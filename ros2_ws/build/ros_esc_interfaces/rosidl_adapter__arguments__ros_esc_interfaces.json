@@ -1,0 +1,10 @@
+{
+  "package_name": "ros_esc_interfaces",
+  "non_idl_tuples": [
+    "/home/mattb/ros2_ws/src/ros_esc_interfaces:msg/Timekeeper.msg",
+    "/home/mattb/ros2_ws/src/ros_esc_interfaces:msg/StampedFloat64.msg",
+    "/home/mattb/ros2_ws/src/ros_esc_interfaces:msg/StampedFloat64MultiArray.msg",
+    "/home/mattb/ros2_ws/src/ros_esc_interfaces:msg/StampedString.msg",
+    "/home/mattb/ros2_ws/src/ros_esc_interfaces:msg/StampedTransformMultiArray.msg"
+  ]
+}
