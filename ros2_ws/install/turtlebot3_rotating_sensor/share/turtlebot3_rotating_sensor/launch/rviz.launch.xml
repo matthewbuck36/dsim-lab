@@ -1,0 +1,9 @@
+<?xml version='1.0' ?>
+
+<launch>
+    <!-- Publish URDF file in robot_description topic -->
+    <include file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/robot_description.launch.py"/>
+
+    <!-- Read robot_description and spawn in rviz running sim -->
+    <include file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/rviz.launch.py"/>
+</launch>

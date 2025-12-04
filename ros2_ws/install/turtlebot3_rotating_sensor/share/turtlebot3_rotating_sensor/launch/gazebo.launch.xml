@@ -1,0 +1,153 @@
+<?xml version='1.0' ?>
+
+<launch>
+    <!-- Set the default entity name -->
+    <arg name="entity_name" default="turtlebot3" />
+
+    <!-- Set the default initial position -->
+    <arg name="init_x_position" default="0" />
+    <arg name="init_y_position" default="0" />
+    <arg name="init_z_position" default="0" />
+
+    <!-- Set the default initial orientation in radians -->
+    <arg name="init_roll_angle" default="0" />
+    <arg name="init_pitch_angle" default="0" />
+    <arg name="init_yaw_angle" default="0" />
+
+    <!-- Set the joint name of the rotating sensor frame joint from the URDF file -->
+    <arg name="joint_name_1" default="rotating_frame_joint" />
+
+    <!-- Specify if the filter needs angular position information
+    from the encoder node appended to the cost values -->
+    <arg name="input_encoder_data_to_filter" default="True"/>
+
+    <!-- Specify the live plotting mode for this vehicle -->
+    <arg name="live_plot_mode" default="2D"/>
+
+    <!-- Set the default rotate frame configuration filepath -->
+    <arg name="rotate_frame_config_filepath" default="~/ros2_ws/src/ros_esc/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation.json" />
+    <!-- Set the default transform configuration filepath -->
+    <arg name="sensor_transform_config_filepath" default="~/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"/>
+    <!-- Set the default cost function configuration filepath-->
+    <arg name="cost_function_config_filepath" default="~/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_config_files/static_2D_quadratic.json"/>
+    <!-- Set the default filter configuration filepath -->
+    <arg name="filter_config_filepath" default="~/ros2_ws/src/ros_esc/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/adaptive_methods/rmsprop_filter_full_rotation.json"/>
+    <!-- Set the default controller configuration filepath -->
+    <arg name="controller_config_filepath" default="~/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/adaptive_methods/rmsprop_controller_full_rotation.json"/>
+    <!-- Set the directory to save simulation test results to -->
+    <arg name="data_collection_filepath" default="~/Experiments/Gazebo-Simulations"/>
+
+
+    <!-- Launch the Gazebo world -->
+    <include file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/empty_world.launch.py"/>
+
+    <!-- Publish URDF file in robot_description topic -->
+    <include file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/robot_description.launch.py"/>
+
+    <!-- Load the controllers -->
+    <include file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/control.launch.py"/>
+
+    <!-- Read robot_description topic and spawn in gazebo -->
+    <node 
+        pkg="gazebo_ros" 
+        exec="spawn_entity.py" 
+        name="spawn_entity"
+        args="
+            -topic=/robot_description 
+            -entity $(var entity_name)
+            -x $(var init_x_position)
+            -y $(var init_y_position)
+            -z $(var init_z_position)
+            -R $(var init_roll_angle)
+            -P $(var init_pitch_angle)
+            -Y $(var init_yaw_angle)
+        "
+        output="screen"
+    />
+
+    <!-- Launch the encoder node -->
+    <executable cmd="
+        ros2 run ros_esc encoder_node
+        /joint_states
+        $(var entity_name)/timekeeper_chatter
+        $(var entity_name)/encoder_chatter
+        --joint_names
+        $(var joint_name_1)
+    "
+    />
+
+    <!-- Launch the rotate frame node -->
+    <executable cmd="
+        ros2 run ros_esc rotate_frame_node
+        $(var entity_name)/encoder_chatter
+        $(var entity_name)/timekeeper_chatter
+        $(var rotate_frame_config_filepath)
+    "
+    />
+
+    <!-- Launch the sensor pose node -->
+    <executable cmd="
+        ros2 run ros_esc sensor_pose_node
+        /odom
+        $(var entity_name)/encoder_chatter
+        $(var entity_name)/timekeeper_chatter
+        $(var entity_name)/sensor_transform_chatter
+        $(var sensor_transform_config_filepath)
+    "
+    />
+
+    <!-- Launch the cost function node -->
+    <executable cmd="
+        ros2 run ros_esc cost_function_node
+        $(var entity_name)/sensor_transform_chatter
+        $(var entity_name)/timekeeper_chatter
+        $(var entity_name)/cost_value_chatter
+        $(var cost_function_config_filepath)
+    "
+    />
+
+    <!-- Launch the filter node -->
+    <executable cmd="
+        ros2 run ros_esc filter_node
+        $(var entity_name)/cost_value_chatter
+        $(var entity_name)/encoder_chatter
+        $(var entity_name)/timekeeper_chatter
+        $(var entity_name)/filter_value_chatter
+        --filter_file
+        $(var filter_config_filepath)
+        --append_encoder_data
+        $(var input_encoder_data_to_filter)
+    "
+    />
+
+    <!-- Launch the controller node -->
+    <executable cmd="
+        ros2 run ros_esc controller_node
+        $(var entity_name)/filter_value_chatter
+        /odom
+        $(var entity_name)/timekeeper_chatter
+        $(var entity_name)/control_value_chatter
+        /cmd_vel
+        $(var controller_config_filepath)
+    "
+    />
+
+    <!-- Launch the data collection node -->
+    <executable cmd="
+        ros2 run ros_esc data_collection_node
+        $(var data_collection_filepath)
+        $(var rotate_frame_config_filepath)
+        $(var sensor_transform_config_filepath)
+        $(var cost_function_config_filepath)
+        $(var filter_config_filepath)
+        $(var controller_config_filepath)
+        $(var entity_name)/timekeeper_chatter
+        /odom
+        $(var entity_name)/sensor_transform_chatter
+        $(var entity_name)/cost_value_chatter
+        $(var entity_name)/filter_value_chatter
+        $(var entity_name)/control_value_chatter
+        $(var live_plot_mode)
+    "
+    />
+</launch>
