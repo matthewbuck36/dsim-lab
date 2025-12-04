@@ -1,0 +1,27 @@
+[0.780s] Invoking command in '/home/mattb/ros2_ws/src/ros_esc': PYTHONPATH=/home/mattb/ros2_ws/build/ros_esc/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/ros_esc build --build-base /home/mattb/ros2_ws/build/ros_esc/build install --record /home/mattb/ros2_ws/build/ros_esc/install.log --single-version-externally-managed install_data
+[1.032s] running egg_info
+[1.032s] writing ../../build/ros_esc/ros_esc.egg-info/PKG-INFO
+[1.032s] writing dependency_links to ../../build/ros_esc/ros_esc.egg-info/dependency_links.txt
+[1.033s] writing entry points to ../../build/ros_esc/ros_esc.egg-info/entry_points.txt
+[1.033s] writing requirements to ../../build/ros_esc/ros_esc.egg-info/requires.txt
+[1.033s] writing top-level names to ../../build/ros_esc/ros_esc.egg-info/top_level.txt
+[1.035s] reading manifest file '../../build/ros_esc/ros_esc.egg-info/SOURCES.txt'
+[1.037s] writing manifest file '../../build/ros_esc/ros_esc.egg-info/SOURCES.txt'
+[1.037s] running build
+[1.037s] running build_py
+[1.040s] running install
+[1.040s] running install_lib
+[1.043s] running install_data
+[1.043s] running install_egg_info
+[1.044s] removing '/home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc-0.0.0-py3.10.egg-info' (and everything under it)
+[1.044s] Copying ../../build/ros_esc/ros_esc.egg-info to /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc-0.0.0-py3.10.egg-info
+[1.046s] running install_scripts
+[1.063s] Installing controller_node script to /home/mattb/ros2_ws/install/ros_esc/lib/ros_esc
+[1.063s] Installing cost_function_node script to /home/mattb/ros2_ws/install/ros_esc/lib/ros_esc
+[1.063s] Installing data_collection_node script to /home/mattb/ros2_ws/install/ros_esc/lib/ros_esc
+[1.063s] Installing encoder_node script to /home/mattb/ros2_ws/install/ros_esc/lib/ros_esc
+[1.063s] Installing filter_node script to /home/mattb/ros2_ws/install/ros_esc/lib/ros_esc
+[1.064s] Installing rotate_frame_node script to /home/mattb/ros2_ws/install/ros_esc/lib/ros_esc
+[1.064s] Installing sensor_pose_node script to /home/mattb/ros2_ws/install/ros_esc/lib/ros_esc
+[1.065s] writing list of installed files to '/home/mattb/ros2_ws/build/ros_esc/install.log'
+[1.081s] Invoked command in '/home/mattb/ros2_ws/src/ros_esc' returned '0': PYTHONPATH=/home/mattb/ros2_ws/build/ros_esc/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/ros_esc build --build-base /home/mattb/ros2_ws/build/ros_esc/build install --record /home/mattb/ros2_ws/build/ros_esc/install.log --single-version-externally-managed install_data
