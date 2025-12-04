@@ -1,0 +1,24 @@
+// generated from rosidl_adapter/resource/msg.idl.em
+// with input from ros_esc_interfaces/msg/StampedFloat64MultiArray.msg
+// generated code does not contain a copyright notice
+
+
+module ros_esc_interfaces {
+  module msg {
+    @verbatim (language="comment", text=
+      "This is simply a timestamped Float64MultiArray message.")
+    struct StampedFloat64MultiArray {
+      @verbatim (language="comment", text=
+        "Header containing a description of what the data represents")
+      string header;
+
+      @verbatim (language="comment", text=
+        "Timestamp of the message.")
+      double timestamp;
+
+      @verbatim (language="comment", text=
+        "Array of float64 data.")
+      sequence<double> data;
+    };
+  };
+};
