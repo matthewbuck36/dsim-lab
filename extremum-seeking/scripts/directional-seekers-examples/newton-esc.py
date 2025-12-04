@@ -1,0 +1,63 @@
+#!/bin/usr/python3
+
+"""
+Demonstrates using direction from a Newton Extremum Seeking Algorithm.
+"""
+# pylint: disable=invalid-name
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+from extremum_seeking.filters import DirectionalFilter
+from extremum_seeking.seekers import LieBracketSeeker, NewtonFlow
+from extremum_seeking.systems import NonholonomicUnicycle
+from example_helpers import  u, J, J_derivatives
+
+if __name__ == "__main__":
+
+    h = DirectionalFilter(NewtonFlow(k=1, omega_l=1, odim=2))
+
+    seeker = LieBracketSeeker(
+        f=NonholonomicUnicycle(),
+        h=h, J=J_derivatives, u=u
+    )  # Form the ESC dynamical system
+
+    # Simulation parameters
+    x0 = seeker.initialize_system(
+        np.array([2, 2, 0]),  # Vehicle states
+        np.hstack((np.zeros(2,), np.eye(2).flatten()))  # theta and Gamma
+    )
+    tstart = 0.
+    tstop = 10.
+    dt = 1e-2
+    tvec = np.linspace(tstart, tstop, int(np.ceil((tstop - tstart)/dt)))
+    stop_event = lambda t, y: np.linalg.norm(y[:2]) - 1e-2
+    stop_event.terminal = True
+
+    # Solve ODE
+    results = solve_ivp(
+        fun=seeker.differential_equation,
+        t_span=(tstart, tstop),
+        y0=x0,
+        t_eval=tvec,
+        max_step=0.1
+    )
+    xh = results.y.T
+    plot_t = results.t
+
+    # Create contours
+    xc = np.linspace(-3, 3, 61)
+    yc = np.linspace(-3, 3, 61)
+    X, Y = np.meshgrid(xc, yc)
+    Z = np.zeros(X.shape)
+    for i in range(X.shape[0]):
+        for j in range(Y.shape[1]):
+            Z[i, j] = J(0., np.array([X[i, j], Y[i, j]]))
+
+    # Plot
+    fig, ax = plt.subplots(1, 1)
+    ax.plot(xh[:, 0], xh[:, 1], linewidth=2, label="Seeker")
+    ax.contourf(X, Y, Z, alpha=0.2)
+    ax.grid()
+    plt.legend()
+    plt.show()
