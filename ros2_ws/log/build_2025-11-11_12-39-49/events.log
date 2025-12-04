@@ -1,0 +1,415 @@
+[0.000000] (-) TimerEvent: {}
+[0.000143] (-) JobUnselected: {'identifier': 'ros_esc'}
+[0.000189] (-) JobUnselected: {'identifier': 'turtlebot3_rotating_sensor'}
+[0.000226] (ros_esc_interfaces) JobQueued: {'identifier': 'ros_esc_interfaces', 'dependencies': OrderedDict()}
+[0.000255] (ros_esc_interfaces) JobStarted: {'identifier': 'ros_esc_interfaces'}
+[0.010282] (ros_esc_interfaces) JobProgress: {'identifier': 'ros_esc_interfaces', 'progress': 'cmake'}
+[0.010868] (ros_esc_interfaces) Command: {'cmd': ['/usr/bin/cmake', '/home/mattb/ros2_ws/src/ros_esc_interfaces', '-DCMAKE_INSTALL_PREFIX=/home/mattb/ros2_ws/install/ros_esc_interfaces'], 'cwd': '/home/mattb/ros2_ws/build/ros_esc_interfaces', 'env': OrderedDict([('LESSOPEN', '| /usr/bin/lesspipe %s'), ('USER', 'mattb'), ('XDG_SESSION_TYPE', 'wayland'), ('GIT_ASKPASS', '/usr/share/code/resources/app/extensions/git/dist/askpass.sh'), ('SHLVL', '2'), ('LD_LIBRARY_PATH', '/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib'), ('HOME', '/home/mattb'), ('CHROME_DESKTOP', 'code.desktop'), ('OLDPWD', '/home/mattb'), ('TERM_PROGRAM_VERSION', '1.105.1'), ('DESKTOP_SESSION', 'ubuntu'), ('ROS_PYTHON_VERSION', '3'), ('GNOME_SHELL_SESSION_MODE', 'ubuntu'), ('GTK_MODULES', 'gail:atk-bridge'), ('VSCODE_GIT_ASKPASS_MAIN', '/usr/share/code/resources/app/extensions/git/dist/askpass-main.js'), ('VSCODE_GIT_ASKPASS_NODE', '/usr/share/code/code'), ('SYSTEMD_EXEC_PID', '1500'), ('VSCODE_PYTHON_AUTOACTIVATE_GUARD', '1'), ('DBUS_SESSION_BUS_ADDRESS', 'unix:path=/run/user/1000/bus'), ('COLORTERM', 'truecolor'), ('IM_CONFIG_PHASE', '1'), ('WAYLAND_DISPLAY', 'wayland-0'), ('ROS_DISTRO', 'humble'), ('LOGNAME', 'mattb'), ('_', '/usr/bin/colcon'), ('ROS_VERSION', '2'), ('XDG_SESSION_CLASS', 'user'), ('USERNAME', 'mattb'), ('TERM', 'xterm-256color'), ('GNOME_DESKTOP_SESSION_ID', 'this-is-deprecated'), ('ROS_LOCALHOST_ONLY', '0'), ('PATH', '/opt/ros/humble/bin:/home/mattb/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin:/home/mattb/.config/Code/User/globalStorage/github.copilot-chat/debugCommand'), ('SESSION_MANAGER', 'local/ubuntu-ssd:@/tmp/.ICE-unix/1263,unix/ubuntu-ssd:/tmp/.ICE-unix/1263'), ('XDG_MENU_PREFIX', 'gnome-'), ('GNOME_TERMINAL_SCREEN', '/org/gnome/Terminal/screen/70be42ff_c0b0_4e81_b165_31b5cabb27e8'), ('GNOME_SETUP_DISPLAY', ':1'), ('XDG_RUNTIME_DIR', '/run/user/1000'), ('GDK_BACKEND', 'x11'), ('DISPLAY', ':0'), ('LANG', 'en_US.UTF-8'), ('XDG_CURRENT_DESKTOP', 'Unity'), ('XMODIFIERS', '@im=ibus'), ('XDG_SESSION_DESKTOP', 'ubuntu'), ('XAUTHORITY', '/run/user/1000/.mutter-Xwaylandauth.MOVYF3'), ('LS_COLORS', 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:'), ('VSCODE_GIT_IPC_HANDLE', '/run/user/1000/vscode-git-cbb1b73edd.sock'), ('GNOME_TERMINAL_SERVICE', ':1.108'), ('TERM_PROGRAM', 'vscode'), ('SSH_AGENT_LAUNCHER', 'gnome-keyring'), ('SSH_AUTH_SOCK', '/run/user/1000/keyring/ssh'), ('AMENT_PREFIX_PATH', '/opt/ros/humble'), ('ORIGINAL_XDG_CURRENT_DESKTOP', 'ubuntu:GNOME'), ('SHELL', '/bin/bash'), ('QT_ACCESSIBILITY', '1'), ('GDMSESSION', 'ubuntu'), ('LESSCLOSE', '/usr/bin/lesspipe %s %s'), ('VSCODE_GIT_ASKPASS_EXTRA_ARGS', ''), ('QT_IM_MODULE', 'ibus'), ('PWD', '/home/mattb/ros2_ws/build/ros_esc_interfaces'), ('XDG_CONFIG_DIRS', '/etc/xdg/xdg-ubuntu:/etc/xdg'), ('XDG_DATA_DIRS', '/usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop'), ('PYTHONPATH', '/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages'), ('COLCON', '1'), ('VTE_VERSION', '6800'), ('CMAKE_PREFIX_PATH', '/opt/ros/humble')]), 'shell': False}
+[0.099436] (-) TimerEvent: {}
+[0.200037] (-) TimerEvent: {}
+[0.281207] (ros_esc_interfaces) StdoutLine: {'line': b'-- The C compiler identification is GNU 11.4.0\n'}
+[0.300212] (-) TimerEvent: {}
+[0.400570] (-) TimerEvent: {}
+[0.490447] (ros_esc_interfaces) StdoutLine: {'line': b'-- The CXX compiler identification is GNU 11.4.0\n'}
+[0.500656] (-) TimerEvent: {}
+[0.501168] (ros_esc_interfaces) StdoutLine: {'line': b'-- Detecting C compiler ABI info\n'}
+[0.567627] (ros_esc_interfaces) StdoutLine: {'line': b'-- Detecting C compiler ABI info - done\n'}
+[0.574156] (ros_esc_interfaces) StdoutLine: {'line': b'-- Check for working C compiler: /usr/bin/cc - skipped\n'}
+[0.574748] (ros_esc_interfaces) StdoutLine: {'line': b'-- Detecting C compile features\n'}
+[0.575633] (ros_esc_interfaces) StdoutLine: {'line': b'-- Detecting C compile features - done\n'}
+[0.579176] (ros_esc_interfaces) StdoutLine: {'line': b'-- Detecting CXX compiler ABI info\n'}
+[0.600785] (-) TimerEvent: {}
+[0.651073] (ros_esc_interfaces) StdoutLine: {'line': b'-- Detecting CXX compiler ABI info - done\n'}
+[0.657969] (ros_esc_interfaces) StdoutLine: {'line': b'-- Check for working CXX compiler: /usr/bin/c++ - skipped\n'}
+[0.658200] (ros_esc_interfaces) StdoutLine: {'line': b'-- Detecting CXX compile features\n'}
+[0.658605] (ros_esc_interfaces) StdoutLine: {'line': b'-- Detecting CXX compile features - done\n'}
+[0.660592] (ros_esc_interfaces) StdoutLine: {'line': b'-- Found ament_cmake: 1.3.12 (/opt/ros/humble/share/ament_cmake/cmake)\n'}
+[0.700905] (-) TimerEvent: {}
+[0.786107] (ros_esc_interfaces) StdoutLine: {'line': b'-- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter \n'}
+[0.801025] (-) TimerEvent: {}
+[0.858016] (ros_esc_interfaces) StdoutLine: {'line': b'-- Found geometry_msgs: 4.9.0 (/opt/ros/humble/share/geometry_msgs/cmake)\n'}
+[0.885991] (ros_esc_interfaces) StdoutLine: {'line': b'-- Found rosidl_generator_c: 3.1.7 (/opt/ros/humble/share/rosidl_generator_c/cmake)\n'}
+[0.889811] (ros_esc_interfaces) StdoutLine: {'line': b'-- Found rosidl_adapter: 3.1.7 (/opt/ros/humble/share/rosidl_adapter/cmake)\n'}
+[0.896255] (ros_esc_interfaces) StdoutLine: {'line': b'-- Found rosidl_generator_cpp: 3.1.7 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)\n'}
+[0.901128] (-) TimerEvent: {}
+[0.905964] (ros_esc_interfaces) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c\n'}
+[0.919986] (ros_esc_interfaces) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp\n'}
+[0.954066] (ros_esc_interfaces) StdoutLine: {'line': b'-- Found rclpy: 3.3.17 (/opt/ros/humble/share/rclpy/cmake)\n'}
+[0.954927] (ros_esc_interfaces) StdoutLine: {'line': b'-- Found rosidl_default_generators: 1.2.0 (/opt/ros/humble/share/rosidl_default_generators/cmake)\n'}
+[1.001244] (-) TimerEvent: {}
+[1.101487] (-) TimerEvent: {}
+[1.201719] (-) TimerEvent: {}
+[1.211443] (ros_esc_interfaces) StdoutLine: {'line': b'-- Found ament_cmake_ros: 0.10.0 (/opt/ros/humble/share/ament_cmake_ros/cmake)\n'}
+[1.301844] (-) TimerEvent: {}
+[1.402049] (-) TimerEvent: {}
+[1.502318] (-) TimerEvent: {}
+[1.567637] (ros_esc_interfaces) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c\n'}
+[1.602434] (-) TimerEvent: {}
+[1.702656] (-) TimerEvent: {}
+[1.706136] (ros_esc_interfaces) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp\n'}
+[1.727398] (ros_esc_interfaces) StdoutLine: {'line': b'-- Found PythonInterp: /usr/bin/python3 (found suitable version "3.10.12", minimum required is "3.6") \n'}
+[1.728770] (ros_esc_interfaces) StdoutLine: {'line': b'-- Found python_cmake_module: 0.10.0 (/opt/ros/humble/share/python_cmake_module/cmake)\n'}
+[1.751549] (ros_esc_interfaces) StdoutLine: {'line': b'-- Found PythonLibs: /usr/lib/x86_64-linux-gnu/libpython3.10.so (found suitable version "3.10.12", minimum required is "3.5") \n'}
+[1.751700] (ros_esc_interfaces) StdoutLine: {'line': b'-- Using PYTHON_EXECUTABLE: /usr/bin/python3\n'}
+[1.751755] (ros_esc_interfaces) StdoutLine: {'line': b'-- Using PYTHON_INCLUDE_DIRS: /usr/include/python3.10\n'}
+[1.751804] (ros_esc_interfaces) StdoutLine: {'line': b'-- Using PYTHON_LIBRARIES: /usr/lib/x86_64-linux-gnu/libpython3.10.so\n'}
+[1.769061] (ros_esc_interfaces) StdoutLine: {'line': b'-- Found PythonExtra: .so  \n'}
+[1.802775] (-) TimerEvent: {}
+[1.819500] (ros_esc_interfaces) StdoutLine: {'line': b'-- Found ament_lint_auto: 0.12.14 (/opt/ros/humble/share/ament_lint_auto/cmake)\n'}
+[1.833915] (ros_esc_interfaces) StdoutLine: {'line': b"-- Added test 'lint_cmake' to check CMake code style\n"}
+[1.834996] (ros_esc_interfaces) StdoutLine: {'line': b"-- Added test 'xmllint' to check XML markup files\n"}
+[1.837231] (ros_esc_interfaces) StdoutLine: {'line': b'-- Configuring done\n'}
+[1.873931] (ros_esc_interfaces) StdoutLine: {'line': b'-- Generating done\n'}
+[1.884355] (ros_esc_interfaces) StdoutLine: {'line': b'-- Build files have been written to: /home/mattb/ros2_ws/build/ros_esc_interfaces\n'}
+[1.891454] (ros_esc_interfaces) CommandEnded: {'returncode': 0}
+[1.892016] (ros_esc_interfaces) JobProgress: {'identifier': 'ros_esc_interfaces', 'progress': 'build'}
+[1.892536] (ros_esc_interfaces) Command: {'cmd': ['/usr/bin/cmake', '--build', '/home/mattb/ros2_ws/build/ros_esc_interfaces', '--', '-j12', '-l12'], 'cwd': '/home/mattb/ros2_ws/build/ros_esc_interfaces', 'env': OrderedDict([('LESSOPEN', '| /usr/bin/lesspipe %s'), ('USER', 'mattb'), ('XDG_SESSION_TYPE', 'wayland'), ('GIT_ASKPASS', '/usr/share/code/resources/app/extensions/git/dist/askpass.sh'), ('SHLVL', '2'), ('LD_LIBRARY_PATH', '/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib'), ('HOME', '/home/mattb'), ('CHROME_DESKTOP', 'code.desktop'), ('OLDPWD', '/home/mattb'), ('TERM_PROGRAM_VERSION', '1.105.1'), ('DESKTOP_SESSION', 'ubuntu'), ('ROS_PYTHON_VERSION', '3'), ('GNOME_SHELL_SESSION_MODE', 'ubuntu'), ('GTK_MODULES', 'gail:atk-bridge'), ('VSCODE_GIT_ASKPASS_MAIN', '/usr/share/code/resources/app/extensions/git/dist/askpass-main.js'), ('VSCODE_GIT_ASKPASS_NODE', '/usr/share/code/code'), ('SYSTEMD_EXEC_PID', '1500'), ('VSCODE_PYTHON_AUTOACTIVATE_GUARD', '1'), ('DBUS_SESSION_BUS_ADDRESS', 'unix:path=/run/user/1000/bus'), ('COLORTERM', 'truecolor'), ('IM_CONFIG_PHASE', '1'), ('WAYLAND_DISPLAY', 'wayland-0'), ('ROS_DISTRO', 'humble'), ('LOGNAME', 'mattb'), ('_', '/usr/bin/colcon'), ('ROS_VERSION', '2'), ('XDG_SESSION_CLASS', 'user'), ('USERNAME', 'mattb'), ('TERM', 'xterm-256color'), ('GNOME_DESKTOP_SESSION_ID', 'this-is-deprecated'), ('ROS_LOCALHOST_ONLY', '0'), ('PATH', '/opt/ros/humble/bin:/home/mattb/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin:/home/mattb/.config/Code/User/globalStorage/github.copilot-chat/debugCommand'), ('SESSION_MANAGER', 'local/ubuntu-ssd:@/tmp/.ICE-unix/1263,unix/ubuntu-ssd:/tmp/.ICE-unix/1263'), ('XDG_MENU_PREFIX', 'gnome-'), ('GNOME_TERMINAL_SCREEN', '/org/gnome/Terminal/screen/70be42ff_c0b0_4e81_b165_31b5cabb27e8'), ('GNOME_SETUP_DISPLAY', ':1'), ('XDG_RUNTIME_DIR', '/run/user/1000'), ('GDK_BACKEND', 'x11'), ('DISPLAY', ':0'), ('LANG', 'en_US.UTF-8'), ('XDG_CURRENT_DESKTOP', 'Unity'), ('XMODIFIERS', '@im=ibus'), ('XDG_SESSION_DESKTOP', 'ubuntu'), ('XAUTHORITY', '/run/user/1000/.mutter-Xwaylandauth.MOVYF3'), ('LS_COLORS', 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:'), ('VSCODE_GIT_IPC_HANDLE', '/run/user/1000/vscode-git-cbb1b73edd.sock'), ('GNOME_TERMINAL_SERVICE', ':1.108'), ('TERM_PROGRAM', 'vscode'), ('SSH_AGENT_LAUNCHER', 'gnome-keyring'), ('SSH_AUTH_SOCK', '/run/user/1000/keyring/ssh'), ('AMENT_PREFIX_PATH', '/opt/ros/humble'), ('ORIGINAL_XDG_CURRENT_DESKTOP', 'ubuntu:GNOME'), ('SHELL', '/bin/bash'), ('QT_ACCESSIBILITY', '1'), ('GDMSESSION', 'ubuntu'), ('LESSCLOSE', '/usr/bin/lesspipe %s %s'), ('VSCODE_GIT_ASKPASS_EXTRA_ARGS', ''), ('QT_IM_MODULE', 'ibus'), ('PWD', '/home/mattb/ros2_ws/build/ros_esc_interfaces'), ('XDG_CONFIG_DIRS', '/etc/xdg/xdg-ubuntu:/etc/xdg'), ('XDG_DATA_DIRS', '/usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop'), ('PYTHONPATH', '/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages'), ('COLCON', '1'), ('VTE_VERSION', '6800'), ('CMAKE_PREFIX_PATH', '/opt/ros/humble')]), 'shell': False}
+[1.902872] (-) TimerEvent: {}
+[1.928798] (ros_esc_interfaces) StdoutLine: {'line': b'[  1%] \x1b[34m\x1b[1mGenerating C code for ROS interfaces\x1b[0m\n'}
+[1.938614] (ros_esc_interfaces) StdoutLine: {'line': b'[  3%] \x1b[34m\x1b[1mGenerating C++ code for ROS interfaces\x1b[0m\n'}
+[1.945859] (ros_esc_interfaces) StdoutLine: {'line': b'[  3%] Built target ament_cmake_python_copy_ros_esc_interfaces\n'}
+[2.002993] (-) TimerEvent: {}
+[2.103274] (-) TimerEvent: {}
+[2.166734] (ros_esc_interfaces) StdoutLine: {'line': b'running egg_info\n'}
+[2.167305] (ros_esc_interfaces) StdoutLine: {'line': b'creating ros_esc_interfaces.egg-info\n'}
+[2.167507] (ros_esc_interfaces) StdoutLine: {'line': b'writing ros_esc_interfaces.egg-info/PKG-INFO\n'}
+[2.167637] (ros_esc_interfaces) StdoutLine: {'line': b'writing dependency_links to ros_esc_interfaces.egg-info/dependency_links.txt\n'}
+[2.167811] (ros_esc_interfaces) StdoutLine: {'line': b'writing top-level names to ros_esc_interfaces.egg-info/top_level.txt\n'}
+[2.167947] (ros_esc_interfaces) StdoutLine: {'line': b"writing manifest file 'ros_esc_interfaces.egg-info/SOURCES.txt'\n"}
+[2.169535] (ros_esc_interfaces) StdoutLine: {'line': b"reading manifest file 'ros_esc_interfaces.egg-info/SOURCES.txt'\n"}
+[2.169986] (ros_esc_interfaces) StdoutLine: {'line': b"writing manifest file 'ros_esc_interfaces.egg-info/SOURCES.txt'\n"}
+[2.189934] (ros_esc_interfaces) StdoutLine: {'line': b'[  3%] Built target ament_cmake_python_build_ros_esc_interfaces_egg\n'}
+[2.203413] (-) TimerEvent: {}
+[2.303665] (-) TimerEvent: {}
+[2.403896] (-) TimerEvent: {}
+[2.477893] (ros_esc_interfaces) StdoutLine: {'line': b'[  3%] Built target ros_esc_interfaces__cpp\n'}
+[2.495147] (ros_esc_interfaces) StdoutLine: {'line': b'[  4%] \x1b[34m\x1b[1mGenerating C++ type support dispatch for ROS interfaces\x1b[0m\n'}
+[2.496563] (ros_esc_interfaces) StdoutLine: {'line': b'[  6%] \x1b[34m\x1b[1mGenerating C++ type support for eProsima Fast-RTPS\x1b[0m\n'}
+[2.501089] (ros_esc_interfaces) StdoutLine: {'line': b'[  7%] \x1b[34m\x1b[1mGenerating C++ introspection for ROS interfaces\x1b[0m\n'}
+[2.504014] (-) TimerEvent: {}
+[2.522765] (ros_esc_interfaces) StdoutLine: {'line': b'[ 12%] \x1b[32mBuilding C object CMakeFiles/ros_esc_interfaces__rosidl_generator_c.dir/rosidl_generator_c/ros_esc_interfaces/msg/detail/stamped_float64_multi_array__functions.c.o\x1b[0m\n'}
+[2.523041] (ros_esc_interfaces) StdoutLine: {'line': b'[ 12%] \x1b[32mBuilding C object CMakeFiles/ros_esc_interfaces__rosidl_generator_c.dir/rosidl_generator_c/ros_esc_interfaces/msg/detail/stamped_float64__functions.c.o\x1b[0m\n'}
+[2.523228] (ros_esc_interfaces) StdoutLine: {'line': b'[ 12%] \x1b[32mBuilding C object CMakeFiles/ros_esc_interfaces__rosidl_generator_c.dir/rosidl_generator_c/ros_esc_interfaces/msg/detail/timekeeper__functions.c.o\x1b[0m\n'}
+[2.526216] (ros_esc_interfaces) StdoutLine: {'line': b'[ 14%] \x1b[32mBuilding C object CMakeFiles/ros_esc_interfaces__rosidl_generator_c.dir/rosidl_generator_c/ros_esc_interfaces/msg/detail/stamped_string__functions.c.o\x1b[0m\n'}
+[2.526489] (ros_esc_interfaces) StdoutLine: {'line': b'[ 15%] \x1b[32mBuilding C object CMakeFiles/ros_esc_interfaces__rosidl_generator_c.dir/rosidl_generator_c/ros_esc_interfaces/msg/detail/stamped_transform_multi_array__functions.c.o\x1b[0m\n'}
+[2.603498] (ros_esc_interfaces) StdoutLine: {'line': b'[ 17%] \x1b[32m\x1b[1mLinking C shared library libros_esc_interfaces__rosidl_generator_c.so\x1b[0m\n'}
+[2.604082] (-) TimerEvent: {}
+[2.640250] (ros_esc_interfaces) StdoutLine: {'line': b'[ 17%] Built target ros_esc_interfaces__rosidl_generator_c\n'}
+[2.650383] (ros_esc_interfaces) StdoutLine: {'line': b'[ 20%] \x1b[34m\x1b[1mGenerating C type support for eProsima Fast-RTPS\x1b[0m\n'}
+[2.650611] (ros_esc_interfaces) StdoutLine: {'line': b'[ 20%] \x1b[34m\x1b[1mGenerating C introspection for ROS interfaces\x1b[0m\n'}
+[2.650725] (ros_esc_interfaces) StdoutLine: {'line': b'[ 22%] \x1b[34m\x1b[1mGenerating C type support dispatch for ROS interfaces\x1b[0m\n'}
+[2.704183] (-) TimerEvent: {}
+[2.804458] (-) TimerEvent: {}
+[2.904744] (-) TimerEvent: {}
+[3.005001] (-) TimerEvent: {}
+[3.010740] (ros_esc_interfaces) StdoutLine: {'line': b'[ 23%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/ros_esc_interfaces/msg/timekeeper__type_support.cpp.o\x1b[0m\n'}
+[3.013417] (ros_esc_interfaces) StdoutLine: {'line': b'[ 25%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/ros_esc_interfaces/msg/stamped_float64__type_support.cpp.o\x1b[0m\n'}
+[3.013672] (ros_esc_interfaces) StdoutLine: {'line': b'[ 26%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/ros_esc_interfaces/msg/stamped_float64_multi_array__type_support.cpp.o\x1b[0m\n'}
+[3.013836] (ros_esc_interfaces) StdoutLine: {'line': b'[ 28%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/ros_esc_interfaces/msg/stamped_string__type_support.cpp.o\x1b[0m\n'}
+[3.013985] (ros_esc_interfaces) StdoutLine: {'line': b'[ 30%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/ros_esc_interfaces/msg/stamped_transform_multi_array__type_support.cpp.o\x1b[0m\n'}
+[3.105103] (-) TimerEvent: {}
+[3.139359] (ros_esc_interfaces) StdoutLine: {'line': b'[ 33%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/ros_esc_interfaces/msg/detail/stamped_float64__type_support.cpp.o\x1b[0m\n'}
+[3.139993] (ros_esc_interfaces) StdoutLine: {'line': b'[ 34%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/ros_esc_interfaces/msg/detail/timekeeper__type_support.cpp.o\x1b[0m\n'}
+[3.140181] (ros_esc_interfaces) StdoutLine: {'line': b'[ 34%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/ros_esc_interfaces/msg/detail/stamped_float64_multi_array__type_support.cpp.o\x1b[0m\n'}
+[3.168431] (ros_esc_interfaces) StdoutLine: {'line': b'[ 36%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/ros_esc_interfaces/msg/detail/dds_fastrtps/timekeeper__type_support.cpp.o\x1b[0m\n'}
+[3.207398] (-) TimerEvent: {}
+[3.307672] (-) TimerEvent: {}
+[3.339105] (ros_esc_interfaces) StdoutLine: {'line': b'[ 38%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/ros_esc_interfaces/msg/timekeeper__type_support.cpp.o\x1b[0m\n'}
+[3.395439] (ros_esc_interfaces) StdoutLine: {'line': b'[ 39%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/ros_esc_interfaces/msg/stamped_float64__type_support.cpp.o\x1b[0m\n'}
+[3.407775] (-) TimerEvent: {}
+[3.444402] (ros_esc_interfaces) StdoutLine: {'line': b'[ 41%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/ros_esc_interfaces/msg/stamped_float64_multi_array__type_support.cpp.o\x1b[0m\n'}
+[3.492948] (ros_esc_interfaces) StdoutLine: {'line': b'[ 42%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/ros_esc_interfaces/msg/stamped_string__type_support.cpp.o\x1b[0m\n'}
+[3.507879] (-) TimerEvent: {}
+[3.542744] (ros_esc_interfaces) StdoutLine: {'line': b'[ 46%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/ros_esc_interfaces/msg/detail/stamped_transform_multi_array__type_support.cpp.o\x1b[0m\n'}
+[3.543006] (ros_esc_interfaces) StdoutLine: {'line': b'[ 46%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/ros_esc_interfaces/msg/stamped_transform_multi_array__type_support.cpp.o\x1b[0m\n'}
+[3.543253] (ros_esc_interfaces) StdoutLine: {'line': b'[ 47%] \x1b[32mBuilding C object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/ros_esc_interfaces/msg/detail/timekeeper__type_support.c.o\x1b[0m\n'}
+[3.543412] (ros_esc_interfaces) StdoutLine: {'line': b'[ 49%] \x1b[32m\x1b[1mLinking CXX shared library libros_esc_interfaces__rosidl_typesupport_cpp.so\x1b[0m\n'}
+[3.547463] (ros_esc_interfaces) StdoutLine: {'line': b'[ 50%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/ros_esc_interfaces/msg/detail/stamped_string__type_support.cpp.o\x1b[0m\n'}
+[3.547677] (ros_esc_interfaces) StdoutLine: {'line': b'[ 52%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/ros_esc_interfaces/msg/detail/dds_fastrtps/stamped_float64__type_support.cpp.o\x1b[0m\n'}
+[3.555745] (ros_esc_interfaces) StdoutLine: {'line': b'[ 53%] \x1b[32mBuilding C object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/ros_esc_interfaces/msg/detail/stamped_float64__type_support.c.o\x1b[0m\n'}
+[3.600536] (ros_esc_interfaces) StdoutLine: {'line': b'[ 55%] \x1b[32m\x1b[1mLinking CXX shared library libros_esc_interfaces__rosidl_typesupport_c.so\x1b[0m\n'}
+[3.600780] (ros_esc_interfaces) StdoutLine: {'line': b'[ 57%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/ros_esc_interfaces/msg/detail/timekeeper__type_support_c.cpp.o\x1b[0m\n'}
+[3.603643] (ros_esc_interfaces) StdoutLine: {'line': b'[ 58%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/ros_esc_interfaces/msg/detail/stamped_float64__type_support_c.cpp.o\x1b[0m\n'}
+[3.607981] (-) TimerEvent: {}
+[3.616585] (ros_esc_interfaces) StdoutLine: {'line': b'[ 58%] Built target ros_esc_interfaces__rosidl_typesupport_cpp\n'}
+[3.617705] (ros_esc_interfaces) StdoutLine: {'line': b'[ 60%] \x1b[32mBuilding C object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/ros_esc_interfaces/msg/detail/stamped_float64_multi_array__type_support.c.o\x1b[0m\n'}
+[3.639504] (ros_esc_interfaces) StdoutLine: {'line': b'[ 61%] \x1b[32mBuilding C object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/ros_esc_interfaces/msg/detail/stamped_string__type_support.c.o\x1b[0m\n'}
+[3.673449] (ros_esc_interfaces) StdoutLine: {'line': b'[ 61%] Built target ros_esc_interfaces__rosidl_typesupport_c\n'}
+[3.684410] (ros_esc_interfaces) StdoutLine: {'line': b'[ 63%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/ros_esc_interfaces/msg/detail/dds_fastrtps/stamped_float64_multi_array__type_support.cpp.o\x1b[0m\n'}
+[3.686219] (ros_esc_interfaces) StdoutLine: {'line': b'[ 65%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/ros_esc_interfaces/msg/detail/dds_fastrtps/stamped_string__type_support.cpp.o\x1b[0m\n'}
+[3.704192] (ros_esc_interfaces) StdoutLine: {'line': b'[ 66%] \x1b[32mBuilding C object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/ros_esc_interfaces/msg/detail/stamped_transform_multi_array__type_support.c.o\x1b[0m\n'}
+[3.709407] (-) TimerEvent: {}
+[3.767648] (ros_esc_interfaces) StdoutLine: {'line': b'[ 68%] \x1b[32m\x1b[1mLinking C shared library libros_esc_interfaces__rosidl_typesupport_introspection_c.so\x1b[0m\n'}
+[3.809510] (-) TimerEvent: {}
+[3.817728] (ros_esc_interfaces) StdoutLine: {'line': b'[ 68%] Built target ros_esc_interfaces__rosidl_typesupport_introspection_c\n'}
+[3.825587] (ros_esc_interfaces) StdoutLine: {'line': b'[ 69%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/ros_esc_interfaces/msg/detail/stamped_float64_multi_array__type_support_c.cpp.o\x1b[0m\n'}
+[3.837514] (ros_esc_interfaces) StdoutLine: {'line': b'[ 71%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/ros_esc_interfaces/msg/detail/dds_fastrtps/stamped_transform_multi_array__type_support.cpp.o\x1b[0m\n'}
+[3.844177] (ros_esc_interfaces) StdoutLine: {'line': b'[ 73%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/ros_esc_interfaces/msg/detail/stamped_string__type_support_c.cpp.o\x1b[0m\n'}
+[3.888119] (ros_esc_interfaces) StdoutLine: {'line': b'[ 74%] \x1b[32mBuilding CXX object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/ros_esc_interfaces/msg/detail/stamped_transform_multi_array__type_support_c.cpp.o\x1b[0m\n'}
+[3.909616] (-) TimerEvent: {}
+[4.010254] (-) TimerEvent: {}
+[4.110842] (-) TimerEvent: {}
+[4.211667] (-) TimerEvent: {}
+[4.225231] (ros_esc_interfaces) StdoutLine: {'line': b'[ 76%] \x1b[32m\x1b[1mLinking CXX shared library libros_esc_interfaces__rosidl_typesupport_introspection_cpp.so\x1b[0m\n'}
+[4.308010] (ros_esc_interfaces) StdoutLine: {'line': b'[ 76%] Built target ros_esc_interfaces__rosidl_typesupport_introspection_cpp\n'}
+[4.311783] (-) TimerEvent: {}
+[4.402079] (ros_esc_interfaces) StdoutLine: {'line': b'[ 77%] \x1b[32m\x1b[1mLinking CXX shared library libros_esc_interfaces__rosidl_typesupport_fastrtps_c.so\x1b[0m\n'}
+[4.411885] (-) TimerEvent: {}
+[4.473676] (ros_esc_interfaces) StdoutLine: {'line': b'[ 77%] Built target ros_esc_interfaces__rosidl_typesupport_fastrtps_c\n'}
+[4.481188] (ros_esc_interfaces) StdoutLine: {'line': b'[ 79%] \x1b[32m\x1b[1mLinking CXX shared library libros_esc_interfaces__rosidl_typesupport_fastrtps_cpp.so\x1b[0m\n'}
+[4.512011] (-) TimerEvent: {}
+[4.551104] (ros_esc_interfaces) StdoutLine: {'line': b'[ 79%] Built target ros_esc_interfaces__rosidl_typesupport_fastrtps_cpp\n'}
+[4.567688] (ros_esc_interfaces) StdoutLine: {'line': b'[ 79%] Built target ros_esc_interfaces\n'}
+[4.584485] (ros_esc_interfaces) StdoutLine: {'line': b'[ 80%] \x1b[34m\x1b[1mGenerating Python code for ROS interfaces\x1b[0m\n'}
+[4.612126] (-) TimerEvent: {}
+[4.712367] (-) TimerEvent: {}
+[4.812556] (-) TimerEvent: {}
+[4.912783] (-) TimerEvent: {}
+[5.013014] (-) TimerEvent: {}
+[5.113241] (-) TimerEvent: {}
+[5.213476] (-) TimerEvent: {}
+[5.313700] (-) TimerEvent: {}
+[5.403286] (ros_esc_interfaces) StdoutLine: {'line': b'[ 80%] Built target ros_esc_interfaces__py\n'}
+[5.413821] (-) TimerEvent: {}
+[5.420353] (ros_esc_interfaces) StdoutLine: {'line': b'[ 84%] \x1b[32mBuilding C object CMakeFiles/ros_esc_interfaces__rosidl_generator_py.dir/rosidl_generator_py/ros_esc_interfaces/msg/_timekeeper_s.c.o\x1b[0m\n'}
+[5.420559] (ros_esc_interfaces) StdoutLine: {'line': b'[ 84%] \x1b[32mBuilding C object CMakeFiles/ros_esc_interfaces__rosidl_generator_py.dir/rosidl_generator_py/ros_esc_interfaces/msg/_stamped_float64_s.c.o\x1b[0m\n'}
+[5.420741] (ros_esc_interfaces) StdoutLine: {'line': b'[ 85%] \x1b[32mBuilding C object CMakeFiles/ros_esc_interfaces__rosidl_generator_py.dir/rosidl_generator_py/ros_esc_interfaces/msg/_stamped_float64_multi_array_s.c.o\x1b[0m\n'}
+[5.420908] (ros_esc_interfaces) StdoutLine: {'line': b'[ 87%] \x1b[32mBuilding C object CMakeFiles/ros_esc_interfaces__rosidl_generator_py.dir/rosidl_generator_py/ros_esc_interfaces/msg/_stamped_string_s.c.o\x1b[0m\n'}
+[5.421182] (ros_esc_interfaces) StdoutLine: {'line': b'[ 88%] \x1b[32mBuilding C object CMakeFiles/ros_esc_interfaces__rosidl_generator_py.dir/rosidl_generator_py/ros_esc_interfaces/msg/_stamped_transform_multi_array_s.c.o\x1b[0m\n'}
+[5.513940] (-) TimerEvent: {}
+[5.565104] (ros_esc_interfaces) StdoutLine: {'line': b'[ 90%] \x1b[32m\x1b[1mLinking C shared library rosidl_generator_py/ros_esc_interfaces/libros_esc_interfaces__rosidl_generator_py.so\x1b[0m\n'}
+[5.601849] (ros_esc_interfaces) StdoutLine: {'line': b'[ 90%] Built target ros_esc_interfaces__rosidl_generator_py\n'}
+[5.614065] (-) TimerEvent: {}
+[5.618970] (ros_esc_interfaces) StdoutLine: {'line': b'[ 95%] \x1b[32mBuilding C object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_fastrtps_c__pyext.dir/rosidl_generator_py/ros_esc_interfaces/_ros_esc_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c.o\x1b[0m\n'}
+[5.619112] (ros_esc_interfaces) StdoutLine: {'line': b'[ 95%] \x1b[32mBuilding C object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_c__pyext.dir/rosidl_generator_py/ros_esc_interfaces/_ros_esc_interfaces_s.ep.rosidl_typesupport_c.c.o\x1b[0m\n'}
+[5.619170] (ros_esc_interfaces) StdoutLine: {'line': b'[ 95%] \x1b[32mBuilding C object CMakeFiles/ros_esc_interfaces__rosidl_typesupport_introspection_c__pyext.dir/rosidl_generator_py/ros_esc_interfaces/_ros_esc_interfaces_s.ep.rosidl_typesupport_introspection_c.c.o\x1b[0m\n'}
+[5.714197] (-) TimerEvent: {}
+[5.721499] (ros_esc_interfaces) StdoutLine: {'line': b'[ 98%] \x1b[32m\x1b[1mLinking C shared library rosidl_generator_py/ros_esc_interfaces/ros_esc_interfaces_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so\x1b[0m\n'}
+[5.721686] (ros_esc_interfaces) StdoutLine: {'line': b'[ 98%] \x1b[32m\x1b[1mLinking C shared library rosidl_generator_py/ros_esc_interfaces/ros_esc_interfaces_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so\x1b[0m\n'}
+[5.726061] (ros_esc_interfaces) StdoutLine: {'line': b'[100%] \x1b[32m\x1b[1mLinking C shared library rosidl_generator_py/ros_esc_interfaces/ros_esc_interfaces_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so\x1b[0m\n'}
+[5.762880] (ros_esc_interfaces) StdoutLine: {'line': b'[100%] Built target ros_esc_interfaces__rosidl_typesupport_introspection_c__pyext\n'}
+[5.763010] (ros_esc_interfaces) StdoutLine: {'line': b'[100%] Built target ros_esc_interfaces__rosidl_typesupport_fastrtps_c__pyext\n'}
+[5.765507] (ros_esc_interfaces) StdoutLine: {'line': b'[100%] Built target ros_esc_interfaces__rosidl_typesupport_c__pyext\n'}
+[5.776120] (ros_esc_interfaces) CommandEnded: {'returncode': 0}
+[5.776804] (ros_esc_interfaces) JobProgress: {'identifier': 'ros_esc_interfaces', 'progress': 'install'}
+[5.784205] (ros_esc_interfaces) Command: {'cmd': ['/usr/bin/cmake', '--install', '/home/mattb/ros2_ws/build/ros_esc_interfaces'], 'cwd': '/home/mattb/ros2_ws/build/ros_esc_interfaces', 'env': OrderedDict([('LESSOPEN', '| /usr/bin/lesspipe %s'), ('USER', 'mattb'), ('XDG_SESSION_TYPE', 'wayland'), ('GIT_ASKPASS', '/usr/share/code/resources/app/extensions/git/dist/askpass.sh'), ('SHLVL', '2'), ('LD_LIBRARY_PATH', '/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib'), ('HOME', '/home/mattb'), ('CHROME_DESKTOP', 'code.desktop'), ('OLDPWD', '/home/mattb'), ('TERM_PROGRAM_VERSION', '1.105.1'), ('DESKTOP_SESSION', 'ubuntu'), ('ROS_PYTHON_VERSION', '3'), ('GNOME_SHELL_SESSION_MODE', 'ubuntu'), ('GTK_MODULES', 'gail:atk-bridge'), ('VSCODE_GIT_ASKPASS_MAIN', '/usr/share/code/resources/app/extensions/git/dist/askpass-main.js'), ('VSCODE_GIT_ASKPASS_NODE', '/usr/share/code/code'), ('SYSTEMD_EXEC_PID', '1500'), ('VSCODE_PYTHON_AUTOACTIVATE_GUARD', '1'), ('DBUS_SESSION_BUS_ADDRESS', 'unix:path=/run/user/1000/bus'), ('COLORTERM', 'truecolor'), ('IM_CONFIG_PHASE', '1'), ('WAYLAND_DISPLAY', 'wayland-0'), ('ROS_DISTRO', 'humble'), ('LOGNAME', 'mattb'), ('_', '/usr/bin/colcon'), ('ROS_VERSION', '2'), ('XDG_SESSION_CLASS', 'user'), ('USERNAME', 'mattb'), ('TERM', 'xterm-256color'), ('GNOME_DESKTOP_SESSION_ID', 'this-is-deprecated'), ('ROS_LOCALHOST_ONLY', '0'), ('PATH', '/opt/ros/humble/bin:/home/mattb/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin:/home/mattb/.config/Code/User/globalStorage/github.copilot-chat/debugCommand'), ('SESSION_MANAGER', 'local/ubuntu-ssd:@/tmp/.ICE-unix/1263,unix/ubuntu-ssd:/tmp/.ICE-unix/1263'), ('XDG_MENU_PREFIX', 'gnome-'), ('GNOME_TERMINAL_SCREEN', '/org/gnome/Terminal/screen/70be42ff_c0b0_4e81_b165_31b5cabb27e8'), ('GNOME_SETUP_DISPLAY', ':1'), ('XDG_RUNTIME_DIR', '/run/user/1000'), ('GDK_BACKEND', 'x11'), ('DISPLAY', ':0'), ('LANG', 'en_US.UTF-8'), ('XDG_CURRENT_DESKTOP', 'Unity'), ('XMODIFIERS', '@im=ibus'), ('XDG_SESSION_DESKTOP', 'ubuntu'), ('XAUTHORITY', '/run/user/1000/.mutter-Xwaylandauth.MOVYF3'), ('LS_COLORS', 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:'), ('VSCODE_GIT_IPC_HANDLE', '/run/user/1000/vscode-git-cbb1b73edd.sock'), ('GNOME_TERMINAL_SERVICE', ':1.108'), ('TERM_PROGRAM', 'vscode'), ('SSH_AGENT_LAUNCHER', 'gnome-keyring'), ('SSH_AUTH_SOCK', '/run/user/1000/keyring/ssh'), ('AMENT_PREFIX_PATH', '/opt/ros/humble'), ('ORIGINAL_XDG_CURRENT_DESKTOP', 'ubuntu:GNOME'), ('SHELL', '/bin/bash'), ('QT_ACCESSIBILITY', '1'), ('GDMSESSION', 'ubuntu'), ('LESSCLOSE', '/usr/bin/lesspipe %s %s'), ('VSCODE_GIT_ASKPASS_EXTRA_ARGS', ''), ('QT_IM_MODULE', 'ibus'), ('PWD', '/home/mattb/ros2_ws/build/ros_esc_interfaces'), ('XDG_CONFIG_DIRS', '/etc/xdg/xdg-ubuntu:/etc/xdg'), ('XDG_DATA_DIRS', '/usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop'), ('PYTHONPATH', '/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages'), ('COLCON', '1'), ('VTE_VERSION', '6800'), ('CMAKE_PREFIX_PATH', '/opt/ros/humble')]), 'shell': False}
+[5.790907] (ros_esc_interfaces) StdoutLine: {'line': b'-- Install configuration: ""\n'}
+[5.791088] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ament_index/resource_index/rosidl_interfaces/ros_esc_interfaces\n'}
+[5.791215] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces\n'}
+[5.791310] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg\n'}
+[5.791560] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/stamped_float64_multi_array.h\n'}
+[5.791712] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/rosidl_generator_c__visibility_control.h\n'}
+[5.791779] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/stamped_string.h\n'}
+[5.791870] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/stamped_transform_multi_array.h\n'}
+[5.791955] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/stamped_float64.h\n'}
+[5.792050] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/timekeeper.h\n'}
+[5.792099] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail\n'}
+[5.792173] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_transform_multi_array__type_support.h\n'}
+[5.792252] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_string__functions.c\n'}
+[5.792353] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64_multi_array__struct.h\n'}
+[5.792482] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64_multi_array__type_support.h\n'}
+[5.792606] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/timekeeper__struct.h\n'}
+[5.792706] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_transform_multi_array__struct.h\n'}
+[5.792809] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_string__struct.h\n'}
+[5.792892] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/timekeeper__functions.h\n'}
+[5.792990] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_string__type_support.h\n'}
+[5.793139] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/timekeeper__type_support.h\n'}
+[5.793219] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64__type_support.h\n'}
+[5.793310] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_string__functions.h\n'}
+[5.793488] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_transform_multi_array__functions.c\n'}
+[5.793580] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64__functions.c\n'}
+[5.793687] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_transform_multi_array__functions.h\n'}
+[5.793780] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64_multi_array__functions.c\n'}
+[5.793863] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/timekeeper__functions.c\n'}
+[5.793976] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64_multi_array__functions.h\n'}
+[5.794086] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64__functions.h\n'}
+[5.794195] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64__struct.h\n'}
+[5.794478] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/environment/library_path.sh\n'}
+[5.794571] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/environment/library_path.dsv\n'}
+[5.794764] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/lib/libros_esc_interfaces__rosidl_generator_c.so\n'}
+[5.795255] (ros_esc_interfaces) StdoutLine: {'line': b'-- Set runtime path of "/home/mattb/ros2_ws/install/ros_esc_interfaces/lib/libros_esc_interfaces__rosidl_generator_c.so" to ""\n'}
+[5.795334] (ros_esc_interfaces) StdoutLine: {'line': b'-- Up-to-date: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces\n'}
+[5.795494] (ros_esc_interfaces) StdoutLine: {'line': b'-- Up-to-date: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg\n'}
+[5.795576] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/rosidl_typesupport_fastrtps_c__visibility_control.h\n'}
+[5.795635] (ros_esc_interfaces) StdoutLine: {'line': b'-- Up-to-date: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail\n'}
+[5.795767] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64_multi_array__rosidl_typesupport_fastrtps_c.h\n'}
+[5.795842] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_string__rosidl_typesupport_fastrtps_c.h\n'}
+[5.795902] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_transform_multi_array__rosidl_typesupport_fastrtps_c.h\n'}
+[5.796054] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/timekeeper__rosidl_typesupport_fastrtps_c.h\n'}
+[5.796128] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64__rosidl_typesupport_fastrtps_c.h\n'}
+[5.796211] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/lib/libros_esc_interfaces__rosidl_typesupport_fastrtps_c.so\n'}
+[5.796847] (ros_esc_interfaces) StdoutLine: {'line': b'-- Set runtime path of "/home/mattb/ros2_ws/install/ros_esc_interfaces/lib/libros_esc_interfaces__rosidl_typesupport_fastrtps_c.so" to ""\n'}
+[5.797010] (ros_esc_interfaces) StdoutLine: {'line': b'-- Up-to-date: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces\n'}
+[5.797071] (ros_esc_interfaces) StdoutLine: {'line': b'-- Up-to-date: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg\n'}
+[5.797125] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/stamped_float64_multi_array.hpp\n'}
+[5.797209] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/stamped_float64.hpp\n'}
+[5.797297] (ros_esc_interfaces) StdoutLine: {'line': b'-- Up-to-date: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail\n'}
+[5.797389] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_string__builder.hpp\n'}
+[5.797480] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_transform_multi_array__type_support.hpp\n'}
+[5.797564] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_string__struct.hpp\n'}
+[5.797646] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/timekeeper__builder.hpp\n'}
+[5.797725] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_transform_multi_array__builder.hpp\n'}
+[5.797864] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64_multi_array__traits.hpp\n'}
+[5.797975] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64__traits.hpp\n'}
+[5.798082] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64__builder.hpp\n'}
+[5.798188] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_string__type_support.hpp\n'}
+[5.798303] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64_multi_array__builder.hpp\n'}
+[5.798394] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64_multi_array__type_support.hpp\n'}
+[5.798494] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64__struct.hpp\n'}
+[5.798604] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/timekeeper__struct.hpp\n'}
+[5.798712] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/timekeeper__traits.hpp\n'}
+[5.798825] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64__type_support.hpp\n'}
+[5.798965] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_transform_multi_array__traits.hpp\n'}
+[5.799046] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_string__traits.hpp\n'}
+[5.799156] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/timekeeper__type_support.hpp\n'}
+[5.799264] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64_multi_array__struct.hpp\n'}
+[5.799393] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_transform_multi_array__struct.hpp\n'}
+[5.799541] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/rosidl_generator_cpp__visibility_control.hpp\n'}
+[5.799642] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/timekeeper.hpp\n'}
+[5.799741] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/stamped_transform_multi_array.hpp\n'}
+[5.799845] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/stamped_string.hpp\n'}
+[5.799994] (ros_esc_interfaces) StdoutLine: {'line': b'-- Up-to-date: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces\n'}
+[5.800043] (ros_esc_interfaces) StdoutLine: {'line': b'-- Up-to-date: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg\n'}
+[5.800128] (ros_esc_interfaces) StdoutLine: {'line': b'-- Up-to-date: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail\n'}
+[5.800177] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/dds_fastrtps\n'}
+[5.800258] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64__rosidl_typesupport_fastrtps_cpp.hpp\n'}
+[5.800334] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_string__rosidl_typesupport_fastrtps_cpp.hpp\n'}
+[5.800473] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/timekeeper__rosidl_typesupport_fastrtps_cpp.hpp\n'}
+[5.800558] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64_multi_array__rosidl_typesupport_fastrtps_cpp.hpp\n'}
+[5.800644] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_transform_multi_array__rosidl_typesupport_fastrtps_cpp.hpp\n'}
+[5.800751] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/rosidl_typesupport_fastrtps_cpp__visibility_control.h\n'}
+[5.800911] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/lib/libros_esc_interfaces__rosidl_typesupport_fastrtps_cpp.so\n'}
+[5.801481] (ros_esc_interfaces) StdoutLine: {'line': b'-- Set runtime path of "/home/mattb/ros2_ws/install/ros_esc_interfaces/lib/libros_esc_interfaces__rosidl_typesupport_fastrtps_cpp.so" to ""\n'}
+[5.801660] (ros_esc_interfaces) StdoutLine: {'line': b'-- Up-to-date: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces\n'}
+[5.801718] (ros_esc_interfaces) StdoutLine: {'line': b'-- Up-to-date: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg\n'}
+[5.801773] (ros_esc_interfaces) StdoutLine: {'line': b'-- Up-to-date: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail\n'}
+[5.801826] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64_multi_array__rosidl_typesupport_introspection_c.h\n'}
+[5.801944] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64__type_support.c\n'}
+[5.802036] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_transform_multi_array__rosidl_typesupport_introspection_c.h\n'}
+[5.802111] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/timekeeper__type_support.c\n'}
+[5.802166] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64__rosidl_typesupport_introspection_c.h\n'}
+[5.802247] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_string__type_support.c\n'}
+[5.802332] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_transform_multi_array__type_support.c\n'}
+[5.802456] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/timekeeper__rosidl_typesupport_introspection_c.h\n'}
+[5.802567] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64_multi_array__type_support.c\n'}
+[5.802683] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_string__rosidl_typesupport_introspection_c.h\n'}
+[5.802796] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/rosidl_typesupport_introspection_c__visibility_control.h\n'}
+[5.802965] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/lib/libros_esc_interfaces__rosidl_typesupport_introspection_c.so\n'}
+[5.803331] (ros_esc_interfaces) StdoutLine: {'line': b'-- Set runtime path of "/home/mattb/ros2_ws/install/ros_esc_interfaces/lib/libros_esc_interfaces__rosidl_typesupport_introspection_c.so" to ""\n'}
+[5.803475] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/lib/libros_esc_interfaces__rosidl_typesupport_c.so\n'}
+[5.803799] (ros_esc_interfaces) StdoutLine: {'line': b'-- Set runtime path of "/home/mattb/ros2_ws/install/ros_esc_interfaces/lib/libros_esc_interfaces__rosidl_typesupport_c.so" to ""\n'}
+[5.804026] (ros_esc_interfaces) StdoutLine: {'line': b'-- Up-to-date: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces\n'}
+[5.804101] (ros_esc_interfaces) StdoutLine: {'line': b'-- Up-to-date: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg\n'}
+[5.804159] (ros_esc_interfaces) StdoutLine: {'line': b'-- Up-to-date: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail\n'}
+[5.804251] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64__type_support.cpp\n'}
+[5.804304] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64_multi_array__type_support.cpp\n'}
+[5.804384] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_transform_multi_array__type_support.cpp\n'}
+[5.804438] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/timekeeper__type_support.cpp\n'}
+[5.804520] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_transform_multi_array__rosidl_typesupport_introspection_cpp.hpp\n'}
+[5.804609] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64_multi_array__rosidl_typesupport_introspection_cpp.hpp\n'}
+[5.804729] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_string__rosidl_typesupport_introspection_cpp.hpp\n'}
+[5.804839] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/timekeeper__rosidl_typesupport_introspection_cpp.hpp\n'}
+[5.804950] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_string__type_support.cpp\n'}
+[5.805067] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/include/ros_esc_interfaces/ros_esc_interfaces/msg/detail/stamped_float64__rosidl_typesupport_introspection_cpp.hpp\n'}
+[5.805238] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/lib/libros_esc_interfaces__rosidl_typesupport_introspection_cpp.so\n'}
+[5.805728] (ros_esc_interfaces) StdoutLine: {'line': b'-- Set runtime path of "/home/mattb/ros2_ws/install/ros_esc_interfaces/lib/libros_esc_interfaces__rosidl_typesupport_introspection_cpp.so" to ""\n'}
+[5.805860] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/lib/libros_esc_interfaces__rosidl_typesupport_cpp.so\n'}
+[5.806194] (ros_esc_interfaces) StdoutLine: {'line': b'-- Set runtime path of "/home/mattb/ros2_ws/install/ros_esc_interfaces/lib/libros_esc_interfaces__rosidl_typesupport_cpp.so" to ""\n'}
+[5.806305] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/environment/pythonpath.sh\n'}
+[5.806540] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/environment/pythonpath.dsv\n'}
+[5.806699] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces-0.0.0-py3.10.egg-info\n'}
+[5.806820] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces-0.0.0-py3.10.egg-info/SOURCES.txt\n'}
+[5.806894] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces-0.0.0-py3.10.egg-info/top_level.txt\n'}
+[5.807031] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces-0.0.0-py3.10.egg-info/dependency_links.txt\n'}
+[5.807106] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces-0.0.0-py3.10.egg-info/PKG-INFO\n'}
+[5.807197] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces\n'}
+[5.807279] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/libros_esc_interfaces__rosidl_generator_py.so\n'}
+[5.807422] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/_ros_esc_interfaces_s.ep.rosidl_typesupport_introspection_c.c\n'}
+[5.807551] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/ros_esc_interfaces_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so\n'}
+[5.807678] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/__init__.py\n'}
+[5.807774] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/_ros_esc_interfaces_s.ep.rosidl_typesupport_c.c\n'}
+[5.807901] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/ros_esc_interfaces_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so\n'}
+[5.808024] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/_ros_esc_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c\n'}
+[5.808147] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/ros_esc_interfaces_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so\n'}
+[5.808269] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/msg\n'}
+[5.808369] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/msg/_stamped_float64_s.c\n'}
+[5.808472] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/msg/_stamped_transform_multi_array.py\n'}
+[5.808582] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/msg/_stamped_float64_multi_array.py\n'}
+[5.808695] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/msg/_stamped_float64.py\n'}
+[5.808804] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/msg/__init__.py\n'}
+[5.808912] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/msg/_timekeeper.py\n'}
+[5.809023] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/msg/_stamped_transform_multi_array_s.c\n'}
+[5.809131] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/msg/_stamped_float64_multi_array_s.c\n'}
+[5.809247] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/msg/_stamped_string.py\n'}
+[5.809379] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/msg/_stamped_string_s.c\n'}
+[5.809500] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/msg/_timekeeper_s.c\n'}
+[5.814298] (-) TimerEvent: {}
+[5.842973] (ros_esc_interfaces) StdoutLine: {'line': b"Listing '/home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces'...\n"}
+[5.843097] (ros_esc_interfaces) StdoutLine: {'line': b"Compiling '/home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/__init__.py'...\n"}
+[5.843170] (ros_esc_interfaces) StdoutLine: {'line': b"Listing '/home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/msg'...\n"}
+[5.843228] (ros_esc_interfaces) StdoutLine: {'line': b"Compiling '/home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/msg/__init__.py'...\n"}
+[5.843276] (ros_esc_interfaces) StdoutLine: {'line': b"Compiling '/home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/msg/_stamped_float64.py'...\n"}
+[5.843324] (ros_esc_interfaces) StdoutLine: {'line': b"Compiling '/home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/msg/_stamped_float64_multi_array.py'...\n"}
+[5.843415] (ros_esc_interfaces) StdoutLine: {'line': b"Compiling '/home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/msg/_stamped_string.py'...\n"}
+[5.843490] (ros_esc_interfaces) StdoutLine: {'line': b"Compiling '/home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/msg/_stamped_transform_multi_array.py'...\n"}
+[5.843538] (ros_esc_interfaces) StdoutLine: {'line': b"Compiling '/home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/msg/_timekeeper.py'...\n"}
+[5.846977] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/ros_esc_interfaces_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so\n'}
+[5.847315] (ros_esc_interfaces) StdoutLine: {'line': b'-- Set runtime path of "/home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/ros_esc_interfaces_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so" to ""\n'}
+[5.847524] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/ros_esc_interfaces_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so\n'}
+[5.847921] (ros_esc_interfaces) StdoutLine: {'line': b'-- Set runtime path of "/home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/ros_esc_interfaces_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so" to ""\n'}
+[5.848082] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/ros_esc_interfaces_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so\n'}
+[5.848470] (ros_esc_interfaces) StdoutLine: {'line': b'-- Set runtime path of "/home/mattb/ros2_ws/install/ros_esc_interfaces/local/lib/python3.10/dist-packages/ros_esc_interfaces/ros_esc_interfaces_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so" to ""\n'}
+[5.848589] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/lib/libros_esc_interfaces__rosidl_generator_py.so\n'}
+[5.848961] (ros_esc_interfaces) StdoutLine: {'line': b'-- Set runtime path of "/home/mattb/ros2_ws/install/ros_esc_interfaces/lib/libros_esc_interfaces__rosidl_generator_py.so" to ""\n'}
+[5.849098] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/msg/Timekeeper.idl\n'}
+[5.849207] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/msg/StampedFloat64.idl\n'}
+[5.849322] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/msg/StampedFloat64MultiArray.idl\n'}
+[5.849470] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/msg/StampedString.idl\n'}
+[5.849594] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/msg/StampedTransformMultiArray.idl\n'}
+[5.849720] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/msg/Timekeeper.msg\n'}
+[5.849807] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/msg/StampedFloat64.msg\n'}
+[5.849941] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/msg/StampedFloat64MultiArray.msg\n'}
+[5.850072] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/msg/StampedString.msg\n'}
+[5.850251] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/msg/StampedTransformMultiArray.msg\n'}
+[5.850442] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ament_index/resource_index/package_run_dependencies/ros_esc_interfaces\n'}
+[5.850642] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ament_index/resource_index/parent_prefix_path/ros_esc_interfaces\n'}
+[5.850787] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/environment/ament_prefix_path.sh\n'}
+[5.850945] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/environment/ament_prefix_path.dsv\n'}
+[5.851057] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/environment/path.sh\n'}
+[5.851142] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/environment/path.dsv\n'}
+[5.851273] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/local_setup.bash\n'}
+[5.851366] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/local_setup.sh\n'}
+[5.851510] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/local_setup.zsh\n'}
+[5.851634] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/local_setup.dsv\n'}
+[5.851755] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/package.dsv\n'}
+[5.851959] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ament_index/resource_index/packages/ros_esc_interfaces\n'}
+[5.852124] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/export_ros_esc_interfaces__rosidl_generator_cExport.cmake\n'}
+[5.852231] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/export_ros_esc_interfaces__rosidl_generator_cExport-noconfig.cmake\n'}
+[5.852506] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/export_ros_esc_interfaces__rosidl_typesupport_fastrtps_cExport.cmake\n'}
+[5.852621] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/export_ros_esc_interfaces__rosidl_typesupport_fastrtps_cExport-noconfig.cmake\n'}
+[5.852771] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/export_ros_esc_interfaces__rosidl_generator_cppExport.cmake\n'}
+[5.852918] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/export_ros_esc_interfaces__rosidl_typesupport_fastrtps_cppExport.cmake\n'}
+[5.853070] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/export_ros_esc_interfaces__rosidl_typesupport_fastrtps_cppExport-noconfig.cmake\n'}
+[5.853196] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/ros_esc_interfaces__rosidl_typesupport_introspection_cExport.cmake\n'}
+[5.853329] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/ros_esc_interfaces__rosidl_typesupport_introspection_cExport-noconfig.cmake\n'}
+[5.853488] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/ros_esc_interfaces__rosidl_typesupport_cExport.cmake\n'}
+[5.853615] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/ros_esc_interfaces__rosidl_typesupport_cExport-noconfig.cmake\n'}
+[5.853747] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/ros_esc_interfaces__rosidl_typesupport_introspection_cppExport.cmake\n'}
+[5.853906] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/ros_esc_interfaces__rosidl_typesupport_introspection_cppExport-noconfig.cmake\n'}
+[5.854066] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/ros_esc_interfaces__rosidl_typesupport_cppExport.cmake\n'}
+[5.854179] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/ros_esc_interfaces__rosidl_typesupport_cppExport-noconfig.cmake\n'}
+[5.854293] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/export_ros_esc_interfaces__rosidl_generator_pyExport.cmake\n'}
+[5.854437] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/export_ros_esc_interfaces__rosidl_generator_pyExport-noconfig.cmake\n'}
+[5.854577] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/rosidl_cmake-extras.cmake\n'}
+[5.854740] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/ament_cmake_export_dependencies-extras.cmake\n'}
+[5.854869] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/ament_cmake_export_include_directories-extras.cmake\n'}
+[5.855030] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/ament_cmake_export_libraries-extras.cmake\n'}
+[5.855184] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/ament_cmake_export_targets-extras.cmake\n'}
+[5.855280] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/rosidl_cmake_export_typesupport_targets-extras.cmake\n'}
+[5.855372] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/rosidl_cmake_export_typesupport_libraries-extras.cmake\n'}
+[5.855570] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/ros_esc_interfacesConfig.cmake\n'}
+[5.855722] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/cmake/ros_esc_interfacesConfig-version.cmake\n'}
+[5.855831] (ros_esc_interfaces) StdoutLine: {'line': b'-- Installing: /home/mattb/ros2_ws/install/ros_esc_interfaces/share/ros_esc_interfaces/package.xml\n'}
+[5.857886] (ros_esc_interfaces) CommandEnded: {'returncode': 0}
+[5.885685] (ros_esc_interfaces) JobEnded: {'identifier': 'ros_esc_interfaces', 'rc': 0}
+[5.885985] (-) EventReactorShutdown: {}
