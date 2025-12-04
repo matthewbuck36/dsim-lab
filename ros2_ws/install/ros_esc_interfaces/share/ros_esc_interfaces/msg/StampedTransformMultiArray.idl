@@ -1,0 +1,28 @@
+// generated from rosidl_adapter/resource/msg.idl.em
+// with input from ros_esc_interfaces/msg/StampedTransformMultiArray.msg
+// generated code does not contain a copyright notice
+
+#include "geometry_msgs/msg/Transform.idl"
+
+module ros_esc_interfaces {
+  module msg {
+    @verbatim (language="comment", text=
+      "This message is used to broadcast transformation matrices" "\n"
+      "which contain the global position and orientation of sensors " "\n"
+      "for other ROS nodes to reference.")
+    struct StampedTransformMultiArray {
+      @verbatim (language="comment", text=
+        "Header containing a description of what the data represents")
+      string header;
+
+      @verbatim (language="comment", text=
+        "Timestamp of the message.")
+      double timestamp;
+
+      @verbatim (language="comment", text=
+        "Array of transformation matrices, each matrix" "\n"
+        "represents the information for one individual sensor.")
+      sequence<geometry_msgs::msg::Transform> transform_array;
+    };
+  };
+};
