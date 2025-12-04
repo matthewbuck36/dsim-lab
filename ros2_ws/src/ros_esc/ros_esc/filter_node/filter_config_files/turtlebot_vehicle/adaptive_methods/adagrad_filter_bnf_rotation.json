@@ -1,0 +1,111 @@
+{
+    "CascadeFilter":[
+        {
+            "ParallelFilter":[
+                {
+                    "CascadeFilter":[
+                        {
+                            "FunctionFilter":{
+                                "function": "u[0]",
+                                "idim": 1,
+                                "odim": 1
+                            }
+                        },
+                        {
+                            "ParallelFilter":[
+                                {
+                                    "WashoutFilter":{
+                                        "omega": 1.0
+                                    }
+                                },
+                                {
+                                    "CascadeFilter":[
+                                        {
+                                            "WashoutFilter":{
+                                                "omega": 1.0
+                                            }
+                                        },
+                                        {
+                                            "FunctionFilter":{
+                                                "function": "u[0]**2",
+                                                "idim": 1,
+                                                "odim": 1
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "CascadeFilter":[
+                        {
+                            "FunctionFilter":{
+                                "function": "u[1]",
+                                "idim": 1,
+                                "odim": 1
+                            }
+                        },
+                        {
+                            "FunctionFilter":{
+                                "function": [
+                                    "a1*cos(phi)-a2",
+                                    "(2/d)*sin(phi)",
+                                    "(1/d**2) * (c1 * (expr1) + c2 * (expr3))",
+                                    "(1/d**2) * (c3 * (expr2))",
+                                    "(1/d**2) * (c2 * (expr1) + c4 * (expr3))"
+                                ],
+                                "symbols": ["phi", "phi", "phi", "phi", "phi"],
+                                "substitutions": [
+                                    {
+                                        "d": 0.18,
+                                        "a1": "(2*pi**2)/(d*(pi**2-8))",
+                                        "a2": "(4*pi)/(d*(pi**2-8))"
+                                    },
+                                    {
+                                        "d": 0.18
+                                    },
+                                    {
+                                        "d": 0.18,
+                                        "c1": 117.29319593,
+                                        "c2": -17.97011341,
+                                        "expr1": "(cos(phi))**2 - (4/pi) * cos(phi) + (4/pi**2)",
+                                        "expr3": "(sin(phi))**2"
+                                    },
+                                    {
+                                        "d": 0.18,
+                                        "c3": 4.3514739,
+                                        "expr2": "sin(2 * phi) - 4/pi * sin(phi)"
+                                    },
+                                    {
+                                        "d": 0.18,
+                                        "c2": -17.97011341,
+                                        "c4": 5.41980996,
+                                        "expr1": "(cos(phi))**2 - (4/pi) * cos(phi) + (4/pi**2)",
+                                        "expr3": "(sin(phi))**2"
+                                    }
+                                ],
+                                "idim": 1,
+                                "odim": 5
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "FunctionFilter":{
+                "function": [
+                    "u[0]*u[2]",
+                    "u[0]*u[3]",
+                    "u[1]*u[4]",
+                    "u[1]*u[5]",
+                    "u[1]*u[6]"
+                ],
+                "idim": 7,
+                "odim": 5
+            }
+        }
+    ]
+}

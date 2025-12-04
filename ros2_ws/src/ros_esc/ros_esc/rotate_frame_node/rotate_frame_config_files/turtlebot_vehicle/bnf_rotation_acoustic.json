@@ -1,0 +1,11 @@
+{
+    "velocity_controller":{
+        "filepath": "~/ros2_ws/src/ros_esc/ros_esc/rotate_frame_node/spin_profile_objects/spin_profile_objects.py",
+        "object_name": "Constant_Back_And_Forth_Rotation",
+        "params":{
+            "spin_rpm": 10,
+            "cw_bound_deg": -90,
+            "ccw_bound_deg": 90
+        }
+    }
+}

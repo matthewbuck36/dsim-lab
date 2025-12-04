@@ -1,0 +1,46 @@
+{
+    "rotating_frame_one":{
+        "filepath": "~/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_objects/transform_objects.py",
+        "object_name": "Transform_Odom_To_Sensor_Pose",
+        "params":{
+            "joint_position": [0, 0, 0.325],
+            "rotation_axis": [0, 0, 1],
+            "sensor_transform": [
+                [1, 0, 0, 0.25],
+                [0, 1, 0, 0],
+                [0, 0, 1, 0],
+                [0, 0, 0, 1]
+            ]
+        }
+    },
+
+    "rotating_frame_two":{
+        "filepath": "~/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_objects/transform_objects.py",
+        "object_name": "Transform_Odom_To_Sensor_Pose",
+        "params":{
+            "joint_position": [0, 0.325, 0],
+            "rotation_axis": [0, 1, 0],
+            "sensor_transform": [
+                [1, 0, 0, 0.25],
+                [0, 1, 0, 0],
+                [0, 0, 1, 0],
+                [0, 0, 0, 1]
+            ]
+        }
+    },
+
+    "rotating_frame_three":{
+        "filepath": "~/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_objects/transform_objects.py",
+        "object_name": "Transform_Odom_To_Sensor_Pose",
+        "params":{
+            "joint_position": [0, 0.325, 0],
+            "rotation_axis": [0, 1, 0],
+            "sensor_transform": [
+                [1, 0, 0, 0.25],
+                [0, 1, 0, 0],
+                [0, 0, 1, 0],
+                [0, 0, 0, 1]
+            ]
+        }
+    }
+}
