@@ -1,0 +1,18 @@
+{
+    "filepath": "~/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_objects/turtlebot_vehicle.py",
+    "object_name": "Forward_Velocity_Input_Controller",
+    "gains":{
+        "k_vx": 1.0,
+        "k_wz": 0.15,
+        "alpha": 0.1,
+        "c_gain": 35,
+        "omega": 1.6
+    },
+    "params":{
+        "wheel_radius": 0.033,
+        "wheel_distance": 0.158,
+        "wheel_max_rpm": 70,
+        "set_max_vx": 0.25,
+        "set_max_wz": null
+    }
+}

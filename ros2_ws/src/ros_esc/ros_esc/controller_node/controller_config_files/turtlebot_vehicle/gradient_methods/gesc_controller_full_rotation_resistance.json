@@ -1,0 +1,15 @@
+{
+    "filepath": "~/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_objects/turtlebot_vehicle.py",
+    "object_name": "Directional_Controller",
+    "gains":{
+        "k_vx": 1e-7,
+        "k_wz": 5e-7
+    },
+    "params":{
+        "wheel_radius": 0.033,
+        "wheel_distance": 0.158,
+        "wheel_max_rpm": 70,
+        "set_max_vx": 0.1,
+        "set_max_wz": 0.5
+    }
+}

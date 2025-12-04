@@ -1,0 +1,26 @@
+{
+    "CostFunction":{
+        "filepath": "~/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/cost_function_objects.py",
+        "object_name": "Position_Based_Sympy_Expression",
+        "params":{
+            "function": "(s - 20*log(radius_expression, 10))*(-1)",
+            "symbols": ["t", "x", "y", "z"],
+            "substitutions":{
+                "s": 80,
+                "radius_expression": "Piecewise((r, r > r0), (r0, True))",
+                "r0": 0.01,
+                "r": "((x-x_optimal)**2+(y-y_optimal)**2)**0.5",
+                "x_optimal": 3,
+                "y_optimal": 3
+            }
+        }
+    },
+    "Noise":{
+        "filepath": "~/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/noise_objects.py",
+        "object_name": "Gaussian",
+        "params":{
+            "std_dev": 1.0,
+            "seed_num": 42
+        }
+    }
+}

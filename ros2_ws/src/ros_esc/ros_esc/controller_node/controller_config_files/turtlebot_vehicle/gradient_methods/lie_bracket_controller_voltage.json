@@ -1,0 +1,18 @@
+{
+    "filepath": "~/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_objects/turtlebot_vehicle.py",
+    "object_name": "Lie_Bracket_Controller",
+    "gains":{
+        "k_vx": 0.1,
+        "k_wz": 1.0,
+        "k": 6,
+        "omega": 0.18,
+        "mu": 0.05
+    },
+    "params":{
+        "wheel_radius": 0.033,
+        "wheel_distance": 0.158,
+        "wheel_max_rpm": 70,
+        "set_max_vx": null,
+        "set_max_wz": null
+    }
+}

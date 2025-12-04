@@ -1,0 +1,17 @@
+{
+    "CostFunction":{
+        "filepath": "~/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/cost_function_objects.py",
+        "object_name": "Photoresistor_Interpolated_Map",
+        "params":{
+            "mode": "Resistance",
+            "scale_map": 1.0,
+            "apply_adc": false,
+            "x_optimal": 3.0,
+            "y_optimal": 3.0
+        }
+    },
+    "Noise":{
+        "filepath": "~/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/noise_objects.py",
+        "object_name": "No_Noise"
+    }
+}
