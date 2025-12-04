@@ -1,0 +1,176 @@
+running egg_info
+creating ../../build/ros_esc/ros_esc.egg-info
+writing ../../build/ros_esc/ros_esc.egg-info/PKG-INFO
+writing dependency_links to ../../build/ros_esc/ros_esc.egg-info/dependency_links.txt
+writing entry points to ../../build/ros_esc/ros_esc.egg-info/entry_points.txt
+writing requirements to ../../build/ros_esc/ros_esc.egg-info/requires.txt
+writing top-level names to ../../build/ros_esc/ros_esc.egg-info/top_level.txt
+writing manifest file '../../build/ros_esc/ros_esc.egg-info/SOURCES.txt'
+reading manifest file '../../build/ros_esc/ros_esc.egg-info/SOURCES.txt'
+writing manifest file '../../build/ros_esc/ros_esc.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /home/mattb/ros2_ws/build/ros_esc/build
+creating /home/mattb/ros2_ws/build/ros_esc/build/lib
+creating /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc
+copying ros_esc/config_parsing.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc
+copying ros_esc/__init__.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc
+copying ros_esc/helper_functions.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc
+creating /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/cost_function_node
+copying ros_esc/cost_function_node/__init__.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/cost_function_node
+copying ros_esc/cost_function_node/cost_function_node_script.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/cost_function_node
+copying ros_esc/cost_function_node/cost_function_config_testing.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/cost_function_node
+creating /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/rotate_frame_node
+copying ros_esc/rotate_frame_node/rotate_frame_node_script.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/rotate_frame_node
+copying ros_esc/rotate_frame_node/__init__.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/rotate_frame_node
+copying ros_esc/rotate_frame_node/rotate_frame_config_testing.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/rotate_frame_node
+creating /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/plotting_scripts
+copying ros_esc/plotting_scripts/plotting_vehicle_states.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/plotting_scripts
+copying ros_esc/plotting_scripts/plotting_node_outputs.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/plotting_scripts
+copying ros_esc/plotting_scripts/__init__.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/plotting_scripts
+copying ros_esc/plotting_scripts/turtlebot_plotting_script.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/plotting_scripts
+copying ros_esc/plotting_scripts/plotting_trajectories.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/plotting_scripts
+copying ros_esc/plotting_scripts/plotting_helper_functions.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/plotting_scripts
+creating /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/data_collection_node
+copying ros_esc/data_collection_node/data_collection_node_script.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/data_collection_node
+copying ros_esc/data_collection_node/live_plot_animation.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/data_collection_node
+copying ros_esc/data_collection_node/__init__.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/data_collection_node
+creating /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/filter_node
+copying ros_esc/filter_node/filter_node_script.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/filter_node
+copying ros_esc/filter_node/__init__.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/filter_node
+copying ros_esc/filter_node/filter_config_testing.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/filter_node
+creating /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/controller_node
+copying ros_esc/controller_node/controller_config_testing.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/controller_node
+copying ros_esc/controller_node/__init__.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/controller_node
+copying ros_esc/controller_node/controller_node_script.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/controller_node
+creating /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/encoder_node
+copying ros_esc/encoder_node/__init__.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/encoder_node
+copying ros_esc/encoder_node/encoder_node_script.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/encoder_node
+creating /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/sensor_pose_node
+copying ros_esc/sensor_pose_node/transform_config_testing.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/sensor_pose_node
+copying ros_esc/sensor_pose_node/sensor_pose_node_script.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/sensor_pose_node
+copying ros_esc/sensor_pose_node/__init__.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/sensor_pose_node
+creating /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/cost_function_node/cost_function_objects
+copying ros_esc/cost_function_node/cost_function_objects/cost_function_objects.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/cost_function_node/cost_function_objects
+copying ros_esc/cost_function_node/cost_function_objects/__init__.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/cost_function_node/cost_function_objects
+copying ros_esc/cost_function_node/cost_function_objects/noise_objects.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/cost_function_node/cost_function_objects
+creating /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/rotate_frame_node/spin_profile_objects
+copying ros_esc/rotate_frame_node/spin_profile_objects/spin_profile_objects.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/rotate_frame_node/spin_profile_objects
+copying ros_esc/rotate_frame_node/spin_profile_objects/__init__.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/rotate_frame_node/spin_profile_objects
+creating /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/controller_node/controller_objects
+copying ros_esc/controller_node/controller_objects/turtlebot_ode_objects.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/controller_node/controller_objects
+copying ros_esc/controller_node/controller_objects/turtlebot_vehicle.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/controller_node/controller_objects
+copying ros_esc/controller_node/controller_objects/__init__.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/controller_node/controller_objects
+creating /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/sensor_pose_node/transform_objects
+copying ros_esc/sensor_pose_node/transform_objects/transform_objects.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/sensor_pose_node/transform_objects
+copying ros_esc/sensor_pose_node/transform_objects/__init__.py -> /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/sensor_pose_node/transform_objects
+running install
+running install_lib
+creating /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc
+creating /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/cost_function_node
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/cost_function_node/__init__.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/cost_function_node
+creating /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/cost_function_node/cost_function_objects
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/cost_function_node/cost_function_objects/cost_function_objects.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/cost_function_node/cost_function_objects
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/cost_function_node/cost_function_objects/__init__.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/cost_function_node/cost_function_objects
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/cost_function_node/cost_function_objects/noise_objects.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/cost_function_node/cost_function_objects
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/cost_function_node/cost_function_node_script.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/cost_function_node
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/cost_function_node/cost_function_config_testing.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/cost_function_node
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/config_parsing.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc
+creating /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/rotate_frame_node
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/rotate_frame_node/rotate_frame_node_script.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/rotate_frame_node
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/rotate_frame_node/__init__.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/rotate_frame_node
+creating /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/rotate_frame_node/spin_profile_objects
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/rotate_frame_node/spin_profile_objects/spin_profile_objects.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/rotate_frame_node/spin_profile_objects
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/rotate_frame_node/spin_profile_objects/__init__.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/rotate_frame_node/spin_profile_objects
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/rotate_frame_node/rotate_frame_config_testing.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/rotate_frame_node
+creating /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/plotting_scripts
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/plotting_scripts/plotting_vehicle_states.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/plotting_scripts
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/plotting_scripts/plotting_node_outputs.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/plotting_scripts
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/plotting_scripts/__init__.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/plotting_scripts
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/plotting_scripts/turtlebot_plotting_script.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/plotting_scripts
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/plotting_scripts/plotting_trajectories.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/plotting_scripts
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/plotting_scripts/plotting_helper_functions.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/plotting_scripts
+creating /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/data_collection_node
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/data_collection_node/data_collection_node_script.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/data_collection_node
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/data_collection_node/live_plot_animation.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/data_collection_node
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/data_collection_node/__init__.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/data_collection_node
+creating /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/filter_node
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/filter_node/filter_node_script.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/filter_node
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/filter_node/__init__.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/filter_node
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/filter_node/filter_config_testing.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/filter_node
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/__init__.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc
+creating /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/controller_node
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/controller_node/controller_config_testing.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/controller_node
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/controller_node/__init__.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/controller_node
+creating /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/controller_node/controller_objects
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/controller_node/controller_objects/turtlebot_ode_objects.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/controller_node/controller_objects
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/controller_node/controller_objects/turtlebot_vehicle.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/controller_node/controller_objects
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/controller_node/controller_objects/__init__.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/controller_node/controller_objects
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/controller_node/controller_node_script.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/controller_node
+creating /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/encoder_node
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/encoder_node/__init__.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/encoder_node
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/encoder_node/encoder_node_script.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/encoder_node
+creating /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/sensor_pose_node
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/sensor_pose_node/transform_config_testing.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/sensor_pose_node
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/sensor_pose_node/sensor_pose_node_script.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/sensor_pose_node
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/sensor_pose_node/__init__.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/sensor_pose_node
+creating /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/sensor_pose_node/transform_objects
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/sensor_pose_node/transform_objects/transform_objects.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/sensor_pose_node/transform_objects
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/sensor_pose_node/transform_objects/__init__.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/sensor_pose_node/transform_objects
+copying /home/mattb/ros2_ws/build/ros_esc/build/lib/ros_esc/helper_functions.py -> /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/cost_function_node/__init__.py to __init__.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/cost_function_node/cost_function_objects/cost_function_objects.py to cost_function_objects.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/cost_function_node/cost_function_objects/__init__.py to __init__.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/cost_function_node/cost_function_objects/noise_objects.py to noise_objects.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/cost_function_node/cost_function_node_script.py to cost_function_node_script.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/cost_function_node/cost_function_config_testing.py to cost_function_config_testing.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/config_parsing.py to config_parsing.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/rotate_frame_node/rotate_frame_node_script.py to rotate_frame_node_script.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/rotate_frame_node/__init__.py to __init__.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/rotate_frame_node/spin_profile_objects/spin_profile_objects.py to spin_profile_objects.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/rotate_frame_node/spin_profile_objects/__init__.py to __init__.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/rotate_frame_node/rotate_frame_config_testing.py to rotate_frame_config_testing.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/plotting_scripts/plotting_vehicle_states.py to plotting_vehicle_states.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/plotting_scripts/plotting_node_outputs.py to plotting_node_outputs.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/plotting_scripts/__init__.py to __init__.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/plotting_scripts/turtlebot_plotting_script.py to turtlebot_plotting_script.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/plotting_scripts/plotting_trajectories.py to plotting_trajectories.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/plotting_scripts/plotting_helper_functions.py to plotting_helper_functions.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/data_collection_node/data_collection_node_script.py to data_collection_node_script.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/data_collection_node/live_plot_animation.py to live_plot_animation.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/data_collection_node/__init__.py to __init__.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/filter_node/filter_node_script.py to filter_node_script.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/filter_node/__init__.py to __init__.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/filter_node/filter_config_testing.py to filter_config_testing.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/__init__.py to __init__.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/controller_node/controller_config_testing.py to controller_config_testing.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/controller_node/__init__.py to __init__.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/controller_node/controller_objects/turtlebot_ode_objects.py to turtlebot_ode_objects.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/controller_node/controller_objects/turtlebot_vehicle.py to turtlebot_vehicle.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/controller_node/controller_objects/__init__.py to __init__.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/controller_node/controller_node_script.py to controller_node_script.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/encoder_node/__init__.py to __init__.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/encoder_node/encoder_node_script.py to encoder_node_script.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/sensor_pose_node/transform_config_testing.py to transform_config_testing.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/sensor_pose_node/sensor_pose_node_script.py to sensor_pose_node_script.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/sensor_pose_node/__init__.py to __init__.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/sensor_pose_node/transform_objects/transform_objects.py to transform_objects.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/sensor_pose_node/transform_objects/__init__.py to __init__.cpython-310.pyc
+byte-compiling /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/helper_functions.py to helper_functions.cpython-310.pyc
+running install_data
+creating /home/mattb/ros2_ws/install/ros_esc/share/ament_index
+creating /home/mattb/ros2_ws/install/ros_esc/share/ament_index/resource_index
+creating /home/mattb/ros2_ws/install/ros_esc/share/ament_index/resource_index/packages
+copying resource/ros_esc -> /home/mattb/ros2_ws/install/ros_esc/share/ament_index/resource_index/packages
+copying package.xml -> /home/mattb/ros2_ws/install/ros_esc/share/ros_esc
+running install_egg_info
+Copying ../../build/ros_esc/ros_esc.egg-info to /home/mattb/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc-0.0.0-py3.10.egg-info
+running install_scripts
+Installing controller_node script to /home/mattb/ros2_ws/install/ros_esc/lib/ros_esc
+Installing cost_function_node script to /home/mattb/ros2_ws/install/ros_esc/lib/ros_esc
+Installing data_collection_node script to /home/mattb/ros2_ws/install/ros_esc/lib/ros_esc
+Installing encoder_node script to /home/mattb/ros2_ws/install/ros_esc/lib/ros_esc
+Installing filter_node script to /home/mattb/ros2_ws/install/ros_esc/lib/ros_esc
+Installing rotate_frame_node script to /home/mattb/ros2_ws/install/ros_esc/lib/ros_esc
+Installing sensor_pose_node script to /home/mattb/ros2_ws/install/ros_esc/lib/ros_esc
+writing list of installed files to '/home/mattb/ros2_ws/build/ros_esc/install.log'
