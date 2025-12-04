@@ -1,0 +1,9 @@
+{
+    "velocity_controller":{
+        "filepath": "/home/jester-phantom/ros2_ws/src/ros-esc/ros_esc/rotate_frame_node/spin_profile_objects/spin_profile_objects.py",
+        "object_name": "Constant_Full_Rotation",
+        "params":{
+            "spin_rpm": 0
+        }
+    }
+}

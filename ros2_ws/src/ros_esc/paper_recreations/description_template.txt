@@ -1,0 +1,35 @@
+-------------------------------------------------------------------
+Paper Title:
+
+{Please write the full title here}
+
+-------------------------------------------------------------------
+Paper Authors:
+
+{Please write the authors names here}
+
+-------------------------------------------------------------------
+Latex Citation:
+
+{Please provide a Latex citation here}
+
+-------------------------------------------------------------------
+Date Created:
+
+{Please record the date created here, this helps with
+troubleshooting since tracking the date helps one find
+the version of the ros_esc package used when these files
+were created}
+
+-------------------------------------------------------------------
+Author of Work Done:
+
+{Please provide your name and email to take credit
+for the paper recreation work done here}
+
+-------------------------------------------------------------------
+Description of Work Done:
+
+{Please provide a description of the work done here}
+
+-------------------------------------------------------------------

@@ -1,0 +1,66 @@
+{
+    "CascadeFilter":[
+        {
+            "FunctionFilter":{ 
+                "function": "0.000001*u",
+                "idim": 1,
+                "odim": 1
+            }
+        },
+        {
+            "WashoutFilter":{
+                "omega": 10.0
+            }
+        },
+        {
+            "ParallelFilter":[
+                {
+                    "ConvolutionFilter":
+                    {
+                        "function": ["c*sin(phi)"],
+                        "symbols": ["t"],
+                        "substitutions": [
+                            {
+                                "p": "1.55",
+                                "c": "(omega)**(1-p)",
+                                "phi": "omega*t",
+                                "omega": "0.4"
+                            }
+                        ],
+                        "odim": 1
+                    }
+                },
+                {
+                    "CascadeFilter":[
+                        {
+                            "ConvolutionFilter":
+                            {
+                                "function": ["-8*sc*cos(phi)"],
+                                "symbols": ["t"],
+                                "substitutions": [
+                                    {
+                                        "alpha": "0.8",
+                                        "p": "1.55",
+                                        "alpha_tilde": "alpha*(omega)**(p)",
+                                        "sc": "(omega**(2)*(alpha_tilde)**(-2))",
+                                        "phi": "2*omega*t",
+                                        "omega": "0.4"
+                                    }
+                                ],
+                                "odim": 1
+                            }
+                        },
+                        {
+                            "LowPassRicattiFilter":{ 
+                                "omega_l": 0.0155,
+                                "init_states": [1.0],
+                                "ndim": 1
+                            }
+
+                        }    
+                    ]
+                }
+            ]  
+        }  
+    ]
+}

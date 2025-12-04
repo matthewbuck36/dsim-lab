@@ -1,0 +1,80 @@
+-------------------------------------------------------------------
+Paper Title:
+
+Source seeking with non-holonomic unicycle without position measurement and with tuning of forward velocity
+
+-------------------------------------------------------------------
+Paper Authors:
+
+Chunlei Zhang, Daniel Arnold, Nima Ghods, Antranik Siranosian, Miroslav Krstic
+
+-------------------------------------------------------------------
+Latex Citation:
+
+@article{ZHANG2007245,
+title = {},
+journal = {Systems & Control Letters},
+volume = {56},
+number = {3},
+pages = {245-252},
+year = {2007},
+issn = {0167-6911},
+doi = {https://doi.org/10.1016/j.sysconle.2006.10.014},
+url = {https://www.sciencedirect.com/science/article/pii/S016769110600171X},
+author = {Chunlei Zhang and Daniel Arnold and Nima Ghods and Antranik Siranosian and Miroslav Krstic},
+keywords = {Extremum seeking, Autonomous agents, Underwater vehicles},
+abstract = {We consider the problem of seeking the source of a scalar signal using an autonomous vehicle modeled as the non-holonomic unicycle and equipped with a sensor of that scalar signal but not possessing the capability to sense either the position of the source nor its own position. We assume that the signal field is the strongest at the source and decays away from it. The functional form of the field is not available to our vehicle. We employ extremum seeking to estimate the gradient of the field in real time and steer the vehicle towards the point where the gradient is zero (the maximum of the field, i.e., the location of the source). We employ periodic forward–backward movement of the unicycle (implementable with mobile robots and some underwater vehicles but not with aircraft), where the forward velocity has a tunable bias term, which is appropriately combined with extremum seeking to produce a net effect of “drifting” towards the source. In addition to simulation results we present a local convergence proof via averaging, which exhibits a delicate periodic structure with two sinusoids of different frequencies—one related to the angular velocity of the unicycle and the other related to the probing frequency of extremum seeking.}
+}
+
+-------------------------------------------------------------------
+Date Created:
+
+February 15, 2025
+
+-------------------------------------------------------------------
+Author of Work Done:
+
+Abelardo Garcia; agarcia5612@sdsu.edu
+
+-------------------------------------------------------------------
+Description of Work Done:
+
+The code used to run this experiment is with the following conditions:
+
+It is a non-rotating microphone: so rpm = 0, and comment out the encoder information from the gazebo.launch.py file
+
+# Initial robot position (x, y, z)
+    init_position = [2,2,0]
+
+spin_type = 'full'
+    # Selected spin speed
+    spin_rpm = 0 # in RPM No rotating microphone needed
+
+
+Original File paths:
+
+### Initialize Configuration File Paths (Needs to be updated but the files are located in this folder instead as it was originally)
+    # Selected transform config file for the turtlebot vehicle
+    sensor_pose_config = '/home/jester-phantom/ros2_ws/ros-esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot3_rotating_sensor.json' # Complete
+    # Selected cost function configuration file
+    cost_function_config = '/home/jester-phantom/ros2_ws/ros-esc/ros_esc/paper-recreations/forward_tune_quadratic.json' # Complete
+    # Selected filter configuration file
+    filter_node_config = '/home/jester-phantom/ros2_ws/ros-esc/ros_esc/paper-recreations/forward_tune.json' # Complete
+    # Selected controller configuration file
+    controller_node_config = '/home/jester-phantom/ros2_ws/ros-esc/ros_esc/paper-recreations/tb_input_directional_controller_config.json' # Complete
+    # Directory to save the test folders to
+    data_collection_filepath = '/home/jester-phantom/Documents/Gazebo_Simulations' # Complete
+
+
+
+#Instructions:
+ 
+ Go to the ros2_ws folder 
+$: colcon build
+$: source install/setup.bash
+$: ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml
+
+
+
+
+-------------------------------------------------------------------

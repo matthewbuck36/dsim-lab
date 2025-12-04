@@ -1,0 +1,79 @@
+-------------------------------------------------------------------
+Paper Title:
+
+Nonholonomic Source Seeking With
+Tuning of Angular Velocity
+-------------------------------------------------------------------
+Paper Authors:
+
+Jennie Cochran, Student Member, IEEE, and Miroslav Krstic, Fellow, IEEE
+
+-------------------------------------------------------------------
+Latex Citation:
+
+@ARTICLE{4806181,
+  author={Cochran, Jennie and Krstic, Miroslav},
+  journal={IEEE Transactions on Automatic Control}, 
+  title={Nonholonomic Source Seeking With Tuning of Angular Velocity}, 
+  year={2009},
+  volume={54},
+  number={4},
+  pages={717-731},
+  abstract={We consider the problem of seeking the source of a scalar signal using an autonomous vehicle modeled as the nonholonomic unicycle. The vehicle does not have the capability of sensing its position or the position of the source but is capable of sensing the scalar signal originating from the source. The signal field is assumed to decay away from the position of the source but the vehicle does not have the knowledge of the functional form of the field. We employ extremum seeking to steer the vehicle to the source. Our control strategy keeps the forward velocity constant and tunes the angular velocity, a setting suitable for most autonomous vehicles, including aerial ones. Because of the constant forward velocity constraint, after it has converged near the source, the vehicle exhibits extremely interesting and complex motions. Using averaging theory, we prove local exponential convergence to an ldquoorbit-likerdquo attractor around the source. We also present a thorough analysis of non-local behaviors and attractors that the vehicle can exhibit near the source. The richness and complexity of behaviors makes only some of them amenable to analysis, whereas others are illustrated through a carefully laid out simulation study.},
+  keywords={Angular velocity;Remotely operated vehicles;Mobile robots;Angular velocity control;Convergence;Analytical models;Motion control;Aircraft;Aerospace engineering;Marine vehicles;Nonholonomic unicycle},
+  doi={10.1109/TAC.2009.2014927},
+  ISSN={1558-2523},
+  month={April},}
+
+-------------------------------------------------------------------
+Date Created:
+
+February 19, 2025
+
+-------------------------------------------------------------------
+Author of Work Done:
+
+Abelardo Garcia; agarcia5612@sdsu.edu
+
+-------------------------------------------------------------------
+Description of Work Done:
+
+The code used to run this experiment is with the following conditions:
+
+It is a non-rotating microphone: so rpm = 0, and comment out the encoder information from the gazebo.launch.py file
+
+# Initial robot position (x, y, z)
+    init_position = [2.2,-1.2,0]
+
+spin_type = 'full'
+    # Selected spin speed
+    spin_rpm = 0 # in RPM No rotating microphone needed
+
+
+Original File paths:
+
+### Initialize Configuration File Paths (Needs to be updated but the files are located in this folder instead as it was originally)
+    # Selected transform config file for the turtlebot vehicle
+    sensor_pose_config = '/home/jester-phantom/ros2_ws/ros-esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot3_rotating_sensor.json' # Complete
+    # Selected cost function configuration file
+    cost_function_config = '/home/jester-phantom/ros2_ws/ros-esc/ros_esc/cost_function_node/cost_function_files/paper-recreations/angular_tune_quadratic.json' # Complete
+    # Selected filter configuration file
+    filter_node_config = '/home/jester-phantom/ros2_ws/ros-esc/ros_esc/filter_node/filter_files/paper-recreations/angular_tune.json' # Complete
+    # Selected controller configuration file
+    controller_node_config = '/home/jester-phantom/ros2_ws/ros-esc/ros_esc/controller_node/controller_config_files/paper-recreations/tb_input_angular_directional_controller_config.json' # Complete
+    # Directory to save the test folders to
+    data_collection_filepath = '/home/jester-phantom/Documents/Gazebo_Simulations' # Complete
+
+
+
+#Instructions:
+ 
+ Go to the ros2_ws folder 
+$: colcon build
+$: source install/setup.bash
+$: ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml
+
+
+
+
+-------------------------------------------------------------------

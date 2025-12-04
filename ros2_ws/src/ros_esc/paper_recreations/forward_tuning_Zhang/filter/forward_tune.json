@@ -1,0 +1,19 @@
+{
+    "CascadeFilter":[
+        {
+            "WashoutFilter":{
+                "omega": 1.0
+            }
+        },
+        {
+            "ConvolutionFilter":{
+                "function": ["cos(phi)"],
+                "symbols": ["t"],
+                "substitutions": [
+                    {"phi": "omega*t", "omega": "25"}
+                ],
+                "odim": 1
+            }
+        }
+    ]
+}

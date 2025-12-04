@@ -1,0 +1,19 @@
+{
+    "path": "~/ros2_ws/src/ros-esc/ros_esc/controller_node/controller_objects/turtlebot_vehicle.py",
+    "controller": "Angular_Velocity_Input_Controller",
+    "gains":{
+        "k_v": 0.05,
+        "w_z": 1,
+        "alpha": 0.5,
+        "omega": 40,
+        "c": 100,
+        "d": 10
+    },
+    "params":{
+        "wheel_radius": 0.033,
+        "wheel_distance": 0.158,
+        "wheel_max_rpm": 70,
+        "set_max_vx": null,
+        "set_max_wz": null
+    }
+}
