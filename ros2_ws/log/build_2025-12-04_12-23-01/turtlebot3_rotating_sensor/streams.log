@@ -1,0 +1,124 @@
+[0.272s] Invoking command in '/home/mattb/ros2_ws/build/turtlebot3_rotating_sensor': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/mattb/ros2_ws/build/turtlebot3_rotating_sensor -- -j12 -l12
+[0.334s] -- Found ament_cmake: 1.3.12 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.460s] -- Found urdf: 2.6.1 (/opt/ros/humble/share/urdf/cmake)
+[0.509s] -- Found rclpy: 3.3.19 (/opt/ros/humble/share/rclpy/cmake)
+[0.510s] -- Found gazebo_ros: 3.9.0 (/opt/ros/humble/share/gazebo_ros/cmake)
+[0.536s] -- Found rosidl_generator_c: 3.1.7 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[0.538s] -- Found rosidl_adapter: 3.1.7 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[0.544s] -- Found rosidl_generator_cpp: 3.1.7 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[0.554s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.571s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.646s] -- Found rmw_implementation_cmake: 6.1.2 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+[0.650s] -- Found rmw_fastrtps_cpp: 6.2.9 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)
+[0.681s] -- Found TinyXML2 via Config file: TinyXML2_DIR-NOTFOUND
+[0.692s] -- Found TinyXML2 via Config file: TinyXML2_DIR-NOTFOUND
+[0.708s] -- Found TinyXML2 via Config file: TinyXML2_DIR-NOTFOUND
+[0.716s] -- Found TinyXML2 via Config file: TinyXML2_DIR-NOTFOUND
+[0.726s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[0.832s] -- Found DART: /usr/include (Required is at least version "6.6") found components: dart 
+[0.871s] -- Found Protobuf: /usr/lib/x86_64-linux-gnu/libprotobuf.so (found version "3.12.4") 
+[0.874s] -- Looking for ignition-math6 -- found version 6.15.1
+[0.882s] -- Searching for dependencies of ignition-math6
+[0.885s] -- Looking for OGRE...
+[0.891s] -- Found Ogre Ghadamon (1.9.0)
+[0.892s] -- Found OGRE: optimized;/usr/lib/x86_64-linux-gnu/libOgreMain.so;debug;/usr/lib/x86_64-linux-gnu/libOgreMain.so
+[0.901s] -- Looking for OGRE_Paging...
+[0.901s] -- Found OGRE_Paging: optimized;/usr/lib/x86_64-linux-gnu/libOgrePaging.so;debug;/usr/lib/x86_64-linux-gnu/libOgrePaging.so
+[0.901s] -- Looking for OGRE_Terrain...
+[0.901s] -- Found OGRE_Terrain: optimized;/usr/lib/x86_64-linux-gnu/libOgreTerrain.so;debug;/usr/lib/x86_64-linux-gnu/libOgreTerrain.so
+[0.901s] -- Looking for OGRE_Property...
+[0.901s] -- Found OGRE_Property: optimized;/usr/lib/x86_64-linux-gnu/libOgreProperty.so;debug;/usr/lib/x86_64-linux-gnu/libOgreProperty.so
+[0.902s] -- Looking for OGRE_RTShaderSystem...
+[0.902s] -- Found OGRE_RTShaderSystem: optimized;/usr/lib/x86_64-linux-gnu/libOgreRTShaderSystem.so;debug;/usr/lib/x86_64-linux-gnu/libOgreRTShaderSystem.so
+[0.902s] -- Looking for OGRE_Volume...
+[0.902s] -- Found OGRE_Volume: optimized;/usr/lib/x86_64-linux-gnu/libOgreVolume.so;debug;/usr/lib/x86_64-linux-gnu/libOgreVolume.so
+[0.902s] -- Looking for OGRE_Overlay...
+[0.902s] -- Found OGRE_Overlay: optimized;/usr/lib/x86_64-linux-gnu/libOgreOverlay.so;debug;/usr/lib/x86_64-linux-gnu/libOgreOverlay.so
+[1.006s] -- Looking for ignition-math6 -- found version 6.15.1
+[1.007s] -- Looking for ignition-transport8 -- found version 8.2.1
+[1.008s] -- Searching for dependencies of ignition-transport8
+[1.026s] -- Found Protobuf: /usr/lib/x86_64-linux-gnu/libprotobuf.so (found suitable version "3.12.4", minimum required is "3") 
+[1.037s] -- Config-file not installed for ZeroMQ -- checking for pkg-config
+[1.042s] -- Checking for module 'libzmq >= 4'
+[1.057s] --   Found libzmq , version 4.3.4
+[1.095s] -- Checking for module 'uuid'
+[1.107s] --   Found uuid, version 2.37.2
+[1.134s] -- Looking for ignition-msgs5 -- found version 5.8.1
+[1.134s] -- Searching for dependencies of ignition-msgs5
+[1.151s] -- Looking for ignition-math6 -- found version 6.15.1
+[1.159s] -- Looking for ignition-msgs5 -- found version 5.8.1
+[1.159s] -- Looking for ignition-common3 -- found version 3.14.0
+[1.160s] -- Searching for dependencies of ignition-common3
+[1.160s] -- Looking for dlfcn.h - found
+[1.160s] -- Looking for libdl - found
+[1.171s] -- Searching for <ignition-common3> component [graphics]
+[1.172s] -- Looking for ignition-common3-graphics -- found version 3.14.0
+[1.172s] -- Searching for dependencies of ignition-common3-graphics
+[1.172s] -- Looking for ignition-math6 -- found version 6.15.1
+[1.174s] -- Looking for ignition-fuel_tools4 -- found version 4.4.0
+[1.174s] -- Searching for dependencies of ignition-fuel_tools4
+[1.212s] -- Checking for module 'jsoncpp'
+[1.223s] --   Found jsoncpp, version 1.9.5
+[1.254s] -- Checking for module 'libzip'
+[1.264s] --   Found libzip, version 1.7.3
+[1.291s] -- Looking for ignition-common3 -- found version 3.14.0
+[1.291s] -- Looking for ignition-math6 -- found version 6.15.1
+[1.291s] -- Looking for ignition-msgs5 -- found version 5.8.1
+[1.294s] -- Gazebo version: 11.10
+[1.296s] -- Found xacro: 2.1.1 (/opt/ros/humble/share/xacro/cmake)
+[1.297s] -- Found ros2_control: 2.52.2 (/opt/ros/humble/share/ros2_control/cmake)
+[1.298s] -- Found gazebo_ros2_control: 0.4.10 (/opt/ros/humble/share/gazebo_ros2_control/cmake)
+[1.501s] -- Found joint_state_broadcaster: 2.50.2 (/opt/ros/humble/share/joint_state_broadcaster/cmake)
+[1.524s] -- Found joint_trajectory_controller: 2.50.2 (/opt/ros/humble/share/joint_trajectory_controller/cmake)
+[1.555s] -- Found velocity_controllers: 2.50.2 (/opt/ros/humble/share/velocity_controllers/cmake)
+[1.567s] -- Found ament_lint_auto: 0.12.14 (/opt/ros/humble/share/ament_lint_auto/cmake)
+[1.653s] -- Added test 'flake8' to check Python code syntax and style conventions
+[1.654s] -- Added test 'lint_cmake' to check CMake code style
+[1.655s] -- Added test 'pep257' to check Python code against some of the docstring style conventions in PEP 257
+[1.659s] -- Added test 'xmllint' to check XML markup files
+[1.660s] -- Configuring done
+[1.668s] -- Generating done
+[1.671s] -- Build files have been written to: /home/mattb/ros2_ws/build/turtlebot3_rotating_sensor
+[1.701s] Invoked command in '/home/mattb/ros2_ws/build/turtlebot3_rotating_sensor' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/mattb/ros2_ws/build/turtlebot3_rotating_sensor -- -j12 -l12
+[1.715s] Invoking command in '/home/mattb/ros2_ws/build/turtlebot3_rotating_sensor': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/mattb/ros2_ws/build/turtlebot3_rotating_sensor
+[1.724s] -- Install configuration: ""
+[1.725s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/urdf
+[1.725s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/urdf/turtlebot3_rotating_sensor.urdf
+[1.725s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/rviz_config
+[1.725s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/rviz_config/README.md
+[1.725s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/rviz_config/urdf_vis.rviz
+[1.725s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/launch
+[1.725s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/launch/gazebo.launch.xml
+[1.725s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/launch/robot_description.launch.py
+[1.726s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/launch/control.launch.py
+[1.726s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/launch/empty_world.launch.py
+[1.726s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/launch/rviz.launch.xml
+[1.727s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/launch/rviz.launch.py
+[1.727s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/controller_config
+[1.727s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/controller_config/README.md
+[1.727s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/controller_config/joint_controller.yaml
+[1.727s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/worlds
+[1.727s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/worlds/gazebo_empty.world
+[1.727s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/models
+[1.727s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/models/model.config
+[1.728s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/meshes
+[1.728s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/meshes/rotating_frame_assembly.dae
+[1.728s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/meshes/turtlebot_vehicle_model.dae
+[1.728s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/meshes/lds.dae
+[1.728s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/meshes/tire.dae
+[1.728s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/ament_index/resource_index/package_run_dependencies/turtlebot3_rotating_sensor
+[1.728s] -- Installing: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/ament_index/resource_index/parent_prefix_path/turtlebot3_rotating_sensor
+[1.728s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/environment/ament_prefix_path.sh
+[1.728s] -- Installing: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/environment/ament_prefix_path.dsv
+[1.729s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/environment/path.sh
+[1.729s] -- Installing: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/environment/path.dsv
+[1.729s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/local_setup.bash
+[1.729s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/local_setup.sh
+[1.729s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/local_setup.zsh
+[1.729s] -- Installing: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/local_setup.dsv
+[1.729s] -- Installing: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/package.dsv
+[1.729s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/ament_index/resource_index/packages/turtlebot3_rotating_sensor
+[1.729s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/cmake/turtlebot3_rotating_sensorConfig.cmake
+[1.729s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/cmake/turtlebot3_rotating_sensorConfig-version.cmake
+[1.729s] -- Up-to-date: /home/mattb/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/package.xml
+[1.733s] Invoked command in '/home/mattb/ros2_ws/build/turtlebot3_rotating_sensor' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/mattb/ros2_ws/build/turtlebot3_rotating_sensor
