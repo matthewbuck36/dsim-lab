@@ -1,0 +1,10 @@
+msg/StampedFloat64.idl
+msg/StampedFloat64.msg
+msg/StampedFloat64MultiArray.idl
+msg/StampedFloat64MultiArray.msg
+msg/StampedString.idl
+msg/StampedString.msg
+msg/StampedTransformMultiArray.idl
+msg/StampedTransformMultiArray.msg
+msg/Timekeeper.idl
+msg/Timekeeper.msg
