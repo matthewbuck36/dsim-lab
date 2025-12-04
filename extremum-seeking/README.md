@@ -1,0 +1,57 @@
+# Extremum Seeking
+
+This package is for simulating Extremum Seeking Control (ESC) dynamical systems within 
+Python. In short, ESC seeks to construct dynamical systems in which vehicles (or optimizers) 
+acting in continuous time practically minimize a cost funciton `J(t, x)` which depends on 
+time `t` and the vehicle states `x`. Here we mean practically minimize since ESC are 
+generally perturbation based methods i.e. the vehicle (or optimizer) has no knowledge of the 
+actual spatial and temporal derivatives of `J` and must estimate these derivatives via 
+continuously perturbing the system hence the vehicle (or optimizer) never stabilizes at a 
+local extrema but rather practically stabilizes at that extrema. The packge is written to 
+simplify the building of ordinary differential equations for simulation and as such the main 
+subpackages are the `filter` and `seeker` subpackages. The `filter` subpackage handles all 
+the ways that compicated filters can be used to either filter `J` or construct estimates of 
+the derivatives of `J`. The `seeker` subpackage contains the continuous time differential 
+equations of various optimization algorithms/systems as well as various classes with the post 
+fix of `Seeker` which construct the full dynamical system from component systems.
+
+## Author Information
+
+Patrick McNamee
+
+Dynamic Systems and Intelligent Machines (DSIM)
+
+San Diego State University (SDSU)
+
+email: pmcnamee5123@sdsu.edu
+
+## Installation Instructions
+
+This package can either be downloaded via git using
+
+	user@machine:~$ git clone https://gitlab.com/dsim-lab/extremum-seeking/extremum-seeking.git
+
+for those who have access to the DSIM Lab GitLab group. Otherwise one will need to download 
+the package directly via some compressed file. After the package is on the machine, the 
+package can be with pip as a local editable package.
+
+	user@machine:~$ cd extremum-seeking
+	user@machine:~/extremum-seeking$ pip install -e .
+
+## Code Documentation
+
+This package uses Sphinx to autobuild the API documentation. To generate HTML documentation 
+that can be read in a browser, run the command
+
+	user@machine:~/extremum-seeking/docs$ make html
+
+before accessing/opening the `index.html` file in the `docs/build/html/` subdirectory.
+
+## Issues/Warnings
+
+1. This package is run entirely on a Linux computer. There are some modules in the `scripts/` 
+subdirectory which save figures using a Unix style path specification. Users on Windows 
+should just comment out those line. 
+
+2. Some of the Python modules in the `scripts/` subdirectory are working on recreation of 
+papers. They may not be showing fully correct information.
