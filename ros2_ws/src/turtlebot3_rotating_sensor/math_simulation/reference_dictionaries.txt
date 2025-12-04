@@ -1,0 +1,153 @@
+This text file holds configured objects written as dictionaries.
+These can be copy pasted into the math simulation script to change out
+what objects are used in a simulation.
+
+
+
+COST FUNCTIONS:
+
+# For a quadratic cost function
+cost_funct_obj = PositionBasedSympyExpression(
+    {
+        "function": "a*(x-x_optimal)**2 + a*(y-y_optimal)**2",
+        "symbols": ["t", "x", "y", "z"],
+        "substitutions":{
+            "a": 0.5,
+            "x_optimal": x_optimal,
+            "y_optimal": y_optimal
+        }
+    }
+)
+
+# For an acoustic cost function
+cost_funct_obj = PositionBasedSympyExpression(
+    {
+        "function": "(s - 20*log(radius_expression, 10))*(-1)",
+        "symbols": ["t", "x", "y", "z"],
+        "substitutions":{
+            "s": 80,
+            "radius_expression": "Piecewise((r, r > r0), (r0, True))",
+            "r0": 0.01,
+            "r": "((x-x_optimal)**2+(y-yoptimal)**2)**0.5",
+            "x_optimal": x_optimal,
+            "y_optimal": y_optimal
+        }
+    }
+)
+
+# For a resistance based cost function
+cost_funct_obj = PhotoresistorInterpolatedMap(
+    {
+        "mode": "Resistance",
+        "scale_map": 1.0,
+        "apply_adc": False,
+        "x_optimal": x_optimal,
+        "y_optimal": y_optimal
+    }
+)
+
+
+
+ANGULAR POSITION SIGNALS:
+
+# For constant full rotation
+angpossignal_obj = ConstantFullRotation(
+    {
+        "spin_rpm": spin_rpm
+    }
+)
+
+# For constant back and forth rotation
+angpossignal_obj = ConstantBnFRotation(
+    {
+        "spin_rpm": spin_rpm,
+        "cw_bound": -90,
+        "ccw_bound": 90
+    }
+)
+
+
+
+ESTIMATION SIGNALS:
+
+# For constant full rotation
+estimsignal_obj = ConstantFullRotationEstimation(
+    {
+        "angular_position_signal_object": angpossignal_obj,
+        "frame_arm_length": frame_arm_length
+    }
+)
+
+# For constant back and forth rotation in a [90, -90] degree envelope
+estimsignal_obj = ConstantBnFRotationEstimation(
+    {
+        "angular_position_signal_object": angpossignal_obj,
+        "frame_arm_length": frame_arm_length
+    }
+)
+
+
+
+CUSTOM FILTER OBJECTS:
+
+# For an RMS Prop custom filter
+customfilter = RMSPropFilter(
+    {
+        "estimation_signal_object": estimsignal_obj,
+        "gradient_washout_omega_l": 1.0,
+        "gradient_squared_washout_omega_l": 1.0,
+        "directional_filter_gains": np.array([0.1, 0.1]),
+        "directional_filter_omega_l": 1.0,
+        "frame_arm_length": frame_arm_length
+    }
+)
+# Define initial states for the two washout filters
+washout_init = np.array([0,0])
+# Define initial guess for the optimal position
+theta_hat_init = start_pose[:2]
+# Define initial gradient squared estimatimates
+v_hat_init = np.array([0,0])
+# Define the initial filter state
+filter_init_state = np.concatenate((
+    washout_init, theta_hat_init, v_hat_init
+))
+
+# For an ADA Grad custom filter
+customfilter = ADAGradFilter(
+    {
+        "estimation_signal_object": estimsignal_obj,
+        "gradient_washout_omega_l": 1.0,
+        "gradient_squared_washout_omega_l": 1.0,
+        "directional_filter_gains": np.array([0.1, 0.1]),
+        "directional_filter_omega_l": 1.0,
+        "adagrad_power": 2,
+        "frame_arm_length": frame_arm_length
+    }
+)
+# Define initial states for the two washout filters
+washout_init = np.array([0,0])
+# Define initial guess for the optimal position
+theta_hat_init = start_pose[:2]
+# Define initial gradient outer product half vector
+gop_vech_init = np.array([1,1,1])
+# Define the initial filter state
+filter_init_state = np.concatenate((
+    washout_init, theta_hat_init, gop_vech_init
+))
+
+
+
+CONTROLLER OBJECTS:
+
+# For a directional controller
+controller_obj = DirectionalController(
+    {
+        "k_vx": 1.0,
+        "k_wz": 5.0,
+        "wheel_radius": 0.033,
+        "wheel_distance": 0.158,
+        "wheel_max_rpm": 70,
+        "set_max_vx": 0.1,
+        "set_max_wz": 0.5
+    }
+)
