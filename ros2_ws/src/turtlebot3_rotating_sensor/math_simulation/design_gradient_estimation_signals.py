@@ -88,7 +88,7 @@ def main():
     
     # Define a filepath where plot figures will be saved
     filepath = os.path.expanduser(
-        "~/ros2_ws/src/turtlebot3_rotating_sensor/python_simulation"
+        "~/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/python_simulation"
     )
 
     # If beta, phi_lower, phi_upper, and d are all defined as numbers

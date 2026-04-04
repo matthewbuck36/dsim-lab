@@ -1,5 +1,5 @@
 {
-    "path": "~/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_objects/turtlebot_vehicle.py",
+    "path": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_objects/turtlebot_vehicle.py",
     "controller": "Forward_Velocity_Input_Controller",
     "gains":{
         "k_v": -20.0,

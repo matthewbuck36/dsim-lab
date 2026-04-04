@@ -22,7 +22,7 @@ The following commands assume the user is downloading this package into a ROS wo
 This package can either be downloaded via git using 
 
 ```
-user@machine:~$ cd ~/ros2_ws/src
+user@machine:~$ cd ~/dsim-lab/ros2_ws/src
 user@machine:~$ git clone https://gitlab.com/dsim-lab/robots/turtlebot-3/turtlebot3_rotating_sensor.git
 ```
 
@@ -50,15 +50,15 @@ user@machine:~$ ~/extremum-seeking$ pip install -e .
 
 - The ros_esc package from the DSIM Lab Gitlab, can be downloaded via git using
 ```
-user@machine:~$ cd ~/ros2_ws/src
+user@machine:~$ cd ~/dsim-lab/ros2_ws/src
 user@machine:~$ git clone https://gitlab.com/dsim-lab/ros-packages/ros-esc.git
 user@machine:~$ cd ros-esc
-user@machine:~$ ~/ros2_ws/src/ros-esc$ pip install -e .
+user@machine:~$ ~/dsim-lab/ros2_ws/src/ros_esc$ pip install -e .
 ```
 
 - The ros_esc_interfaces package from the DSIM Lab Gitlab, can be downloaded via git using
 ```
-user@machine:~$ cd ~/ros2_ws/src
+user@machine:~$ cd ~/dsim-lab/ros2_ws/src
 user@machine:~$ git clone https://gitlab.com/dsim-lab/ros-packages/ros_esc_interfaces.git
 ```
 
@@ -72,9 +72,9 @@ Please note that some of the following commands are written for a generic ROS wo
 ```
 user@machine:~$ cd ~
 user@machine:~$ mkdir -p ~/.gazebo/models/turtlebot3_rotating_sensor
-user@machine:~$ cp ~/ros2_ws/src/turtlebot3_rotating_sensor/models/model.config ~/.gazebo/models/turtlebot3_rotating_sensor/
+user@machine:~$ cp ~/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/models/model.config ~/.gazebo/models/turtlebot3_rotating_sensor/
 user@machine:~$ mkdir -p ~/.gazebo/models/turtlebot3_rotating_sensor/meshes
-user@machine:~$ cp -r ~/ros2_ws/src/turtlebot3_rotating_sensor/meshes ~/.gazebo/models/turtlebot3_rotating_sensor/meshes
+user@machine:~$ cp -r ~/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/meshes ~/.gazebo/models/turtlebot3_rotating_sensor/meshes
 ```
 
 ## Instructions for Use
@@ -109,7 +109,7 @@ Please note that some of the following commands are written for a generic ROS wo
 
 
 ```
-user@machine:~$ cd ~/ros2_ws
+user@machine:~$ cd ~/dsim-lab/ros2_ws
 user@machine:~$ colcon build --packages-select turtlebot3_rotating_sensor ros_esc ros_esc_interfaces
 user@machine:~$ source install/setup.bash
 user@machine:~$ ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml
@@ -130,7 +130,7 @@ Please note that some of the following commands are written for a generic ROS wo
 
 
 ```
-user@machine:~$ cd ~/ros2_ws
+user@machine:~$ cd ~/dsim-lab/ros2_ws
 user@machine:~$ colcon build --packages-select turtlebot3_rotating_sensor
 user@machine:~$ source install/setup.bash
 user@machine:~$ ros2 launch turtlebot3_rotating_sensor rviz.launch.xml
@@ -142,14 +142,14 @@ separate terminals. Note this package contains a RVIZ configuration file in the 
 
 Terminal 1:
 ```
-user@machine:~$ cd ~/ros2_ws
+user@machine:~$ cd ~/dsim-lab/ros2_ws
 user@machine:~$ source install/setup.bash
 user@machine:~$ rviz2
 ```
 
 Terminal 2:
 ```
-user@machine:~$ cd ~/ros2_ws
+user@machine:~$ cd ~/dsim-lab/ros2_ws
 user@machine:~$ colcon build --packages-select turtlebot3_rotating_sensor
 user@machine:~$ source install/setup.bash
 user@machine:~$ ros2 launch turtlebot3_rotating_sensor robot_description.launch.py
@@ -160,7 +160,7 @@ and then navigate to the urdf_viz.rviz file found within this package.
 
 Terminal 3:
 ```
-user@machine:~$ cd ~/ros2_ws
+user@machine:~$ cd ~/dsim-lab/ros2_ws
 user@machine:~$ source install/setup.bash
 user@machine:~$ ros2 run joint_state_publisher_gui joint_state_publisher_gui
 ```

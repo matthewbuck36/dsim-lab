@@ -1,5 +1,5 @@
 {
-  "filepath": "~/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_objects/turtlebot_vehicle.py",
+  "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_objects/turtlebot_vehicle.py",
   "object_name": "Rotating_Frame_Directional_Controller",
 
   "gains": {
@@ -10,7 +10,7 @@
   "dynamic_states": {
     "m": 2,
     "ode": {
-      "filepath": "~/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_objects/turtlebot_ode_objects.py",
+      "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_objects/turtlebot_ode_objects.py",
       "object_name": "HeavyBallODE",
       "k": 1.0,
       "beta": 1.0

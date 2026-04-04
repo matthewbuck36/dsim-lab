@@ -27,7 +27,7 @@ elsewhere, please update the terminal commands shown here accordingly.
 This package can either be downloaded via git using 
 
 ```
-user@machine:~$ cd ~/ros2_ws/src
+user@machine:~$ cd ~/dsim-lab/ros2_ws/src
 user@machine:~$ git clone https://gitlab.com/dsim-lab/ros-packages/ros_esc_interfaces.git
 ```
 
@@ -44,7 +44,7 @@ so that a DSIM Lab Gitlab maintainer can evaluate the changes and complete a mer
 
 Please ensure that ROS created the custom messages correctly by using the following terminal commands:
 ```
-user@machine:~$ cd ~/ros2_ws
+user@machine:~$ cd ~/dsim-lab/ros2_ws
 user@machine:~$ colcon build --packages-select ros_esc_interfaces
 user@machine:~$ source install/setup.bash
 user@machine:~$ ros2 interface show ros_esc_interfaces/msg/{custom_msg_name}
@@ -52,7 +52,7 @@ user@machine:~$ ros2 interface show ros_esc_interfaces/msg/{custom_msg_name}
 
 Please ensure that ROS created the custom services correctly by using the following terminal commands:
 ```
-user@machine:~$ cd ~/ros2_ws
+user@machine:~$ cd ~/dsim-lab/ros2_ws
 user@machine:~$ colcon build --packages-select ros_esc_interfaces
 user@machine:~$ source install/setup.bash
 user@machine:~$ ros2 interface show ros_esc_interfaces/src/{custom_srv_name}

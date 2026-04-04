@@ -20,7 +20,7 @@ def main():
     ### Please enter the filepath to the configuration file to be tested
     # pylint: disable=line-too-long
     filepath = os.path.expanduser(
-        "~/ros2_ws/src/ros_esc/ros_esc/rotate_frame_node"+
+        "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/rotate_frame_node"+
         "/rotate_frame_config_files/turtlebot_vehicle/full_rotation.json"
     )
     # pylint: enable=line-too-long

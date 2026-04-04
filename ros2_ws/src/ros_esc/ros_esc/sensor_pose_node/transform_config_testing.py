@@ -19,7 +19,7 @@ def main():
     ### Please enter the filepath to the configuration file to be tested
     # pylint: disable=line-too-long
     filepath = os.path.expanduser(
-        "~/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/"+
+        "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/"+
         "transform_config_files/turtlebot_rotating_sensor.json"
     )
     # pylint: enable=line-too-long

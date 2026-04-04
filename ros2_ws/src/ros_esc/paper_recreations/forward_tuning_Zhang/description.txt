@@ -55,15 +55,15 @@ Original File paths:
 
 ### Initialize Configuration File Paths (Needs to be updated but the files are located in this folder instead as it was originally)
     # Selected transform config file for the turtlebot vehicle
-    sensor_pose_config = '/home/jester-phantom/ros2_ws/ros-esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot3_rotating_sensor.json' # Complete
+    sensor_pose_config = '~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot3_rotating_sensor.json' # Complete
     # Selected cost function configuration file
-    cost_function_config = '/home/jester-phantom/ros2_ws/ros-esc/ros_esc/paper-recreations/forward_tune_quadratic.json' # Complete
+    cost_function_config = '~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/paper-recreations/forward_tune_quadratic.json' # Complete
     # Selected filter configuration file
-    filter_node_config = '/home/jester-phantom/ros2_ws/ros-esc/ros_esc/paper-recreations/forward_tune.json' # Complete
+    filter_node_config = '~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/paper-recreations/forward_tune.json' # Complete
     # Selected controller configuration file
-    controller_node_config = '/home/jester-phantom/ros2_ws/ros-esc/ros_esc/paper-recreations/tb_input_directional_controller_config.json' # Complete
+    controller_node_config = '~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/paper-recreations/tb_input_directional_controller_config.json' # Complete
     # Directory to save the test folders to
-    data_collection_filepath = '/home/jester-phantom/Documents/Gazebo_Simulations' # Complete
+    data_collection_filepath = '~/Experiments/Gazebo-Simulations' # Complete
 
 
 

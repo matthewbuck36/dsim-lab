@@ -23,7 +23,7 @@ a minimum at (x, y) = (3, 3). More cost function configuration files can be foun
 ```
 {
     "CostFunction":{
-        "filepath": "~/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/cost_function_objects.py",
+        "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/cost_function_objects.py",
         "object_name": "Position_Based_Sympy_Expression",
         "params":{
             "function": "a*(x-x_optimal)**2 + a*(y-y_optimal)**2",
@@ -36,7 +36,7 @@ a minimum at (x, y) = (3, 3). More cost function configuration files can be foun
         }
     },
     "Noise":{
-        "filepath": "~/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/noise_objects.py",
+        "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/noise_objects.py",
         "object_name": "No_Noise"
     }
 }

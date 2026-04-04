@@ -63,7 +63,7 @@ This configuration file was made to describe a vehicle mounted with three rotati
 ```
 {
     "rotating_frame_one":{
-        "filepath": "~/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_objects/transform_objects.py",
+        "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_objects/transform_objects.py",
         "object_name": "Transform_Odom_To_Sensor_Pose",
         "params":{
             "joint_position": [0, 0, 0.325],
@@ -78,7 +78,7 @@ This configuration file was made to describe a vehicle mounted with three rotati
     },
 
     "rotating_frame_two":{
-        "filepath": "~/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_objects/transform_objects.py",
+        "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_objects/transform_objects.py",
         "object_name": "Transform_Odom_To_Sensor_Pose",
         "params":{
             "joint_position": [0, 0.325, 0],
@@ -93,7 +93,7 @@ This configuration file was made to describe a vehicle mounted with three rotati
     },
 
     "rotating_frame_three":{
-        "filepath": "~/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_objects/transform_objects.py",
+        "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_objects/transform_objects.py",
         "object_name": "Transform_Odom_To_Sensor_Pose",
         "params":{
             "joint_position": [0, 0.325, 0],

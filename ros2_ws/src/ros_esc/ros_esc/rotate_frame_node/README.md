@@ -23,7 +23,7 @@ An example of a rotating frame config file is given below. More examples can be 
 ```
 {
     "velocity_controller_one":{
-        "filepath": "~/ros2_ws/src/ros_esc/ros_esc/rotate_frame_node/spin_profile_objects/spin_profile_objects.py",
+        "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/rotate_frame_node/spin_profile_objects/spin_profile_objects.py",
         "object_name": "Four_Section_Back_And_Forth_Rotation",
         "params":{
             "spin_rpm_section_one": 20,
@@ -36,7 +36,7 @@ An example of a rotating frame config file is given below. More examples can be 
         }
     },
     "velocity_controller_two":{
-        "filepath": "~/ros2_ws/src/ros_esc/ros_esc/rotate_frame_node/spin_profile_objects/spin_profile_objects.py",
+        "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/rotate_frame_node/spin_profile_objects/spin_profile_objects.py",
         "object_name": "Constant_Back_And_Forth_Rotation",
         "params":{
             "spin_rpm": 20,
@@ -45,7 +45,7 @@ An example of a rotating frame config file is given below. More examples can be 
         }
     },
     "velocity_controller_three":{
-        "filepath": "~/ros2_ws/src/ros_esc/ros_esc/rotate_frame_node/spin_profile_objects/spin_profile_objects.py",
+        "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/rotate_frame_node/spin_profile_objects/spin_profile_objects.py",
         "object_name": "Constant_Full_Rotation",
         "params":{
             "spin_rpm": -10

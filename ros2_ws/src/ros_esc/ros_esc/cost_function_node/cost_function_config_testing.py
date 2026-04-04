@@ -19,7 +19,7 @@ def main():
     ### Please enter the filepath to the configuration file to be tested
     # pylint: disable=line-too-long
     filepath = os.path.expanduser(
-        "~/ros2_ws/src/ros_esc/ros_esc/cost_function_node"+
+        "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/cost_function_node"+
         "/cost_function_config_files/static_2D_quadratic.json"
     )
     # pylint: enable=line-too-long

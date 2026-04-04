@@ -1,6 +1,6 @@
 {
     "CostFunction":{
-        "filepath": "~/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/cost_function_objects.py",
+        "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/cost_function_objects.py",
         "object_name": "Position_Based_Sympy_Expression",
         "params":{
             "function": "(s - 20*log(radius_expression, 10))*(-1)",
@@ -16,7 +16,7 @@
         }
     },
     "Noise":{
-        "filepath": "~/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/noise_objects.py",
+        "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/noise_objects.py",
         "object_name": "Gaussian",
         "params":{
             "std_dev": 1.0,

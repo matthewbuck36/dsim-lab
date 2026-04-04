@@ -24,16 +24,26 @@
     <!-- Specify the live plotting mode for this vehicle -->
     <arg name="live_plot_mode" default="2D"/>
 
+    <!-- Enable PDE-style basin escape extensions -->
+    <arg name="use_pde_extensions" default="False"/>
+    <arg name="pde_omega" default="5.0"/>
+    <arg name="convergence_threshold" default="0.2"/>
+    <arg name="convergence_decay_rate" default="0.15"/>
+    <arg name="convergence_min_fill_periods" default="2.0"/>
+    <arg name="gaussian_fill_amplitude" default="5.0"/>
+    <arg name="gaussian_fill_min_sigma" default="3.16"/>
+    <arg name="gaussian_fill_use_recent_fraction" default="0.2"/>
+
     <!-- Set the default rotate frame configuration filepath -->
-    <arg name="rotate_frame_config_filepath" default="~/ros2_ws/src/ros_esc/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation.json" />
+    <arg name="rotate_frame_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation.json" />
     <!-- Set the default transform configuration filepath -->
-    <arg name="sensor_transform_config_filepath" default="~/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"/>
+    <arg name="sensor_transform_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"/>
     <!-- Set the default cost function configuration filepath-->
-    <arg name="cost_function_config_filepath" default="~/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_config_files/static_2D_quadratic.json"/>
+    <arg name="cost_function_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/2D_local_min.json"/>
     <!-- Set the default filter configuration filepath -->
-    <arg name="filter_config_filepath" default="~/ros2_ws/src/ros_esc/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/adaptive_methods/rmsprop_filter_full_rotation.json"/>
+    <arg name="filter_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json"/>
     <!-- Set the default controller configuration filepath -->
-    <arg name="controller_config_filepath" default="~/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/adaptive_methods/rmsprop_controller_full_rotation.json"/>
+    <arg name="controller_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/adaptive_methods/heavyball_controller_full_rotation.json"/>
     <!-- Set the directory to save simulation test results to -->
     <arg name="data_collection_filepath" default="~/Experiments/Gazebo-Simulations"/>
 
@@ -106,10 +116,74 @@
     "
     />
 
+    <!-- Optional PDE extension nodes -->
+    <executable
+        if="$(var use_pde_extensions)"
+        cmd="
+            ros2 run ros_esc modified_cost_node
+            $(var entity_name)/cost_value_chatter
+            /cost_bias
+            /cost_modified
+            --input_sensor_transform_topic
+            $(var entity_name)/sensor_transform_chatter
+            --input_odom_topic
+            /odom
+        "
+    />
+
+    <executable
+        if="$(var use_pde_extensions)"
+        cmd="
+            ros2 run ros_esc pde_history_node
+            --ros-args
+            -p omega:=$(var pde_omega)
+        "
+    />
+
+    <executable
+        if="$(var use_pde_extensions)"
+        cmd="
+            ros2 run ros_esc convergence_detector_node
+            --ros-args
+            -p omega:=$(var pde_omega)
+            -p threshold:=$(var convergence_threshold)
+            -p decay_rate:=$(var convergence_decay_rate)
+            -p min_fill_periods:=$(var convergence_min_fill_periods)
+        "
+    />
+
+    <executable
+        if="$(var use_pde_extensions)"
+        cmd="
+            ros2 run ros_esc gaussian_fill_node
+            --ros-args
+            -p amplitude:=$(var gaussian_fill_amplitude)
+            -p min_sigma:=$(var gaussian_fill_min_sigma)
+            -p use_recent_fraction:=$(var gaussian_fill_use_recent_fraction)
+        "
+    />
+
     <!-- Launch the filter node -->
-    <executable cmd="
+    <executable
+        unless="$(var use_pde_extensions)"
+        cmd="
         ros2 run ros_esc filter_node
         $(var entity_name)/cost_value_chatter
+        $(var entity_name)/encoder_chatter
+        $(var entity_name)/timekeeper_chatter
+        $(var entity_name)/filter_value_chatter
+        --filter_file
+        $(var filter_config_filepath)
+        --append_encoder_data
+        $(var input_encoder_data_to_filter)
+    "
+    />
+
+    <executable
+        if="$(var use_pde_extensions)"
+        cmd="
+        ros2 run ros_esc filter_node
+        /cost_modified
         $(var entity_name)/encoder_chatter
         $(var entity_name)/timekeeper_chatter
         $(var entity_name)/filter_value_chatter
@@ -133,7 +207,9 @@
     />
 
     <!-- Launch the data collection node -->
-    <executable cmd="
+    <executable
+        unless="$(var use_pde_extensions)"
+        cmd="
         ros2 run ros_esc data_collection_node
         $(var data_collection_filepath)
         $(var rotate_frame_config_filepath)
@@ -145,6 +221,26 @@
         /odom
         $(var entity_name)/sensor_transform_chatter
         $(var entity_name)/cost_value_chatter
+        $(var entity_name)/filter_value_chatter
+        $(var entity_name)/control_value_chatter
+        $(var live_plot_mode)
+    "
+    />
+
+    <executable
+        if="$(var use_pde_extensions)"
+        cmd="
+        ros2 run ros_esc data_collection_node
+        $(var data_collection_filepath)
+        $(var rotate_frame_config_filepath)
+        $(var sensor_transform_config_filepath)
+        $(var cost_function_config_filepath)
+        $(var filter_config_filepath)
+        $(var controller_config_filepath)
+        $(var entity_name)/timekeeper_chatter
+        /odom
+        $(var entity_name)/sensor_transform_chatter
+        /cost_modified
         $(var entity_name)/filter_value_chatter
         $(var entity_name)/control_value_chatter
         $(var live_plot_mode)

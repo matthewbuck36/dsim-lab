@@ -24,10 +24,10 @@ elsewhere, please update the terminal commands shown here accordingly.
 This package can either be downloaded via git using 
 
 ```
-user@machine:~$ cd ~/ros2_ws/src
+user@machine:~$ cd ~/dsim-lab/ros2_ws/src
 user@machine:~$ git clone https://gitlab.com/dsim-lab/ros-packages/ros-esc.git
 user@machine:~$ cd ros-esc
-user@machine:~$ ~/ros2_ws/src/ros-esc$ pip install -e .
+user@machine:~$ ~/dsim-lab/ros2_ws/src/ros_esc$ pip install -e .
 ```
 
 for those who have access to the DSIM Lab Gitlab group. Otherwise one will need to download
@@ -55,7 +55,7 @@ user@machine:~$ ~/extremum-seeking$ pip install -e .
 
 - The ros_esc_interfaces package from the DSIM Lab Gitlab, can be downloaded via git using
 ```
-user@machine:~$ cd ~/ros2_ws/src
+user@machine:~$ cd ~/dsim-lab/ros2_ws/src
 user@machine:~$ git clone https://gitlab.com/dsim-lab/ros-packages/ros_esc_interfaces.git
 ```
 
@@ -63,7 +63,7 @@ user@machine:~$ git clone https://gitlab.com/dsim-lab/ros-packages/ros_esc_inter
 
 There are many examples in this ros_esc package that are designed to work with a Turtlebot vehicle in Gazebo simulation. For new users wanting to learn this package, it is recommended to work with the following package: turtlebot3_rotating_sensor from the DSIM Lab Gitlab. Please download the following package via git using
 ```
-user@machine:~$ cd ~/ros2_ws/src
+user@machine:~$ cd ~/dsim-lab/ros2_ws/src
 user@machine:~$ git clone https://gitlab.com/dsim-lab/robots/turtlebot-3/turtlebot3_rotating_sensor.git
 ```
 
@@ -88,7 +88,7 @@ Gitlab, one should first work with the turtlebot3_rotating_sensor package to bec
 If the user would like to use this package to test new ideas, they should create a new branch off of the main using the following command. Please note that this command was written for a generic ROS workspace named "ros2_ws". If the user wants to work with this package in a workspace not named "ros2_ws", they will have to rewrite the command accordingly.
 
 ```
-user@machine:~$ cd ~/ros2_ws/src/ros_esc
+user@machine:~$ cd ~/dsim-lab/ros2_ws/src/ros_esc
 user@machine:~$ git branch {new_branch_name}
 ```
 

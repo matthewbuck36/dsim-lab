@@ -1,6 +1,6 @@
 {
   "CostFunction": {
-    "filepath": "~/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/cost_function_objects.py",
+    "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/cost_function_objects.py",
     "object_name": "Position_Based_Sympy_Expression",
     "params": {
       "function": "2 - 4*exp(-((x-2)**2 + (y-2)**2)/20) - 10*exp(-((x - 10)**2 + (y - 10)**2)/10)",
@@ -9,7 +9,7 @@
     }
   },
   "Noise": {
-    "filepath": "~/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/noise_objects.py",
+    "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/noise_objects.py",
     "object_name": "No_Noise"
   }
 }

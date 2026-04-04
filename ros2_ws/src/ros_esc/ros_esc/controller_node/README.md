@@ -30,7 +30,7 @@ Output Topic Publishing:
 
 ```
 {
-    "filepath": "~/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_objects/turtlebot_vehicle.py",
+    "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_objects/turtlebot_vehicle.py",
     "object_name": "Directional_Controller",
     "gains":{
         "k_v": 1.0,

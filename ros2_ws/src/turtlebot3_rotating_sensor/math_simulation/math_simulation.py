@@ -144,7 +144,7 @@ def main():
     tstamps = results.t
 
     # Initialize the filepath to this script
-    math_sim_filepath = "~/ros2_ws/src/turtlebot3_rotating_sensor/math_simulation/math_simulation.py"
+    math_sim_filepath = "~/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/math_simulation/math_simulation.py"
 
     # Create a new test folder to hold simulation results
     test_folder_filepath, csv_filepath_dict = create_test_folder(directory, math_sim_filepath)

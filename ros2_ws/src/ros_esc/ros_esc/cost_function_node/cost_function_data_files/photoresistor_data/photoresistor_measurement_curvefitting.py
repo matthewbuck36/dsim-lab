@@ -28,7 +28,7 @@ def main():
     # Specify the filepath to the csv file
     # pylint: disable=line-too-long
     filepath = os.path.expanduser(
-        '~/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_data_files/photoresistor_data/photoresistor_measurement_data.csv'
+        '~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_data_files/photoresistor_data/photoresistor_measurement_data.csv'
     )
 
     # Get the data from the csv file,
@@ -71,7 +71,7 @@ def main():
     # Specify the filepath for where the figures will be saved
     # pylint: disable=line-too-long
     filepath = os.path.expanduser(
-        '~/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_data_files/photoresistor_data/figures'
+        '~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_data_files/photoresistor_data/figures'
     )
 
     # Initialize the resistance bounds
@@ -85,7 +85,7 @@ def main():
 
     # Export the colorbar colors for use in MATLAB plotting# pylint: disable=line-too-long
     filepath = os.path.expanduser(
-        '~/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_data_files/photoresistor_data'
+        '~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_data_files/photoresistor_data'
     )
     export_colorbar_rgba(filepath)
 
@@ -199,7 +199,7 @@ def get_data_to_fit(data):
 
     # Write fitting data to csv file for matlab plotting script
     fitting_data_filepath = os.path.expanduser(
-        '~/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_data_files/photoresistor_data/curve_fitting_data.csv'
+        '~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_data_files/photoresistor_data/curve_fitting_data.csv'
     )
     # Write the header row for csv file
     with open(fitting_data_filepath, mode="w", newline="", encoding="utf-8") as file:
