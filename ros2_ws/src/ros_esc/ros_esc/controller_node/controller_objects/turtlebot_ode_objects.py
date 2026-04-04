@@ -8,7 +8,7 @@ specify various parameters.
 """
 
 from abc import ABC, abstractmethod
-from extremum_seeking.seekers.parameter_odes import RMSpropFlow, AdaGradFlow
+from extremum_seeking.seekers.parameter_odes import RMSpropFlow, AdaGradFlow, HeavyBallFlow
 import numpy as np
 
 # pylint: disable=anomalous-backslash-in-string
@@ -312,6 +312,90 @@ class AdaGradODE(ODEObject): # pylint: disable=too-few-public-methods
         }
 
         # Return the output dictionary
+        return output
+
+class HeavyBallODE(ODEObject):  # pylint: disable=too-few-public-methods
+    """This implements the Heavy-Ball ODE equation.
+
+    The dynamic states correspond to the momentum variable v.
+
+    Gradient estimates are provided in the vehicle-relative frame and are
+    converted to the absolute frame for the ODE computation. The resulting
+    update direction is converted back to the relative frame for control.
+    """
+
+    def __init__(self, k, beta, input_gain=1.0):
+        """
+        Parameters
+        ----------
+        k : int, float, or list
+            Gradient gain
+        beta : float
+            Momentum damping coefficient
+        input_gain : float
+            Gain on the incoming filter output before it is interpreted as
+            a gradient estimate. Use -1.0 when the filter output is a descent
+            direction estimate (-grad J) rather than grad J.
+        """
+
+        if isinstance(k, (int, float)):
+            k = k * np.eye(2)
+        elif isinstance(k, list):
+            k = np.diag(np.array(k))
+        else:
+            raise ValueError("Invalid gain format")
+
+        self.input_gain = input_gain
+
+        # Initialize the parameter ODE
+        self.param_ode = HeavyBallFlow(k, beta)
+
+    # pylint: disable=too-many-locals
+    def differential_equation(self, time, state, dynamic_states, input_values):
+        """Implements the Heavy-Ball differential equation.
+
+        Expected input_values:
+            g_relative = input_values[:2]
+                Gradient estimate in vehicle-relative frame
+
+        dynamic_states:
+            momentum state v (2,)
+        """
+
+        # Gradient estimate (relative frame). input_gain allows us to map
+        # filter outputs into the gradient sign convention expected by HeavyBallFlow.
+        g_relative = self.input_gain * input_values[:2]
+
+        # Rotation matrix
+        rot_matrix = rotation_matrix(state)
+
+        # Convert gradient to absolute frame
+        g_absolute = rot_matrix @ g_relative
+
+        # Construct theta_hat = [theta, v]
+        # theta is unused internally, but kept for interface consistency
+        theta_hat = np.concatenate((np.array([0.0, 0.0]), dynamic_states))
+
+        # Evaluate Heavy-Ball ODE
+        theta_hat_dot = self.param_ode.differential_equation(
+            time,
+            theta_hat=theta_hat,
+            z=g_absolute
+        )
+
+        # Extract components
+        theta_dot_absolute = theta_hat_dot[:2]
+        v_dot = theta_hat_dot[2:]
+
+        # Convert update direction back to relative frame
+        theta_dot_relative = rot_matrix.T @ theta_dot_absolute
+
+        # Package outputs
+        output = {
+            "theta_dot": theta_dot_relative,
+            "z_dot": v_dot
+        }
+
         return output
 
 

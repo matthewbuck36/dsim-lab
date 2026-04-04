@@ -222,7 +222,7 @@ class Rotating_Frame_Directional_Controller(ControllerObject):
         self.ode_object = parse_object_config(ode_dict)
 
         # Define a variable to track the previous timestamp
-        self.prev_tstamp = 0
+        self.prev_tstamp = None
 
         # Define forward velocity gain
         self.k_vx = gains["k_vx"]
@@ -279,8 +279,12 @@ class Rotating_Frame_Directional_Controller(ControllerObject):
             (typically these come from the output of a filter)
         """
 
-        # Calculate the change in time from previous timestamp
-        dt =  time - self.prev_tstamp
+        # Calculate the change in time from previous timestamp.
+        # On first callback, avoid a large startup integration jump.
+        if self.prev_tstamp is None:
+            dt = 0.0
+        else:
+            dt =  time - self.prev_tstamp
         # Update controller dynamic states,
         # obtain the update direction in the vehicle relative frame
         update_direction = self.update_dynamic_states(time, state, input_values, dt)

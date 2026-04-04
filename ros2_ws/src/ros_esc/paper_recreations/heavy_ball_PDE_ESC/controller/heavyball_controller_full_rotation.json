@@ -1,0 +1,28 @@
+{
+  "filepath": "~/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_objects/turtlebot_vehicle.py",
+  "object_name": "Rotating_Frame_Directional_Controller",
+
+  "gains": {
+    "k_vx": 1.0,
+    "k_wz": 5.0
+  },
+
+  "dynamic_states": {
+    "m": 2,
+    "ode": {
+      "filepath": "~/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_objects/turtlebot_ode_objects.py",
+      "object_name": "HeavyBallODE",
+      "k": 1.0,
+      "beta": 1.0
+    },
+    "initial_values": [0.0, 0.0]
+  },
+
+  "params": {
+    "wheel_radius": 0.033,
+    "wheel_distance": 0.158,
+    "wheel_max_rpm": 70,
+    "set_max_vx": 0.5,
+    "set_max_wz": 0.5
+  }
+}
