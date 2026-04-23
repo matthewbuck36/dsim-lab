@@ -43,7 +43,7 @@
     <!-- Set the default filter configuration filepath -->
     <arg name="filter_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json"/>
     <!-- Set the default controller configuration filepath -->
-    <arg name="controller_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/adaptive_methods/heavyball_controller_full_rotation.json"/>
+    <arg name="controller_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/accelerated_methods/heavyball_controller_full_rotation.json"/>
     <!-- Set the directory to save simulation test results to -->
     <arg name="data_collection_filepath" default="~/Experiments/Gazebo-Simulations"/>
 
