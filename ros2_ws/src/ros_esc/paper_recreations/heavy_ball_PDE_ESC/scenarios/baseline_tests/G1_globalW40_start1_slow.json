@@ -1,0 +1,26 @@
+{
+  "name": "G1_globalW40_start1_slow",
+  "test_id": "G1",
+  "description": "Baseline HBESC on widened-global-basin Gaussian map from (1,1) with low speed limits.",
+  "cost_family": "gaussian_two_basin_globalW40",
+  "speed_label": "slow",
+  "target": {"x": 10.0, "y": 10.0},
+  "local_basin": {"x": 2.0, "y": 2.0},
+  "stop_rule_sec": 700,
+  "launch": {
+    "entity_name": "turtlebot3",
+    "init_x_position": 1,
+    "init_y_position": 1,
+    "init_yaw_angle": 0,
+    "input_encoder_data_to_filter": true,
+    "live_plot_mode": "2D",
+    "use_pde_extensions": false,
+    "escape_policy": "none",
+    "rotate_frame_config_filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation.json",
+    "sensor_transform_config_filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json",
+    "cost_function_config_filepath": "~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/gaussian_two_basin/wide_global_W40.json",
+    "filter_config_filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json",
+    "controller_config_filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/accelerated_methods/hbesc_baseline_slow_full_rotation.json",
+    "data_collection_filepath": "~/Experiments/HBESC-Baseline-Tests"
+  }
+}

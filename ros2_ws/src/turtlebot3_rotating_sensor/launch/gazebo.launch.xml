@@ -26,24 +26,30 @@
 
     <!-- Enable PDE-style basin escape extensions -->
     <arg name="use_pde_extensions" default="False"/>
+    <arg name="escape_policy" default="conditional_gaussian_fill"/>
     <arg name="pde_omega" default="5.0"/>
     <arg name="convergence_threshold" default="0.2"/>
     <arg name="convergence_decay_rate" default="0.15"/>
     <arg name="convergence_min_fill_periods" default="2.0"/>
     <arg name="gaussian_fill_amplitude" default="5.0"/>
     <arg name="gaussian_fill_min_sigma" default="3.16"/>
+    <arg name="gaussian_fill_max_sigma" default="5.0"/>
+    <arg name="gaussian_fill_min_points" default="50"/>
     <arg name="gaussian_fill_use_recent_fraction" default="0.2"/>
+    <arg name="gaussian_fill_max_fills" default="1"/>
+    <arg name="gaussian_fill_cooldown_sec" default="0.0"/>
+    <arg name="gaussian_fill_min_distance_between_fills" default="0.0"/>
 
     <!-- Set the default rotate frame configuration filepath -->
     <arg name="rotate_frame_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation.json" />
     <!-- Set the default transform configuration filepath -->
     <arg name="sensor_transform_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"/>
     <!-- Set the default cost function configuration filepath-->
-    <arg name="cost_function_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/2D_local_min.json"/>
+    <arg name="cost_function_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/gaussian_two_basin/original_local_min.json"/>
     <!-- Set the default filter configuration filepath -->
     <arg name="filter_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json"/>
     <!-- Set the default controller configuration filepath -->
-    <arg name="controller_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/accelerated_methods/heavyball_controller_full_rotation.json"/>
+    <arg name="controller_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/accelerated_methods/hbesc_gaussian_conservative_full_rotation.json"/>
     <!-- Set the directory to save simulation test results to -->
     <arg name="data_collection_filepath" default="~/Experiments/Gazebo-Simulations"/>
 
@@ -157,9 +163,15 @@
         cmd="
             ros2 run ros_esc gaussian_fill_node
             --ros-args
+            -p escape_policy:=$(var escape_policy)
             -p amplitude:=$(var gaussian_fill_amplitude)
             -p min_sigma:=$(var gaussian_fill_min_sigma)
+            -p max_sigma:=$(var gaussian_fill_max_sigma)
+            -p min_points:=$(var gaussian_fill_min_points)
             -p use_recent_fraction:=$(var gaussian_fill_use_recent_fraction)
+            -p max_fills:=$(var gaussian_fill_max_fills)
+            -p fill_cooldown_sec:=$(var gaussian_fill_cooldown_sec)
+            -p min_distance_between_fills:=$(var gaussian_fill_min_distance_between_fills)
         "
     />
 
