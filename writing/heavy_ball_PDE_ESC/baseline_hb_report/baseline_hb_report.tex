@@ -279,13 +279,7 @@ the Gaussian-fill extension for future global-seeking experiments.
 \appendix
 \section{Run and Analysis Commands}
 
-Preview all baseline scenarios:
-\begin{verbatim}
-bash ~/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/bash_scripts/\
-accelerated_methods/hb_baseline_matrix_acoustic.bash --dry-run
-\end{verbatim}
-
-Run one scenario:
+Run one scenario manually:
 \begin{verbatim}
 bash ~/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/bash_scripts/\
 accelerated_methods/hb_scenario_acoustic.bash \
@@ -293,8 +287,8 @@ accelerated_methods/hb_scenario_acoustic.bash \
 scenarios/baseline_tests/Q1_quadratic_start0_real.json
 \end{verbatim}
 
-After filling in \texttt{report/baseline\_hb\_run\_manifest.csv}, analyze
-completed runs:
+After filling in \texttt{baseline\_hb\_run\_manifest.csv}, analyze completed
+runs:
 \begin{verbatim}
 python3 ~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/\
 heavy_ball_PDE_ESC/analysis/analyze_baseline_hb_logs.py --plots
@@ -302,14 +296,13 @@ heavy_ball_PDE_ESC/analysis/analyze_baseline_hb_logs.py --plots
 
 The complete metrics table is saved at:
 \begin{verbatim}
-~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/
-report/baseline_hb_metrics.csv
+~/dsim-lab/writing/heavy_ball_PDE_ESC/baseline_hb_report/
+baseline_hb_metrics.csv
 \end{verbatim}
 
 All generated figures are saved under:
 \begin{verbatim}
-~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/
-report/figures/
+~/dsim-lab/writing/heavy_ball_PDE_ESC/baseline_hb_report/figures/
 \end{verbatim}
 
 \end{document}

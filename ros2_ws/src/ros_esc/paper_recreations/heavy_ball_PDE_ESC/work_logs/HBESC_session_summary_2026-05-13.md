@@ -261,14 +261,14 @@ Matt ran all 15 scenarios manually in Gazebo to watch the robot and live plots.
 The run folders were entered in:
 
 ```text
-report/baseline_hb_run_manifest.csv
+~/dsim-lab/writing/heavy_ball_PDE_ESC/baseline_hb_report/baseline_hb_run_manifest.csv
 ```
 
 The analyzer generated:
 
 ```text
-report/baseline_hb_metrics.csv
-report/figures/
+~/dsim-lab/writing/heavy_ball_PDE_ESC/baseline_hb_report/baseline_hb_metrics.csv
+~/dsim-lab/writing/heavy_ball_PDE_ESC/baseline_hb_report/figures/
 ```
 
 ## Baseline Results Summary
@@ -302,7 +302,7 @@ Main conclusion:
 Updated report:
 
 ```text
-ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/report/baseline_hb_report.tex
+~/dsim-lab/writing/heavy_ball_PDE_ESC/baseline_hb_report/baseline_hb_report.tex
 ```
 
 The report now includes:
@@ -338,6 +338,43 @@ Naming cleanup:
 - A duplicate controller config and generated `__pycache__` were moved to
   `Depreciated/`.
 
+## Follow-up Cleanup - 2026-05-18
+
+Matt clarified that written reports should live outside `ros2_ws`, and that all
+Gazebo testing should be manual, one scenario at a time, so he can watch Gazebo
+and live plots and stop each run himself.
+
+Report artifacts were moved to:
+
+```text
+~/dsim-lab/writing/heavy_ball_PDE_ESC/baseline_hb_report/
+```
+
+This folder now contains:
+
+```text
+baseline_hb_report.tex
+baseline_hb_run_manifest.csv
+baseline_hb_metrics.csv
+figures/
+README.md
+```
+
+The analysis script remains in `ros2_ws`, but its default manifest, metrics,
+and figure paths now point to the writing folder.
+
+The previous batch/matrix runner was retired to:
+
+```text
+Depreciated/2026-05-18/manual_testing_only/hb_baseline_matrix_acoustic.bash
+```
+
+The active Gazebo workflow is:
+
+```text
+manual scenario JSON -> hb_scenario_acoustic.bash -> watch Gazebo/live plots -> stop by hand
+```
+
 ## Useful Commands
 
 Run a single scenario manually:
@@ -345,12 +382,6 @@ Run a single scenario manually:
 ```bash
 bash ~/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/bash_scripts/accelerated_methods/hb_scenario_acoustic.bash \
   ~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/scenarios/baseline_tests/Q1_quadratic_start0_real.json
-```
-
-Preview the full baseline matrix:
-
-```bash
-bash ~/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/bash_scripts/accelerated_methods/hb_baseline_matrix_acoustic.bash --dry-run
 ```
 
 Analyze completed baseline logs:

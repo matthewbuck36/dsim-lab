@@ -1,7 +1,7 @@
 # Heavy-Ball PDE ESC Experiments
 
 This folder contains Heavy-Ball ESC paper recreation assets, generalized
-scenario configs, baseline test reports, and analysis tooling.
+scenario configs, and analysis tooling.
 
 Active layout:
 
@@ -9,12 +9,17 @@ Active layout:
 analysis/                 # log analysis scripts
 controller/               # older paper recreation controller assets
 cost_function/            # cost-map configs grouped by family
-docs/                     # session summaries and implementation notes
 filter/                   # filter configs for paper recreation assets
-report/                   # baseline report, manifest, metrics, figures
 scenarios/
   baseline_tests/         # 15 professor-assignment baseline scenarios
   reference_runs/         # known-good Gaussian/multi-fill/reference scenarios
+work_logs/                # session summaries and implementation notes
+```
+
+Written reports and report figures live outside `ros2_ws`:
+
+```text
+~/dsim-lab/writing/heavy_ball_PDE_ESC/
 ```
 
 Use this runner for new manual Gazebo tests:
@@ -27,6 +32,5 @@ bash ~/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/bash_scripts/accelerated_
 The consolidated 2026-05-13 work summary is:
 
 ```text
-docs/HBESC_session_summary_2026-05-13.md
+work_logs/HBESC_session_summary_2026-05-13.md
 ```
-
