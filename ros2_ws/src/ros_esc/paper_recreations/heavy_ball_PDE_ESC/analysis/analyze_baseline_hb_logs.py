@@ -247,7 +247,8 @@ def make_plots(entry: dict[str, str], output_dir: Path, tail_seconds: float):
     ax.axis("equal")
     ax.legend()
     fig.tight_layout()
-    fig.savefig(output_dir / f"{test_id}_trajectory.png", dpi=200)
+    trajectory_path = output_dir / f"{test_id}_trajectory.png"
+    fig.savefig(str(trajectory_path), dpi=200)
     plt.close(fig)
 
     fig, axes = plt.subplots(3, 1, figsize=(7.0, 7.5), sharex=False)
@@ -270,7 +271,8 @@ def make_plots(entry: dict[str, str], output_dir: Path, tail_seconds: float):
     axes[2].legend()
 
     fig.tight_layout()
-    fig.savefig(output_dir / f"{test_id}_timeseries.png", dpi=200)
+    timeseries_path = output_dir / f"{test_id}_timeseries.png"
+    fig.savefig(str(timeseries_path), dpi=200)
     plt.close(fig)
 
 
