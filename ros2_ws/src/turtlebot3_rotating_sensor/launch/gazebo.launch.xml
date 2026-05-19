@@ -45,7 +45,7 @@
     <arg name="light_source_entity_name" default="light_source"/>
     <arg name="light_source_model_filepath" default="$(find-pkg-share turtlebot3_rotating_sensor)/models/light_source/model.sdf"/>
     <arg name="light_source_x" default="2.0"/>
-    <arg name="light_source_y" default="0.0"/>
+    <arg name="light_source_y" default="2.0"/>
     <arg name="light_source_z" default="0.0"/>
     <arg name="light_source_roll" default="0.0"/>
     <arg name="light_source_pitch" default="0.0"/>
