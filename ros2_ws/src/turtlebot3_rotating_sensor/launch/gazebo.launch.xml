@@ -40,6 +40,17 @@
     <arg name="gaussian_fill_cooldown_sec" default="0.0"/>
     <arg name="gaussian_fill_min_distance_between_fills" default="0.0"/>
 
+    <!-- Optional cosmetic/test light source model -->
+    <arg name="include_light_source" default="False"/>
+    <arg name="light_source_entity_name" default="light_source"/>
+    <arg name="light_source_model_filepath" default="$(find-pkg-share turtlebot3_rotating_sensor)/models/light_source/model.sdf"/>
+    <arg name="light_source_x" default="2.0"/>
+    <arg name="light_source_y" default="0.0"/>
+    <arg name="light_source_z" default="0.0"/>
+    <arg name="light_source_roll" default="0.0"/>
+    <arg name="light_source_pitch" default="0.0"/>
+    <arg name="light_source_yaw" default="0.0"/>
+
     <!-- Set the default rotate frame configuration filepath -->
     <arg name="rotate_frame_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation.json" />
     <!-- Set the default transform configuration filepath -->
@@ -77,6 +88,25 @@
             -R $(var init_roll_angle)
             -P $(var init_pitch_angle)
             -Y $(var init_yaw_angle)
+        "
+        output="screen"
+    />
+
+    <!-- Optionally spawn a cosmetic light source model in Gazebo -->
+    <node
+        if="$(var include_light_source)"
+        pkg="gazebo_ros"
+        exec="spawn_entity.py"
+        name="spawn_light_source"
+        args="
+            -file $(var light_source_model_filepath)
+            -entity $(var light_source_entity_name)
+            -x $(var light_source_x)
+            -y $(var light_source_y)
+            -z $(var light_source_z)
+            -R $(var light_source_roll)
+            -P $(var light_source_pitch)
+            -Y $(var light_source_yaw)
         "
         output="screen"
     />

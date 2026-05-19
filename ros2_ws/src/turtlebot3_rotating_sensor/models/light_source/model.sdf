@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+
+<sdf version="1.6">
+  <model name="light_source">
+    <static>true</static>
+
+    <link name="body">
+      <pose>0 0 0 0 0 0</pose>
+
+      <collision name="base_collision">
+        <pose>0 0 0.0762 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.0762</radius>
+            <length>0.1524</length>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <collision name="globe_collision">
+        <pose>0 0 0.2286 0 0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.0762</radius>
+          </sphere>
+        </geometry>
+      </collision>
+
+      <visual name="base_visual">
+        <pose>0 0 0.0762 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.0762</radius>
+            <length>0.1524</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.05 0.05 0.055 1</ambient>
+          <diffuse>0.12 0.12 0.13 1</diffuse>
+          <specular>0.35 0.35 0.35 1</specular>
+        </material>
+      </visual>
+
+      <visual name="globe_visual">
+        <pose>0 0 0.2286 0 0 0</pose>
+        <cast_shadows>false</cast_shadows>
+        <geometry>
+          <sphere>
+            <radius>0.0762</radius>
+          </sphere>
+        </geometry>
+        <material>
+          <ambient>1.0 0.74 0.36 1</ambient>
+          <diffuse>1.0 0.76 0.40 1</diffuse>
+          <specular>0.4 0.28 0.12 1</specular>
+          <emissive>1.0 0.58 0.18 1</emissive>
+        </material>
+      </visual>
+
+      <light type="point" name="warm_globe_light">
+        <pose>0 0 0.2286 0 0 0</pose>
+        <diffuse>1.0 0.74 0.42 1</diffuse>
+        <specular>0.25 0.18 0.10 1</specular>
+        <attenuation>
+          <range>6.0</range>
+          <constant>0.8</constant>
+          <linear>0.08</linear>
+          <quadratic>0.02</quadratic>
+        </attenuation>
+        <cast_shadows>false</cast_shadows>
+      </light>
+    </link>
+  </model>
+</sdf>

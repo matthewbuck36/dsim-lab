@@ -90,6 +90,7 @@ The user has the ability to set and alter the following parameters before starti
 - The filepath to a filter configuration file to use. This configuration file describes a custom filter built by the user. This gets parsed by the filter node, see the ros_esc package for more information.
 - The filepath to a controller configuration file to use. This configuration file describes a custom controller built by the user. This gets parsed by the controller node, see the ros_esc package for more information.
 - The filepath where test folders documenting the Gazebo simulation will be saved on the local machine.
+- Whether to spawn the optional Gazebo light source model, along with its initial position and orientation.
 
 Please note that if the user wants to set the initial angular position of the rotating sensor frame, this is accomplished in the robot's URDF file, under the rotating frame velocity controller section.
 
@@ -113,6 +114,12 @@ user@machine:~$ cd ~/dsim-lab/ros2_ws
 user@machine:~$ colcon build --packages-select turtlebot3_rotating_sensor ros_esc ros_esc_interfaces
 user@machine:~$ source install/setup.bash
 user@machine:~$ ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml
+```
+
+To spawn the optional light source model during a Gazebo simulation, set `include_light_source` to `True`. The model is a one foot tall cylinder and sphere assembly with a warm point light inside the globe. It is disabled by default so existing simulation runs are unchanged.
+
+```
+user@machine:~$ ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml include_light_source:=True light_source_x:=2.0 light_source_y:=0.0 light_source_z:=0.0
 ```
 
 ## Launching a RVIZ Simulation:
