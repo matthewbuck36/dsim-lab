@@ -13,29 +13,29 @@ set -e
 
 VARIANT="${1:-A2p0}"
 START_PRESET="${2:-near0}"
-COST_DIR="~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/gaussian_two_basin"
+COST_DIR="~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function"
 
 case "${VARIANT}" in
   original|A4p0|4|4.0)
-    COST_CONFIG="${COST_DIR}/original_local_min.json"
+    COST_CONFIG="${COST_DIR}/gaussian_two_basin_original.json"
     ;;
   A3p0|3|3.0)
-    COST_CONFIG="${COST_DIR}/shallow_local_A3p0.json"
+    COST_CONFIG="${COST_DIR}/gaussian_two_basin_localA3p0.json"
     ;;
   A2p0|2|2.0)
-    COST_CONFIG="${COST_DIR}/shallow_local_A2p0.json"
+    COST_CONFIG="${COST_DIR}/gaussian_two_basin_localA2p0.json"
     ;;
   A1p0|1|1.0)
-    COST_CONFIG="${COST_DIR}/shallow_local_A1p0.json"
+    COST_CONFIG="${COST_DIR}/gaussian_two_basin_localA1p0.json"
     ;;
   globalW25|W25|25)
-    COST_CONFIG="${COST_DIR}/wide_global_W25.json"
+    COST_CONFIG="${COST_DIR}/gaussian_two_basin_globalW25.json"
     ;;
   globalW30|W30|30)
-    COST_CONFIG="${COST_DIR}/wide_global_W30.json"
+    COST_CONFIG="${COST_DIR}/gaussian_two_basin_globalW30.json"
     ;;
   globalW40|W40|40)
-    COST_CONFIG="${COST_DIR}/wide_global_W40.json"
+    COST_CONFIG="${COST_DIR}/gaussian_two_basin_globalW40.json"
     ;;
   *)
     echo "Unknown variant '${VARIANT}'." >&2

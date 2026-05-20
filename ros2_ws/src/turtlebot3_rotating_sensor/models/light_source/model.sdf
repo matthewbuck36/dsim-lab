@@ -7,25 +7,6 @@
     <link name="body">
       <pose>0 0 0 0 0 0</pose>
 
-      <collision name="base_collision">
-        <pose>0 0 0.0762 0 0 0</pose>
-        <geometry>
-          <cylinder>
-            <radius>0.0762</radius>
-            <length>0.1524</length>
-          </cylinder>
-        </geometry>
-      </collision>
-
-      <collision name="globe_collision">
-        <pose>0 0 0.2286 0 0 0</pose>
-        <geometry>
-          <sphere>
-            <radius>0.0762</radius>
-          </sphere>
-        </geometry>
-      </collision>
-
       <visual name="base_visual">
         <pose>0 0 0.0762 0 0 0</pose>
         <geometry>

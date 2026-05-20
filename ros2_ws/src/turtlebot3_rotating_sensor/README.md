@@ -90,7 +90,7 @@ The user has the ability to set and alter the following parameters before starti
 - The filepath to a filter configuration file to use. This configuration file describes a custom filter built by the user. This gets parsed by the filter node, see the ros_esc package for more information.
 - The filepath to a controller configuration file to use. This configuration file describes a custom controller built by the user. This gets parsed by the controller node, see the ros_esc package for more information.
 - The filepath where test folders documenting the Gazebo simulation will be saved on the local machine.
-- Whether to spawn the optional Gazebo light source model, along with its initial position and orientation.
+- Whether to spawn the optional Gazebo light source model manually or at the minima listed in the cost function config.
 
 Please note that if the user wants to set the initial angular position of the rotating sensor frame, this is accomplished in the robot's URDF file, under the rotating frame velocity controller section.
 
@@ -116,10 +116,16 @@ user@machine:~$ source install/setup.bash
 user@machine:~$ ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml
 ```
 
-To spawn the optional light source model during a Gazebo simulation, set `include_light_source` to `True`. The model is a one foot tall cylinder and sphere assembly with a warm point light inside the globe. It is disabled by default so existing simulation runs are unchanged.
+To spawn the optional light source model during a Gazebo simulation, set `include_light_source` to `True`. The model is a one foot tall cylinder and sphere assembly with a warm point light inside the globe. It is visual-only and has no collision geometry, so the robot can drive through it. It is disabled by default so existing simulation runs are unchanged.
 
 ```
 user@machine:~$ ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml include_light_source:=True light_source_x:=2.0 light_source_y:=0.0 light_source_z:=0.0
+```
+
+To spawn light source models at all minima listed in the selected cost function config, set `include_cost_minima_light_sources` to `True`.
+
+```
+user@machine:~$ ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml include_cost_minima_light_sources:=True cost_function_config_filepath:=~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/gaussian_two_basin_globalW30.json
 ```
 
 ## Launching a RVIZ Simulation:

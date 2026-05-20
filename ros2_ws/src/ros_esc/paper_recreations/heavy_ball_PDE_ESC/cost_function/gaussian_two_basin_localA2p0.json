@@ -3,11 +3,15 @@
     "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/cost_function_objects.py",
     "object_name": "Position_Based_Sympy_Expression",
     "params": {
-      "function": "2 - 4*exp(-((x-2)**2 + (y-2)**2)/20) - 10*exp(-((x - 10)**2 + (y - 10)**2)/25)",
+      "function": "2 - 2*exp(-((x-2)**2 + (y-2)**2)/20) - 10*exp(-((x - 10)**2 + (y - 10)**2)/10)",
       "symbols": ["t", "x", "y", "z"],
       "substitutions": {}
     }
   },
+  "Minima": [
+    {"name": "global", "type": "global", "x": 10.0, "y": 10.0, "z": 0.0},
+    {"name": "local", "type": "local", "x": 2.0, "y": 2.0, "z": 0.0}
+  ],
   "Noise": {
     "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/noise_objects.py",
     "object_name": "No_Noise"
