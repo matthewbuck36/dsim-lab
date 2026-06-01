@@ -90,7 +90,7 @@ The user has the ability to set and alter the following parameters before starti
 - The filepath to a filter configuration file to use. This configuration file describes a custom filter built by the user. This gets parsed by the filter node, see the ros_esc package for more information.
 - The filepath to a controller configuration file to use. This configuration file describes a custom controller built by the user. This gets parsed by the controller node, see the ros_esc package for more information.
 - The filepath where test folders documenting the Gazebo simulation will be saved on the local machine.
-- Whether to spawn the optional Gazebo light source model manually or at the minima listed in the cost function config.
+- Whether to spawn one or two optional Gazebo light source models at manually configured positions.
 
 Please note that if the user wants to set the initial angular position of the rotating sensor frame, this is accomplished in the robot's URDF file, under the rotating frame velocity controller section.
 
@@ -122,10 +122,10 @@ To spawn the optional light source model during a Gazebo simulation, set `includ
 user@machine:~$ ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml include_light_source:=True light_source_x:=2.0 light_source_y:=0.0 light_source_z:=0.0
 ```
 
-To spawn light source models at all minima listed in the selected cost function config, set `include_cost_minima_light_sources` to `True`.
+To spawn two manually placed light source models, enable both manual light source arguments and provide separate entity names and positions.
 
 ```
-user@machine:~$ ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml include_cost_minima_light_sources:=True cost_function_config_filepath:=~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/gaussian_two_basin_globalW30.json
+user@machine:~$ ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml include_light_source:=True light_source_entity_name:=manual_light_1 light_source_x:=2.0 light_source_y:=2.0 include_light_source_2:=True light_source_2_entity_name:=manual_light_2 light_source_2_x:=10.0 light_source_2_y:=10.0
 ```
 
 ## Launching a RVIZ Simulation:

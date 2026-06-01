@@ -19,8 +19,3 @@ polynomial_quartic_double_well_local2_global10.json
 
 Scenario files should reference these paths directly through
 `cost_function_config_filepath`.
-
-Each cost config includes a top-level `Minima` list used by Gazebo visualization
-helpers. These coordinates are nominal basin-center marker positions for
-spawning light-source models, not numerically exact optimizer locations. They
-are not consumed by the cost-function node or the controller.

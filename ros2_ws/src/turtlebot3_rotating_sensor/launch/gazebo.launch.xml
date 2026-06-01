@@ -50,8 +50,16 @@
     <arg name="light_source_roll" default="0.0"/>
     <arg name="light_source_pitch" default="0.0"/>
     <arg name="light_source_yaw" default="0.0"/>
-    <arg name="include_cost_minima_light_sources" default="False"/>
-    <arg name="cost_minima_light_entity_prefix" default="cost_minimum_light"/>
+    <!-- Optional second cosmetic light source model -->
+    <arg name="include_light_source_2" default="False"/>
+    <arg name="light_source_2_entity_name" default="light_source_2"/>
+    <arg name="light_source_2_model_filepath" default="$(find-pkg-share turtlebot3_rotating_sensor)/models/light_source/model.sdf"/>
+    <arg name="light_source_2_x" default="10.0"/>
+    <arg name="light_source_2_y" default="10.0"/>
+    <arg name="light_source_2_z" default="0.0"/>
+    <arg name="light_source_2_roll" default="0.0"/>
+    <arg name="light_source_2_pitch" default="0.0"/>
+    <arg name="light_source_2_yaw" default="0.0"/>
 
     <!-- Set the default rotate frame configuration filepath -->
     <arg name="rotate_frame_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation.json" />
@@ -113,15 +121,24 @@
         output="screen"
     />
 
-    <!-- Optionally spawn one light source model at each configured cost minimum -->
-    <include
-        if="$(var include_cost_minima_light_sources)"
-        file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/spawn_cost_minima_lights.launch.py"
-    >
-        <arg name="cost_function_config_filepath" value="$(var cost_function_config_filepath)"/>
-        <arg name="light_source_model_filepath" value="$(var light_source_model_filepath)"/>
-        <arg name="cost_minima_light_entity_prefix" value="$(var cost_minima_light_entity_prefix)"/>
-    </include>
+    <!-- Optionally spawn a second cosmetic light source model in Gazebo -->
+    <node
+        if="$(var include_light_source_2)"
+        pkg="gazebo_ros"
+        exec="spawn_entity.py"
+        name="spawn_light_source_2"
+        args="
+            -file $(var light_source_2_model_filepath)
+            -entity $(var light_source_2_entity_name)
+            -x $(var light_source_2_x)
+            -y $(var light_source_2_y)
+            -z $(var light_source_2_z)
+            -R $(var light_source_2_roll)
+            -P $(var light_source_2_pitch)
+            -Y $(var light_source_2_yaw)
+        "
+        output="screen"
+    />
 
     <!-- Launch the encoder node -->
     <executable cmd="
