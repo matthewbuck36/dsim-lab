@@ -1,0 +1,9 @@
+{
+  "run_id": "20260609T223918Z_phase2_smoke_quartic_baseline_execute",
+  "scenario_name": "phase2_smoke_quartic_baseline",
+  "scenario_id": "SMOKE-QRT-HB",
+  "mode": "execute",
+  "status": "smoke_outputs_missing",
+  "completed_at_utc": "2026-06-09T22:40:25.893599+00:00",
+  "notes": "sim-time was observed from a stale Gazebo run; this run had launch errors and missing data collection files"
+}

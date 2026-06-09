@@ -1,0 +1,21 @@
+{
+  "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260609T223918Z_phase2_smoke_quartic_baseline_execute",
+  "status": "fail",
+  "missing": [
+    "data_collection/Test_2026-06-09_15-39-23/odometry.csv",
+    "data_collection/Test_2026-06-09_15-39-23/sensor_transform.csv",
+    "data_collection/Test_2026-06-09_15-39-23/cost_value.csv",
+    "data_collection/Test_2026-06-09_15-39-23/filter_value.csv",
+    "data_collection/Test_2026-06-09_15-39-23/control_value.csv",
+    "data_collection/Test_2026-06-09_15-39-23/comments.txt"
+  ],
+  "present": [
+    "trial_metadata.json",
+    "configs/scenario_used.json",
+    "launch_command.txt",
+    "logs/scenario_dry_run.stdout",
+    "logs/scenario_dry_run.stderr",
+    "summary.json"
+  ],
+  "warnings": []
+}

@@ -1,8 +1,8 @@
 # Experiment Plan
 
-Phase: 1 repository verification and documentation.
+Phase: 2 experiment harness.
 
-This plan is based on the current local checkout, not prior assumptions. Full simulations are intentionally deferred.
+This plan is based on the current local checkout, not prior assumptions. Full 500-second simulations are intentionally deferred until the smoke harness produces complete output files.
 
 ## Current Verified Infrastructure
 
@@ -44,7 +44,7 @@ All current cost configs under `ros2_ws/src/ros_esc/paper_recreations/heavy_ball
 
 ## Minimal Trial Matrix
 
-The first runnable matrix is scaffolded in `configs/scenarios/phase1_trial_matrix.csv`. Start with a dry-run of `phase2_smoke_quartic_baseline.json`, then add a short sim-time-limited run only after the Phase 2 harness exists.
+The first runnable matrix is scaffolded in `configs/scenarios/phase1_trial_matrix.csv`. Start with `phase2_smoke_quartic_baseline.json`, using `scripts/run_one_trial.sh` for both dry-runs and bounded execute attempts.
 
 Priority order:
 
@@ -66,19 +66,20 @@ Priority order:
 
 ## Phase 2 Harness Requirements
 
-The next implementation phase should create a runner that:
+The Phase 2 harness now includes:
 
-- prints and saves the exact launch command,
-- terminates by sim time, not wall-clock sleep,
-- saves stdout/stderr,
-- copies scenario/config metadata into each run directory,
-- checks required output files,
-- records missing diagnostics explicitly,
-- kills only processes it starts.
+- `scripts/run_one_trial.sh`: creates run directories, copies scenario metadata, rewrites `data_collection_filepath` to the run directory, saves the exact launch command, supports dry-run and execute modes, monitors `/clock`, and appends the manifest.
+- `scripts/monitor_sim_time.py`: subscribes to `/clock` using best-effort clock QoS and exits when scenario `stop_rule_sec` elapses.
+- `scripts/check_trial_outputs.py`: checks expected logs and, for execute runs, the normal data collection CSVs.
+- `scripts/run_sweep.py`: controlled wrapper over one or more scenario JSON files.
+- `analysis/analyze_results.py`: computes basic distance, path length, command, wheel RPM, and saturation metrics when CSVs exist.
+- `analysis/make_plots.py`: creates a basic trajectory plot when odometry exists and Matplotlib is available.
+
+Execute runs are isolated with per-run `ROS_DOMAIN_ID`, `GAZEBO_MASTER_URI`, `ROS_LOG_DIR`, and `MPLCONFIGDIR`. If the sim-time monitor succeeds but required output files are absent, the manifest status is downgraded to `smoke_outputs_missing`.
 
 ## Unresolved Questions
 
 - Which diagnostic recorder should be used for `/cost_bias`, `/pde_history`, `/convergence_event`, `/convergence_metric`, `/convergence_r`, and raw cost during Gaussian-fill runs: a new lightweight node, `ros2 bag`, or an extension of `data_collection_node`?
-- Whether `live_plot_mode` should default to `None` for headless smoke runs. The current data collection node only initializes plots for `2D` or `3D`, so `None` avoids plotting, but this should be tested in a short run.
+- `live_plot_mode:=None` is not suitable for the current data collection node because `main()` still reaches `plt.show()` and the node exits quickly without initialized live-plot state. The Phase 2 smoke scenario uses `2D` to keep data collection alive.
 - Whether Phase 2 should add a true headless Gazebo launch path. Current `empty_world.launch.py` launches `gazebo --verbose`.
 - The scenario `stop_rule_sec` metadata is not enforced by `hb_scenario_acoustic.bash`; Phase 2 must enforce it in the harness.

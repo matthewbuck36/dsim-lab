@@ -1,0 +1,53 @@
+1781044427.3208864 [INFO] [launch]: All log files can be found below /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260609T223343Z_phase2_smoke_quartic_baseline_execute/logs/ros/2026-06-09-15-33-47-320141-ubuntu-ssd-420
+1781044427.3210099 [INFO] [launch]: Default logging verbosity is set to INFO
+1781044427.6845171 [INFO] [gazebo-1]: process started with pid [422]
+1781044427.6847630 [INFO] [robot_state_publisher-2]: process started with pid [424]
+1781044427.6849120 [INFO] [spawner-3]: process started with pid [426]
+1781044427.6850417 [INFO] [spawner-4]: process started with pid [428]
+1781044427.6851687 [INFO] [spawn_entity.py-5]: process started with pid [430]
+1781044427.6852884 [INFO] [ros2-6]: process started with pid [432]
+1781044427.6885555 [INFO] [ros2-7]: process started with pid [434]
+1781044427.6887109 [INFO] [ros2-8]: process started with pid [436]
+1781044427.6888421 [INFO] [ros2-9]: process started with pid [438]
+1781044427.6890001 [INFO] [ros2-10]: process started with pid [440]
+1781044427.6891491 [INFO] [ros2-11]: process started with pid [442]
+1781044427.6893156 [INFO] [ros2-12]: process started with pid [444]
+1781044428.6250751 [ros2-6] getifaddrs: Operation not permitted
+1781044428.6252389 [ros2-6] getifaddrs: Operation not permitted
+1781044428.6253817 [ros2-6] getifaddrs: Operation not permitted
+1781044428.6258221 [ros2-12] Matplotlib created a temporary config/cache directory at /tmp/matplotlib-rm5z6ca3 because the default path (/home/mattb/.config/matplotlib) is not a writable directory; it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
+1781044428.6262257 [ros2-6] [37;1m2026-06-09 15:33:48.624 [31;1m[[37;1mTRANSPORT_UDP[31;1m Error] [37mError creating socket: Operation not permitted[34;1m -> Function [36minit[m
+1781044428.6262944 [ros2-6] [37;1m2026-06-09 15:33:48.624 [31;1m[[37;1mRTPS_PARTICIPANT[31;1m Error] [37mUser transport failed to register.[34;1m -> Function [36mRTPSParticipantImpl[m
+1781044429.1483517 [ros2-8] getifaddrs: Operation not permitted
+1781044429.1485307 [ros2-8] getifaddrs: Operation not permitted
+1781044429.1488783 [ros2-9] getifaddrs: Operation not permitted
+1781044429.1489489 [ros2-9] getifaddrs: Operation not permitted
+1781044429.1491888 [ros2-9] getifaddrs: Operation not permitted
+1781044429.1495035 [ros2-8] getifaddrs: Operation not permitted
+1781044429.1497562 [ros2-9] [37;1m2026-06-09 15:33:49.149 [31;1m[[37;1mTRANSPORT_UDP[31;1m Error] [37mError creating socket: Operation not permitted[34;1m -> Function [36minit[m
+1781044429.1498067 [ros2-9] [37;1m2026-06-09 15:33:49.149 [31;1m[[37;1mRTPS_PARTICIPANT[31;1m Error] [37mUser transport failed to register.[34;1m -> Function [36mRTPSParticipantImpl[m
+1781044429.1500199 [ros2-8] [37;1m2026-06-09 15:33:49.149 [31;1m[[37;1mTRANSPORT_UDP[31;1m Error] [37mError creating socket: Operation not permitted[34;1m -> Function [36minit[m
+1781044429.1500750 [ros2-8] [37;1m2026-06-09 15:33:49.149 [31;1m[[37;1mRTPS_PARTICIPANT[31;1m Error] [37mUser transport failed to register.[34;1m -> Function [36mRTPSParticipantImpl[m
+1781044429.1503541 [ros2-11] getifaddrs: Operation not permitted
+1781044429.1504278 [ros2-11] getifaddrs: Operation not permitted
+1781044429.1506383 [ros2-7] getifaddrs: Operation not permitted
+1781044429.1507151 [ros2-7] getifaddrs: Operation not permitted
+1781044429.1509378 [ros2-10] getifaddrs: Operation not permitted
+1781044429.1510189 [ros2-10] getifaddrs: Operation not permitted
+1781044429.1513674 [ros2-11] getifaddrs: Operation not permitted
+1781044429.1515622 [ros2-11] [37;1m2026-06-09 15:33:49.150 [31;1m[[37;1mTRANSPORT_UDP[31;1m Error] [37mError creating socket: Operation not permitted[34;1m -> Function [36minit[m
+1781044429.1516132 [ros2-11] [37;1m2026-06-09 15:33:49.150 [31;1m[[37;1mRTPS_PARTICIPANT[31;1m Error] [37mUser transport failed to register.[34;1m -> Function [36mRTPSParticipantImpl[m
+1781044429.1517770 [ros2-7] getifaddrs: Operation not permitted
+1781044429.1519639 [ros2-7] [37;1m2026-06-09 15:33:49.150 [31;1m[[37;1mTRANSPORT_UDP[31;1m Error] [37mError creating socket: Operation not permitted[34;1m -> Function [36minit[m
+1781044429.1520071 [ros2-7] [37;1m2026-06-09 15:33:49.150 [31;1m[[37;1mRTPS_PARTICIPANT[31;1m Error] [37mUser transport failed to register.[34;1m -> Function [36mRTPSParticipantImpl[m
+1781044429.1521454 [ros2-10] getifaddrs: Operation not permitted
+1781044429.1523323 [ros2-10] [37;1m2026-06-09 15:33:49.151 [31;1m[[37;1mTRANSPORT_UDP[31;1m Error] [37mError creating socket: Operation not permitted[34;1m -> Function [36minit[m
+1781044429.1523969 [ros2-10] [37;1m2026-06-09 15:33:49.151 [31;1m[[37;1mRTPS_PARTICIPANT[31;1m Error] [37mUser transport failed to register.[34;1m -> Function [36mRTPSParticipantImpl[m
+1781044430.4052908 [ros2-12] getifaddrs: Operation not permitted
+1781044430.4054103 [ros2-12] getifaddrs: Operation not permitted
+1781044430.4055574 [ERROR] [gazebo-1]: process has died [pid 422, exit code 255, cmd 'gazebo --verbose -s libgazebo_ros_init.so -s libgazebo_ros_factory.so worlds/gazebo_empty.world'].
+1781044430.4059312 [ros2-12] getifaddrs: Operation not permitted
+1781044430.4061108 [ros2-12] [37;1m2026-06-09 15:33:50.405 [31;1m[[37;1mTRANSPORT_UDP[31;1m Error] [37mError creating socket: Operation not permitted[34;1m -> Function [36minit[m
+1781044430.4061503 [ros2-12] [37;1m2026-06-09 15:33:50.405 [31;1m[[37;1mRTPS_PARTICIPANT[31;1m Error] [37mUser transport failed to register.[34;1m -> Function [36mRTPSParticipantImpl[m
+1781044430.7274048 [INFO] [ros2-12]: process has finished cleanly [pid 444]
+1781044458.9636793 [ERROR] [spawn_entity.py-5]: process has died [pid 430, exit code 1, cmd '/opt/ros/humble/lib/gazebo_ros/spawn_entity.py -topic=/robot_description -entity turtlebot3 -x 0 -y 0 -z 0 -R 0 -P 0 -Y 0 --ros-args -r __node:=spawn_entity'].

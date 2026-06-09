@@ -1,0 +1,143 @@
+Running HBESC scenario: /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260609T223343Z_phase2_smoke_quartic_baseline_execute/configs/scenario_used.json
+Scenario name: phase2_smoke_quartic_baseline
+Description: Short Phase 2 smoke scenario scaffold for baseline HBESC on the quartic bowl. stop_rule_sec is metadata until the Phase 2 harness enforces sim-time termination.
+Starting >>> ros_esc
+Starting >>> ros_esc_interfaces
+Starting >>> turtlebot3_rotating_sensor
+Finished <<< turtlebot3_rotating_sensor [0.46s]
+Finished <<< ros_esc [2.00s]
+Finished <<< ros_esc_interfaces [2.62s]
+
+Summary: 3 packages finished [2.93s]
+[INFO] [launch]: All log files can be found below /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260609T223343Z_phase2_smoke_quartic_baseline_execute/logs/ros/2026-06-09-15-33-47-320141-ubuntu-ssd-420
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [gazebo-1]: process started with pid [422]
+[INFO] [robot_state_publisher-2]: process started with pid [424]
+[INFO] [spawner-3]: process started with pid [426]
+[INFO] [spawner-4]: process started with pid [428]
+[INFO] [spawn_entity.py-5]: process started with pid [430]
+[INFO] [ros2-6]: process started with pid [432]
+[INFO] [ros2-7]: process started with pid [434]
+[INFO] [ros2-8]: process started with pid [436]
+[INFO] [ros2-9]: process started with pid [438]
+[INFO] [ros2-10]: process started with pid [440]
+[INFO] [ros2-11]: process started with pid [442]
+[INFO] [ros2-12]: process started with pid [444]
+[robot_state_publisher-2] getifaddrs: Operation not permitted
+[robot_state_publisher-2] getifaddrs: Operation not permitted
+[robot_state_publisher-2] getifaddrs: Operation not permitted
+[robot_state_publisher-2] [37;1m2026-06-09 15:33:47.725 [31;1m[[37;1mTRANSPORT_UDP[31;1m Error] [37mError creating socket: Operation not permitted[34;1m -> Function [36minit[m
+[robot_state_publisher-2] [37;1m2026-06-09 15:33:47.725 [31;1m[[37;1mRTPS_PARTICIPANT[31;1m Error] [37mUser transport failed to register.[34;1m -> Function [36mRTPSParticipantImpl[m
+[robot_state_publisher-2] [INFO] [1781044428.132357399] [robot_state_publisher_node]: got segment base_footprint
+[robot_state_publisher-2] [INFO] [1781044428.132534697] [robot_state_publisher_node]: got segment base_link
+[robot_state_publisher-2] [INFO] [1781044428.132550948] [robot_state_publisher_node]: got segment base_scan
+[robot_state_publisher-2] [INFO] [1781044428.132559556] [robot_state_publisher_node]: got segment caster_wheel
+[robot_state_publisher-2] [INFO] [1781044428.132567360] [robot_state_publisher_node]: got segment imu_link
+[robot_state_publisher-2] [INFO] [1781044428.132574912] [robot_state_publisher_node]: got segment rotating_frame_link
+[robot_state_publisher-2] [INFO] [1781044428.132582569] [robot_state_publisher_node]: got segment sensor_link
+[robot_state_publisher-2] [INFO] [1781044428.132590289] [robot_state_publisher_node]: got segment wheel_left_link
+[robot_state_publisher-2] [INFO] [1781044428.132597840] [robot_state_publisher_node]: got segment wheel_right_link
+[spawner-3] getifaddrs: Operation not permitted
+[spawner-3] getifaddrs: Operation not permitted
+[spawner-3] getifaddrs: Operation not permitted
+[spawner-3] [37;1m2026-06-09 15:33:48.214 [31;1m[[37;1mTRANSPORT_UDP[31;1m Error] [37mError creating socket: Operation not permitted[34;1m -> Function [36minit[m
+[spawner-3] [37;1m2026-06-09 15:33:48.215 [31;1m[[37;1mRTPS_PARTICIPANT[31;1m Error] [37mUser transport failed to register.[34;1m -> Function [36mRTPSParticipantImpl[m
+[spawner-4] getifaddrs: Operation not permitted
+[spawner-4] getifaddrs: Operation not permitted
+[spawner-4] getifaddrs: Operation not permitted
+[spawner-4] [37;1m2026-06-09 15:33:48.231 [31;1m[[37;1mTRANSPORT_UDP[31;1m Error] [37mError creating socket: Operation not permitted[34;1m -> Function [36minit[m
+[spawner-4] [37;1m2026-06-09 15:33:48.231 [31;1m[[37;1mRTPS_PARTICIPANT[31;1m Error] [37mUser transport failed to register.[34;1m -> Function [36mRTPSParticipantImpl[m
+[spawner-3] [INFO] [1781044428.437017331] [spawner_joint_state_broadcaster]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-4] [INFO] [1781044428.449399353] [spawner_velocity_controller]: waiting for service /controller_manager/list_controllers to become available...
+[ros2-6] getifaddrs: Operation not permitted
+[ros2-6] getifaddrs: Operation not permitted
+[ros2-6] getifaddrs: Operation not permitted
+[ros2-12] Matplotlib created a temporary config/cache directory at /tmp/matplotlib-rm5z6ca3 because the default path (/home/mattb/.config/matplotlib) is not a writable directory; it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
+[spawn_entity.py-5] getifaddrs: Operation not permitted
+[spawn_entity.py-5] getifaddrs: Operation not permitted
+[spawn_entity.py-5] getifaddrs: Operation not permitted
+[spawn_entity.py-5] [37;1m2026-06-09 15:33:48.636 [31;1m[[37;1mTRANSPORT_UDP[31;1m Error] [37mError creating socket: Operation not permitted[34;1m -> Function [36minit[m
+[spawn_entity.py-5] [37;1m2026-06-09 15:33:48.636 [31;1m[[37;1mRTPS_PARTICIPANT[31;1m Error] [37mUser transport failed to register.[34;1m -> Function [36mRTPSParticipantImpl[m
+[spawn_entity.py-5] [INFO] [1781044428.737390064] [spawn_entity]: Spawn Entity started
+[spawn_entity.py-5] [INFO] [1781044428.738179687] [spawn_entity]: Loading entity published on topic /robot_description
+[spawn_entity.py-5] [INFO] [1781044428.741575651] [spawn_entity]: Waiting for entity xml on /robot_description
+[spawn_entity.py-5] [INFO] [1781044428.753320005] [spawn_entity]: Waiting for service /spawn_entity, timeout = 30
+[spawn_entity.py-5] [INFO] [1781044428.753950797] [spawn_entity]: Waiting for service /spawn_entity
+[gazebo-1] Error opening log file: "/home/mattb/.gazebo/client-11345/gzclient.log"
+[gazebo-1] Gazebo multi-robot simulator, version 11.10.2
+[gazebo-1] Copyright (C) 2012 Open Source Robotics Foundation.
+[gazebo-1] Released under the Apache 2 License.
+[gazebo-1] http://gazebosim.org
+[gazebo-1] 
+[gazebo-1] Error opening log file: "/home/mattb/.gazebo/client-11345/default.log"
+[gazebo-1] getifaddres: Operation not permitted
+[gazebo-1] [1;31m[Err] [Connection.cc:744] [0m[1;31mEXCEPTION: [0m[1;31mUnable to get local interface addresses
+[gazebo-1] [0m[1;31m
+[gazebo-1] [0m[1;31m[0m[1;31m[0mterminate called after throwing an instance of 'gazebo::common::Exception'
+[ros2-8] getifaddrs: Operation not permitted
+[ros2-8] getifaddrs: Operation not permitted
+[ros2-9] getifaddrs: Operation not permitted
+[ros2-9] getifaddrs: Operation not permitted
+[ros2-9] getifaddrs: Operation not permitted
+[ros2-8] getifaddrs: Operation not permitted
+[ros2-11] getifaddrs: Operation not permitted
+[ros2-11] getifaddrs: Operation not permitted
+[ros2-7] getifaddrs: Operation not permitted
+[ros2-7] getifaddrs: Operation not permitted
+[ros2-10] getifaddrs: Operation not permitted
+[ros2-10] getifaddrs: Operation not permitted
+[ros2-11] getifaddrs: Operation not permitted
+[ros2-7] getifaddrs: Operation not permitted
+[ros2-10] getifaddrs: Operation not permitted
+[ros2-12] getifaddrs: Operation not permitted
+[ros2-12] getifaddrs: Operation not permitted
+[ERROR] [gazebo-1]: process has died [pid 422, exit code 255, cmd 'gazebo --verbose -s libgazebo_ros_init.so -s libgazebo_ros_factory.so worlds/gazebo_empty.world'].
+[ros2-12] getifaddrs: Operation not permitted
+[INFO] [ros2-12]: process has finished cleanly [pid 444]
+[spawner-3] [WARN] [1781044438.455059085] [spawner_joint_state_broadcaster]: Could not contact service /controller_manager/list_controllers
+[spawner-3] [INFO] [1781044438.455574056] [spawner_joint_state_broadcaster]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-4] [WARN] [1781044438.470649499] [spawner_velocity_controller]: Could not contact service /controller_manager/list_controllers
+[spawner-4] [INFO] [1781044438.470986928] [spawner_velocity_controller]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-3] [WARN] [1781044448.474779114] [spawner_joint_state_broadcaster]: Could not contact service /controller_manager/list_controllers
+[spawner-3] [INFO] [1781044448.475092832] [spawner_joint_state_broadcaster]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-4] [WARN] [1781044448.491530621] [spawner_velocity_controller]: Could not contact service /controller_manager/list_controllers
+[spawner-4] [INFO] [1781044448.491845461] [spawner_velocity_controller]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-3] [WARN] [1781044458.495803719] [spawner_joint_state_broadcaster]: Could not contact service /controller_manager/list_controllers
+[spawner-3] [INFO] [1781044458.496115840] [spawner_joint_state_broadcaster]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-4] [WARN] [1781044458.514207071] [spawner_velocity_controller]: Could not contact service /controller_manager/list_controllers
+[spawner-4] [INFO] [1781044458.514549166] [spawner_velocity_controller]: waiting for service /controller_manager/list_controllers to become available...
+[spawn_entity.py-5] [ERROR] [1781044458.830897145] [spawn_entity]: Service /spawn_entity unavailable. Was Gazebo started with GazeboRosFactory?
+[spawn_entity.py-5] [ERROR] [1781044458.831255217] [spawn_entity]: Spawn service failed. Exiting.
+[ERROR] [spawn_entity.py-5]: process has died [pid 430, exit code 1, cmd '/opt/ros/humble/lib/gazebo_ros/spawn_entity.py -topic=/robot_description -entity turtlebot3 -x 0 -y 0 -z 0 -R 0 -P 0 -Y 0 --ros-args -r __node:=spawn_entity'].
+[spawner-3] [WARN] [1781044468.514159422] [spawner_joint_state_broadcaster]: Could not contact service /controller_manager/list_controllers
+[spawner-3] [INFO] [1781044468.514582579] [spawner_joint_state_broadcaster]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-4] [WARN] [1781044468.534020511] [spawner_velocity_controller]: Could not contact service /controller_manager/list_controllers
+[spawner-4] [INFO] [1781044468.534371367] [spawner_velocity_controller]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-3] [WARN] [1781044478.538001377] [spawner_joint_state_broadcaster]: Could not contact service /controller_manager/list_controllers
+[spawner-3] [INFO] [1781044478.538384482] [spawner_joint_state_broadcaster]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-4] [WARN] [1781044478.555664614] [spawner_velocity_controller]: Could not contact service /controller_manager/list_controllers
+[spawner-4] [INFO] [1781044478.556147211] [spawner_velocity_controller]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-3] [WARN] [1781044488.559263009] [spawner_joint_state_broadcaster]: Could not contact service /controller_manager/list_controllers
+[spawner-3] [INFO] [1781044488.559603081] [spawner_joint_state_broadcaster]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-4] [WARN] [1781044488.578057769] [spawner_velocity_controller]: Could not contact service /controller_manager/list_controllers
+[spawner-4] [INFO] [1781044488.578464608] [spawner_velocity_controller]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-3] [WARN] [1781044498.579680701] [spawner_joint_state_broadcaster]: Could not contact service /controller_manager/list_controllers
+[spawner-3] [INFO] [1781044498.580031962] [spawner_joint_state_broadcaster]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-4] [WARN] [1781044498.598143711] [spawner_velocity_controller]: Could not contact service /controller_manager/list_controllers
+[spawner-4] [INFO] [1781044498.598495093] [spawner_velocity_controller]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-3] [WARN] [1781044508.599857931] [spawner_joint_state_broadcaster]: Could not contact service /controller_manager/list_controllers
+[spawner-3] [INFO] [1781044508.600200166] [spawner_joint_state_broadcaster]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-4] [WARN] [1781044508.620195796] [spawner_velocity_controller]: Could not contact service /controller_manager/list_controllers
+[spawner-4] [INFO] [1781044508.620573308] [spawner_velocity_controller]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-3] [WARN] [1781044518.622794994] [spawner_joint_state_broadcaster]: Could not contact service /controller_manager/list_controllers
+[spawner-3] [INFO] [1781044518.623107315] [spawner_joint_state_broadcaster]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-4] [WARN] [1781044518.640863503] [spawner_velocity_controller]: Could not contact service /controller_manager/list_controllers
+[spawner-4] [INFO] [1781044518.641180067] [spawner_velocity_controller]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-3] [WARN] [1781044528.642823179] [spawner_joint_state_broadcaster]: Could not contact service /controller_manager/list_controllers
+[spawner-3] [INFO] [1781044528.643164332] [spawner_joint_state_broadcaster]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-4] [WARN] [1781044528.663277090] [spawner_velocity_controller]: Could not contact service /controller_manager/list_controllers
+[spawner-4] [INFO] [1781044528.663694405] [spawner_velocity_controller]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-3] [WARN] [1781044538.664873215] [spawner_joint_state_broadcaster]: Could not contact service /controller_manager/list_controllers
+[spawner-3] [INFO] [1781044538.665305396] [spawner_joint_state_broadcaster]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-4] [WARN] [1781044538.681208592] [spawner_velocity_controller]: Could not contact service /controller_manager/list_controllers
+[spawner-4] [INFO] [1781044538.681598564] [spawner_velocity_controller]: waiting for service /controller_manager/list_controllers to become available...

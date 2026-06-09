@@ -1,0 +1,6 @@
+Running HBESC scenario: /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260609T223303Z_phase2_smoke_quartic_baseline_execute/configs/scenario_used.json
+Scenario name: phase2_smoke_quartic_baseline
+Description: Short Phase 2 smoke scenario scaffold for baseline HBESC on the quartic bowl. stop_rule_sec is metadata until the Phase 2 harness enforces sim-time termination.
+Starting >>> ros_esc
+Starting >>> ros_esc_interfaces
+Starting >>> turtlebot3_rotating_sensor

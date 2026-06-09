@@ -1,0 +1,41 @@
+[WARN] [1781044597.188152075] [gazebo]: New subscription discovered on topic '/clock', requesting incompatible QoS. No messages will be sent to it. Last incompatible policy: RELIABILITY_QOS_POLICY
+[INFO] [1781044598.348862167] [turtlebot3_diff_drive]: Wheel pair 1 separation set to [0.160000m]
+[INFO] [1781044598.348954047] [turtlebot3_diff_drive]: Wheel pair 1 diameter set to [0.066000m]
+[INFO] [1781044598.350914525] [turtlebot3_diff_drive]: Subscribed to [/cmd_vel]
+[INFO] [1781044598.355082748] [turtlebot3_diff_drive]: Advertise odometry on [/odom]
+[INFO] [1781044598.358546111] [turtlebot3_diff_drive]: Publishing odom transforms between [odom] and [base_footprint]
+[INFO] [1781044598.372836054] [turtlebot3_joint_state]: Going to publish joint [rotating_frame_joint]
+[INFO] [1781044598.407860905] [gazebo_ros2_control]: Loading gazebo_ros2_control plugin
+[INFO] [1781044598.413607418] [gazebo_ros2_control]: Starting gazebo_ros2_control plugin in namespace: /
+[INFO] [1781044598.413652748] [gazebo_ros2_control]: Starting gazebo_ros2_control plugin in ros 2 node: gazebo_ros2_control
+[INFO] [1781044598.418201710] [gazebo_ros2_control]: connected to service!! /robot_state_publisher_node
+[INFO] [1781044598.418783163] [gazebo_ros2_control]: Received urdf from param server, parsing...
+[INFO] [1781044598.418823636] [gazebo_ros2_control]: Loading parameter files /home/mattb/dsim-lab/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/controller_config/joint_controller.yaml
+[INFO] [1781044598.439018586] [gazebo_ros2_control]: Loading joint: rotating_frame_joint
+[INFO] [1781044598.439053223] [gazebo_ros2_control]: 	State:
+[INFO] [1781044598.439087705] [gazebo_ros2_control]: 		 position
+[INFO] [1781044598.439104734] [gazebo_ros2_control]: 			 found initial value: 0.000000
+[INFO] [1781044598.439138207] [gazebo_ros2_control]: 		 velocity
+[INFO] [1781044598.439148195] [gazebo_ros2_control]: 			 found initial value: 0.000000
+[INFO] [1781044598.439160630] [gazebo_ros2_control]: 	Command:
+[INFO] [1781044598.439730876] [gazebo_ros2_control]: 		 velocity
+[INFO] [1781044598.439970626] [resource_manager]: Initialize hardware 'GazeboSystem' 
+[INFO] [1781044598.440186457] [resource_manager]: Successful initialization of hardware 'GazeboSystem'
+[INFO] [1781044598.440289648] [resource_manager]: 'configure' hardware 'GazeboSystem' 
+[INFO] [1781044598.440311080] [resource_manager]: Successful 'configure' of hardware 'GazeboSystem'
+[INFO] [1781044598.440316859] [resource_manager]: 'activate' hardware 'GazeboSystem' 
+[INFO] [1781044598.440322526] [resource_manager]: Successful 'activate' of hardware 'GazeboSystem'
+[INFO] [1781044598.440400556] [gazebo_ros2_control]: Loading controller_manager
+[WARN] [1781044598.490596443] [gazebo_ros2_control]:  Desired controller update period (0.01 s) is slower than the gazebo simulation period (0.001 s).
+[INFO] [1781044598.490820739] [gazebo_ros2_control]: Loaded gazebo_ros2_control.
+[INFO] [1781044598.535406030] [controller_manager]: Loading controller 'velocity_controller'
+[INFO] [1781044598.568410532] [controller_manager]: Configuring controller 'velocity_controller'
+[INFO] [1781044598.570290463] [velocity_controller]: configure successful
+[INFO] [1781044598.586523887] [velocity_controller]: activate successful
+[INFO] [1781044598.652142728] [controller_manager]: Loading controller 'joint_state_broadcaster'
+[INFO] [1781044598.668294441] [controller_manager]: Configuring controller 'joint_state_broadcaster'
+[INFO] [1781044598.668454981] [joint_state_broadcaster]: 'joints' or 'interfaces' parameter is empty. All available state interfaces will be published
+[INFO] [1781044762.207989957] [controller_manager]: Configuring controller 'joint_state_broadcaster'
+[ERROR] [1781044762.208058406] [controller_manager]: Controller 'joint_state_broadcaster' can not be configured from 'active' state.
+[INFO] [1781044762.523117497] [controller_manager]: Configuring controller 'velocity_controller'
+[ERROR] [1781044762.523156164] [controller_manager]: Controller 'velocity_controller' can not be configured from 'active' state.

@@ -1,0 +1,1 @@
+[WARN] [1781044597.206430156] [hbesc_phase2_sim_time_monitor]: New publisher discovered on topic '/clock', offering incompatible QoS. No messages will be received from it. Last incompatible policy: RELIABILITY

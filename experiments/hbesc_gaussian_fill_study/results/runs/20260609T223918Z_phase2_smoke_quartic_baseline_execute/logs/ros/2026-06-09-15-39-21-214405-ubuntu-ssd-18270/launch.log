@@ -1,0 +1,19 @@
+1781044761.2151849 [INFO] [launch]: All log files can be found below /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260609T223918Z_phase2_smoke_quartic_baseline_execute/logs/ros/2026-06-09-15-39-21-214405-ubuntu-ssd-18270
+1781044761.2152934 [INFO] [launch]: Default logging verbosity is set to INFO
+1781044761.5659299 [INFO] [gazebo-1]: process started with pid [18272]
+1781044761.5690162 [INFO] [robot_state_publisher-2]: process started with pid [18274]
+1781044761.5699506 [INFO] [spawner-3]: process started with pid [18276]
+1781044761.5717466 [INFO] [spawner-4]: process started with pid [18278]
+1781044761.5724840 [INFO] [spawn_entity.py-5]: process started with pid [18280]
+1781044761.5732744 [INFO] [ros2-6]: process started with pid [18282]
+1781044761.5735025 [INFO] [ros2-7]: process started with pid [18284]
+1781044761.5736327 [INFO] [ros2-8]: process started with pid [18286]
+1781044761.5737545 [INFO] [ros2-9]: process started with pid [18288]
+1781044761.5738740 [INFO] [ros2-10]: process started with pid [18290]
+1781044761.5739992 [INFO] [ros2-11]: process started with pid [18294]
+1781044761.5741169 [INFO] [ros2-12]: process started with pid [18296]
+1781044762.3886714 [ERROR] [spawner-3]: process has died [pid 18276, exit code 1, cmd '/opt/ros/humble/lib/controller_manager/spawner joint_state_broadcaster --ros-args'].
+1781044762.6734238 [ERROR] [gazebo-1]: process has died [pid 18272, exit code 255, cmd 'gazebo --verbose -s libgazebo_ros_init.so -s libgazebo_ros_factory.so worlds/gazebo_empty.world'].
+1781044762.7143655 [ERROR] [spawner-4]: process has died [pid 18278, exit code 1, cmd '/opt/ros/humble/lib/controller_manager/spawner velocity_controller --ros-args'].
+1781044762.7220223 [ERROR] [spawn_entity.py-5]: process has died [pid 18280, exit code 1, cmd '/opt/ros/humble/lib/gazebo_ros/spawn_entity.py -topic=/robot_description -entity turtlebot3 -x 0 -y 0 -z 0 -R 0 -P 0 -Y 0 --ros-args -r __node:=spawn_entity'].
+1781044763.8236308 [INFO] [ros2-12]: process has finished cleanly [pid 18296]

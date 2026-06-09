@@ -1,6 +1,6 @@
 # HeavyBall ESC Versus Gaussian Fill Study
 
-Phase 1 status as of 2026-06-09: repository verification and foundational docs are complete. No long Gazebo simulation or full trial was run.
+Phase 2 status as of 2026-06-09: repository verification, foundational docs, harness scripts, analysis entrypoints, and one bounded 60-second sim-time smoke run are complete. No full 500-second trial was run.
 
 ## What This Directory Contains
 
@@ -11,6 +11,8 @@ Phase 1 status as of 2026-06-09: repository verification and foundational docs a
 - `results_manifest.csv`: initialized manifest for future runs.
 - `configs/scenarios/phase1_trial_matrix.csv`: initial trial matrix scaffold.
 - `configs/scenarios/phase2_smoke_quartic_baseline.json`: first dry-run/smoke scenario config.
+- `scripts/`: Phase 2 harness scripts for one trial, sweeps, sim-time monitoring, output checks, and manifest recording.
+- `analysis/`: Phase 2 analysis and plotting entrypoints.
 
 ## Verified Repo Facts
 
@@ -39,7 +41,32 @@ bash ros2_ws/src/turtlebot3_rotating_sensor/bash_scripts/accelerated_methods/hb_
 Next exact command for the Phase 2 smoke dry-run:
 
 ```bash
-bash ros2_ws/src/turtlebot3_rotating_sensor/bash_scripts/accelerated_methods/hb_scenario_acoustic.bash --dry-run experiments/hbesc_gaussian_fill_study/configs/scenarios/phase2_smoke_quartic_baseline.json
+experiments/hbesc_gaussian_fill_study/scripts/run_one_trial.sh --dry-run experiments/hbesc_gaussian_fill_study/configs/scenarios/phase2_smoke_quartic_baseline.json
 ```
 
-Do not run a full 500-second trial until a Phase 2 harness can terminate by sim time and archive logs deterministically.
+Actual smoke command:
+
+```bash
+experiments/hbesc_gaussian_fill_study/scripts/run_one_trial.sh --execute --wall-timeout 120 experiments/hbesc_gaussian_fill_study/configs/scenarios/phase2_smoke_quartic_baseline.json
+```
+
+The execute mode uses the scenario `stop_rule_sec` as a sim-time stop rule, writes logs under `results/runs/<run_id>/`, and updates `results_manifest.csv`.
+
+## Phase 2 Smoke Result
+
+Successful smoke run:
+
+- Run ID: `20260609T224323Z_phase2_smoke_quartic_baseline_execute`
+- Status: `smoke_sim_time_reached`
+- Run directory: `experiments/hbesc_gaussian_fill_study/results/runs/20260609T224323Z_phase2_smoke_quartic_baseline_execute`
+- Validation: all normal data collection files were present.
+- Metrics file: `summary_metrics.json`
+- Figure: `figures/trajectory.png`
+
+The smoke run required execution outside the sandbox because ROS/Gazebo DDS and Gazebo networking need local socket/interface access.
+
+Next exact command for a Phase 3 minimal-matrix dry-run:
+
+```bash
+experiments/hbesc_gaussian_fill_study/scripts/run_sweep.py --limit 1 experiments/hbesc_gaussian_fill_study/configs/scenarios/phase2_smoke_quartic_baseline.json
+```

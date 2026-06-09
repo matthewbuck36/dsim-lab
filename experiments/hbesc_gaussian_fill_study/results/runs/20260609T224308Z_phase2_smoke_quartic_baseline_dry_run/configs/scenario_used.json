@@ -24,6 +24,6 @@
     "cost_function_config_filepath": "~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/polynomial_quartic_bowl_center10.json",
     "filter_config_filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json",
     "controller_config_filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/accelerated_methods/hbesc_baseline_real_full_rotation.json",
-    "data_collection_filepath": "~/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs"
+    "data_collection_filepath": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260609T224308Z_phase2_smoke_quartic_baseline_dry_run/data_collection"
   }
 }

@@ -1,0 +1,8 @@
+[INFO] [1781044762.458726465] [spawn_entity]: Spawn Entity started
+[INFO] [1781044762.460670170] [spawn_entity]: Loading entity published on topic /robot_description
+[INFO] [1781044762.465375425] [spawn_entity]: Waiting for entity xml on /robot_description
+[INFO] [1781044762.478629907] [spawn_entity]: Waiting for service /spawn_entity, timeout = 30
+[INFO] [1781044762.479192018] [spawn_entity]: Waiting for service /spawn_entity
+[INFO] [1781044762.486840222] [spawn_entity]: Calling service /spawn_entity
+[INFO] [1781044762.528476319] [spawn_entity]: Spawn status: Entity [turtlebot3] already exists.
+[ERROR] [1781044762.530463900] [spawn_entity]: Spawn service failed. Exiting.

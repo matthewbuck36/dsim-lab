@@ -1,0 +1,18 @@
+{
+  "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260609T224323Z_phase2_smoke_quartic_baseline_execute",
+  "data_quality": "ok",
+  "final_distance_m": 6.834592481295975,
+  "min_distance_m": 6.834592481295975,
+  "time_to_success_sec": "",
+  "success_radius_m": 2.0,
+  "tail_mean_distance_m": 7.463398325814453,
+  "tail_std_distance_m": 0.3655397354002909,
+  "path_length_m": 14.07435931978204,
+  "max_vx_cmd_mps": 0.2419026343264141,
+  "max_wz_cmd_radps": 0.75,
+  "max_left_wheel_rpm": 87.14532796035418,
+  "max_right_wheel_rpm": 87.14532796035418,
+  "vx_saturation_pct": 99.97356245869135,
+  "wz_saturation_pct": 52.63714474553866,
+  "physical_feasibility_label": "exceeds_turtlebot3_burger_reference_limits"
+}
