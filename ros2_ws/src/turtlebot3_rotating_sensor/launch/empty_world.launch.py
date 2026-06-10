@@ -26,13 +26,19 @@ def generate_launch_description():
     else:
         os.environ['GAZEBO_PLUGIN_PATH'] = install_dir + '/lib'
 
-    # Launch Gazebo
+    headless = os.environ.get('HBESC_GAZEBO_HEADLESS', '').lower() in [
+        '1', 'true', 'yes', 'on'
+    ]
+    gazebo_executable = 'gzserver' if headless else 'gazebo'
+
+    # Launch Gazebo. Normal launches keep the historical GUI-capable gazebo
+    # command; batch headless runs set HBESC_GAZEBO_HEADLESS=1 to use gzserver.
     # Note adding in a -u tag before worlds/empty.world
     # means gazebo will be paused when it launches
     gazebo_launch = ExecuteProcess(
-        cmd=['gazebo','--verbose',
-             '-s','libgazebo_ros_init.so',
-             '-s','libgazebo_ros_factory.so',
+        cmd=[gazebo_executable, '--verbose',
+             '-s', 'libgazebo_ros_init.so',
+             '-s', 'libgazebo_ros_factory.so',
              'worlds/gazebo_empty.world'],
         output='screen'
     )

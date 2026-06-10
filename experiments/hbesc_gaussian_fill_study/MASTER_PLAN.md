@@ -814,6 +814,7 @@ configs/
   scenarios/
 scripts/
   run_one_trial.sh
+  run_batch.py
   run_sweep.py
   check_trial_outputs.py
   record_trial_metadata.py
@@ -834,6 +835,7 @@ Harness requirements:
 
 - run one trial reproducibly
 - run a controlled sweep only after smoke test passes
+- run a reproducible batch from scenario JSON files or a CSV scenario list
 - run each full trial for target sim-time, default `500 s`, not wall-clock time
 - use `700 s` where needed for local-basin comparisons
 - save stdout/stderr logs
@@ -846,15 +848,17 @@ Harness requirements:
 - retry failed trial at most once
 - record failure details instead of silently skipping
 - save notes on skipped simulations
+- save batch-level plan and summary files for reusable execution
 
 Headless execution:
 
 - preferred only if reliable in the local environment
-- existing `empty_world.launch.py` launches `gazebo --verbose`, which is GUI
-  oriented
-- if true headless mode is needed, add a minimal approved launch path or wrapper
-  using `gzserver`/headless Gazebo after verifying local ROS/Gazebo behavior
-- do not modify core launch behavior unless necessary
+- default launch behavior remains the existing GUI-capable `gazebo --verbose`
+  path
+- opt-in batch/headless runs may request `gzserver` and `live_plot_mode:=None`
+  through the harness
+- verify one short headless execute run on the target machine before long
+  batches
 
 Sim-time monitoring:
 
@@ -914,6 +918,7 @@ Goal:
 Deliverables:
 
 - `scripts/run_one_trial.sh`
+- `scripts/run_batch.py`
 - `scripts/run_sweep.py`
 - `scripts/check_trial_outputs.py`
 - `analysis/analyze_results.py`
@@ -1045,6 +1050,7 @@ Resolve before full runs:
 - trial matrix exists
 - one-trial runner exists
 - sweep runner exists or is documented
+- batch runner exists or is documented
 - output checker exists
 - analysis scripts exist
 - plot scripts exist
@@ -1117,4 +1123,3 @@ experiments/hbesc_gaussian_fill_study/results_manifest.csv
 
 Then it should read phase-specific files such as `code_trace.md`,
 `hbesc_gain_trace.md`, current scenario configs, and current summary tables.
-

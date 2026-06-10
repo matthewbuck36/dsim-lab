@@ -1,0 +1,2 @@
+order,scenario_config,scenario_id,name,phase,stop_rule_sec,method,action
+1,/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase3_qrt_a_gf.json,QRT-A-GF,phase3_qrt_a_gf,3,500,gaussian_fill,run

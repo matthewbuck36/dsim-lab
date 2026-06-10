@@ -1,6 +1,6 @@
 # HeavyBall ESC Versus Gaussian Fill Study
 
-Phase 3 status as of 2026-06-10: repository verification, foundational docs, harness scripts, analysis entrypoints, the bounded Phase 2 smoke run, and the Phase 3 minimal quartic matrix are complete. No Phase 4 gain-sensitivity run has been started.
+Phase 3 status as of 2026-06-10: repository verification, foundational docs, harness scripts, analysis entrypoints, the bounded Phase 2 smoke run, and the Phase 3 minimal quartic matrix are complete. A reusable batch runner has been added as post-Phase 3 harness work. No Phase 4 gain-sensitivity run has been started.
 
 ## What This Directory Contains
 
@@ -14,7 +14,7 @@ Phase 3 status as of 2026-06-10: repository verification, foundational docs, har
 - `configs/scenarios/phase2_smoke_quartic_baseline.json`: first dry-run/smoke scenario config.
 - `configs/scenarios/phase3_qrt_a_hb.json`: Phase 3 convex quartic baseline continuation.
 - `configs/scenarios/phase3_qrt_a_gf.json`: next Phase 3 paired Gaussian-fill dry-run candidate.
-- `scripts/`: Phase 2 harness scripts for one trial, sweeps, sim-time monitoring, output checks, and manifest recording.
+- `scripts/`: harness scripts for one trial, reusable batches, sim-time monitoring, output checks, analysis dispatch, and manifest recording.
 - `analysis/`: Phase 2 analysis and topographic plotting entrypoints.
 
 ## Verified Repo Facts
@@ -81,3 +81,27 @@ Completed minimal quartic matrix:
 No further Phase 3 run command is pending. Phase 4 should start by adding
 low/default/high HBESC gain scenario configs, then dry-running that Phase 4
 scenario list before execution.
+
+## Batch Simulation Runner
+
+Use `scripts/run_batch.py` for reusable batch simulations. It writes a batch
+plan and summary under `results/batches/<batch_id>/`, calls `run_one_trial.sh`
+for each scenario, and leaves each trial artifact under `results/runs/<run_id>/`.
+The older `scripts/run_sweep.py` entrypoint remains as a compatibility wrapper.
+
+Default mode is dry-run:
+
+```bash
+experiments/hbesc_gaussian_fill_study/scripts/run_batch.py --limit 1 --csv experiments/hbesc_gaussian_fill_study/configs/scenarios/phase3_remaining_matrix.csv
+```
+
+Execute a batch with the opt-in barebones path:
+
+```bash
+experiments/hbesc_gaussian_fill_study/scripts/run_batch.py --execute --headless --wall-timeout 700 --retries 1 --csv experiments/hbesc_gaussian_fill_study/configs/scenarios/phase3_remaining_matrix.csv
+```
+
+`--headless` requests `gzserver` instead of `gazebo` and rewrites only the
+per-run copied scenario to `live_plot_mode:=None`; source scenario JSON files
+are not changed. Useful controls: `--plan-only`, `--resume`, `--limit N`,
+`--fail-fast`, and `--batch-id NAME`.

@@ -1,0 +1,35 @@
+{
+  "batch_id": "20260610T192917Z_dry_run_batch",
+  "mode": "dry_run",
+  "headless": true,
+  "wall_timeout": 180,
+  "resume": false,
+  "retries": 0,
+  "plan_only": false,
+  "created_at_utc": "2026-06-10T19:29:17.960651+00:00",
+  "batch_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/20260610T192917Z_dry_run_batch",
+  "plan_csv": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/20260610T192917Z_dry_run_batch/batch_plan.csv",
+  "results": [
+    {
+      "order": 1,
+      "scenario_id": "QRT-A-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase3_qrt_a_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/20260610T192917Z_dry_run_batch/logs/001_QRT-A-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/20260610T192917Z_dry_run_batch/logs/001_QRT-A-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/20260610T192917Z_dry_run_batch/logs/001_QRT-A-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T192917Z_phase3_qrt_a_gf_dry_run"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T192917Z_phase3_qrt_a_gf_dry_run",
+      "status": "succeeded"
+    }
+  ],
+  "completed_at_utc": "2026-06-10T19:29:18.211422+00:00",
+  "failure_count": 0
+}

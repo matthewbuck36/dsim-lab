@@ -22,9 +22,13 @@ import os
 import csv
 import argparse
 import threading
+import time
 from datetime import datetime
 from functools import partial
 import rclpy
+if os.environ.get("ROS_ESC_HEADLESS_PLOTS", "").lower() in ["1", "true", "yes", "on"]:
+    import matplotlib
+    matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from rclpy.node import Node
 from ros_esc_interfaces.msg import Timekeeper, StampedFloat64MultiArray, StampedTransformMultiArray
@@ -80,6 +84,10 @@ class DataCollection(Node):
         parser.add_argument('input_control_topic', type=str, help=inp_control_topic_msg)
         parser.add_argument('live_plot_mode', type=str, help=live_plot_mode_msg)
         args = parser.parse_args()
+        if args.live_plot_mode not in ["2D", "3D", "None"]:
+            raise ValueError(live_plot_mode_msg)
+        self.live_plot_enabled = args.live_plot_mode in ["2D", "3D"]
+        self.live_plot_data = None
 
         # Get the current time
         now = datetime.now()
@@ -130,7 +138,7 @@ class DataCollection(Node):
         self.made_comment_file = False
 
         # If the user selects live plots
-        if args.live_plot_mode in ["2D", "3D"]:
+        if self.live_plot_enabled:
             # Use the number of transformation objects to
             # determine how many sensors will yield cost values
             # num_cost_vals = len(self.exp_params["transform_objects"])
@@ -241,11 +249,12 @@ class DataCollection(Node):
         # Append the csv file with this data
         append_csv_file(self.filepaths["odometry_csv"], data)
 
-        # Save data for the live plots
-        self.live_plot_data["x_position"].append(float(x))
-        self.live_plot_data["y_position"].append(float(y))
-        self.live_plot_data["z_position"].append(float(z))
-        self.live_plot_data["position_tstamps"].append(float(odom_tstamp))
+        if self.live_plot_enabled:
+            # Save data for the live plots
+            self.live_plot_data["x_position"].append(float(x))
+            self.live_plot_data["y_position"].append(float(y))
+            self.live_plot_data["z_position"].append(float(z))
+            self.live_plot_data["position_tstamps"].append(float(odom_tstamp))
 
     def sensor_transform_callback(self, msg=StampedTransformMultiArray):
         """This function collects the sensor transform information and writes to a csv file.
@@ -279,36 +288,35 @@ class DataCollection(Node):
         timestamp, cost_value_1, cost_value_2, cost_value_3, ....
         """
 
-        # Save data for the live plots
-        # Check if this is the first time we receive
-        # a cost value, if so we must initialize things
-        if self.live_plot_data["num_distinct_cost_values"] is None:
-            # Note the amount of distinct cost values in the array
-            self.live_plot_data["num_distinct_cost_values"] = len(msg.data)
+        if self.live_plot_enabled:
+            # Save data for the live plots
+            # Check if this is the first time we receive
+            # a cost value, if so we must initialize things
+            if self.live_plot_data["num_distinct_cost_values"] is None:
+                # Note the amount of distinct cost values in the array
+                self.live_plot_data["num_distinct_cost_values"] = len(msg.data)
 
-            # Create new lists of data for each distinct cost value
-            for i in range(self.live_plot_data["num_distinct_cost_values"]):
-                # Initialize these lists of data with the first cost values
-                self.live_plot_data[f"cost_value_{i}"] = [msg.data[i]]
+                # Create new lists of data for each distinct cost value
+                for i in range(self.live_plot_data["num_distinct_cost_values"]):
+                    # Initialize these lists of data with the first cost values
+                    self.live_plot_data[f"cost_value_{i}"] = [msg.data[i]]
 
-                # Initialize an object to represent this cost value line
-                # Note that we give it empty lists we will fill with timestamps
-                # and cost value data, we set the line's color and markersize
-                self.live_plot_data[f"cost_value_line_{i}"], = (
-                    self.live_plot_data["ax3"].plot(
-                        [], [], self.live_plot_data["colors"][i], markersize=5
+                    # Initialize an object to represent this cost value line.
+                    self.live_plot_data[f"cost_value_line_{i}"], = (
+                        self.live_plot_data["ax3"].plot(
+                            [], [], self.live_plot_data["colors"][i], markersize=5
+                        )
                     )
-                )
 
 
-        # With initialized cost value lists
-        else:
-            for i in range(self.live_plot_data["num_distinct_cost_values"]):
-                # Append these lists of data with the cost values
-                self.live_plot_data[f"cost_value_{i}"].append(msg.data[i])
+            # With initialized cost value lists
+            else:
+                for i in range(self.live_plot_data["num_distinct_cost_values"]):
+                    # Append these lists of data with the cost values
+                    self.live_plot_data[f"cost_value_{i}"].append(msg.data[i])
 
-        # Append the timestamp
-        self.live_plot_data["cost_value_tstamps"].append(msg.timestamp)
+            # Append the timestamp
+            self.live_plot_data["cost_value_tstamps"].append(msg.timestamp)
 
         # Collect the timestamp from this message
         cost_tstamp = [msg.timestamp]
@@ -384,7 +392,11 @@ def main(args=None):
     ros_thread_instance.start()
 
     try:
-        plt.show()
+        if node.live_plot_enabled:
+            plt.show()
+        else:
+            while rclpy.ok():
+                time.sleep(0.2)
     except KeyboardInterrupt:
         pass
     finally:

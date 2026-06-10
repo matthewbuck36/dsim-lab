@@ -5,15 +5,17 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  scripts/run_one_trial.sh [--dry-run|--execute] [--wall-timeout SEC] SCENARIO_JSON
+  scripts/run_one_trial.sh [--dry-run|--execute] [--wall-timeout SEC] [--headless] SCENARIO_JSON
 
 Default mode is --dry-run. --execute starts the existing HBESC scenario runner,
 monitors /clock, and terminates the started process group after stop_rule_sec.
+--headless requests gzserver and disables data-collection live plots for this run.
 EOF
 }
 
 MODE="dry-run"
 WALL_TIMEOUT="180"
+HEADLESS="false"
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -32,6 +34,10 @@ while [ "$#" -gt 0 ]; do
         exit 2
       fi
       shift 2
+      ;;
+    --headless)
+      HEADLESS="true"
+      shift
       ;;
     -h|--help)
       usage
@@ -73,6 +79,12 @@ if [ ! -x "${RUNNER}" ] && [ ! -f "${RUNNER}" ]; then
   echo "Scenario runner not found: ${RUNNER}" >&2
   exit 2
 fi
+
+case "${HBESC_GAZEBO_HEADLESS:-}" in
+  1|true|True|TRUE|yes|Yes|YES|on|On|ON)
+    HEADLESS="true"
+    ;;
+esac
 
 RUN_INFO="$(
   python3 - "${SCENARIO_INPUT}" "${EXP_DIR}" "${MODE}" <<'PY'
@@ -119,12 +131,18 @@ PY
 )"
 export ROS_DOMAIN_ID="${HBESC_ROS_DOMAIN_ID:-$((20 + RUN_HASH % 180))}"
 export GAZEBO_MASTER_URI="${HBESC_GAZEBO_MASTER_URI:-http://127.0.0.1:$((11345 + RUN_HASH % 1000))}"
+if [ "${HEADLESS}" = "true" ]; then
+  export HBESC_GAZEBO_HEADLESS=1
+  export ROS_ESC_HEADLESS_PLOTS=1
+  export MPLBACKEND=Agg
+fi
 
 SCENARIO_USED="${RUN_DIR}/configs/scenario_used.json"
 METADATA_JSON="${RUN_DIR}/trial_metadata.json"
 
-python3 - "${SCENARIO_INPUT}" "${SCENARIO_USED}" "${METADATA_JSON}" "${RUN_DIR}" "${RUN_ID}" "${MODE}" <<'PY'
+python3 - "${SCENARIO_INPUT}" "${SCENARIO_USED}" "${METADATA_JSON}" "${RUN_DIR}" "${RUN_ID}" "${MODE}" "${HEADLESS}" <<'PY'
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -135,9 +153,13 @@ metadata_path = Path(sys.argv[3]).resolve()
 run_dir = Path(sys.argv[4]).resolve()
 run_id = sys.argv[5]
 mode = sys.argv[6]
+headless = sys.argv[7] == "true"
 
 scenario = json.loads(src.read_text(encoding="utf-8"))
 launch = scenario.setdefault("launch", {})
+original_live_plot_mode = launch.get("live_plot_mode")
+if headless:
+    launch["live_plot_mode"] = "None"
 launch["data_collection_filepath"] = str(run_dir / "data_collection")
 dst.write_text(json.dumps(scenario, indent=2) + "\n", encoding="utf-8")
 
@@ -151,11 +173,17 @@ metadata = {
     "scenario_name": scenario.get("name", src.stem),
     "scenario_id": scenario.get("test_id", scenario.get("name", src.stem)),
     "stop_rule_sec": scenario.get("stop_rule_sec"),
+    "headless": headless,
+    "gazebo_headless_env": os.environ.get("HBESC_GAZEBO_HEADLESS", ""),
+    "gazebo_command": "gzserver" if headless else "gazebo",
+    "original_live_plot_mode": original_live_plot_mode,
+    "scenario_live_plot_mode": launch.get("live_plot_mode"),
     "data_collection_filepath": launch.get("data_collection_filepath"),
-    "ros_domain_id": __import__("os").environ.get("ROS_DOMAIN_ID", ""),
-    "gazebo_master_uri": __import__("os").environ.get("GAZEBO_MASTER_URI", ""),
-    "ros_log_dir": __import__("os").environ.get("ROS_LOG_DIR", ""),
-    "mplconfigdir": __import__("os").environ.get("MPLCONFIGDIR", ""),
+    "ros_domain_id": os.environ.get("ROS_DOMAIN_ID", ""),
+    "gazebo_master_uri": os.environ.get("GAZEBO_MASTER_URI", ""),
+    "ros_log_dir": os.environ.get("ROS_LOG_DIR", ""),
+    "mplconfigdir": os.environ.get("MPLCONFIGDIR", ""),
+    "mplbackend": os.environ.get("MPLBACKEND", ""),
 }
 metadata_path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
 PY
@@ -196,7 +224,7 @@ else
 fi
 
 if [ "${MODE}" = "dry-run" ]; then
-  python3 - "${RUN_DIR}" "${RUN_ID}" "${SCENARIO_NAME}" "${SCENARIO_ID}" <<'PY'
+  python3 - "${RUN_DIR}" "${RUN_ID}" "${SCENARIO_NAME}" "${SCENARIO_ID}" "${HEADLESS}" <<'PY'
 import json
 import sys
 from datetime import datetime, timezone
@@ -209,6 +237,7 @@ summary = {
     "scenario_id": sys.argv[4],
     "mode": "dry-run",
     "status": "dry_run_passed",
+    "headless": sys.argv[5] == "true",
     "completed_at_utc": datetime.now(timezone.utc).isoformat(),
     "notes": "No Gazebo simulation was started.",
 }
@@ -327,7 +356,7 @@ esac
 
 cleanup_runner
 
-python3 - "${RUN_DIR}" "${RUN_ID}" "${SCENARIO_NAME}" "${SCENARIO_ID}" "${MODE}" "${STATUS}" "${NOTES}" <<'PY'
+python3 - "${RUN_DIR}" "${RUN_ID}" "${SCENARIO_NAME}" "${SCENARIO_ID}" "${MODE}" "${STATUS}" "${NOTES}" "${HEADLESS}" <<'PY'
 import json
 import sys
 from datetime import datetime, timezone
@@ -342,6 +371,7 @@ summary = {
     "status": sys.argv[6],
     "completed_at_utc": datetime.now(timezone.utc).isoformat(),
     "notes": sys.argv[7],
+    "headless": sys.argv[8] == "true",
 }
 (run_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
 PY
@@ -357,7 +387,7 @@ if [ "${CHECK_STATUS}" -ne 0 ] && { [ "${STATUS}" = "smoke_sim_time_reached" ] |
     STATUS="outputs_missing"
   fi
   NOTES="sim-time stop_rule_sec reached, but required data collection files are missing"
-  python3 - "${RUN_DIR}" "${RUN_ID}" "${SCENARIO_NAME}" "${SCENARIO_ID}" "${MODE}" "${STATUS}" "${NOTES}" <<'PY'
+  python3 - "${RUN_DIR}" "${RUN_ID}" "${SCENARIO_NAME}" "${SCENARIO_ID}" "${MODE}" "${STATUS}" "${NOTES}" "${HEADLESS}" <<'PY'
 import json
 import sys
 from datetime import datetime, timezone
@@ -372,6 +402,7 @@ summary = {
     "status": sys.argv[6],
     "completed_at_utc": datetime.now(timezone.utc).isoformat(),
     "notes": sys.argv[7],
+    "headless": sys.argv[8] == "true",
 }
 (run_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
 PY

@@ -68,18 +68,17 @@ Priority order:
 
 The Phase 2 harness now includes:
 
-- `scripts/run_one_trial.sh`: creates run directories, copies scenario metadata, rewrites `data_collection_filepath` to the run directory, saves the exact launch command, supports dry-run and execute modes, monitors `/clock`, and appends the manifest.
+- `scripts/run_one_trial.sh`: creates run directories, copies scenario metadata, rewrites `data_collection_filepath` to the run directory, saves the exact launch command, supports dry-run and execute modes, supports opt-in headless execution, monitors `/clock`, and appends the manifest.
+- `scripts/run_batch.py`: reusable batch runner over scenario JSON files or CSV scenario lists; writes `results/batches/<batch_id>/batch_plan.csv`, `batch_summary.json`, and per-attempt logs while delegating each trial to `run_one_trial.sh`.
 - `scripts/monitor_sim_time.py`: subscribes to `/clock` using best-effort clock QoS and exits when scenario `stop_rule_sec` elapses.
 - `scripts/check_trial_outputs.py`: checks expected logs and, for execute runs, the normal data collection CSVs.
-- `scripts/run_sweep.py`: controlled wrapper over one or more scenario JSON files.
+- `scripts/run_sweep.py`: compatibility wrapper for `run_batch.py`.
 - `analysis/analyze_results.py`: computes basic distance, path length, command, wheel RPM, and saturation metrics when CSVs exist.
 - `analysis/make_plots.py`: creates a topographic cost contour plot with trajectory, start, end, target, and local-basin overlays when odometry exists and Matplotlib is available.
 
-Execute runs are isolated with per-run `ROS_DOMAIN_ID`, `GAZEBO_MASTER_URI`, `ROS_LOG_DIR`, and `MPLCONFIGDIR`. If the sim-time monitor succeeds but required output files are absent, the manifest status is downgraded to `smoke_outputs_missing`.
+Execute runs are isolated with per-run `ROS_DOMAIN_ID`, `GAZEBO_MASTER_URI`, `ROS_LOG_DIR`, and `MPLCONFIGDIR`. If the sim-time monitor succeeds but required output files are absent, the manifest status is downgraded to `smoke_outputs_missing`. Headless runs are opt-in with `--headless`; that path requests `gzserver`, sets Matplotlib to `Agg`, and rewrites only the copied per-run scenario to `live_plot_mode:=None`.
 
 ## Unresolved Questions
 
 - Which diagnostic recorder should be used for `/cost_bias`, `/pde_history`, `/convergence_event`, `/convergence_metric`, `/convergence_r`, and raw cost during Gaussian-fill runs: a new lightweight node, `ros2 bag`, or an extension of `data_collection_node`?
-- `live_plot_mode:=None` is not suitable for the current data collection node because `main()` still reaches `plt.show()` and the node exits quickly without initialized live-plot state. The Phase 2 smoke scenario uses `2D` to keep data collection alive.
-- Whether Phase 2 should add a true headless Gazebo launch path. Current `empty_world.launch.py` launches `gazebo --verbose`.
-- The scenario `stop_rule_sec` metadata is not enforced by `hb_scenario_acoustic.bash`; Phase 2 must enforce it in the harness.
+- Headless execution must still be proven with at least one short execute smoke on any new machine before trusting it for long batches.
