@@ -96,6 +96,7 @@ print(run_dir)
 print(name)
 print(scenario.get("test_id", name))
 print(scenario.get("stop_rule_sec", 60))
+print(scenario.get("phase", 2))
 PY
 )"
 
@@ -104,6 +105,7 @@ RUN_DIR="$(printf '%s\n' "${RUN_INFO}" | sed -n '2p')"
 SCENARIO_NAME="$(printf '%s\n' "${RUN_INFO}" | sed -n '3p')"
 SCENARIO_ID="$(printf '%s\n' "${RUN_INFO}" | sed -n '4p')"
 STOP_RULE_SEC="$(printf '%s\n' "${RUN_INFO}" | sed -n '5p')"
+PHASE="$(printf '%s\n' "${RUN_INFO}" | sed -n '6p')"
 
 mkdir -p "${RUN_DIR}/logs" "${RUN_DIR}/configs" "${RUN_DIR}/data_collection"
 mkdir -p "${RUN_DIR}/logs/ros" "${RUN_DIR}/logs/matplotlib"
@@ -166,13 +168,23 @@ record_manifest() {
     --run-dir "${RUN_DIR}" \
     --scenario "${SCENARIO_USED}" \
     --run-id "${RUN_ID}" \
-    --phase "2" \
+    --phase "${PHASE}" \
     --status "${status}" \
     --notes "${notes}"
 }
 
 DRY_STDOUT="${RUN_DIR}/logs/scenario_dry_run.stdout"
 DRY_STDERR="${RUN_DIR}/logs/scenario_dry_run.stderr"
+USE_PDE_EXTENSIONS="$(
+  python3 - "${SCENARIO_USED}" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+scenario = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+print("true" if scenario.get("launch", {}).get("use_pde_extensions") is True else "false")
+PY
+)"
 
 if bash "${RUNNER}" --dry-run "${SCENARIO_USED}" >"${DRY_STDOUT}" 2>"${DRY_STDERR}"; then
   tail -n 1 "${DRY_STDOUT}" > "${RUN_DIR}/launch_command.txt"
@@ -202,7 +214,7 @@ summary = {
 }
 (run_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
 PY
-  record_manifest "dry_run_passed" "Phase 2 smoke dry-run; no Gazebo simulation started"
+  record_manifest "dry_run_passed" "Phase ${PHASE} dry-run; no Gazebo simulation started"
   python3 "${SCRIPT_DIR}/check_trial_outputs.py" "${RUN_DIR}" > "${RUN_DIR}/logs/check_trial_outputs.stdout"
   echo "${RUN_DIR}"
   exit 0
@@ -219,18 +231,65 @@ PGID="$(ps -o pgid= -p "${RUNNER_PID}" | tr -d ' ')"
 if [ -z "${PGID}" ]; then
   PGID="${RUNNER_PID}"
 fi
+RUNNER_SID="$(ps -o sid= -p "${RUNNER_PID}" | tr -d ' ')"
+if [ -z "${RUNNER_SID}" ]; then
+  RUNNER_SID="${RUNNER_PID}"
+fi
+
+DIAG_PID=""
+DIAG_PGID=""
+DIAG_SID=""
+if [ "${USE_PDE_EXTENSIONS}" = "true" ]; then
+  mkdir -p "${RUN_DIR}/diagnostics"
+  setsid bash -lc "source /opt/ros/humble/setup.bash 2>/dev/null || true; source '${REPO_ROOT}/ros2_ws/install/setup.bash' 2>/dev/null || true; ros2 bag record -o '${RUN_DIR}/diagnostics/gaussian_fill_topics' /cost_bias /pde_history /convergence_event /convergence_metric /convergence_r /cost_modified /turtlebot3/cost_value_chatter" \
+    > "${RUN_DIR}/logs/rosbag_gaussian_fill.stdout" \
+    2> "${RUN_DIR}/logs/rosbag_gaussian_fill.stderr" &
+  DIAG_PID="$!"
+  sleep 1
+  DIAG_PGID="$(ps -o pgid= -p "${DIAG_PID}" | tr -d ' ')"
+  if [ -z "${DIAG_PGID}" ]; then
+    DIAG_PGID="${DIAG_PID}"
+  fi
+  DIAG_SID="$(ps -o sid= -p "${DIAG_PID}" | tr -d ' ')"
+  if [ -z "${DIAG_SID}" ]; then
+    DIAG_SID="${DIAG_PID}"
+  fi
+fi
 
 STATUS="unknown"
 NOTES=""
 
-cleanup_runner() {
-  if kill -0 "${RUNNER_PID}" 2>/dev/null; then
-    kill -TERM "-${PGID}" 2>/dev/null || true
-    sleep 5
-    kill -KILL "-${PGID}" 2>/dev/null || true
-    wait "${RUNNER_PID}" 2>/dev/null || true
+kill_session() {
+  local sid="$1"
+  local signal="$2"
+  if [ -z "${sid}" ]; then
+    return 0
+  fi
+  mapfile -t session_pids < <(ps -eo pid=,sid= | awk -v sid="${sid}" '$2 == sid {print $1}')
+  if [ "${#session_pids[@]}" -gt 0 ]; then
+    kill "-${signal}" "${session_pids[@]}" 2>/dev/null || true
   fi
 }
+
+cleanup_runner() {
+  if [ -n "${DIAG_PID}" ]; then
+    kill_session "${DIAG_SID}" TERM
+    kill -TERM "-${DIAG_PGID}" 2>/dev/null || true
+    sleep 2
+    kill_session "${DIAG_SID}" KILL
+    kill -KILL "-${DIAG_PGID}" 2>/dev/null || true
+    wait "${DIAG_PID}" 2>/dev/null || true
+  fi
+  kill_session "${RUNNER_SID}" TERM
+  kill -TERM "-${PGID}" 2>/dev/null || true
+  sleep 5
+  kill_session "${RUNNER_SID}" KILL
+  kill -KILL "-${PGID}" 2>/dev/null || true
+  wait "${RUNNER_PID}" 2>/dev/null || true
+}
+
+trap 'cleanup_runner; exit 130' INT TERM
+trap 'cleanup_runner' EXIT
 
 set +e
 bash -lc "source /opt/ros/humble/setup.bash 2>/dev/null || true; source '${REPO_ROOT}/ros2_ws/install/setup.bash' 2>/dev/null || true; python3 '${SCRIPT_DIR}/monitor_sim_time.py' --duration '${STOP_RULE_SEC}' --wall-timeout '${WALL_TIMEOUT}'" \
@@ -241,16 +300,28 @@ set -e
 
 case "${MONITOR_STATUS}" in
   0)
-    STATUS="smoke_sim_time_reached"
-    NOTES="sim-time stop_rule_sec reached; runner process group terminated"
+    if [ "${PHASE}" = "2" ]; then
+      STATUS="smoke_sim_time_reached"
+    else
+      STATUS="sim_time_reached"
+    fi
+    NOTES="sim-time stop_rule_sec reached; runner process session terminated"
     ;;
   2)
-    STATUS="smoke_wall_timeout"
-    NOTES="wall-time timeout before sim-time duration; runner process group terminated"
+    if [ "${PHASE}" = "2" ]; then
+      STATUS="smoke_wall_timeout"
+    else
+      STATUS="wall_timeout"
+    fi
+    NOTES="wall-time timeout before sim-time duration; runner process session terminated"
     ;;
   *)
-    STATUS="smoke_monitor_failed"
-    NOTES="sim-time monitor failed; runner process group terminated"
+    if [ "${PHASE}" = "2" ]; then
+      STATUS="smoke_monitor_failed"
+    else
+      STATUS="monitor_failed"
+    fi
+    NOTES="sim-time monitor failed; runner process session terminated"
     ;;
 esac
 
@@ -278,8 +349,12 @@ PY
 CHECK_STATUS=0
 python3 "${SCRIPT_DIR}/check_trial_outputs.py" "${RUN_DIR}" > "${RUN_DIR}/logs/check_trial_outputs.stdout" || CHECK_STATUS="$?"
 python3 "${EXP_DIR}/analysis/analyze_results.py" "${RUN_DIR}" > "${RUN_DIR}/logs/analyze_results.stdout" 2> "${RUN_DIR}/logs/analyze_results.stderr" || true
-if [ "${CHECK_STATUS}" -ne 0 ] && [ "${STATUS}" = "smoke_sim_time_reached" ]; then
-  STATUS="smoke_outputs_missing"
+if [ "${CHECK_STATUS}" -ne 0 ] && { [ "${STATUS}" = "smoke_sim_time_reached" ] || [ "${STATUS}" = "sim_time_reached" ]; }; then
+  if [ "${PHASE}" = "2" ]; then
+    STATUS="smoke_outputs_missing"
+  else
+    STATUS="outputs_missing"
+  fi
   NOTES="sim-time stop_rule_sec reached, but required data collection files are missing"
   python3 - "${RUN_DIR}" "${RUN_ID}" "${SCENARIO_NAME}" "${SCENARIO_ID}" "${MODE}" "${STATUS}" "${NOTES}" <<'PY'
 import json

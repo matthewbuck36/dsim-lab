@@ -1,0 +1,9 @@
+{
+  "run_id": "20260609T233155Z_phase3_qvq_1_quadratic_dry_run",
+  "scenario_name": "phase3_qvq_1_quadratic",
+  "scenario_id": "QVQ-1",
+  "mode": "dry-run",
+  "status": "dry_run_passed",
+  "completed_at_utc": "2026-06-09T23:31:55.722591+00:00",
+  "notes": "No Gazebo simulation was started."
+}

@@ -1,0 +1,8 @@
+[INFO] [1781047943.771868606] [convergence_detector]: ConvergenceDetector: k=20, th=0.2, b=0.15, N=2000, omega=5.000, dt_node=0.012566, min_trigger_time=50.27s
+[INFO] [1781048185.340520721] [convergence_detector]: Convergence event: metric=-0.000279, r=0.199721, decay=0.000000, t=239.600
+[INFO] [1781048371.697724363] [convergence_detector]: Convergence event: metric=-0.000445, r=0.199555, decay=0.000000, t=425.700
+[INFO] [1781048387.835371773] [convergence_detector]: Convergence event: metric=-0.000794, r=0.109839, decay=0.089367, t=441.800
+[INFO] [1781048401.964123585] [convergence_detector]: Convergence event: metric=-0.001958, r=0.077409, decay=0.120633, t=455.900
+[INFO] [1781048415.380496620] [convergence_detector]: Convergence event: metric=-0.000483, r=0.065528, decay=0.133989, t=469.300
+[INFO] [1781048428.692768031] [convergence_detector]: Convergence event: metric=-0.000551, r=0.063436, decay=0.136014, t=482.600
+[INFO] [1781048442.108284464] [convergence_detector]: Convergence event: metric=-0.000166, r=0.065845, decay=0.133989, t=496.000

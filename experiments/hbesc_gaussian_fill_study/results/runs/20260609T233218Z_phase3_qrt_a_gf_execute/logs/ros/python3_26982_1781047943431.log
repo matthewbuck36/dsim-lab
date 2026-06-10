@@ -1,0 +1,2 @@
+[INFO] [1781047943.763204262] [gaussian_fill]: GaussianFill ready (2D): policy=conditional_gaussian_fill, A=5.000, sigma=[3.160, 5.000], max_fills=1, cooldown=0.000s, min_distance=0.000m
+[INFO] [1781048185.341141425] [gaussian_fill]: Published fill #1: A=5.000, mu=(7.272,5.414), sigma=3.160

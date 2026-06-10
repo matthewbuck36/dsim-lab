@@ -1,0 +1,19 @@
+{
+  "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T004932Z_phase3_qvq_2_quartic_execute",
+  "data_quality": "ok",
+  "final_distance_m": 0.566523954342404,
+  "min_distance_m": 0.566523954342404,
+  "time_to_success_sec": 150.756,
+  "success_radius_m": 2.0,
+  "tail_mean_distance_m": 0.5887815987440707,
+  "tail_std_distance_m": 0.013285831198630712,
+  "path_length_m": 26.93929891882063,
+  "max_vx_cmd_mps": 0.2419026343264141,
+  "max_wz_cmd_radps": 0.75,
+  "max_left_wheel_rpm": 87.14532796035418,
+  "max_right_wheel_rpm": 87.14532796035418,
+  "vx_saturation_pct": 16.864883498644602,
+  "wz_saturation_pct": 5.7271345524060235,
+  "physical_feasibility_label": "exceeds_turtlebot3_burger_reference_limits",
+  "gaussian_fill_count": ""
+}

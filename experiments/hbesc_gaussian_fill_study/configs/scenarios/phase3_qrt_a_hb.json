@@ -1,0 +1,30 @@
+{
+  "phase": 3,
+  "name": "phase3_qrt_a_hb",
+  "test_id": "QRT-A-HB",
+  "description": "Phase 3 minimal quartic matrix continuation: baseline HBESC success candidate on the convex quartic bowl, extended from the successful 60-second Phase 2 smoke run.",
+  "cost_family": "quartic_bowl",
+  "speed_label": "real",
+  "target": {
+    "x": 10.0,
+    "y": 10.0
+  },
+  "local_basin": null,
+  "stop_rule_sec": 500,
+  "launch": {
+    "entity_name": "turtlebot3",
+    "init_x_position": 0,
+    "init_y_position": 0,
+    "init_yaw_angle": 0,
+    "input_encoder_data_to_filter": true,
+    "live_plot_mode": "2D",
+    "use_pde_extensions": false,
+    "escape_policy": "none",
+    "rotate_frame_config_filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation.json",
+    "sensor_transform_config_filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json",
+    "cost_function_config_filepath": "~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/polynomial_quartic_bowl_center10.json",
+    "filter_config_filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json",
+    "controller_config_filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/accelerated_methods/hbesc_baseline_real_full_rotation.json",
+    "data_collection_filepath": "~/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs"
+  }
+}

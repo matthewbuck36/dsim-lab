@@ -1,0 +1,178 @@
+Running HBESC scenario: /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260609T235245Z_phase3_qrt_b_gf_execute/configs/scenario_used.json
+Scenario name: phase3_qrt_b_gf
+Description: Phase 3 quartic double-well one-fill Gaussian-fill rescue candidate.
+Starting >>> ros_esc
+Starting >>> ros_esc_interfaces
+Starting >>> turtlebot3_rotating_sensor
+Finished <<< turtlebot3_rotating_sensor [0.74s]
+Finished <<< ros_esc_interfaces [1.47s]
+Finished <<< ros_esc [2.06s]
+
+Summary: 3 packages finished [2.59s]
+[INFO] [launch]: All log files can be found below /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260609T235245Z_phase3_qrt_b_gf_execute/logs/ros/2026-06-09-16-52-49-745457-ubuntu-ssd-29255
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [gazebo-1]: process started with pid [29266]
+[INFO] [robot_state_publisher-2]: process started with pid [29268]
+[INFO] [spawner-3]: process started with pid [29270]
+[INFO] [spawner-4]: process started with pid [29272]
+[INFO] [spawn_entity.py-5]: process started with pid [29274]
+[INFO] [ros2-6]: process started with pid [29276]
+[INFO] [ros2-7]: process started with pid [29278]
+[INFO] [ros2-8]: process started with pid [29280]
+[INFO] [ros2-9]: process started with pid [29282]
+[INFO] [ros2-10]: process started with pid [29284]
+[INFO] [ros2-11]: process started with pid [29289]
+[INFO] [ros2-12]: process started with pid [29291]
+[INFO] [ros2-13]: process started with pid [29299]
+[INFO] [ros2-14]: process started with pid [29302]
+[INFO] [ros2-15]: process started with pid [29305]
+[INFO] [ros2-16]: process started with pid [29308]
+[robot_state_publisher-2] [INFO] [1781049170.434140696] [robot_state_publisher_node]: got segment base_footprint
+[robot_state_publisher-2] [INFO] [1781049170.434863628] [robot_state_publisher_node]: got segment base_link
+[robot_state_publisher-2] [INFO] [1781049170.435020847] [robot_state_publisher_node]: got segment base_scan
+[robot_state_publisher-2] [INFO] [1781049170.435053535] [robot_state_publisher_node]: got segment caster_wheel
+[robot_state_publisher-2] [INFO] [1781049170.435075231] [robot_state_publisher_node]: got segment imu_link
+[robot_state_publisher-2] [INFO] [1781049170.435087144] [robot_state_publisher_node]: got segment rotating_frame_link
+[robot_state_publisher-2] [INFO] [1781049170.435100801] [robot_state_publisher_node]: got segment sensor_link
+[robot_state_publisher-2] [INFO] [1781049170.435115549] [robot_state_publisher_node]: got segment wheel_left_link
+[robot_state_publisher-2] [INFO] [1781049170.435128339] [robot_state_publisher_node]: got segment wheel_right_link
+[spawner-4] [INFO] [1781049171.960095958] [spawner_velocity_controller]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-3] [INFO] [1781049171.962497629] [spawner_joint_state_broadcaster]: waiting for service /controller_manager/list_controllers to become available...
+[gazebo-1] Gazebo multi-robot simulator, version 11.10.2
+[gazebo-1] Copyright (C) 2012 Open Source Robotics Foundation.
+[gazebo-1] Released under the Apache 2 License.
+[gazebo-1] http://gazebosim.org
+[gazebo-1] 
+[spawn_entity.py-5] [INFO] [1781049172.465422094] [spawn_entity]: Spawn Entity started
+[spawn_entity.py-5] [INFO] [1781049172.471739623] [spawn_entity]: Loading entity published on topic /robot_description
+[spawn_entity.py-5] [INFO] [1781049172.486950002] [spawn_entity]: Waiting for entity xml on /robot_description
+[spawn_entity.py-5] [INFO] [1781049172.505735263] [spawn_entity]: Waiting for service /spawn_entity, timeout = 30
+[spawn_entity.py-5] [INFO] [1781049172.506590654] [spawn_entity]: Waiting for service /spawn_entity
+[gazebo-1] Gazebo multi-robot simulator, version 11.10.2
+[gazebo-1] Copyright (C) 2012 Open Source Robotics Foundation.
+[gazebo-1] Released under the Apache 2 License.
+[gazebo-1] http://gazebosim.org
+[gazebo-1] 
+[ros2-12] [INFO] [1781049172.674556324] [convergence_detector]: ConvergenceDetector: k=20, th=0.2, b=0.15, N=2000, omega=5.000, dt_node=0.012566, min_trigger_time=50.27s
+[gazebo-1] [1;33m[Wrn] [gazebo_ros_init.cpp:178] [0m[1;33m
+[gazebo-1] #     # ####### ####### ###  #####  #######
+[gazebo-1] ##    # #     #    #     #  #     # #
+[gazebo-1] # #   # #     #    #     #  #       #
+[gazebo-1] #  #  # #     #    #     #  #       #####
+[gazebo-1] #   # # #     #    #     #  #       #
+[gazebo-1] #    ## #     #    #     #  #     # #
+[gazebo-1] #     # #######    #    ###  #####  #######
+[gazebo-1] 
+[gazebo-1] This version of Gazebo, now called Gazebo classic, reaches end-of-life
+[gazebo-1] in January 2025. Users are highly encouraged to migrate to the new Gazebo
+[gazebo-1] using our migration guides (https://gazebosim.org/docs/latest/gazebo_classic_migration?utm_source=gazebo_ros_pkgs&utm_medium=cli)
+[gazebo-1] 
+[gazebo-1] [0m[1;33m
+[ros2-13] [INFO] [1781049173.374237361] [gaussian_fill]: GaussianFill ready (2D): policy=conditional_gaussian_fill, A=5.000, sigma=[3.160, 5.000], max_fills=1, cooldown=0.000s, min_distance=0.000m
+[ros2-10] [INFO] [1781049173.387449688] [modified_cost_2d]: ModifiedCost2D started. Waiting for sensor/cost/fill streams.
+[gazebo-1] [1;32m[Msg] [0m[1;32mWaiting for master.[0m[1;32m
+[gazebo-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mConnected to gazebo master @ [0m[1;32mhttp://127.0.0.1:11693[0m[1;32m
+[gazebo-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mPublicized address: [0m[1;32m192.168.44.106[0m[1;32m
+[gazebo-1] [0m[1;33m[0m[1;33m[0m[1;33m[Wrn] [FuelModelDatabase.cc:313] [0m[1;33mURI not supported by Fuel [[0m[1;33mworlds/gazebo_empty.world[0m[1;33m][0m[1;33m
+[gazebo-1] [0m[1;33m[0m[1;33m[0m[1;33m[Wrn] [SystemPaths.cc:459] [0m[1;33mFile or path does not exist [[0m[1;33m""[0m[1;33m] [[0m[1;33mworlds/gazebo_empty.world[0m[1;33m][0m[1;33m
+[gazebo-1] [0m[1;33m[0m[1;33m[0m[1;31m[Err] [Server.cc:472] [0m[1;31mCould not open file[[0m[1;31mworlds/gazebo_empty.world[0m[1;31m]
+[gazebo-1] [0m[1;33m[Wrn] [Server.cc:381] [0m[1;33mFalling back on worlds/empty.world
+[ros2-11] [INFO] [1781049174.017338325] [pde_history]: PDEHistory: N=2000, k=20, omega=5.000, lambda=79.577, dt_node=0.012566
+[spawn_entity.py-5] [INFO] [1781049174.809975047] [spawn_entity]: Calling service /spawn_entity
+[gazebo-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mWaiting for master.[0m[1;32m
+[gazebo-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mConnected to gazebo master @ [0m[1;32mhttp://127.0.0.1:11693[0m[1;32m
+[gazebo-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mPublicized address: [0m[1;32m192.168.44.106[0m[1;32m
+[gazebo-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mWarning: Ignoring XDG_SESSION_TYPE=wayland on Gnome. Use QT_QPA_PLATFORM=wayland to run on Wayland anyway.[0m[1;32m
+[gazebo-1] [0m[1;33m[Wrn] [Event.cc:61] [0m[1;33mWarning: Deleting a connection right after creation. [0m[1;33mMake sure to save the ConnectionPtr from a Connect call
+[spawn_entity.py-5] [INFO] [1781049175.286063994] [spawn_entity]: Spawn status: SpawnEntity: Successfully spawned entity [turtlebot3]
+[gazebo-1] [0m[INFO] [1781049175.334904871] [turtlebot3_diff_drive]: Wheel pair 1 separation set to [0.160000m]
+[gazebo-1] [INFO] [1781049175.335486241] [turtlebot3_diff_drive]: Wheel pair 1 diameter set to [0.066000m]
+[gazebo-1] [INFO] [1781049175.337878215] [turtlebot3_diff_drive]: Subscribed to [/cmd_vel]
+[gazebo-1] [INFO] [1781049175.343221763] [turtlebot3_diff_drive]: Advertise odometry on [/odom]
+[gazebo-1] [INFO] [1781049175.351093112] [turtlebot3_diff_drive]: Publishing odom transforms between [odom] and [base_footprint]
+[gazebo-1] [INFO] [1781049175.380508042] [turtlebot3_joint_state]: Going to publish joint [rotating_frame_joint]
+[gazebo-1] [INFO] [1781049175.444462316] [gazebo_ros2_control]: Loading gazebo_ros2_control plugin
+[gazebo-1] [INFO] [1781049175.458687517] [gazebo_ros2_control]: Starting gazebo_ros2_control plugin in namespace: /
+[gazebo-1] [INFO] [1781049175.458785362] [gazebo_ros2_control]: Starting gazebo_ros2_control plugin in ros 2 node: gazebo_ros2_control
+[gazebo-1] [INFO] [1781049175.473098792] [gazebo_ros2_control]: connected to service!! /robot_state_publisher_node
+[gazebo-1] [INFO] [1781049175.474225906] [gazebo_ros2_control]: Received urdf from param server, parsing...
+[gazebo-1] [INFO] [1781049175.474353505] [gazebo_ros2_control]: Loading parameter files /home/mattb/dsim-lab/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/controller_config/joint_controller.yaml
+[gazebo-1] [INFO] [1781049175.492317104] [gazebo_ros2_control]: Loading joint: rotating_frame_joint
+[gazebo-1] [INFO] [1781049175.492378155] [gazebo_ros2_control]: 	State:
+[gazebo-1] [INFO] [1781049175.492398904] [gazebo_ros2_control]: 		 position
+[gazebo-1] [INFO] [1781049175.492421211] [gazebo_ros2_control]: 			 found initial value: 0.000000
+[gazebo-1] [INFO] [1781049175.492441009] [gazebo_ros2_control]: 		 velocity
+[gazebo-1] [INFO] [1781049175.492453729] [gazebo_ros2_control]: 			 found initial value: 0.000000
+[gazebo-1] [INFO] [1781049175.492466326] [gazebo_ros2_control]: 	Command:
+[gazebo-1] [INFO] [1781049175.492492956] [gazebo_ros2_control]: 		 velocity
+[gazebo-1] [INFO] [1781049175.492775332] [resource_manager]: Initialize hardware 'GazeboSystem' 
+[gazebo-1] [INFO] [1781049175.492964946] [resource_manager]: Successful initialization of hardware 'GazeboSystem'
+[gazebo-1] [INFO] [1781049175.493067364] [resource_manager]: 'configure' hardware 'GazeboSystem' 
+[gazebo-1] [INFO] [1781049175.493080975] [resource_manager]: Successful 'configure' of hardware 'GazeboSystem'
+[gazebo-1] [INFO] [1781049175.493092450] [resource_manager]: 'activate' hardware 'GazeboSystem' 
+[gazebo-1] [INFO] [1781049175.493102835] [resource_manager]: Successful 'activate' of hardware 'GazeboSystem'
+[gazebo-1] [INFO] [1781049175.493288125] [gazebo_ros2_control]: Loading controller_manager
+[INFO] [spawn_entity.py-5]: process has finished cleanly [pid 29274]
+[gazebo-1] [WARN] [1781049175.551542713] [gazebo_ros2_control]:  Desired controller update period (0.01 s) is slower than the gazebo simulation period (0.001 s).
+[gazebo-1] [INFO] [1781049175.551958747] [gazebo_ros2_control]: Loaded gazebo_ros2_control.
+[gazebo-1] [INFO] [1781049175.746961395] [controller_manager]: Loading controller 'velocity_controller'
+[spawner-4] [INFO] [1781049175.796796432] [spawner_velocity_controller]: [94mLoaded [1mvelocity_controller[0m
+[gazebo-1] [INFO] [1781049175.802043848] [controller_manager]: Configuring controller 'velocity_controller'
+[gazebo-1] [INFO] [1781049175.807015798] [velocity_controller]: configure successful
+[gazebo-1] [INFO] [1781049175.815881857] [controller_manager]: Loading controller 'joint_state_broadcaster'
+[spawner-3] [INFO] [1781049175.857669219] [spawner_joint_state_broadcaster]: [94mLoaded [1mjoint_state_broadcaster[0m
+[gazebo-1] [INFO] [1781049175.866780914] [velocity_controller]: activate successful
+[gazebo-1] [INFO] [1781049175.876571304] [controller_manager]: Configuring controller 'joint_state_broadcaster'
+[gazebo-1] [INFO] [1781049175.876748610] [joint_state_broadcaster]: 'joints' or 'interfaces' parameter is empty. All available state interfaces will be published
+[spawner-4] [INFO] [1781049175.877994549] [spawner_velocity_controller]: [92mConfigured and activated [1mvelocity_controller[0m
+[spawner-3] [INFO] [1781049175.918218138] [spawner_joint_state_broadcaster]: [92mConfigured and activated [1mjoint_state_broadcaster[0m
+[INFO] [spawner-4]: process has finished cleanly [pid 29272]
+[INFO] [spawner-3]: process has finished cleanly [pid 29270]
+[ros2-16] No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+[gazebo-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mLoading world file [[0m[1;32m/usr/share/gazebo-11/worlds/empty.world[0m[1;32m][0m[1;32m
+[ros2-12] [INFO] [1781049239.559438519] [convergence_detector]: Convergence event: metric=-0.001997, r=0.057847, decay=0.140156, t=63.900
+[ros2-13] [INFO] [1781049239.562324803] [gaussian_fill]: Published fill #1: A=5.000, mu=(2.247,1.426), sigma=3.160
+[ros2-10] [INFO] [1781049239.562693151] [modified_cost_2d]: Added fill term: A=5.000, mu=(2.247,1.426), sigma=3.160 (total terms=1)
+[ros2-12] [INFO] [1781049254.589073199] [convergence_detector]: Convergence event: metric=-0.000887, r=0.092121, decay=0.106992, t=78.800
+[ros2-12] [INFO] [1781049273.117823040] [convergence_detector]: Convergence event: metric=-0.001142, r=0.135566, decay=0.063292, t=97.200
+[ros2-12] [INFO] [1781049435.465869697] [convergence_detector]: Convergence event: metric=-0.000153, r=0.199847, decay=0.000000, t=258.400
+[ros2-12] [INFO] [1781049449.800794602] [convergence_detector]: Convergence event: metric=-0.001122, r=0.080040, decay=0.118837, t=272.600
+[ros2-12] [INFO] [1781049461.957332991] [convergence_detector]: Convergence event: metric=-0.001111, r=0.036051, decay=0.162838, t=284.700
+[ros2-12] [INFO] [1781049473.454451049] [convergence_detector]: Convergence event: metric=-0.002340, r=0.016794, decay=0.180866, t=296.100
+[ros2-12] [INFO] [1781049484.513198839] [convergence_detector]: Convergence event: metric=-0.000008, r=0.007942, decay=0.192050, t=307.100
+[ros2-12] [INFO] [1781049495.502564789] [convergence_detector]: Convergence event: metric=-0.001283, r=0.003764, decay=0.194952, t=318.000
+[ros2-12] [INFO] [1781049506.393643057] [convergence_detector]: Convergence event: metric=-0.000308, r=0.001793, decay=0.197899, t=328.800
+[ros2-12] [INFO] [1781049517.242388608] [convergence_detector]: Convergence event: metric=-0.001250, r=0.000851, decay=0.197899, t=339.600
+[ros2-12] [INFO] [1781049528.129956797] [convergence_detector]: Convergence event: metric=-0.001687, r=0.000414, decay=0.197899, t=350.400
+[ros2-12] [INFO] [1781049538.967711255] [convergence_detector]: Convergence event: metric=-0.001896, r=0.000206, decay=0.197899, t=361.200
+[ros2-12] [INFO] [1781049549.859868601] [convergence_detector]: Convergence event: metric=-0.001993, r=0.000108, decay=0.197899, t=372.000
+[ros2-12] [INFO] [1781049560.762145990] [convergence_detector]: Convergence event: metric=-0.002040, r=0.000061, decay=0.197899, t=382.800
+[ros2-12] [INFO] [1781049571.614728515] [convergence_detector]: Convergence event: metric=-0.002063, r=0.000038, decay=0.197899, t=393.600
+[ros2-12] [INFO] [1781049582.499110629] [convergence_detector]: Convergence event: metric=-0.002072, r=0.000029, decay=0.197899, t=404.400
+[ros2-12] [INFO] [1781049593.388922881] [convergence_detector]: Convergence event: metric=-0.002077, r=0.000024, decay=0.197899, t=415.200
+[ros2-12] [INFO] [1781049604.243857088] [convergence_detector]: Convergence event: metric=-0.002080, r=0.000021, decay=0.197899, t=426.000
+[ros2-12] [INFO] [1781049615.121468436] [convergence_detector]: Convergence event: metric=-0.002080, r=0.000021, decay=0.197899, t=436.800
+[ros2-12] [INFO] [1781049626.017282419] [convergence_detector]: Convergence event: metric=-0.002079, r=0.000022, decay=0.197899, t=447.600
+[ros2-12] [INFO] [1781049636.871323156] [convergence_detector]: Convergence event: metric=-0.002079, r=0.000023, decay=0.197899, t=458.400
+[ros2-12] [INFO] [1781049647.761680986] [convergence_detector]: Convergence event: metric=-0.002078, r=0.000024, decay=0.197899, t=469.200
+[ros2-12] [INFO] [1781049658.659104791] [convergence_detector]: Convergence event: metric=-0.002077, r=0.000025, decay=0.197899, t=480.000
+[ros2-12] [INFO] [1781049669.516460190] [convergence_detector]: Convergence event: metric=-0.002074, r=0.000027, decay=0.197899, t=490.800
+[ros2-12] [INFO] [1781049680.406630667] [convergence_detector]: Convergence event: metric=-0.002073, r=0.000028, decay=0.197899, t=501.600
+[ros2-12] [INFO] [1781049691.286859146] [convergence_detector]: Convergence event: metric=-0.002070, r=0.000031, decay=0.197899, t=512.400
+[ros2-12] [INFO] [1781049702.136752020] [convergence_detector]: Convergence event: metric=-0.002067, r=0.000035, decay=0.197899, t=523.200
+[ros2-12] [INFO] [1781049713.023125032] [convergence_detector]: Convergence event: metric=-0.002064, r=0.000038, decay=0.197899, t=534.000
+[ros2-12] [INFO] [1781049723.866022733] [convergence_detector]: Convergence event: metric=-0.002059, r=0.000042, decay=0.197899, t=544.800
+[ros2-12] [INFO] [1781049734.760230019] [convergence_detector]: Convergence event: metric=-0.002055, r=0.000047, decay=0.197899, t=555.600
+[ros2-12] [INFO] [1781049745.647742954] [convergence_detector]: Convergence event: metric=-0.002049, r=0.000052, decay=0.197899, t=566.400
+[ros2-12] [INFO] [1781049756.498674612] [convergence_detector]: Convergence event: metric=-0.002041, r=0.000061, decay=0.197899, t=577.200
+[ros2-12] [INFO] [1781049767.395554708] [convergence_detector]: Convergence event: metric=-0.002031, r=0.000071, decay=0.197899, t=588.000
+[ros2-12] [INFO] [1781049778.278643777] [convergence_detector]: Convergence event: metric=-0.002017, r=0.000085, decay=0.197899, t=598.800
+[ros2-12] [INFO] [1781049789.139827131] [convergence_detector]: Convergence event: metric=-0.001998, r=0.000104, decay=0.197899, t=609.600
+[ros2-12] [INFO] [1781049800.034685258] [convergence_detector]: Convergence event: metric=-0.001971, r=0.000130, decay=0.197899, t=620.400
+[ros2-12] [INFO] [1781049810.922900785] [convergence_detector]: Convergence event: metric=-0.001926, r=0.000175, decay=0.197899, t=631.200
+[ros2-12] [INFO] [1781049821.778190507] [convergence_detector]: Convergence event: metric=-0.001853, r=0.000249, decay=0.197899, t=642.000
+[ros2-12] [INFO] [1781049832.656106119] [convergence_detector]: Convergence event: metric=-0.001725, r=0.000376, decay=0.197899, t=652.800
+[ros2-12] [INFO] [1781049843.587421374] [convergence_detector]: Convergence event: metric=-0.001490, r=0.000611, decay=0.197899, t=663.600
+[ros2-12] [INFO] [1781049854.448730950] [convergence_detector]: Convergence event: metric=-0.001064, r=0.001038, decay=0.197899, t=674.400
+[ros2-12] [INFO] [1781049865.339686817] [convergence_detector]: Convergence event: metric=-0.000299, r=0.001802, decay=0.197899, t=685.200
+[ros2-12] [INFO] [1781049876.303213668] [convergence_detector]: Convergence event: metric=-0.002051, r=0.002997, decay=0.194952, t=696.100

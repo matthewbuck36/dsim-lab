@@ -1,0 +1,2 @@
+[INFO] [1781047943.899221573] [modified_cost_2d]: ModifiedCost2D started. Waiting for sensor/cost/fill streams.
+[INFO] [1781048185.341444186] [modified_cost_2d]: Added fill term: A=5.000, mu=(7.272,5.414), sigma=3.160 (total terms=1)

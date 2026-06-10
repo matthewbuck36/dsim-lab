@@ -1,0 +1,16 @@
+stdin is not a terminal device. Keyboard handling disabled.[INFO] [1781047941.149020918] [rosbag2_recorder]: Press SPACE for pausing/resuming
+[INFO] [1781047941.151914050] [rosbag2_storage]: Opened database '/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260609T233218Z_phase3_qrt_a_gf_execute/diagnostics/gaussian_fill_topics/gaussian_fill_topics_0.db3' for READ_WRITE.
+[INFO] [1781047941.154918011] [rosbag2_recorder]: Listening for topics...
+[INFO] [1781047941.155000073] [rosbag2_recorder]: Event publisher thread: Starting
+[INFO] [1781047941.155161425] [rosbag2_recorder]: Recording...
+[INFO] [1781047943.764336597] [rosbag2_recorder]: Subscribed to topic '/convergence_event'
+[INFO] [1781047943.765320895] [rosbag2_recorder]: Subscribed to topic '/convergence_metric'
+[INFO] [1781047943.767393724] [rosbag2_recorder]: Subscribed to topic '/convergence_r'
+[INFO] [1781047943.769778291] [rosbag2_recorder]: Subscribed to topic '/cost_bias'
+[INFO] [1781047943.871662916] [rosbag2_recorder]: Subscribed to topic '/cost_modified'
+[INFO] [1781047943.872502370] [rosbag2_recorder]: Subscribed to topic '/pde_history'
+[INFO] [1781047944.880857688] [rosbag2_recorder]: Subscribed to topic '/turtlebot3/cost_value_chatter'
+[INFO] [1781047944.880903589] [rosbag2_recorder]: All requested topics are subscribed. Stopping discovery...
+[INFO] [1781048446.321143396] [rosbag2_cpp]: Writing remaining messages from cache to the bag. It may take a while
+[INFO] [1781048446.322872115] [rosbag2_recorder]: Event publisher thread: Exiting
+[INFO] [1781048446.322970229] [rosbag2_recorder]: Recording stopped

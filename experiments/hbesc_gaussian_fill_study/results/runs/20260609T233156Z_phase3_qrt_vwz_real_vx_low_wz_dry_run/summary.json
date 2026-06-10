@@ -1,0 +1,9 @@
+{
+  "run_id": "20260609T233156Z_phase3_qrt_vwz_real_vx_low_wz_dry_run",
+  "scenario_name": "phase3_qrt_vwz_real_vx_low_wz",
+  "scenario_id": "QRT-VWZ-RV-LW",
+  "mode": "dry-run",
+  "status": "dry_run_passed",
+  "completed_at_utc": "2026-06-09T23:31:56.557880+00:00",
+  "notes": "No Gazebo simulation was started."
+}

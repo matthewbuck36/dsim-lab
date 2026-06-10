@@ -1,0 +1,22 @@
+1781049893.9652052 [INFO] [launch]: All log files can be found below /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T000449Z_phase3_qrt_c_slow_execute/logs/ros/2026-06-09-17-04-53-963274-ubuntu-ssd-30846
+1781049893.9655778 [INFO] [launch]: Default logging verbosity is set to INFO
+1781049894.6988904 [INFO] [gazebo-1]: process started with pid [30858]
+1781049894.6992157 [INFO] [robot_state_publisher-2]: process started with pid [30860]
+1781049894.7024801 [INFO] [spawner-3]: process started with pid [30862]
+1781049894.7041397 [INFO] [spawner-4]: process started with pid [30864]
+1781049894.7043672 [INFO] [spawn_entity.py-5]: process started with pid [30866]
+1781049894.7045426 [INFO] [ros2-6]: process started with pid [30868]
+1781049894.7046883 [INFO] [ros2-7]: process started with pid [30870]
+1781049894.7048283 [INFO] [ros2-8]: process started with pid [30872]
+1781049894.7049630 [INFO] [ros2-9]: process started with pid [30874]
+1781049894.7050858 [INFO] [ros2-10]: process started with pid [30876]
+1781049894.7052214 [INFO] [ros2-11]: process started with pid [30878]
+1781049894.7053990 [INFO] [ros2-12]: process started with pid [30882]
+1781049898.3373785 [INFO] [spawn_entity.py-5]: process has finished cleanly [pid 30866]
+1781049898.7767494 [INFO] [spawner-3]: process has finished cleanly [pid 30862]
+1781049898.8439939 [INFO] [spawner-4]: process has finished cleanly [pid 30864]
+1781049900.4682024 [ros2-12] No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+1781049905.5299304 [ros2-8] /home/mattb/dsim-lab/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/sensor_pose_node/sensor_pose_node_script.py:253: RuntimeWarning: invalid value encountered in sqrt
+1781049905.5303848 [ros2-8]   mag_q2 = np.sqrt((1-r11+r22-r33)/4)
+1781049937.9594386 [ros2-8] /home/mattb/dsim-lab/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/sensor_pose_node/sensor_pose_node_script.py:252: RuntimeWarning: invalid value encountered in sqrt
+1781049937.9596903 [ros2-8]   mag_q1 = np.sqrt((1+r11-r22-r33)/4)

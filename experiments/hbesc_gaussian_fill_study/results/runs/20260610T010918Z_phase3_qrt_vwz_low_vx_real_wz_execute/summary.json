@@ -1,0 +1,9 @@
+{
+  "run_id": "20260610T010918Z_phase3_qrt_vwz_low_vx_real_wz_execute",
+  "scenario_name": "phase3_qrt_vwz_low_vx_real_wz",
+  "scenario_id": "QRT-VWZ-LV-RW",
+  "mode": "execute",
+  "status": "sim_time_reached",
+  "completed_at_utc": "2026-06-10T01:17:49.029570+00:00",
+  "notes": "sim-time stop_rule_sec reached; runner process session terminated"
+}

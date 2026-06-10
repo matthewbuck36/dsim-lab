@@ -1,0 +1,72 @@
+1781049169.7463646 [INFO] [launch]: All log files can be found below /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260609T235245Z_phase3_qrt_b_gf_execute/logs/ros/2026-06-09-16-52-49-745457-ubuntu-ssd-29255
+1781049169.7464759 [INFO] [launch]: Default logging verbosity is set to INFO
+1781049170.4556329 [INFO] [gazebo-1]: process started with pid [29266]
+1781049170.4560359 [INFO] [robot_state_publisher-2]: process started with pid [29268]
+1781049170.4562335 [INFO] [spawner-3]: process started with pid [29270]
+1781049170.4563975 [INFO] [spawner-4]: process started with pid [29272]
+1781049170.4568555 [INFO] [spawn_entity.py-5]: process started with pid [29274]
+1781049170.4571478 [INFO] [ros2-6]: process started with pid [29276]
+1781049170.4573870 [INFO] [ros2-7]: process started with pid [29278]
+1781049170.4576235 [INFO] [ros2-8]: process started with pid [29280]
+1781049170.4597595 [INFO] [ros2-9]: process started with pid [29282]
+1781049170.4624841 [INFO] [ros2-10]: process started with pid [29284]
+1781049170.4627500 [INFO] [ros2-11]: process started with pid [29289]
+1781049170.4628897 [INFO] [ros2-12]: process started with pid [29291]
+1781049170.4630218 [INFO] [ros2-13]: process started with pid [29299]
+1781049170.4631493 [INFO] [ros2-14]: process started with pid [29302]
+1781049170.4632769 [INFO] [ros2-15]: process started with pid [29305]
+1781049170.4634316 [INFO] [ros2-16]: process started with pid [29308]
+1781049172.6750436 [ros2-12] [INFO] [1781049172.674556324] [convergence_detector]: ConvergenceDetector: k=20, th=0.2, b=0.15, N=2000, omega=5.000, dt_node=0.012566, min_trigger_time=50.27s
+1781049173.3761287 [ros2-13] [INFO] [1781049173.374237361] [gaussian_fill]: GaussianFill ready (2D): policy=conditional_gaussian_fill, A=5.000, sigma=[3.160, 5.000], max_fills=1, cooldown=0.000s, min_distance=0.000m
+1781049173.3901713 [ros2-10] [INFO] [1781049173.387449688] [modified_cost_2d]: ModifiedCost2D started. Waiting for sensor/cost/fill streams.
+1781049174.0178885 [ros2-11] [INFO] [1781049174.017338325] [pde_history]: PDEHistory: N=2000, k=20, omega=5.000, lambda=79.577, dt_node=0.012566
+1781049175.5106366 [INFO] [spawn_entity.py-5]: process has finished cleanly [pid 29274]
+1781049176.1303811 [INFO] [spawner-4]: process has finished cleanly [pid 29272]
+1781049176.1804221 [INFO] [spawner-3]: process has finished cleanly [pid 29270]
+1781049177.4035985 [ros2-16] No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+1781049239.5601058 [ros2-12] [INFO] [1781049239.559438519] [convergence_detector]: Convergence event: metric=-0.001997, r=0.057847, decay=0.140156, t=63.900
+1781049239.5626233 [ros2-13] [INFO] [1781049239.562324803] [gaussian_fill]: Published fill #1: A=5.000, mu=(2.247,1.426), sigma=3.160
+1781049239.5630708 [ros2-10] [INFO] [1781049239.562693151] [modified_cost_2d]: Added fill term: A=5.000, mu=(2.247,1.426), sigma=3.160 (total terms=1)
+1781049254.5894964 [ros2-12] [INFO] [1781049254.589073199] [convergence_detector]: Convergence event: metric=-0.000887, r=0.092121, decay=0.106992, t=78.800
+1781049273.1183419 [ros2-12] [INFO] [1781049273.117823040] [convergence_detector]: Convergence event: metric=-0.001142, r=0.135566, decay=0.063292, t=97.200
+1781049435.4665306 [ros2-12] [INFO] [1781049435.465869697] [convergence_detector]: Convergence event: metric=-0.000153, r=0.199847, decay=0.000000, t=258.400
+1781049449.8012645 [ros2-12] [INFO] [1781049449.800794602] [convergence_detector]: Convergence event: metric=-0.001122, r=0.080040, decay=0.118837, t=272.600
+1781049461.9577296 [ros2-12] [INFO] [1781049461.957332991] [convergence_detector]: Convergence event: metric=-0.001111, r=0.036051, decay=0.162838, t=284.700
+1781049473.4548466 [ros2-12] [INFO] [1781049473.454451049] [convergence_detector]: Convergence event: metric=-0.002340, r=0.016794, decay=0.180866, t=296.100
+1781049484.5135665 [ros2-12] [INFO] [1781049484.513198839] [convergence_detector]: Convergence event: metric=-0.000008, r=0.007942, decay=0.192050, t=307.100
+1781049495.5030062 [ros2-12] [INFO] [1781049495.502564789] [convergence_detector]: Convergence event: metric=-0.001283, r=0.003764, decay=0.194952, t=318.000
+1781049506.3939550 [ros2-12] [INFO] [1781049506.393643057] [convergence_detector]: Convergence event: metric=-0.000308, r=0.001793, decay=0.197899, t=328.800
+1781049517.2427719 [ros2-12] [INFO] [1781049517.242388608] [convergence_detector]: Convergence event: metric=-0.001250, r=0.000851, decay=0.197899, t=339.600
+1781049528.1303890 [ros2-12] [INFO] [1781049528.129956797] [convergence_detector]: Convergence event: metric=-0.001687, r=0.000414, decay=0.197899, t=350.400
+1781049538.9683416 [ros2-12] [INFO] [1781049538.967711255] [convergence_detector]: Convergence event: metric=-0.001896, r=0.000206, decay=0.197899, t=361.200
+1781049549.8601987 [ros2-12] [INFO] [1781049549.859868601] [convergence_detector]: Convergence event: metric=-0.001993, r=0.000108, decay=0.197899, t=372.000
+1781049560.7632678 [ros2-12] [INFO] [1781049560.762145990] [convergence_detector]: Convergence event: metric=-0.002040, r=0.000061, decay=0.197899, t=382.800
+1781049571.6150339 [ros2-12] [INFO] [1781049571.614728515] [convergence_detector]: Convergence event: metric=-0.002063, r=0.000038, decay=0.197899, t=393.600
+1781049582.4995234 [ros2-12] [INFO] [1781049582.499110629] [convergence_detector]: Convergence event: metric=-0.002072, r=0.000029, decay=0.197899, t=404.400
+1781049593.3892424 [ros2-12] [INFO] [1781049593.388922881] [convergence_detector]: Convergence event: metric=-0.002077, r=0.000024, decay=0.197899, t=415.200
+1781049604.2442312 [ros2-12] [INFO] [1781049604.243857088] [convergence_detector]: Convergence event: metric=-0.002080, r=0.000021, decay=0.197899, t=426.000
+1781049615.1219592 [ros2-12] [INFO] [1781049615.121468436] [convergence_detector]: Convergence event: metric=-0.002080, r=0.000021, decay=0.197899, t=436.800
+1781049626.0177016 [ros2-12] [INFO] [1781049626.017282419] [convergence_detector]: Convergence event: metric=-0.002079, r=0.000022, decay=0.197899, t=447.600
+1781049636.8723762 [ros2-12] [INFO] [1781049636.871323156] [convergence_detector]: Convergence event: metric=-0.002079, r=0.000023, decay=0.197899, t=458.400
+1781049647.7620015 [ros2-12] [INFO] [1781049647.761680986] [convergence_detector]: Convergence event: metric=-0.002078, r=0.000024, decay=0.197899, t=469.200
+1781049658.6594768 [ros2-12] [INFO] [1781049658.659104791] [convergence_detector]: Convergence event: metric=-0.002077, r=0.000025, decay=0.197899, t=480.000
+1781049669.5169528 [ros2-12] [INFO] [1781049669.516460190] [convergence_detector]: Convergence event: metric=-0.002074, r=0.000027, decay=0.197899, t=490.800
+1781049680.4069374 [ros2-12] [INFO] [1781049680.406630667] [convergence_detector]: Convergence event: metric=-0.002073, r=0.000028, decay=0.197899, t=501.600
+1781049691.2875175 [ros2-12] [INFO] [1781049691.286859146] [convergence_detector]: Convergence event: metric=-0.002070, r=0.000031, decay=0.197899, t=512.400
+1781049702.1382143 [ros2-12] [INFO] [1781049702.136752020] [convergence_detector]: Convergence event: metric=-0.002067, r=0.000035, decay=0.197899, t=523.200
+1781049713.0236135 [ros2-12] [INFO] [1781049713.023125032] [convergence_detector]: Convergence event: metric=-0.002064, r=0.000038, decay=0.197899, t=534.000
+1781049723.8664298 [ros2-12] [INFO] [1781049723.866022733] [convergence_detector]: Convergence event: metric=-0.002059, r=0.000042, decay=0.197899, t=544.800
+1781049734.7623315 [ros2-12] [INFO] [1781049734.760230019] [convergence_detector]: Convergence event: metric=-0.002055, r=0.000047, decay=0.197899, t=555.600
+1781049745.6481063 [ros2-12] [INFO] [1781049745.647742954] [convergence_detector]: Convergence event: metric=-0.002049, r=0.000052, decay=0.197899, t=566.400
+1781049756.4992228 [ros2-12] [INFO] [1781049756.498674612] [convergence_detector]: Convergence event: metric=-0.002041, r=0.000061, decay=0.197899, t=577.200
+1781049767.3960259 [ros2-12] [INFO] [1781049767.395554708] [convergence_detector]: Convergence event: metric=-0.002031, r=0.000071, decay=0.197899, t=588.000
+1781049778.2792380 [ros2-12] [INFO] [1781049778.278643777] [convergence_detector]: Convergence event: metric=-0.002017, r=0.000085, decay=0.197899, t=598.800
+1781049789.1401875 [ros2-12] [INFO] [1781049789.139827131] [convergence_detector]: Convergence event: metric=-0.001998, r=0.000104, decay=0.197899, t=609.600
+1781049800.0352678 [ros2-12] [INFO] [1781049800.034685258] [convergence_detector]: Convergence event: metric=-0.001971, r=0.000130, decay=0.197899, t=620.400
+1781049810.9232707 [ros2-12] [INFO] [1781049810.922900785] [convergence_detector]: Convergence event: metric=-0.001926, r=0.000175, decay=0.197899, t=631.200
+1781049821.7788484 [ros2-12] [INFO] [1781049821.778190507] [convergence_detector]: Convergence event: metric=-0.001853, r=0.000249, decay=0.197899, t=642.000
+1781049832.6564951 [ros2-12] [INFO] [1781049832.656106119] [convergence_detector]: Convergence event: metric=-0.001725, r=0.000376, decay=0.197899, t=652.800
+1781049843.5878103 [ros2-12] [INFO] [1781049843.587421374] [convergence_detector]: Convergence event: metric=-0.001490, r=0.000611, decay=0.197899, t=663.600
+1781049854.4497364 [ros2-12] [INFO] [1781049854.448730950] [convergence_detector]: Convergence event: metric=-0.001064, r=0.001038, decay=0.197899, t=674.400
+1781049865.3401363 [ros2-12] [INFO] [1781049865.339686817] [convergence_detector]: Convergence event: metric=-0.000299, r=0.001802, decay=0.197899, t=685.200
+1781049876.3040042 [ros2-12] [INFO] [1781049876.303213668] [convergence_detector]: Convergence event: metric=-0.002051, r=0.002997, decay=0.194952, t=696.100

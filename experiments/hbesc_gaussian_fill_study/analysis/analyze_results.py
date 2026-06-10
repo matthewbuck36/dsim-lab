@@ -37,17 +37,37 @@ def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def rosbag_topic_count(metadata_path: Path, topic_name: str) -> int | str:
+    if not metadata_path.exists():
+        return ""
+    current_topic = None
+    for line in metadata_path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if stripped.startswith("name: "):
+            current_topic = stripped.split("name: ", 1)[1].strip().strip("'\"")
+        elif current_topic == topic_name and stripped.startswith("message_count: "):
+            value = stripped.split("message_count: ", 1)[1].strip()
+            try:
+                return int(value)
+            except ValueError:
+                return ""
+    return ""
+
+
 def distance_metrics(odom_rows: list[list[float]], target: dict, success_radius: float) -> dict:
     if not odom_rows or "x" not in target or "y" not in target:
         return {}
     target_x = float(target["x"])
     target_y = float(target["y"])
     distances = []
+    t0 = None
     for row in odom_rows:
         if len(row) < 3:
             continue
         t, x, y = row[0], row[1], row[2]
-        distances.append((t, math.hypot(x - target_x, y - target_y)))
+        if t0 is None:
+            t0 = t
+        distances.append((t - t0, math.hypot(x - target_x, y - target_y)))
     if not distances:
         return {}
     tail_count = max(1, len(distances) // 10)
@@ -159,6 +179,11 @@ def main() -> int:
             controller_config = load_json(Path(controller_config_path).expanduser())
         metrics.update(control_metrics(control_rows, controller_config))
         metrics["data_quality"] = "ok" if odom_rows and control_rows else "incomplete_csv"
+
+    metrics["gaussian_fill_count"] = rosbag_topic_count(
+        run_dir / "diagnostics" / "gaussian_fill_topics" / "metadata.yaml",
+        "/cost_bias",
+    )
 
     out = run_dir / "summary_metrics.json"
     out.write_text(json.dumps(metrics, indent=2) + "\n", encoding="utf-8")

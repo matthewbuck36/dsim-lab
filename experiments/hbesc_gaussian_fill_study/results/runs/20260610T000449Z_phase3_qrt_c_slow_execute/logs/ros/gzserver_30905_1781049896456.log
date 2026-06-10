@@ -1,0 +1,36 @@
+[INFO] [1781049898.160466957] [turtlebot3_diff_drive]: Wheel pair 1 separation set to [0.160000m]
+[INFO] [1781049898.161044498] [turtlebot3_diff_drive]: Wheel pair 1 diameter set to [0.066000m]
+[INFO] [1781049898.162829593] [turtlebot3_diff_drive]: Subscribed to [/cmd_vel]
+[INFO] [1781049898.168941191] [turtlebot3_diff_drive]: Advertise odometry on [/odom]
+[INFO] [1781049898.173450582] [turtlebot3_diff_drive]: Publishing odom transforms between [odom] and [base_footprint]
+[INFO] [1781049898.198068359] [turtlebot3_joint_state]: Going to publish joint [rotating_frame_joint]
+[INFO] [1781049898.244873562] [gazebo_ros2_control]: Loading gazebo_ros2_control plugin
+[INFO] [1781049898.256644056] [gazebo_ros2_control]: Starting gazebo_ros2_control plugin in namespace: /
+[INFO] [1781049898.256715796] [gazebo_ros2_control]: Starting gazebo_ros2_control plugin in ros 2 node: gazebo_ros2_control
+[INFO] [1781049898.264892914] [gazebo_ros2_control]: connected to service!! /robot_state_publisher_node
+[INFO] [1781049898.267171950] [gazebo_ros2_control]: Received urdf from param server, parsing...
+[INFO] [1781049898.267662423] [gazebo_ros2_control]: Loading parameter files /home/mattb/dsim-lab/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/controller_config/joint_controller.yaml
+[INFO] [1781049898.284188383] [gazebo_ros2_control]: Loading joint: rotating_frame_joint
+[INFO] [1781049898.284321498] [gazebo_ros2_control]: 	State:
+[INFO] [1781049898.284350484] [gazebo_ros2_control]: 		 position
+[INFO] [1781049898.284373270] [gazebo_ros2_control]: 			 found initial value: 0.000000
+[INFO] [1781049898.284396670] [gazebo_ros2_control]: 		 velocity
+[INFO] [1781049898.284409995] [gazebo_ros2_control]: 			 found initial value: 0.000000
+[INFO] [1781049898.284423954] [gazebo_ros2_control]: 	Command:
+[INFO] [1781049898.284457361] [gazebo_ros2_control]: 		 velocity
+[INFO] [1781049898.285019514] [resource_manager]: Initialize hardware 'GazeboSystem' 
+[INFO] [1781049898.285283216] [resource_manager]: Successful initialization of hardware 'GazeboSystem'
+[INFO] [1781049898.285445061] [resource_manager]: 'configure' hardware 'GazeboSystem' 
+[INFO] [1781049898.285464611] [resource_manager]: Successful 'configure' of hardware 'GazeboSystem'
+[INFO] [1781049898.285475608] [resource_manager]: 'activate' hardware 'GazeboSystem' 
+[INFO] [1781049898.285486622] [resource_manager]: Successful 'activate' of hardware 'GazeboSystem'
+[INFO] [1781049898.285593916] [gazebo_ros2_control]: Loading controller_manager
+[WARN] [1781049898.332039162] [gazebo_ros2_control]:  Desired controller update period (0.01 s) is slower than the gazebo simulation period (0.001 s).
+[INFO] [1781049898.333527041] [gazebo_ros2_control]: Loaded gazebo_ros2_control.
+[INFO] [1781049898.424007229] [controller_manager]: Loading controller 'joint_state_broadcaster'
+[INFO] [1781049898.462142538] [controller_manager]: Configuring controller 'joint_state_broadcaster'
+[INFO] [1781049898.463140874] [joint_state_broadcaster]: 'joints' or 'interfaces' parameter is empty. All available state interfaces will be published
+[INFO] [1781049898.503373967] [controller_manager]: Loading controller 'velocity_controller'
+[INFO] [1781049898.557766863] [controller_manager]: Configuring controller 'velocity_controller'
+[INFO] [1781049898.563674437] [velocity_controller]: configure successful
+[INFO] [1781049898.585724043] [velocity_controller]: activate successful

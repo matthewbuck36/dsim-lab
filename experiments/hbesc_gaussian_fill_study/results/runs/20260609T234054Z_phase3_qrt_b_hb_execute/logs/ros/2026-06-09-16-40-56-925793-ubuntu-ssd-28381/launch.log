@@ -1,0 +1,19 @@
+1781048456.9268529 [INFO] [launch]: All log files can be found below /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260609T234054Z_phase3_qrt_b_hb_execute/logs/ros/2026-06-09-16-40-56-925793-ubuntu-ssd-28381
+1781048456.9269783 [INFO] [launch]: Default logging verbosity is set to INFO
+1781048457.3398845 [INFO] [gazebo-1]: process started with pid [28383]
+1781048457.3401654 [INFO] [robot_state_publisher-2]: process started with pid [28385]
+1781048457.3403423 [INFO] [spawner-3]: process started with pid [28387]
+1781048457.3405104 [INFO] [spawner-4]: process started with pid [28389]
+1781048457.3406572 [INFO] [spawn_entity.py-5]: process started with pid [28391]
+1781048457.3408108 [INFO] [ros2-6]: process started with pid [28393]
+1781048457.3409820 [INFO] [ros2-7]: process started with pid [28395]
+1781048457.3410983 [INFO] [ros2-8]: process started with pid [28397]
+1781048457.3412113 [INFO] [ros2-9]: process started with pid [28399]
+1781048457.3454356 [INFO] [ros2-10]: process started with pid [28401]
+1781048457.3457205 [INFO] [ros2-11]: process started with pid [28403]
+1781048457.3458657 [INFO] [ros2-12]: process started with pid [28407]
+1781048458.3418853 [ERROR] [spawner-3]: process has died [pid 28387, exit code 1, cmd '/opt/ros/humble/lib/controller_manager/spawner joint_state_broadcaster --ros-args'].
+1781048458.5103183 [ERROR] [gazebo-1]: process has died [pid 28383, exit code 255, cmd 'gazebo --verbose -s libgazebo_ros_init.so -s libgazebo_ros_factory.so worlds/gazebo_empty.world'].
+1781048458.5336971 [ERROR] [spawner-4]: process has died [pid 28389, exit code 1, cmd '/opt/ros/humble/lib/controller_manager/spawner velocity_controller --ros-args'].
+1781048458.5796044 [ERROR] [spawn_entity.py-5]: process has died [pid 28391, exit code 1, cmd '/opt/ros/humble/lib/gazebo_ros/spawn_entity.py -topic=/robot_description -entity turtlebot3 -x 1 -y 1 -z 0 -R 0 -P 0 -Y 0 --ros-args -r __node:=spawn_entity'].
+1781048460.6875806 [ros2-12] No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.

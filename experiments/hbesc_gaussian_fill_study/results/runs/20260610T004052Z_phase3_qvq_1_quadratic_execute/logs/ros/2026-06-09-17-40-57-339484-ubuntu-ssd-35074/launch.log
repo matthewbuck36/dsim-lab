@@ -1,0 +1,18 @@
+1781052057.3410416 [INFO] [launch]: All log files can be found below /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T004052Z_phase3_qvq_1_quadratic_execute/logs/ros/2026-06-09-17-40-57-339484-ubuntu-ssd-35074
+1781052057.3412805 [INFO] [launch]: Default logging verbosity is set to INFO
+1781052058.1646879 [INFO] [gazebo-1]: process started with pid [35086]
+1781052058.1651242 [INFO] [robot_state_publisher-2]: process started with pid [35088]
+1781052058.1653564 [INFO] [spawner-3]: process started with pid [35090]
+1781052058.1655202 [INFO] [spawner-4]: process started with pid [35092]
+1781052058.1656559 [INFO] [spawn_entity.py-5]: process started with pid [35094]
+1781052058.1657906 [INFO] [ros2-6]: process started with pid [35096]
+1781052058.1659236 [INFO] [ros2-7]: process started with pid [35098]
+1781052058.1660550 [INFO] [ros2-8]: process started with pid [35100]
+1781052058.1661863 [INFO] [ros2-9]: process started with pid [35102]
+1781052058.1686304 [INFO] [ros2-10]: process started with pid [35106]
+1781052058.1696396 [INFO] [ros2-11]: process started with pid [35111]
+1781052058.1712630 [INFO] [ros2-12]: process started with pid [35117]
+1781052061.9254985 [INFO] [spawn_entity.py-5]: process has finished cleanly [pid 35094]
+1781052062.3915939 [INFO] [spawner-4]: process has finished cleanly [pid 35092]
+1781052062.4788640 [INFO] [spawner-3]: process has finished cleanly [pid 35090]
+1781052064.5513320 [ros2-12] No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.

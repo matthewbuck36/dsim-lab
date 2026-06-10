@@ -1,0 +1,20 @@
+1781050614.3737850 [INFO] [launch]: All log files can be found below /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T001649Z_phase3_qrt_c_real_execute/logs/ros/2026-06-09-17-16-54-372552-ubuntu-ssd-32275
+1781050614.3742270 [INFO] [launch]: Default logging verbosity is set to INFO
+1781050615.1481593 [INFO] [gazebo-1]: process started with pid [32287]
+1781050615.1486247 [INFO] [robot_state_publisher-2]: process started with pid [32289]
+1781050615.1488342 [INFO] [spawner-3]: process started with pid [32291]
+1781050615.1489820 [INFO] [spawner-4]: process started with pid [32293]
+1781050615.1491108 [INFO] [spawn_entity.py-5]: process started with pid [32295]
+1781050615.1492486 [INFO] [ros2-6]: process started with pid [32297]
+1781050615.1494038 [INFO] [ros2-7]: process started with pid [32299]
+1781050615.1495526 [INFO] [ros2-8]: process started with pid [32301]
+1781050615.1496842 [INFO] [ros2-9]: process started with pid [32303]
+1781050615.1498172 [INFO] [ros2-10]: process started with pid [32307]
+1781050615.1499479 [INFO] [ros2-11]: process started with pid [32309]
+1781050615.1500781 [INFO] [ros2-12]: process started with pid [32315]
+1781050618.9917431 [INFO] [spawn_entity.py-5]: process has finished cleanly [pid 32295]
+1781050619.3944879 [INFO] [spawner-4]: process has finished cleanly [pid 32293]
+1781050619.5405083 [INFO] [spawner-3]: process has finished cleanly [pid 32291]
+1781050621.0034366 [ros2-12] No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+1781050663.6158428 [ros2-8] /home/mattb/dsim-lab/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/sensor_pose_node/sensor_pose_node_script.py:253: RuntimeWarning: invalid value encountered in sqrt
+1781050663.6161885 [ros2-8]   mag_q2 = np.sqrt((1-r11+r22-r33)/4)

@@ -1,0 +1,35 @@
+1781047941.9376755 [INFO] [launch]: All log files can be found below /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260609T233218Z_phase3_qrt_a_gf_execute/logs/ros/2026-06-09-16-32-21-936505-ubuntu-ssd-26855
+1781047941.9378181 [INFO] [launch]: Default logging verbosity is set to INFO
+1781047942.3867481 [INFO] [gazebo-1]: process started with pid [26878]
+1781047942.3870828 [INFO] [robot_state_publisher-2]: process started with pid [26880]
+1781047942.3872335 [INFO] [spawner-3]: process started with pid [26882]
+1781047942.3914509 [INFO] [spawner-4]: process started with pid [26884]
+1781047942.3916225 [INFO] [spawn_entity.py-5]: process started with pid [26886]
+1781047942.3917441 [INFO] [ros2-6]: process started with pid [26888]
+1781047942.3918598 [INFO] [ros2-7]: process started with pid [26890]
+1781047942.3920839 [INFO] [ros2-8]: process started with pid [26892]
+1781047942.3923931 [INFO] [ros2-9]: process started with pid [26894]
+1781047942.3927126 [INFO] [ros2-10]: process started with pid [26898]
+1781047942.3930013 [INFO] [ros2-11]: process started with pid [26901]
+1781047942.3932288 [INFO] [ros2-12]: process started with pid [26910]
+1781047942.3933530 [INFO] [ros2-13]: process started with pid [26912]
+1781047942.3934736 [INFO] [ros2-14]: process started with pid [26917]
+1781047942.3936100 [INFO] [ros2-15]: process started with pid [26919]
+1781047942.3937182 [INFO] [ros2-16]: process started with pid [26921]
+1781047943.7646322 [ros2-13] [INFO] [1781047943.763204262] [gaussian_fill]: GaussianFill ready (2D): policy=conditional_gaussian_fill, A=5.000, sigma=[3.160, 5.000], max_fills=1, cooldown=0.000s, min_distance=0.000m
+1781047943.7726665 [ros2-12] [INFO] [1781047943.771868606] [convergence_detector]: ConvergenceDetector: k=20, th=0.2, b=0.15, N=2000, omega=5.000, dt_node=0.012566, min_trigger_time=50.27s
+1781047943.8761740 [ros2-11] [INFO] [1781047943.875819865] [pde_history]: PDEHistory: N=2000, k=20, omega=5.000, lambda=79.577, dt_node=0.012566
+1781047943.8997054 [ros2-10] [INFO] [1781047943.899221573] [modified_cost_2d]: ModifiedCost2D started. Waiting for sensor/cost/fill streams.
+1781047945.3842647 [INFO] [spawn_entity.py-5]: process has finished cleanly [pid 26886]
+1781047945.7641475 [INFO] [spawner-3]: process has finished cleanly [pid 26882]
+1781047945.8156304 [INFO] [spawner-4]: process has finished cleanly [pid 26884]
+1781047946.5890348 [ros2-16] No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+1781048185.3408046 [ros2-12] [INFO] [1781048185.340520721] [convergence_detector]: Convergence event: metric=-0.000279, r=0.199721, decay=0.000000, t=239.600
+1781048185.3414104 [ros2-13] [INFO] [1781048185.341141425] [gaussian_fill]: Published fill #1: A=5.000, mu=(7.272,5.414), sigma=3.160
+1781048185.3417227 [ros2-10] [INFO] [1781048185.341444186] [modified_cost_2d]: Added fill term: A=5.000, mu=(7.272,5.414), sigma=3.160 (total terms=1)
+1781048371.6979721 [ros2-12] [INFO] [1781048371.697724363] [convergence_detector]: Convergence event: metric=-0.000445, r=0.199555, decay=0.000000, t=425.700
+1781048387.8356631 [ros2-12] [INFO] [1781048387.835371773] [convergence_detector]: Convergence event: metric=-0.000794, r=0.109839, decay=0.089367, t=441.800
+1781048401.9644608 [ros2-12] [INFO] [1781048401.964123585] [convergence_detector]: Convergence event: metric=-0.001958, r=0.077409, decay=0.120633, t=455.900
+1781048415.3808119 [ros2-12] [INFO] [1781048415.380496620] [convergence_detector]: Convergence event: metric=-0.000483, r=0.065528, decay=0.133989, t=469.300
+1781048428.6930485 [ros2-12] [INFO] [1781048428.692768031] [convergence_detector]: Convergence event: metric=-0.000551, r=0.063436, decay=0.136014, t=482.600
+1781048442.1086121 [ros2-12] [INFO] [1781048442.108284464] [convergence_detector]: Convergence event: metric=-0.000166, r=0.065845, decay=0.133989, t=496.000

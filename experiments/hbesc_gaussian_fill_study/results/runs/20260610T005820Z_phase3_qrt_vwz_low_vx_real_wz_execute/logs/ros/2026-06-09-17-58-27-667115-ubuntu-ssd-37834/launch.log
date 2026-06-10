@@ -1,0 +1,52 @@
+1781053107.6692743 [INFO] [launch]: All log files can be found below /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T005820Z_phase3_qrt_vwz_low_vx_real_wz_execute/logs/ros/2026-06-09-17-58-27-667115-ubuntu-ssd-37834
+1781053107.6696148 [INFO] [launch]: Default logging verbosity is set to INFO
+1781053108.7793331 [INFO] [gazebo-1]: process started with pid [37867]
+1781053108.7808728 [INFO] [robot_state_publisher-2]: process started with pid [37869]
+1781053108.7812767 [INFO] [spawner-3]: process started with pid [37871]
+1781053108.7814488 [INFO] [spawner-4]: process started with pid [37873]
+1781053108.7815909 [INFO] [spawn_entity.py-5]: process started with pid [37875]
+1781053108.7817297 [INFO] [ros2-6]: process started with pid [37877]
+1781053108.7818661 [INFO] [ros2-7]: process started with pid [37879]
+1781053108.7820008 [INFO] [ros2-8]: process started with pid [37881]
+1781053108.7867601 [INFO] [ros2-9]: process started with pid [37885]
+1781053108.7889829 [INFO] [ros2-10]: process started with pid [37887]
+1781053108.7893271 [INFO] [ros2-11]: process started with pid [37889]
+1781053108.7895536 [INFO] [ros2-12]: process started with pid [37891]
+1781053114.9633911 [INFO] [spawn_entity.py-5]: process has finished cleanly [pid 37875]
+1781053115.9211788 [INFO] [spawner-3]: process has finished cleanly [pid 37871]
+1781053115.9953952 [INFO] [spawner-4]: process has finished cleanly [pid 37873]
+1781053117.5414455 [ros2-12] No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+1781053348.0676651 [ros2-12] Exception in Tkinter callback
+1781053348.0961728 [ros2-12] Traceback (most recent call last):
+1781053348.0975907 [ros2-12]   File "/usr/lib/python3.10/tkinter/__init__.py", line 1921, in __call__
+1781053348.0980887 [ros2-12]     return self.func(*args)
+1781053348.0984080 [ros2-12]   File "/usr/lib/python3.10/tkinter/__init__.py", line 839, in callit
+1781053348.0985878 [ros2-12]     func(*args)
+1781053348.0987160 [ros2-12]   File "/usr/lib/python3/dist-packages/matplotlib/backends/_backend_tk.py", line 141, in _on_timer
+1781053348.0988300 [ros2-12]     super()._on_timer()
+1781053348.0991700 [ros2-12]   File "/usr/lib/python3/dist-packages/matplotlib/backend_bases.py", line 1198, in _on_timer
+1781053348.0994155 [ros2-12]     ret = func(*args, **kwargs)
+1781053348.0996182 [ros2-12]   File "/usr/lib/python3/dist-packages/matplotlib/animation.py", line 1408, in _step
+1781053348.0997751 [ros2-12]     still_going = super()._step(*args)
+1781053348.0998981 [ros2-12]   File "/usr/lib/python3/dist-packages/matplotlib/animation.py", line 1107, in _step
+1781053348.1000071 [ros2-12]     self._draw_next_frame(framedata, self._blit)
+1781053348.1021278 [ros2-12]   File "/usr/lib/python3/dist-packages/matplotlib/animation.py", line 1126, in _draw_next_frame
+1781053348.1023355 [ros2-12]     self._draw_frame(framedata)
+1781053348.1024461 [ros2-12]   File "/usr/lib/python3/dist-packages/matplotlib/animation.py", line 1720, in _draw_frame
+1781053348.1025462 [ros2-12]     self._drawn_artists = self._func(framedata, *self._args)
+1781053348.1026483 [ros2-12]   File "/home/mattb/dsim-lab/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/data_collection_node/live_plot_animation.py", line 184, in update_plot
+1781053348.1027510 [ros2-12]     live_plot_data["ax3"].relim()
+1781053348.1028454 [ros2-12]   File "/usr/lib/python3/dist-packages/matplotlib/axes/_base.py", line 2451, in relim
+1781053348.1029325 [ros2-12]     self._update_line_limits(artist)
+1781053348.1030135 [ros2-12]   File "/usr/lib/python3/dist-packages/matplotlib/axes/_base.py", line 2306, in _update_line_limits
+1781053348.1030917 [ros2-12]     path = line.get_path()
+1781053348.1031919 [ros2-12]   File "/usr/lib/python3/dist-packages/matplotlib/lines.py", line 999, in get_path
+1781053348.1032736 [ros2-12]     self.recache()
+1781053348.1036036 [ros2-12]   File "/usr/lib/python3/dist-packages/matplotlib/lines.py", line 661, in recache
+1781053348.1036992 [ros2-12]     self._xy = np.column_stack(np.broadcast_arrays(x, y)).astype(float)
+1781053348.1038015 [ros2-12]   File "<__array_function__ internals>", line 200, in broadcast_arrays
+1781053348.1038828 [ros2-12]   File "/home/mattb/.local/lib/python3.10/site-packages/numpy/lib/stride_tricks.py", line 540, in broadcast_arrays
+1781053348.1039553 [ros2-12]     shape = _broadcast_shape(*args)
+1781053348.1040361 [ros2-12]   File "/home/mattb/.local/lib/python3.10/site-packages/numpy/lib/stride_tricks.py", line 422, in _broadcast_shape
+1781053348.1041241 [ros2-12]     b = np.broadcast(*args[:32])
+1781053348.1042032 [ros2-12] ValueError: shape mismatch: objects cannot be broadcast to a single shape.  Mismatch is between arg 0 with shape (7693,) and arg 1 with shape (7694,).

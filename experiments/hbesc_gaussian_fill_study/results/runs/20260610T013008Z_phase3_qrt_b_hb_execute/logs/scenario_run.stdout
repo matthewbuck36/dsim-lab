@@ -1,0 +1,124 @@
+Running HBESC scenario: /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T013008Z_phase3_qrt_b_hb_execute/configs/scenario_used.json
+Scenario name: phase3_qrt_b_hb
+Description: Phase 3 quartic double-well baseline local-basin candidate.
+Starting >>> ros_esc
+Starting >>> ros_esc_interfaces
+Starting >>> turtlebot3_rotating_sensor
+Finished <<< turtlebot3_rotating_sensor [0.37s]
+Finished <<< ros_esc_interfaces [0.77s]
+Finished <<< ros_esc [1.04s]
+
+Summary: 3 packages finished [1.35s]
+[INFO] [launch]: All log files can be found below /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T013008Z_phase3_qrt_b_hb_execute/logs/ros/2026-06-09-18-30-10-321894-ubuntu-ssd-43067
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [gazebo-1]: process started with pid [43069]
+[INFO] [robot_state_publisher-2]: process started with pid [43071]
+[INFO] [spawner-3]: process started with pid [43073]
+[INFO] [spawner-4]: process started with pid [43075]
+[INFO] [spawn_entity.py-5]: process started with pid [43077]
+[INFO] [ros2-6]: process started with pid [43079]
+[INFO] [ros2-7]: process started with pid [43081]
+[INFO] [ros2-8]: process started with pid [43083]
+[INFO] [ros2-9]: process started with pid [43085]
+[INFO] [ros2-10]: process started with pid [43087]
+[INFO] [ros2-11]: process started with pid [43089]
+[INFO] [ros2-12]: process started with pid [43091]
+[robot_state_publisher-2] [INFO] [1781055010.671036398] [robot_state_publisher_node]: got segment base_footprint
+[robot_state_publisher-2] [INFO] [1781055010.671166516] [robot_state_publisher_node]: got segment base_link
+[robot_state_publisher-2] [INFO] [1781055010.671182639] [robot_state_publisher_node]: got segment base_scan
+[robot_state_publisher-2] [INFO] [1781055010.671191157] [robot_state_publisher_node]: got segment caster_wheel
+[robot_state_publisher-2] [INFO] [1781055010.671198773] [robot_state_publisher_node]: got segment imu_link
+[robot_state_publisher-2] [INFO] [1781055010.671206879] [robot_state_publisher_node]: got segment rotating_frame_link
+[robot_state_publisher-2] [INFO] [1781055010.671214894] [robot_state_publisher_node]: got segment sensor_link
+[robot_state_publisher-2] [INFO] [1781055010.671222809] [robot_state_publisher_node]: got segment wheel_left_link
+[robot_state_publisher-2] [INFO] [1781055010.671230128] [robot_state_publisher_node]: got segment wheel_right_link
+[spawner-3] [INFO] [1781055011.185532972] [spawner_joint_state_broadcaster]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-4] [INFO] [1781055011.214742613] [spawner_velocity_controller]: waiting for service /controller_manager/list_controllers to become available...
+[spawn_entity.py-5] [INFO] [1781055011.412169680] [spawn_entity]: Spawn Entity started
+[spawn_entity.py-5] [INFO] [1781055011.413421327] [spawn_entity]: Loading entity published on topic /robot_description
+[spawn_entity.py-5] [INFO] [1781055011.417676343] [spawn_entity]: Waiting for entity xml on /robot_description
+[spawn_entity.py-5] [INFO] [1781055011.431387355] [spawn_entity]: Waiting for service /spawn_entity, timeout = 30
+[spawn_entity.py-5] [INFO] [1781055011.432094690] [spawn_entity]: Waiting for service /spawn_entity
+[gazebo-1] Gazebo multi-robot simulator, version 11.10.2
+[gazebo-1] Copyright (C) 2012 Open Source Robotics Foundation.
+[gazebo-1] Released under the Apache 2 License.
+[gazebo-1] http://gazebosim.org
+[gazebo-1] 
+[gazebo-1] Gazebo multi-robot simulator, version 11.10.2
+[gazebo-1] Copyright (C) 2012 Open Source Robotics Foundation.
+[gazebo-1] Released under the Apache 2 License.
+[gazebo-1] http://gazebosim.org
+[gazebo-1] 
+[gazebo-1] [1;33m[Wrn] [gazebo_ros_init.cpp:178] [0m[1;33m
+[gazebo-1] #     # ####### ####### ###  #####  #######
+[gazebo-1] ##    # #     #    #     #  #     # #
+[gazebo-1] # #   # #     #    #     #  #       #
+[gazebo-1] #  #  # #     #    #     #  #       #####
+[gazebo-1] #   # # #     #    #     #  #       #
+[gazebo-1] #    ## #     #    #     #  #     # #
+[gazebo-1] #     # #######    #    ###  #####  #######
+[gazebo-1] 
+[gazebo-1] This version of Gazebo, now called Gazebo classic, reaches end-of-life
+[gazebo-1] in January 2025. Users are highly encouraged to migrate to the new Gazebo
+[gazebo-1] using our migration guides (https://gazebosim.org/docs/latest/gazebo_classic_migration?utm_source=gazebo_ros_pkgs&utm_medium=cli)
+[gazebo-1] 
+[gazebo-1] [0m[1;33m
+[gazebo-1] [1;32m[Msg] [0m[1;32mWaiting for master.[0m[1;32m
+[gazebo-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mConnected to gazebo master @ [0m[1;32mhttp://127.0.0.1:11673[0m[1;32m
+[gazebo-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mPublicized address: [0m[1;32m192.168.44.106[0m[1;32m
+[gazebo-1] [0m[1;33m[0m[1;33m[0m[1;33m[Wrn] [FuelModelDatabase.cc:313] [0m[1;33mURI not supported by Fuel [[0m[1;33mworlds/gazebo_empty.world[0m[1;33m][0m[1;33m
+[gazebo-1] [0m[1;33m[0m[1;33m[0m[1;33m[Wrn] [SystemPaths.cc:459] [0m[1;33mFile or path does not exist [[0m[1;33m""[0m[1;33m] [[0m[1;33mworlds/gazebo_empty.world[0m[1;33m][0m[1;33m
+[gazebo-1] [0m[1;33m[0m[1;33m[0m[1;31m[Err] [Server.cc:472] [0m[1;31mCould not open file[[0m[1;31mworlds/gazebo_empty.world[0m[1;31m]
+[gazebo-1] [0m[1;33m[Wrn] [Server.cc:381] [0m[1;33mFalling back on worlds/empty.world
+[spawn_entity.py-5] [INFO] [1781055012.438172832] [spawn_entity]: Calling service /spawn_entity
+[spawn_entity.py-5] [INFO] [1781055012.605744034] [spawn_entity]: Spawn status: SpawnEntity: Successfully spawned entity [turtlebot3]
+[gazebo-1] [0m[INFO] [1781055012.625817857] [turtlebot3_diff_drive]: Wheel pair 1 separation set to [0.160000m]
+[gazebo-1] [INFO] [1781055012.626431799] [turtlebot3_diff_drive]: Wheel pair 1 diameter set to [0.066000m]
+[gazebo-1] [INFO] [1781055012.628291692] [turtlebot3_diff_drive]: Subscribed to [/cmd_vel]
+[gazebo-1] [INFO] [1781055012.631462014] [turtlebot3_diff_drive]: Advertise odometry on [/odom]
+[gazebo-1] [INFO] [1781055012.634381896] [turtlebot3_diff_drive]: Publishing odom transforms between [odom] and [base_footprint]
+[gazebo-1] [INFO] [1781055012.647869394] [turtlebot3_joint_state]: Going to publish joint [rotating_frame_joint]
+[gazebo-1] [INFO] [1781055012.669472933] [gazebo_ros2_control]: Loading gazebo_ros2_control plugin
+[gazebo-1] [INFO] [1781055012.675957451] [gazebo_ros2_control]: Starting gazebo_ros2_control plugin in namespace: /
+[gazebo-1] [INFO] [1781055012.676006375] [gazebo_ros2_control]: Starting gazebo_ros2_control plugin in ros 2 node: gazebo_ros2_control
+[gazebo-1] [INFO] [1781055012.680466726] [gazebo_ros2_control]: connected to service!! /robot_state_publisher_node
+[gazebo-1] [INFO] [1781055012.681027207] [gazebo_ros2_control]: Received urdf from param server, parsing...
+[gazebo-1] [INFO] [1781055012.681067003] [gazebo_ros2_control]: Loading parameter files /home/mattb/dsim-lab/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/controller_config/joint_controller.yaml
+[gazebo-1] [INFO] [1781055012.690657507] [gazebo_ros2_control]: Loading joint: rotating_frame_joint
+[gazebo-1] [INFO] [1781055012.690709619] [gazebo_ros2_control]: 	State:
+[gazebo-1] [INFO] [1781055012.690718181] [gazebo_ros2_control]: 		 position
+[gazebo-1] [INFO] [1781055012.690726501] [gazebo_ros2_control]: 			 found initial value: 0.000000
+[gazebo-1] [INFO] [1781055012.690741352] [gazebo_ros2_control]: 		 velocity
+[gazebo-1] [INFO] [1781055012.690751234] [gazebo_ros2_control]: 			 found initial value: 0.000000
+[gazebo-1] [INFO] [1781055012.690761814] [gazebo_ros2_control]: 	Command:
+[gazebo-1] [INFO] [1781055012.690789655] [gazebo_ros2_control]: 		 velocity
+[gazebo-1] [INFO] [1781055012.691099943] [resource_manager]: Initialize hardware 'GazeboSystem' 
+[gazebo-1] [INFO] [1781055012.691236300] [resource_manager]: Successful initialization of hardware 'GazeboSystem'
+[gazebo-1] [INFO] [1781055012.691350545] [resource_manager]: 'configure' hardware 'GazeboSystem' 
+[gazebo-1] [INFO] [1781055012.691362642] [resource_manager]: Successful 'configure' of hardware 'GazeboSystem'
+[gazebo-1] [INFO] [1781055012.691368124] [resource_manager]: 'activate' hardware 'GazeboSystem' 
+[gazebo-1] [INFO] [1781055012.691373490] [resource_manager]: Successful 'activate' of hardware 'GazeboSystem'
+[gazebo-1] [INFO] [1781055012.691481556] [gazebo_ros2_control]: Loading controller_manager
+[gazebo-1] [WARN] [1781055012.714543322] [gazebo_ros2_control]:  Desired controller update period (0.01 s) is slower than the gazebo simulation period (0.001 s).
+[gazebo-1] [INFO] [1781055012.714783809] [gazebo_ros2_control]: Loaded gazebo_ros2_control.
+[gazebo-1] [INFO] [1781055012.718381090] [controller_manager]: Loading controller 'velocity_controller'
+[spawner-4] [INFO] [1781055012.746094520] [spawner_velocity_controller]: [94mLoaded [1mvelocity_controller[0m
+[gazebo-1] [INFO] [1781055012.747590755] [controller_manager]: Configuring controller 'velocity_controller'
+[gazebo-1] [INFO] [1781055012.749347005] [velocity_controller]: configure successful
+[INFO] [spawn_entity.py-5]: process has finished cleanly [pid 43077]
+[gazebo-1] [INFO] [1781055012.765527374] [velocity_controller]: activate successful
+[spawner-4] [INFO] [1781055012.776997090] [spawner_velocity_controller]: [92mConfigured and activated [1mvelocity_controller[0m
+[INFO] [spawner-4]: process has finished cleanly [pid 43075]
+[gazebo-1] [INFO] [1781055012.939115051] [controller_manager]: Loading controller 'joint_state_broadcaster'
+[spawner-3] [INFO] [1781055012.957278871] [spawner_joint_state_broadcaster]: [94mLoaded [1mjoint_state_broadcaster[0m
+[gazebo-1] [INFO] [1781055012.958285365] [controller_manager]: Configuring controller 'joint_state_broadcaster'
+[gazebo-1] [INFO] [1781055012.958409927] [joint_state_broadcaster]: 'joints' or 'interfaces' parameter is empty. All available state interfaces will be published
+[spawner-3] [INFO] [1781055012.987634923] [spawner_joint_state_broadcaster]: [92mConfigured and activated [1mjoint_state_broadcaster[0m
+[INFO] [spawner-3]: process has finished cleanly [pid 43073]
+[gazebo-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mWaiting for master.[0m[1;32m
+[gazebo-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mConnected to gazebo master @ [0m[1;32mhttp://127.0.0.1:11673[0m[1;32m
+[gazebo-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mPublicized address: [0m[1;32m192.168.44.106[0m[1;32m
+[gazebo-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mWarning: Ignoring XDG_SESSION_TYPE=wayland on Gnome. Use QT_QPA_PLATFORM=wayland to run on Wayland anyway.[0m[1;32m
+[gazebo-1] [1;33m[Wrn] [Event.cc:61] [0m[1;33mWarning: Deleting a connection right after creation. [0m[1;33mMake sure to save the ConnectionPtr from a Connect call
+[ros2-12] No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+[gazebo-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mLoading world file [[0m[1;32m/usr/share/gazebo-11/worlds/empty.world[0m[1;32m][0m[1;32m

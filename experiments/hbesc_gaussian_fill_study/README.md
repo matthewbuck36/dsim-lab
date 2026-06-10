@@ -1,6 +1,6 @@
 # HeavyBall ESC Versus Gaussian Fill Study
 
-Phase 2 status as of 2026-06-09: repository verification, foundational docs, harness scripts, analysis entrypoints, and one bounded 60-second sim-time smoke run are complete. No full 500-second trial was run.
+Phase 3 status as of 2026-06-10: repository verification, foundational docs, harness scripts, analysis entrypoints, the bounded Phase 2 smoke run, and the Phase 3 minimal quartic matrix are complete. No Phase 4 gain-sensitivity run has been started.
 
 ## What This Directory Contains
 
@@ -9,8 +9,11 @@ Phase 2 status as of 2026-06-09: repository verification, foundational docs, har
 - `code_trace.md`: local repo trace of the ROS2/Gazebo pipeline and data flow.
 - `hbesc_gain_trace.md`: local repo trace of HBESC, velocity, filter, sensor-spin, and Gaussian-fill parameters.
 - `results_manifest.csv`: initialized manifest for future runs.
+- `phase3_results.md`: Phase 3 run table, classifications, invalidated run note, and Phase 4 handoff.
 - `configs/scenarios/phase1_trial_matrix.csv`: initial trial matrix scaffold.
 - `configs/scenarios/phase2_smoke_quartic_baseline.json`: first dry-run/smoke scenario config.
+- `configs/scenarios/phase3_qrt_a_hb.json`: Phase 3 convex quartic baseline continuation.
+- `configs/scenarios/phase3_qrt_a_gf.json`: next Phase 3 paired Gaussian-fill dry-run candidate.
 - `scripts/`: Phase 2 harness scripts for one trial, sweeps, sim-time monitoring, output checks, and manifest recording.
 - `analysis/`: Phase 2 analysis and plotting entrypoints.
 
@@ -65,8 +68,16 @@ Successful smoke run:
 
 The smoke run required execution outside the sandbox because ROS/Gazebo DDS and Gazebo networking need local socket/interface access.
 
-Next exact command for a Phase 3 minimal-matrix dry-run:
+## Phase 3 Minimal Quartic Result
 
-```bash
-experiments/hbesc_gaussian_fill_study/scripts/run_sweep.py --limit 1 experiments/hbesc_gaussian_fill_study/configs/scenarios/phase2_smoke_quartic_baseline.json
-```
+Completed minimal quartic matrix:
+
+- Summary: see `phase3_results.md`.
+- Valid execute runs: 11.
+- Invalidated execute runs: 1 (`20260609T234054Z_phase3_qrt_b_hb_execute`, superseded by `20260610T013008Z_phase3_qrt_b_hb_execute`).
+- Gazebo cleanup: `run_one_trial.sh` now terminates the whole runner process session after each execute run so `gazebo`, `gzserver`, and `gzclient` do not accumulate.
+- Gazebo physics: `worlds/gazebo_empty.world` sets `real_time_update_rate` to 3000.
+
+No further Phase 3 run command is pending. Phase 4 should start by adding
+low/default/high HBESC gain scenario configs, then dry-running that Phase 4
+scenario list before execution.

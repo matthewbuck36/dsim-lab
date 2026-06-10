@@ -1,0 +1,9 @@
+{
+  "run_id": "20260609T230722Z_phase3_qrt_a_hb_dry_run",
+  "scenario_name": "phase3_qrt_a_hb",
+  "scenario_id": "QRT-A-HB",
+  "mode": "dry-run",
+  "status": "dry_run_passed",
+  "completed_at_utc": "2026-06-09T23:07:22.979684+00:00",
+  "notes": "No Gazebo simulation was started."
+}

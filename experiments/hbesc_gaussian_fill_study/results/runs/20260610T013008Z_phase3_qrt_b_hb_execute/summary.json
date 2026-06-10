@@ -1,0 +1,9 @@
+{
+  "run_id": "20260610T013008Z_phase3_qrt_b_hb_execute",
+  "scenario_name": "phase3_qrt_b_hb",
+  "scenario_id": "QRT-B-HB",
+  "mode": "execute",
+  "status": "sim_time_reached",
+  "completed_at_utc": "2026-06-10T01:41:58.663075+00:00",
+  "notes": "sim-time stop_rule_sec reached; runner process session terminated"
+}
