@@ -1,6 +1,6 @@
 # HeavyBall ESC Versus Gaussian Fill Study
 
-Phase 3 status as of 2026-06-10: repository verification, foundational docs, harness scripts, analysis entrypoints, the bounded Phase 2 smoke run, and the Phase 3 minimal quartic matrix are complete. A reusable batch runner has been added as post-Phase 3 harness work. No Phase 4 gain-sensitivity run has been started.
+Phase 4 status as of 2026-06-10: repository verification, foundational docs, harness scripts, analysis entrypoints, the bounded Phase 2 smoke run, the Phase 3 minimal quartic matrix, and the Phase 4 HBESC gain-sensitivity matrix are complete. A reusable batch runner is active for dry-run and bounded execute batches. No Phase 5 expanded-characterization run has been started.
 
 ## What This Directory Contains
 
@@ -10,10 +10,12 @@ Phase 3 status as of 2026-06-10: repository verification, foundational docs, har
 - `hbesc_gain_trace.md`: local repo trace of HBESC, velocity, filter, sensor-spin, and Gaussian-fill parameters.
 - `results_manifest.csv`: initialized manifest for future runs.
 - `phase3_results.md`: Phase 3 run table, classifications, invalidated run note, and Phase 4 handoff.
+- `phase4_results.md`: Phase 4 HBESC gain-sensitivity run table, conclusions, unresolved world-path note, and Phase 5 handoff.
 - `configs/scenarios/phase1_trial_matrix.csv`: initial trial matrix scaffold.
 - `configs/scenarios/phase2_smoke_quartic_baseline.json`: first dry-run/smoke scenario config.
 - `configs/scenarios/phase3_qrt_a_hb.json`: Phase 3 convex quartic baseline continuation.
 - `configs/scenarios/phase3_qrt_a_gf.json`: next Phase 3 paired Gaussian-fill dry-run candidate.
+- `configs/scenarios/phase4_gain_sensitivity_matrix.csv`: Phase 4 low/default/high one-at-a-time HBESC gain-sensitivity matrix.
 - `scripts/`: harness scripts for one trial, reusable batches, sim-time monitoring, output checks, analysis dispatch, and manifest recording.
 - `analysis/`: Phase 2 analysis and topographic plotting entrypoints.
 
@@ -78,9 +80,27 @@ Completed minimal quartic matrix:
 - Gazebo cleanup: `run_one_trial.sh` now terminates the whole runner process session after each execute run so `gazebo`, `gzserver`, and `gzclient` do not accumulate.
 - Gazebo physics: `worlds/gazebo_empty.world` sets `real_time_update_rate` to 3000.
 
-No further Phase 3 run command is pending. Phase 4 should start by adding
-low/default/high HBESC gain scenario configs, then dry-running that Phase 4
-scenario list before execution.
+No further Phase 3 run command is pending.
+
+## Phase 4 Gain Sensitivity Result
+
+Completed Phase 4 matrix:
+
+- Summary: see `phase4_results.md`.
+- Valid execute runs: 9.
+- Dry-run batch: `results/batches/phase4_gain_dry_run/`.
+- Execute batch: `results/batches/phase4_gain_execute/`.
+- Aggregate metrics: `results/batches/phase4_gain_execute/phase4_metrics.csv`.
+- Result: all 9 gain variants converged within the 2 m success radius on the
+  representative convex quartic field, but all exceeded TurtleBot3 Burger
+  reference wheel limits.
+- Strongest sensitivity: HeavyBall `k`, `k_vx`, and `beta`; `k_wz` was less
+  important on this field.
+
+No further Phase 4 run command is pending. Phase 5 should start by fixing or
+explicitly routing the Gazebo world path if the custom world physics settings are
+required, then adding a minimal characterization matrix and dry-running it before
+execution.
 
 ## Batch Simulation Runner
 

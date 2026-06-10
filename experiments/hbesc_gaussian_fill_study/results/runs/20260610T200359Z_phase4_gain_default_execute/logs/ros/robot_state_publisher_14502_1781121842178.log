@@ -1,0 +1,10 @@
+[INFO] [1781121842.244130715] [robot_state_publisher_node]: got segment base_footprint
+[INFO] [1781121842.244305194] [robot_state_publisher_node]: got segment base_link
+[INFO] [1781121842.244329362] [robot_state_publisher_node]: got segment base_scan
+[INFO] [1781121842.244346434] [robot_state_publisher_node]: got segment caster_wheel
+[INFO] [1781121842.244361275] [robot_state_publisher_node]: got segment imu_link
+[INFO] [1781121842.244376748] [robot_state_publisher_node]: got segment rotating_frame_link
+[INFO] [1781121842.244391233] [robot_state_publisher_node]: got segment sensor_link
+[INFO] [1781121842.244401762] [robot_state_publisher_node]: got segment wheel_left_link
+[INFO] [1781121842.244413589] [robot_state_publisher_node]: got segment wheel_right_link
+[INFO] [1781122345.152051934] [rclcpp]: signal_handler(SIGINT/SIGTERM)

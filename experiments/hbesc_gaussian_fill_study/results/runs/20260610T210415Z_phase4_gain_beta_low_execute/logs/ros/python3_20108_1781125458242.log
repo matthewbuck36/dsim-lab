@@ -1,0 +1,7 @@
+[INFO] [1781125458.348415873] [spawn_entity]: Spawn Entity started
+[INFO] [1781125458.350263239] [spawn_entity]: Loading entity published on topic /robot_description
+[INFO] [1781125458.354361134] [spawn_entity]: Waiting for entity xml on /robot_description
+[INFO] [1781125458.365777099] [spawn_entity]: Waiting for service /spawn_entity, timeout = 30
+[INFO] [1781125458.366397159] [spawn_entity]: Waiting for service /spawn_entity
+[INFO] [1781125459.372881497] [spawn_entity]: Calling service /spawn_entity
+[INFO] [1781125459.603223639] [spawn_entity]: Spawn status: SpawnEntity: Successfully spawned entity [turtlebot3]

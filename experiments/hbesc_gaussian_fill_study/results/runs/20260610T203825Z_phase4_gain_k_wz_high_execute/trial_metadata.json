@@ -1,0 +1,22 @@
+{
+  "run_id": "20260610T203825Z_phase4_gain_k_wz_high_execute",
+  "mode": "execute",
+  "created_at_utc": "2026-06-10T20:38:25.854557+00:00",
+  "source_scenario": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_k_wz_high.json",
+  "scenario_used": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T203825Z_phase4_gain_k_wz_high_execute/configs/scenario_used.json",
+  "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T203825Z_phase4_gain_k_wz_high_execute",
+  "scenario_name": "phase4_gain_k_wz_high",
+  "scenario_id": "QRT-GAIN-KWZ-HIGH",
+  "stop_rule_sec": 500,
+  "headless": true,
+  "gazebo_headless_env": "1",
+  "gazebo_command": "gzserver",
+  "original_live_plot_mode": "2D",
+  "scenario_live_plot_mode": "None",
+  "data_collection_filepath": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T203825Z_phase4_gain_k_wz_high_execute/data_collection",
+  "ros_domain_id": "28",
+  "gazebo_master_uri": "http://127.0.0.1:12313",
+  "ros_log_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T203825Z_phase4_gain_k_wz_high_execute/logs/ros",
+  "mplconfigdir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T203825Z_phase4_gain_k_wz_high_execute/logs/matplotlib",
+  "mplbackend": "Agg"
+}

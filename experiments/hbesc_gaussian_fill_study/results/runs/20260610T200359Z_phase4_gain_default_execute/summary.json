@@ -1,0 +1,10 @@
+{
+  "run_id": "20260610T200359Z_phase4_gain_default_execute",
+  "scenario_name": "phase4_gain_default",
+  "scenario_id": "QRT-GAIN-DEFAULT",
+  "mode": "execute",
+  "status": "sim_time_reached",
+  "completed_at_utc": "2026-06-10T20:12:30.187803+00:00",
+  "notes": "sim-time stop_rule_sec reached; runner process session terminated",
+  "headless": true
+}

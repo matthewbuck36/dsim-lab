@@ -1,0 +1,565 @@
+-------------------------------------------------------------------
+User Comments:
+
+
+
+-------------------------------------------------------------------
+Experiment Conducted At:
+2026-06-10_13-38-30
+-------------------------------------------------------------------
+Timekeeper Information:
+Start Time:
+0.0
+Timekeeper Mode:
+sim time
+-------------------------------------------------------------------
+Rotate Frame Configuration Used:
+{
+    "velocity_controller":{
+        "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/rotate_frame_node/spin_profile_objects/spin_profile_objects.py",
+        "object_name": "Constant_Full_Rotation",
+        "params":{
+            "spin_rpm": 20
+        }
+    }
+}
+-------------------------------------------------------------------
+Rotate Frame Velocity Controller Name:
+velocity_controller
+
+Spin Profile Object Used:
+class Constant_Full_Rotation(SpinProfile):
+    """This class enables constant full rotation of the frame."""
+
+    def __init__(self, params):
+        """This initializes the spin profile object.
+
+        The params input should be a dictionary with the following keys
+        "params":{
+            "spin_rpm": float
+        }
+        """
+
+        # Define the rotation speed in radians per second
+        self.speed = params["spin_rpm"]*(2*np.pi/60)
+
+    def velocity_output(self, time, angular_position, spin_direction):
+        """This operates on the input arguments and produces the velocity output.
+
+        time (float): current time
+            (either simulation or real time)
+
+        angular_position (float): current angular position of the rotating frame
+
+        spin_direction (boolean or None): current spin direction of the rotating frame
+            (True for ccw rotation, False for cw rotation, None if uninitialized)
+        """
+
+        # No dependence on any input variable
+        output = self.speed
+
+        return output
+-------------------------------------------------------------------
+Transform Configuration Used:
+{
+    "rotating_frame_one":{
+        "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_objects/transform_objects.py",
+        "object_name": "Transform_Odom_To_Sensor_Pose",
+        "params":{
+            "joint_position": [0, 0, 0.355],
+            "rotation_axis": [0, 0, 1],
+            "sensor_transform": [
+                [1, 0, 0, 0.180],
+                [0, 1, 0, 0],
+                [0, 0, 1, 0.015],
+                [0, 0, 0, 1]
+            ]
+        }
+    }
+}
+-------------------------------------------------------------------
+Transform Name:
+rotating_frame_one
+
+Transform Object Used:
+class Transform_Odom_To_Sensor_Pose(TransformObject):
+    """This calculates the transformation matrix of a sensor based on odometry and encoder data."""
+
+    def __init__(self, params):
+        """This initializes the transform object.
+
+        The transform odom to sensor pose object should be configured in the config
+        file as a dictionary named params in the following format. The joint position
+        key should be an array that describes the position of the rotating sensor frame
+        joint with respect to the vehicle's 'footprint', or 'base' frame. Note that this
+        'footprint' or 'base' frame is specified in the vehicle's URDF file, and can be
+        thought of as the vehicle's center of mass. The rotation axis key should be an
+        array containing a unit vector describing the rotation axis of the rotating sensor
+        frame in the local vehicle frame. The sensor position key should be a transformation
+        matrix that describes the position and orientation of the sensor with respect the the
+        rotating sensor frame joint. This matrix does not change as the frame rotates,
+        this is a static transform.
+
+        "params":{
+            "joint_position": np.array (3,) (one row by three columns),
+            "rotation_axis": np.array (3,) (one row by three columns),
+            "sensor_transform": np.array (4,4) (four rows by four columns)
+        }
+        """
+
+        # Assert all inputs are arrays of the correct dimensions
+        joint_position = params["joint_position"]
+        warn_msg = "The joint_position must be an array of length three."
+        assert np.shape(joint_position) == (3,), warn_msg
+
+        rotation_axis = params["rotation_axis"]
+        warn_msg = "The rotation_axis must be an array of length three."
+        assert np.shape(rotation_axis) == (3,), warn_msg
+
+        sensor_transform = params["sensor_transform"]
+        warn_msg = "The sensor_position must be a 4x4 transformation matrix."
+        assert np.shape(sensor_transform) == (4, 4), warn_msg
+
+        # Initialize the object with the inputs
+        self.joint_position = joint_position
+        self.rotation_axis = rotation_axis
+        self.sensor_transform = sensor_transform
+
+    # pylint: disable=no-self-use
+    def odom_transform_matrix(self, odom_data):
+        """This generates the transformation matrix from odom to the vehicle 'footprint'."""
+
+        # The odom data is an array in the form
+        # odom_data = [x_pos, y_pos, z_pos, quat_w, quat_x, quat_y, quat_z]
+
+        # Get the vehicle's position
+        x_pos = odom_data[0]
+        y_pos = odom_data[1]
+        z_pos = odom_data[2]
+
+        # Note we have to use the quaternion angles given to us
+        # by msg.pose.pose.orientation to calculate our r, p, y angles
+        # For reference, see eqns (11a-c):
+        # https://danceswithcode.net/engineeringnotes/quaternions/quaternions.html
+        quat_w = odom_data[3]
+        quat_x = odom_data[4]
+        quat_y = odom_data[5]
+        quat_z = odom_data[6]
+
+        # Package this position and orientation data into a homogeneous transformation matrix
+        # Note this transformation matrix represents the position & orientation of the vehicle
+        # in the stationary odometry frame. The rotation matrix was constructed using eqn (7b):
+        # https://danceswithcode.net/engineeringnotes/quaternions/quaternions.html
+        transform_matrix = np.array([
+            [1-2*quat_y**2-2*quat_z**2, 2*quat_x*quat_y-2*quat_w*quat_z,
+             2*quat_x*quat_z+2*quat_w*quat_y, x_pos],
+
+            [2*quat_x*quat_y+2*quat_w*quat_z, 1-2*quat_x**2-2*quat_z**2,
+             2*quat_y*quat_z-2*quat_w*quat_x, y_pos],
+
+            [2*quat_x*quat_z-2*quat_w*quat_y, 2*quat_y*quat_z+2*quat_w*quat_x,
+             1-2*quat_x**2-2*quat_y**2, z_pos],
+
+            [0,0,0,1]
+        ])
+
+        return transform_matrix
+
+    def joint_transform_matrix(self, angular_position):
+        """This generates the transformation matrix from the vehicle's 'footprint' to the joint."""
+
+        # Convert an axis angle representation to quaternions
+        # For reference, see eqns (4b-e):
+        # https://danceswithcode.net/engineeringnotes/quaternions/quaternions.html
+        quat_w = np.cos(angular_position / 2)
+        quat_x = self.rotation_axis[0] * np.sin(angular_position / 2)
+        quat_y = self.rotation_axis[1] * np.sin(angular_position / 2)
+        quat_z = self.rotation_axis[2] * np.sin(angular_position / 2)
+
+        # Convert these quaternions to a rotation matrix,
+        # combine with position information the joint position variable
+
+        # Package this position and orientation data into a homogeneous transformation matrix
+        # Note this transformation matrix represents the position & orientation of the rotating
+        # sensor frame in the vehicle footprint frame. For reference, see eqn (7b):
+        # https://danceswithcode.net/engineeringnotes/quaternions/quaternions.html
+        transform_matrix = np.array([
+            [1-2*quat_y**2-2*quat_z**2, 2*quat_x*quat_y-2*quat_w*quat_z,
+             2*quat_x*quat_z+2*quat_w*quat_y, self.joint_position[0]],
+
+            [2*quat_x*quat_y+2*quat_w*quat_z, 1-2*quat_x**2-2*quat_z**2,
+             2*quat_y*quat_z-2*quat_w*quat_x, self.joint_position[1]],
+
+            [2*quat_x*quat_z-2*quat_w*quat_y, 2*quat_y*quat_z+2*quat_w*quat_x,
+             1-2*quat_x**2-2*quat_y**2, self.joint_position[2]],
+
+            [0,0,0,1]
+        ])
+
+        return transform_matrix
+
+    def transform_output(self, odom_data, angular_position):
+        """This uses the forward kinematic method to get the transformation matrix of the sensor."""
+
+        # Get the transformation matrix from odom to vehicle footprint
+        odom_transform = self.odom_transform_matrix(odom_data)
+
+        # Get the transformation matrix from vehicle footprint to joint
+        joint_transform = self.joint_transform_matrix(angular_position)
+
+        # Multiply these two transformation matrices together
+        intermediate_transform = np.matmul(odom_transform, joint_transform)
+
+        # Multiply this by the sensor transform to get the final transformation
+        # matrix describint the sensor's pose in the global frame
+        final_transform = np.matmul(intermediate_transform, self.sensor_transform)
+
+        # Return the final transformation matrix describing the sensor
+        output = final_transform
+
+        return output
+-------------------------------------------------------------------
+Cost Function Configuration Used:
+{
+  "CostFunction": {
+    "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/cost_function_objects.py",
+    "object_name": "Position_Based_Sympy_Expression",
+    "params": {
+      "function": "0.0005*((x-10)**4 + (y-10)**4)",
+      "symbols": ["t", "x", "y", "z"],
+      "substitutions": {}
+    }
+  },
+  "Noise": {
+    "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/noise_objects.py",
+    "object_name": "No_Noise"
+  }
+}
+
+-------------------------------------------------------------------
+Cost Function Object Used:
+class Position_Based_Sympy_Expression(CostFunction):
+    """This class allows for a position based sympy expression to be used as a cost function."""
+
+    def __init__(self, params):
+        """This initializes the object.
+
+        The sympy expression should be defined in the config file as a dictionary
+        named params in the following format. The function key should contain the
+        cost function expressed symbolically as a string. The symbols key should
+        match the one shown below, all cost functions will be functions of position
+        and time. Finally, the substitutions key is optional, this can be used to
+        define a dictionary of variables that will get substituted into the main
+        expression. These variables may be defined as ints or floats, or they may
+        contain more expressions expressed as strings.
+
+        "params":{
+            "function": {cost_function_expressed_symbolically_as_a_string},
+            "symbols": ["t", "x", "y", "z"],
+            "substitutions":{
+                "substitution_1": float
+                "substitution_2": {expression_string}
+                etc...
+            }
+        }
+        """
+
+        # Create a lambda function with sympy
+        # pylint: disable=unused-variable
+        self.cost_function, self.cost_expression = parse_sympy_expression(params)
+
+    def cost_output(self, time, sensor_transform):
+        """This operates on input arguments and produces a cost value."""
+
+        # Extract the sensor's position from the transformation matrix
+        x = sensor_transform[0][3]
+        y = sensor_transform[1][3]
+        z = sensor_transform[2][3]
+
+        # Calculate the cost value with the expression
+        output = self.cost_function(time, x, y, z)
+
+        return output
+-------------------------------------------------------------------
+Noise Object Used:
+class No_Noise(NoiseObject):
+    """This class implements no noise, it is simply a placeholder in a config file."""
+
+    def __init__(self):
+        """This initializes the object."""
+
+        # pylint: disable=unnecessary-pass
+        pass
+
+    def add_noise(self, time, cost):
+        """This takes in the cost value and adds in noise."""
+
+        # Return the unaltered cost values
+        output = cost
+        # Convert from array to list
+        output = output.tolist()
+
+        return output
+-------------------------------------------------------------------
+Filter Configuration Used:
+{
+    "CascadeFilter":[
+        {
+            "ParallelFilter":[
+                {
+                    "CascadeFilter":[
+                        {
+                            "FunctionFilter":{
+                                "function": "u[0]",
+                                "idim": 1,
+                                "odim": 1
+                            }
+                        },
+                        {
+                            "WashoutFilter":{
+                                "omega": 1.0
+                            }
+                        }
+                    ]
+                },
+                {
+                    "CascadeFilter":[
+                        {
+                            "FunctionFilter":{
+                                "function": "u[1]",
+                                "idim": 1,
+                                "odim": 1
+                            }
+                        },
+                        {
+                            "FunctionFilter":{
+                                "function": [
+                                    "(2/d)*cos(phi)",
+                                    "(2/d)*sin(phi)"
+                                ],
+                                "symbols": ["phi","phi"],
+                                "substitutions": [
+                                    {
+                                        "d": 0.18
+                                    },
+                                    {
+                                        "d": 0.18
+                                    }
+                                ],
+                                "idim": 1,
+                                "odim": 2
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "FunctionFilter":{
+                "function": [
+                    "-1*u[0]*u[1]",
+                    "-1*u[0]*u[2]"
+                ],
+                "idim": 3,
+                "odim": 2
+            }
+        }
+    ]
+}
+
+-------------------------------------------------------------------
+Controller Configuration Used:
+{
+  "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_objects/turtlebot_vehicle.py",
+  "object_name": "Rotating_Frame_Directional_Controller",
+  "gains": {
+    "k_vx": 0.2,
+    "k_wz": 4.0
+  },
+  "dynamic_states": {
+    "m": 2,
+    "ode": {
+      "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_objects/turtlebot_ode_objects.py",
+      "object_name": "HeavyBallODE",
+      "k": 1.0,
+      "beta": 0.1,
+      "input_gain": -1.0
+    },
+    "initial_values": [
+      0.0,
+      0.0
+    ]
+  },
+  "params": {
+    "wheel_radius": 0.033,
+    "wheel_distance": 0.158,
+    "wheel_max_rpm": 70,
+    "set_max_vx": null,
+    "set_max_wz": 0.75
+  }
+}
+
+-------------------------------------------------------------------
+Controller Object Used:
+class Rotating_Frame_Directional_Controller(ControllerObject):
+    """This can be used with derivative estimations obtained in the vehicle relative frame.
+
+    This class can be used for methods that collect a time history of a derivative estimation.
+    Adaptive methods like RMSProp and AdaGrad ESC obtain and track the time history of derivative
+    estimates in the vehicle relative frame. These must be converted via a 2D rotation matrix so
+    that the derivative estimates are transformed into the absolute frame. The selected ODE can be
+    used with the derivative estimates to obtain a direction of travel in the absolute frame
+    where one sees improvement in their cost value. This direction must then be converted
+    back into the vehicle relative frame. With this result, one can then apply their feedback
+    control law to navigate along the desired direction in the relative frame.
+    """
+
+    def __init__(self, gains, dynamic_states, params):
+        """This initializes the rotating frame directional controller object.
+
+        The gains input should be a dictionary with the following keys
+        "gains":{
+            "k_vx": float,
+            "k_wz": float
+        },
+
+        The dynamic states input should be a dictionary with the following keys
+        "dynamic_states": {
+            "m" : int > 0,
+
+            "ode" : {
+                "filepath" : string,
+                "object_name" : string,
+
+                    ode_object must have a method: "differential_equation"
+                    with call signature: differential_equation(t, x, z, u)
+
+                    t is a float for time
+                    x is a vector of vehicle states
+                    z is a vector of controller dynamic states (for choice of ODE)
+                    u is a vector of input values coming from derivative estimation filter
+
+                Include other keys used to intialize the ODE object such as:
+                "omega_l" : float, low pass filter parameter
+                "k" : ndarray, gains for the ode equation
+                "epsilon" : float, small value in ODE equation
+            },
+
+            "initial_values": list[float]
+                is a vector of initial controller dynamic states
+        }
+
+        The params input should be a dictionary with the following keys
+        "params":{
+            "wheel_radius": float,
+            "wheel_distance": float,
+            "wheel_max_rpm": float,
+            "set_max_vx": null,
+            "set_max_wz": null
+        }
+
+        The user can override the maximum forward and angular velocity
+        constraints by replacing null with a float value.
+        """
+
+        # Initialize a vector of dynamic states
+        self.num_dynamic_states = dynamic_states["m"]
+        self.dynamic_states = np.zeros((self.num_dynamic_states,))
+
+        # If given initial values for the dynamic states
+        if dynamic_states["initial_values"]:
+            # Initialize with user defined initial states
+            self.dynamic_states = dynamic_states["initial_values"]
+
+        # Obtain the dictionary describing the ode
+        ode_dict = dynamic_states["ode"]
+        # Parse this ode dictionary and return the initialized ODE object
+        self.ode_object = parse_object_config(ode_dict)
+
+        # Define a variable to track the previous timestamp
+        self.prev_tstamp = None
+
+        # Define forward velocity gain
+        self.k_vx = gains["k_vx"]
+        # Define angular velocity gain
+        self.k_wz = gains["k_wz"]
+        # Define necessary parameters
+        radius = params["wheel_radius"] # wheel radius in meters
+        dist = params["wheel_distance"] # horizontal distance between wheels in meters
+        max_rpm = params["wheel_max_rpm"] # maximum no load speed for the driving servo motors
+
+        # Calculate the maximum angular velocity of the driving servos
+        omega_max = max_rpm/60*2*np.pi # max angular velocity in rad/s
+        # Calculate the maximum velocity constraints
+        self.max_vx = omega_max*radius # maximum forward velocity
+        self.max_wz = 2*omega_max*radius/dist # maximum turning velocity while turning in place
+
+        # Override the maximum forward velocity if the user desires
+        if params["set_max_vx"] is not None:
+            self.max_vx = params["set_max_vx"]
+
+        # Override the maximum angular velocity if the user desires
+        if params["set_max_wz"] is not None:
+            self.max_wz = params["set_max_wz"]
+
+    def update_dynamic_states(self, time, state, input_values, dt):
+        """Updates controller dynamic states for choice of ODE method."""
+
+        # Use the ODE object to operate on input information
+        diff_eqn_output = self.ode_object.differential_equation(
+            time, state, self.dynamic_states, input_values
+        )
+
+        # Separate the dictionary into the different parts
+        theta_dot = diff_eqn_output["theta_dot"]
+        z_dot = diff_eqn_output["z_dot"]
+
+        # Update dynamic states with a forward Euler step
+        self.dynamic_states += z_dot * dt
+
+        # Update the previous timestamp
+        self.prev_tstamp = time
+
+        # Return the desired update direction in the vehicle relative frame
+        return theta_dot
+
+    def controller_output(self, time, state, input_values):
+        """This operates on the input arguments and produces the controller output.
+
+        time (float): current time
+            (either simulation or real time)
+        state (np.ndarray): (6,) vector of system states
+            (x, y, z, roll, pitch, yaw)
+        input_values (np.ndarray): a vector of input values to operate on
+            (typically these come from the output of a filter)
+        """
+
+        # Calculate the change in time from previous timestamp.
+        # On first callback, avoid a large startup integration jump.
+        if self.prev_tstamp is None:
+            dt = 0.0
+        else:
+            dt =  time - self.prev_tstamp
+        # Update controller dynamic states,
+        # obtain the update direction in the vehicle relative frame
+        update_direction = self.update_dynamic_states(time, state, input_values, dt)
+
+        # Calculate the feed back law:
+        # Linear velocity vx
+        v_x = self.k_vx * update_direction[0]
+        # Angular velocity wz
+        w_z = self.k_wz * update_direction[1]
+
+        # Apply vehicle constraints:
+        # Make sure these commands don't go over our vehicle constraints
+        if np.abs(v_x) > self.max_vx:
+            v_x = float(self.max_vx * np.sign(v_x))
+        if np.abs(w_z) > self.max_wz:
+            w_z = float(self.max_wz * np.sign(w_z))
+
+        # Return a list of commanded velocities
+        # [vx, vy, vz, wx, wy, wz]
+        output = np.array([v_x, 0, 0, 0, 0, w_z])
+
+        return output
+-------------------------------------------------------------------

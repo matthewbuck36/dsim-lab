@@ -1,0 +1,1 @@
+/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/scripts/run_one_trial.sh --dry-run --wall-timeout 180 /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_k_wz_low.json

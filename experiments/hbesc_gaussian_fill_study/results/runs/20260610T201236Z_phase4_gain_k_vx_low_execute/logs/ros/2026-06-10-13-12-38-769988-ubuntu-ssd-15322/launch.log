@@ -1,0 +1,17 @@
+1781122358.7707386 [INFO] [launch]: All log files can be found below /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T201236Z_phase4_gain_k_vx_low_execute/logs/ros/2026-06-10-13-12-38-769988-ubuntu-ssd-15322
+1781122358.7708776 [INFO] [launch]: Default logging verbosity is set to INFO
+1781122359.1213195 [INFO] [gzserver-1]: process started with pid [15324]
+1781122359.1215966 [INFO] [robot_state_publisher-2]: process started with pid [15326]
+1781122359.1217570 [INFO] [spawner-3]: process started with pid [15328]
+1781122359.1219003 [INFO] [spawner-4]: process started with pid [15330]
+1781122359.1220334 [INFO] [spawn_entity.py-5]: process started with pid [15332]
+1781122359.1221535 [INFO] [ros2-6]: process started with pid [15334]
+1781122359.1222785 [INFO] [ros2-7]: process started with pid [15336]
+1781122359.1224194 [INFO] [ros2-8]: process started with pid [15338]
+1781122359.1225293 [INFO] [ros2-9]: process started with pid [15340]
+1781122359.1226428 [INFO] [ros2-10]: process started with pid [15342]
+1781122359.1248479 [INFO] [ros2-11]: process started with pid [15344]
+1781122359.1250694 [INFO] [ros2-12]: process started with pid [15346]
+1781122361.0342877 [INFO] [spawn_entity.py-5]: process has finished cleanly [pid 15332]
+1781122361.3571997 [INFO] [spawner-3]: process has finished cleanly [pid 15328]
+1781122361.4880881 [INFO] [spawner-4]: process has finished cleanly [pid 15330]

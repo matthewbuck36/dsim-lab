@@ -1,0 +1,10 @@
+{
+  "run_id": "20260610T200335Z_phase4_gain_default_dry_run",
+  "scenario_name": "phase4_gain_default",
+  "scenario_id": "QRT-GAIN-DEFAULT",
+  "mode": "dry-run",
+  "status": "dry_run_passed",
+  "headless": false,
+  "completed_at_utc": "2026-06-10T20:03:35.834200+00:00",
+  "notes": "No Gazebo simulation was started."
+}

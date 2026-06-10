@@ -1,0 +1,10 @@
+order,scenario_config,scenario_id,name,phase,stop_rule_sec,method,action
+1,/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_default.json,QRT-GAIN-DEFAULT,phase4_gain_default,4,500,baseline_hbesc,run
+2,/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_k_vx_low.json,QRT-GAIN-KVX-LOW,phase4_gain_k_vx_low,4,500,baseline_hbesc,run
+3,/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_k_vx_high.json,QRT-GAIN-KVX-HIGH,phase4_gain_k_vx_high,4,500,baseline_hbesc,run
+4,/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_k_wz_low.json,QRT-GAIN-KWZ-LOW,phase4_gain_k_wz_low,4,500,baseline_hbesc,run
+5,/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_k_wz_high.json,QRT-GAIN-KWZ-HIGH,phase4_gain_k_wz_high,4,500,baseline_hbesc,run
+6,/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_hb_k_low.json,QRT-GAIN-HBK-LOW,phase4_gain_hb_k_low,4,500,baseline_hbesc,run
+7,/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_hb_k_high.json,QRT-GAIN-HBK-HIGH,phase4_gain_hb_k_high,4,500,baseline_hbesc,run
+8,/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_beta_low.json,QRT-GAIN-BETA-LOW,phase4_gain_beta_low,4,500,baseline_hbesc,run
+9,/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_beta_high.json,QRT-GAIN-BETA-HIGH,phase4_gain_beta_high,4,500,baseline_hbesc,run

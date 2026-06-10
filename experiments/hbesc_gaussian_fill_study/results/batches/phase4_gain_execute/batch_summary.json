@@ -1,0 +1,187 @@
+{
+  "batch_id": "phase4_gain_execute",
+  "mode": "execute",
+  "headless": true,
+  "wall_timeout": 700,
+  "resume": false,
+  "retries": 1,
+  "plan_only": false,
+  "created_at_utc": "2026-06-10T20:03:59.092575+00:00",
+  "batch_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute",
+  "plan_csv": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/batch_plan.csv",
+  "results": [
+    {
+      "order": 1,
+      "scenario_id": "QRT-GAIN-DEFAULT",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_default.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/001_QRT-GAIN-DEFAULT_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/001_QRT-GAIN-DEFAULT_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/001_QRT-GAIN-DEFAULT_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T200359Z_phase4_gain_default_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T200359Z_phase4_gain_default_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 2,
+      "scenario_id": "QRT-GAIN-KVX-LOW",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_k_vx_low.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/002_QRT-GAIN-KVX-LOW_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/002_QRT-GAIN-KVX-LOW_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/002_QRT-GAIN-KVX-LOW_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T201236Z_phase4_gain_k_vx_low_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T201236Z_phase4_gain_k_vx_low_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 3,
+      "scenario_id": "QRT-GAIN-KVX-HIGH",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_k_vx_high.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/003_QRT-GAIN-KVX-HIGH_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/003_QRT-GAIN-KVX-HIGH_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/003_QRT-GAIN-KVX-HIGH_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T202112Z_phase4_gain_k_vx_high_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T202112Z_phase4_gain_k_vx_high_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 4,
+      "scenario_id": "QRT-GAIN-KWZ-LOW",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_k_wz_low.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/004_QRT-GAIN-KWZ-LOW_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/004_QRT-GAIN-KWZ-LOW_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/004_QRT-GAIN-KWZ-LOW_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T202949Z_phase4_gain_k_wz_low_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T202949Z_phase4_gain_k_wz_low_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 5,
+      "scenario_id": "QRT-GAIN-KWZ-HIGH",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_k_wz_high.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/005_QRT-GAIN-KWZ-HIGH_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/005_QRT-GAIN-KWZ-HIGH_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/005_QRT-GAIN-KWZ-HIGH_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T203825Z_phase4_gain_k_wz_high_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T203825Z_phase4_gain_k_wz_high_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 6,
+      "scenario_id": "QRT-GAIN-HBK-LOW",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_hb_k_low.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/006_QRT-GAIN-HBK-LOW_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/006_QRT-GAIN-HBK-LOW_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/006_QRT-GAIN-HBK-LOW_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T204702Z_phase4_gain_hb_k_low_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T204702Z_phase4_gain_hb_k_low_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 7,
+      "scenario_id": "QRT-GAIN-HBK-HIGH",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_hb_k_high.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/007_QRT-GAIN-HBK-HIGH_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/007_QRT-GAIN-HBK-HIGH_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/007_QRT-GAIN-HBK-HIGH_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T205538Z_phase4_gain_hb_k_high_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T205538Z_phase4_gain_hb_k_high_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 8,
+      "scenario_id": "QRT-GAIN-BETA-LOW",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_beta_low.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/008_QRT-GAIN-BETA-LOW_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/008_QRT-GAIN-BETA-LOW_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/008_QRT-GAIN-BETA-LOW_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T210415Z_phase4_gain_beta_low_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T210415Z_phase4_gain_beta_low_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 9,
+      "scenario_id": "QRT-GAIN-BETA-HIGH",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_beta_high.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/009_QRT-GAIN-BETA-HIGH_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/009_QRT-GAIN-BETA-HIGH_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase4_gain_execute/logs/009_QRT-GAIN-BETA-HIGH_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T211252Z_phase4_gain_beta_high_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T211252Z_phase4_gain_beta_high_execute",
+      "status": "succeeded"
+    }
+  ],
+  "completed_at_utc": "2026-06-10T21:21:28.591415+00:00",
+  "failure_count": 0
+}

@@ -1,0 +1,20 @@
+{
+  "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T204702Z_phase4_gain_hb_k_low_execute",
+  "status": "pass",
+  "missing": [],
+  "present": [
+    "trial_metadata.json",
+    "configs/scenario_used.json",
+    "launch_command.txt",
+    "logs/scenario_dry_run.stdout",
+    "logs/scenario_dry_run.stderr",
+    "summary.json",
+    "data_collection/Test_2026-06-10_13-47-07/odometry.csv",
+    "data_collection/Test_2026-06-10_13-47-07/sensor_transform.csv",
+    "data_collection/Test_2026-06-10_13-47-07/cost_value.csv",
+    "data_collection/Test_2026-06-10_13-47-07/filter_value.csv",
+    "data_collection/Test_2026-06-10_13-47-07/control_value.csv",
+    "data_collection/Test_2026-06-10_13-47-07/comments.txt"
+  ],
+  "warnings": []
+}

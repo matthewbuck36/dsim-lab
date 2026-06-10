@@ -1,0 +1,10 @@
+scenario_config,sweep_parameter,sweep_level,k_vx,k_wz,hb_k,beta,stop_rule_sec
+experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_default.json,default,default,0.2,2.0,1.0,0.1,500
+experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_k_vx_low.json,k_vx,low,0.1,2.0,1.0,0.1,500
+experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_k_vx_high.json,k_vx,high,0.4,2.0,1.0,0.1,500
+experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_k_wz_low.json,k_wz,low,0.2,1.0,1.0,0.1,500
+experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_k_wz_high.json,k_wz,high,0.2,4.0,1.0,0.1,500
+experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_hb_k_low.json,hb_k,low,0.2,2.0,0.5,0.1,500
+experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_hb_k_high.json,hb_k,high,0.2,2.0,2.0,0.1,500
+experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_beta_low.json,beta,low,0.2,2.0,1.0,0.05,500
+experiments/hbesc_gaussian_fill_study/configs/scenarios/phase4_gain_beta_high.json,beta,high,0.2,2.0,1.0,0.2,500

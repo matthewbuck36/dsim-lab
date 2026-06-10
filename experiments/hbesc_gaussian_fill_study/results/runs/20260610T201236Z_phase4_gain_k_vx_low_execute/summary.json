@@ -1,0 +1,10 @@
+{
+  "run_id": "20260610T201236Z_phase4_gain_k_vx_low_execute",
+  "scenario_name": "phase4_gain_k_vx_low",
+  "scenario_id": "QRT-GAIN-KVX-LOW",
+  "mode": "execute",
+  "status": "sim_time_reached",
+  "completed_at_utc": "2026-06-10T20:21:06.535118+00:00",
+  "notes": "sim-time stop_rule_sec reached; runner process session terminated",
+  "headless": true
+}
