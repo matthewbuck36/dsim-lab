@@ -73,7 +73,7 @@ The Phase 2 harness now includes:
 - `scripts/check_trial_outputs.py`: checks expected logs and, for execute runs, the normal data collection CSVs.
 - `scripts/run_sweep.py`: controlled wrapper over one or more scenario JSON files.
 - `analysis/analyze_results.py`: computes basic distance, path length, command, wheel RPM, and saturation metrics when CSVs exist.
-- `analysis/make_plots.py`: creates a basic trajectory plot when odometry exists and Matplotlib is available.
+- `analysis/make_plots.py`: creates a topographic cost contour plot with trajectory, start, end, target, and local-basin overlays when odometry exists and Matplotlib is available.
 
 Execute runs are isolated with per-run `ROS_DOMAIN_ID`, `GAZEBO_MASTER_URI`, `ROS_LOG_DIR`, and `MPLCONFIGDIR`. If the sim-time monitor succeeds but required output files are absent, the manifest status is downgraded to `smoke_outputs_missing`.
 

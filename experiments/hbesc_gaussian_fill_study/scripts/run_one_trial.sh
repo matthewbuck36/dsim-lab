@@ -349,6 +349,7 @@ PY
 CHECK_STATUS=0
 python3 "${SCRIPT_DIR}/check_trial_outputs.py" "${RUN_DIR}" > "${RUN_DIR}/logs/check_trial_outputs.stdout" || CHECK_STATUS="$?"
 python3 "${EXP_DIR}/analysis/analyze_results.py" "${RUN_DIR}" > "${RUN_DIR}/logs/analyze_results.stdout" 2> "${RUN_DIR}/logs/analyze_results.stderr" || true
+python3 "${EXP_DIR}/analysis/make_plots.py" "${RUN_DIR}" > "${RUN_DIR}/logs/make_plots.stdout" 2> "${RUN_DIR}/logs/make_plots.stderr" || true
 if [ "${CHECK_STATUS}" -ne 0 ] && { [ "${STATUS}" = "smoke_sim_time_reached" ] || [ "${STATUS}" = "sim_time_reached" ]; }; then
   if [ "${PHASE}" = "2" ]; then
     STATUS="smoke_outputs_missing"

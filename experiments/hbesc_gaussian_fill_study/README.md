@@ -15,7 +15,7 @@ Phase 3 status as of 2026-06-10: repository verification, foundational docs, har
 - `configs/scenarios/phase3_qrt_a_hb.json`: Phase 3 convex quartic baseline continuation.
 - `configs/scenarios/phase3_qrt_a_gf.json`: next Phase 3 paired Gaussian-fill dry-run candidate.
 - `scripts/`: Phase 2 harness scripts for one trial, sweeps, sim-time monitoring, output checks, and manifest recording.
-- `analysis/`: Phase 2 analysis and plotting entrypoints.
+- `analysis/`: Phase 2 analysis and topographic plotting entrypoints.
 
 ## Verified Repo Facts
 
@@ -64,7 +64,7 @@ Successful smoke run:
 - Run directory: `experiments/hbesc_gaussian_fill_study/results/runs/20260609T224323Z_phase2_smoke_quartic_baseline_execute`
 - Validation: all normal data collection files were present.
 - Metrics file: `summary_metrics.json`
-- Figure: `figures/trajectory.png`
+- Figure: `figures/trajectory.png` topographic cost contour with trajectory overlay
 
 The smoke run required execution outside the sandbox because ROS/Gazebo DDS and Gazebo networking need local socket/interface access.
 
