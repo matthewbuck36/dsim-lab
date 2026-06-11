@@ -1,0 +1,22 @@
+{
+  "run_id": "20260610T230621Z_phase5_barrier_low_real_execute",
+  "mode": "execute",
+  "created_at_utc": "2026-06-10T23:06:21.624352+00:00",
+  "source_scenario": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_barrier_low_real.json",
+  "scenario_used": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T230621Z_phase5_barrier_low_real_execute/configs/scenario_used.json",
+  "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T230621Z_phase5_barrier_low_real_execute",
+  "scenario_name": "phase5_barrier_low_real",
+  "scenario_id": "P5-BARRIER-LOW-REAL",
+  "stop_rule_sec": 700,
+  "headless": true,
+  "gazebo_headless_env": "1",
+  "gazebo_command": "gzserver",
+  "original_live_plot_mode": "2D",
+  "scenario_live_plot_mode": "None",
+  "data_collection_filepath": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T230621Z_phase5_barrier_low_real_execute/data_collection",
+  "ros_domain_id": "70",
+  "gazebo_master_uri": "http://127.0.0.1:11535",
+  "ros_log_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T230621Z_phase5_barrier_low_real_execute/logs/ros",
+  "mplconfigdir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T230621Z_phase5_barrier_low_real_execute/logs/matplotlib",
+  "mplbackend": "Agg"
+}

@@ -105,6 +105,7 @@ launch_arg_order = [
     "filter_config_filepath",
     "controller_config_filepath",
     "data_collection_filepath",
+    "world",
 ]
 
 known = set(launch_arg_order)

@@ -9,6 +9,7 @@ from ament_index_python.packages import get_package_prefix
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.actions import ExecuteProcess
+from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
     """This function creates a launch description for an empty gazebo world."""
@@ -30,6 +31,7 @@ def generate_launch_description():
         '1', 'true', 'yes', 'on'
     ]
     gazebo_executable = 'gzserver' if headless else 'gazebo'
+    world = LaunchConfiguration('world')
 
     # Launch Gazebo. Normal launches keep the historical GUI-capable gazebo
     # command; batch headless runs set HBESC_GAZEBO_HEADLESS=1 to use gzserver.
@@ -39,7 +41,7 @@ def generate_launch_description():
         cmd=[gazebo_executable, '--verbose',
              '-s', 'libgazebo_ros_init.so',
              '-s', 'libgazebo_ros_factory.so',
-             'worlds/gazebo_empty.world'],
+             world],
         output='screen'
     )
 

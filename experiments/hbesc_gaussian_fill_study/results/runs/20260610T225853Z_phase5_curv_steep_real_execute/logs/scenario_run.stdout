@@ -1,0 +1,111 @@
+Running HBESC scenario: /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T225853Z_phase5_curv_steep_real_execute/configs/scenario_used.json
+Scenario name: phase5_curv_steep_real
+Description: Phase 5 bounded curvature sweep: steep convex quartic with real-speed HBESC authority.
+Starting >>> ros_esc
+Starting >>> ros_esc_interfaces
+Starting >>> turtlebot3_rotating_sensor
+Finished <<< turtlebot3_rotating_sensor [0.63s]
+Finished <<< ros_esc [1.60s]
+Finished <<< ros_esc_interfaces [1.63s]
+
+Summary: 3 packages finished [2.13s]
+[INFO] [launch]: All log files can be found below /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T225853Z_phase5_curv_steep_real_execute/logs/ros/2026-06-10-15-58-56-544001-ubuntu-ssd-36098
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [gzserver-1]: process started with pid [36100]
+[INFO] [robot_state_publisher-2]: process started with pid [36102]
+[INFO] [spawner-3]: process started with pid [36104]
+[INFO] [spawner-4]: process started with pid [36106]
+[INFO] [spawn_entity.py-5]: process started with pid [36108]
+[INFO] [ros2-6]: process started with pid [36110]
+[INFO] [ros2-7]: process started with pid [36112]
+[INFO] [ros2-8]: process started with pid [36114]
+[INFO] [ros2-9]: process started with pid [36118]
+[INFO] [ros2-10]: process started with pid [36120]
+[INFO] [ros2-11]: process started with pid [36128]
+[INFO] [ros2-12]: process started with pid [36132]
+[robot_state_publisher-2] [INFO] [1781132337.087097451] [robot_state_publisher_node]: got segment base_footprint
+[robot_state_publisher-2] [INFO] [1781132337.087281264] [robot_state_publisher_node]: got segment base_link
+[robot_state_publisher-2] [INFO] [1781132337.087305378] [robot_state_publisher_node]: got segment base_scan
+[robot_state_publisher-2] [INFO] [1781132337.087317701] [robot_state_publisher_node]: got segment caster_wheel
+[robot_state_publisher-2] [INFO] [1781132337.087327134] [robot_state_publisher_node]: got segment imu_link
+[robot_state_publisher-2] [INFO] [1781132337.087336421] [robot_state_publisher_node]: got segment rotating_frame_link
+[robot_state_publisher-2] [INFO] [1781132337.087345452] [robot_state_publisher_node]: got segment sensor_link
+[robot_state_publisher-2] [INFO] [1781132337.087356070] [robot_state_publisher_node]: got segment wheel_left_link
+[robot_state_publisher-2] [INFO] [1781132337.087364405] [robot_state_publisher_node]: got segment wheel_right_link
+[spawner-3] [INFO] [1781132337.648653580] [spawner_joint_state_broadcaster]: waiting for service /controller_manager/list_controllers to become available...
+[gzserver-1] Gazebo multi-robot simulator, version 11.10.2
+[gzserver-1] Copyright (C) 2012 Open Source Robotics Foundation.
+[gzserver-1] Released under the Apache 2 License.
+[gzserver-1] http://gazebosim.org
+[gzserver-1] 
+[spawner-4] [INFO] [1781132337.745311349] [spawner_velocity_controller]: waiting for service /controller_manager/list_controllers to become available...
+[gzserver-1] [1;33m[Wrn] [gazebo_ros_init.cpp:178] [0m[1;33m
+[gzserver-1] #     # ####### ####### ###  #####  #######
+[gzserver-1] ##    # #     #    #     #  #     # #
+[gzserver-1] # #   # #     #    #     #  #       #
+[gzserver-1] #  #  # #     #    #     #  #       #####
+[gzserver-1] #   # # #     #    #     #  #       #
+[gzserver-1] #    ## #     #    #     #  #     # #
+[gzserver-1] #     # #######    #    ###  #####  #######
+[gzserver-1] 
+[gzserver-1] This version of Gazebo, now called Gazebo classic, reaches end-of-life
+[gzserver-1] in January 2025. Users are highly encouraged to migrate to the new Gazebo
+[gzserver-1] using our migration guides (https://gazebosim.org/docs/latest/gazebo_classic_migration?utm_source=gazebo_ros_pkgs&utm_medium=cli)
+[gzserver-1] 
+[gzserver-1] [0m[1;33m
+[spawn_entity.py-5] [INFO] [1781132338.183761623] [spawn_entity]: Spawn Entity started
+[spawn_entity.py-5] [INFO] [1781132338.184406165] [spawn_entity]: Loading entity published on topic /robot_description
+[spawn_entity.py-5] [INFO] [1781132338.194148921] [spawn_entity]: Waiting for entity xml on /robot_description
+[spawn_entity.py-5] [INFO] [1781132338.205581717] [spawn_entity]: Waiting for service /spawn_entity, timeout = 30
+[spawn_entity.py-5] [INFO] [1781132338.210939775] [spawn_entity]: Waiting for service /spawn_entity
+[spawn_entity.py-5] [INFO] [1781132338.987524056] [spawn_entity]: Calling service /spawn_entity
+[spawn_entity.py-5] [INFO] [1781132339.150237874] [spawn_entity]: Spawn status: SpawnEntity: Successfully spawned entity [turtlebot3]
+[gzserver-1] [0m[1;33m[0m[1;33m[0m[INFO] [1781132339.178975158] [turtlebot3_diff_drive]: Wheel pair 1 separation set to [0.160000m]
+[gzserver-1] [INFO] [1781132339.179602727] [turtlebot3_diff_drive]: Wheel pair 1 diameter set to [0.066000m]
+[gzserver-1] [INFO] [1781132339.181424592] [turtlebot3_diff_drive]: Subscribed to [/cmd_vel]
+[gzserver-1] [INFO] [1781132339.185265269] [turtlebot3_diff_drive]: Advertise odometry on [/odom]
+[gzserver-1] [INFO] [1781132339.188871186] [turtlebot3_diff_drive]: Publishing odom transforms between [odom] and [base_footprint]
+[gzserver-1] [INFO] [1781132339.205429443] [turtlebot3_joint_state]: Going to publish joint [rotating_frame_joint]
+[gzserver-1] [INFO] [1781132339.233896548] [gazebo_ros2_control]: Loading gazebo_ros2_control plugin
+[gzserver-1] [INFO] [1781132339.240395711] [gazebo_ros2_control]: Starting gazebo_ros2_control plugin in namespace: /
+[gzserver-1] [INFO] [1781132339.240448118] [gazebo_ros2_control]: Starting gazebo_ros2_control plugin in ros 2 node: gazebo_ros2_control
+[gzserver-1] [INFO] [1781132339.245050825] [gazebo_ros2_control]: connected to service!! /robot_state_publisher_node
+[gzserver-1] [INFO] [1781132339.246279870] [gazebo_ros2_control]: Received urdf from param server, parsing...
+[gzserver-1] [INFO] [1781132339.246340935] [gazebo_ros2_control]: Loading parameter files /home/mattb/dsim-lab/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/controller_config/joint_controller.yaml
+[gzserver-1] [INFO] [1781132339.259930516] [gazebo_ros2_control]: Loading joint: rotating_frame_joint
+[gzserver-1] [INFO] [1781132339.259978564] [gazebo_ros2_control]: 	State:
+[gzserver-1] [INFO] [1781132339.259992958] [gazebo_ros2_control]: 		 position
+[gzserver-1] [INFO] [1781132339.260007277] [gazebo_ros2_control]: 			 found initial value: 0.000000
+[gzserver-1] [INFO] [1781132339.260022506] [gazebo_ros2_control]: 		 velocity
+[gzserver-1] [INFO] [1781132339.260033220] [gazebo_ros2_control]: 			 found initial value: 0.000000
+[gzserver-1] [INFO] [1781132339.260044647] [gazebo_ros2_control]: 	Command:
+[gzserver-1] [INFO] [1781132339.260074536] [gazebo_ros2_control]: 		 velocity
+[gzserver-1] [INFO] [1781132339.260445925] [resource_manager]: Initialize hardware 'GazeboSystem' 
+[gzserver-1] [INFO] [1781132339.260664746] [resource_manager]: Successful initialization of hardware 'GazeboSystem'
+[gzserver-1] [INFO] [1781132339.260807711] [resource_manager]: 'configure' hardware 'GazeboSystem' 
+[gzserver-1] [INFO] [1781132339.260824245] [resource_manager]: Successful 'configure' of hardware 'GazeboSystem'
+[gzserver-1] [INFO] [1781132339.260832820] [resource_manager]: 'activate' hardware 'GazeboSystem' 
+[gzserver-1] [INFO] [1781132339.260841362] [resource_manager]: Successful 'activate' of hardware 'GazeboSystem'
+[gzserver-1] [INFO] [1781132339.260942801] [gazebo_ros2_control]: Loading controller_manager
+[gzserver-1] [WARN] [1781132339.287599218] [gazebo_ros2_control]:  Desired controller update period (0.01 s) is slower than the gazebo simulation period (0.001 s).
+[gzserver-1] [INFO] [1781132339.287834918] [gazebo_ros2_control]: Loaded gazebo_ros2_control.
+[INFO] [spawn_entity.py-5]: process has finished cleanly [pid 36108]
+[gzserver-1] [INFO] [1781132339.487191390] [controller_manager]: Loading controller 'joint_state_broadcaster'
+[spawner-3] [INFO] [1781132339.522008836] [spawner_joint_state_broadcaster]: [94mLoaded [1mjoint_state_broadcaster[0m
+[gzserver-1] [INFO] [1781132339.523076064] [controller_manager]: Loading controller 'velocity_controller'
+[gzserver-1] [INFO] [1781132339.553951604] [controller_manager]: Configuring controller 'joint_state_broadcaster'
+[gzserver-1] [INFO] [1781132339.554444941] [joint_state_broadcaster]: 'joints' or 'interfaces' parameter is empty. All available state interfaces will be published
+[spawner-4] [INFO] [1781132339.555970855] [spawner_velocity_controller]: [94mLoaded [1mvelocity_controller[0m
+[gzserver-1] [INFO] [1781132339.573663804] [controller_manager]: Configuring controller 'velocity_controller'
+[gzserver-1] [INFO] [1781132339.575766900] [velocity_controller]: configure successful
+[spawner-3] [INFO] [1781132339.584826671] [spawner_joint_state_broadcaster]: [92mConfigured and activated [1mjoint_state_broadcaster[0m
+[gzserver-1] [INFO] [1781132339.586154831] [velocity_controller]: activate successful
+[spawner-4] [INFO] [1781132339.590731120] [spawner_velocity_controller]: [92mConfigured and activated [1mvelocity_controller[0m
+[INFO] [spawner-3]: process has finished cleanly [pid 36104]
+[INFO] [spawner-4]: process has finished cleanly [pid 36106]
+[gzserver-1] [1;32m[Msg] [0m[1;32mWaiting for master.[0m[1;32m
+[gzserver-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mConnected to gazebo master @ [0m[1;32mhttp://127.0.0.1:11458[0m[1;32m
+[gzserver-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mPublicized address: [0m[1;32m10.130.191.118[0m[1;32m
+[gzserver-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mLoading world file [[0m[1;32m/home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/worlds/gazebo_empty.world[0m[1;32m][0m[1;32m
+[ros2-8] /home/mattb/dsim-lab/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/sensor_pose_node/sensor_pose_node_script.py:253: RuntimeWarning: invalid value encountered in sqrt
+[ros2-8]   mag_q2 = np.sqrt((1-r11+r22-r33)/4)

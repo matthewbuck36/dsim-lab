@@ -1,0 +1,10 @@
+{
+  "run_id": "20260610T225542Z_phase5_curv_default_real_execute",
+  "scenario_name": "phase5_curv_default_real",
+  "scenario_id": "P5-CURV-DEFAULT-REAL",
+  "mode": "execute",
+  "status": "sim_time_reached",
+  "completed_at_utc": "2026-06-10T22:58:45.862727+00:00",
+  "notes": "sim-time stop_rule_sec reached; runner process session terminated",
+  "headless": true
+}

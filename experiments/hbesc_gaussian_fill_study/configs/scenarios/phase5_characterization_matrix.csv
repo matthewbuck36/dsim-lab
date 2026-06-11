@@ -1,0 +1,8 @@
+scenario_config,axis,cost_family,quartic_scale,barrier_alpha,speed_label,stop_rule_sec
+experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_curv_shallow_real.json,quartic_curvature,quartic_bowl,0.0001,,real,500
+experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_curv_default_real.json,quartic_curvature,quartic_bowl,0.0005,,real,500
+experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_curv_steep_real.json,quartic_curvature,quartic_bowl,0.0015,,real,500
+experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_barrier_low_lowvx.json,barrier_speed_authority,quartic_double_well,,0.005,low_vx_real_wz,700
+experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_barrier_low_real.json,barrier_speed_authority,quartic_double_well,,0.005,real,700
+experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_barrier_high_lowvx.json,barrier_speed_authority,quartic_double_well,,0.02,low_vx_real_wz,700
+experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_barrier_high_real.json,barrier_speed_authority,quartic_double_well,,0.02,real,700

@@ -1,0 +1,1 @@
+/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/scripts/run_one_trial.sh --execute --wall-timeout 900 --headless /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_barrier_low_lowvx.json

@@ -1,0 +1,149 @@
+{
+  "batch_id": "phase5_characterization_execute_host",
+  "mode": "execute",
+  "headless": true,
+  "wall_timeout": 900,
+  "resume": false,
+  "retries": 0,
+  "plan_only": false,
+  "created_at_utc": "2026-06-10T22:52:31.670754+00:00",
+  "batch_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host",
+  "plan_csv": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host/batch_plan.csv",
+  "results": [
+    {
+      "order": 1,
+      "scenario_id": "P5-CURV-SHALLOW-REAL",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_curv_shallow_real.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host/logs/001_P5-CURV-SHALLOW-REAL_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host/logs/001_P5-CURV-SHALLOW-REAL_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host/logs/001_P5-CURV-SHALLOW-REAL_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T225231Z_phase5_curv_shallow_real_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T225231Z_phase5_curv_shallow_real_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 2,
+      "scenario_id": "P5-CURV-DEFAULT-REAL",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_curv_default_real.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host/logs/002_P5-CURV-DEFAULT-REAL_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host/logs/002_P5-CURV-DEFAULT-REAL_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host/logs/002_P5-CURV-DEFAULT-REAL_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T225542Z_phase5_curv_default_real_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T225542Z_phase5_curv_default_real_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 3,
+      "scenario_id": "P5-CURV-STEEP-REAL",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_curv_steep_real.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host/logs/003_P5-CURV-STEEP-REAL_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host/logs/003_P5-CURV-STEEP-REAL_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host/logs/003_P5-CURV-STEEP-REAL_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T225853Z_phase5_curv_steep_real_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T225853Z_phase5_curv_steep_real_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 4,
+      "scenario_id": "P5-BARRIER-LOW-LOWVX",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_barrier_low_lowvx.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host/logs/004_P5-BARRIER-LOW-LOWVX_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host/logs/004_P5-BARRIER-LOW-LOWVX_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host/logs/004_P5-BARRIER-LOW-LOWVX_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T230204Z_phase5_barrier_low_lowvx_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T230204Z_phase5_barrier_low_lowvx_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 5,
+      "scenario_id": "P5-BARRIER-LOW-REAL",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_barrier_low_real.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host/logs/005_P5-BARRIER-LOW-REAL_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host/logs/005_P5-BARRIER-LOW-REAL_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host/logs/005_P5-BARRIER-LOW-REAL_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T230621Z_phase5_barrier_low_real_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T230621Z_phase5_barrier_low_real_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 6,
+      "scenario_id": "P5-BARRIER-HIGH-LOWVX",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_barrier_high_lowvx.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host/logs/006_P5-BARRIER-HIGH-LOWVX_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host/logs/006_P5-BARRIER-HIGH-LOWVX_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host/logs/006_P5-BARRIER-HIGH-LOWVX_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T231033Z_phase5_barrier_high_lowvx_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T231033Z_phase5_barrier_high_lowvx_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 7,
+      "scenario_id": "P5-BARRIER-HIGH-REAL",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_barrier_high_real.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host/logs/007_P5-BARRIER-HIGH-REAL_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host/logs/007_P5-BARRIER-HIGH-REAL_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_characterization_execute_host/logs/007_P5-BARRIER-HIGH-REAL_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T231444Z_phase5_barrier_high_real_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T231444Z_phase5_barrier_high_real_execute",
+      "status": "succeeded"
+    }
+  ],
+  "completed_at_utc": "2026-06-10T23:18:56.299638+00:00",
+  "failure_count": 0
+}

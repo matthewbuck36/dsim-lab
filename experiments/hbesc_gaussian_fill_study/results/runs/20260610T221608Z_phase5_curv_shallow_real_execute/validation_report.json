@@ -1,0 +1,21 @@
+{
+  "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T221608Z_phase5_curv_shallow_real_execute",
+  "status": "fail",
+  "missing": [
+    "data_collection/Test_2026-06-10_15-16-13/odometry.csv",
+    "data_collection/Test_2026-06-10_15-16-13/sensor_transform.csv",
+    "data_collection/Test_2026-06-10_15-16-13/cost_value.csv",
+    "data_collection/Test_2026-06-10_15-16-13/filter_value.csv",
+    "data_collection/Test_2026-06-10_15-16-13/control_value.csv",
+    "data_collection/Test_2026-06-10_15-16-13/comments.txt"
+  ],
+  "present": [
+    "trial_metadata.json",
+    "configs/scenario_used.json",
+    "launch_command.txt",
+    "logs/scenario_dry_run.stdout",
+    "logs/scenario_dry_run.stderr",
+    "summary.json"
+  ],
+  "warnings": []
+}

@@ -1,0 +1,51 @@
+1781129770.2384183 [INFO] [launch]: All log files can be found below /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T221608Z_phase5_curv_shallow_real_execute/logs/ros/2026-06-10-15-16-10-237627-ubuntu-ssd-243
+1781129770.2385228 [INFO] [launch]: Default logging verbosity is set to INFO
+1781129770.5646312 [INFO] [gzserver-1]: process started with pid [245]
+1781129770.5648668 [INFO] [robot_state_publisher-2]: process started with pid [247]
+1781129770.5650091 [INFO] [spawner-3]: process started with pid [249]
+1781129770.5651228 [INFO] [spawner-4]: process started with pid [251]
+1781129770.5652335 [INFO] [spawn_entity.py-5]: process started with pid [253]
+1781129770.5653422 [INFO] [ros2-6]: process started with pid [255]
+1781129770.5654707 [INFO] [ros2-7]: process started with pid [257]
+1781129770.5656228 [INFO] [ros2-8]: process started with pid [259]
+1781129770.5688541 [INFO] [ros2-9]: process started with pid [261]
+1781129770.5691209 [INFO] [ros2-10]: process started with pid [263]
+1781129770.5693021 [INFO] [ros2-11]: process started with pid [265]
+1781129770.5694730 [INFO] [ros2-12]: process started with pid [267]
+1781129771.3188910 [ros2-6] getifaddrs: Operation not permitted
+1781129771.3190472 [ros2-6] getifaddrs: Operation not permitted
+1781129771.3195930 [ros2-6] getifaddrs: Operation not permitted
+1781129771.3202808 [ros2-6] [37;1m2026-06-10 15:16:11.319 [31;1m[[37;1mTRANSPORT_UDP[31;1m Error] [37mError creating socket: Operation not permitted[34;1m -> Function [36minit[m
+1781129771.3203976 [ros2-6] [37;1m2026-06-10 15:16:11.319 [31;1m[[37;1mRTPS_PARTICIPANT[31;1m Error] [37mUser transport failed to register.[34;1m -> Function [36mRTPSParticipantImpl[m
+1781129771.6233974 [ros2-7] getifaddrs: Operation not permitted
+1781129771.6251674 [ros2-7] getifaddrs: Operation not permitted
+1781129771.6255403 [ERROR] [gzserver-1]: process has died [pid 245, exit code -6, cmd 'gzserver --verbose -s libgazebo_ros_init.so -s libgazebo_ros_factory.so /home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/worlds/gazebo_empty.world'].
+1781129771.6261640 [ros2-7] getifaddrs: Operation not permitted
+1781129771.6265166 [ros2-7] [37;1m2026-06-10 15:16:11.624 [31;1m[[37;1mTRANSPORT_UDP[31;1m Error] [37mError creating socket: Operation not permitted[34;1m -> Function [36minit[m
+1781129771.6265790 [ros2-7] [37;1m2026-06-10 15:16:11.624 [31;1m[[37;1mRTPS_PARTICIPANT[31;1m Error] [37mUser transport failed to register.[34;1m -> Function [36mRTPSParticipantImpl[m
+1781129771.6268177 [ros2-9] getifaddrs: Operation not permitted
+1781129771.6269104 [ros2-9] getifaddrs: Operation not permitted
+1781129771.6271889 [ros2-9] getifaddrs: Operation not permitted
+1781129771.6275504 [ros2-9] [37;1m2026-06-10 15:16:11.626 [31;1m[[37;1mTRANSPORT_UDP[31;1m Error] [37mError creating socket: Operation not permitted[34;1m -> Function [36minit[m
+1781129771.6276307 [ros2-9] [37;1m2026-06-10 15:16:11.626 [31;1m[[37;1mRTPS_PARTICIPANT[31;1m Error] [37mUser transport failed to register.[34;1m -> Function [36mRTPSParticipantImpl[m
+1781129771.6303813 [ros2-11] getifaddrs: Operation not permitted
+1781129771.6306272 [ros2-11] getifaddrs: Operation not permitted
+1781129771.6316528 [ros2-11] getifaddrs: Operation not permitted
+1781129771.6320524 [ros2-11] [37;1m2026-06-10 15:16:11.631 [31;1m[[37;1mTRANSPORT_UDP[31;1m Error] [37mError creating socket: Operation not permitted[34;1m -> Function [36minit[m
+1781129771.6320982 [ros2-11] [37;1m2026-06-10 15:16:11.631 [31;1m[[37;1mRTPS_PARTICIPANT[31;1m Error] [37mUser transport failed to register.[34;1m -> Function [36mRTPSParticipantImpl[m
+1781129771.6379139 [ros2-10] getifaddrs: Operation not permitted
+1781129771.6380410 [ros2-10] getifaddrs: Operation not permitted
+1781129771.6385229 [ros2-10] getifaddrs: Operation not permitted
+1781129771.6387608 [ros2-10] [37;1m2026-06-10 15:16:11.638 [31;1m[[37;1mTRANSPORT_UDP[31;1m Error] [37mError creating socket: Operation not permitted[34;1m -> Function [36minit[m
+1781129771.6388085 [ros2-10] [37;1m2026-06-10 15:16:11.638 [31;1m[[37;1mRTPS_PARTICIPANT[31;1m Error] [37mUser transport failed to register.[34;1m -> Function [36mRTPSParticipantImpl[m
+1781129771.6685798 [ros2-8] getifaddrs: Operation not permitted
+1781129771.6686954 [ros2-8] getifaddrs: Operation not permitted
+1781129771.6691306 [ros2-8] getifaddrs: Operation not permitted
+1781129771.6693645 [ros2-8] [37;1m2026-06-10 15:16:11.669 [31;1m[[37;1mTRANSPORT_UDP[31;1m Error] [37mError creating socket: Operation not permitted[34;1m -> Function [36minit[m
+1781129771.6694078 [ros2-8] [37;1m2026-06-10 15:16:11.669 [31;1m[[37;1mRTPS_PARTICIPANT[31;1m Error] [37mUser transport failed to register.[34;1m -> Function [36mRTPSParticipantImpl[m
+1781129772.7882469 [ros2-12] getifaddrs: Operation not permitted
+1781129772.7883520 [ros2-12] getifaddrs: Operation not permitted
+1781129772.7886739 [ros2-12] getifaddrs: Operation not permitted
+1781129772.7888889 [ros2-12] [37;1m2026-06-10 15:16:12.788 [31;1m[[37;1mTRANSPORT_UDP[31;1m Error] [37mError creating socket: Operation not permitted[34;1m -> Function [36minit[m
+1781129772.7889287 [ros2-12] [37;1m2026-06-10 15:16:12.788 [31;1m[[37;1mRTPS_PARTICIPANT[31;1m Error] [37mUser transport failed to register.[34;1m -> Function [36mRTPSParticipantImpl[m
+1781129801.4742963 [ERROR] [spawn_entity.py-5]: process has died [pid 253, exit code 1, cmd '/opt/ros/humble/lib/gazebo_ros/spawn_entity.py -topic=/robot_description -entity turtlebot3 -x 0 -y 0 -z 0 -R 0 -P 0 -Y 0 --ros-args -r __node:=spawn_entity'].

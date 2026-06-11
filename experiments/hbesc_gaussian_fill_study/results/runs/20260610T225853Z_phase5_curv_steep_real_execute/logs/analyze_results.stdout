@@ -1,0 +1,19 @@
+{
+  "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T225853Z_phase5_curv_steep_real_execute",
+  "data_quality": "ok",
+  "final_distance_m": 0.34560683862367597,
+  "min_distance_m": 0.34560683862367597,
+  "time_to_success_sec": 53.108000000000004,
+  "success_radius_m": 2.0,
+  "tail_mean_distance_m": 0.35429336785044946,
+  "tail_std_distance_m": 0.00521644462808537,
+  "path_length_m": 24.21101001342421,
+  "max_vx_cmd_mps": 0.2419026343264141,
+  "max_wz_cmd_radps": 0.75,
+  "max_left_wheel_rpm": 87.14532796035418,
+  "max_right_wheel_rpm": 87.14532796035418,
+  "vx_saturation_pct": 12.518532538405728,
+  "wz_saturation_pct": 5.8578593735213405,
+  "physical_feasibility_label": "exceeds_turtlebot3_burger_reference_limits",
+  "gaussian_fill_count": ""
+}

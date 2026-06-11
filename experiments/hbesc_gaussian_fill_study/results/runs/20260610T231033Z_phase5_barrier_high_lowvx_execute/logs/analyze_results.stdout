@@ -1,0 +1,19 @@
+{
+  "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T231033Z_phase5_barrier_high_lowvx_execute",
+  "data_quality": "ok",
+  "final_distance_m": 11.120530478373697,
+  "min_distance_m": 10.811149007850004,
+  "time_to_success_sec": "",
+  "success_radius_m": 2.0,
+  "tail_mean_distance_m": 11.309666111651397,
+  "tail_std_distance_m": 0.1156972115781441,
+  "path_length_m": 31.206897478728216,
+  "max_vx_cmd_mps": 0.05,
+  "max_wz_cmd_radps": 0.75,
+  "max_left_wheel_rpm": 31.613959150526483,
+  "max_right_wheel_rpm": 31.613959150526483,
+  "vx_saturation_pct": 70.88596285500498,
+  "wz_saturation_pct": 16.293094783395315,
+  "physical_feasibility_label": "within_turtlebot3_burger_reference_limits",
+  "gaussian_fill_count": ""
+}

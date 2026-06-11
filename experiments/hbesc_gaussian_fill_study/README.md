@@ -1,6 +1,6 @@
 # HeavyBall ESC Versus Gaussian Fill Study
 
-Phase 4 status as of 2026-06-10: repository verification, foundational docs, harness scripts, analysis entrypoints, the bounded Phase 2 smoke run, the Phase 3 minimal quartic matrix, and the Phase 4 HBESC gain-sensitivity matrix are complete. A reusable batch runner is active for dry-run and bounded execute batches. No Phase 5 expanded-characterization run has been started.
+Phase 5 status as of 2026-06-10: repository verification, foundational docs, harness scripts, analysis entrypoints, the bounded Phase 2 smoke run, the Phase 3 minimal quartic matrix, the Phase 4 HBESC gain-sensitivity matrix, and the first bounded Phase 5 characterization matrix are complete. A reusable batch runner is active for dry-run and bounded execute batches.
 
 ## What This Directory Contains
 
@@ -11,11 +11,13 @@ Phase 4 status as of 2026-06-10: repository verification, foundational docs, har
 - `results_manifest.csv`: initialized manifest for future runs.
 - `phase3_results.md`: Phase 3 run table, classifications, invalidated run note, and Phase 4 handoff.
 - `phase4_results.md`: Phase 4 HBESC gain-sensitivity run table, conclusions, unresolved world-path note, and Phase 5 handoff.
+- `phase5_results.md`: Phase 5 bounded characterization run table, world-path fix evidence, aggregate artifacts, and conclusions.
 - `configs/scenarios/phase1_trial_matrix.csv`: initial trial matrix scaffold.
 - `configs/scenarios/phase2_smoke_quartic_baseline.json`: first dry-run/smoke scenario config.
 - `configs/scenarios/phase3_qrt_a_hb.json`: Phase 3 convex quartic baseline continuation.
 - `configs/scenarios/phase3_qrt_a_gf.json`: next Phase 3 paired Gaussian-fill dry-run candidate.
 - `configs/scenarios/phase4_gain_sensitivity_matrix.csv`: Phase 4 low/default/high one-at-a-time HBESC gain-sensitivity matrix.
+- `configs/scenarios/phase5_characterization_matrix.csv`: Phase 5 first bounded curvature/barrier/speed characterization matrix.
 - `scripts/`: harness scripts for one trial, reusable batches, sim-time monitoring, output checks, analysis dispatch, and manifest recording.
 - `analysis/`: Phase 2 analysis and topographic plotting entrypoints.
 
@@ -97,10 +99,25 @@ Completed Phase 4 matrix:
 - Strongest sensitivity: HeavyBall `k`, `k_vx`, and `beta`; `k_wz` was less
   important on this field.
 
-No further Phase 4 run command is pending. Phase 5 should start by fixing or
-explicitly routing the Gazebo world path if the custom world physics settings are
-required, then adding a minimal characterization matrix and dry-running it before
-execution.
+No further Phase 4 run command is pending.
+
+## Phase 5 Expanded Characterization Result
+
+Completed first bounded Phase 5 matrix:
+
+- Summary: see `phase5_results.md`.
+- Valid host-level execute runs: 7.
+- Dry-run batch: `results/batches/phase5_characterization_dry_run/`.
+- Controlling execute batch: `results/batches/phase5_characterization_execute_host/`.
+- Aggregate metrics: `results/batches/phase5_characterization_execute_host/phase5_metrics.csv`.
+- Aggregate plots: `results/batches/phase5_characterization_execute_host/figures/`.
+- World path: `gazebo.launch.xml` now forwards `world` into `empty_world.launch.py`, and `empty_world.launch.py` passes that launch configuration to Gazebo. Phase 5 scenarios explicitly route `/home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/worlds/gazebo_empty.world`.
+- Result: convex quartic curvature changed convergence quality and speed; the tested double-well barrier-speed slice stayed trapped for all four baseline HBESC cases.
+- Note: two sandboxed execute rows in `results_manifest.csv` timed out because DDS/Gazebo socket creation is blocked in the restricted sandbox. They are superseded by the host-level execute batch.
+
+No further Phase 5 baseline run command is pending. The next useful bounded
+increment is a Gaussian-fill paired barrier slice on the same Phase 5 double-well
+cases.
 
 ## Batch Simulation Runner
 

@@ -1,0 +1,17 @@
+1781131955.4323716 [INFO] [launch]: All log files can be found below /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T225231Z_phase5_curv_shallow_real_execute/logs/ros/2026-06-10-15-52-35-431118-ubuntu-ssd-34117
+1781131955.4325469 [INFO] [launch]: Default logging verbosity is set to INFO
+1781131955.9575655 [INFO] [gzserver-1]: process started with pid [34120]
+1781131955.9580121 [INFO] [robot_state_publisher-2]: process started with pid [34122]
+1781131955.9582140 [INFO] [spawner-3]: process started with pid [34124]
+1781131955.9583666 [INFO] [spawner-4]: process started with pid [34126]
+1781131955.9585032 [INFO] [spawn_entity.py-5]: process started with pid [34128]
+1781131955.9586532 [INFO] [ros2-6]: process started with pid [34130]
+1781131955.9648709 [INFO] [ros2-7]: process started with pid [34132]
+1781131955.9650502 [INFO] [ros2-8]: process started with pid [34134]
+1781131955.9651663 [INFO] [ros2-9]: process started with pid [34136]
+1781131955.9652812 [INFO] [ros2-10]: process started with pid [34140]
+1781131955.9653950 [INFO] [ros2-11]: process started with pid [34142]
+1781131955.9655073 [INFO] [ros2-12]: process started with pid [34148]
+1781131958.4261951 [INFO] [spawn_entity.py-5]: process has finished cleanly [pid 34128]
+1781131958.7383657 [INFO] [spawner-4]: process has finished cleanly [pid 34126]
+1781131958.8729377 [INFO] [spawner-3]: process has finished cleanly [pid 34124]

@@ -1,0 +1,7 @@
+[INFO] [1781129771.258428972] [spawn_entity]: Spawn Entity started
+[INFO] [1781129771.259873073] [spawn_entity]: Loading entity published on topic /robot_description
+[INFO] [1781129771.263611114] [spawn_entity]: Waiting for entity xml on /robot_description
+[INFO] [1781129771.274694911] [spawn_entity]: Waiting for service /spawn_entity, timeout = 30
+[INFO] [1781129771.276609251] [spawn_entity]: Waiting for service /spawn_entity
+[ERROR] [1781129801.338831905] [spawn_entity]: Service /spawn_entity unavailable. Was Gazebo started with GazeboRosFactory?
+[ERROR] [1781129801.339325107] [spawn_entity]: Spawn service failed. Exiting.

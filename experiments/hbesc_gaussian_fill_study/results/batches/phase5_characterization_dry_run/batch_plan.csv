@@ -1,0 +1,8 @@
+order,scenario_config,scenario_id,name,phase,stop_rule_sec,method,action
+1,/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_curv_shallow_real.json,P5-CURV-SHALLOW-REAL,phase5_curv_shallow_real,5,500,baseline_hbesc,run
+2,/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_curv_default_real.json,P5-CURV-DEFAULT-REAL,phase5_curv_default_real,5,500,baseline_hbesc,run
+3,/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_curv_steep_real.json,P5-CURV-STEEP-REAL,phase5_curv_steep_real,5,500,baseline_hbesc,run
+4,/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_barrier_low_lowvx.json,P5-BARRIER-LOW-LOWVX,phase5_barrier_low_lowvx,5,700,baseline_hbesc,run
+5,/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_barrier_low_real.json,P5-BARRIER-LOW-REAL,phase5_barrier_low_real,5,700,baseline_hbesc,run
+6,/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_barrier_high_lowvx.json,P5-BARRIER-HIGH-LOWVX,phase5_barrier_high_lowvx,5,700,baseline_hbesc,run
+7,/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_barrier_high_real.json,P5-BARRIER-HIGH-REAL,phase5_barrier_high_real,5,700,baseline_hbesc,run

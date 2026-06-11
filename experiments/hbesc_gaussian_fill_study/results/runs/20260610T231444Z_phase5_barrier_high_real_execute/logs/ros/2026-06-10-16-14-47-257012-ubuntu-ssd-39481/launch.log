@@ -1,0 +1,19 @@
+1781133287.2578390 [INFO] [launch]: All log files can be found below /home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T231444Z_phase5_barrier_high_real_execute/logs/ros/2026-06-10-16-14-47-257012-ubuntu-ssd-39481
+1781133287.2579563 [INFO] [launch]: Default logging verbosity is set to INFO
+1781133287.5882330 [INFO] [gzserver-1]: process started with pid [39483]
+1781133287.5885797 [INFO] [robot_state_publisher-2]: process started with pid [39485]
+1781133287.5898137 [INFO] [spawner-3]: process started with pid [39487]
+1781133287.5900142 [INFO] [spawner-4]: process started with pid [39489]
+1781133287.5901420 [INFO] [spawn_entity.py-5]: process started with pid [39491]
+1781133287.5902553 [INFO] [ros2-6]: process started with pid [39493]
+1781133287.5903842 [INFO] [ros2-7]: process started with pid [39495]
+1781133287.5905204 [INFO] [ros2-8]: process started with pid [39497]
+1781133287.5906610 [INFO] [ros2-9]: process started with pid [39499]
+1781133287.5918684 [INFO] [ros2-10]: process started with pid [39501]
+1781133287.5920248 [INFO] [ros2-11]: process started with pid [39503]
+1781133287.5921607 [INFO] [ros2-12]: process started with pid [39505]
+1781133289.6662822 [INFO] [spawn_entity.py-5]: process has finished cleanly [pid 39491]
+1781133289.8483987 [INFO] [spawner-4]: process has finished cleanly [pid 39489]
+1781133290.0517640 [INFO] [spawner-3]: process has finished cleanly [pid 39487]
+1781133377.8005769 [ros2-8] /home/mattb/dsim-lab/ros2_ws/install/ros_esc/lib/python3.10/site-packages/ros_esc/sensor_pose_node/sensor_pose_node_script.py:252: RuntimeWarning: invalid value encountered in sqrt
+1781133377.8007772 [ros2-8]   mag_q1 = np.sqrt((1+r11-r22-r33)/4)

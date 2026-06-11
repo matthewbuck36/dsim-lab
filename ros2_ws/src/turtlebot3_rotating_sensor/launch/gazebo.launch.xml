@@ -73,10 +73,14 @@
     <arg name="controller_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/accelerated_methods/hbesc_gaussian_conservative_full_rotation.json"/>
     <!-- Set the directory to save simulation test results to -->
     <arg name="data_collection_filepath" default="~/Experiments/Gazebo-Simulations"/>
+    <!-- Set the Gazebo world file. The default resolves to the package world, not Gazebo's installed empty world. -->
+    <arg name="world" default="$(find-pkg-share turtlebot3_rotating_sensor)/worlds/gazebo_empty.world"/>
 
 
     <!-- Launch the Gazebo world -->
-    <include file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/empty_world.launch.py"/>
+    <include file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/empty_world.launch.py">
+        <arg name="world" value="$(var world)"/>
+    </include>
 
     <!-- Publish URDF file in robot_description topic -->
     <include file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/robot_description.launch.py"/>

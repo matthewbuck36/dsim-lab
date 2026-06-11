@@ -1,0 +1,20 @@
+{
+  "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260610T230621Z_phase5_barrier_low_real_execute",
+  "status": "pass",
+  "missing": [],
+  "present": [
+    "trial_metadata.json",
+    "configs/scenario_used.json",
+    "launch_command.txt",
+    "logs/scenario_dry_run.stdout",
+    "logs/scenario_dry_run.stderr",
+    "summary.json",
+    "data_collection/Test_2026-06-10_16-06-29/odometry.csv",
+    "data_collection/Test_2026-06-10_16-06-29/sensor_transform.csv",
+    "data_collection/Test_2026-06-10_16-06-29/cost_value.csv",
+    "data_collection/Test_2026-06-10_16-06-29/filter_value.csv",
+    "data_collection/Test_2026-06-10_16-06-29/control_value.csv",
+    "data_collection/Test_2026-06-10_16-06-29/comments.txt"
+  ],
+  "warnings": []
+}

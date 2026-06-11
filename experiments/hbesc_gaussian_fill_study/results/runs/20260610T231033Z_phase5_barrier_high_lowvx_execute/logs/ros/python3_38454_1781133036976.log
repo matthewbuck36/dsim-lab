@@ -1,0 +1,3 @@
+[INFO] [1781133037.160299624] [spawner_velocity_controller]: waiting for service /controller_manager/list_controllers to become available...
+[INFO] [1781133038.444348288] [spawner_velocity_controller]: [94mLoaded [1mvelocity_controller[0m
+[INFO] [1781133038.457251463] [spawner_velocity_controller]: [92mConfigured and activated [1mvelocity_controller[0m

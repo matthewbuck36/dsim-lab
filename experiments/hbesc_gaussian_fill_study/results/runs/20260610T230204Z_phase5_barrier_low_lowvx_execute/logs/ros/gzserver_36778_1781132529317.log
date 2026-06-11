@@ -1,0 +1,48 @@
+[INFO] [1781132530.736990229] [turtlebot3_diff_drive]: Wheel pair 1 separation set to [0.160000m]
+[INFO] [1781132530.737589227] [turtlebot3_diff_drive]: Wheel pair 1 diameter set to [0.066000m]
+[INFO] [1781132530.739749382] [turtlebot3_diff_drive]: Subscribed to [/cmd_vel]
+[INFO] [1781132530.744031937] [turtlebot3_diff_drive]: Advertise odometry on [/odom]
+[INFO] [1781132530.748213563] [turtlebot3_diff_drive]: Publishing odom transforms between [odom] and [base_footprint]
+[INFO] [1781132530.767329697] [turtlebot3_joint_state]: Going to publish joint [rotating_frame_joint]
+[INFO] [1781132530.806584270] [gazebo_ros2_control]: Loading gazebo_ros2_control plugin
+[INFO] [1781132530.815719236] [gazebo_ros2_control]: Starting gazebo_ros2_control plugin in namespace: /
+[INFO] [1781132530.815784085] [gazebo_ros2_control]: Starting gazebo_ros2_control plugin in ros 2 node: gazebo_ros2_control
+[INFO] [1781132530.824118342] [gazebo_ros2_control]: connected to service!! /robot_state_publisher_node
+[INFO] [1781132530.824686974] [gazebo_ros2_control]: Received urdf from param server, parsing...
+[INFO] [1781132530.824756689] [gazebo_ros2_control]: Loading parameter files /home/mattb/dsim-lab/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/controller_config/joint_controller.yaml
+[INFO] [1781132530.839776650] [gazebo_ros2_control]: Loading joint: rotating_frame_joint
+[INFO] [1781132530.839815431] [gazebo_ros2_control]: 	State:
+[INFO] [1781132530.839825844] [gazebo_ros2_control]: 		 position
+[INFO] [1781132530.839843318] [gazebo_ros2_control]: 			 found initial value: 0.000000
+[INFO] [1781132530.839858744] [gazebo_ros2_control]: 		 velocity
+[INFO] [1781132530.839871160] [gazebo_ros2_control]: 			 found initial value: 0.000000
+[INFO] [1781132530.839887410] [gazebo_ros2_control]: 	Command:
+[INFO] [1781132530.839922900] [gazebo_ros2_control]: 		 velocity
+[INFO] [1781132530.840155436] [resource_manager]: Initialize hardware 'GazeboSystem' 
+[INFO] [1781132530.840340169] [resource_manager]: Successful initialization of hardware 'GazeboSystem'
+[INFO] [1781132530.840492306] [resource_manager]: 'configure' hardware 'GazeboSystem' 
+[INFO] [1781132530.840513128] [resource_manager]: Successful 'configure' of hardware 'GazeboSystem'
+[INFO] [1781132530.840523797] [resource_manager]: 'activate' hardware 'GazeboSystem' 
+[INFO] [1781132530.840534563] [resource_manager]: Successful 'activate' of hardware 'GazeboSystem'
+[INFO] [1781132530.840616383] [gazebo_ros2_control]: Loading controller_manager
+[WARN] [1781132530.873152625] [gazebo_ros2_control]:  Desired controller update period (0.01 s) is slower than the gazebo simulation period (0.001 s).
+[INFO] [1781132530.873471725] [gazebo_ros2_control]: Loaded gazebo_ros2_control.
+[INFO] [1781132530.998135513] [controller_manager]: Loading controller 'joint_state_broadcaster'
+[INFO] [1781132531.023974922] [controller_manager]: Configuring controller 'joint_state_broadcaster'
+[INFO] [1781132531.024588412] [joint_state_broadcaster]: 'joints' or 'interfaces' parameter is empty. All available state interfaces will be published
+[INFO] [1781132531.115264162] [controller_manager]: Loading controller 'velocity_controller'
+[INFO] [1781132531.147892255] [controller_manager]: Configuring controller 'velocity_controller'
+[INFO] [1781132531.150233390] [velocity_controller]: configure successful
+[INFO] [1781132531.158218388] [velocity_controller]: activate successful
+[INFO] [1781132769.372489691] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[INFO] [1781132769.372683990] [controller_manager]: Shutdown request received....
+[INFO] [1781132769.372881140] [controller_manager]: Shutting down all controllers in the controller manager.
+[INFO] [1781132769.372981492] [controller_manager]: Deactivating controller 'joint_state_broadcaster'
+[INFO] [1781132769.373110277] [controller_manager]: Shutting down controller 'joint_state_broadcaster'
+[INFO] [1781132769.373247594] [controller_manager]: Deactivating controller 'velocity_controller'
+[INFO] [1781132769.373328312] [controller_manager]: Shutting down controller 'velocity_controller'
+[INFO] [1781132769.373396099] [resource_manager]: 'deactivate' hardware 'GazeboSystem' 
+[INFO] [1781132769.373416184] [resource_manager]: Successful 'deactivate' of hardware 'GazeboSystem'
+[INFO] [1781132769.373427562] [resource_manager]: 'shutdown' hardware 'GazeboSystem' 
+[INFO] [1781132769.373442274] [resource_manager]: Successful 'shutdown' of hardware 'GazeboSystem'
+[INFO] [1781132769.373453212] [controller_manager]: Shutting down the controller manager.
