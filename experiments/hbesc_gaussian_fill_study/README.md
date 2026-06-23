@@ -1,6 +1,6 @@
 # HeavyBall ESC Versus Gaussian Fill Study
 
-Phase 5 status as of 2026-06-23: repository verification, foundational docs, harness scripts, analysis entrypoints, the bounded Phase 2 smoke run, the Phase 3 minimal quartic matrix, the Phase 4 HBESC gain-sensitivity matrix, the first bounded Phase 5 characterization matrix, and the expanded 84-scenario Phase 5 characterization matrix are complete. A reusable batch runner is active for dry-run and bounded execute batches.
+Phase 6 status as of 2026-06-23: repository verification, foundational docs, harness scripts, analysis entrypoints, the bounded Phase 2 smoke run, the Phase 3 minimal quartic matrix, the Phase 4 HBESC gain-sensitivity matrix, the first bounded Phase 5 characterization matrix, the expanded 84-scenario Phase 5 characterization matrix, and the Phase 6 final summary/report outline are complete. A reusable batch runner is active for dry-run and bounded execute batches.
 
 ## What This Directory Contains
 
@@ -13,6 +13,9 @@ Phase 5 status as of 2026-06-23: repository verification, foundational docs, har
 - `phase4_results.md`: Phase 4 HBESC gain-sensitivity run table, conclusions, unresolved world-path note, and Phase 5 handoff.
 - `phase5_results.md`: Phase 5A bounded characterization run table, world-path fix evidence, aggregate artifacts, and conclusions.
 - `phase5_expanded_results.md`: Phase 5B expanded characterization matrix, execution evidence, aggregate artifacts, and conclusions.
+- `final_report_outline.md`: Phase 6 thesis/report outline with section-by-section evidence routing.
+- `final_summary.md`: Phase 6 answer-first synthesis of the completed study results.
+- `reports/phase6_visual_report/phase6_visual_report.pdf`: compact visual report with key aggregate figures and representative trajectory plots.
 - `configs/scenarios/phase1_trial_matrix.csv`: initial trial matrix scaffold.
 - `configs/scenarios/phase2_smoke_quartic_baseline.json`: first dry-run/smoke scenario config.
 - `configs/scenarios/phase3_qrt_a_hb.json`: Phase 3 convex quartic baseline continuation.
@@ -135,6 +138,24 @@ Completed expanded Phase 5B matrix:
   the tested quartic double-well failure mode.
 
 No further Phase 5 expanded characterization run command is pending.
+
+## Phase 6 Final Report Draft
+
+Completed Phase 6 artifacts:
+
+- Report outline: `final_report_outline.md`.
+- Final summary: `final_summary.md`.
+- Required Phase 6 questions answered: HBESC-helping cases, Gaussian-fill-helping
+  cases, TurtleBot3 Burger physical limitations, strong/weak/inconclusive
+  results, important HBESC gains, gain effects, quartic convergence effects,
+  saturation/physical-infeasibility effects, gain-choice comparison impacts, and
+  recommended next runs.
+- Aggregate figures available for final report drafting:
+  `results/batches/phase5_expanded_execute/figures/`.
+- Compact visual report:
+  `reports/phase6_visual_report/phase6_visual_report.pdf`.
+
+No further Phase 6 run command is pending.
 
 ## Batch Simulation Runner
 
