@@ -1,0 +1,37 @@
+{
+  "name": "phase5b_pilot_w2_double_well_start1_real",
+  "test_id": "P5B-PILOT-14-W2_DOUBLE_WELL_START1_REAL",
+  "description": "Phase 5B normalized pilot replication of existing baseline scenario W2_double_well_start1_real.json.",
+  "cost_family": "quartic_double_well",
+  "speed_label": "real",
+  "target": {
+    "x": 10.0,
+    "y": 10.0
+  },
+  "local_basin": {
+    "x": 2.0,
+    "y": 2.0
+  },
+  "stop_rule_sec": 700,
+  "launch": {
+    "entity_name": "turtlebot3",
+    "init_x_position": 1,
+    "init_y_position": 1,
+    "init_yaw_angle": 0,
+    "input_encoder_data_to_filter": true,
+    "live_plot_mode": "2D",
+    "use_pde_extensions": false,
+    "escape_policy": "none",
+    "rotate_frame_config_filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation.json",
+    "sensor_transform_config_filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json",
+    "cost_function_config_filepath": "~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/polynomial_quartic_double_well_local2_global10.json",
+    "filter_config_filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json",
+    "controller_config_filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/accelerated_methods/hbesc_baseline_real_full_rotation.json",
+    "data_collection_filepath": "~/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs",
+    "world": "/home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/worlds/gazebo_empty.world"
+  },
+  "phase": 5,
+  "characterization_axis": "pilot_replication",
+  "method_label": "baseline_hbesc",
+  "source_scenario": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/scenarios/baseline_tests/W2_double_well_start1_real.json"
+}

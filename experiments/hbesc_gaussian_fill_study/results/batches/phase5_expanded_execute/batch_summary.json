@@ -1,0 +1,1603 @@
+{
+  "batch_id": "phase5_expanded_execute",
+  "mode": "execute",
+  "headless": true,
+  "wall_timeout": 900,
+  "resume": true,
+  "retries": 0,
+  "plan_only": false,
+  "created_at_utc": "2026-06-22T23:32:49.066391+00:00",
+  "batch_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute",
+  "plan_csv": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/batch_plan.csv",
+  "results": [
+    {
+      "order": 1,
+      "scenario_id": "P5B-PILOT-01-G1_GLOBALW40_START1_SLOW",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_pilot_g1_globalw40_start1_slow.json",
+      "action": "skip_resume",
+      "attempts": [],
+      "final_returncode": 0,
+      "run_dir": "",
+      "status": "skipped_resume"
+    },
+    {
+      "order": 2,
+      "scenario_id": "P5B-PILOT-02-G2_GLOBALW40_START1_REAL",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_pilot_g2_globalw40_start1_real.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/002_P5B-PILOT-02-G2_GLOBALW40_START1_REAL_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/002_P5B-PILOT-02-G2_GLOBALW40_START1_REAL_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/002_P5B-PILOT-02-G2_GLOBALW40_START1_REAL_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260622T233249Z_phase5b_pilot_g2_globalw40_start1_real_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260622T233249Z_phase5b_pilot_g2_globalw40_start1_real_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 3,
+      "scenario_id": "P5B-PILOT-03-G3_GLOBALW40_START1_FAST",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_pilot_g3_globalw40_start1_fast.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/003_P5B-PILOT-03-G3_GLOBALW40_START1_FAST_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/003_P5B-PILOT-03-G3_GLOBALW40_START1_FAST_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/003_P5B-PILOT-03-G3_GLOBALW40_START1_FAST_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260622T233659Z_phase5b_pilot_g3_globalw40_start1_fast_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260622T233659Z_phase5b_pilot_g3_globalw40_start1_fast_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 4,
+      "scenario_id": "P5B-PILOT-04-H1_ORIGINAL_START0_SLOW",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_pilot_h1_original_start0_slow.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/004_P5B-PILOT-04-H1_ORIGINAL_START0_SLOW_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/004_P5B-PILOT-04-H1_ORIGINAL_START0_SLOW_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/004_P5B-PILOT-04-H1_ORIGINAL_START0_SLOW_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260622T234109Z_phase5b_pilot_h1_original_start0_slow_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260622T234109Z_phase5b_pilot_h1_original_start0_slow_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 5,
+      "scenario_id": "P5B-PILOT-05-H2_ORIGINAL_START0_REAL",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_pilot_h2_original_start0_real.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/005_P5B-PILOT-05-H2_ORIGINAL_START0_REAL_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/005_P5B-PILOT-05-H2_ORIGINAL_START0_REAL_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/005_P5B-PILOT-05-H2_ORIGINAL_START0_REAL_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260622T234519Z_phase5b_pilot_h2_original_start0_real_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260622T234519Z_phase5b_pilot_h2_original_start0_real_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 6,
+      "scenario_id": "P5B-PILOT-06-H3_ORIGINAL_START0_FAST",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_pilot_h3_original_start0_fast.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/006_P5B-PILOT-06-H3_ORIGINAL_START0_FAST_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/006_P5B-PILOT-06-H3_ORIGINAL_START0_FAST_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/006_P5B-PILOT-06-H3_ORIGINAL_START0_FAST_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260622T234930Z_phase5b_pilot_h3_original_start0_fast_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260622T234930Z_phase5b_pilot_h3_original_start0_fast_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 7,
+      "scenario_id": "P5B-PILOT-07-Q1_QUADRATIC_START0_REAL",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_pilot_q1_quadratic_start0_real.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/007_P5B-PILOT-07-Q1_QUADRATIC_START0_REAL_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/007_P5B-PILOT-07-Q1_QUADRATIC_START0_REAL_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/007_P5B-PILOT-07-Q1_QUADRATIC_START0_REAL_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260622T235340Z_phase5b_pilot_q1_quadratic_start0_real_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260622T235340Z_phase5b_pilot_q1_quadratic_start0_real_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 8,
+      "scenario_id": "P5B-PILOT-08-Q2_QUADRATIC_START6_REAL",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_pilot_q2_quadratic_start6_real.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/008_P5B-PILOT-08-Q2_QUADRATIC_START6_REAL_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/008_P5B-PILOT-08-Q2_QUADRATIC_START6_REAL_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/008_P5B-PILOT-08-Q2_QUADRATIC_START6_REAL_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260622T235536Z_phase5b_pilot_q2_quadratic_start6_real_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260622T235536Z_phase5b_pilot_q2_quadratic_start6_real_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 9,
+      "scenario_id": "P5B-PILOT-09-Q3_QUADRATIC_START8_REAL",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_pilot_q3_quadratic_start8_real.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/009_P5B-PILOT-09-Q3_QUADRATIC_START8_REAL_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/009_P5B-PILOT-09-Q3_QUADRATIC_START8_REAL_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/009_P5B-PILOT-09-Q3_QUADRATIC_START8_REAL_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260622T235732Z_phase5b_pilot_q3_quadratic_start8_real_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260622T235732Z_phase5b_pilot_q3_quadratic_start8_real_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 10,
+      "scenario_id": "P5B-PILOT-10-R1_QUARTIC_START0_REAL",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_pilot_r1_quartic_start0_real.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/010_P5B-PILOT-10-R1_QUARTIC_START0_REAL_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/010_P5B-PILOT-10-R1_QUARTIC_START0_REAL_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/010_P5B-PILOT-10-R1_QUARTIC_START0_REAL_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260622T235928Z_phase5b_pilot_r1_quartic_start0_real_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260622T235928Z_phase5b_pilot_r1_quartic_start0_real_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 11,
+      "scenario_id": "P5B-PILOT-11-R2_QUARTIC_START6_REAL",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_pilot_r2_quartic_start6_real.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/011_P5B-PILOT-11-R2_QUARTIC_START6_REAL_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/011_P5B-PILOT-11-R2_QUARTIC_START6_REAL_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/011_P5B-PILOT-11-R2_QUARTIC_START6_REAL_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T000124Z_phase5b_pilot_r2_quartic_start6_real_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T000124Z_phase5b_pilot_r2_quartic_start6_real_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 12,
+      "scenario_id": "P5B-PILOT-12-R3_QUARTIC_START8_REAL",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_pilot_r3_quartic_start8_real.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/012_P5B-PILOT-12-R3_QUARTIC_START8_REAL_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/012_P5B-PILOT-12-R3_QUARTIC_START8_REAL_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/012_P5B-PILOT-12-R3_QUARTIC_START8_REAL_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T000321Z_phase5b_pilot_r3_quartic_start8_real_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T000321Z_phase5b_pilot_r3_quartic_start8_real_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 13,
+      "scenario_id": "P5B-PILOT-13-W1_DOUBLE_WELL_START1_SLOW",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_pilot_w1_double_well_start1_slow.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/013_P5B-PILOT-13-W1_DOUBLE_WELL_START1_SLOW_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/013_P5B-PILOT-13-W1_DOUBLE_WELL_START1_SLOW_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/013_P5B-PILOT-13-W1_DOUBLE_WELL_START1_SLOW_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T000517Z_phase5b_pilot_w1_double_well_start1_slow_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T000517Z_phase5b_pilot_w1_double_well_start1_slow_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 14,
+      "scenario_id": "P5B-PILOT-14-W2_DOUBLE_WELL_START1_REAL",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_pilot_w2_double_well_start1_real.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/014_P5B-PILOT-14-W2_DOUBLE_WELL_START1_REAL_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/014_P5B-PILOT-14-W2_DOUBLE_WELL_START1_REAL_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/014_P5B-PILOT-14-W2_DOUBLE_WELL_START1_REAL_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T000927Z_phase5b_pilot_w2_double_well_start1_real_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T000927Z_phase5b_pilot_w2_double_well_start1_real_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 15,
+      "scenario_id": "P5B-PILOT-15-W3_DOUBLE_WELL_START1_FAST",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_pilot_w3_double_well_start1_fast.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/015_P5B-PILOT-15-W3_DOUBLE_WELL_START1_FAST_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/015_P5B-PILOT-15-W3_DOUBLE_WELL_START1_FAST_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/015_P5B-PILOT-15-W3_DOUBLE_WELL_START1_FAST_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T001337Z_phase5b_pilot_w3_double_well_start1_fast_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T001337Z_phase5b_pilot_w3_double_well_start1_fast_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 16,
+      "scenario_id": "P5B-PILOT-GF-Q1_QUADRATIC_START0_REAL",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_pilot_gf_q1_quadratic_start0_real.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/016_P5B-PILOT-GF-Q1_QUADRATIC_START0_REAL_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/016_P5B-PILOT-GF-Q1_QUADRATIC_START0_REAL_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/016_P5B-PILOT-GF-Q1_QUADRATIC_START0_REAL_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T001748Z_phase5b_pilot_gf_q1_quadratic_start0_real_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T001748Z_phase5b_pilot_gf_q1_quadratic_start0_real_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 17,
+      "scenario_id": "P5B-PILOT-GF-R1_QUARTIC_START0_REAL",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_pilot_gf_r1_quartic_start0_real.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/017_P5B-PILOT-GF-R1_QUARTIC_START0_REAL_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/017_P5B-PILOT-GF-R1_QUARTIC_START0_REAL_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/017_P5B-PILOT-GF-R1_QUARTIC_START0_REAL_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T002056Z_phase5b_pilot_gf_r1_quartic_start0_real_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T002056Z_phase5b_pilot_gf_r1_quartic_start0_real_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 18,
+      "scenario_id": "P5B-PILOT-GF-R2_QUARTIC_START6_REAL",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_pilot_gf_r2_quartic_start6_real.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/018_P5B-PILOT-GF-R2_QUARTIC_START6_REAL_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/018_P5B-PILOT-GF-R2_QUARTIC_START6_REAL_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/018_P5B-PILOT-GF-R2_QUARTIC_START6_REAL_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T002403Z_phase5b_pilot_gf_r2_quartic_start6_real_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T002403Z_phase5b_pilot_gf_r2_quartic_start6_real_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 19,
+      "scenario_id": "P5B-PILOT-GF-W2_DOUBLE_WELL_START1_REAL",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_pilot_gf_w2_double_well_start1_real.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/019_P5B-PILOT-GF-W2_DOUBLE_WELL_START1_REAL_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/019_P5B-PILOT-GF-W2_DOUBLE_WELL_START1_REAL_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/019_P5B-PILOT-GF-W2_DOUBLE_WELL_START1_REAL_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T002712Z_phase5b_pilot_gf_w2_double_well_start1_real_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T002712Z_phase5b_pilot_gf_w2_double_well_start1_real_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 20,
+      "scenario_id": "P5B-PILOT-GF-G2_GLOBALW40_START1_REAL",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_pilot_gf_g2_globalw40_start1_real.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/020_P5B-PILOT-GF-G2_GLOBALW40_START1_REAL_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/020_P5B-PILOT-GF-G2_GLOBALW40_START1_REAL_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/020_P5B-PILOT-GF-G2_GLOBALW40_START1_REAL_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T003127Z_phase5b_pilot_gf_g2_globalw40_start1_real_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T003127Z_phase5b_pilot_gf_g2_globalw40_start1_real_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 21,
+      "scenario_id": "P5B-CURV-SHALLOW-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_curv_shallow_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/021_P5B-CURV-SHALLOW-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/021_P5B-CURV-SHALLOW-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/021_P5B-CURV-SHALLOW-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T003542Z_phase5b_curv_shallow_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T003542Z_phase5b_curv_shallow_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 22,
+      "scenario_id": "P5B-CURV-SHALLOW-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_curv_shallow_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/022_P5B-CURV-SHALLOW-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/022_P5B-CURV-SHALLOW-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/022_P5B-CURV-SHALLOW-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T003845Z_phase5b_curv_shallow_gf_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T003845Z_phase5b_curv_shallow_gf_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 23,
+      "scenario_id": "P5B-CURV-DEFAULT-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_curv_default_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/023_P5B-CURV-DEFAULT-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/023_P5B-CURV-DEFAULT-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/023_P5B-CURV-DEFAULT-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T004153Z_phase5b_curv_default_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T004153Z_phase5b_curv_default_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 24,
+      "scenario_id": "P5B-CURV-DEFAULT-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_curv_default_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/024_P5B-CURV-DEFAULT-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/024_P5B-CURV-DEFAULT-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/024_P5B-CURV-DEFAULT-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T004456Z_phase5b_curv_default_gf_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T004456Z_phase5b_curv_default_gf_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 25,
+      "scenario_id": "P5B-CURV-STEEP-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_curv_steep_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/025_P5B-CURV-STEEP-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/025_P5B-CURV-STEEP-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/025_P5B-CURV-STEEP-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T004804Z_phase5b_curv_steep_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T004804Z_phase5b_curv_steep_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 26,
+      "scenario_id": "P5B-CURV-STEEP-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_curv_steep_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/026_P5B-CURV-STEEP-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/026_P5B-CURV-STEEP-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/026_P5B-CURV-STEEP-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T005107Z_phase5b_curv_steep_gf_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T005107Z_phase5b_curv_steep_gf_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 27,
+      "scenario_id": "P5B-CURV-ASYM-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_curv_asym_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/027_P5B-CURV-ASYM-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/027_P5B-CURV-ASYM-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/027_P5B-CURV-ASYM-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T005415Z_phase5b_curv_asym_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T005415Z_phase5b_curv_asym_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 28,
+      "scenario_id": "P5B-CURV-ASYM-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_curv_asym_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/028_P5B-CURV-ASYM-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/028_P5B-CURV-ASYM-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/028_P5B-CURV-ASYM-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T005718Z_phase5b_curv_asym_gf_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T005718Z_phase5b_curv_asym_gf_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 29,
+      "scenario_id": "P5B-CURV-CROSS-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_curv_cross_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/029_P5B-CURV-CROSS-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/029_P5B-CURV-CROSS-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/029_P5B-CURV-CROSS-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T010026Z_phase5b_curv_cross_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T010026Z_phase5b_curv_cross_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 30,
+      "scenario_id": "P5B-CURV-CROSS-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_curv_cross_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/030_P5B-CURV-CROSS-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/030_P5B-CURV-CROSS-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/030_P5B-CURV-CROSS-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T010329Z_phase5b_curv_cross_gf_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T010329Z_phase5b_curv_cross_gf_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 31,
+      "scenario_id": "P5B-DW-A0P0025-VX005-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p0025_vx005_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/031_P5B-DW-A0P0025-VX005-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/031_P5B-DW-A0P0025-VX005-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/031_P5B-DW-A0P0025-VX005-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T010637Z_phase5b_dw_a0p0025_vx005_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T010637Z_phase5b_dw_a0p0025_vx005_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 32,
+      "scenario_id": "P5B-DW-A0P0025-VX010-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p0025_vx010_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/032_P5B-DW-A0P0025-VX010-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/032_P5B-DW-A0P0025-VX010-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/032_P5B-DW-A0P0025-VX010-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T011048Z_phase5b_dw_a0p0025_vx010_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T011048Z_phase5b_dw_a0p0025_vx010_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 33,
+      "scenario_id": "P5B-DW-A0P0025-VX015-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p0025_vx015_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/033_P5B-DW-A0P0025-VX015-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/033_P5B-DW-A0P0025-VX015-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/033_P5B-DW-A0P0025-VX015-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T011458Z_phase5b_dw_a0p0025_vx015_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T011458Z_phase5b_dw_a0p0025_vx015_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 34,
+      "scenario_id": "P5B-DW-A0P0025-VX020-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p0025_vx020_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/034_P5B-DW-A0P0025-VX020-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/034_P5B-DW-A0P0025-VX020-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/034_P5B-DW-A0P0025-VX020-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T011908Z_phase5b_dw_a0p0025_vx020_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T011908Z_phase5b_dw_a0p0025_vx020_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 35,
+      "scenario_id": "P5B-DW-A0P0025-REAL-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p0025_real_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/035_P5B-DW-A0P0025-REAL-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/035_P5B-DW-A0P0025-REAL-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/035_P5B-DW-A0P0025-REAL-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T012318Z_phase5b_dw_a0p0025_real_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T012318Z_phase5b_dw_a0p0025_real_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 36,
+      "scenario_id": "P5B-DW-A0P0025-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p0025_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/036_P5B-DW-A0P0025-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/036_P5B-DW-A0P0025-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/036_P5B-DW-A0P0025-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T012729Z_phase5b_dw_a0p0025_gf_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T012729Z_phase5b_dw_a0p0025_gf_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 37,
+      "scenario_id": "P5B-DW-A0P005-VX005-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p005_vx005_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/037_P5B-DW-A0P005-VX005-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/037_P5B-DW-A0P005-VX005-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/037_P5B-DW-A0P005-VX005-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T013143Z_phase5b_dw_a0p005_vx005_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T013143Z_phase5b_dw_a0p005_vx005_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 38,
+      "scenario_id": "P5B-DW-A0P005-VX010-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p005_vx010_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/038_P5B-DW-A0P005-VX010-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/038_P5B-DW-A0P005-VX010-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/038_P5B-DW-A0P005-VX010-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T013553Z_phase5b_dw_a0p005_vx010_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T013553Z_phase5b_dw_a0p005_vx010_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 39,
+      "scenario_id": "P5B-DW-A0P005-VX015-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p005_vx015_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/039_P5B-DW-A0P005-VX015-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/039_P5B-DW-A0P005-VX015-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/039_P5B-DW-A0P005-VX015-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T014004Z_phase5b_dw_a0p005_vx015_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T014004Z_phase5b_dw_a0p005_vx015_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 40,
+      "scenario_id": "P5B-DW-A0P005-VX020-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p005_vx020_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/040_P5B-DW-A0P005-VX020-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/040_P5B-DW-A0P005-VX020-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/040_P5B-DW-A0P005-VX020-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T014414Z_phase5b_dw_a0p005_vx020_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T014414Z_phase5b_dw_a0p005_vx020_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 41,
+      "scenario_id": "P5B-DW-A0P005-REAL-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p005_real_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/041_P5B-DW-A0P005-REAL-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/041_P5B-DW-A0P005-REAL-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/041_P5B-DW-A0P005-REAL-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T014824Z_phase5b_dw_a0p005_real_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T014824Z_phase5b_dw_a0p005_real_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 42,
+      "scenario_id": "P5B-DW-A0P005-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p005_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/042_P5B-DW-A0P005-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/042_P5B-DW-A0P005-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/042_P5B-DW-A0P005-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T015235Z_phase5b_dw_a0p005_gf_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T015235Z_phase5b_dw_a0p005_gf_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 43,
+      "scenario_id": "P5B-DW-A0P01-VX005-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p01_vx005_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/043_P5B-DW-A0P01-VX005-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/043_P5B-DW-A0P01-VX005-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/043_P5B-DW-A0P01-VX005-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T015649Z_phase5b_dw_a0p01_vx005_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T015649Z_phase5b_dw_a0p01_vx005_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 44,
+      "scenario_id": "P5B-DW-A0P01-VX010-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p01_vx010_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/044_P5B-DW-A0P01-VX010-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/044_P5B-DW-A0P01-VX010-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/044_P5B-DW-A0P01-VX010-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T020100Z_phase5b_dw_a0p01_vx010_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T020100Z_phase5b_dw_a0p01_vx010_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 45,
+      "scenario_id": "P5B-DW-A0P01-VX015-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p01_vx015_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/045_P5B-DW-A0P01-VX015-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/045_P5B-DW-A0P01-VX015-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/045_P5B-DW-A0P01-VX015-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T020510Z_phase5b_dw_a0p01_vx015_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T020510Z_phase5b_dw_a0p01_vx015_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 46,
+      "scenario_id": "P5B-DW-A0P01-VX020-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p01_vx020_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/046_P5B-DW-A0P01-VX020-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/046_P5B-DW-A0P01-VX020-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/046_P5B-DW-A0P01-VX020-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T020920Z_phase5b_dw_a0p01_vx020_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T020920Z_phase5b_dw_a0p01_vx020_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 47,
+      "scenario_id": "P5B-DW-A0P01-REAL-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p01_real_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/047_P5B-DW-A0P01-REAL-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/047_P5B-DW-A0P01-REAL-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/047_P5B-DW-A0P01-REAL-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T021331Z_phase5b_dw_a0p01_real_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T021331Z_phase5b_dw_a0p01_real_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 48,
+      "scenario_id": "P5B-DW-A0P01-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p01_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/048_P5B-DW-A0P01-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/048_P5B-DW-A0P01-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/048_P5B-DW-A0P01-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T021741Z_phase5b_dw_a0p01_gf_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T021741Z_phase5b_dw_a0p01_gf_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 49,
+      "scenario_id": "P5B-DW-A0P02-VX005-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p02_vx005_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/049_P5B-DW-A0P02-VX005-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/049_P5B-DW-A0P02-VX005-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/049_P5B-DW-A0P02-VX005-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T022156Z_phase5b_dw_a0p02_vx005_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T022156Z_phase5b_dw_a0p02_vx005_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 50,
+      "scenario_id": "P5B-DW-A0P02-VX010-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p02_vx010_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/050_P5B-DW-A0P02-VX010-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/050_P5B-DW-A0P02-VX010-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/050_P5B-DW-A0P02-VX010-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T022606Z_phase5b_dw_a0p02_vx010_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T022606Z_phase5b_dw_a0p02_vx010_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 51,
+      "scenario_id": "P5B-DW-A0P02-VX015-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p02_vx015_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/051_P5B-DW-A0P02-VX015-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/051_P5B-DW-A0P02-VX015-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/051_P5B-DW-A0P02-VX015-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T023017Z_phase5b_dw_a0p02_vx015_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T023017Z_phase5b_dw_a0p02_vx015_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 52,
+      "scenario_id": "P5B-DW-A0P02-VX020-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p02_vx020_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/052_P5B-DW-A0P02-VX020-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/052_P5B-DW-A0P02-VX020-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/052_P5B-DW-A0P02-VX020-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T023427Z_phase5b_dw_a0p02_vx020_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T023427Z_phase5b_dw_a0p02_vx020_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 53,
+      "scenario_id": "P5B-DW-A0P02-REAL-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p02_real_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/053_P5B-DW-A0P02-REAL-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/053_P5B-DW-A0P02-REAL-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/053_P5B-DW-A0P02-REAL-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T023837Z_phase5b_dw_a0p02_real_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T023837Z_phase5b_dw_a0p02_real_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 54,
+      "scenario_id": "P5B-DW-A0P02-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p02_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/054_P5B-DW-A0P02-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/054_P5B-DW-A0P02-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/054_P5B-DW-A0P02-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T024247Z_phase5b_dw_a0p02_gf_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T024247Z_phase5b_dw_a0p02_gf_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 55,
+      "scenario_id": "P5B-DW-A0P04-VX005-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p04_vx005_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/055_P5B-DW-A0P04-VX005-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/055_P5B-DW-A0P04-VX005-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/055_P5B-DW-A0P04-VX005-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T024702Z_phase5b_dw_a0p04_vx005_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T024702Z_phase5b_dw_a0p04_vx005_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 56,
+      "scenario_id": "P5B-DW-A0P04-VX010-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p04_vx010_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/056_P5B-DW-A0P04-VX010-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/056_P5B-DW-A0P04-VX010-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/056_P5B-DW-A0P04-VX010-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T025112Z_phase5b_dw_a0p04_vx010_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T025112Z_phase5b_dw_a0p04_vx010_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 57,
+      "scenario_id": "P5B-DW-A0P04-VX015-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p04_vx015_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/057_P5B-DW-A0P04-VX015-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/057_P5B-DW-A0P04-VX015-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/057_P5B-DW-A0P04-VX015-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T025523Z_phase5b_dw_a0p04_vx015_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T025523Z_phase5b_dw_a0p04_vx015_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 58,
+      "scenario_id": "P5B-DW-A0P04-VX020-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p04_vx020_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/058_P5B-DW-A0P04-VX020-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/058_P5B-DW-A0P04-VX020-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/058_P5B-DW-A0P04-VX020-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T025933Z_phase5b_dw_a0p04_vx020_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T025933Z_phase5b_dw_a0p04_vx020_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 59,
+      "scenario_id": "P5B-DW-A0P04-REAL-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p04_real_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/059_P5B-DW-A0P04-REAL-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/059_P5B-DW-A0P04-REAL-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/059_P5B-DW-A0P04-REAL-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T030343Z_phase5b_dw_a0p04_real_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T030343Z_phase5b_dw_a0p04_real_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 60,
+      "scenario_id": "P5B-DW-A0P04-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_a0p04_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/060_P5B-DW-A0P04-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/060_P5B-DW-A0P04-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/060_P5B-DW-A0P04-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T030754Z_phase5b_dw_a0p04_gf_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T030754Z_phase5b_dw_a0p04_gf_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 61,
+      "scenario_id": "P5B-DW-BETA0P00625-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_beta0p00625_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/061_P5B-DW-BETA0P00625-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/061_P5B-DW-BETA0P00625-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/061_P5B-DW-BETA0P00625-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T031209Z_phase5b_dw_beta0p00625_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T031209Z_phase5b_dw_beta0p00625_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 62,
+      "scenario_id": "P5B-DW-BETA0P00625-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_beta0p00625_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/062_P5B-DW-BETA0P00625-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/062_P5B-DW-BETA0P00625-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/062_P5B-DW-BETA0P00625-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T031619Z_phase5b_dw_beta0p00625_gf_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T031619Z_phase5b_dw_beta0p00625_gf_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 63,
+      "scenario_id": "P5B-DW-BETA0P025-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_beta0p025_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/063_P5B-DW-BETA0P025-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/063_P5B-DW-BETA0P025-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/063_P5B-DW-BETA0P025-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T032034Z_phase5b_dw_beta0p025_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T032034Z_phase5b_dw_beta0p025_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 64,
+      "scenario_id": "P5B-DW-BETA0P025-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_beta0p025_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/064_P5B-DW-BETA0P025-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/064_P5B-DW-BETA0P025-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/064_P5B-DW-BETA0P025-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T032444Z_phase5b_dw_beta0p025_gf_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T032444Z_phase5b_dw_beta0p025_gf_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 65,
+      "scenario_id": "P5B-DW-GAMMA0P0025-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_gamma0p0025_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/065_P5B-DW-GAMMA0P0025-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/065_P5B-DW-GAMMA0P0025-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/065_P5B-DW-GAMMA0P0025-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T032859Z_phase5b_dw_gamma0p0025_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T032859Z_phase5b_dw_gamma0p0025_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 66,
+      "scenario_id": "P5B-DW-GAMMA0P0025-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_gamma0p0025_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/066_P5B-DW-GAMMA0P0025-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/066_P5B-DW-GAMMA0P0025-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/066_P5B-DW-GAMMA0P0025-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T033310Z_phase5b_dw_gamma0p0025_gf_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T033310Z_phase5b_dw_gamma0p0025_gf_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 67,
+      "scenario_id": "P5B-DW-GAMMA0P01-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_gamma0p01_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/067_P5B-DW-GAMMA0P01-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/067_P5B-DW-GAMMA0P01-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/067_P5B-DW-GAMMA0P01-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T033724Z_phase5b_dw_gamma0p01_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T033724Z_phase5b_dw_gamma0p01_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 68,
+      "scenario_id": "P5B-DW-GAMMA0P01-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_dw_gamma0p01_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/068_P5B-DW-GAMMA0P01-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/068_P5B-DW-GAMMA0P01-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/068_P5B-DW-GAMMA0P01-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T034135Z_phase5b_dw_gamma0p01_gf_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T034135Z_phase5b_dw_gamma0p01_gf_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 69,
+      "scenario_id": "P5B-START-S00-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_start_s00_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/069_P5B-START-S00-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/069_P5B-START-S00-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/069_P5B-START-S00-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T034550Z_phase5b_start_s00_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T034550Z_phase5b_start_s00_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 70,
+      "scenario_id": "P5B-START-S00-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_start_s00_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/070_P5B-START-S00-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/070_P5B-START-S00-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/070_P5B-START-S00-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T035000Z_phase5b_start_s00_gf_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T035000Z_phase5b_start_s00_gf_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 71,
+      "scenario_id": "P5B-START-S11-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_start_s11_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/071_P5B-START-S11-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/071_P5B-START-S11-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/071_P5B-START-S11-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T035415Z_phase5b_start_s11_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T035415Z_phase5b_start_s11_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 72,
+      "scenario_id": "P5B-START-S11-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_start_s11_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/072_P5B-START-S11-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/072_P5B-START-S11-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/072_P5B-START-S11-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T035825Z_phase5b_start_s11_gf_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T035825Z_phase5b_start_s11_gf_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 73,
+      "scenario_id": "P5B-START-S31-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_start_s31_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/073_P5B-START-S31-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/073_P5B-START-S31-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/073_P5B-START-S31-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T040240Z_phase5b_start_s31_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T040240Z_phase5b_start_s31_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 74,
+      "scenario_id": "P5B-START-S31-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_start_s31_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/074_P5B-START-S31-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/074_P5B-START-S31-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/074_P5B-START-S31-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T040650Z_phase5b_start_s31_gf_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T040650Z_phase5b_start_s31_gf_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 75,
+      "scenario_id": "P5B-START-S55-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_start_s55_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/075_P5B-START-S55-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/075_P5B-START-S55-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/075_P5B-START-S55-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T041106Z_phase5b_start_s55_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T041106Z_phase5b_start_s55_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 76,
+      "scenario_id": "P5B-START-S55-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_start_s55_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/076_P5B-START-S55-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/076_P5B-START-S55-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/076_P5B-START-S55-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T041516Z_phase5b_start_s55_gf_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T041516Z_phase5b_start_s55_gf_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 77,
+      "scenario_id": "P5B-START-S81-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_start_s81_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/077_P5B-START-S81-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/077_P5B-START-S81-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/077_P5B-START-S81-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T041931Z_phase5b_start_s81_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T041931Z_phase5b_start_s81_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 78,
+      "scenario_id": "P5B-START-S81-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_start_s81_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/078_P5B-START-S81-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/078_P5B-START-S81-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/078_P5B-START-S81-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T042341Z_phase5b_start_s81_gf_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T042341Z_phase5b_start_s81_gf_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 79,
+      "scenario_id": "P5B-NOISE-SEED101-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_noise_seed101_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/079_P5B-NOISE-SEED101-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/079_P5B-NOISE-SEED101-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/079_P5B-NOISE-SEED101-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T042756Z_phase5b_noise_seed101_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T042756Z_phase5b_noise_seed101_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 80,
+      "scenario_id": "P5B-NOISE-SEED101-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_noise_seed101_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/080_P5B-NOISE-SEED101-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/080_P5B-NOISE-SEED101-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/080_P5B-NOISE-SEED101-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T043206Z_phase5b_noise_seed101_gf_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T043206Z_phase5b_noise_seed101_gf_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 81,
+      "scenario_id": "P5B-NOISE-SEED202-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_noise_seed202_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/081_P5B-NOISE-SEED202-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/081_P5B-NOISE-SEED202-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/081_P5B-NOISE-SEED202-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T043620Z_phase5b_noise_seed202_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T043620Z_phase5b_noise_seed202_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 82,
+      "scenario_id": "P5B-NOISE-SEED202-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_noise_seed202_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/082_P5B-NOISE-SEED202-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/082_P5B-NOISE-SEED202-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/082_P5B-NOISE-SEED202-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T044031Z_phase5b_noise_seed202_gf_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T044031Z_phase5b_noise_seed202_gf_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 83,
+      "scenario_id": "P5B-NOISE-SEED303-HB",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_noise_seed303_hb.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/083_P5B-NOISE-SEED303-HB_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/083_P5B-NOISE-SEED303-HB_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/083_P5B-NOISE-SEED303-HB_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T044445Z_phase5b_noise_seed303_hb_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T044445Z_phase5b_noise_seed303_hb_execute",
+      "status": "succeeded"
+    },
+    {
+      "order": 84,
+      "scenario_id": "P5B-NOISE-SEED303-GF",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_noise_seed303_gf.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/084_P5B-NOISE-SEED303-GF_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/084_P5B-NOISE-SEED303-GF_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/logs/084_P5B-NOISE-SEED303-GF_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T044856Z_phase5b_noise_seed303_gf_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260623T044856Z_phase5b_noise_seed303_gf_execute",
+      "status": "succeeded"
+    }
+  ],
+  "completed_at_utc": "2026-06-23T04:53:11.066540+00:00",
+  "failure_count": 0
+}

@@ -1,0 +1,2 @@
+order,scenario_config,scenario_id,name,phase,stop_rule_sec,method,action
+1,/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_pilot_g1_globalw40_start1_slow.json,P5B-PILOT-01-G1_GLOBALW40_START1_SLOW,phase5b_pilot_g1_globalw40_start1_slow,5,700,baseline_hbesc,run

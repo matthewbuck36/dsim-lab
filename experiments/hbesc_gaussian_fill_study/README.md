@@ -1,6 +1,6 @@
 # HeavyBall ESC Versus Gaussian Fill Study
 
-Phase 5 status as of 2026-06-10: repository verification, foundational docs, harness scripts, analysis entrypoints, the bounded Phase 2 smoke run, the Phase 3 minimal quartic matrix, the Phase 4 HBESC gain-sensitivity matrix, and the first bounded Phase 5 characterization matrix are complete. A reusable batch runner is active for dry-run and bounded execute batches.
+Phase 5 status as of 2026-06-23: repository verification, foundational docs, harness scripts, analysis entrypoints, the bounded Phase 2 smoke run, the Phase 3 minimal quartic matrix, the Phase 4 HBESC gain-sensitivity matrix, the first bounded Phase 5 characterization matrix, and the expanded 84-scenario Phase 5 characterization matrix are complete. A reusable batch runner is active for dry-run and bounded execute batches.
 
 ## What This Directory Contains
 
@@ -11,13 +11,15 @@ Phase 5 status as of 2026-06-10: repository verification, foundational docs, har
 - `results_manifest.csv`: initialized manifest for future runs.
 - `phase3_results.md`: Phase 3 run table, classifications, invalidated run note, and Phase 4 handoff.
 - `phase4_results.md`: Phase 4 HBESC gain-sensitivity run table, conclusions, unresolved world-path note, and Phase 5 handoff.
-- `phase5_results.md`: Phase 5 bounded characterization run table, world-path fix evidence, aggregate artifacts, and conclusions.
+- `phase5_results.md`: Phase 5A bounded characterization run table, world-path fix evidence, aggregate artifacts, and conclusions.
+- `phase5_expanded_results.md`: Phase 5B expanded characterization matrix, execution evidence, aggregate artifacts, and conclusions.
 - `configs/scenarios/phase1_trial_matrix.csv`: initial trial matrix scaffold.
 - `configs/scenarios/phase2_smoke_quartic_baseline.json`: first dry-run/smoke scenario config.
 - `configs/scenarios/phase3_qrt_a_hb.json`: Phase 3 convex quartic baseline continuation.
 - `configs/scenarios/phase3_qrt_a_gf.json`: next Phase 3 paired Gaussian-fill dry-run candidate.
 - `configs/scenarios/phase4_gain_sensitivity_matrix.csv`: Phase 4 low/default/high one-at-a-time HBESC gain-sensitivity matrix.
 - `configs/scenarios/phase5_characterization_matrix.csv`: Phase 5 first bounded curvature/barrier/speed characterization matrix.
+- `configs/scenarios/phase5_expanded_characterization_matrix.csv`: Phase 5 expanded characterization matrix.
 - `scripts/`: harness scripts for one trial, reusable batches, sim-time monitoring, output checks, analysis dispatch, and manifest recording.
 - `analysis/`: Phase 2 analysis and topographic plotting entrypoints.
 
@@ -103,7 +105,7 @@ No further Phase 4 run command is pending.
 
 ## Phase 5 Expanded Characterization Result
 
-Completed first bounded Phase 5 matrix:
+Completed first bounded Phase 5A matrix:
 
 - Summary: see `phase5_results.md`.
 - Valid host-level execute runs: 7.
@@ -115,9 +117,24 @@ Completed first bounded Phase 5 matrix:
 - Result: convex quartic curvature changed convergence quality and speed; the tested double-well barrier-speed slice stayed trapped for all four baseline HBESC cases.
 - Note: two sandboxed execute rows in `results_manifest.csv` timed out because DDS/Gazebo socket creation is blocked in the restricted sandbox. They are superseded by the host-level execute batch.
 
-No further Phase 5 baseline run command is pending. The next useful bounded
-increment is a Gaussian-fill paired barrier slice on the same Phase 5 double-well
-cases.
+Completed expanded Phase 5B matrix:
+
+- Summary: see `phase5_expanded_results.md`.
+- Matrix: `configs/scenarios/phase5_expanded_characterization_matrix.csv`.
+- Generated scenarios/configs: `scripts/generate_phase5_expanded_matrix.py`.
+- Valid execute runs: 84.
+- Dry-run batch: `results/batches/phase5_expanded_dry_run/`.
+- Canary execute batch: `results/batches/phase5_expanded_execute_canary/`.
+- Controlling execute batch: `results/batches/phase5_expanded_execute/`.
+- Aggregate metrics: `results/batches/phase5_expanded_execute/phase5_expanded_metrics.csv`.
+- Aggregate summary: `results/batches/phase5_expanded_execute/phase5_expanded_summary.json`.
+- Aggregate plots: `results/batches/phase5_expanded_execute/figures/`.
+- Result: all 84 scenarios reached sim-time; double-well alpha/speed, beta,
+  gamma, start-grid, and noise-seed slices did not enter the 2 m target radius;
+  Gaussian fill executed one fill in every Gaussian-fill row but did not rescue
+  the tested quartic double-well failure mode.
+
+No further Phase 5 expanded characterization run command is pending.
 
 ## Batch Simulation Runner
 

@@ -1,0 +1,39 @@
+{
+  "phase": 5,
+  "name": "phase5b_start_s55_gf",
+  "test_id": "P5B-START-S55-GF",
+  "description": "Phase 5B double-well starting-position grid s55, gaussian_fill.",
+  "cost_family": "quartic_double_well",
+  "characterization_axis": "starting_position_grid",
+  "method_label": "gaussian_fill",
+  "speed_label": "conservative",
+  "target": {
+    "x": 10.0,
+    "y": 10.0
+  },
+  "local_basin": {
+    "x": 2.0,
+    "y": 2.0
+  },
+  "stop_rule_sec": 700,
+  "launch": {
+    "entity_name": "turtlebot3",
+    "init_x_position": 5,
+    "init_y_position": 5,
+    "init_yaw_angle": 0,
+    "input_encoder_data_to_filter": true,
+    "live_plot_mode": "2D",
+    "use_pde_extensions": true,
+    "escape_policy": "conditional_gaussian_fill",
+    "rotate_frame_config_filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation.json",
+    "sensor_transform_config_filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json",
+    "cost_function_config_filepath": "~/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/cost_functions/phase5b_double_well_alpha0p01.json",
+    "filter_config_filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json",
+    "controller_config_filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/accelerated_methods/hbesc_gaussian_conservative_full_rotation.json",
+    "data_collection_filepath": "~/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs",
+    "world": "/home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/worlds/gazebo_empty.world"
+  },
+  "barrier_alpha": 0.01,
+  "cross_valley_beta": 0.0125,
+  "tilt_gamma": 0.005
+}

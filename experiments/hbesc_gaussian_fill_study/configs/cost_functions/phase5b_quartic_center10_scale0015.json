@@ -1,0 +1,20 @@
+{
+  "CostFunction": {
+    "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/cost_function_objects.py",
+    "object_name": "Position_Based_Sympy_Expression",
+    "params": {
+      "function": "0.0015*((x-10)**4 + (y-10)**4)",
+      "symbols": [
+        "t",
+        "x",
+        "y",
+        "z"
+      ],
+      "substitutions": {}
+    }
+  },
+  "Noise": {
+    "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/noise_objects.py",
+    "object_name": "No_Noise"
+  }
+}

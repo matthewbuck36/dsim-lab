@@ -82,9 +82,11 @@ The sandboxed logs show DDS socket failures such as `Error creating socket:
 Operation not permitted`, and `gzserver` died immediately. The corrected
 host-level batch supersedes these attempts.
 
-## Next Step
+## Follow-Up Completed
 
-For the next bounded Phase 5 increment, keep the custom world routing and run a
-Gaussian-fill paired barrier slice on the same `alpha=0.005` and `alpha=0.02`
-double-well cases. The current baseline HBESC slice establishes that speed
-authority alone did not escape these local-basin cases.
+The follow-up expanded Phase 5B matrix is complete and documented in
+`phase5_expanded_results.md`. It includes Gaussian-fill paired double-well
+cases, alpha/speed sweeps, beta/gamma sweeps, start-grid cases, noise-seed
+cases, and pilot replications. The expanded result preserves the main finding:
+the tested quartic double-well cases remained local-basin failures, and the
+current conservative one-fill Gaussian-fill settings did not rescue them.

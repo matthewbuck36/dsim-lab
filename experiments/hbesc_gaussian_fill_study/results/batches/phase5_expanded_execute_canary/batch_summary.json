@@ -1,0 +1,35 @@
+{
+  "batch_id": "phase5_expanded_execute_canary",
+  "mode": "execute",
+  "headless": true,
+  "wall_timeout": 900,
+  "resume": false,
+  "retries": 0,
+  "plan_only": false,
+  "created_at_utc": "2026-06-22T23:28:06.636266+00:00",
+  "batch_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute_canary",
+  "plan_csv": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute_canary/batch_plan.csv",
+  "results": [
+    {
+      "order": 1,
+      "scenario_id": "P5B-PILOT-01-G1_GLOBALW40_START1_SLOW",
+      "scenario_config": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5b_pilot_g1_globalw40_start1_slow.json",
+      "action": "run",
+      "attempts": [
+        {
+          "attempt": 1,
+          "returncode": 0,
+          "stdout": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute_canary/logs/001_P5B-PILOT-01-G1_GLOBALW40_START1_SLOW_attempt1.stdout",
+          "stderr": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute_canary/logs/001_P5B-PILOT-01-G1_GLOBALW40_START1_SLOW_attempt1.stderr",
+          "command": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute_canary/logs/001_P5B-PILOT-01-G1_GLOBALW40_START1_SLOW_attempt1.cmd.txt",
+          "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260622T232806Z_phase5b_pilot_g1_globalw40_start1_slow_execute"
+        }
+      ],
+      "final_returncode": 0,
+      "run_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/runs/20260622T232806Z_phase5b_pilot_g1_globalw40_start1_slow_execute",
+      "status": "succeeded"
+    }
+  ],
+  "completed_at_utc": "2026-06-22T23:32:19.329556+00:00",
+  "failure_count": 0
+}

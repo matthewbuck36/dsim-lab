@@ -13,6 +13,13 @@ ros2_ws/log/
 # Local experiment rosbag database artifacts
 experiments/hbesc_gaussian_fill_study/results/runs/**/diagnostics/**/*.db3
 
+# Local experiment run artifacts
+experiments/hbesc_gaussian_fill_study/results/runs/
+experiments/hbesc_gaussian_fill_study/results/batches/**/logs/
+experiments/hbesc_gaussian_fill_study/results/batches/**/*.log
+experiments/hbesc_gaussian_fill_study/results/batches/**/*.stdout
+experiments/hbesc_gaussian_fill_study/results/batches/**/*.stderr
+
 # Local AI assistant workspace/session artifacts
 .codex
 .codex/

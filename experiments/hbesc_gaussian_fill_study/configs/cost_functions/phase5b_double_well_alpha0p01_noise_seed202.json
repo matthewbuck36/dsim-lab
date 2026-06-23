@@ -1,0 +1,24 @@
+{
+  "CostFunction": {
+    "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/cost_function_objects.py",
+    "object_name": "Position_Based_Sympy_Expression",
+    "params": {
+      "function": "0.01*(((x+y)/2)-2)**2*(((x+y)/2)-10)**2 + 0.0125*(x-y)**2 - 0.005*((x+y)/2)",
+      "symbols": [
+        "t",
+        "x",
+        "y",
+        "z"
+      ],
+      "substitutions": {}
+    }
+  },
+  "Noise": {
+    "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/noise_objects.py",
+    "object_name": "Gaussian",
+    "params": {
+      "std_dev": 0.01,
+      "seed_num": 202
+    }
+  }
+}

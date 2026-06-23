@@ -1,0 +1,40 @@
+{
+  "matrix_csv": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/configs/scenarios/phase5_expanded_characterization_matrix.csv",
+  "metrics_csv": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute/phase5_expanded_metrics.csv",
+  "batch_dir": "/home/mattb/dsim-lab/experiments/hbesc_gaussian_fill_study/results/batches/phase5_expanded_execute",
+  "total_rows": 84,
+  "status_counts": {
+    "sim_time_reached": 84
+  },
+  "axis_counts": {
+    "pilot_replication": 15,
+    "pilot_gaussian_fill_pair": 5,
+    "quartic_curvature_and_shape": 10,
+    "double_well_alpha_speed": 25,
+    "double_well_alpha_gaussian_fill": 5,
+    "double_well_beta": 4,
+    "double_well_gamma": 4,
+    "starting_position_grid": 10,
+    "noise_seed": 6
+  },
+  "axis_success_counts": {
+    "pilot_replication": 7,
+    "pilot_gaussian_fill_pair": 2,
+    "quartic_curvature_and_shape": 5
+  },
+  "method_counts": {
+    "baseline_hbesc": 57,
+    "gaussian_fill": 27
+  },
+  "method_success_counts": {
+    "baseline_hbesc": 12,
+    "gaussian_fill": 2
+  },
+  "physical_feasibility_counts": {
+    "within_turtlebot3_burger_reference_limits": 48,
+    "exceeds_turtlebot3_burger_reference_limits": 36
+  },
+  "gaussian_fill_rows": 27,
+  "baseline_rows": 57,
+  "success_radius_entries": 14
+}
