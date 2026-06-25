@@ -13,3 +13,9 @@ ros2_ws/log/
 # Local AI assistant workspace/session artifacts
 .codex
 .codex/
+
+# Local editor settings
+.vscode/settings.json
+
+# Generated HBESC / Gaussian-fill experiment artifacts
+experiments/hbesc_gaussian_fill_study/results/
