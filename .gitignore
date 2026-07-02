@@ -19,3 +19,6 @@ ros2_ws/log/
 
 # Generated HBESC / Gaussian-fill experiment artifacts
 experiments/hbesc_gaussian_fill_study/results/
+
+# Physical TurtleBot3 Testing
+Jan-29-try-20260630T235703Z-3-001
