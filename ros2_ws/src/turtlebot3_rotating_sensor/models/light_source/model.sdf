@@ -7,11 +7,30 @@
     <link name="body">
       <pose>0 0 0 0 0 0</pose>
 
+      <collision name="base_collision">
+        <pose>0 0 0.0762 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.045</radius>
+            <length>0.1524</length>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <collision name="globe_collision">
+        <pose>0 0 0.2074 0 0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.055</radius>
+          </sphere>
+        </geometry>
+      </collision>
+
       <visual name="base_visual">
         <pose>0 0 0.0762 0 0 0</pose>
         <geometry>
           <cylinder>
-            <radius>0.0762</radius>
+            <radius>0.045</radius>
             <length>0.1524</length>
           </cylinder>
         </geometry>
@@ -23,11 +42,11 @@
       </visual>
 
       <visual name="globe_visual">
-        <pose>0 0 0.2286 0 0 0</pose>
+        <pose>0 0 0.2074 0 0 0</pose>
         <cast_shadows>false</cast_shadows>
         <geometry>
           <sphere>
-            <radius>0.0762</radius>
+            <radius>0.055</radius>
           </sphere>
         </geometry>
         <material>
@@ -39,7 +58,7 @@
       </visual>
 
       <light type="point" name="warm_globe_light">
-        <pose>0 0 0.2286 0 0 0</pose>
+        <pose>0 0 0.2074 0 0 0</pose>
         <diffuse>1.0 0.74 0.42 1</diffuse>
         <specular>0.25 0.18 0.10 1</specular>
         <attenuation>

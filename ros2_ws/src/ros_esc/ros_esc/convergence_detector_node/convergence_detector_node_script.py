@@ -8,14 +8,22 @@ from ros_esc_interfaces.msg import StampedFloat64MultiArray
 
 class ConvergenceDetector(Node):
     """
-    Integral convergence metric using PDE transport buffer.
+    Mean-based convergence metric using PDE transport buffer.
 
     For 2D:
-      U is (N,2) trajectory history.
-      r = ∫ ||U_recent(s) - U_old(s)||^2 ds  ~ sum(||diff||^2)*dt_node
+      U is (N, 2) trajectory history.
+
+      mean_recent = mean(U[0:M])
+      mean_old    = mean(U[2M:3M])
+
+      r = ||mean_recent - mean_old||^2
 
     metric = r + exp(-b*(t-t0)) - threshold
-    Trigger when metric crosses below 0 (we approximate by checking metric < 0).
+
+    A convergence candidate occurs when metric crosses below 0.
+
+    A real convergence event is published only after the convergence counter
+    reaches zero.
     """
 
     def __init__(self):
@@ -24,26 +32,40 @@ class ConvergenceDetector(Node):
         # Use Gazebo simulation time
         self.set_parameters([
             rclpy.parameter.Parameter(
-                'use_sim_time',
+                "use_sim_time",
                 rclpy.parameter.Parameter.Type.BOOL,
                 True
             )
         ])
-    
 
-        # Params
+        # ---------------------------------------------------------------------
+        # Parameters
+        # ---------------------------------------------------------------------
+
         self.declare_parameter("k_periods", 20)
-        # Threshold must be positive; with threshold=0 the metric
-        # r + exp(-b(t-t0)) - threshold is nonnegative and never crosses below zero.
-        self.declare_parameter("threshold", 0.2)
+
+        # Threshold must be positive.
+        self.declare_parameter("threshold", 0.1)
         self.declare_parameter("decay_rate", 0.15)
 
-        # Must match PDEHistory omega, n_buffer to get correct dt_node, fill time
+        # Must match PDEHistory omega and n_buffer.
         self.declare_parameter("n_buffer", 2000)
         self.declare_parameter("omega", 5.0)
 
         # Startup gating
-        self.declare_parameter("min_fill_periods", 1.0)  # require >= 1*kT before trigger
+        self.declare_parameter("min_fill_periods", 1.0)
+
+        # ---------------------------------------------------------------------
+        # New convergence-counter parameters
+        # ---------------------------------------------------------------------
+
+        # Number of convergence detections required before publishing
+        # the fill-trigger event.
+        self.declare_parameter("convergence_count_start", 3)
+
+        # If True, after publishing a fill-ready event, reset the counter
+        # so future local minima can also be detected and filled.
+        self.declare_parameter("reset_counter_after_event", True)
 
         self.k = int(self.get_parameter("k_periods").value)
         self.th = float(self.get_parameter("threshold").value)
@@ -51,16 +73,41 @@ class ConvergenceDetector(Node):
 
         self.N = int(self.get_parameter("n_buffer").value)
         self.omega = float(self.get_parameter("omega").value)
+
         self.T = 2.0 * np.pi / self.omega
         self.kT = self.k * self.T
         self.dt_node = self.kT / self.N
 
-        self.min_fill_periods = float(self.get_parameter("min_fill_periods").value)
+        self.min_fill_periods = float(
+            self.get_parameter("min_fill_periods").value
+        )
+
         self.min_time_before_trigger = self.min_fill_periods * self.kT
+
+        self.count_start = int(
+            self.get_parameter("convergence_count_start").value
+        )
+
+        self.reset_counter_after_event = bool(
+            self.get_parameter("reset_counter_after_event").value
+        )
+
+        if self.count_start < 1:
+            self.count_start = 1
+
+        self.count_remaining = self.count_start
+
+        # ---------------------------------------------------------------------
+        # Internal state
+        # ---------------------------------------------------------------------
 
         self.t0 = None
         self.first_time = None
         self.last_metric = None
+
+        # ---------------------------------------------------------------------
+        # Subscribers
+        # ---------------------------------------------------------------------
 
         self.sub = self.create_subscription(
             StampedFloat64MultiArray,
@@ -69,13 +116,18 @@ class ConvergenceDetector(Node):
             10
         )
 
+        # ---------------------------------------------------------------------
+        # Publishers
+        # ---------------------------------------------------------------------
+
+        # This is published only when the counter reaches zero.
+        # The Gaussian-fill node should subscribe to this topic.
         self.pub = self.create_publisher(
             StampedFloat64MultiArray,
             "/convergence_event",
             10
         )
 
-        # in __init__ (add this)
         self.pub_metric = self.create_publisher(
             StampedFloat64MultiArray,
             "/convergence_metric",
@@ -88,10 +140,18 @@ class ConvergenceDetector(Node):
             10
         )
 
+        # Optional diagnostic publisher for the counter.
+        self.pub_count = self.create_publisher(
+            StampedFloat64MultiArray,
+            "/convergence_count",
+            10
+        )
+
         self.get_logger().info(
             f"ConvergenceDetector: k={self.k}, th={self.th}, b={self.b}, "
             f"N={self.N}, omega={self.omega:.3f}, dt_node={self.dt_node:.6f}, "
-            f"min_trigger_time={self.min_time_before_trigger:.2f}s"
+            f"min_trigger_time={self.min_time_before_trigger:.2f}s, "
+            f"count_start={self.count_start}"
         )
 
     def buffer_cb(self, msg: StampedFloat64MultiArray):
@@ -100,29 +160,43 @@ class ConvergenceDetector(Node):
         if self.first_time is None:
             self.first_time = t
 
-        # Parse flat [x0,y0,x1,y1,...] -> (N,2)
+        # ---------------------------------------------------------------------
+        # Parse flat buffer:
+        #
+        #   [x0, y0, x1, y1, x2, y2, ...]
+        #
+        # into:
+        #
+        #   U.shape = (N, 2)
+        # ---------------------------------------------------------------------
+
         data = np.array(msg.data, dtype=np.float64)
+
         if data.size < 2:
             return
+
         if data.size % 2 != 0:
-            # malformed
             return
 
-        U = data.reshape(-1, 2)  # shape (N,2) if consistent
+        U = data.reshape(-1, 2)
 
         if not np.all(np.isfinite(U)):
             return
 
         N = U.shape[0]
+
         if N < self.k * 3:
-            # Not enough nodes to form 0:M and 2M:3M
             return
 
         M = N // self.k
+
         if 3 * M > N or M <= 0:
             return
 
-        # Startup gating: avoid false positives before buffer meaningfully represents history
+        # ---------------------------------------------------------------------
+        # Startup gating
+        # ---------------------------------------------------------------------
+
         if (t - self.first_time) < self.min_time_before_trigger:
             return
 
@@ -130,52 +204,135 @@ class ConvergenceDetector(Node):
             self.t0 = t
             return
 
+        # ---------------------------------------------------------------------
+        # Recent and old trajectory segments
+        # ---------------------------------------------------------------------
+
         seg_recent = U[0:M, :]
-        seg_old = U[2*M:3*M, :]
+        seg_old = U[2 * M:3 * M, :]
 
-        diff = seg_recent - seg_old
-        # ||diff||^2 per node
-        diff_sq = np.sum(diff * diff, axis=1)  # (M,)
-        r_val = float(np.sum(diff_sq) * self.dt_node)
+        mean_recent = np.mean(seg_recent, axis=0)
+        mean_old = np.mean(seg_old, axis=0)
 
+        diff_mean = mean_recent - mean_old
+
+        # Squared Euclidean distance between mean positions
+        r_val = float(np.sum(diff_mean * diff_mean))
 
         decay_term = float(np.exp(-self.b * (t - self.t0)))
+
         metric = r_val + decay_term - self.th
 
-        # in buffer_cb (right after computing metric)
+        # ---------------------------------------------------------------------
+        # Publish diagnostic metric
+        # ---------------------------------------------------------------------
+
         metric_msg = StampedFloat64MultiArray()
         metric_msg.header = "CONV_METRIC"
         metric_msg.timestamp = t
         metric_msg.data = [float(metric)]
         self.pub_metric.publish(metric_msg)
 
-        m = StampedFloat64MultiArray()
-        m.header = "R_VAL"
-        m.timestamp = t
-        m.data = [float(r_val)]
-        self.pub_r.publish(m) 
+        r_msg = StampedFloat64MultiArray()
+        r_msg.header = "R_VAL"
+        r_msg.timestamp = t
+        r_msg.data = [float(r_val)]
+        self.pub_r.publish(r_msg)
 
-        # Optional: require sign change (prevents repeated triggers due to noise)
+        count_msg = StampedFloat64MultiArray()
+        count_msg.header = "CONV_COUNT"
+        count_msg.timestamp = t
+        count_msg.data = [float(self.count_remaining)]
+        self.pub_count.publish(count_msg)
+
+        # ---------------------------------------------------------------------
+        # Crossing logic
+        # ---------------------------------------------------------------------
+
         if self.last_metric is None:
             self.last_metric = metric
             return
 
-        crossed = (self.last_metric > 0.0) and (metric < 0.0)
+        crossed = self.last_metric > 0.0 and metric < 0.0
         self.last_metric = metric
 
-        if crossed:
+        if not crossed:
+            return
+
+        # ---------------------------------------------------------------------
+        # A convergence candidate was detected.
+        # Decrement the counter.
+        # ---------------------------------------------------------------------
+
+        self.count_remaining -= 1
+
+        self.get_logger().info(
+            "Convergence candidate: "
+            + f"metric={metric:.6f}, "
+            + f"r_mean={r_val:.6f}, "
+            + f"decay={decay_term:.6f}, "
+            + f"mean_recent=({mean_recent[0]:.4f}, {mean_recent[1]:.4f}), "
+            + f"mean_old=({mean_old[0]:.4f}, {mean_old[1]:.4f}), "
+            + f"count_remaining={self.count_remaining}, "
+            + f"t={t:.3f}"
+        )
+
+        # Publish updated counter immediately
+        count_msg = StampedFloat64MultiArray()
+        count_msg.header = "CONV_COUNT_DECREMENTED"
+        count_msg.timestamp = t
+        count_msg.data = [float(self.count_remaining)]
+        self.pub_count.publish(count_msg)
+
+        # Reset decay reference after every candidate, so the next candidate
+        # requires another period of stable behavior.
+        self.t0 = t
+        self.last_metric = None
+
+        # ---------------------------------------------------------------------
+        # Only publish the actual convergence event when the counter reaches zero.
+        # This is the event your Gaussian-fill node should use.
+        # ---------------------------------------------------------------------
+
+        if self.count_remaining <= 0:
             out = StampedFloat64MultiArray()
-            out.header = "CONVERGED"
+            out.header = "CONVERGED_FILL_READY"
             out.timestamp = t
-            out.data = [metric, r_val, decay_term]
+
+            out.data = [
+                float(metric),
+                float(r_val),
+                float(decay_term),
+
+                # Recommended fill center estimate:
+                float(mean_recent[0]),
+                float(mean_recent[1]),
+
+                # Old segment mean, useful for diagnostics:
+                float(mean_old[0]),
+                float(mean_old[1]),
+
+                # Counter state:
+                float(self.count_remaining),
+            ]
+
             self.pub.publish(out)
+
             self.get_logger().info(
-                "Convergence event: "
-                + f"metric={metric:.6f}, r={r_val:.6f}, decay={decay_term:.6f}, t={t:.3f}"
+                "CONVERGED_FILL_READY: "
+                + f"metric={metric:.6f}, "
+                + f"r_mean={r_val:.6f}, "
+                + f"decay={decay_term:.6f}, "
+                + f"fill_center=({mean_recent[0]:.4f}, {mean_recent[1]:.4f}), "
+                + f"t={t:.3f}"
             )
 
-            # Reset decay reference like your script
-            self.t0 = t
+            if self.reset_counter_after_event:
+                self.count_remaining = self.count_start
+
+                self.get_logger().info(
+                    f"Convergence counter reset to {self.count_start}"
+                )
 
 
 def main():

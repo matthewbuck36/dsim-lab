@@ -29,3 +29,7 @@ The controller node is responsible for reading input values and operating on the
 ## Data Collection:
 
 The data collection node is responsible for documenting information from an active gazebo simulation. This node saves odometry information, sensor transform values, cost values, filter outputs, and controller outputs to csv files. This node also generates a text file where all the configuration files and objects used for that simulation are written out and recorded for reference. These files are all saved in a test folder.
+
+## Gaussian Fill Extensions:
+
+The optional Gaussian-fill extension stack uses `pde_history_node` for position history, `pde_cost_history_node` for raw cost history, `convergence_detector_node` for fill-ready events and diagnostics, `gaussian_fill_node` for `/cost_bias`, and `modified_cost_node` for `/cost_modified`. The modified cost node now combines Gaussian fill correction with an optional PDE-history-based affine exploration bias.

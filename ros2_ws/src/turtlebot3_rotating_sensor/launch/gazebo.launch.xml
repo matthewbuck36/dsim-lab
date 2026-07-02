@@ -208,6 +208,16 @@
     <executable
         if="$(var use_pde_extensions)"
         cmd="
+            ros2 run ros_esc pde_cost_history_node
+            --ros-args
+            -p omega:=$(var pde_omega)
+            -p cost_topic:=/$(var entity_name)/cost_value_chatter
+        "
+    />
+
+    <executable
+        if="$(var use_pde_extensions)"
+        cmd="
             ros2 run ros_esc convergence_detector_node
             --ros-args
             -p omega:=$(var pde_omega)

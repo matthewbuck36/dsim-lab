@@ -116,7 +116,7 @@ user@machine:~$ source install/setup.bash
 user@machine:~$ ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml
 ```
 
-To spawn the optional light source model during a Gazebo simulation, set `include_light_source` to `True`. The model is a one foot tall cylinder and sphere assembly with a warm point light inside the globe. It is visual-only and has no collision geometry, so the robot can drive through it. It is disabled by default so existing simulation runs are unchanged.
+To spawn the optional light source model during a Gazebo simulation, set `include_light_source` to `True`. The model is a compact cylinder and sphere assembly with a warm point light inside the globe. It includes collision geometry, so it can physically block the robot if placed on the robot's path. It is disabled by default so existing simulation runs are unchanged.
 
 ```
 user@machine:~$ ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml include_light_source:=True light_source_x:=2.0 light_source_y:=0.0 light_source_z:=0.0
