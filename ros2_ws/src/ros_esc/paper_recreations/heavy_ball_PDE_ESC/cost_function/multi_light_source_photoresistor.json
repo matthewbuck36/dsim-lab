@@ -1,0 +1,33 @@
+{
+  "CostFunction": {
+    "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/cost_function_objects.py",
+    "object_name": "Multi_Light_Source_Cost",
+    "params": {
+      "mode": "Voltage",
+      "scale_map": 1.0,
+      "apply_adc": false,
+      "reference_intensity_lumens": 1000.0,
+      "light_sources": [
+        {
+          "x": 2.0,
+          "y": 2.0,
+          "intensity_lumens": 1000.0
+        },
+        {
+          "x": 10.0,
+          "y": 10.0,
+          "intensity_lumens": 2500.0
+        },
+        {
+          "x": 6.0,
+          "y": 3.0,
+          "intensity_lumens": 1500.0
+        }
+      ]
+    }
+  },
+  "Noise": {
+    "filepath": "~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/noise_objects.py",
+    "object_name": "No_Noise"
+  }
+}

@@ -1,0 +1,208 @@
+Starting >>> ros_esc
+Starting >>> ros_esc_interfaces
+Starting >>> turtlebot3_rotating_sensor
+Finished <<< turtlebot3_rotating_sensor [0.36s]
+Finished <<< ros_esc_interfaces [0.73s]
+Finished <<< ros_esc [1.00s]
+
+Summary: 3 packages finished [1.29s]
+[INFO] [launch]: All log files can be found below /home/mattb/.ros/log/2026-07-01-20-07-10-915655-ubuntu-ssd-147513
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [gazebo-1]: process started with pid [147525]
+[INFO] [robot_state_publisher-2]: process started with pid [147527]
+[INFO] [spawner-3]: process started with pid [147529]
+[INFO] [spawner-4]: process started with pid [147531]
+[INFO] [spawn_entity.py-5]: process started with pid [147533]
+[INFO] [spawn_entity.py-6]: process started with pid [147535]
+[INFO] [spawn_entity.py-7]: process started with pid [147537]
+[INFO] [spawn_entity.py-8]: process started with pid [147539]
+[INFO] [ros2-9]: process started with pid [147541]
+[INFO] [ros2-10]: process started with pid [147543]
+[INFO] [ros2-11]: process started with pid [147545]
+[INFO] [ros2-12]: process started with pid [147547]
+[INFO] [ros2-13]: process started with pid [147549]
+[INFO] [ros2-14]: process started with pid [147553]
+[INFO] [ros2-15]: process started with pid [147562]
+[INFO] [ros2-16]: process started with pid [147565]
+[INFO] [ros2-17]: process started with pid [147568]
+[INFO] [ros2-18]: process started with pid [147570]
+[INFO] [ros2-19]: process started with pid [147572]
+[INFO] [ros2-20]: process started with pid [147574]
+[robot_state_publisher-2] [INFO] [1782961631.301068733] [robot_state_publisher_node]: got segment base_footprint
+[robot_state_publisher-2] [INFO] [1782961631.301222429] [robot_state_publisher_node]: got segment base_link
+[robot_state_publisher-2] [INFO] [1782961631.301237397] [robot_state_publisher_node]: got segment base_scan
+[robot_state_publisher-2] [INFO] [1782961631.301246664] [robot_state_publisher_node]: got segment caster_wheel
+[robot_state_publisher-2] [INFO] [1782961631.301255244] [robot_state_publisher_node]: got segment imu_link
+[robot_state_publisher-2] [INFO] [1782961631.301263934] [robot_state_publisher_node]: got segment rotating_frame_link
+[robot_state_publisher-2] [INFO] [1782961631.301271924] [robot_state_publisher_node]: got segment sensor_link
+[robot_state_publisher-2] [INFO] [1782961631.301280191] [robot_state_publisher_node]: got segment wheel_left_link
+[robot_state_publisher-2] [INFO] [1782961631.301287766] [robot_state_publisher_node]: got segment wheel_right_link
+[spawn_entity.py-8] [INFO] [1782961631.986187594] [spawn_light_source_3]: Spawn Entity started
+[spawn_entity.py-8] [INFO] [1782961631.988358488] [spawn_light_source_3]: Loading entity XML from file /home/mattb/dsim-lab/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/models/light_source/model.sdf
+[spawner-3] [INFO] [1782961631.989114683] [spawner_joint_state_broadcaster]: waiting for service /controller_manager/list_controllers to become available...
+[spawn_entity.py-8] [INFO] [1782961631.992565540] [spawn_light_source_3]: Waiting for service /spawn_entity, timeout = 30
+[spawn_entity.py-8] [INFO] [1782961631.993745413] [spawn_light_source_3]: Waiting for service /spawn_entity
+[spawner-4] [INFO] [1782961632.182973798] [spawner_velocity_controller]: waiting for service /controller_manager/list_controllers to become available...
+[gazebo-1] Gazebo multi-robot simulator, version 11.10.2
+[gazebo-1] Copyright (C) 2012 Open Source Robotics Foundation.
+[gazebo-1] Released under the Apache 2 License.
+[gazebo-1] http://gazebosim.org
+[gazebo-1] 
+[spawn_entity.py-7] [INFO] [1782961632.383597206] [spawn_light_source_2]: Spawn Entity started
+[spawn_entity.py-7] [INFO] [1782961632.384308601] [spawn_light_source_2]: Loading entity XML from file /home/mattb/dsim-lab/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/models/light_source/model.sdf
+[spawn_entity.py-7] [INFO] [1782961632.385492909] [spawn_light_source_2]: Waiting for service /spawn_entity, timeout = 30
+[spawn_entity.py-7] [INFO] [1782961632.386045311] [spawn_light_source_2]: Waiting for service /spawn_entity
+[spawn_entity.py-5] [INFO] [1782961632.525926449] [spawn_entity]: Spawn Entity started
+[spawn_entity.py-5] [INFO] [1782961632.528482223] [spawn_entity]: Loading entity published on topic /robot_description
+[spawn_entity.py-5] [INFO] [1782961632.532736871] [spawn_entity]: Waiting for entity xml on /robot_description
+[spawn_entity.py-5] [INFO] [1782961632.548709201] [spawn_entity]: Waiting for service /spawn_entity, timeout = 30
+[spawn_entity.py-5] [INFO] [1782961632.549328538] [spawn_entity]: Waiting for service /spawn_entity
+[ros2-16] [INFO] [1782961632.603713887] [convergence_detector]: ConvergenceDetector: k=20, th=0.2, b=0.15, N=2000, omega=5.000, dt_node=0.012566, min_trigger_time=50.27s, count_start=3
+[spawn_entity.py-6] [INFO] [1782961632.652255305] [spawn_light_source_1]: Spawn Entity started
+[spawn_entity.py-6] [INFO] [1782961632.653289485] [spawn_light_source_1]: Loading entity XML from file /home/mattb/dsim-lab/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/models/light_source/model.sdf
+[spawn_entity.py-6] [INFO] [1782961632.654161977] [spawn_light_source_1]: Waiting for service /spawn_entity, timeout = 30
+[spawn_entity.py-6] [INFO] [1782961632.654780032] [spawn_light_source_1]: Waiting for service /spawn_entity
+[ros2-14] [INFO] [1782961632.724567792] [pde_history]: PDEHistory: N=2000, k=20, omega=5.000, lambda=79.577, dt_node=0.012566
+[gazebo-1] Gazebo multi-robot simulator, version 11.10.2
+[gazebo-1] Copyright (C) 2012 Open Source Robotics Foundation.
+[gazebo-1] Released under the Apache 2 License.
+[gazebo-1] http://gazebosim.org
+[gazebo-1] 
+[ros2-15] [INFO] [1782961632.818981841] [pde_cost_history]: PDECostHistory started. Subscribing to /turtlebot3/cost_value_chatter as StampedFloat64MultiArray. Publishing /pde_cost_history as std_msgs/msg/Float64MultiArray. N=2000, k=20, omega=5.000, lambda=79.577, dt_node=0.012566
+[ros2-17] [INFO] [1782961632.821439016] [gaussian_fill]: GaussianFill ready (2D): policy=conditional_gaussian_fill, fallback_A=5.000, fit_A=[0.150, 10.000], sigma=[3.160, 5.000], max_fills=3, cooldown=0.000s, min_distance=0.000m
+[ros2-13] [INFO] [1782961632.882667543] [modified_cost_2d]: ModifiedCost2D started with Gaussian correction + PDE-history affine bias.
+[ros2-13] [INFO] [1782961632.883333387] [modified_cost_2d]: PDE history topic: /pde_history, use_pde_history_for_affine=True
+[gazebo-1] [1;33m[Wrn] [gazebo_ros_init.cpp:178] [0m[1;33m
+[gazebo-1] #     # ####### ####### ###  #####  #######
+[gazebo-1] ##    # #     #    #     #  #     # #
+[gazebo-1] # #   # #     #    #     #  #       #
+[gazebo-1] #  #  # #     #    #     #  #       #####
+[gazebo-1] #   # # #     #    #     #  #       #
+[gazebo-1] #    ## #     #    #     #  #     # #
+[gazebo-1] #     # #######    #    ###  #####  #######
+[gazebo-1] 
+[gazebo-1] This version of Gazebo, now called Gazebo classic, reaches end-of-life
+[gazebo-1] in January 2025. Users are highly encouraged to migrate to the new Gazebo
+[gazebo-1] using our migration guides (https://gazebosim.org/docs/latest/gazebo_classic_migration?utm_source=gazebo_ros_pkgs&utm_medium=cli)
+[gazebo-1] 
+[gazebo-1] [0m[1;33m
+[gazebo-1] [1;32m[Msg] [0m[1;32mWaiting for master.[0m[1;32m
+[gazebo-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mConnected to gazebo master @ [0m[1;32mhttp://127.0.0.1:11345[0m[1;32m
+[gazebo-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mPublicized address: [0m[1;32m10.130.191.118[0m[1;32m
+[gazebo-1] [0m[1;33m[0m[1;33m[0m[1;33m[Wrn] [FuelModelDatabase.cc:313] [0m[1;33mURI not supported by Fuel [[0m[1;33mworlds/gazebo_empty.world[0m[1;33m][0m[1;33m
+[gazebo-1] [0m[1;33m[0m[1;33m[0m[1;33m[Wrn] [SystemPaths.cc:459] [0m[1;33mFile or path does not exist [[0m[1;33m""[0m[1;33m] [[0m[1;33mworlds/gazebo_empty.world[0m[1;33m][0m[1;33m
+[gazebo-1] [0m[1;33m[0m[1;33m[0m[1;31m[Err] [Server.cc:472] [0m[1;31mCould not open file[[0m[1;31mworlds/gazebo_empty.world[0m[1;31m]
+[gazebo-1] [0m[1;33m[Wrn] [Server.cc:381] [0m[1;33mFalling back on worlds/empty.world
+[ros2-20] No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+[spawn_entity.py-5] [INFO] [1782961634.063739448] [spawn_entity]: Calling service /spawn_entity
+[spawn_entity.py-6] [INFO] [1782961634.169356060] [spawn_light_source_1]: Calling service /spawn_entity
+[spawn_entity.py-5] [INFO] [1782961634.334502961] [spawn_entity]: Spawn status: SpawnEntity: Successfully spawned entity [turtlebot3]
+[gazebo-1] [0m[INFO] [1782961634.360426127] [turtlebot3_diff_drive]: Wheel pair 1 separation set to [0.160000m]
+[gazebo-1] [INFO] [1782961634.360988326] [turtlebot3_diff_drive]: Wheel pair 1 diameter set to [0.066000m]
+[gazebo-1] [INFO] [1782961634.362908809] [turtlebot3_diff_drive]: Subscribed to [/cmd_vel]
+[gazebo-1] [INFO] [1782961634.366226015] [turtlebot3_diff_drive]: Advertise odometry on [/odom]
+[gazebo-1] [INFO] [1782961634.369828238] [turtlebot3_diff_drive]: Publishing odom transforms between [odom] and [base_footprint]
+[gazebo-1] [INFO] [1782961634.386533990] [turtlebot3_joint_state]: Going to publish joint [rotating_frame_joint]
+[spawn_entity.py-7] [INFO] [1782961634.394973623] [spawn_light_source_2]: Calling service /spawn_entity
+[gazebo-1] [INFO] [1782961634.414610602] [gazebo_ros2_control]: Loading gazebo_ros2_control plugin
+[gazebo-1] [INFO] [1782961634.424627728] [gazebo_ros2_control]: Starting gazebo_ros2_control plugin in namespace: /
+[gazebo-1] [INFO] [1782961634.424676657] [gazebo_ros2_control]: Starting gazebo_ros2_control plugin in ros 2 node: gazebo_ros2_control
+[gazebo-1] [INFO] [1782961634.431363411] [gazebo_ros2_control]: connected to service!! /robot_state_publisher_node
+[gazebo-1] [INFO] [1782961634.431928034] [gazebo_ros2_control]: Received urdf from param server, parsing...
+[gazebo-1] [INFO] [1782961634.431976896] [gazebo_ros2_control]: Loading parameter files /home/mattb/dsim-lab/ros2_ws/install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/controller_config/joint_controller.yaml
+[gazebo-1] [INFO] [1782961634.444515459] [gazebo_ros2_control]: Loading joint: rotating_frame_joint
+[gazebo-1] [INFO] [1782961634.444547315] [gazebo_ros2_control]: 	State:
+[gazebo-1] [INFO] [1782961634.444555090] [gazebo_ros2_control]: 		 position
+[gazebo-1] [INFO] [1782961634.444562690] [gazebo_ros2_control]: 			 found initial value: 0.000000
+[gazebo-1] [INFO] [1782961634.444570511] [gazebo_ros2_control]: 		 velocity
+[gazebo-1] [INFO] [1782961634.444576713] [gazebo_ros2_control]: 			 found initial value: 0.000000
+[gazebo-1] [INFO] [1782961634.444582440] [gazebo_ros2_control]: 	Command:
+[gazebo-1] [INFO] [1782961634.444603489] [gazebo_ros2_control]: 		 velocity
+[gazebo-1] [INFO] [1782961634.444883724] [resource_manager]: Initialize hardware 'GazeboSystem' 
+[gazebo-1] [INFO] [1782961634.445059022] [resource_manager]: Successful initialization of hardware 'GazeboSystem'
+[gazebo-1] [INFO] [1782961634.445212069] [resource_manager]: 'configure' hardware 'GazeboSystem' 
+[gazebo-1] [INFO] [1782961634.445228366] [resource_manager]: Successful 'configure' of hardware 'GazeboSystem'
+[gazebo-1] [INFO] [1782961634.445238012] [resource_manager]: 'activate' hardware 'GazeboSystem' 
+[gazebo-1] [INFO] [1782961634.445247748] [resource_manager]: Successful 'activate' of hardware 'GazeboSystem'
+[gazebo-1] [INFO] [1782961634.445335469] [gazebo_ros2_control]: Loading controller_manager
+[gazebo-1] [WARN] [1782961634.481838745] [gazebo_ros2_control]:  Desired controller update period (0.01 s) is slower than the gazebo simulation period (0.001 s).
+[gazebo-1] [INFO] [1782961634.482024675] [gazebo_ros2_control]: Loaded gazebo_ros2_control.
+[INFO] [spawn_entity.py-5]: process has finished cleanly [pid 147533]
+[gazebo-1] [INFO] [1782961634.497695476] [controller_manager]: Loading controller 'joint_state_broadcaster'
+[spawn_entity.py-8] [INFO] [1782961634.508186272] [spawn_light_source_3]: Calling service /spawn_entity
+[spawner-3] [INFO] [1782961634.523901433] [spawner_joint_state_broadcaster]: [94mLoaded [1mjoint_state_broadcaster[0m
+[gazebo-1] [INFO] [1782961634.526352432] [controller_manager]: Configuring controller 'joint_state_broadcaster'
+[gazebo-1] [INFO] [1782961634.526859748] [joint_state_broadcaster]: 'joints' or 'interfaces' parameter is empty. All available state interfaces will be published
+[gazebo-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mWaiting for master.[0m[1;32m
+[gazebo-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mConnected to gazebo master @ [0m[1;32mhttp://127.0.0.1:11345[0m[1;32m
+[gazebo-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mPublicized address: [0m[1;32m10.130.191.118[0m[1;32m
+[gazebo-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mWarning: Ignoring XDG_SESSION_TYPE=wayland on Gnome. Use QT_QPA_PLATFORM=wayland to run on Wayland anyway.[0m[1;32m
+[gazebo-1] [1;33m[Wrn] [Event.cc:61] [0m[1;33mWarning: Deleting a connection right after creation. [0m[1;33mMake sure to save the ConnectionPtr from a Connect call
+[spawner-3] [INFO] [1782961634.564041808] [spawner_joint_state_broadcaster]: [92mConfigured and activated [1mjoint_state_broadcaster[0m
+[gazebo-1] [0m[INFO] [1782961634.691596784] [controller_manager]: Loading controller 'velocity_controller'
+[spawn_entity.py-6] [INFO] [1782961634.716601038] [spawn_light_source_1]: Spawn status: SpawnEntity: Successfully spawned entity [manual_light_1]
+[spawner-4] [INFO] [1782961634.717021398] [spawner_velocity_controller]: [94mLoaded [1mvelocity_controller[0m
+[INFO] [spawner-3]: process has finished cleanly [pid 147529]
+[gazebo-1] [INFO] [1782961634.800820632] [controller_manager]: Configuring controller 'velocity_controller'
+[gazebo-1] [INFO] [1782961634.802537681] [velocity_controller]: configure successful
+[gazebo-1] [INFO] [1782961634.816454592] [velocity_controller]: activate successful
+[spawner-4] [INFO] [1782961634.827667547] [spawner_velocity_controller]: [92mConfigured and activated [1mvelocity_controller[0m
+[INFO] [spawn_entity.py-6]: process has finished cleanly [pid 147535]
+[spawn_entity.py-7] [INFO] [1782961634.937712148] [spawn_light_source_2]: Spawn status: SpawnEntity: Successfully spawned entity [manual_light_2]
+[INFO] [spawner-4]: process has finished cleanly [pid 147531]
+[INFO] [spawn_entity.py-7]: process has finished cleanly [pid 147537]
+[spawn_entity.py-8] [INFO] [1782961635.179002382] [spawn_light_source_3]: Spawn status: SpawnEntity: Successfully spawned entity [manual_light_3]
+[INFO] [spawn_entity.py-8]: process has finished cleanly [pid 147539]
+[gazebo-1] [0m[1;32m[0m[1;32m[0m[1;32m[Msg] [0m[1;32mLoading world file [[0m[1;32m/usr/share/gazebo-11/worlds/empty.world[0m[1;32m][0m[1;32m
+[ros2-16] [INFO] [1782961695.452926621] [convergence_detector]: Convergence candidate: metric=-0.001576, r_mean=0.198423, decay=0.000000, mean_recent=(2.1361, 1.8345), mean_old=(2.4086, 2.1868), count_remaining=2, t=151.300
+[ros2-16] [INFO] [1782961699.417543371] [convergence_detector]: Convergence candidate: metric=-0.002139, r_mean=0.016995, decay=0.180866, mean_recent=(2.0550, 2.1128), mean_old=(1.9441, 2.0443), count_remaining=1, t=162.700
+[ros2-16] [INFO] [1782961703.376829398] [convergence_detector]: Convergence candidate: metric=-0.001904, r_mean=0.017231, decay=0.180866, mean_recent=(2.0235, 1.8247), mean_old=(2.1530, 1.8461), count_remaining=0, t=174.100
+[ros2-16] [INFO] [1782961703.377624771] [convergence_detector]: CONVERGED_FILL_READY: metric=-0.001904, r_mean=0.017231, decay=0.180866, fill_center=(2.0235, 1.8247), t=174.100
+[ros2-16] [INFO] [1782961703.378162008] [convergence_detector]: Convergence counter reset to 3
+[ros2-17] [INFO] [1782961703.425299375] [gaussian_fill]: Published fill #1: A=20.000, cost_mean=-1.336, mu=(-0.563,3.724), sigma=3.160
+[ros2-13] [INFO] [1782961703.430523642] [modified_cost_2d]: Added Gaussian term: A=20.000, mu=(-0.563,3.724), sigma=3.160 (total Gaussian terms=1)
+[ros2-13] [WARN] [1782961703.449073718] [modified_cost_2d]: All PDE-history points are inside exclusion radius; using oldest point as fallback.
+[ros2-13] [INFO] [1782961703.450366014] [modified_cost_2d]: Added affine term: anchor=(-0.563,3.724), direction=(-0.149,0.989), b0=(-0.075,0.494), decay_rate=0.000, total affine terms=1
+[ros2-16] [INFO] [1782961707.581078862] [convergence_detector]: Convergence candidate: metric=-0.001914, r_mean=0.035248, decay=0.162838, mean_recent=(2.1682, 1.9977), mean_old=(2.0114, 2.1010), count_remaining=2, t=186.200
+[ros2-16] [INFO] [1782961711.898333671] [convergence_detector]: Convergence candidate: metric=-0.001382, r_mean=0.042945, decay=0.155673, mean_recent=(1.8998, 1.8593), mean_old=(2.1004, 1.8070), count_remaining=1, t=198.600
+[ros2-16] [INFO] [1782961715.805398808] [convergence_detector]: Convergence candidate: metric=-0.001547, r_mean=0.014854, decay=0.183599, mean_recent=(2.1827, 1.9242), mean_old=(2.1254, 2.0318), count_remaining=0, t=209.900
+[ros2-16] [INFO] [1782961715.806490421] [convergence_detector]: CONVERGED_FILL_READY: metric=-0.001547, r_mean=0.014854, decay=0.183599, fill_center=(2.1827, 1.9242), t=209.900
+[ros2-16] [INFO] [1782961715.807270774] [convergence_detector]: Convergence counter reset to 3
+[ros2-17] [INFO] [1782961715.883903495] [gaussian_fill]: Published fill #2: A=20.000, cost_mean=-2.969, mu=(0.439,4.639), sigma=3.160
+[ros2-13] [INFO] [1782961715.884994374] [modified_cost_2d]: Added Gaussian term: A=20.000, mu=(0.439,4.639), sigma=3.160 (total Gaussian terms=2)
+[ros2-13] [WARN] [1782961715.896813536] [modified_cost_2d]: All PDE-history points are inside exclusion radius; using oldest point as fallback.
+[ros2-13] [INFO] [1782961715.899667725] [modified_cost_2d]: Added affine term: anchor=(0.439,4.639), direction=(0.094,0.996), b0=(0.047,0.498), decay_rate=0.000, total affine terms=1
+[ros2-16] [INFO] [1782961720.164626159] [convergence_detector]: Convergence candidate: metric=-0.000357, r_mean=0.041617, decay=0.158025, mean_recent=(1.9946, 2.0139), mean_old=(1.9284, 1.8210), count_remaining=2, t=222.200
+[ros2-16] [INFO] [1782961724.226318464] [convergence_detector]: Convergence candidate: metric=-0.001298, r_mean=0.028369, decay=0.170333, mean_recent=(2.2230, 1.8281), mean_old=(2.1765, 1.9899), count_remaining=1, t=234.000
+[ros2-16] [INFO] [1782961728.237111060] [convergence_detector]: Convergence candidate: metric=-0.002252, r_mean=0.016882, decay=0.180866, mean_recent=(2.0668, 2.0822), mean_old=(1.9849, 1.9813), count_remaining=0, t=245.400
+[ros2-16] [INFO] [1782961728.238157271] [convergence_detector]: CONVERGED_FILL_READY: metric=-0.002252, r_mean=0.016882, decay=0.180866, fill_center=(2.0668, 2.0822), t=245.400
+[ros2-16] [INFO] [1782961728.238949145] [convergence_detector]: Convergence counter reset to 3
+[ros2-17] [INFO] [1782961728.309828962] [gaussian_fill]: Published fill #3: A=20.000, cost_mean=-4.666, mu=(-0.595,3.582), sigma=3.160
+[ros2-13] [INFO] [1782961728.311124869] [modified_cost_2d]: Added Gaussian term: A=20.000, mu=(-0.595,3.582), sigma=3.160 (total Gaussian terms=3)
+[ros2-13] [WARN] [1782961728.328298375] [modified_cost_2d]: All PDE-history points are inside exclusion radius; using oldest point as fallback.
+[ros2-13] [INFO] [1782961728.329138748] [modified_cost_2d]: Added affine term: anchor=(-0.595,3.582), direction=(-0.243,0.970), b0=(-0.122,0.485), decay_rate=0.000, total affine terms=1
+[ros2-16] [INFO] [1782961732.644510913] [convergence_detector]: Convergence candidate: metric=-0.001579, r_mean=0.047349, decay=0.151072, mean_recent=(2.0417, 1.8615), mean_old=(2.2586, 1.8796), count_remaining=2, t=258.000
+[ros2-16] [INFO] [1782961736.560593359] [convergence_detector]: Convergence candidate: metric=-0.000389, r_mean=0.016012, decay=0.183599, mean_recent=(2.1051, 2.1379), mean_old=(2.0077, 2.0571), count_remaining=1, t=269.300
+[ros2-16] [INFO] [1782961740.493630084] [convergence_detector]: Convergence candidate: metric=-0.000756, r_mean=0.015644, decay=0.183599, mean_recent=(1.9356, 1.9015), mean_old=(2.0548, 1.8637), count_remaining=0, t=280.600
+[ros2-16] [INFO] [1782961740.494614767] [convergence_detector]: CONVERGED_FILL_READY: metric=-0.000756, r_mean=0.015644, decay=0.183599, fill_center=(1.9356, 1.9015), t=280.600
+[ros2-16] [INFO] [1782961740.495814655] [convergence_detector]: Convergence counter reset to 3
+[ros2-16] [INFO] [1782961744.516764680] [convergence_detector]: Convergence candidate: metric=-0.002615, r_mean=0.021865, decay=0.175520, mean_recent=(2.1941, 2.0476), mean_old=(2.0823, 2.1443), count_remaining=2, t=292.200
+[ros2-16] [INFO] [1782961748.471960550] [convergence_detector]: Convergence candidate: metric=-0.001549, r_mean=0.017585, decay=0.180866, mean_recent=(1.9074, 2.0060), mean_old=(1.9567, 1.8829), count_remaining=1, t=303.600
+[ros2-16] [INFO] [1782961752.434273135] [convergence_detector]: Convergence candidate: metric=-0.001871, r_mean=0.017264, decay=0.180866, mean_recent=(2.1882, 1.9347), mean_old=(2.1850, 2.0660), count_remaining=0, t=315.000
+[ros2-16] [INFO] [1782961752.435671490] [convergence_detector]: CONVERGED_FILL_READY: metric=-0.001871, r_mean=0.017264, decay=0.180866, fill_center=(2.1882, 1.9347), t=315.000
+[ros2-16] [INFO] [1782961752.436322924] [convergence_detector]: Convergence counter reset to 3
+[ros2-16] [INFO] [1782961756.411431969] [convergence_detector]: Convergence candidate: metric=-0.001873, r_mean=0.017261, decay=0.180866, mean_recent=(1.9560, 2.1081), mean_old=(1.9088, 1.9855), count_remaining=2, t=326.400
+[ros2-16] [INFO] [1782961760.357391123] [convergence_detector]: Convergence candidate: metric=-0.001900, r_mean=0.017235, decay=0.180866, mean_recent=(2.1043, 1.8590), mean_old=(2.1947, 1.9541), count_remaining=1, t=337.800
+[ros2-16] [INFO] [1782961764.321739147] [convergence_detector]: Convergence candidate: metric=-0.001918, r_mean=0.017216, decay=0.180866, mean_recent=(2.0625, 2.1458), mean_old=(1.9426, 2.0926), count_remaining=0, t=349.200
+[ros2-16] [INFO] [1782961764.322584382] [convergence_detector]: CONVERGED_FILL_READY: metric=-0.001918, r_mean=0.017216, decay=0.180866, fill_center=(2.0625, 2.1458), t=349.200
+[ros2-16] [INFO] [1782961764.323286238] [convergence_detector]: Convergence counter reset to 3
+[ros2-16] [INFO] [1782961768.297324246] [convergence_detector]: Convergence candidate: metric=-0.001885, r_mean=0.017250, decay=0.180866, mean_recent=(1.9913, 1.8649), mean_old=(2.1226, 1.8681), count_remaining=2, t=360.600
+[ros2-16] [INFO] [1782961772.256128667] [convergence_detector]: Convergence candidate: metric=-0.001885, r_mean=0.017249, decay=0.180866, mean_recent=(2.1646, 2.0972), mean_old=(2.0420, 2.1444), count_remaining=1, t=372.000
+[ros2-16] [INFO] [1782961776.225580680] [convergence_detector]: Convergence candidate: metric=-0.001889, r_mean=0.017245, decay=0.180866, mean_recent=(1.9156, 1.9488), mean_old=(2.0108, 1.8584), count_remaining=0, t=383.400
+[ros2-16] [INFO] [1782961776.227605351] [convergence_detector]: CONVERGED_FILL_READY: metric=-0.001889, r_mean=0.017245, decay=0.180866, fill_center=(1.9156, 1.9488), t=383.400
+[ros2-16] [INFO] [1782961776.228474369] [convergence_detector]: Convergence counter reset to 3
+[ros2-16] [INFO] [1782961780.189734442] [convergence_detector]: Convergence candidate: metric=-0.001871, r_mean=0.017264, decay=0.180866, mean_recent=(2.2023, 1.9906), mean_old=(2.1491, 2.1107), count_remaining=2, t=394.800
+[ros2-16] [INFO] [1782961784.149001510] [convergence_detector]: Convergence candidate: metric=-0.001849, r_mean=0.017285, decay=0.180866, mean_recent=(1.9215, 2.0619), mean_old=(1.9248, 1.9304), count_remaining=1, t=406.200
+[ros2-16] [INFO] [1782961788.136132305] [convergence_detector]: Convergence candidate: metric=-0.001852, r_mean=0.017282, decay=0.180866, mean_recent=(2.1537, 1.8884), mean_old=(2.2010, 2.0111), count_remaining=0, t=417.600
+[ros2-16] [INFO] [1782961788.136769289] [convergence_detector]: CONVERGED_FILL_READY: metric=-0.001852, r_mean=0.017282, decay=0.180866, fill_center=(2.1537, 1.8884), t=417.600
+[ros2-16] [INFO] [1782961788.137435599] [convergence_detector]: Convergence counter reset to 3

@@ -1,6 +1,8 @@
 #!/bin/bash
 
-# HBESC + PDE/Gaussian-fill basin-escape test.
+# HBESC + PDE/Gaussian-fill source-seeking run with a light-defined cost map.
+# Edit the number_of_lights and light_N_* launch arguments below.
+# number_of_lights is capped at 5 in gazebo.launch.xml.
 cd ~/dsim-lab/ros2_ws
 
 colcon build --packages-select ros_esc ros_esc_interfaces turtlebot3_rotating_sensor
@@ -16,11 +18,11 @@ input_encoder_data_to_filter:='True' \
 live_plot_mode:='2D' \
 show_cost_surface_plot:='True' \
 cost_surface_x_min:=0.0 \
-cost_surface_x_max:=12.0 \
+cost_surface_x_max:=4.5 \
 cost_surface_y_min:=0.0 \
-cost_surface_y_max:=12.0 \
-cost_surface_resolution:=80 \
-cost_surface_orientation_mode:='fixed' \
+cost_surface_y_max:=4.5 \
+cost_surface_resolution:=60 \
+cost_surface_orientation_mode:='average' \
 cost_surface_z_scale_mode:='base' \
 cost_surface_show_base_wireframe:='True' \
 cost_surface_live:='True' \
@@ -32,26 +34,29 @@ use_pde_extensions:='True' \
 escape_policy:='conditional_gaussian_fill' \
 rotate_frame_config_filepath:='~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation.json' \
 sensor_transform_config_filepath:='~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json' \
-cost_function_config_filepath:='~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/gaussian_two_basin_original.json' \
+cost_function_config_filepath:='~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json' \
 filter_config_filepath:='~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json' \
 controller_config_filepath:='~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/accelerated_methods/hbesc_gaussian_conservative_full_rotation.json' \
 pde_omega:=5.0 \
 convergence_threshold:=0.2 \
 convergence_decay_rate:=0.15 \
 convergence_min_fill_periods:=2.0 \
-gaussian_fill_amplitude:=5.0 \
-gaussian_fill_min_sigma:=3.16 \
-gaussian_fill_max_sigma:=5.0 \
+gaussian_fill_amplitude:=3.0 \
+gaussian_fill_min_sigma:=0.2 \
+gaussian_fill_max_sigma:=0.7 \
 gaussian_fill_min_points:=50 \
 gaussian_fill_use_recent_fraction:=0.2 \
-gaussian_fill_max_fills:=1 \
+gaussian_fill_max_fills:=2 \
 gaussian_fill_cooldown_sec:=0.0 \
 gaussian_fill_min_distance_between_fills:=0.0 \
-number_of_lights:=2 \
-light_1_x:=2.0 \
-light_1_y:=2.0 \
-light_1_intensity_lumens:=1000.0 \
-light_2_x:=10.0 \
-light_2_y:=10.0 \
-light_2_intensity_lumens:=2500.0 \
+number_of_lights:=3 \
+light_1_x:=1.0 \
+light_1_y:=0.5 \
+light_1_intensity_lumens:=500.0 \
+light_2_x:=1.5 \
+light_2_y:=3.0 \
+light_2_intensity_lumens:=1000.0 \
+light_3_x:=4.0 \
+light_3_y:=4.0 \
+light_3_intensity_lumens:=2000.0 \
 data_collection_filepath:='~/Experiments/Gazebo-Simulations'

@@ -21,7 +21,9 @@ select either: '2D', '3D', or 'None'.
 import os
 import csv
 import argparse
+import signal
 import threading
+import time
 from datetime import datetime
 from functools import partial
 import rclpy
@@ -128,6 +130,9 @@ class DataCollection(Node):
         # we wait until the first timekeeper callback to make the
         # file with the timekeeper information
         self.made_comment_file = False
+        self.fig = None
+        self.live_plot_data = None
+        self.ani = None
 
         # If the user selects live plots
         if args.live_plot_mode in ["2D", "3D"]:
@@ -242,10 +247,11 @@ class DataCollection(Node):
         append_csv_file(self.filepaths["odometry_csv"], data)
 
         # Save data for the live plots
-        self.live_plot_data["x_position"].append(float(x))
-        self.live_plot_data["y_position"].append(float(y))
-        self.live_plot_data["z_position"].append(float(z))
-        self.live_plot_data["position_tstamps"].append(float(odom_tstamp))
+        if self.live_plot_data is not None:
+            self.live_plot_data["x_position"].append(float(x))
+            self.live_plot_data["y_position"].append(float(y))
+            self.live_plot_data["z_position"].append(float(z))
+            self.live_plot_data["position_tstamps"].append(float(odom_tstamp))
 
     def sensor_transform_callback(self, msg=StampedTransformMultiArray):
         """This function collects the sensor transform information and writes to a csv file.
@@ -282,33 +288,33 @@ class DataCollection(Node):
         # Save data for the live plots
         # Check if this is the first time we receive
         # a cost value, if so we must initialize things
-        if self.live_plot_data["num_distinct_cost_values"] is None:
-            # Note the amount of distinct cost values in the array
-            self.live_plot_data["num_distinct_cost_values"] = len(msg.data)
+        if self.live_plot_data is not None:
+            if self.live_plot_data["num_distinct_cost_values"] is None:
+                # Note the amount of distinct cost values in the array
+                self.live_plot_data["num_distinct_cost_values"] = len(msg.data)
 
-            # Create new lists of data for each distinct cost value
-            for i in range(self.live_plot_data["num_distinct_cost_values"]):
-                # Initialize these lists of data with the first cost values
-                self.live_plot_data[f"cost_value_{i}"] = [msg.data[i]]
+                # Create new lists of data for each distinct cost value
+                for i in range(self.live_plot_data["num_distinct_cost_values"]):
+                    # Initialize these lists of data with the first cost values
+                    self.live_plot_data[f"cost_value_{i}"] = [msg.data[i]]
 
-                # Initialize an object to represent this cost value line
-                # Note that we give it empty lists we will fill with timestamps
-                # and cost value data, we set the line's color and markersize
-                self.live_plot_data[f"cost_value_line_{i}"], = (
-                    self.live_plot_data["ax3"].plot(
-                        [], [], self.live_plot_data["colors"][i], markersize=5
+                    # Initialize an object to represent this cost value line
+                    # Note that we give it empty lists we will fill with timestamps
+                    # and cost value data, we set the line's color and markersize
+                    self.live_plot_data[f"cost_value_line_{i}"], = (
+                        self.live_plot_data["ax3"].plot(
+                            [], [], self.live_plot_data["colors"][i], markersize=5
+                        )
                     )
-                )
 
+            # With initialized cost value lists
+            else:
+                for i in range(self.live_plot_data["num_distinct_cost_values"]):
+                    # Append these lists of data with the cost values
+                    self.live_plot_data[f"cost_value_{i}"].append(msg.data[i])
 
-        # With initialized cost value lists
-        else:
-            for i in range(self.live_plot_data["num_distinct_cost_values"]):
-                # Append these lists of data with the cost values
-                self.live_plot_data[f"cost_value_{i}"].append(msg.data[i])
-
-        # Append the timestamp
-        self.live_plot_data["cost_value_tstamps"].append(msg.timestamp)
+            # Append the timestamp
+            self.live_plot_data["cost_value_tstamps"].append(msg.timestamp)
 
         # Collect the timestamp from this message
         cost_tstamp = [msg.timestamp]
@@ -369,7 +375,7 @@ def ros_thread(node):
     """This function creates a thread where anything related to ROS will run."""
     try:
         while rclpy.ok():
-            rclpy.spin_once(node)
+            rclpy.spin_once(node, timeout_sec=0.1)
     except KeyboardInterrupt:
         print("Shutting down ROS thread...")
 
@@ -378,21 +384,32 @@ def main(args=None):
 
     rclpy.init(args=args)
     node = DataCollection()
+    shutdown_requested = threading.Event()
+
+    def request_shutdown(_signum=None, _frame=None):
+        shutdown_requested.set()
+        plt.close("all")
+        rclpy.try_shutdown()
+
+    signal.signal(signal.SIGINT, request_shutdown)
+    signal.signal(signal.SIGTERM, request_shutdown)
 
     # Create the ROS thread
-    ros_thread_instance = threading.Thread(target=ros_thread, args=(node,))
+    ros_thread_instance = threading.Thread(target=ros_thread, args=(node,), daemon=True)
     ros_thread_instance.start()
 
     try:
-        plt.show()
+        if node.fig is not None:
+            plt.show()
+        else:
+            while rclpy.ok() and not shutdown_requested.is_set():
+                time.sleep(0.1)
     except KeyboardInterrupt:
-        pass
+        request_shutdown()
     finally:
-        # We wait for a keyboard interrupt, and then run the following
-        # Destroy our node
+        request_shutdown()
+        ros_thread_instance.join(timeout=2.0)
         node.destroy_node()
-        # Shutdown ros2 communications
-        rclpy.try_shutdown()
 
 if __name__ == "__main__":
     main()

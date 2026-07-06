@@ -90,7 +90,9 @@ The user has the ability to set and alter the following parameters before starti
 - The filepath to a filter configuration file to use. This configuration file describes a custom filter built by the user. This gets parsed by the filter node, see the ros_esc package for more information.
 - The filepath to a controller configuration file to use. This configuration file describes a custom controller built by the user. This gets parsed by the controller node, see the ros_esc package for more information.
 - The filepath where test folders documenting the Gazebo simulation will be saved on the local machine.
-- Whether to spawn one or two optional Gazebo light source models at manually configured positions.
+- Whether to spawn up to five optional Gazebo light source models at manually
+  configured positions. When a compatible cost config is selected, those same
+  launch arguments can define the simulated light-source cost map.
 
 Please note that if the user wants to set the initial angular position of the rotating sensor frame, this is accomplished in the robot's URDF file, under the rotating frame velocity controller section.
 
@@ -116,17 +118,42 @@ user@machine:~$ source install/setup.bash
 user@machine:~$ ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml
 ```
 
-To spawn the optional light source model during a Gazebo simulation, set `include_light_source` to `True`. The model is a compact cylinder and sphere assembly with a warm point light inside the globe. It includes collision geometry, so it can physically block the robot if placed on the robot's path. It is disabled by default so existing simulation runs are unchanged.
+To spawn light source models during a Gazebo simulation, set
+`number_of_lights` from 0 to 5 and define the corresponding `light_N_x`,
+`light_N_y`, and `light_N_intensity_lumens` values. The model is a compact
+cylinder and sphere assembly with a warm point light inside the globe. Its
+collision blocks are disabled so the marker does not physically block the
+robot. The model's rendered brightness is only a visual marker; the
+`light_N_intensity_lumens` launch values are consumed by compatible cost
+function objects such as `Multi_Light_Source_Cost`.
 
 ```
-user@machine:~$ ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml include_light_source:=True light_source_x:=2.0 light_source_y:=0.0 light_source_z:=0.0
+user@machine:~$ ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml \
+  number_of_lights:=3 \
+  light_1_x:=2.0 light_1_y:=2.0 light_1_intensity_lumens:=1000.0 \
+  light_2_x:=10.0 light_2_y:=10.0 light_2_intensity_lumens:=2500.0 \
+  light_3_x:=6.0 light_3_y:=3.0 light_3_intensity_lumens:=1500.0
 ```
 
-To spawn two manually placed light source models, enable both manual light source arguments and provide separate entity names and positions.
+To use those light settings as the cost function, select a cost configuration
+that uses `Multi_Light_Source_Cost`, for example:
 
 ```
-user@machine:~$ ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml include_light_source:=True light_source_entity_name:=manual_light_1 light_source_x:=2.0 light_source_y:=2.0 include_light_source_2:=True light_source_2_entity_name:=manual_light_2 light_source_2_x:=10.0 light_source_2_y:=10.0
+user@machine:~$ ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml \
+  cost_function_config_filepath:=~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json \
+  number_of_lights:=2 \
+  light_1_x:=2.0 light_1_y:=2.0 light_1_intensity_lumens:=1000.0 \
+  light_2_x:=10.0 light_2_y:=10.0 light_2_intensity_lumens:=2500.0
 ```
+
+`Multi_Light_Source_Cost` is the multi-light rotating photoresistor model.
+Lumens are interpreted relative to the cost config's
+`reference_intensity_lumens`; they are not an absolute photometric calibration.
+The legacy `Photoresistor_Interpolated_Map` remains available for older
+single-light ESC methods.
+
+The older unnumbered manual-light launch arguments have been deprecated. New
+runs should use `number_of_lights` and `light_1_*` through `light_5_*`.
 
 ## Launching a RVIZ Simulation:
 

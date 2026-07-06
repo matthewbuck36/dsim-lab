@@ -34,6 +34,7 @@ setup(
             "controller_node = ros_esc.controller_node.controller_node_script:main",
             "data_collection_node = ros_esc.data_collection_node.data_collection_node_script:main",
             "pde_cost_history_node = ros_esc.pde_cost_history_node.pde_cost_history_script:main",
+            "cost_surface_plotter = ros_esc.plotting_scripts.cost_surface_plotter:main",
         ],
     },
 )

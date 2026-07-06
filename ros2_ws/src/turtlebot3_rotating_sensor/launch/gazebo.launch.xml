@@ -24,6 +24,23 @@
     <!-- Specify the live plotting mode for this vehicle -->
     <arg name="live_plot_mode" default="2D"/>
 
+    <!-- Optional standalone cost-surface plot. This is separate from the live
+    data-collection plot and uses the configured cost JSON/light args. -->
+    <arg name="show_cost_surface_plot" default="False"/>
+    <arg name="cost_surface_x_min" default="0.0"/>
+    <arg name="cost_surface_x_max" default="12.0"/>
+    <arg name="cost_surface_y_min" default="0.0"/>
+    <arg name="cost_surface_y_max" default="12.0"/>
+    <arg name="cost_surface_resolution" default="80"/>
+    <arg name="cost_surface_orientation_mode" default="fixed"/>
+    <arg name="cost_surface_z_scale_mode" default="base"/>
+    <arg name="cost_surface_show_base_wireframe" default="True"/>
+    <arg name="cost_surface_live" default="True"/>
+    <arg name="cost_surface_odom_topic" default="/odom"/>
+    <arg name="cost_surface_fill_topic" default="/cost_bias"/>
+    <arg name="cost_surface_refresh_hz" default="10.0"/>
+    <arg name="cost_surface_trajectory_period" default="0.2"/>
+
     <!-- Enable PDE-style basin escape extensions -->
     <arg name="use_pde_extensions" default="False"/>
     <arg name="escape_policy" default="conditional_gaussian_fill"/>
@@ -40,26 +57,56 @@
     <arg name="gaussian_fill_cooldown_sec" default="0.0"/>
     <arg name="gaussian_fill_min_distance_between_fills" default="0.0"/>
 
-    <!-- Optional cosmetic/test light source model -->
-    <arg name="include_light_source" default="False"/>
-    <arg name="light_source_entity_name" default="light_source"/>
-    <arg name="light_source_model_filepath" default="$(find-pkg-share turtlebot3_rotating_sensor)/models/light_source/model.sdf"/>
-    <arg name="light_source_x" default="2.0"/>
-    <arg name="light_source_y" default="2.0"/>
-    <arg name="light_source_z" default="0.0"/>
-    <arg name="light_source_roll" default="0.0"/>
-    <arg name="light_source_pitch" default="0.0"/>
-    <arg name="light_source_yaw" default="0.0"/>
-    <!-- Optional second cosmetic light source model -->
-    <arg name="include_light_source_2" default="False"/>
-    <arg name="light_source_2_entity_name" default="light_source_2"/>
+    <!-- Streamlined light-source interface. Set number_of_lights from 0 to 5,
+    then define each light_N_x, light_N_y, and light_N_intensity_lumens. The
+    visible Gazebo markers and compatible light-source cost functions use the
+    same values. -->
+    <arg name="number_of_lights" default="0"/>
+    <arg name="light_source_1_entity_name" default="manual_light_1"/>
+    <arg name="light_source_1_model_filepath" default="$(find-pkg-share turtlebot3_rotating_sensor)/models/light_source/model.sdf"/>
+    <arg name="light_1_x" default="2.0"/>
+    <arg name="light_1_y" default="2.0"/>
+    <arg name="light_source_1_z" default="0.0"/>
+    <arg name="light_source_1_roll" default="0.0"/>
+    <arg name="light_source_1_pitch" default="0.0"/>
+    <arg name="light_source_1_yaw" default="0.0"/>
+    <arg name="light_1_intensity_lumens" default="1000.0"/>
+    <arg name="light_source_2_entity_name" default="manual_light_2"/>
     <arg name="light_source_2_model_filepath" default="$(find-pkg-share turtlebot3_rotating_sensor)/models/light_source/model.sdf"/>
-    <arg name="light_source_2_x" default="10.0"/>
-    <arg name="light_source_2_y" default="10.0"/>
+    <arg name="light_2_x" default="10.0"/>
+    <arg name="light_2_y" default="10.0"/>
     <arg name="light_source_2_z" default="0.0"/>
     <arg name="light_source_2_roll" default="0.0"/>
     <arg name="light_source_2_pitch" default="0.0"/>
     <arg name="light_source_2_yaw" default="0.0"/>
+    <arg name="light_2_intensity_lumens" default="2500.0"/>
+    <arg name="light_source_3_entity_name" default="manual_light_3"/>
+    <arg name="light_source_3_model_filepath" default="$(find-pkg-share turtlebot3_rotating_sensor)/models/light_source/model.sdf"/>
+    <arg name="light_3_x" default="6.0"/>
+    <arg name="light_3_y" default="3.0"/>
+    <arg name="light_source_3_z" default="0.0"/>
+    <arg name="light_source_3_roll" default="0.0"/>
+    <arg name="light_source_3_pitch" default="0.0"/>
+    <arg name="light_source_3_yaw" default="0.0"/>
+    <arg name="light_3_intensity_lumens" default="1500.0"/>
+    <arg name="light_source_4_entity_name" default="manual_light_4"/>
+    <arg name="light_source_4_model_filepath" default="$(find-pkg-share turtlebot3_rotating_sensor)/models/light_source/model.sdf"/>
+    <arg name="light_4_x" default="3.0"/>
+    <arg name="light_4_y" default="9.0"/>
+    <arg name="light_source_4_z" default="0.0"/>
+    <arg name="light_source_4_roll" default="0.0"/>
+    <arg name="light_source_4_pitch" default="0.0"/>
+    <arg name="light_source_4_yaw" default="0.0"/>
+    <arg name="light_4_intensity_lumens" default="1200.0"/>
+    <arg name="light_source_5_entity_name" default="manual_light_5"/>
+    <arg name="light_source_5_model_filepath" default="$(find-pkg-share turtlebot3_rotating_sensor)/models/light_source/model.sdf"/>
+    <arg name="light_5_x" default="9.0"/>
+    <arg name="light_5_y" default="4.0"/>
+    <arg name="light_source_5_z" default="0.0"/>
+    <arg name="light_source_5_roll" default="0.0"/>
+    <arg name="light_source_5_pitch" default="0.0"/>
+    <arg name="light_source_5_yaw" default="0.0"/>
+    <arg name="light_5_intensity_lumens" default="800.0"/>
 
     <!-- Set the default rotate frame configuration filepath -->
     <arg name="rotate_frame_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation.json" />
@@ -102,40 +149,92 @@
         output="screen"
     />
 
-    <!-- Optionally spawn a cosmetic light source model in Gazebo -->
     <node
-        if="$(var include_light_source)"
+        if="$(eval '$(var number_of_lights) >= 1')"
         pkg="gazebo_ros"
         exec="spawn_entity.py"
-        name="spawn_light_source"
+        name="spawn_light_source_1"
         args="
-            -file $(var light_source_model_filepath)
-            -entity $(var light_source_entity_name)
-            -x $(var light_source_x)
-            -y $(var light_source_y)
-            -z $(var light_source_z)
-            -R $(var light_source_roll)
-            -P $(var light_source_pitch)
-            -Y $(var light_source_yaw)
+            -file $(var light_source_1_model_filepath)
+            -entity $(var light_source_1_entity_name)
+            -x $(var light_1_x)
+            -y $(var light_1_y)
+            -z $(var light_source_1_z)
+            -R $(var light_source_1_roll)
+            -P $(var light_source_1_pitch)
+            -Y $(var light_source_1_yaw)
         "
         output="screen"
     />
 
-    <!-- Optionally spawn a second cosmetic light source model in Gazebo -->
     <node
-        if="$(var include_light_source_2)"
+        if="$(eval '$(var number_of_lights) >= 2')"
         pkg="gazebo_ros"
         exec="spawn_entity.py"
         name="spawn_light_source_2"
         args="
             -file $(var light_source_2_model_filepath)
             -entity $(var light_source_2_entity_name)
-            -x $(var light_source_2_x)
-            -y $(var light_source_2_y)
+            -x $(var light_2_x)
+            -y $(var light_2_y)
             -z $(var light_source_2_z)
             -R $(var light_source_2_roll)
             -P $(var light_source_2_pitch)
             -Y $(var light_source_2_yaw)
+        "
+        output="screen"
+    />
+
+    <node
+        if="$(eval '$(var number_of_lights) >= 3')"
+        pkg="gazebo_ros"
+        exec="spawn_entity.py"
+        name="spawn_light_source_3"
+        args="
+            -file $(var light_source_3_model_filepath)
+            -entity $(var light_source_3_entity_name)
+            -x $(var light_3_x)
+            -y $(var light_3_y)
+            -z $(var light_source_3_z)
+            -R $(var light_source_3_roll)
+            -P $(var light_source_3_pitch)
+            -Y $(var light_source_3_yaw)
+        "
+        output="screen"
+    />
+
+    <node
+        if="$(eval '$(var number_of_lights) >= 4')"
+        pkg="gazebo_ros"
+        exec="spawn_entity.py"
+        name="spawn_light_source_4"
+        args="
+            -file $(var light_source_4_model_filepath)
+            -entity $(var light_source_4_entity_name)
+            -x $(var light_4_x)
+            -y $(var light_4_y)
+            -z $(var light_source_4_z)
+            -R $(var light_source_4_roll)
+            -P $(var light_source_4_pitch)
+            -Y $(var light_source_4_yaw)
+        "
+        output="screen"
+    />
+
+    <node
+        if="$(eval '$(var number_of_lights) >= 5')"
+        pkg="gazebo_ros"
+        exec="spawn_entity.py"
+        name="spawn_light_source_5"
+        args="
+            -file $(var light_source_5_model_filepath)
+            -entity $(var light_source_5_entity_name)
+            -x $(var light_5_x)
+            -y $(var light_5_y)
+            -z $(var light_source_5_z)
+            -R $(var light_source_5_roll)
+            -P $(var light_source_5_pitch)
+            -Y $(var light_source_5_yaw)
         "
         output="screen"
     />
@@ -178,7 +277,106 @@
         $(var entity_name)/timekeeper_chatter
         $(var entity_name)/cost_value_chatter
         $(var cost_function_config_filepath)
+        --light_source_count
+        $(var number_of_lights)
+        --light_source_1_x
+        $(var light_1_x)
+        --light_source_1_y
+        $(var light_1_y)
+        --light_source_1_intensity_lumens
+        $(var light_1_intensity_lumens)
+        --light_source_2_x
+        $(var light_2_x)
+        --light_source_2_y
+        $(var light_2_y)
+        --light_source_2_intensity_lumens
+        $(var light_2_intensity_lumens)
+        --light_source_3_x
+        $(var light_3_x)
+        --light_source_3_y
+        $(var light_3_y)
+        --light_source_3_intensity_lumens
+        $(var light_3_intensity_lumens)
+        --light_source_4_x
+        $(var light_4_x)
+        --light_source_4_y
+        $(var light_4_y)
+        --light_source_4_intensity_lumens
+        $(var light_4_intensity_lumens)
+        --light_source_5_x
+        $(var light_5_x)
+        --light_source_5_y
+        $(var light_5_y)
+        --light_source_5_intensity_lumens
+        $(var light_5_intensity_lumens)
     "
+    />
+
+    <!-- Optional 3D cost-surface plot in a separate Matplotlib window. -->
+    <executable
+        if="$(var show_cost_surface_plot)"
+        cmd="
+            ros2 run ros_esc cost_surface_plotter
+            $(var cost_function_config_filepath)
+            --x-min
+            $(var cost_surface_x_min)
+            --x-max
+            $(var cost_surface_x_max)
+            --y-min
+            $(var cost_surface_y_min)
+            --y-max
+            $(var cost_surface_y_max)
+            --resolution
+            $(var cost_surface_resolution)
+            --orientation-mode
+            $(var cost_surface_orientation_mode)
+            --z-scale-mode
+            $(var cost_surface_z_scale_mode)
+            --show-base-wireframe
+            $(var cost_surface_show_base_wireframe)
+            --live
+            $(var cost_surface_live)
+            --odom-topic
+            $(var cost_surface_odom_topic)
+            --fill-topic
+            $(var cost_surface_fill_topic)
+            --refresh-hz
+            $(var cost_surface_refresh_hz)
+            --trajectory-period
+            $(var cost_surface_trajectory_period)
+            --light_source_count
+            $(var number_of_lights)
+            --light_source_1_x
+            $(var light_1_x)
+            --light_source_1_y
+            $(var light_1_y)
+            --light_source_1_intensity_lumens
+            $(var light_1_intensity_lumens)
+            --light_source_2_x
+            $(var light_2_x)
+            --light_source_2_y
+            $(var light_2_y)
+            --light_source_2_intensity_lumens
+            $(var light_2_intensity_lumens)
+            --light_source_3_x
+            $(var light_3_x)
+            --light_source_3_y
+            $(var light_3_y)
+            --light_source_3_intensity_lumens
+            $(var light_3_intensity_lumens)
+            --light_source_4_x
+            $(var light_4_x)
+            --light_source_4_y
+            $(var light_4_y)
+            --light_source_4_intensity_lumens
+            $(var light_4_intensity_lumens)
+            --light_source_5_x
+            $(var light_5_x)
+            --light_source_5_y
+            $(var light_5_y)
+            --light_source_5_intensity_lumens
+            $(var light_5_intensity_lumens)
+        "
     />
 
     <!-- Optional PDE extension nodes -->

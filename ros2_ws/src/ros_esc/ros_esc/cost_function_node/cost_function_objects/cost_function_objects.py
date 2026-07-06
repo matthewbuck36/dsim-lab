@@ -297,4 +297,222 @@ class Photoresistor_Interpolated_Map(CostFunction):
             output = self.convert_resistance_to_voltage(output)
 
         return output
-    
+
+# pylint: disable=too-few-public-methods
+# pylint: disable=invalid-name
+class Multi_Light_Source_Cost(CostFunction):
+    """Multi-light photoresistor cost using the rotating sensor direction."""
+
+    def __init__(self, params):
+        """Initialize a multi-light photoresistor cost map.
+
+        Parameters:
+            mode: "Resistance" or "Voltage", default "Voltage".
+            scale_map: radius scaling factor for the fitted curve.
+            apply_adc: if true, quantize the aggregate resistance reading.
+            reference_intensity_lumens: fitted-curve reference light intensity.
+            light_sources: list of dictionaries with x, y, intensity_lumens.
+        """
+
+        self.mode = params.get("mode", "Voltage")
+        if self.mode not in ["Resistance", "Voltage"]:
+            raise ValueError("mode must be 'Resistance' or 'Voltage'.")
+
+        self.scale = float(params.get("scale_map", 1.0))
+        if self.scale <= 0:
+            raise ValueError("scale_map must be greater than 0.")
+
+        self.apply_adc = bool(params.get("apply_adc", False))
+        self.reference_intensity_lumens = float(
+            params.get("reference_intensity_lumens", 1000.0)
+        )
+        if self.reference_intensity_lumens <= 0:
+            raise ValueError("reference_intensity_lumens must be greater than 0.")
+
+        self.max_value = 337260 # in ohms
+        self.min_value = 100 # in ohms
+
+        self.light_sources = self._normalize_light_sources(
+            params.get("light_sources", [])
+        )
+        self.distinct_list = self._build_distinct_resistance_list()
+
+    def _build_distinct_resistance_list(self):
+        """Build ADC-like resistance readings used by the photoresistor model."""
+
+        distinct_resistance_list = []
+        series_res = 337260 / (5/0.0049 - 1) # in ohms
+        for i in range(1023):
+            distinct_resistance_list.append(series_res*(5 / ((i+1)*0.0049) - 1))
+
+        return distinct_resistance_list
+
+    def _normalize_light_sources(self, light_sources):
+        """Validate and normalize a light-source list."""
+
+        if light_sources is None:
+            light_sources = []
+        if not isinstance(light_sources, list):
+            raise TypeError("light_sources must be a list.")
+
+        normalized_sources = []
+        for source_idx, source in enumerate(light_sources, start=1):
+            if not isinstance(source, dict):
+                raise TypeError(f"light source {source_idx} must be a dictionary.")
+            try:
+                x_pos = float(source["x"])
+                y_pos = float(source["y"])
+                intensity_lumens = float(source["intensity_lumens"])
+            except KeyError as exc:
+                raise KeyError(
+                    f"light source {source_idx} is missing required key {exc}."
+                ) from exc
+            if intensity_lumens < 0:
+                raise ValueError(
+                    f"light source {source_idx} intensity_lumens must be >= 0."
+                )
+            normalized_sources.append({
+                "x": x_pos,
+                "y": y_pos,
+                "intensity_lumens": intensity_lumens,
+            })
+
+        return normalized_sources
+
+    def configure_light_sources(self, light_source_count, light_sources):
+        """Override configured lights from launch-time light-source arguments."""
+
+        if light_source_count is None:
+            return
+        light_source_count = int(light_source_count)
+        if light_source_count < 0:
+            raise ValueError("light_source_count must be >= 0.")
+        if light_source_count > len(light_sources):
+            raise ValueError(
+                f"light_source_count={light_source_count} exceeds "
+                f"available launch light slots={len(light_sources)}."
+            )
+
+        selected_sources = []
+        for source_idx in range(light_source_count):
+            source = light_sources[source_idx]
+            missing_keys = [
+                key for key, value in source.items()
+                if key in ("x", "y", "intensity_lumens") and value is None
+            ]
+            if missing_keys:
+                raise ValueError(
+                    f"light source {source_idx + 1} missing launch values: "
+                    + ", ".join(missing_keys)
+                )
+            selected_sources.append(source)
+
+        self.light_sources = self._normalize_light_sources(selected_sources)
+
+    def _match_reading(self, resistance):
+        """Find the closest ADC-like resistance reading."""
+
+        error = None
+        for index, value in enumerate(self.distinct_list):
+            diff = np.abs(resistance - value)
+
+            if error is None:
+                error = diff
+
+            if diff > error:
+                resistance = self.distinct_list[index-1]
+                break
+
+        return resistance
+
+    def _curve_fit(self, radius, beta):
+        """Calculate resistance from the existing photoresistor curve fit."""
+
+        a = 8.28082113e3
+        b = 7.90425287
+        c = 4.42130406e2
+        d = 5.36416164e-13
+        e = 1.68542637e-16
+        f = 2.18515692e-18
+
+        resistance = a*radius**2 + b*beta**2 + c*radius*beta + d*radius + e*beta + f
+        resistance = min(resistance, self.max_value)
+        resistance = max(resistance, self.min_value)
+
+        return resistance
+
+    def _convert_resistance_to_voltage(self, resistance):
+        """Convert resistance into negative divider voltage for minimization."""
+
+        voltage = 5 / (resistance / 330 + 1)
+        voltage *= -1
+
+        return voltage
+
+    def _sensor_x_axis(self, sensor_transform):
+        """Return the sensor x-axis direction in global XY coordinates."""
+
+        intermediate_step = np.matmul(sensor_transform, np.array([1, 0, 0, 0]).T)
+        return intermediate_step[:2]
+
+    def _source_radius_beta(self, sensor_transform, source):
+        """Compute source radius and angle from the rotating sensor direction."""
+
+        x_pos = sensor_transform[0][3]
+        y_pos = sensor_transform[1][3]
+        vec_sensor_to_source = np.array(
+            [source["x"] - x_pos, source["y"] - y_pos],
+            dtype=float,
+        )
+        radius = np.linalg.norm(vec_sensor_to_source)
+        if radius <= 0:
+            return 0.0, 0.0
+
+        vec_sensor_x_axis = self._sensor_x_axis(sensor_transform)
+        sensor_axis_norm = np.linalg.norm(vec_sensor_x_axis)
+        if sensor_axis_norm <= 0:
+            return radius, 0.0
+
+        dot_prod = np.dot(vec_sensor_to_source, vec_sensor_x_axis)
+        cos_beta = dot_prod / (radius * sensor_axis_norm)
+        cos_beta = np.clip(cos_beta, -1.0, 1.0)
+        beta = np.abs(np.arccos(cos_beta)) * 180 / np.pi
+        if beta > 180:
+            beta = 360 - beta
+
+        return radius, beta
+
+    def _source_conductance_delta(self, sensor_transform, source):
+        """Compute one source contribution as a scaled conductance delta."""
+
+        if source["intensity_lumens"] <= 0:
+            return 0.0
+
+        radius, beta = self._source_radius_beta(sensor_transform, source)
+        source_resistance = self._curve_fit(radius/self.scale, beta)
+        dark_conductance = 1 / self.max_value
+        source_conductance = 1 / source_resistance
+        conductance_delta = max(source_conductance - dark_conductance, 0.0)
+        intensity_scale = source["intensity_lumens"] / self.reference_intensity_lumens
+
+        return conductance_delta * intensity_scale
+
+    def cost_output(self, time, sensor_transform):
+        """Evaluate the multi-light photoresistor cost."""
+
+        del time
+        total_conductance = 1 / self.max_value
+        for source in self.light_sources:
+            total_conductance += self._source_conductance_delta(sensor_transform, source)
+
+        output = 1 / total_conductance
+        output = min(output, self.max_value)
+        output = max(output, self.min_value)
+
+        if self.apply_adc:
+            output = self._match_reading(output)
+
+        if self.mode == "Voltage":
+            output = self._convert_resistance_to_voltage(output)
+
+        return output

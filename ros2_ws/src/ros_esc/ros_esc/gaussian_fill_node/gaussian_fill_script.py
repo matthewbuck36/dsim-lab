@@ -47,15 +47,16 @@ class GaussianFill(Node):
         self.declare_parameter("fit_max_amplitude", 10.0)
         self.declare_parameter("fit_offset_bound", 10.0)
 
-        # Legacy parameter retained so older launch files do not fail. The fill
-        # amplitude now comes from the fitted basin depth, matching the script.
+        # Legacy parameter retained so older launch files do not fail.
+        # The published fill amplitude now comes directly from "amplitude";
+        # fitted amplitude is used only as a basin-detection quality check.
         self.declare_parameter("use_pde_cost_mean_for_amplitude", True)
 
         self.escape_policy = self._normalize_policy(
             str(self.get_parameter("escape_policy").value)
         )
 
-        self.A = float(self.get_parameter("amplitude").value)
+        self.A = max(0.0, float(self.get_parameter("amplitude").value))
         self.pde_cost_mean = self.A
         self.use_pde_cost_mean_for_amplitude = bool(
             self.get_parameter("use_pde_cost_mean_for_amplitude").value
@@ -214,6 +215,12 @@ class GaussianFill(Node):
         if self.max_fills == 0:
             return
 
+        if self.A <= 0.0:
+            self.get_logger().info(
+                "Skipping fill: gaussian fill amplitude is <= 0.0."
+            )
+            return
+
         if self.max_fills > 0 and self.fill_count >= self.max_fills:
             return
 
@@ -234,7 +241,7 @@ class GaussianFill(Node):
         if fill is None:
             return
 
-        A, mu, sigma = fill
+        A, mu, sigma, fitted_A = fill
 
         if self._too_close_to_existing_fill(mu):
             self.get_logger().info(
@@ -265,6 +272,7 @@ class GaussianFill(Node):
         self.get_logger().info(
             f"Published fill #{self.fill_count}: "
             + f"A={A:.3f}, "
+            + f"fitted_A={fitted_A:.3f}, "
             + f"cost_mean={self.pde_cost_mean:.3f}, "
             + f"mu=({mu[0]:.3f},{mu[1]:.3f}), "
             + f"sigma={sigma:.3f}"
@@ -388,7 +396,7 @@ class GaussianFill(Node):
         sigma = float(np.clip(sigma, self.min_sigma, self.max_sigma))
         mu = np.array([mu_x, mu_y], dtype=np.float64)
 
-        return float(2*A), mu, sigma
+        return self.A, mu, sigma, float(A)
 
     def _too_close_to_existing_fill(self, mu):
         if self.min_distance_between_fills <= 0.0 or not self.fill_centers:

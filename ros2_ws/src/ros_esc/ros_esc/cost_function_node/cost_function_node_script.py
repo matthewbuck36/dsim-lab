@@ -70,6 +70,21 @@ class CostFunction(Node):
         parser.add_argument('input_timekeeping_topic', type=str, help=inp_timekeeping_topic_msg)
         parser.add_argument('output_topic', type=str, help=out_topic_msg)
         parser.add_argument('config', type=str, help=cost_funct_msg)
+        parser.add_argument(
+            "--light_source_count",
+            "--number_of_lights",
+            dest="light_source_count",
+            type=int,
+            default=None,
+        )
+        for light_idx in range(1, 6):
+            parser.add_argument(f"--light_source_{light_idx}_x", type=float, default=None)
+            parser.add_argument(f"--light_source_{light_idx}_y", type=float, default=None)
+            parser.add_argument(
+                f"--light_source_{light_idx}_intensity_lumens",
+                type=float,
+                default=None,
+            )
         args = parser.parse_args()
 
         # Initialize variables
@@ -98,6 +113,7 @@ class CostFunction(Node):
 
         # Get the cost function object
         self.cost_function = parse_object_config(config_dict["CostFunction"])
+        self.configure_light_source_cost(args)
         # Get the noise object
         self.noise_obj = parse_object_config(config_dict["Noise"])
 
@@ -118,6 +134,27 @@ class CostFunction(Node):
         # This will publish the cost value with the given sensor transform information
         self.cost_publisher = self.create_publisher(
             StampedFloat64MultiArray, args.output_topic, 10
+        )
+
+    def configure_light_source_cost(self, args):
+        """Pass launch-time light source settings to compatible cost objects."""
+
+        if not hasattr(self.cost_function, "configure_light_sources"):
+            return
+
+        light_sources = []
+        for light_idx in range(1, 6):
+            light_sources.append({
+                "x": getattr(args, f"light_source_{light_idx}_x"),
+                "y": getattr(args, f"light_source_{light_idx}_y"),
+                "intensity_lumens": getattr(
+                    args, f"light_source_{light_idx}_intensity_lumens"
+                ),
+            })
+
+        self.cost_function.configure_light_sources(
+            args.light_source_count,
+            light_sources,
         )
 
     def transform_callback(self, msg: StampedTransformMultiArray):
@@ -249,4 +286,3 @@ def main(args=None):
 
 if __name__ == "__main__":
     main()
-    
