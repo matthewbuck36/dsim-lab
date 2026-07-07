@@ -129,8 +129,15 @@ class PDEHistory(Node):
 
 def main():
     rclpy.init()
-    rclpy.spin(PDEHistory())
-    rclpy.shutdown()
+    node = PDEHistory()
+
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
 
 
 if __name__ == "__main__":

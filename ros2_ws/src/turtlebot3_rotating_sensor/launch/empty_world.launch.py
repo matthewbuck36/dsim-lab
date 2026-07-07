@@ -9,6 +9,7 @@ from ament_index_python.packages import get_package_prefix
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.actions import ExecuteProcess
+from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
     """This function creates a launch description for an empty gazebo world."""
@@ -33,7 +34,7 @@ def generate_launch_description():
         cmd=['gazebo','--verbose',
              '-s','libgazebo_ros_init.so',
              '-s','libgazebo_ros_factory.so',
-             'worlds/gazebo_empty.world'],
+             LaunchConfiguration('world')],
         output='screen'
     )
 

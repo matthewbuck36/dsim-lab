@@ -248,10 +248,11 @@ class DataCollection(Node):
 
         # Save data for the live plots
         if self.live_plot_data is not None:
-            self.live_plot_data["x_position"].append(float(x))
-            self.live_plot_data["y_position"].append(float(y))
-            self.live_plot_data["z_position"].append(float(z))
-            self.live_plot_data["position_tstamps"].append(float(odom_tstamp))
+            with self.live_plot_data["lock"]:
+                self.live_plot_data["x_position"].append(float(x))
+                self.live_plot_data["y_position"].append(float(y))
+                self.live_plot_data["z_position"].append(float(z))
+                self.live_plot_data["position_tstamps"].append(float(odom_tstamp))
 
     def sensor_transform_callback(self, msg=StampedTransformMultiArray):
         """This function collects the sensor transform information and writes to a csv file.
@@ -289,32 +290,38 @@ class DataCollection(Node):
         # Check if this is the first time we receive
         # a cost value, if so we must initialize things
         if self.live_plot_data is not None:
-            if self.live_plot_data["num_distinct_cost_values"] is None:
-                # Note the amount of distinct cost values in the array
-                self.live_plot_data["num_distinct_cost_values"] = len(msg.data)
+            with self.live_plot_data["lock"]:
+                if self.live_plot_data["num_distinct_cost_values"] is None:
+                    # Note the amount of distinct cost values in the array
+                    self.live_plot_data["num_distinct_cost_values"] = len(msg.data)
 
-                # Create new lists of data for each distinct cost value
-                for i in range(self.live_plot_data["num_distinct_cost_values"]):
-                    # Initialize these lists of data with the first cost values
-                    self.live_plot_data[f"cost_value_{i}"] = [msg.data[i]]
+                    # Create new lists of data for each distinct cost value
+                    for i in range(self.live_plot_data["num_distinct_cost_values"]):
+                        # Initialize these lists of data with the first cost values
+                        self.live_plot_data[f"cost_value_{i}"] = [msg.data[i]]
 
-                    # Initialize an object to represent this cost value line
-                    # Note that we give it empty lists we will fill with timestamps
-                    # and cost value data, we set the line's color and markersize
-                    self.live_plot_data[f"cost_value_line_{i}"], = (
-                        self.live_plot_data["ax3"].plot(
-                            [], [], self.live_plot_data["colors"][i], markersize=5
+                        # Initialize an object to represent this cost value line
+                        # Note that we give it empty lists we will fill with timestamps
+                        # and cost value data, we set the line's color and markersize
+                        self.live_plot_data[f"cost_value_line_{i}"], = (
+                            self.live_plot_data["ax3"].plot(
+                                [], [],
+                                self.live_plot_data["colors"][i],
+                                markersize=5,
+                                label=f"Cost {i}",
+                            )
                         )
-                    )
 
-            # With initialized cost value lists
-            else:
-                for i in range(self.live_plot_data["num_distinct_cost_values"]):
-                    # Append these lists of data with the cost values
-                    self.live_plot_data[f"cost_value_{i}"].append(msg.data[i])
+                    self.live_plot_data["ax3"].legend()
 
-            # Append the timestamp
-            self.live_plot_data["cost_value_tstamps"].append(msg.timestamp)
+                # With initialized cost value lists
+                else:
+                    for i in range(self.live_plot_data["num_distinct_cost_values"]):
+                        # Append these lists of data with the cost values
+                        self.live_plot_data[f"cost_value_{i}"].append(msg.data[i])
+
+                # Append the timestamp
+                self.live_plot_data["cost_value_tstamps"].append(msg.timestamp)
 
         # Collect the timestamp from this message
         cost_tstamp = [msg.timestamp]

@@ -607,8 +607,15 @@ class ModifiedCost2D(Node):
 
 def main():
     rclpy.init()
-    rclpy.spin(ModifiedCost2D())
-    rclpy.shutdown()
+    node = ModifiedCost2D()
+
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
 
 
 if __name__ == "__main__":

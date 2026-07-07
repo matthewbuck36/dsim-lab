@@ -18,6 +18,8 @@ class GaussianFill(Node):
     - Reads PDE cost history from /pde_cost_history.
     - On /convergence_event, fits an inverted Gaussian basin to history:
       A * exp(-||xy - mu||^2 / v) + c ~= -J(xy).
+    - Uses the convergence event mean as the default fill center. The fit is
+      still used as a basin-quality check and sigma estimate.
     - Publishes /cost_bias: [A, mu_x, mu_y, sigma].
     """
 
@@ -43,6 +45,9 @@ class GaussianFill(Node):
         self.declare_parameter("max_fills", 1)
         self.declare_parameter("fill_cooldown_sec", 0.0)
         self.declare_parameter("min_distance_between_fills", 0.0)
+        self.declare_parameter("min_event_center_distance_between_fills", 0.0)
+        self.declare_parameter("center_source", "event_mean")
+        self.declare_parameter("max_fit_center_distance_from_event", 0.75)
         self.declare_parameter("fit_min_amplitude", 0.15)
         self.declare_parameter("fit_max_amplitude", 10.0)
         self.declare_parameter("fit_offset_bound", 10.0)
@@ -102,10 +107,33 @@ class GaussianFill(Node):
             float(self.get_parameter("min_distance_between_fills").value)
         )
 
+        self.min_event_center_distance_between_fills = max(
+            0.0,
+            float(
+                self.get_parameter(
+                    "min_event_center_distance_between_fills"
+                ).value
+            )
+        )
+
+        self.center_source = self._normalize_center_source(
+            str(self.get_parameter("center_source").value)
+        )
+
+        self.max_fit_center_distance_from_event = max(
+            0.0,
+            float(
+                self.get_parameter(
+                    "max_fit_center_distance_from_event"
+                ).value
+            )
+        )
+
         self.fill_count = 0
         self.has_filled = False
         self.last_fill_time = None
         self.fill_centers = []
+        self.event_centers = []
 
         self.buf_xy = None
         self.buf_cost = None
@@ -147,7 +175,12 @@ class GaussianFill(Node):
             + f"sigma=[{self.min_sigma:.3f}, {self.max_sigma:.3f}], "
             + f"max_fills={self.max_fills}, "
             + f"cooldown={self.fill_cooldown_sec:.3f}s, "
-            + f"min_distance={self.min_distance_between_fills:.3f}m"
+            + f"min_distance={self.min_distance_between_fills:.3f}m, "
+            + "min_event_center_distance="
+            + f"{self.min_event_center_distance_between_fills:.3f}m, "
+            + f"center_source={self.center_source}, "
+            + "max_fit_center_distance_from_event="
+            + f"{self.max_fit_center_distance_from_event:.3f}m"
         )
 
     def _normalize_policy(self, policy: str) -> str:
@@ -180,6 +213,37 @@ class GaussianFill(Node):
             return "conditional_gaussian_fill"
 
         return policy
+
+    def _normalize_center_source(self, source: str) -> str:
+        source = source.strip().lower()
+
+        aliases = {
+            "event": "event_mean",
+            "mean": "event_mean",
+            "mean_recent": "event_mean",
+            "convergence_event": "event_mean",
+            "convergence_mean": "event_mean",
+            "history_fit": "fit",
+            "fitted": "fit",
+            "clamp": "fit_clamped",
+            "clamped": "fit_clamped",
+        }
+
+        source = aliases.get(source, source)
+
+        valid = {
+            "event_mean",
+            "fit",
+            "fit_clamped",
+        }
+
+        if source not in valid:
+            self.get_logger().warn(
+                f"Unknown center_source '{source}'. Falling back to event_mean."
+            )
+            return "event_mean"
+
+        return source
 
     def buffer_cb(self, msg: StampedFloat64MultiArray):
         data = np.array(msg.data, dtype=np.float64)
@@ -236,12 +300,29 @@ class GaussianFill(Node):
             )
             return
 
-        fill = self._fit_fill_to_history()
+        event_center = self._extract_event_center(msg)
+
+        fill = self._fit_fill_to_history(event_center)
 
         if fill is None:
             return
 
-        A, mu, sigma, fitted_A = fill
+        A, fit_mu, sigma, fitted_A = fill
+        mu = self._select_fill_center(fit_mu, event_center)
+
+        if mu is None:
+            return
+
+        basin_center = event_center if event_center is not None else mu
+
+        if self._too_close_to_existing_event_center(basin_center):
+            self.get_logger().info(
+                "Skipping fill: convergence-event center "
+                + f"({basin_center[0]:.3f},{basin_center[1]:.3f}) is within "
+                + f"{self.min_event_center_distance_between_fills:.3f}m "
+                + "of an existing filled basin."
+            )
+            return
 
         if self._too_close_to_existing_fill(mu):
             self.get_logger().info(
@@ -268,6 +349,7 @@ class GaussianFill(Node):
         self.has_filled = self.fill_count > 0
         self.last_fill_time = event_time
         self.fill_centers.append(mu)
+        self.event_centers.append(basin_center)
 
         self.get_logger().info(
             f"Published fill #{self.fill_count}: "
@@ -275,8 +357,82 @@ class GaussianFill(Node):
             + f"fitted_A={fitted_A:.3f}, "
             + f"cost_mean={self.pde_cost_mean:.3f}, "
             + f"mu=({mu[0]:.3f},{mu[1]:.3f}), "
-            + f"sigma={sigma:.3f}"
+            + f"sigma={sigma:.3f}, "
+            + f"event_center=({basin_center[0]:.3f},{basin_center[1]:.3f}), "
+            + f"center_source={self.center_source}"
         )
+
+    def _extract_event_center(self, msg: StampedFloat64MultiArray):
+        data = np.array(msg.data, dtype=np.float64)
+
+        # convergence_detector_node publishes:
+        # [metric, r_val, decay, mean_recent_x, mean_recent_y, ...]
+        if data.size < 5:
+            self.get_logger().warn(
+                "Convergence event did not include mean_recent center; "
+                "falling back to fitted center."
+            )
+            return None
+
+        center = data[3:5]
+
+        if not np.all(np.isfinite(center)):
+            self.get_logger().warn(
+                "Convergence event center was non-finite; "
+                "falling back to fitted center."
+            )
+            return None
+
+        return center.astype(np.float64)
+
+    def _select_fill_center(self, fit_mu, event_center):
+        if event_center is None:
+            return fit_mu
+
+        drift = float(np.linalg.norm(fit_mu - event_center))
+
+        if (
+            self.max_fit_center_distance_from_event > 0.0
+            and drift > self.max_fit_center_distance_from_event
+        ):
+            if self.center_source == "fit":
+                self.get_logger().info(
+                    "Skipping fill: fitted center drifted "
+                    + f"{drift:.3f}m from convergence-event center "
+                    + f"(limit {self.max_fit_center_distance_from_event:.3f}m)."
+                )
+                return None
+
+            if self.center_source == "fit_clamped":
+                direction = fit_mu - event_center
+                norm = float(np.linalg.norm(direction))
+                if norm <= 1e-12:
+                    return event_center
+
+                clamped = (
+                    event_center
+                    + direction / norm * self.max_fit_center_distance_from_event
+                )
+                self.get_logger().info(
+                    "Clamped fitted center from "
+                    + f"({fit_mu[0]:.3f},{fit_mu[1]:.3f}) to "
+                    + f"({clamped[0]:.3f},{clamped[1]:.3f}); "
+                    + f"event_center=({event_center[0]:.3f},{event_center[1]:.3f})"
+                )
+                return clamped
+
+            self.get_logger().info(
+                "Using convergence-event center because fitted center drifted "
+                + f"{drift:.3f}m from the event mean."
+            )
+
+        if self.center_source == "fit":
+            return fit_mu
+
+        if self.center_source == "fit_clamped":
+            return fit_mu
+
+        return event_center
 
     def _gaussian_model(self, params, xy):
         """A * exp(-||xy-mu||^2 / v) + c, using v = 2*sigma^2."""
@@ -287,7 +443,7 @@ class GaussianFill(Node):
         r2 = dx * dx + dy * dy
         return A * np.exp(-r2 / v) + c
 
-    def _fit_fill_to_history(self):
+    def _fit_fill_to_history(self, event_center=None):
         if self.buf_xy is None or self.buf_xy.shape[0] < self.min_points:
             self.get_logger().warn(
                 f"No sufficient 2D history for Gaussian fit "
@@ -331,7 +487,10 @@ class GaussianFill(Node):
         c_guess = float(np.clip(c_guess, -self.fit_offset_bound, self.fit_offset_bound))
         A_guess = float(np.max(target_y) - c_guess)
         A_guess = float(np.clip(A_guess, 0.0, self.fit_max_amplitude))
-        mu_guess = np.mean(xy_use, axis=0)
+        if event_center is not None:
+            mu_guess = event_center
+        else:
+            mu_guess = np.mean(xy_use, axis=0)
 
         diffs = xy_use - mu_guess[None, :]
         r2 = np.sum(diffs * diffs, axis=1)
@@ -349,17 +508,32 @@ class GaussianFill(Node):
 
         v_min = max(2.0 * self.min_sigma * self.min_sigma, 1e-6)
         v_max = max(v_min, 2.0 * self.max_sigma * self.max_sigma)
+        mu_x_lb = -np.inf
+        mu_x_ub = np.inf
+        mu_y_lb = -np.inf
+        mu_y_ub = np.inf
+
+        if (
+            event_center is not None
+            and self.max_fit_center_distance_from_event > 0.0
+        ):
+            center_radius = self.max_fit_center_distance_from_event
+            mu_x_lb = float(event_center[0] - center_radius)
+            mu_x_ub = float(event_center[0] + center_radius)
+            mu_y_lb = float(event_center[1] - center_radius)
+            mu_y_ub = float(event_center[1] + center_radius)
+
         lb = [
             0.0,
-            -np.inf,
-            -np.inf,
+            mu_x_lb,
+            mu_y_lb,
             v_min,
             -self.fit_offset_bound,
         ]
         ub = [
             self.fit_max_amplitude,
-            np.inf,
-            np.inf,
+            mu_x_ub,
+            mu_y_ub,
             v_max,
             self.fit_offset_bound,
         ]
@@ -407,6 +581,18 @@ class GaussianFill(Node):
 
         return bool(np.min(dists) < self.min_distance_between_fills)
 
+    def _too_close_to_existing_event_center(self, event_center):
+        if (
+            self.min_event_center_distance_between_fills <= 0.0
+            or not self.event_centers
+        ):
+            return False
+
+        centers = np.array(self.event_centers, dtype=np.float64)
+        dists = np.linalg.norm(centers - event_center[None, :], axis=1)
+
+        return bool(np.min(dists) < self.min_event_center_distance_between_fills)
+
 
 def main():
     rclpy.init()
@@ -418,7 +604,7 @@ def main():
         pass
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        rclpy.try_shutdown()
 
 
 if __name__ == "__main__":

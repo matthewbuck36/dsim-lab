@@ -40,6 +40,9 @@
     <arg name="cost_surface_fill_topic" default="/cost_bias"/>
     <arg name="cost_surface_refresh_hz" default="10.0"/>
     <arg name="cost_surface_trajectory_period" default="0.2"/>
+    <arg name="cost_surface_output_dir" default="~/Experiments/Gazebo-Simulations"/>
+    <arg name="cost_surface_output_latest_test_dir" default="True"/>
+    <arg name="cost_surface_dpi" default="150"/>
 
     <!-- Enable PDE-style basin escape extensions -->
     <arg name="use_pde_extensions" default="False"/>
@@ -56,6 +59,18 @@
     <arg name="gaussian_fill_max_fills" default="1"/>
     <arg name="gaussian_fill_cooldown_sec" default="0.0"/>
     <arg name="gaussian_fill_min_distance_between_fills" default="0.0"/>
+    <arg name="gaussian_fill_min_event_center_distance_between_fills" default="0.0"/>
+    <arg name="gaussian_fill_center_source" default="event_mean"/>
+    <arg name="gaussian_fill_max_fit_center_distance_from_event" default="0.75"/>
+    <arg name="pde_cost_history_topic" default="/turtlebot3/cost_value_chatter"/>
+    <arg name="modified_cost_enable_affine_bias" default="True"/>
+    <arg name="modified_cost_affine_gain" default="0.5"/>
+    <arg name="modified_cost_affine_decay_rate" default="0.0000005"/>
+    <arg name="modified_cost_affine_max_age" default="30.0"/>
+    <arg name="modified_cost_affine_direction_sign" default="1.0"/>
+    <arg name="modified_cost_use_pde_history_for_affine" default="True"/>
+    <arg name="modified_cost_history_exclusion_radius_factor" default="3.0"/>
+    <arg name="modified_cost_history_direction_mode" default="outside_to_anchor"/>
 
     <!-- Streamlined light-source interface. Set number_of_lights from 0 to 5,
     then define each light_N_x, light_N_y, and light_N_intensity_lumens. The
@@ -344,6 +359,12 @@
             $(var cost_surface_refresh_hz)
             --trajectory-period
             $(var cost_surface_trajectory_period)
+            --output-dir
+            $(var cost_surface_output_dir)
+            --output-latest-test-dir
+            $(var cost_surface_output_latest_test_dir)
+            --dpi
+            $(var cost_surface_dpi)
             --light_source_count
             $(var number_of_lights)
             --light_source_1_x
@@ -391,6 +412,15 @@
             $(var entity_name)/sensor_transform_chatter
             --input_odom_topic
             /odom
+            --ros-args
+            -p enable_affine_bias:=$(var modified_cost_enable_affine_bias)
+            -p affine_gain:=$(var modified_cost_affine_gain)
+            -p affine_decay_rate:=$(var modified_cost_affine_decay_rate)
+            -p affine_max_age:=$(var modified_cost_affine_max_age)
+            -p affine_direction_sign:=$(var modified_cost_affine_direction_sign)
+            -p use_pde_history_for_affine:=$(var modified_cost_use_pde_history_for_affine)
+            -p history_exclusion_radius_factor:=$(var modified_cost_history_exclusion_radius_factor)
+            -p history_direction_mode:=$(var modified_cost_history_direction_mode)
         "
     />
 
@@ -409,7 +439,7 @@
             ros2 run ros_esc pde_cost_history_node
             --ros-args
             -p omega:=$(var pde_omega)
-            -p cost_topic:=/$(var entity_name)/cost_value_chatter
+            -p cost_topic:=$(var pde_cost_history_topic)
         "
     />
 
@@ -439,6 +469,9 @@
             -p max_fills:=$(var gaussian_fill_max_fills)
             -p fill_cooldown_sec:=$(var gaussian_fill_cooldown_sec)
             -p min_distance_between_fills:=$(var gaussian_fill_min_distance_between_fills)
+            -p min_event_center_distance_between_fills:=$(var gaussian_fill_min_event_center_distance_between_fills)
+            -p center_source:=$(var gaussian_fill_center_source)
+            -p max_fit_center_distance_from_event:=$(var gaussian_fill_max_fit_center_distance_from_event)
         "
     />
 

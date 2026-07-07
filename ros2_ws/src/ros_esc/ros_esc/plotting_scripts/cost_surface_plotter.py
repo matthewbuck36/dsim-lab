@@ -7,6 +7,7 @@ import copy
 import json
 import math
 import os
+from datetime import datetime
 
 import matplotlib.pyplot as plt
 from matplotlib import colors
@@ -98,11 +99,57 @@ def _plot_surface(x_grid, y_grid, z_grid, args, lights):
     plot = CostSurfacePlot(x_grid, y_grid, z_grid, args, lights)
     plot.draw()
 
-    if args.output:
-        plot.fig.savefig(os.path.expanduser(args.output), dpi=args.dpi)
+    _save_snapshot(plot, args, "static")
 
     if not args.no_show:
         plt.show()
+
+
+def _snapshot_path(args, suffix):
+    output = str(args.output).strip()
+    if output:
+        return os.path.expanduser(output)
+
+    output_dir = str(args.output_dir).strip()
+    if not output_dir:
+        return ""
+
+    output_dir = os.path.expanduser(output_dir)
+    if args.output_latest_test_dir:
+        output_dir = _latest_test_dir(output_dir)
+
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    filename = f"cost_surface_{suffix}_{timestamp}.png"
+    return os.path.join(output_dir, filename)
+
+
+def _latest_test_dir(output_dir):
+    if not os.path.isdir(output_dir):
+        return output_dir
+
+    candidates = []
+    for name in os.listdir(output_dir):
+        path = os.path.join(output_dir, name)
+        if name.startswith("Test_") and os.path.isdir(path):
+            candidates.append(path)
+
+    if not candidates:
+        return output_dir
+
+    return max(candidates, key=os.path.getmtime)
+
+
+def _save_snapshot(plot, args, suffix):
+    path = _snapshot_path(args, suffix)
+    if not path:
+        return ""
+
+    output_dir = os.path.dirname(path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+    plot.fig.canvas.draw()
+    plot.fig.savefig(path, dpi=args.dpi)
+    return path
 
 
 class CostSurfacePlot:
@@ -421,6 +468,11 @@ def _run_live_plot(x_grid, y_grid, z_grid, args, lights):
             rclpy.spin_once(node, timeout_sec=0.01)
             plt.pause(max(0.001, 1.0 / args.refresh_hz))
     finally:
+        saved_path = _save_snapshot(plot, args, "final")
+        if saved_path:
+            node.get_logger().info(
+                f"Saved final cost surface snapshot to {saved_path}"
+            )
         node.destroy_node()
         if rclpy.ok():
             rclpy.shutdown()
@@ -473,6 +525,15 @@ def build_parser():
     parser.add_argument("--elev", type=float, default=35.0)
     parser.add_argument("--azim", type=float, default=-45.0)
     parser.add_argument("--output", default="")
+    parser.add_argument("--output-dir", default="")
+    parser.add_argument(
+        "--output-latest-test-dir",
+        nargs="?",
+        const=True,
+        default=False,
+        type=_normalize_bool,
+        help="Save into the newest Test_* folder under --output-dir.",
+    )
     parser.add_argument("--dpi", type=int, default=150)
     parser.add_argument("--no-show", action="store_true")
     parser.add_argument(

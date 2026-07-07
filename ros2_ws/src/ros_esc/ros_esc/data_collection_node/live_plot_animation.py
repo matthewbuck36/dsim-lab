@@ -2,6 +2,7 @@
 
 """This script holds helper functions used in live plots created by the data collection node."""
 
+import threading
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
@@ -13,6 +14,7 @@ def initialize_animation(live_plotting_mode):
 
     # Initialize the live plots dictionary
     live_plot_data = {}
+    live_plot_data["lock"] = threading.RLock()
     # Set the live plotting mode
     live_plot_data["mode"] = live_plotting_mode
 
@@ -68,7 +70,6 @@ def initialize_animation(live_plotting_mode):
     ax3.set_xlabel("Time [sec]")
     ax3.set_ylabel("Cost Value")
     ax3.grid()
-    ax3.legend()
     # Save to dictionary
     live_plot_data["ax3"] = ax3
 
@@ -109,84 +110,122 @@ def update_plot(frame, live_plot_data):
     # Select how much time we display in a live plot in seconds
     time_hist = 60
 
-    # Check to make sure we have data
-    if (
-        live_plot_data["position_tstamps"] is not None
-        and 
-        len(live_plot_data["position_tstamps"]) > 0
-    ):
-        # Reduce the timestamp data if needed, only keep the most recent time history of data
-        num_datapoints_to_cut, live_plot_data["position_tstamps"] = reduce_timestamps(
-            time_hist, live_plot_data["position_tstamps"]
-        )
-        # Trim the position data based on trimmed position timestamp data
-        live_plot_data["x_position"] = live_plot_data["x_position"][num_datapoints_to_cut:]
-        live_plot_data["y_position"] = live_plot_data["y_position"][num_datapoints_to_cut:]
-        live_plot_data["z_position"] = live_plot_data["z_position"][num_datapoints_to_cut:]
+    with live_plot_data["lock"]:
+        # Check to make sure we have data
+        if (
+            live_plot_data["position_tstamps"] is not None
+            and
+            len(live_plot_data["position_tstamps"]) > 0
+        ):
+            # Reduce the timestamp data if needed, only keep the most recent time history of data
+            num_datapoints_to_cut, live_plot_data["position_tstamps"] = reduce_timestamps(
+                time_hist, live_plot_data["position_tstamps"]
+            )
+            # Trim the position data based on trimmed position timestamp data
+            live_plot_data["x_position"] = live_plot_data["x_position"][num_datapoints_to_cut:]
+            live_plot_data["y_position"] = live_plot_data["y_position"][num_datapoints_to_cut:]
+            live_plot_data["z_position"] = live_plot_data["z_position"][num_datapoints_to_cut:]
 
-    # Check to make sure we have data
-    if (
-        live_plot_data["cost_value_tstamps"] is not None
-        and
-        len(live_plot_data["cost_value_tstamps"]) > 0
-    ):
-        # Reduce the timestamp data
-        num_datapoints_to_cut, live_plot_data["cost_value_tstamps"] = reduce_timestamps(
-            time_hist, live_plot_data["cost_value_tstamps"]
-        )
-
-        # Reduce data for all the distinct cost values based on trimmed cost timestamp data
-        for i in range(live_plot_data["num_distinct_cost_values"]):
-            live_plot_data[f"cost_value_{i}"] = live_plot_data[f"cost_value_{i}"][num_datapoints_to_cut:]
-
-
-    # Update the plots with the new x, y data
-    live_plot_data["xhist_plot"].set_data(
-        live_plot_data["position_tstamps"],
-        live_plot_data["x_position"]
-    )
-    live_plot_data["yhist_plot"].set_data(
-        live_plot_data["position_tstamps"],
-        live_plot_data["y_position"]
-    )
-
-    # Update the plot with new cost value data
-    if live_plot_data["num_distinct_cost_values"] is not None:
-        # Loop over all distinct cost values
-        for i in range(live_plot_data["num_distinct_cost_values"]):
-            # Set the data for this distinct cost value line
-            live_plot_data[f"cost_value_line_{i}"].set_data(
-                live_plot_data["cost_value_tstamps"],
-                live_plot_data[f"cost_value_{i}"]
+        # Check to make sure we have data
+        if (
+            live_plot_data["cost_value_tstamps"] is not None
+            and
+            len(live_plot_data["cost_value_tstamps"]) > 0
+            and
+            live_plot_data["num_distinct_cost_values"] is not None
+        ):
+            # Reduce the timestamp data
+            num_datapoints_to_cut, live_plot_data["cost_value_tstamps"] = reduce_timestamps(
+                time_hist, live_plot_data["cost_value_tstamps"]
             )
 
-    # If we are using the 2D live plotting mode
-    if live_plot_data["mode"] == "2D":
-        # Update the trajectory plot
-        live_plot_data["trajectory_plot"].set_data(
-            live_plot_data["x_position"],
-            live_plot_data["y_position"]
+            # Reduce data for all the distinct cost values based on trimmed cost timestamp data
+            for i in range(live_plot_data["num_distinct_cost_values"]):
+                live_plot_data[f"cost_value_{i}"] = live_plot_data[f"cost_value_{i}"][num_datapoints_to_cut:]
+
+        _trim_live_plot_series(live_plot_data)
+        position_tstamps = list(live_plot_data["position_tstamps"])
+        x_position = list(live_plot_data["x_position"])
+        y_position = list(live_plot_data["y_position"])
+        z_position = list(live_plot_data["z_position"])
+        cost_value_tstamps = list(live_plot_data["cost_value_tstamps"])
+        cost_values = {}
+
+        if live_plot_data["num_distinct_cost_values"] is not None:
+            for i in range(live_plot_data["num_distinct_cost_values"]):
+                cost_values[i] = list(live_plot_data[f"cost_value_{i}"])
+
+        # Update the plots with the new x, y data
+        live_plot_data["xhist_plot"].set_data(
+            position_tstamps,
+            x_position
+        )
+        live_plot_data["yhist_plot"].set_data(
+            position_tstamps,
+            y_position
         )
 
-    # If we are using the 3D live plotting mode
-    elif live_plot_data["mode"] == "3D":
-        # Update the plot with new z data
-        live_plot_data["zhist_plot"].set_data(
-            live_plot_data["position_tstamps"],
-            live_plot_data["z_position"]
-        )
+        # Update the plot with new cost value data
+        if live_plot_data["num_distinct_cost_values"] is not None:
+            # Loop over all distinct cost values
+            for i in range(live_plot_data["num_distinct_cost_values"]):
+                # Set the data for this distinct cost value line
+                live_plot_data[f"cost_value_line_{i}"].set_data(
+                    cost_value_tstamps,
+                    cost_values[i]
+                )
 
-    # Adjust the axis scaling on all plots
-    live_plot_data["ax1"].relim()
-    live_plot_data["ax1"].autoscale_view()
-    live_plot_data["ax2"].relim()
-    live_plot_data["ax2"].autoscale_view()
-    live_plot_data["ax3"].relim()
-    live_plot_data["ax3"].autoscale_view()
-    live_plot_data["ax4"].relim()
-    live_plot_data["ax4"].autoscale_view()
+        # If we are using the 2D live plotting mode
+        if live_plot_data["mode"] == "2D":
+            # Update the trajectory plot
+            live_plot_data["trajectory_plot"].set_data(
+                x_position,
+                y_position
+            )
+
+        # If we are using the 3D live plotting mode
+        elif live_plot_data["mode"] == "3D":
+            # Update the plot with new z data
+            live_plot_data["zhist_plot"].set_data(
+                position_tstamps,
+                z_position
+            )
+
+        # Adjust the axis scaling on all plots.
+        live_plot_data["ax1"].relim()
+        live_plot_data["ax1"].autoscale_view()
+        live_plot_data["ax2"].relim()
+        live_plot_data["ax2"].autoscale_view()
+        live_plot_data["ax3"].relim()
+        live_plot_data["ax3"].autoscale_view()
+        live_plot_data["ax4"].relim()
+        live_plot_data["ax4"].autoscale_view()
     
     return live_plot_data
+
+
+def _trim_live_plot_series(live_plot_data):
+    position_length = min(
+        len(live_plot_data["position_tstamps"]),
+        len(live_plot_data["x_position"]),
+        len(live_plot_data["y_position"]),
+        len(live_plot_data["z_position"]),
+    )
+    live_plot_data["position_tstamps"] = live_plot_data["position_tstamps"][-position_length:]
+    live_plot_data["x_position"] = live_plot_data["x_position"][-position_length:]
+    live_plot_data["y_position"] = live_plot_data["y_position"][-position_length:]
+    live_plot_data["z_position"] = live_plot_data["z_position"][-position_length:]
+
+    if live_plot_data["num_distinct_cost_values"] is None:
+        return
+
+    cost_length = len(live_plot_data["cost_value_tstamps"])
+    for i in range(live_plot_data["num_distinct_cost_values"]):
+        cost_length = min(cost_length, len(live_plot_data[f"cost_value_{i}"]))
+
+    live_plot_data["cost_value_tstamps"] = live_plot_data["cost_value_tstamps"][-cost_length:]
+    for i in range(live_plot_data["num_distinct_cost_values"]):
+        live_plot_data[f"cost_value_{i}"] = live_plot_data[f"cost_value_{i}"][-cost_length:]
 
 def reduce_timestamps(time_hist, tstamp_data):
     """This reduces the total number of timestamps to only keep the most recent data."""
