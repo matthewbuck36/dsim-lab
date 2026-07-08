@@ -43,7 +43,7 @@
     <arg name="cost_surface_output_dir" default="~/Experiments/Gazebo-Simulations"/>
     <arg name="cost_surface_output_latest_test_dir" default="True"/>
     <arg name="cost_surface_dpi" default="150"/>
-    <arg name="pause_sim_until_cost_surface_ready" default="False"/>
+    <arg name="cost_surface_start_delay_sec" default="0.0"/>
 
     <!-- Enable PDE-style basin escape extensions -->
     <arg name="use_pde_extensions" default="False"/>
@@ -139,18 +139,7 @@
 
 
     <!-- Launch the Gazebo world -->
-    <include
-        if="$(var show_cost_surface_plot)"
-        file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/empty_world.launch.py"
-    >
-        <arg name="paused" value="$(var pause_sim_until_cost_surface_ready)"/>
-    </include>
-    <include
-        unless="$(var show_cost_surface_plot)"
-        file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/empty_world.launch.py"
-    >
-        <arg name="paused" value="False"/>
-    </include>
+    <include file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/empty_world.launch.py"/>
 
     <!-- Publish URDF file in robot_description topic -->
     <include file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/robot_description.launch.py"/>
@@ -377,8 +366,6 @@
             $(var cost_surface_output_latest_test_dir)
             --dpi
             $(var cost_surface_dpi)
-            --unpause-gazebo-when-ready
-            $(var pause_sim_until_cost_surface_ready)
             --light_source_count
             $(var number_of_lights)
             --light_source_1_x
@@ -520,56 +507,58 @@
     "
     />
 
-    <!-- Launch the controller node -->
-    <executable cmd="
-        ros2 run ros_esc controller_node
-        $(var entity_name)/filter_value_chatter
-        /odom
-        $(var entity_name)/timekeeper_chatter
-        $(var entity_name)/control_value_chatter
-        /cmd_vel
-        $(var controller_config_filepath)
-    "
-    />
+    <timer period="$(var cost_surface_start_delay_sec)">
+        <!-- Launch the controller node -->
+        <executable cmd="
+            ros2 run ros_esc controller_node
+            $(var entity_name)/filter_value_chatter
+            /odom
+            $(var entity_name)/timekeeper_chatter
+            $(var entity_name)/control_value_chatter
+            /cmd_vel
+            $(var controller_config_filepath)
+        "
+        />
 
-    <!-- Launch the data collection node -->
-    <executable
-        unless="$(var use_pde_extensions)"
-        cmd="
-        ros2 run ros_esc data_collection_node
-        $(var data_collection_filepath)
-        $(var rotate_frame_config_filepath)
-        $(var sensor_transform_config_filepath)
-        $(var cost_function_config_filepath)
-        $(var filter_config_filepath)
-        $(var controller_config_filepath)
-        $(var entity_name)/timekeeper_chatter
-        /odom
-        $(var entity_name)/sensor_transform_chatter
-        $(var entity_name)/cost_value_chatter
-        $(var entity_name)/filter_value_chatter
-        $(var entity_name)/control_value_chatter
-        $(var live_plot_mode)
-    "
-    />
+        <!-- Launch the data collection node -->
+        <executable
+            unless="$(var use_pde_extensions)"
+            cmd="
+            ros2 run ros_esc data_collection_node
+            $(var data_collection_filepath)
+            $(var rotate_frame_config_filepath)
+            $(var sensor_transform_config_filepath)
+            $(var cost_function_config_filepath)
+            $(var filter_config_filepath)
+            $(var controller_config_filepath)
+            $(var entity_name)/timekeeper_chatter
+            /odom
+            $(var entity_name)/sensor_transform_chatter
+            $(var entity_name)/cost_value_chatter
+            $(var entity_name)/filter_value_chatter
+            $(var entity_name)/control_value_chatter
+            $(var live_plot_mode)
+        "
+        />
 
-    <executable
-        if="$(var use_pde_extensions)"
-        cmd="
-        ros2 run ros_esc data_collection_node
-        $(var data_collection_filepath)
-        $(var rotate_frame_config_filepath)
-        $(var sensor_transform_config_filepath)
-        $(var cost_function_config_filepath)
-        $(var filter_config_filepath)
-        $(var controller_config_filepath)
-        $(var entity_name)/timekeeper_chatter
-        /odom
-        $(var entity_name)/sensor_transform_chatter
-        /cost_modified
-        $(var entity_name)/filter_value_chatter
-        $(var entity_name)/control_value_chatter
-        $(var live_plot_mode)
-    "
-    />
+        <executable
+            if="$(var use_pde_extensions)"
+            cmd="
+            ros2 run ros_esc data_collection_node
+            $(var data_collection_filepath)
+            $(var rotate_frame_config_filepath)
+            $(var sensor_transform_config_filepath)
+            $(var cost_function_config_filepath)
+            $(var filter_config_filepath)
+            $(var controller_config_filepath)
+            $(var entity_name)/timekeeper_chatter
+            /odom
+            $(var entity_name)/sensor_transform_chatter
+            /cost_modified
+            $(var entity_name)/filter_value_chatter
+            $(var entity_name)/control_value_chatter
+            $(var live_plot_mode)
+        "
+        />
+    </timer>
 </launch>

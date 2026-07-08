@@ -9,8 +9,6 @@ from ament_index_python.packages import get_package_prefix
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.actions import ExecuteProcess
-from launch.conditions import IfCondition
-from launch.conditions import UnlessCondition
 from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
@@ -37,18 +35,7 @@ def generate_launch_description():
              '-s','libgazebo_ros_init.so',
              '-s','libgazebo_ros_factory.so',
              LaunchConfiguration('world')],
-        output='screen',
-        condition=UnlessCondition(LaunchConfiguration('paused'))
-    )
-
-    gazebo_launch_paused = ExecuteProcess(
-        cmd=['gazebo','--verbose',
-             '-u',
-             '-s','libgazebo_ros_init.so',
-             '-s','libgazebo_ros_factory.so',
-             LaunchConfiguration('world')],
-        output='screen',
-        condition=IfCondition(LaunchConfiguration('paused'))
+        output='screen'
     )
 
     return LaunchDescription([
@@ -56,10 +43,5 @@ def generate_launch_description():
           'world',
           default_value=[os.path.join(pkg_tb_gazebo, 'worlds', 'gazebo_empty.world'), ''],
           description='SDF world file'),
-        DeclareLaunchArgument(
-          'paused',
-          default_value='False',
-          description='Start Gazebo physics paused'),
-        gazebo_launch,
-        gazebo_launch_paused
+        gazebo_launch
     ])

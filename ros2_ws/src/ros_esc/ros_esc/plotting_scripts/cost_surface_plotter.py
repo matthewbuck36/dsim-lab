@@ -8,7 +8,6 @@ import json
 import math
 import os
 import signal
-import time
 from datetime import datetime
 
 import matplotlib.pyplot as plt
@@ -18,7 +17,6 @@ import rclpy
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from ros_esc_interfaces.msg import StampedFloat64MultiArray
-from std_srvs.srv import Empty
 
 from ros_esc.config_parsing import parse_object_config
 
@@ -101,16 +99,6 @@ def _load_cost_function(config_path, args):
 def _plot_surface(x_grid, y_grid, z_grid, args, lights):
     plot = CostSurfacePlot(x_grid, y_grid, z_grid, args, lights)
     plot.draw()
-
-    if args.unpause_gazebo_when_ready:
-        rclpy.init(args=None)
-        node = Node("cost_surface_plotter_unpause")
-        try:
-            _unpause_gazebo(node, args)
-        finally:
-            node.destroy_node()
-            if rclpy.ok():
-                rclpy.shutdown()
 
     _save_snapshot(plot, args, "static")
 
@@ -467,38 +455,6 @@ class LiveCostSurfaceNode(Node):
         )
 
 
-def _unpause_gazebo(node, args):
-    service_name = str(args.gazebo_unpause_service)
-    timeout_sec = max(0.0, float(args.gazebo_unpause_timeout_sec))
-    client = node.create_client(Empty, service_name)
-    deadline = time.monotonic() + timeout_sec
-
-    while rclpy.ok():
-        if client.wait_for_service(timeout_sec=0.1):
-            break
-        if time.monotonic() >= deadline:
-            node.get_logger().warn(
-                f"Timed out waiting for Gazebo unpause service {service_name}."
-            )
-            return
-
-    future = client.call_async(Empty.Request())
-    rclpy.spin_until_future_complete(node, future, timeout_sec=2.0)
-
-    if future.done() and future.exception() is None:
-        node.get_logger().info(
-            "Cost surface is ready; unpaused Gazebo physics."
-        )
-    elif future.done():
-        node.get_logger().warn(
-            f"Gazebo unpause service failed: {future.exception()}"
-        )
-    else:
-        node.get_logger().warn(
-            f"Timed out calling Gazebo unpause service {service_name}."
-        )
-
-
 def _run_live_plot(x_grid, y_grid, z_grid, args, lights):
     plot = CostSurfacePlot(x_grid, y_grid, z_grid, args, lights)
     plot.draw()
@@ -506,7 +462,6 @@ def _run_live_plot(x_grid, y_grid, z_grid, args, lights):
     rclpy.init(args=None)
     node = LiveCostSurfaceNode(plot, args)
     shutdown_requested = False
-    unpause_attempted = False
     timer = None
 
     def request_shutdown(_signum=None, _frame=None):
@@ -515,12 +470,8 @@ def _run_live_plot(x_grid, y_grid, z_grid, args, lights):
         plt.close(plot.fig)
 
     def timer_callback():
-        nonlocal unpause_attempted
         if shutdown_requested or not rclpy.ok() or not plt.fignum_exists(plot.fig.number):
             return False
-        if args.unpause_gazebo_when_ready and not unpause_attempted:
-            unpause_attempted = True
-            _unpause_gazebo(node, args)
         rclpy.spin_once(node, timeout_sec=0.0)
         return True
 
@@ -622,25 +573,6 @@ def build_parser():
         help="Minimum seconds between plotted odometry points.",
     )
     parser.add_argument("--trajectory-max-points", type=int, default=2000)
-    parser.add_argument(
-        "--unpause-gazebo-when-ready",
-        nargs="?",
-        const=True,
-        default=False,
-        type=_normalize_bool,
-        help="Call Gazebo's unpause service after the cost surface is ready.",
-    )
-    parser.add_argument(
-        "--gazebo-unpause-service",
-        default="/unpause_physics",
-        help="Gazebo service used by --unpause-gazebo-when-ready.",
-    )
-    parser.add_argument(
-        "--gazebo-unpause-timeout-sec",
-        type=float,
-        default=5.0,
-        help="Seconds to wait for Gazebo's unpause service.",
-    )
     parser.add_argument(
         "--light_source_count",
         "--number_of_lights",
