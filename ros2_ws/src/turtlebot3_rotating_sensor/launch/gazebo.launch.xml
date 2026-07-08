@@ -43,6 +43,7 @@
     <arg name="cost_surface_output_dir" default="~/Experiments/Gazebo-Simulations"/>
     <arg name="cost_surface_output_latest_test_dir" default="True"/>
     <arg name="cost_surface_dpi" default="150"/>
+    <arg name="pause_sim_until_cost_surface_ready" default="False"/>
 
     <!-- Enable PDE-style basin escape extensions -->
     <arg name="use_pde_extensions" default="False"/>
@@ -138,7 +139,18 @@
 
 
     <!-- Launch the Gazebo world -->
-    <include file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/empty_world.launch.py"/>
+    <include
+        if="$(var show_cost_surface_plot)"
+        file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/empty_world.launch.py"
+    >
+        <arg name="paused" value="$(var pause_sim_until_cost_surface_ready)"/>
+    </include>
+    <include
+        unless="$(var show_cost_surface_plot)"
+        file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/empty_world.launch.py"
+    >
+        <arg name="paused" value="False"/>
+    </include>
 
     <!-- Publish URDF file in robot_description topic -->
     <include file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/robot_description.launch.py"/>
@@ -365,6 +377,8 @@
             $(var cost_surface_output_latest_test_dir)
             --dpi
             $(var cost_surface_dpi)
+            --unpause-gazebo-when-ready
+            $(var pause_sim_until_cost_surface_ready)
             --light_source_count
             $(var number_of_lights)
             --light_source_1_x
