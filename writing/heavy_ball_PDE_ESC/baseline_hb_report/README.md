@@ -1,17 +1,14 @@
 # Baseline HBESC Report Workflow
 
-1. Run scenarios manually, one at a time, from:
+1. Historical scenarios for this report are archived at:
 
 ```text
-~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/scenarios/baseline_tests/
+~/dsim-lab/writing/heavy_ball_PDE_ESC/archive/scenarios/baseline_tests/
 ```
 
-Use:
-
-```bash
-bash ~/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/bash_scripts/accelerated_methods/hb_scenario_acoustic.bash \
-  ~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/scenarios/baseline_tests/Q1_quadratic_start0_real.json
-```
+The original scenario runner has been retired from the active ROS tree. These
+scenario files are retained as report provenance rather than as the current
+manual Gazebo workflow.
 
 2. Copy each generated `Test_YYYY-MM-DD_HH-MM-SS` folder path into
    `baseline_hb_run_manifest.csv`.

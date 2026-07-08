@@ -1,26 +1,17 @@
-# HeavyBall Cost Function Configs
+# Active HeavyBall Cost Function Configs
 
-All cost maps live directly in this folder. Filenames start with the cost family
-so scenario files can stay readable without nested cost-map directories.
+Only cost maps used by active Gazebo launch paths live in this folder.
 
 ```text
-gaussian_two_basin_original.json       # original hard two-basin map
-gaussian_two_basin_localA1p0.json      # local-well amplitude sweep
-gaussian_two_basin_localA2p0.json
-gaussian_two_basin_localA3p0.json
-gaussian_two_basin_globalW25.json      # widened global-basin sweep
-gaussian_two_basin_globalW30.json
-gaussian_two_basin_globalW40.json
-
-polynomial_quadratic_bowl_center10.json
-polynomial_quartic_bowl_center10.json
-polynomial_quartic_double_well_local2_global10.json
-
+2D_local_min.json                      # original hard two-basin map
 multi_light_source_photoresistor.json  # multi-light rotating photoresistor map
 ```
 
-Scenario files should reference these paths directly through
-`cost_function_config_filepath`.
+Retired sweep and baseline-report cost maps live in:
+
+```text
+~/dsim-lab/writing/heavy_ball_PDE_ESC/archive/cost_function/
+```
 
 `multi_light_source_photoresistor.json` selects `Multi_Light_Source_Cost`.
 That class is the multi-light rotating-sensor photoresistor model; the older

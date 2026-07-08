@@ -6,21 +6,13 @@ matching the existing adaptive/gradient-method layout style.
 Current active scripts:
 
 ```text
-hb_scenario_acoustic.bash
-hb_escape_acoustic.bash
-hb_escape_shallow_acoustic.bash
-hb_gaussian_fill_acoustic.bash
-hb_light_source_gaussian_fill_acoustic.bash
+hb_gaussian_full_rotation_voltage.bash
 ```
 
-Use `hb_scenario_acoustic.bash` for new work. It launches one selected scenario
-at a time, which is the preferred Gazebo workflow.
-
-Use `hb_light_source_gaussian_fill_acoustic.bash` for a direct HeavyBall
+Use `hb_gaussian_full_rotation_voltage.bash` for a direct HeavyBall
 source-seeking run where the cost map is generated from configured light-source
 positions, lumen values, and the rotating photoresistor sensor orientation. The
-script is intentionally edited the same way as the other accelerated-method
-launch helpers:
+script is intentionally edited in place for manual Gazebo checks:
 
 ```text
 number_of_lights:=3
@@ -37,7 +29,7 @@ published fill term. The fill node still fits basin center and sigma from
 history, but it no longer replaces this launch value with a doubled fitted
 amplitude.
 
-Several HeavyBall scripts pass `show_cost_surface_plot:=True` into
+The HeavyBall script passes `show_cost_surface_plot:=True` into
 `gazebo.launch.xml`. Set it to `False` to disable the separate 3D cost-surface
 window. The surface plot uses the same cost config and `light_N_*` launch values
 as the Gazebo run. With `cost_surface_live:=True`, the plot subscribes to
@@ -50,4 +42,11 @@ The previous matrix/batch runner was retired to:
 
 ```text
 Depreciated/2026-05-18/manual_testing_only/
+```
+
+Historical scenario-runner and non-light-source HeavyBall scripts were retired
+from this active folder. Related baseline/reference material now lives under:
+
+```text
+~/dsim-lab/writing/heavy_ball_PDE_ESC/archive/
 ```

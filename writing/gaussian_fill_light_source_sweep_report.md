@@ -7,7 +7,7 @@ Run artifacts:
 - Temporary headless launch wrapper: `/tmp/codex_light_search/gazebo_headless.launch.xml`
 - Temporary runner/analyzer: `/tmp/codex_light_search/run_trial.sh`, `/tmp/codex_light_search/analyze_trial.py`
 
-The runs used headless Gazebo through a temporary launch copy. The repo launch files and Python source were not changed during the sweep. The existing `gesc_light_source_gaussian_fill_acoustic.bash` and `hb_light_source_gaussian_fill_acoustic.bash` scripts still contain GUI-oriented defaults (`live_plot_mode:='2D'`, `show_cost_surface_plot:='True'`) and a stale `gaussian_fill_amplitude:=10.0`, so the sweep used explicit launch arguments instead of running those bash files directly.
+The runs used headless Gazebo through a temporary launch copy. The repo launch files and Python source were not changed during the sweep. At the time of the sweep, the light-source Gaussian bash scripts still contained GUI-oriented defaults and stale amplitude settings, so the sweep used explicit launch arguments instead of running those bash files directly.
 
 ## Setup
 
@@ -161,20 +161,20 @@ If the fill center is wrong, the affine term can also be wrong. It is not a pure
 
 Suggested change: expose `enable_affine_bias`, `affine_gain`, `affine_max_age`, and `history_exclusion_radius_factor` as launch arguments and run an A/B test with affine disabled. If Gaussian-only behaves more predictably, tune/rework affine separately.
 
-### 5. The bash defaults are stale for current amplitude semantics
+### 5. The bash defaults were stale for current amplitude semantics
 
-Both light-source Gaussian bash scripts still use:
+At the time of this sweep, both light-source Gaussian bash scripts used:
 
 - `live_plot_mode:='2D'`
 - `show_cost_surface_plot:='True'`
-- `gaussian_fill_amplitude:=10.0`
+- stale Gaussian-fill amplitude values for the voltage-scale tests
 
 See:
 
-- `ros2_ws/src/turtlebot3_rotating_sensor/bash_scripts/gradient_methods/gesc_light_source_gaussian_fill_acoustic.bash:18-19`
-- `ros2_ws/src/turtlebot3_rotating_sensor/bash_scripts/gradient_methods/gesc_light_source_gaussian_fill_acoustic.bash:44`
-- `ros2_ws/src/turtlebot3_rotating_sensor/bash_scripts/accelerated_methods/hb_light_source_gaussian_fill_acoustic.bash:18-19`
-- `ros2_ws/src/turtlebot3_rotating_sensor/bash_scripts/accelerated_methods/hb_light_source_gaussian_fill_acoustic.bash:44`
+- `ros2_ws/src/turtlebot3_rotating_sensor/bash_scripts/gradient_methods/gesc_gaussian_full_rotation_voltage.bash:18-19`
+- `ros2_ws/src/turtlebot3_rotating_sensor/bash_scripts/gradient_methods/gesc_gaussian_full_rotation_voltage.bash:44`
+- `ros2_ws/src/turtlebot3_rotating_sensor/bash_scripts/accelerated_methods/hb_gaussian_full_rotation_voltage.bash:18-19`
+- `ros2_ws/src/turtlebot3_rotating_sensor/bash_scripts/accelerated_methods/hb_gaussian_full_rotation_voltage.bash:44`
 
 Since `gaussian_fill_amplitude` now directly sets published fill height, `10.0` is far too large for the voltage-scale multi-light runs tested here.
 

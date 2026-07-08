@@ -4,7 +4,7 @@ This folder contains launch executables for gradient based extremum seeking
 methods tuned for a journal paper by Dylan James Kavanaugh. Most experiments
 use a photoresistor voltage based cost function.
 
-`gesc_light_source_gaussian_fill_acoustic.bash` is a comparison entrypoint for
+`gesc_gaussian_full_rotation_voltage.bash` is a comparison entrypoint for
 GESC plus Gaussian fill using the same multi-light rotating photoresistor cost
 model and light layout as the HeavyBall light-source script.
 

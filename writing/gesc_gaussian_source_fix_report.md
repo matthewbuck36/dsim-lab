@@ -54,7 +54,7 @@ The affine default remains enabled, with `outside_to_anchor` and sign `1.0`, bec
 
 ### GESC Two-Light Runner
 
-File: `ros2_ws/src/turtlebot3_rotating_sensor/bash_scripts/gradient_methods/gesc_light_source_gaussian_fill_acoustic.bash`
+File: `ros2_ws/src/turtlebot3_rotating_sensor/bash_scripts/gradient_methods/gesc_gaussian_full_rotation_voltage.bash`
 
 - Kept one-off visual-test defaults enabled:
   - `live_plot_mode:='2D'`
@@ -80,7 +80,7 @@ The normal data collection node saves CSVs, not the 3D cost-surface map. The liv
 
 ### HB Manual Test Runner
 
-File: `ros2_ws/src/turtlebot3_rotating_sensor/bash_scripts/accelerated_methods/hb_light_source_gaussian_fill_acoustic.bash`
+File: `ros2_ws/src/turtlebot3_rotating_sensor/bash_scripts/accelerated_methods/hb_gaussian_full_rotation_voltage.bash`
 
 HB is still not the primary path, but the script now uses the same event-centered Gaussian-fill source fixes so it can be tried manually. It uses the same two-light moved layout, visible plots, `/cost_modified` cost history, `center_source:='event_mean'`, and one fill. Its starting amplitude is `0.10`, based on the earlier HB sweep where `0.10` behaved better than the larger values.
 
@@ -89,7 +89,7 @@ HB is still not the primary path, but the script now uses the same event-centere
 From any shell:
 
 ```bash
-cd ~/dsim-lab/ros2_ws && ./src/turtlebot3_rotating_sensor/bash_scripts/gradient_methods/gesc_light_source_gaussian_fill_acoustic.bash
+cd ~/dsim-lab/ros2_ws && ./src/turtlebot3_rotating_sensor/bash_scripts/gradient_methods/gesc_gaussian_full_rotation_voltage.bash
 ```
 
 This is now the recommended three-light GESC run. It keeps the Gazebo GUI and plots visible, uses the moved middle light at `(2.7, 3.0)`, includes the third light at `(4.0, 4.0)`, and allows two Gaussian fills.

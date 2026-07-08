@@ -9,6 +9,6 @@ Current report:
 baseline_hb_report/
 ```
 
-ROS scenario/config/code files remain under `ros2_ws`; report text, report
-figures, run manifests used for writeups, and generated metrics live here.
-
+Active ROS code remains under `ros2_ws`. Historical scenarios, retired configs,
+report text, report figures, run manifests used for writeups, and generated
+metrics live here.

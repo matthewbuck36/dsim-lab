@@ -6,11 +6,15 @@ folder, matching the existing adaptive/gradient-method layout style.
 Current active HeavyBall configs:
 
 ```text
-hbesc_gaussian_conservative_full_rotation.json
-hbesc_baseline_slow_full_rotation.json
-hbesc_baseline_real_full_rotation.json
-hbesc_baseline_fast_sim_full_rotation.json
+hbesc_controller_full_rotation_voltage.json
 ```
 
-Keep future HeavyBall controller variants in this folder and name them by
-purpose, speed regime, and frame/rotation setup.
+Retired baseline speed-regime configs were archived with the historical
+baseline scenarios under:
+
+```text
+~/dsim-lab/writing/heavy_ball_PDE_ESC/archive/controller_configs/
+```
+
+Keep future active HeavyBall controller variants in this folder and name them by
+method, rotation setup, and signal type.

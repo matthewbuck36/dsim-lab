@@ -128,11 +128,11 @@
     <!-- Set the default transform configuration filepath -->
     <arg name="sensor_transform_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"/>
     <!-- Set the default cost function configuration filepath-->
-    <arg name="cost_function_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/gaussian_two_basin_original.json"/>
+    <arg name="cost_function_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/2D_local_min.json"/>
     <!-- Set the default filter configuration filepath -->
     <arg name="filter_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json"/>
     <!-- Set the default controller configuration filepath -->
-    <arg name="controller_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/accelerated_methods/hbesc_gaussian_conservative_full_rotation.json"/>
+    <arg name="controller_config_filepath" default="~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/accelerated_methods/hbesc_controller_full_rotation_voltage.json"/>
     <!-- Set the directory to save simulation test results to -->
     <arg name="data_collection_filepath" default="~/Experiments/Gazebo-Simulations"/>
 
