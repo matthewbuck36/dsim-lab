@@ -6,6 +6,9 @@ ros2_ws/build/
 ros2_ws/install/
 ros2_ws/log/
 
+# Ad hoc command/run logs written at the repo root
+/*.log
+
 # Python cache artifacts
 **/__pycache__/
 *.pyc
