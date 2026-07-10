@@ -20,8 +20,7 @@ ros2_ws/log/
 # Local editor settings
 .vscode/settings.json
 
-# Generated HBESC / Gaussian-fill experiment artifacts
-experiments/hbesc_gaussian_fill_study/results/
-
-# Physical TurtleBot3 Testing
-Jan-29-try-20260630T235703Z-3-001
+# Experiment data is stored outside this repository under ~/Experiments.
+# Ignore the local compatibility links too, so raw runs cannot be committed.
+/experiments/
+/Jan-29-try-20260630T235703Z-3-001
