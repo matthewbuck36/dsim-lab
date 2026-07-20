@@ -20,7 +20,14 @@ import numpy as np
 import rclpy
 from rclpy.node import Node
 import rclpy.parameter
-from ros_esc_interfaces.msg import Timekeeper, StampedFloat64MultiArray, StampedTransformMultiArray
+from ros_esc_interfaces.msg import (
+    AlgorithmEvent,
+    AlgorithmState,
+    CostBreakdown,
+    StampedFloat64MultiArray,
+    StampedTransformMultiArray,
+    Timekeeper,
+)
 from ros_esc.config_parsing import parse_object_config
 
 class CostFunction(Node):
@@ -85,6 +92,27 @@ class CostFunction(Node):
                 type=float,
                 default=None,
             )
+        parser.add_argument("--enable_observability", default="False")
+        parser.add_argument(
+            "--publish_final_breakdown",
+            default="False",
+        )
+        parser.add_argument(
+            "--cost_breakdown_topic",
+            default="/gesc_gaussian/cost_breakdown",
+        )
+        parser.add_argument(
+            "--algorithm_state_topic",
+            default="/gesc_gaussian/algorithm_state",
+        )
+        parser.add_argument(
+            "--algorithm_event_topic",
+            default="/gesc_gaussian/algorithm_events",
+        )
+        parser.add_argument(
+            "--observability_source_mode",
+            default="simulation",
+        )
         args = parser.parse_args()
 
         # Initialize variables
@@ -92,6 +120,12 @@ class CostFunction(Node):
         self.timekeeping_mode = None
         self.transforms = None
         self.transforms_tstamp = None
+        self.enable_observability = _as_bool(args.enable_observability)
+        self.publish_final_breakdown = _as_bool(args.publish_final_breakdown)
+        self.observability_source_mode = _source_mode(
+            args.observability_source_mode
+        )
+        self.observability_configuration_published = False
 
         # Expand the filepath if the ~ character is used
         config_filepath = os.path.expanduser(args.config)
@@ -113,6 +147,7 @@ class CostFunction(Node):
 
         # Get the cost function object
         self.cost_function = parse_object_config(config_dict["CostFunction"])
+        self.cost_model_name = type(self.cost_function).__name__
         self.configure_light_source_cost(args)
         # Get the noise object
         self.noise_obj = parse_object_config(config_dict["Noise"])
@@ -136,12 +171,23 @@ class CostFunction(Node):
             StampedFloat64MultiArray, args.output_topic, 10
         )
 
+        self.cost_breakdown_publisher = None
+        self.algorithm_state_publisher = None
+        self.algorithm_event_publisher = None
+        if self.enable_observability:
+            self.algorithm_event_publisher = self.create_publisher(
+                AlgorithmEvent, args.algorithm_event_topic, 10
+            )
+            if self.publish_final_breakdown:
+                self.cost_breakdown_publisher = self.create_publisher(
+                    CostBreakdown, args.cost_breakdown_topic, 10
+                )
+                self.algorithm_state_publisher = self.create_publisher(
+                    AlgorithmState, args.algorithm_state_topic, 10
+                )
+
     def configure_light_source_cost(self, args):
         """Pass launch-time light source settings to compatible cost objects."""
-
-        if not hasattr(self.cost_function, "configure_light_sources"):
-            return
-
         light_sources = []
         for light_idx in range(1, 6):
             light_sources.append({
@@ -151,6 +197,12 @@ class CostFunction(Node):
                     args, f"light_source_{light_idx}_intensity_lumens"
                 ),
             })
+
+        self.configured_light_source_count = args.light_source_count
+        self.configured_light_sources = light_sources
+
+        if not hasattr(self.cost_function, "configure_light_sources"):
+            return
 
         self.cost_function.configure_light_sources(
             args.light_source_count,
@@ -234,6 +286,146 @@ class CostFunction(Node):
             # Publish the message
             self.cost_publisher.publish(msg)
 
+            if self.enable_observability:
+                self.publish_observability(
+                    cost_values,
+                    source_timestamp=publish_time,
+                )
+
+    def publish_observability(self, cost_values, source_timestamp):
+        """Publish opt-in typed mirrors after the unchanged legacy output."""
+
+        stamp = self.get_clock().now().to_msg()
+        if not self.observability_configuration_published:
+            self.publish_configuration_events(stamp)
+            self.observability_configuration_published = True
+
+        if not self.publish_final_breakdown:
+            return
+
+        values = [float(value) for value in np.asarray(cost_values).tolist()]
+        channel_count = len(values)
+        unavailable = [float("nan")] * channel_count
+        zeros = [0.0] * channel_count
+
+        breakdown = CostBreakdown()
+        breakdown.stamp = stamp
+        breakdown.source_timestamp = float(source_timestamp)
+        breakdown.source_timestamp_valid = bool(np.isfinite(source_timestamp))
+        breakdown.source_mode = self.observability_source_mode
+        breakdown.source_name = self.cost_model_name
+        breakdown.channel_count = channel_count
+        breakdown.raw_sensor_value = unavailable
+        breakdown.filtered_sensor_value = unavailable
+        breakdown.raw_cost = values
+        breakdown.source_score = unavailable
+        breakdown.gaussian_cost = zeros
+        breakdown.affine_cost = zeros
+        breakdown.augmented_cost = values
+        breakdown.sensor_weight = 1.0
+        breakdown.gaussian_weight = 0.0
+        breakdown.affine_weight = 0.0
+        breakdown.raw_sensor_valid = False
+        breakdown.filtered_sensor_valid = False
+        breakdown.raw_cost_valid = bool(np.all(np.isfinite(values)))
+        breakdown.source_score_valid = False
+        breakdown.gaussian_cost_valid = True
+        breakdown.affine_cost_valid = True
+        breakdown.augmented_cost_valid = breakdown.raw_cost_valid
+        breakdown.weights_valid = True
+        self.cost_breakdown_publisher.publish(breakdown)
+
+        state = AlgorithmState()
+        state.stamp = stamp
+        state.source_timestamp = float(source_timestamp)
+        state.source_timestamp_valid = bool(np.isfinite(source_timestamp))
+        state.run_id = ""
+        state.run_id_valid = False
+        state.algorithm_profile = "legacy"
+        state.state = AlgorithmState.STATE_UNAVAILABLE
+        state.state_name = "UNAVAILABLE"
+        state.state_valid = False
+        state.previous_state = AlgorithmState.STATE_UNAVAILABLE
+        state.previous_state_name = "UNAVAILABLE"
+        state.previous_state_valid = False
+        state.transition_reason = ""
+        state.transition_reason_valid = False
+        state.state_elapsed_sec = float("nan")
+        state.state_elapsed_valid = False
+        state.active_fill_count = 0
+        state.active_fill_count_valid = True
+        state.active_escape_fill_id = 0
+        state.active_escape_fill_id_valid = False
+        state.sensor_weight = 1.0
+        state.gaussian_weight = 0.0
+        state.affine_weight = 0.0
+        state.weights_valid = True
+        state.failsafe = False
+        state.failsafe_valid = False
+        self.algorithm_state_publisher.publish(state)
+
+    def publish_configuration_events(self, stamp):
+        """Publish source configuration and unavailable capability status."""
+
+        names = []
+        values = []
+        if self.configured_light_source_count is not None:
+            names.append("source_count")
+            values.append(float(self.configured_light_source_count))
+            active_sources = self.configured_light_sources[
+                :max(0, self.configured_light_source_count)
+            ]
+            for index, source in enumerate(active_sources, start=1):
+                entries = (
+                    ("x_m", source["x"]),
+                    ("y_m", source["y"]),
+                    ("relative_intensity_input", source["intensity_lumens"]),
+                )
+                for suffix, value in entries:
+                    if value is not None and np.isfinite(value):
+                        names.append(f"source_{index}_{suffix}")
+                        values.append(float(value))
+
+        event = AlgorithmEvent()
+        event.stamp = stamp
+        event.source_timestamp = float("nan")
+        event.source_timestamp_valid = False
+        event.event_type = AlgorithmEvent.EVENT_CONFIGURATION
+        event.state = AlgorithmState.STATE_UNAVAILABLE
+        event.state_name = "UNAVAILABLE"
+        event.state_valid = False
+        event.fill_id = 0
+        event.fill_id_valid = False
+        event.reason_code = 0
+        event.detail = (
+            f"source_mode={_source_mode_name(self.observability_source_mode)}; "
+            f"cost_model={self.cost_model_name}; relative simulator intensity "
+            "inputs are not absolute photometric calibration"
+        )
+        event.value_names = names
+        event.values = values
+        self.algorithm_event_publisher.publish(event)
+
+        unavailable = AlgorithmEvent()
+        unavailable.stamp = stamp
+        unavailable.source_timestamp = float("nan")
+        unavailable.source_timestamp_valid = False
+        unavailable.event_type = AlgorithmEvent.EVENT_CAPABILITY_UNAVAILABLE
+        unavailable.state = AlgorithmState.STATE_UNAVAILABLE
+        unavailable.state_name = "UNAVAILABLE"
+        unavailable.state_valid = False
+        unavailable.fill_id = 0
+        unavailable.fill_id_valid = False
+        unavailable.reason_code = 1
+        unavailable.detail = (
+            "raw_sensor_value, filtered_sensor_value, and calibrated "
+            "source_score are unavailable in the current simulation adapter"
+        )
+        unavailable.value_names = []
+        unavailable.values = []
+        self.algorithm_event_publisher.publish(unavailable)
+
+
 def create_transform_matrix(transform_object):
     """This converts a transform object into a transformation matrix."""
 
@@ -276,6 +468,36 @@ def create_transform_matrix(transform_object):
 
     return transform_matrix
 
+
+def _as_bool(value):
+    """Parse existing launch-style string booleans without changing defaults."""
+
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _source_mode(value):
+    """Map a platform adapter name to the common source enum."""
+
+    normalized = str(value).strip().lower()
+    if normalized == "simulation":
+        return CostBreakdown.SOURCE_SIMULATION
+    if normalized == "physical":
+        return CostBreakdown.SOURCE_PHYSICAL
+    return CostBreakdown.SOURCE_UNKNOWN
+
+
+def _source_mode_name(value):
+    """Return a stable readable name for a source enum."""
+
+    if value == CostBreakdown.SOURCE_SIMULATION:
+        return "simulation"
+    if value == CostBreakdown.SOURCE_PHYSICAL:
+        return "physical"
+    return "unknown"
+
+
 def main(args=None):
     """This will initialize and launch the cost function node."""
 
@@ -288,6 +510,7 @@ def main(args=None):
     finally:
         node.destroy_node()
         rclpy.try_shutdown()
+
 
 if __name__ == "__main__":
     main()

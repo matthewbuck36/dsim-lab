@@ -73,6 +73,16 @@
     <arg name="modified_cost_history_exclusion_radius_factor" default="3.0"/>
     <arg name="modified_cost_history_direction_mode" default="outside_to_anchor"/>
 
+    <!-- Opt-in common GESC/Gaussian observability. -->
+    <arg name="enable_observability" default="False"/>
+    <arg name="cost_breakdown_topic" default="/gesc_gaussian/cost_breakdown"/>
+    <arg name="gesc_diagnostics_topic" default="/gesc_gaussian/gesc_diagnostics"/>
+    <arg name="control_diagnostics_topic" default="/gesc_gaussian/control_diagnostics"/>
+    <arg name="gaussian_fill_diagnostics_topic" default="/gesc_gaussian/gaussian_fills"/>
+    <arg name="algorithm_state_topic" default="/gesc_gaussian/algorithm_state"/>
+    <arg name="algorithm_event_topic" default="/gesc_gaussian/algorithm_events"/>
+    <arg name="observability_source_mode" default="simulation"/>
+
     <!-- Streamlined light-source interface. Set number_of_lights from 0 to 5,
     then define each light_N_x, light_N_y, and light_N_intensity_lumens. The
     visible Gazebo markers and compatible light-source cost functions use the
@@ -287,7 +297,9 @@
     />
 
     <!-- Launch the cost function node -->
-    <executable cmd="
+    <executable
+        unless="$(var use_pde_extensions)"
+        cmd="
         ros2 run ros_esc cost_function_node
         $(var entity_name)/sensor_transform_chatter
         $(var entity_name)/timekeeper_chatter
@@ -325,6 +337,73 @@
         $(var light_5_y)
         --light_source_5_intensity_lumens
         $(var light_5_intensity_lumens)
+        --enable_observability
+        $(var enable_observability)
+        --publish_final_breakdown
+        True
+        --cost_breakdown_topic
+        $(var cost_breakdown_topic)
+        --algorithm_state_topic
+        $(var algorithm_state_topic)
+        --algorithm_event_topic
+        $(var algorithm_event_topic)
+        --observability_source_mode
+        $(var observability_source_mode)
+    "
+    />
+
+    <executable
+        if="$(var use_pde_extensions)"
+        cmd="
+        ros2 run ros_esc cost_function_node
+        $(var entity_name)/sensor_transform_chatter
+        $(var entity_name)/timekeeper_chatter
+        $(var entity_name)/cost_value_chatter
+        $(var cost_function_config_filepath)
+        --light_source_count
+        $(var number_of_lights)
+        --light_source_1_x
+        $(var light_1_x)
+        --light_source_1_y
+        $(var light_1_y)
+        --light_source_1_intensity_lumens
+        $(var light_1_intensity_lumens)
+        --light_source_2_x
+        $(var light_2_x)
+        --light_source_2_y
+        $(var light_2_y)
+        --light_source_2_intensity_lumens
+        $(var light_2_intensity_lumens)
+        --light_source_3_x
+        $(var light_3_x)
+        --light_source_3_y
+        $(var light_3_y)
+        --light_source_3_intensity_lumens
+        $(var light_3_intensity_lumens)
+        --light_source_4_x
+        $(var light_4_x)
+        --light_source_4_y
+        $(var light_4_y)
+        --light_source_4_intensity_lumens
+        $(var light_4_intensity_lumens)
+        --light_source_5_x
+        $(var light_5_x)
+        --light_source_5_y
+        $(var light_5_y)
+        --light_source_5_intensity_lumens
+        $(var light_5_intensity_lumens)
+        --enable_observability
+        $(var enable_observability)
+        --publish_final_breakdown
+        False
+        --cost_breakdown_topic
+        $(var cost_breakdown_topic)
+        --algorithm_state_topic
+        $(var algorithm_state_topic)
+        --algorithm_event_topic
+        $(var algorithm_event_topic)
+        --observability_source_mode
+        $(var observability_source_mode)
     "
     />
 
@@ -422,6 +501,11 @@
             -p use_pde_history_for_affine:=$(var modified_cost_use_pde_history_for_affine)
             -p history_exclusion_radius_factor:=$(var modified_cost_history_exclusion_radius_factor)
             -p history_direction_mode:=$(var modified_cost_history_direction_mode)
+            -p enable_observability:=$(var enable_observability)
+            -p cost_breakdown_topic:=$(var cost_breakdown_topic)
+            -p algorithm_state_topic:=$(var algorithm_state_topic)
+            -p algorithm_event_topic:=$(var algorithm_event_topic)
+            -p observability_source_mode:=$(var observability_source_mode)
         "
     />
 
@@ -453,6 +537,8 @@
             -p threshold:=$(var convergence_threshold)
             -p decay_rate:=$(var convergence_decay_rate)
             -p min_fill_periods:=$(var convergence_min_fill_periods)
+            -p enable_observability:=$(var enable_observability)
+            -p algorithm_event_topic:=$(var algorithm_event_topic)
         "
     />
 
@@ -473,6 +559,9 @@
             -p min_event_center_distance_between_fills:=$(var gaussian_fill_min_event_center_distance_between_fills)
             -p center_source:=$(var gaussian_fill_center_source)
             -p max_fit_center_distance_from_event:=$(var gaussian_fill_max_fit_center_distance_from_event)
+            -p enable_observability:=$(var enable_observability)
+            -p gaussian_fill_diagnostics_topic:=$(var gaussian_fill_diagnostics_topic)
+            -p algorithm_event_topic:=$(var algorithm_event_topic)
         "
     />
 
@@ -489,6 +578,10 @@
         $(var filter_config_filepath)
         --append_encoder_data
         $(var input_encoder_data_to_filter)
+        --enable_observability
+        $(var enable_observability)
+        --gesc_diagnostics_topic
+        $(var gesc_diagnostics_topic)
     "
     />
 
@@ -504,6 +597,10 @@
         $(var filter_config_filepath)
         --append_encoder_data
         $(var input_encoder_data_to_filter)
+        --enable_observability
+        $(var enable_observability)
+        --gesc_diagnostics_topic
+        $(var gesc_diagnostics_topic)
     "
     />
 
@@ -517,6 +614,10 @@
             $(var entity_name)/control_value_chatter
             /cmd_vel
             $(var controller_config_filepath)
+            --enable_observability
+            $(var enable_observability)
+            --control_diagnostics_topic
+            $(var control_diagnostics_topic)
         "
         />
 

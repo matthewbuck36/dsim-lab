@@ -6,7 +6,12 @@ from rclpy.node import Node
 import rclpy.parameter
 from scipy.optimize import least_squares
 
-from ros_esc_interfaces.msg import StampedFloat64MultiArray
+from ros_esc_interfaces.msg import (
+    AlgorithmEvent,
+    AlgorithmState,
+    GaussianFill as GaussianFillMessage,
+    StampedFloat64MultiArray,
+)
 from std_msgs.msg import Float64MultiArray
 
 
@@ -51,6 +56,13 @@ class GaussianFill(Node):
         self.declare_parameter("fit_min_amplitude", 0.15)
         self.declare_parameter("fit_max_amplitude", 10.0)
         self.declare_parameter("fit_offset_bound", 10.0)
+        self.declare_parameter("enable_observability", False)
+        self.declare_parameter(
+            "gaussian_fill_diagnostics_topic", "/gesc_gaussian/gaussian_fills"
+        )
+        self.declare_parameter(
+            "algorithm_event_topic", "/gesc_gaussian/algorithm_events"
+        )
 
         # Legacy parameter retained so older launch files do not fail.
         # The published fill amplitude now comes directly from "amplitude";
@@ -66,6 +78,11 @@ class GaussianFill(Node):
         self.use_pde_cost_mean_for_amplitude = bool(
             self.get_parameter("use_pde_cost_mean_for_amplitude").value
         )
+        self.enable_observability = bool(
+            self.get_parameter("enable_observability").value
+        )
+        self.observability_configuration_published = False
+        self.current_event_timestamp = None
         self.fit_min_amplitude = max(
             0.0,
             float(self.get_parameter("fit_min_amplitude").value)
@@ -166,6 +183,23 @@ class GaussianFill(Node):
             "/cost_bias",
             10
         )
+        self.gaussian_fill_diagnostics_publisher = None
+        self.algorithm_event_publisher = None
+        if self.enable_observability:
+            self.gaussian_fill_diagnostics_publisher = self.create_publisher(
+                GaussianFillMessage,
+                str(
+                    self.get_parameter(
+                        "gaussian_fill_diagnostics_topic"
+                    ).value
+                ),
+                10,
+            )
+            self.algorithm_event_publisher = self.create_publisher(
+                AlgorithmEvent,
+                str(self.get_parameter("algorithm_event_topic").value),
+                10,
+            )
 
         self.get_logger().info(
             "GaussianFill ready (2D): "
@@ -273,31 +307,42 @@ class GaussianFill(Node):
         self.buf_cost = data
 
     def trigger_cb(self, msg: StampedFloat64MultiArray):
+        event_time = float(msg.timestamp)
+        self.current_event_timestamp = event_time
+
+        if (
+            self.enable_observability
+            and not self.observability_configuration_published
+        ):
+            self._publish_configuration_event()
+            self.observability_configuration_published = True
+
         if self.escape_policy == "none":
+            self._publish_rejection(13, "fill policy is disabled")
             return
 
         if self.max_fills == 0:
+            self._publish_rejection(14, "maximum fill count is zero")
             return
 
         if self.A <= 0.0:
-            self.get_logger().info(
-                "Skipping fill: gaussian fill amplitude is <= 0.0."
-            )
+            detail = "Skipping fill: gaussian fill amplitude is <= 0.0."
+            self.get_logger().info(detail)
+            self._publish_rejection(1, detail)
             return
 
         if self.max_fills > 0 and self.fill_count >= self.max_fills:
+            self._publish_rejection(15, "maximum fill count reached")
             return
-
-        event_time = float(msg.timestamp)
 
         if (
             self.last_fill_time is not None
             and (event_time - self.last_fill_time) < self.fill_cooldown_sec
         ):
             remaining = self.fill_cooldown_sec - (event_time - self.last_fill_time)
-            self.get_logger().info(
-                f"Skipping fill: cooldown active for {remaining:.3f}s more."
-            )
+            detail = f"Skipping fill: cooldown active for {remaining:.3f}s more."
+            self.get_logger().info(detail)
+            self._publish_rejection(12, detail)
             return
 
         event_center = self._extract_event_center(msg)
@@ -307,7 +352,16 @@ class GaussianFill(Node):
         if fill is None:
             return
 
-        A, fit_mu, sigma, fitted_A = fill
+        (
+            A,
+            fit_mu,
+            sigma,
+            fitted_A,
+            sample_count,
+            fit_residual,
+            fit_condition_number,
+            fit_condition_number_valid,
+        ) = fill
         mu = self._select_fill_center(fit_mu, event_center)
 
         if mu is None:
@@ -316,20 +370,24 @@ class GaussianFill(Node):
         basin_center = event_center if event_center is not None else mu
 
         if self._too_close_to_existing_event_center(basin_center):
-            self.get_logger().info(
+            detail = (
                 "Skipping fill: convergence-event center "
                 + f"({basin_center[0]:.3f},{basin_center[1]:.3f}) is within "
                 + f"{self.min_event_center_distance_between_fills:.3f}m "
                 + "of an existing filled basin."
             )
+            self.get_logger().info(detail)
+            self._publish_rejection(10, detail)
             return
 
         if self._too_close_to_existing_fill(mu):
-            self.get_logger().info(
+            detail = (
                 "Skipping fill: candidate center "
                 + f"({mu[0]:.3f},{mu[1]:.3f}) is within "
                 + f"{self.min_distance_between_fills:.3f}m of an existing fill."
             )
+            self.get_logger().info(detail)
+            self._publish_rejection(11, detail)
             return
 
         # Publish fill: [A, mu_x, mu_y, sigma]
@@ -344,6 +402,49 @@ class GaussianFill(Node):
         ]
 
         self.pub.publish(out)
+
+        fill_id = self.fill_count + 1
+        if self.enable_observability:
+            self._publish_fill_diagnostics(
+                fill_id,
+                event_time,
+                A,
+                mu,
+                sigma,
+                sample_count,
+                fit_residual,
+                fit_condition_number,
+                fit_condition_number_valid,
+            )
+            event_values = [
+                float(mu[0]),
+                float(mu[1]),
+                float(A),
+                float(sigma),
+                float(fitted_A),
+                float(sample_count),
+                float(fit_residual),
+            ]
+            event_names = [
+                "center_x_m",
+                "center_y_m",
+                "amplitude_cost_units",
+                "sigma_m",
+                "fitted_amplitude_cost_units",
+                "sample_count",
+                "fit_residual_rms",
+            ]
+            if fit_condition_number_valid:
+                event_names.append("fit_condition_number")
+                event_values.append(float(fit_condition_number))
+            self._publish_event(
+                AlgorithmEvent.EVENT_FILL_CREATED,
+                "Gaussian fill created",
+                event_time,
+                event_names,
+                event_values,
+                fill_id=fill_id,
+            )
 
         self.fill_count += 1
         self.has_filled = self.fill_count > 0
@@ -396,11 +497,13 @@ class GaussianFill(Node):
             and drift > self.max_fit_center_distance_from_event
         ):
             if self.center_source == "fit":
-                self.get_logger().info(
+                detail = (
                     "Skipping fill: fitted center drifted "
                     + f"{drift:.3f}m from convergence-event center "
                     + f"(limit {self.max_fit_center_distance_from_event:.3f}m)."
                 )
+                self.get_logger().info(detail)
+                self._publish_rejection(9, detail)
                 return None
 
             if self.center_source == "fit_clamped":
@@ -445,17 +548,21 @@ class GaussianFill(Node):
 
     def _fit_fill_to_history(self, event_center=None):
         if self.buf_xy is None or self.buf_xy.shape[0] < self.min_points:
-            self.get_logger().warn(
+            detail = (
                 f"No sufficient 2D history for Gaussian fit "
                 f"(have {0 if self.buf_xy is None else self.buf_xy.shape[0]} points)."
             )
+            self.get_logger().warn(detail)
+            self._publish_rejection(2, detail)
             return None
 
         if self.buf_cost is None or self.buf_cost.size < self.min_points:
-            self.get_logger().warn(
+            detail = (
                 f"No sufficient cost history for Gaussian fit "
                 f"(have {0 if self.buf_cost is None else self.buf_cost.size} points)."
             )
+            self.get_logger().warn(detail)
+            self._publish_rejection(3, detail)
             return None
 
         # Index 0 is freshest in PDE buffer
@@ -472,13 +579,17 @@ class GaussianFill(Node):
         cost_use = self.buf_cost[:n_use]
 
         if not np.all(np.isfinite(xy_use)) or not np.all(np.isfinite(cost_use)):
-            self.get_logger().warn("Non-finite history found during Gaussian fit.")
+            detail = "Non-finite history found during Gaussian fit."
+            self.get_logger().warn(detail)
+            self._publish_rejection(4, detail)
             return None
 
         # Prevent ill-conditioned fits when the recent trajectory has collapsed
         # to a single point. This mirrors the pasted script's static-data guard.
         if np.max(np.std(xy_use, axis=0)) < 1e-4:
-            self.get_logger().warn("Position history variance too low for Gaussian fit.")
+            detail = "Position history variance too low for Gaussian fit."
+            self.get_logger().warn(detail)
+            self._publish_rejection(5, detail)
             return None
 
         target_y = -cost_use
@@ -550,27 +661,55 @@ class GaussianFill(Node):
                 max_nfev=500,
             )
         except Exception as exc:
-            self.get_logger().warn(f"Gaussian fit failed: {exc}")
+            detail = f"Gaussian fit failed: {exc}"
+            self.get_logger().warn(detail)
+            self._publish_rejection(6, detail)
             return None
 
         if not res.success:
-            self.get_logger().warn(f"Gaussian fit did not converge: {res.message}")
+            detail = f"Gaussian fit did not converge: {res.message}"
+            self.get_logger().warn(detail)
+            self._publish_rejection(7, detail)
             return None
 
         A, mu_x, mu_y, v, _ = res.x
 
         if A < self.fit_min_amplitude:
-            self.get_logger().info(
+            detail = (
                 f"Skipping fill: fitted basin amplitude {A:.3f} "
                 f"is below threshold {self.fit_min_amplitude:.3f}."
             )
+            self.get_logger().info(detail)
+            self._publish_rejection(8, detail)
             return None
 
         sigma = float(np.sqrt(max(v, 0.0) / 2.0))
         sigma = float(np.clip(sigma, self.min_sigma, self.max_sigma))
         mu = np.array([mu_x, mu_y], dtype=np.float64)
 
-        return self.A, mu, sigma, float(A)
+        fit_residual = float("nan")
+        fit_condition_number = float("nan")
+        fit_condition_number_valid = False
+        if self.enable_observability:
+            fit_residual = float(np.sqrt(np.mean(np.square(res.fun))))
+            try:
+                fit_condition_number = float(np.linalg.cond(res.jac))
+                fit_condition_number_valid = bool(
+                    np.isfinite(fit_condition_number)
+                )
+            except np.linalg.LinAlgError:
+                fit_condition_number = float("nan")
+
+        return (
+            self.A,
+            mu,
+            sigma,
+            float(A),
+            int(n_use),
+            fit_residual,
+            fit_condition_number,
+            fit_condition_number_valid,
+        )
 
     def _too_close_to_existing_fill(self, mu):
         if self.min_distance_between_fills <= 0.0 or not self.fill_centers:
@@ -592,6 +731,128 @@ class GaussianFill(Node):
         dists = np.linalg.norm(centers - event_center[None, :], axis=1)
 
         return bool(np.min(dists) < self.min_event_center_distance_between_fills)
+
+    def _publish_fill_diagnostics(
+        self,
+        fill_id,
+        source_timestamp,
+        amplitude,
+        center,
+        sigma,
+        sample_count,
+        fit_residual,
+        fit_condition_number,
+        fit_condition_number_valid,
+    ):
+        """Publish the accepted isotropic fill as an append-only registry record."""
+
+        msg = GaussianFillMessage()
+        msg.stamp = self.get_clock().now().to_msg()
+        msg.source_timestamp = float(source_timestamp)
+        msg.source_timestamp_valid = bool(np.isfinite(source_timestamp))
+        msg.frame_id = "odom"
+        msg.fill_id = fill_id
+        msg.cluster_id = fill_id
+        msg.revision = 1
+        msg.center_x = float(center[0])
+        msg.center_y = float(center[1])
+        msg.amplitude = float(amplitude)
+        msg.covariance_xx = float(sigma * sigma)
+        msg.covariance_xy = 0.0
+        msg.covariance_yy = float(sigma * sigma)
+        msg.sigma_major = float(sigma)
+        msg.sigma_minor = float(sigma)
+        msg.orientation = 0.0
+        msg.support_radius = float("nan")
+        msg.exit_radius = float("nan")
+        msg.confidence = float("nan")
+        msg.sample_count = sample_count
+        msg.fit_residual = float(fit_residual)
+        msg.fit_condition_number = float(fit_condition_number)
+        msg.design_escalations = 0
+        msg.covariance_valid = True
+        msg.principal_widths_valid = True
+        msg.support_radius_valid = False
+        msg.exit_radius_valid = False
+        msg.confidence_valid = False
+        msg.sample_count_valid = True
+        msg.fit_residual_valid = bool(np.isfinite(fit_residual))
+        msg.fit_condition_number_valid = fit_condition_number_valid
+        msg.design_escalations_valid = False
+        msg.active = True
+        msg.superseded = False
+        self.gaussian_fill_diagnostics_publisher.publish(msg)
+
+    def _publish_configuration_event(self):
+        """Publish the effective legacy fill configuration once."""
+
+        self._publish_event(
+            AlgorithmEvent.EVENT_CONFIGURATION,
+            f"Gaussian fill configuration; policy={self.escape_policy}",
+            None,
+            [
+                "amplitude_cost_units",
+                "min_sigma_m",
+                "max_sigma_m",
+                "min_points",
+                "max_fills",
+                "fill_cooldown_sec",
+            ],
+            [
+                self.A,
+                self.min_sigma,
+                self.max_sigma,
+                float(self.min_points),
+                float(self.max_fills),
+                self.fill_cooldown_sec,
+            ],
+        )
+
+    def _publish_rejection(self, reason_code, detail):
+        """Publish a typed rejection outcome when observability is enabled."""
+
+        if not self.enable_observability:
+            return
+        self._publish_event(
+            AlgorithmEvent.EVENT_FILL_REJECTED,
+            detail,
+            self.current_event_timestamp,
+            [],
+            [],
+            reason_code=reason_code,
+        )
+
+    def _publish_event(
+        self,
+        event_type,
+        detail,
+        source_timestamp,
+        value_names,
+        values,
+        reason_code=0,
+        fill_id=None,
+    ):
+        """Publish a typed fill event with explicit availability metadata."""
+
+        event = AlgorithmEvent()
+        event.stamp = self.get_clock().now().to_msg()
+        if source_timestamp is None:
+            event.source_timestamp = float("nan")
+            event.source_timestamp_valid = False
+        else:
+            event.source_timestamp = float(source_timestamp)
+            event.source_timestamp_valid = bool(np.isfinite(source_timestamp))
+        event.event_type = event_type
+        event.state = AlgorithmState.STATE_UNAVAILABLE
+        event.state_name = "UNAVAILABLE"
+        event.state_valid = False
+        event.fill_id = 0 if fill_id is None else fill_id
+        event.fill_id_valid = fill_id is not None
+        event.reason_code = reason_code
+        event.detail = detail
+        event.value_names = list(value_names)
+        event.values = [float(value) for value in values]
+        self.algorithm_event_publisher.publish(event)
 
 
 def main():

@@ -3,7 +3,11 @@ import rclpy
 import numpy as np
 from rclpy.node import Node
 import rclpy.parameter
-from ros_esc_interfaces.msg import StampedFloat64MultiArray
+from ros_esc_interfaces.msg import (
+    AlgorithmEvent,
+    AlgorithmState,
+    StampedFloat64MultiArray,
+)
 
 
 class ConvergenceDetector(Node):
@@ -66,6 +70,10 @@ class ConvergenceDetector(Node):
         # If True, after publishing a fill-ready event, reset the counter
         # so future local minima can also be detected and filled.
         self.declare_parameter("reset_counter_after_event", True)
+        self.declare_parameter("enable_observability", False)
+        self.declare_parameter(
+            "algorithm_event_topic", "/gesc_gaussian/algorithm_events"
+        )
 
         self.k = int(self.get_parameter("k_periods").value)
         self.th = float(self.get_parameter("threshold").value)
@@ -91,6 +99,10 @@ class ConvergenceDetector(Node):
         self.reset_counter_after_event = bool(
             self.get_parameter("reset_counter_after_event").value
         )
+        self.enable_observability = bool(
+            self.get_parameter("enable_observability").value
+        )
+        self.observability_configuration_published = False
 
         if self.count_start < 1:
             self.count_start = 1
@@ -146,6 +158,13 @@ class ConvergenceDetector(Node):
             "/convergence_count",
             10
         )
+        self.algorithm_event_publisher = None
+        if self.enable_observability:
+            self.algorithm_event_publisher = self.create_publisher(
+                AlgorithmEvent,
+                str(self.get_parameter("algorithm_event_topic").value),
+                10,
+            )
 
         self.get_logger().info(
             f"ConvergenceDetector: k={self.k}, th={self.th}, b={self.b}, "
@@ -156,6 +175,35 @@ class ConvergenceDetector(Node):
 
     def buffer_cb(self, msg: StampedFloat64MultiArray):
         t = float(msg.timestamp)
+
+        if (
+            self.enable_observability
+            and not self.observability_configuration_published
+        ):
+            self._publish_event(
+                AlgorithmEvent.EVENT_CONFIGURATION,
+                "convergence detector configuration",
+                source_timestamp=None,
+                value_names=[
+                    "k_periods",
+                    "threshold",
+                    "decay_rate",
+                    "n_buffer",
+                    "omega_rad_sec",
+                    "min_fill_periods",
+                    "convergence_count_start",
+                ],
+                values=[
+                    float(self.k),
+                    self.th,
+                    self.b,
+                    float(self.N),
+                    self.omega,
+                    self.min_fill_periods,
+                    float(self.count_start),
+                ],
+            )
+            self.observability_configuration_published = True
 
         if self.first_time is None:
             self.first_time = t
@@ -284,6 +332,33 @@ class ConvergenceDetector(Node):
         count_msg.data = [float(self.count_remaining)]
         self.pub_count.publish(count_msg)
 
+        if self.enable_observability:
+            self._publish_event(
+                AlgorithmEvent.EVENT_CONVERGENCE_CANDIDATE,
+                "convergence candidate",
+                source_timestamp=t,
+                value_names=[
+                    "metric",
+                    "r_mean_m2",
+                    "decay",
+                    "mean_recent_x_m",
+                    "mean_recent_y_m",
+                    "mean_old_x_m",
+                    "mean_old_y_m",
+                    "count_remaining",
+                ],
+                values=[
+                    metric,
+                    r_val,
+                    decay_term,
+                    float(mean_recent[0]),
+                    float(mean_recent[1]),
+                    float(mean_old[0]),
+                    float(mean_old[1]),
+                    float(self.count_remaining),
+                ],
+            )
+
         # Reset decay reference after every candidate, so the next candidate
         # requires another period of stable behavior.
         self.t0 = t
@@ -327,12 +402,66 @@ class ConvergenceDetector(Node):
                 + f"t={t:.3f}"
             )
 
+            if self.enable_observability:
+                self._publish_event(
+                    AlgorithmEvent.EVENT_CONVERGENCE_CONFIRMED,
+                    "convergence confirmed; fill ready",
+                    source_timestamp=t,
+                    value_names=[
+                        "metric",
+                        "r_mean_m2",
+                        "decay",
+                        "fill_center_x_m",
+                        "fill_center_y_m",
+                        "count_remaining",
+                    ],
+                    values=[
+                        metric,
+                        r_val,
+                        decay_term,
+                        float(mean_recent[0]),
+                        float(mean_recent[1]),
+                        float(self.count_remaining),
+                    ],
+                )
+
             if self.reset_counter_after_event:
                 self.count_remaining = self.count_start
 
                 self.get_logger().info(
                     f"Convergence counter reset to {self.count_start}"
                 )
+
+    def _publish_event(
+        self,
+        event_type,
+        detail,
+        source_timestamp,
+        value_names,
+        values,
+        reason_code=0,
+    ):
+        """Publish a typed mirror without changing convergence state."""
+
+        event = AlgorithmEvent()
+        event.stamp = self.get_clock().now().to_msg()
+        if source_timestamp is None:
+            event.source_timestamp = float("nan")
+            event.source_timestamp_valid = False
+        else:
+            event.source_timestamp = float(source_timestamp)
+            event.source_timestamp_valid = bool(np.isfinite(source_timestamp))
+        event.event_type = event_type
+        event.state = AlgorithmState.STATE_UNAVAILABLE
+        event.state_name = "UNAVAILABLE"
+        event.state_valid = False
+        event.fill_id = 0
+        event.fill_id_valid = False
+        event.reason_code = reason_code
+        event.detail = detail
+        event.value_names = list(value_names)
+        event.values = [float(value) for value in values]
+        self.algorithm_event_publisher.publish(event)
 
 
 def main():

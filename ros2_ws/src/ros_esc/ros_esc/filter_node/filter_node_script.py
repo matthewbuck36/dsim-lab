@@ -17,7 +17,11 @@ import rclpy
 import numpy as np
 from rclpy.node import Node
 import rclpy.parameter
-from ros_esc_interfaces.msg import Timekeeper, StampedFloat64MultiArray
+from ros_esc_interfaces.msg import (
+    GescDiagnostics,
+    StampedFloat64MultiArray,
+    Timekeeper,
+)
 from ros_esc.config_parsing import parse_filter_config
 
 class CustomFilter(Node):
@@ -80,6 +84,11 @@ class CustomFilter(Node):
         #                     help=string_msg)
         parser.add_argument('--append_encoder_data', type=str, dest="combine_enc_data",
                             help=encoder_inp_msg)
+        parser.add_argument("--enable_observability", default="False")
+        parser.add_argument(
+            "--gesc_diagnostics_topic",
+            default="/gesc_gaussian/gesc_diagnostics",
+        )
         args = parser.parse_args()
 
         # Initialize variables
@@ -89,6 +98,7 @@ class CustomFilter(Node):
         self.input_value = None
         self.input_value_timestamp = None
         self.encoder_value = None
+        self.enable_observability = _as_bool(args.enable_observability)
 
         # Specify if we want to combine cost values and encoder values
         self.combine_data = False
@@ -140,6 +150,11 @@ class CustomFilter(Node):
         self.filter_publisher = self.create_publisher(
             StampedFloat64MultiArray, args.out_topic, 10
         )
+        self.gesc_diagnostics_publisher = None
+        if self.enable_observability:
+            self.gesc_diagnostics_publisher = self.create_publisher(
+                GescDiagnostics, args.gesc_diagnostics_topic, 10
+            )
 
     def input_value_callback(self, msg: StampedFloat64MultiArray):
         """This collects the input value, then uses the filter, then publishes the result."""
@@ -185,6 +200,8 @@ class CustomFilter(Node):
                 input_val = np.concatenate([filter_input, self.encoder_value])
             else:
                 input_val = self.input_value
+
+            state_before = np.array(self.z_vec, dtype=np.float64, copy=True)
 
             # Input the cost value into the filter, save the result
             filter_output = self.custom_filter.filter_output(
@@ -243,6 +260,66 @@ class CustomFilter(Node):
             # Publish the message
             self.filter_publisher.publish(msg)
 
+            if self.enable_observability:
+                self.publish_gesc_diagnostics(
+                    current_time,
+                    input_val,
+                    output,
+                    state_before,
+                    z_vec_dot,
+                    self.z_vec,
+                )
+
+    def publish_gesc_diagnostics(
+        self,
+        source_timestamp,
+        filter_input,
+        filter_output,
+        state_before,
+        state_derivative,
+        state_after,
+    ):
+        """Publish the values used by the unchanged filter evaluation."""
+
+        input_values = _float_list(filter_input)
+        output_values = _float_list(filter_output)
+        before_values = _float_list(state_before)
+        derivative_values = _float_list(state_derivative)
+        after_values = _float_list(state_after)
+
+        diagnostics = GescDiagnostics()
+        diagnostics.stamp = self.get_clock().now().to_msg()
+        diagnostics.source_timestamp = float(source_timestamp)
+        diagnostics.source_timestamp_valid = bool(
+            np.isfinite(source_timestamp)
+        )
+        diagnostics.valid = bool(
+            np.all(np.isfinite(input_values))
+            and np.all(np.isfinite(output_values))
+            and np.all(np.isfinite(before_values))
+            and np.all(np.isfinite(derivative_values))
+            and np.all(np.isfinite(after_values))
+        )
+        diagnostics.filter_input = input_values
+        diagnostics.filter_output = output_values
+        diagnostics.filter_state_before = before_values
+        diagnostics.filter_state_derivative = derivative_values
+        diagnostics.filter_state_after = after_values
+
+        if self.combine_data and self.encoder_value.size > 0:
+            diagnostics.dither_phase_rad = float(self.encoder_value.flat[0])
+            diagnostics.dither_phase_valid = bool(
+                np.isfinite(diagnostics.dither_phase_rad)
+            )
+        else:
+            diagnostics.dither_phase_rad = float("nan")
+            diagnostics.dither_phase_valid = False
+        diagnostics.dither_amplitude_m = float("nan")
+        diagnostics.dither_amplitude_valid = False
+        diagnostics.dither_angular_frequency_rad_sec = float("nan")
+        diagnostics.dither_angular_frequency_valid = False
+        self.gesc_diagnostics_publisher.publish(diagnostics)
+
     # pylint: disable=too-many-arguments
     # pylint: disable=line-too-long
     def check_filter_valid_state(self, previous_time, current_time, orig_input_val, orig_z_vec, orig_z_vec_dot):
@@ -295,6 +372,21 @@ class CustomFilter(Node):
         # Return the new filter state
         return z_vec_new
 
+
+def _as_bool(value):
+    """Parse existing launch-style string booleans."""
+
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _float_list(values):
+    """Flatten numeric filter data into ROS-compatible Python floats."""
+
+    return [float(value) for value in np.asarray(values).reshape(-1)]
+
+
 def main(args=None):
     """This will initialize and launch the custom filter node."""
 
@@ -308,6 +400,6 @@ def main(args=None):
         node.destroy_node()
         rclpy.try_shutdown()
 
+
 if __name__ == "__main__":
     main()
-    

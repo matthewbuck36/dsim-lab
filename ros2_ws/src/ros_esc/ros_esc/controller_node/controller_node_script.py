@@ -17,7 +17,11 @@ import rclpy
 import numpy as np
 from rclpy.node import Node
 import rclpy.parameter
-from ros_esc_interfaces.msg import Timekeeper, StampedFloat64MultiArray
+from ros_esc_interfaces.msg import (
+    ControlDiagnostics,
+    StampedFloat64MultiArray,
+    Timekeeper,
+)
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from ros_esc.config_parsing import parse_object_config
@@ -74,6 +78,11 @@ class CustomController(Node):
         parser.add_argument('out_control_topic', type=str, help=output_controller_topic_msg)
         parser.add_argument('out_twist_topic', type=str, help=output_twist_topic_msg)
         parser.add_argument('config', type=str, help=config_file_msg)
+        parser.add_argument("--enable_observability", default="False")
+        parser.add_argument(
+            "--control_diagnostics_topic",
+            default="/gesc_gaussian/control_diagnostics",
+        )
         args = parser.parse_args()
 
         # Initialize variables
@@ -82,6 +91,7 @@ class CustomController(Node):
         self.start_time = None
         self.input_value_timestamp = None
         self.timekeeping_mode = None
+        self.enable_observability = _as_bool(args.enable_observability)
 
         # Expand the filepath if the ~ character is used
         config_filepath = os.path.expanduser(args.config)
@@ -123,6 +133,11 @@ class CustomController(Node):
         self.controller_publisher = self.create_publisher(
             StampedFloat64MultiArray, args.out_control_topic, 10
         )
+        self.control_diagnostics_publisher = None
+        if self.enable_observability:
+            self.control_diagnostics_publisher = self.create_publisher(
+                ControlDiagnostics, args.control_diagnostics_topic, 10
+            )
 
     def input_value_callback(self, msg: StampedFloat64MultiArray):
         """This function collects the input values."""
@@ -234,6 +249,96 @@ class CustomController(Node):
             # Publish the message
             self.controller_publisher.publish(msg)
 
+            if self.enable_observability:
+                self.publish_control_diagnostics(current_time, output)
+
+    def publish_control_diagnostics(self, source_timestamp, output):
+        """Publish pre/post-saturation values retained by compatible controllers."""
+
+        unavailable = [float("nan")] * 6
+        controller = self.controller_obj
+        unsaturated = getattr(controller, "last_command_unsaturated", None)
+        saturated = getattr(controller, "last_command_saturated", None)
+        saturation_flags = getattr(controller, "last_saturation_flags", None)
+        limit_valid = getattr(controller, "last_limit_valid", None)
+        lower_limits = getattr(controller, "last_lower_limits", None)
+        upper_limits = getattr(controller, "last_upper_limits", None)
+        diagnostics_available = all(
+            value is not None
+            for value in (
+                unsaturated,
+                saturated,
+                saturation_flags,
+                limit_valid,
+                lower_limits,
+                upper_limits,
+            )
+        )
+
+        msg = ControlDiagnostics()
+        msg.stamp = self.get_clock().now().to_msg()
+        msg.source_timestamp = float(source_timestamp)
+        msg.source_timestamp_valid = bool(np.isfinite(source_timestamp))
+        msg.controller_type = type(controller).__name__
+        if diagnostics_available:
+            msg.gesc_command_unsaturated = _six_float_list(unsaturated)
+            msg.gesc_command_unsaturated_valid = bool(
+                np.all(np.isfinite(unsaturated))
+            )
+            msg.combined_command_unsaturated = _six_float_list(unsaturated)
+            msg.combined_command_unsaturated_valid = (
+                msg.gesc_command_unsaturated_valid
+            )
+            msg.saturation_flags = [
+                bool(value) for value in np.asarray(saturation_flags)
+            ]
+            msg.limit_valid = [bool(value) for value in np.asarray(limit_valid)]
+            msg.lower_limits = _six_float_list(lower_limits)
+            msg.upper_limits = _six_float_list(upper_limits)
+        else:
+            msg.gesc_command_unsaturated = unavailable
+            msg.gesc_command_unsaturated_valid = False
+            msg.combined_command_unsaturated = unavailable
+            msg.combined_command_unsaturated_valid = False
+            msg.saturation_flags = [False] * 6
+            msg.limit_valid = [False] * 6
+            msg.lower_limits = unavailable
+            msg.upper_limits = unavailable
+
+        msg.supervisor_contribution = unavailable
+        msg.supervisor_contribution_valid = False
+        msg.final_command = _six_float_list(output)
+        msg.final_command_valid = bool(np.all(np.isfinite(output)))
+        k_vx = getattr(controller, "k_vx", None)
+        k_wz = getattr(controller, "k_wz", None)
+        if k_vx is not None and k_wz is not None:
+            msg.k_vx = float(k_vx)
+            msg.k_wz = float(k_wz)
+            msg.gains_valid = bool(np.isfinite([k_vx, k_wz]).all())
+        else:
+            msg.k_vx = float("nan")
+            msg.k_wz = float("nan")
+            msg.gains_valid = False
+        self.control_diagnostics_publisher.publish(msg)
+
+
+def _as_bool(value):
+    """Parse existing launch-style string booleans."""
+
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _six_float_list(values):
+    """Return a fixed six-element list of Python floats."""
+
+    flattened = np.asarray(values).reshape(-1)
+    if flattened.size != 6:
+        raise ValueError("controller diagnostics require exactly six values")
+    return [float(value) for value in flattened]
+
+
 def main(args=None):
     """This will initialize and launch the custom controller node."""
 
@@ -247,6 +352,6 @@ def main(args=None):
         node.destroy_node()
         rclpy.try_shutdown()
 
+
 if __name__ == "__main__":
     main()
-    

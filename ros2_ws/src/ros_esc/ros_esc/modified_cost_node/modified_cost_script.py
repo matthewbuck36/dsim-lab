@@ -8,6 +8,9 @@ import rclpy.parameter
 
 from nav_msgs.msg import Odometry
 from ros_esc_interfaces.msg import (
+    AlgorithmEvent,
+    AlgorithmState,
+    CostBreakdown,
     StampedFloat64MultiArray,
     StampedTransformMultiArray,
 )
@@ -130,6 +133,17 @@ class ModifiedCost2D(Node):
         #
         # Usually start with "outside_to_anchor".
         self.declare_parameter("history_direction_mode", "outside_to_anchor")
+        self.declare_parameter("enable_observability", False)
+        self.declare_parameter(
+            "cost_breakdown_topic", "/gesc_gaussian/cost_breakdown"
+        )
+        self.declare_parameter(
+            "algorithm_state_topic", "/gesc_gaussian/algorithm_state"
+        )
+        self.declare_parameter(
+            "algorithm_event_topic", "/gesc_gaussian/algorithm_events"
+        )
+        self.declare_parameter("observability_source_mode", "simulation")
 
         # Read parameters.
         self.bias_all = bool(self.get_parameter("bias_all_channels").value)
@@ -174,6 +188,13 @@ class ModifiedCost2D(Node):
         self.history_direction_mode = str(
             self.get_parameter("history_direction_mode").value
         )
+        self.enable_observability = bool(
+            self.get_parameter("enable_observability").value
+        )
+        self.observability_source_mode = self._source_mode(
+            self.get_parameter("observability_source_mode").value
+        )
+        self.observability_configuration_published = False
 
         # ---------------- State ----------------
 
@@ -240,6 +261,26 @@ class ModifiedCost2D(Node):
             args.output_topic,
             10
         )
+
+        self.cost_breakdown_publisher = None
+        self.algorithm_state_publisher = None
+        self.algorithm_event_publisher = None
+        if self.enable_observability:
+            self.cost_breakdown_publisher = self.create_publisher(
+                CostBreakdown,
+                str(self.get_parameter("cost_breakdown_topic").value),
+                10,
+            )
+            self.algorithm_state_publisher = self.create_publisher(
+                AlgorithmState,
+                str(self.get_parameter("algorithm_state_topic").value),
+                10,
+            )
+            self.algorithm_event_publisher = self.create_publisher(
+                AlgorithmEvent,
+                str(self.get_parameter("algorithm_event_topic").value),
+                10,
+            )
 
         self.get_logger().info(
             "ModifiedCost2D started with Gaussian correction + PDE-history affine bias."
@@ -413,12 +454,18 @@ class ModifiedCost2D(Node):
 
         # Preferred path: evaluate correction per sensor channel.
         if self.sensor_xy is not None and self.sensor_xy.shape[0] == cost_vals.size:
+            components = [
+                self._bias_components_at_xy(float(x), float(y))
+                for x, y in self.sensor_xy
+            ]
+            gaussian_cost = np.array(
+                [component[0] for component in components], dtype=np.float64
+            )
+            affine_cost = np.array(
+                [component[1] for component in components], dtype=np.float64
+            )
             biases = np.array(
-                [
-                    self._total_bias_at_xy(float(x), float(y))
-                    for x, y in self.sensor_xy
-                ],
-                dtype=np.float64
+                [component[2] for component in components], dtype=np.float64
             )
 
             if self.bias_all:
@@ -426,6 +473,8 @@ class ModifiedCost2D(Node):
             else:
                 cost_out = cost_vals.copy()
                 cost_out[0] = cost_out[0] + biases[0]
+                gaussian_cost[1:] = 0.0
+                affine_cost[1:] = 0.0
 
         else:
             # Fallback path: evaluate correction at robot center.
@@ -433,19 +482,34 @@ class ModifiedCost2D(Node):
                 return
 
             x, y = float(self.xy[0]), float(self.xy[1])
-            bias = self._total_bias_at_xy(x, y)
+            gaussian_bias, affine_bias, bias = self._bias_components_at_xy(x, y)
 
             if self.bias_all:
                 cost_out = cost_vals + bias
+                gaussian_cost = np.full(cost_vals.shape, gaussian_bias)
+                affine_cost = np.full(cost_vals.shape, affine_bias)
             else:
                 cost_out = cost_vals.copy()
                 cost_out[0] = cost_out[0] + bias
+                gaussian_cost = np.zeros(cost_vals.shape, dtype=np.float64)
+                affine_cost = np.zeros(cost_vals.shape, dtype=np.float64)
+                gaussian_cost[0] = gaussian_bias
+                affine_cost[0] = affine_bias
 
         out = StampedFloat64MultiArray()
         out.header = "Modified Cost 2D"
         out.timestamp = msg.timestamp
         out.data = [float(v) for v in cost_out.tolist()]
         self.pub.publish(out)
+
+        if self.enable_observability:
+            self._publish_observability(
+                msg,
+                cost_vals,
+                gaussian_cost,
+                affine_cost,
+                cost_out,
+            )
 
     # ------------------------------------------------------------
     # Direction estimation
@@ -602,7 +666,141 @@ class ModifiedCost2D(Node):
         """
         Total correction added to original cost.
         """
-        return self._gaussian_bias_at_xy(x, y) + self._affine_bias_at_xy(x, y)
+        return self._bias_components_at_xy(x, y)[2]
+
+    def _bias_components_at_xy(self, x: float, y: float):
+        """Evaluate each correction exactly once and retain its decomposition."""
+
+        gaussian = self._gaussian_bias_at_xy(x, y)
+        affine = self._affine_bias_at_xy(x, y)
+        return gaussian, affine, gaussian + affine
+
+    def _publish_observability(
+        self,
+        source_msg,
+        raw_cost,
+        gaussian_cost,
+        affine_cost,
+        augmented_cost,
+    ):
+        """Publish typed cost/state mirrors after the legacy modified cost."""
+
+        stamp = self.get_clock().now().to_msg()
+        if not self.observability_configuration_published:
+            self._publish_configuration_event(stamp)
+            self.observability_configuration_published = True
+
+        raw_values = [float(value) for value in raw_cost.tolist()]
+        gaussian_values = [float(value) for value in gaussian_cost.tolist()]
+        affine_values = [float(value) for value in affine_cost.tolist()]
+        augmented_values = [float(value) for value in augmented_cost.tolist()]
+        unavailable = [float("nan")] * len(raw_values)
+        affine_weight = 1.0 if self.enable_affine_bias else 0.0
+
+        breakdown = CostBreakdown()
+        breakdown.stamp = stamp
+        breakdown.source_timestamp = float(source_msg.timestamp)
+        breakdown.source_timestamp_valid = bool(
+            np.isfinite(source_msg.timestamp)
+        )
+        breakdown.source_mode = self.observability_source_mode
+        breakdown.source_name = "modified_cost_2d"
+        breakdown.channel_count = len(raw_values)
+        breakdown.raw_sensor_value = unavailable
+        breakdown.filtered_sensor_value = unavailable
+        breakdown.raw_cost = raw_values
+        breakdown.source_score = unavailable
+        breakdown.gaussian_cost = gaussian_values
+        breakdown.affine_cost = affine_values
+        breakdown.augmented_cost = augmented_values
+        breakdown.sensor_weight = 1.0
+        breakdown.gaussian_weight = 1.0
+        breakdown.affine_weight = affine_weight
+        breakdown.raw_sensor_valid = False
+        breakdown.filtered_sensor_valid = False
+        breakdown.raw_cost_valid = bool(np.all(np.isfinite(raw_cost)))
+        breakdown.source_score_valid = False
+        breakdown.gaussian_cost_valid = bool(
+            np.all(np.isfinite(gaussian_cost))
+        )
+        breakdown.affine_cost_valid = bool(np.all(np.isfinite(affine_cost)))
+        breakdown.augmented_cost_valid = bool(
+            np.all(np.isfinite(augmented_cost))
+        )
+        breakdown.weights_valid = True
+        self.cost_breakdown_publisher.publish(breakdown)
+
+        state = AlgorithmState()
+        state.stamp = stamp
+        state.source_timestamp = float(source_msg.timestamp)
+        state.source_timestamp_valid = bool(np.isfinite(source_msg.timestamp))
+        state.run_id = ""
+        state.run_id_valid = False
+        state.algorithm_profile = "legacy_pde_gaussian"
+        state.state = AlgorithmState.STATE_UNAVAILABLE
+        state.state_name = "UNAVAILABLE"
+        state.state_valid = False
+        state.previous_state = AlgorithmState.STATE_UNAVAILABLE
+        state.previous_state_name = "UNAVAILABLE"
+        state.previous_state_valid = False
+        state.transition_reason = ""
+        state.transition_reason_valid = False
+        state.state_elapsed_sec = float("nan")
+        state.state_elapsed_valid = False
+        state.active_fill_count = len(self.terms)
+        state.active_fill_count_valid = True
+        state.active_escape_fill_id = 0
+        state.active_escape_fill_id_valid = False
+        state.sensor_weight = 1.0
+        state.gaussian_weight = 1.0
+        state.affine_weight = affine_weight
+        state.weights_valid = True
+        state.failsafe = False
+        state.failsafe_valid = False
+        self.algorithm_state_publisher.publish(state)
+
+    def _publish_configuration_event(self, stamp):
+        """Publish the effective fixed Phase 01 weights once."""
+
+        event = AlgorithmEvent()
+        event.stamp = stamp
+        event.source_timestamp = float("nan")
+        event.source_timestamp_valid = False
+        event.event_type = AlgorithmEvent.EVENT_CONFIGURATION
+        event.state = AlgorithmState.STATE_UNAVAILABLE
+        event.state_name = "UNAVAILABLE"
+        event.state_valid = False
+        event.fill_id = 0
+        event.fill_id_valid = False
+        event.reason_code = 0
+        event.detail = (
+            "legacy_pde_gaussian fixed observational weights; Phase 01 does "
+            "not switch controller contributions"
+        )
+        event.value_names = [
+            "sensor_weight",
+            "gaussian_weight",
+            "affine_weight",
+            "bias_all_channels",
+        ]
+        event.values = [
+            1.0,
+            1.0,
+            1.0 if self.enable_affine_bias else 0.0,
+            1.0 if self.bias_all else 0.0,
+        ]
+        self.algorithm_event_publisher.publish(event)
+
+    @staticmethod
+    def _source_mode(value):
+        """Map a platform adapter parameter to the common source enum."""
+
+        normalized = str(value).strip().lower()
+        if normalized == "simulation":
+            return CostBreakdown.SOURCE_SIMULATION
+        if normalized == "physical":
+            return CostBreakdown.SOURCE_PHYSICAL
+        return CostBreakdown.SOURCE_UNKNOWN
 
 
 def main():

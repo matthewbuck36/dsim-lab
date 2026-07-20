@@ -114,6 +114,21 @@ class Directional_Controller(ControllerObject):
         if params["set_max_wz"] is not None:
             self.max_wz = params["set_max_wz"]
 
+        self.last_command_unsaturated = None
+        self.last_command_saturated = None
+        self.last_saturation_flags = None
+        self.last_limit_valid = np.array(
+            [True, False, False, False, False, True], dtype=bool
+        )
+        self.last_lower_limits = np.array(
+            [-self.max_vx, np.nan, np.nan, np.nan, np.nan, -self.max_wz],
+            dtype=np.float64,
+        )
+        self.last_upper_limits = np.array(
+            [self.max_vx, np.nan, np.nan, np.nan, np.nan, self.max_wz],
+            dtype=np.float64,
+        )
+
     def controller_output(self, time, state, input_values):
         """This operates on the input arguments and produces the controller output.
 
@@ -130,6 +145,21 @@ class Directional_Controller(ControllerObject):
         # Angular velocity wz
         w_z = self.k_wz*input_values[1]
 
+        self.last_command_unsaturated = np.array(
+            [v_x, 0, 0, 0, 0, w_z], dtype=np.float64
+        )
+        saturation_flags = np.array(
+            [
+                np.abs(v_x) > self.max_vx,
+                False,
+                False,
+                False,
+                False,
+                np.abs(w_z) > self.max_wz,
+            ],
+            dtype=bool,
+        )
+
         # Make sure these commands don't go over our vehicle constraints
         if np.abs(v_x) > self.max_vx:
             v_x = float(self.max_vx*np.sign(v_x))
@@ -139,6 +169,9 @@ class Directional_Controller(ControllerObject):
         # Return a list of commanded velocities
         # [vx, vy, vz, wx, wy, wz]
         output = np.array([v_x, 0, 0, 0, 0, w_z])
+
+        self.last_command_saturated = np.array(output, dtype=np.float64, copy=True)
+        self.last_saturation_flags = saturation_flags
 
         return output
 

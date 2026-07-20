@@ -1,0 +1,215 @@
+"""Focused tests for the Phase 01 typed observability contract."""
+
+import math
+from pathlib import Path
+import sys
+import xml.etree.ElementTree as ET
+
+import pytest
+import rclpy
+from rclpy.serialization import deserialize_message, serialize_message
+
+from ros_esc.cost_function_node.cost_function_node_script import CostFunction
+from ros_esc_interfaces.msg import (
+    AlgorithmEvent,
+    AlgorithmState,
+    ControlDiagnostics,
+    CostBreakdown,
+    GaussianFill,
+    GescDiagnostics,
+)
+
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
+LAUNCH_FILE = (
+    REPOSITORY_ROOT
+    / "ros2_ws/src/turtlebot3_rotating_sensor/launch/gazebo.launch.xml"
+)
+COST_CONFIG = (
+    REPOSITORY_ROOT
+    / "ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC"
+    / "cost_function/2D_local_min.json"
+)
+
+
+class Recorder:
+    """Minimal publisher replacement that retains published messages."""
+
+    def __init__(self):
+        self.messages = []
+
+    def publish(self, msg):
+        self.messages.append(msg)
+
+
+@pytest.mark.parametrize(
+    "message_type",
+    [
+        CostBreakdown,
+        GescDiagnostics,
+        ControlDiagnostics,
+        GaussianFill,
+        AlgorithmState,
+        AlgorithmEvent,
+    ],
+)
+def test_messages_serialize_and_deserialize(message_type):
+    message = message_type()
+    message.stamp.sec = 12
+    message.stamp.nanosec = 345
+    message.source_timestamp = 6.25
+    message.source_timestamp_valid = True
+
+    restored = deserialize_message(serialize_message(message), message_type)
+
+    assert restored.stamp.sec == 12
+    assert restored.stamp.nanosec == 345
+    assert restored.source_timestamp == 6.25
+    assert restored.source_timestamp_valid is True
+
+
+def test_unavailable_fields_are_explicit_and_event_values_are_paired():
+    channel_count = 2
+    message = CostBreakdown()
+    message.channel_count = channel_count
+    message.raw_sensor_value = [math.nan] * channel_count
+    message.filtered_sensor_value = [math.nan] * channel_count
+    message.source_score = [math.nan] * channel_count
+    message.raw_sensor_valid = False
+    message.filtered_sensor_valid = False
+    message.source_score_valid = False
+
+    assert len(message.raw_sensor_value) == message.channel_count
+    assert len(message.filtered_sensor_value) == message.channel_count
+    assert len(message.source_score) == message.channel_count
+    assert all(math.isnan(value) for value in message.raw_sensor_value)
+    assert all(math.isnan(value) for value in message.filtered_sensor_value)
+    assert all(math.isnan(value) for value in message.source_score)
+
+    event = AlgorithmEvent()
+    event.value_names = ["metric", "count_remaining"]
+    event.values = [-0.1, 0.0]
+    assert len(event.value_names) == len(event.values)
+
+
+def test_isotropic_fill_contract_and_reserved_state_constants():
+    sigma = 0.4
+    fill = GaussianFill()
+    fill.fill_id = 1
+    fill.cluster_id = 1
+    fill.revision = 1
+    fill.covariance_xx = sigma ** 2
+    fill.covariance_xy = 0.0
+    fill.covariance_yy = sigma ** 2
+    fill.sigma_major = sigma
+    fill.sigma_minor = sigma
+    fill.covariance_valid = True
+    fill.principal_widths_valid = True
+    fill.active = True
+    fill.superseded = False
+
+    assert fill.fill_id == fill.cluster_id == 1
+    assert fill.revision == 1
+    assert fill.covariance_xx == pytest.approx(sigma ** 2)
+    assert fill.covariance_yy == pytest.approx(sigma ** 2)
+    assert fill.sigma_major == fill.sigma_minor == sigma
+    assert AlgorithmState.STATE_SEARCH != AlgorithmState.STATE_UNAVAILABLE
+    assert AlgorithmState.STATE_FAILSAFE != AlgorithmState.STATE_UNAVAILABLE
+
+
+def _make_cost_node(monkeypatch, enabled):
+    argv = [
+        "cost_function_node",
+        "/test/transforms",
+        "/test/timekeeper",
+        "/test/raw_cost",
+        str(COST_CONFIG),
+        "--enable_observability",
+        "True" if enabled else "False",
+        "--publish_final_breakdown",
+        "True",
+    ]
+    monkeypatch.setattr(sys, "argv", argv)
+    rclpy.init(args=argv)
+    return CostFunction()
+
+
+def test_cost_owner_creates_publishers_only_when_enabled(monkeypatch):
+    disabled = _make_cost_node(monkeypatch, False)
+    try:
+        assert disabled.cost_breakdown_publisher is None
+        assert disabled.algorithm_state_publisher is None
+        assert disabled.algorithm_event_publisher is None
+    finally:
+        disabled.destroy_node()
+        rclpy.shutdown()
+
+    enabled = _make_cost_node(monkeypatch, True)
+    try:
+        assert enabled.cost_breakdown_publisher is not None
+        assert enabled.algorithm_state_publisher is not None
+        assert enabled.algorithm_event_publisher is not None
+
+        enabled.cost_breakdown_publisher = Recorder()
+        enabled.algorithm_state_publisher = Recorder()
+        enabled.algorithm_event_publisher = Recorder()
+        enabled.publish_observability([-1.5, -2.5], source_timestamp=3.0)
+
+        breakdown = enabled.cost_breakdown_publisher.messages[-1]
+        state = enabled.algorithm_state_publisher.messages[-1]
+        assert breakdown.channel_count == 2
+        assert list(breakdown.raw_cost) == [-1.5, -2.5]
+        assert list(breakdown.augmented_cost) == list(breakdown.raw_cost)
+        assert breakdown.sensor_weight == 1.0
+        assert breakdown.gaussian_weight == 0.0
+        assert breakdown.affine_weight == 0.0
+        assert breakdown.raw_sensor_valid is False
+        assert breakdown.source_score_valid is False
+        assert all(math.isnan(value) for value in breakdown.source_score)
+        assert state.state == AlgorithmState.STATE_UNAVAILABLE
+        assert state.state_valid is False
+        assert state.algorithm_profile == "legacy"
+        assert all(
+            len(event.value_names) == len(event.values)
+            for event in enabled.algorithm_event_publisher.messages
+        )
+    finally:
+        enabled.destroy_node()
+        rclpy.shutdown()
+
+
+def test_launch_contract_has_canonical_defaults_and_one_final_owner():
+    root = ET.parse(LAUNCH_FILE).getroot()
+    args = {
+        element.attrib["name"]: element.attrib.get("default")
+        for element in root.findall("arg")
+    }
+    expected = {
+        "enable_observability": "False",
+        "cost_breakdown_topic": "/gesc_gaussian/cost_breakdown",
+        "gesc_diagnostics_topic": "/gesc_gaussian/gesc_diagnostics",
+        "control_diagnostics_topic": "/gesc_gaussian/control_diagnostics",
+        "gaussian_fill_diagnostics_topic": "/gesc_gaussian/gaussian_fills",
+        "algorithm_state_topic": "/gesc_gaussian/algorithm_state",
+        "algorithm_event_topic": "/gesc_gaussian/algorithm_events",
+        "observability_source_mode": "simulation",
+    }
+    for name, default in expected.items():
+        assert args[name] == default
+
+    cost_commands = [
+        element
+        for element in root.findall("executable")
+        if "cost_function_node" in element.attrib.get("cmd", "")
+    ]
+    assert len(cost_commands) == 2
+    non_pde = next(element for element in cost_commands if "unless" in element.attrib)
+    pde = next(element for element in cost_commands if "if" in element.attrib)
+    non_pde_tokens = non_pde.attrib["cmd"].split()
+    pde_tokens = pde.attrib["cmd"].split()
+    non_pde_flag = non_pde_tokens.index("--publish_final_breakdown")
+    pde_flag = pde_tokens.index("--publish_final_breakdown")
+    assert non_pde_tokens[non_pde_flag + 1] == "True"
+    assert pde_tokens[pde_flag + 1] == "False"
+    assert "$(var use_pde_extensions)" in non_pde.attrib["unless"]
+    assert "$(var use_pde_extensions)" in pde.attrib["if"]

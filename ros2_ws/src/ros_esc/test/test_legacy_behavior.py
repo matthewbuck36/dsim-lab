@@ -1,0 +1,320 @@
+"""Focused numerical-equivalence tests for opt-in Phase 01 diagnostics."""
+
+from pathlib import Path
+import sys
+
+import numpy as np
+import pytest
+import rclpy
+
+from ros_esc.controller_node.controller_node_script import CustomController
+from ros_esc.controller_node.controller_objects.turtlebot_vehicle import (
+    Directional_Controller,
+)
+from ros_esc.filter_node.filter_node_script import CustomFilter
+from ros_esc.gaussian_fill_node.gaussian_fill_script import GaussianFill
+from ros_esc.modified_cost_node.modified_cost_script import ModifiedCost2D
+from ros_esc_interfaces.msg import (
+    AlgorithmEvent,
+    StampedFloat64MultiArray,
+)
+
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
+FILTER_CONFIG = (
+    REPOSITORY_ROOT
+    / "ros2_ws/src/ros_esc/ros_esc/filter_node/filter_config_files"
+    / "turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json"
+)
+CONTROLLER_CONFIG = (
+    REPOSITORY_ROOT
+    / "ros2_ws/src/ros_esc/ros_esc/controller_node/controller_config_files"
+    / "turtlebot_vehicle/gradient_methods"
+    / "gesc_controller_full_rotation_voltage.json"
+)
+
+
+class Recorder:
+    """Minimal publisher replacement that retains published messages."""
+
+    def __init__(self):
+        self.messages = []
+
+    def publish(self, msg):
+        self.messages.append(msg)
+
+
+def _run_modified_cost(monkeypatch, observability, bias_all=True):
+    argv = ["modified_cost_node", "/test/raw", "/test/fill", "/test/out"]
+    monkeypatch.setattr(sys, "argv", argv)
+    ros_args = [
+        "--ros-args",
+        "-p",
+        f"enable_observability:={'true' if observability else 'false'}",
+        "-p",
+        f"bias_all_channels:={'true' if bias_all else 'false'}",
+    ]
+    rclpy.init(args=ros_args)
+    node = ModifiedCost2D()
+    try:
+        node.pub = Recorder()
+        if observability:
+            node.cost_breakdown_publisher = Recorder()
+            node.algorithm_state_publisher = Recorder()
+            node.algorithm_event_publisher = Recorder()
+        node.xy = np.array([0.0, 0.0])
+        node.sensor_xy = np.array([[0.0, 0.0], [1.0, 0.0]])
+        node.terms = [(0.7, 0.0, 0.0, 0.5)]
+        node.affine_terms = []
+
+        source = StampedFloat64MultiArray()
+        source.header = "Cost Values"
+        source.timestamp = 9.75
+        source.data = [-1.0, -2.0]
+        node.cost_cb(source)
+
+        legacy = node.pub.messages[-1]
+        breakdown = (
+            node.cost_breakdown_publisher.messages[-1]
+            if observability
+            else None
+        )
+        return legacy, breakdown
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_modified_cost_is_identical_with_observability_enabled(monkeypatch):
+    disabled, _ = _run_modified_cost(monkeypatch, False)
+    enabled, breakdown = _run_modified_cost(monkeypatch, True)
+
+    assert enabled.timestamp == disabled.timestamp == 9.75
+    assert enabled.header == disabled.header == "Modified Cost 2D"
+    assert list(enabled.data) == list(disabled.data)
+    recombined = (
+        np.array(breakdown.raw_cost)
+        + np.array(breakdown.gaussian_cost)
+        + np.array(breakdown.affine_cost)
+    )
+    assert recombined.tolist() == list(enabled.data)
+    assert list(breakdown.augmented_cost) == list(enabled.data)
+    assert breakdown.source_timestamp == enabled.timestamp
+
+
+def test_bias_all_false_preserves_first_channel_only(monkeypatch):
+    legacy, breakdown = _run_modified_cost(monkeypatch, True, bias_all=False)
+
+    assert legacy.data[0] != -1.0
+    assert legacy.data[1] == -2.0
+    assert breakdown.gaussian_cost[1] == 0.0
+    assert breakdown.affine_cost[1] == 0.0
+    assert (
+        breakdown.raw_cost[0]
+        + breakdown.gaussian_cost[0]
+        + breakdown.affine_cost[0]
+    ) == legacy.data[0]
+
+
+def test_directional_controller_retains_exact_saturation_diagnostics():
+    gains = {"k_vx": 1.0, "k_wz": 5.0}
+    params = {
+        "wheel_radius": 0.033,
+        "wheel_distance": 0.158,
+        "wheel_max_rpm": 70,
+        "set_max_vx": 0.1,
+        "set_max_wz": 0.5,
+    }
+    controller = Directional_Controller(gains, params)
+    output = controller.controller_output(
+        2.0,
+        np.zeros(6),
+        np.array([0.25, -0.2]),
+    )
+
+    assert output.tolist() == [0.1, 0.0, 0.0, 0.0, 0.0, -0.5]
+    assert controller.last_command_unsaturated.tolist() == [
+        0.25,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -1.0,
+    ]
+    assert controller.last_command_saturated.tolist() == output.tolist()
+    assert controller.last_saturation_flags.tolist() == [
+        True,
+        False,
+        False,
+        False,
+        False,
+        True,
+    ]
+
+
+def _run_filter(monkeypatch, observability):
+    argv = [
+        "filter_node",
+        "/test/cost",
+        "/test/encoder",
+        "/test/timekeeper",
+        "/test/filter",
+        "--filter_file",
+        str(FILTER_CONFIG),
+        "--append_encoder_data",
+        "True",
+        "--enable_observability",
+        "True" if observability else "False",
+    ]
+    monkeypatch.setattr(sys, "argv", argv)
+    rclpy.init(args=argv)
+    node = CustomFilter()
+    try:
+        node.filter_publisher = Recorder()
+        if observability:
+            node.gesc_diagnostics_publisher = Recorder()
+        node.start_time = 0.0
+        node.timekeeping_mode = "sim time"
+        node.encoder_value = np.array([0.4])
+        node.input_value = np.array([-1.25])
+        node.input_value_timestamp = 0.1
+        node.publish_filter_value()
+        return (
+            node.filter_publisher.messages[-1],
+            np.array(node.z_vec, copy=True),
+            node.gesc_diagnostics_publisher.messages[-1]
+            if observability
+            else None,
+        )
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_filter_output_and_state_are_unchanged(monkeypatch):
+    disabled_output, disabled_state, _ = _run_filter(monkeypatch, False)
+    enabled_output, enabled_state, diagnostics = _run_filter(monkeypatch, True)
+
+    assert enabled_output.data == disabled_output.data
+    assert np.array_equal(enabled_state, disabled_state)
+    assert list(diagnostics.filter_output) == list(enabled_output.data)
+    assert list(diagnostics.filter_state_after) == enabled_state.tolist()
+    assert diagnostics.dither_phase_rad == 0.4
+    assert diagnostics.dither_amplitude_valid is False
+    assert diagnostics.dither_angular_frequency_valid is False
+
+
+def test_controller_legacy_and_typed_final_commands_match(monkeypatch):
+    argv = [
+        "controller_node",
+        "/test/filter",
+        "/test/odom",
+        "/test/timekeeper",
+        "/test/control",
+        "/test/cmd_vel",
+        str(CONTROLLER_CONFIG),
+        "--enable_observability",
+        "True",
+    ]
+    monkeypatch.setattr(sys, "argv", argv)
+    rclpy.init(args=argv)
+    node = CustomController()
+    try:
+        node.twist_publisher = Recorder()
+        node.controller_publisher = Recorder()
+        node.control_diagnostics_publisher = Recorder()
+        node.start_time = 0.0
+        node.timekeeping_mode = "sim time"
+        node.state_value = np.zeros(6)
+        node.input_value = [0.25, -0.2]
+        node.input_value_timestamp = 2.0
+        node.publish_control_value()
+
+        legacy = node.controller_publisher.messages[-1]
+        twist = node.twist_publisher.messages[-1]
+        diagnostics = node.control_diagnostics_publisher.messages[-1]
+        assert list(legacy.data) == [0.1, 0.0, 0.0, 0.0, 0.0, -0.5]
+        assert list(diagnostics.final_command) == list(legacy.data)
+        assert list(diagnostics.gesc_command_unsaturated) == [
+            0.25,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.0,
+        ]
+        assert list(diagnostics.saturation_flags) == [
+            True,
+            False,
+            False,
+            False,
+            False,
+            True,
+        ]
+        assert diagnostics.supervisor_contribution_valid is False
+        assert twist.linear.x == legacy.data[0]
+        assert twist.angular.z == legacy.data[5]
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_gaussian_fill_keeps_legacy_layout_and_publishes_fit_record(monkeypatch):
+    argv = ["gaussian_fill_node"]
+    monkeypatch.setattr(sys, "argv", argv)
+    rclpy.init(
+        args=[
+            "--ros-args",
+            "-p",
+            "enable_observability:=true",
+            "-p",
+            "min_points:=20",
+            "-p",
+            "min_sigma:=0.1",
+            "-p",
+            "max_sigma:=1.0",
+            "-p",
+            "amplitude:=0.5",
+        ]
+    )
+    node = GaussianFill()
+    try:
+        node.pub = Recorder()
+        node.gaussian_fill_diagnostics_publisher = Recorder()
+        node.algorithm_event_publisher = Recorder()
+        x_values = np.linspace(-0.8, 0.8, 8)
+        y_values = np.linspace(-0.8, 0.8, 8)
+        node.buf_xy = np.array(
+            [(x_value, y_value) for x_value in x_values for y_value in y_values]
+        )
+        radius_sq = np.sum(node.buf_xy ** 2, axis=1)
+        node.buf_cost = -(1.2 * np.exp(-radius_sq / (2.0 * 0.35 ** 2)) + 0.1)
+
+        trigger = StampedFloat64MultiArray()
+        trigger.timestamp = 4.5
+        trigger.data = [-0.1, 0.01, 0.1, 0.0, 0.0, 0.2, 0.2, 0.0]
+        node.trigger_cb(trigger)
+
+        legacy = node.pub.messages[-1]
+        fill = node.gaussian_fill_diagnostics_publisher.messages[-1]
+        assert len(legacy.data) == 4
+        assert legacy.data[0] == 0.5
+        assert fill.fill_id == fill.cluster_id == 1
+        assert fill.revision == 1
+        assert fill.center_x == legacy.data[1]
+        assert fill.center_y == legacy.data[2]
+        assert fill.sigma_major == fill.sigma_minor == legacy.data[3]
+        assert fill.covariance_xx == pytest.approx(legacy.data[3] ** 2)
+        assert fill.sample_count_valid is True
+        assert fill.fit_residual_valid is True
+        created = [
+            event
+            for event in node.algorithm_event_publisher.messages
+            if event.event_type == AlgorithmEvent.EVENT_FILL_CREATED
+        ]
+        assert len(created) == 1
+        assert len(created[0].value_names) == len(created[0].values)
+        assert all(np.isfinite(created[0].values))
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
