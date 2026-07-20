@@ -7,6 +7,7 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(builtin_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rclpy REQUIRED)
 
@@ -21,6 +22,12 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/StampedFloat64MultiArray.msg"
   "msg/StampedString.msg"
   "msg/StampedTransformMultiArray.msg"
+  "msg/CostBreakdown.msg"
+  "msg/GescDiagnostics.msg"
+  "msg/ControlDiagnostics.msg"
+  "msg/GaussianFill.msg"
+  "msg/AlgorithmState.msg"
+  "msg/AlgorithmEvent.msg"
 
   # add custom services from srv folder here
   # example: "srv/Example.srv"
@@ -31,6 +38,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   # for example, in the case that one of the above messages depended
   # on a geometry message, write this below: geometry_msgs
   DEPENDENCIES
+  builtin_interfaces
   geometry_msgs
  )
 ament_export_dependencies(rosidl_default_runtime)

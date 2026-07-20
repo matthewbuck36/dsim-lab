@@ -1,0 +1,37 @@
+builtin_interfaces/Time stamp
+float64 source_timestamp
+bool source_timestamp_valid
+string frame_id
+
+uint64 fill_id
+uint64 cluster_id
+uint32 revision
+
+float64 center_x
+float64 center_y
+float64 amplitude
+float64 covariance_xx
+float64 covariance_xy
+float64 covariance_yy
+float64 sigma_major
+float64 sigma_minor
+float64 orientation
+float64 support_radius
+float64 exit_radius
+float64 confidence
+uint32 sample_count
+float64 fit_residual
+float64 fit_condition_number
+uint32 design_escalations
+
+bool covariance_valid
+bool principal_widths_valid
+bool support_radius_valid
+bool exit_radius_valid
+bool confidence_valid
+bool sample_count_valid
+bool fit_residual_valid
+bool fit_condition_number_valid
+bool design_escalations_valid
+bool active
+bool superseded
