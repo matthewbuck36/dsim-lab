@@ -1,11 +1,18 @@
 # GESC Gaussian Topic and Message Dictionary
 
-This dictionary is the resolved Phase 03 interface contract for the current
+> Phase 04 source interfaces are implemented, but Phase 04 is not accepted.
+> The required visible Gazebo smoke exposed the launch/shutdown contradictions
+> recorded in `handoffs/phase_04_handoff.md`; do not treat this dictionary as a
+> completed simulation acceptance claim.
+
+This dictionary is the resolved Phase 04 interface contract for the current
 `dsim-lab` checkout. `algorithm_profile=legacy` remains the default and keeps
 the numerical legacy path. `robust_gaussian_v1` enables the explicit
 supervisor, state-weighted cost composition, model-normalized simulation
 source score, robust synchronized basin estimation, adaptive anisotropic fill
 design, and revision-aware typed fill consumption.
+Phase 04 adds measured radial escape, one targeted stall redesign,
+boundary-aware assisted direction, and bounded indoor recentering.
 
 ## Common timestamp and validity contract
 
@@ -42,7 +49,7 @@ sample-driven.
 | `/gesc_gaussian/source_cost` | `ros_esc_interfaces/msg/CostBreakdown` | `cost_function` | Each robust raw-cost sample, synchronized with model-normalized source score |
 | `/gesc_gaussian/convergence_status` | `ros_esc_interfaces/msg/StampedFloat64MultiArray` | `convergence_detector` | Every valid post-startup convergence evaluation |
 | `/gesc_gaussian/fill_requests` | `ros_esc_interfaces/msg/StampedFloat64MultiArray` | supervisor | Once on each entry to fill design |
-| `/gesc_gaussian/supervisor_command` | `geometry_msgs/msg/Twist` | supervisor | Configured supervisor rate; always zero in Phase 02 |
+| `/gesc_gaussian/supervisor_command` | `geometry_msgs/msg/Twist` | supervisor | Configured supervisor rate; nonzero only for bounded `RECENTER` |
 | `/gesc_gaussian/stop_requested` | `std_msgs/msg/Bool` | experiment operator/runner | `True` latches `FAILSAFE`; `False` is ignored |
 
 The two cost owners are mutually exclusive in `gazebo.launch.xml`. Multiple
@@ -134,7 +141,7 @@ angular components in radians per second.
 |---|---|
 | `controller_type` | Python controller class name |
 | `gesc_command_unsaturated[6]` | GESC command immediately before existing limit checks |
-| `supervisor_contribution[6]` | Invalid in legacy; received/cancelling robust contribution in Phase 02 |
+| `supervisor_contribution[6]` | Invalid in legacy; robust supervisor contribution before final arbitration |
 | `combined_command_unsaturated[6]` | Legacy GESC command, or robust state-authorized combination before one final saturation |
 | `final_command[6]` | Exact post-saturation legacy command |
 | `saturation_flags[6]` | True where a component exceeded its configured limit |
@@ -197,11 +204,23 @@ sample windows, deterministically de-duplicates/caps them, re-estimates the
 basin, and commits one replacement only after validation. Published fill
 versions and the registry history are immutable.
 
+Targeted stall redesign requests use the header
+`ROBUST_FILL_REDESIGN:<active_fill_id>` while retaining the existing request
+timestamp and eight numeric fields. The fill owner resolves the target to its
+current active cluster, requires the same hard-overlap gate, combines retained
+samples, and may commit only a revision of that cluster. `ROBUST_FILL_CREATE`
+marks an ordinary robust request; unknown older headers remain ordinary create
+requests.
+
 Legacy behavior remains separate: legacy still uses the original isotropic
 least-squares path and the legacy modified-cost owner still consumes
 `/cost_bias`. Robust modified cost consumes only `GaussianFill`, evaluates
-`A*exp(-0.5*delta^T*Sigma^-1*delta)`, and replaces both Gaussian and affine
-cluster terms on revision. `/cost_bias` remains exactly
+`A*exp(-0.5*delta^T*Sigma^-1*delta)`, and replaces Gaussian cluster terms on
+revision. Robust affine terms are created only in `ESCAPE_ASSIST` from the
+supervisor's safe world-frame direction. One direction revision is applied
+once, so the 20 Hz state stream does not reset affine decay. Legacy
+fill-triggered history/odometry affine construction is unchanged.
+`/cost_bias` remains exactly
 `[amplitude, center_x, center_y, sigma]`; robust publishes `sigma_major` as a
 lossy compatibility projection, so that topic is not authoritative and cannot
 retract a superseded revision.
@@ -219,7 +238,7 @@ publishes at `supervisor_publish_rate_hz` plus immediately after transitions.
 | `DESIGN_OR_MERGE_FILL` | `(0,1,0)` | Zero |
 | `ESCAPE_REPULSE` | `(0,1,0)` | GESC plus supervisor contribution |
 | `ESCAPE_ASSIST` | `(0,1,1)` | GESC plus supervisor contribution |
-| `RECENTER` | `(0,1,0)` | Supervisor-only; Phase 02 publishes zero |
+| `RECENTER` | `(0,1,0)` | Supervisor-only bounded center-return command |
 | `GOAL_HOLD` | `(0,1,0)` | Zero, latched |
 | `FAILSAFE` | `(0,0,0)` | Zero, latched |
 
@@ -230,8 +249,43 @@ Phase 03 derives `active_fill_count` from unique active typed clusters, not
 fill publications, and an accepted revision becomes `active_escape_fill_id`.
 Supersession tombstones are lifecycle updates and are never treated as a
 design rejection.
-Stable-exit, stall, and recenter-complete inputs exist only in the pure state
-machine in Phase 02; no timer or guessed geometry synthesizes success.
+
+Phase 04 adds these `AlgorithmState` fields. Legacy publishers set all floats
+to `NaN`, revisions to zero, and validity flags false.
+
+| Field group | Meaning |
+|---|---|
+| `escape_center_x`, `escape_center_y`, `escape_exit_radius`, `escape_geometry_valid` | Initial accepted fill geometry, frozen through repulse, redesign, assist, and recenter |
+| `radial_distance`, `radial_distance_valid` | `norm(position - frozen_center)` in meters |
+| `radial_progress`, `radial_progress_valid` | Current distance minus linearly interpolated distance exactly `stall_window_sec` earlier |
+| `escape_exit_hold_elapsed_sec`, validity | Uninterrupted time beyond the strict exit radius with nonnegative valid progress |
+| `escape_stalled`, `escape_stalled_valid` | Valid complete-window progress below `minimum_radial_progress_m`, suppressed during a qualifying exit hold |
+| `safe_direction_x`, `safe_direction_y`, `safe_direction_clearance_m`, validity | Selected world-frame unit direction and predicted look-ahead clearance |
+| `safe_direction_revision`, validity | Increments only when a selected assisted/recenter direction changes |
+| `recenter_target_x`, `recenter_target_y`, validity | Configured room center in meters |
+| `recenter_distance`, validity | Current Euclidean distance to the recenter target in meters |
+
+The initial escape uses pure Gaussian repulsion. A stall emits one event and
+one targeted fill redesign request; an accepted replacement enters
+`ESCAPE_ASSIST` without changing the frozen center, exit radius, or shared
+escape deadline. Stable exit requires `distance > exit_radius`, valid
+nonnegative progress, and the configured uninterrupted hold. Bounded mode
+then enters `RECENTER`; unbounded mode returns directly to `SEARCH`.
+
+Safe direction candidates are evaluated in deterministic rotation order
+`0,+step,-step,+2*step,-2*step,+3*step,-3*step,pi`. Candidates pointing away
+from the preferred half-plane, leaving the wall-margin inset, moving inward
+while already inside a fill avoidance circle, or entering another fill circle
+are rejected. Remaining candidates maximize predicted clearance, alignment,
+then minimum rotation with positive-before-negative tie-breaking. Fill
+avoidance radius is `support_radius + fill_avoidance_margin_m`.
+
+In bounded mode the preferred direction is toward the configured room center;
+in unbounded assisted escape it is opposite the frozen recent approach, with
+outward radial fallback. `RECENTER` uses a bounded differential-drive command,
+rotates in place for large heading error, and holds zero inside the center
+tolerance. All retained fills remain active in the Gaussian cost and in the
+direction selector.
 
 ## `AlgorithmEvent`
 
@@ -269,6 +323,19 @@ counts, center/covariance, depth/curvature, fit validity/residual/condition,
 residual minima, escalation, six confidence components, association,
 identity, revision, and supersession.
 
+Phase 04 emits:
+
+- `EVENT_ESCAPE_STARTED` with frozen fill ID, center, exit radius, and approach;
+- exactly one `EVENT_ESCAPE_STALLED` per attempt with distance, progress,
+  window, and threshold;
+- `EVENT_RECENTER_STARTED` with target and retained-fill count;
+- `EVENT_RECENTER_COMPLETE` after the uninterrupted tolerance dwell;
+- `EVENT_CONFIGURATION` with effective bounds, progress/direction settings,
+  recenter gains, and command caps;
+- existing timeout/failsafe events for stale/invalid input, bounds violation,
+  no safe candidate, state timeout, exception, explicit stop, and watchdog
+  faults.
+
 ## Legacy compatibility mapping
 
 | Legacy topic | Preserved type/layout | Typed relationship |
@@ -284,7 +351,7 @@ identity, revision, and supersession.
 | `/tf`, `/tf_static` | Standard TF topics | Unchanged |
 
 No legacy topic, queue depth, array order, timestamp, cost sign, unit, command
-limit, or default launch behavior changes in Phase 03.
+limit, or default launch behavior changes in Phase 04.
 
 ## Launch and parameter reference
 
@@ -310,8 +377,29 @@ The central launch adds these arguments:
 | `verification_max_sec` | `10.0` |
 | `fill_design_timeout_sec` | `5.0` |
 | `escape_max_sec` | `20.0` |
+| `escape_exit_hold_sec` | `1.0` |
+| `stall_window_sec` | `3.0` |
+| `minimum_radial_progress_m` | `0.05` |
+| `approach_history_window_sec` | `3.0` |
 | `recenter_after_escape` | `True` |
 | `recenter_max_sec` | `30.0` |
+| `room_bounds_x_min_m` | `-2.0` |
+| `room_bounds_x_max_m` | `2.0` |
+| `room_bounds_y_min_m` | `-2.0` |
+| `room_bounds_y_max_m` | `2.0` |
+| `room_center_x_m` | `0.0` |
+| `room_center_y_m` | `0.0` |
+| `wall_margin_m` | `0.35` |
+| `direction_lookahead_m` | `0.50` |
+| `direction_candidate_step_rad` | `0.7853981633974483` |
+| `fill_avoidance_margin_m` | `0.10` |
+| `recenter_tolerance_m` | `0.25` |
+| `recenter_hold_sec` | `1.0` |
+| `recenter_linear_gain` | `0.50` |
+| `recenter_angular_gain` | `1.50` |
+| `recenter_max_linear_velocity_mps` | `0.10` |
+| `recenter_max_angular_velocity_rps` | `0.40` |
+| `recenter_rotate_in_place_angle_rad` | `1.0471975511965976` |
 | `stale_pose_sec` | `0.50` |
 | `stale_sensor_sec` | `0.50` |
 | `supervisor_state_stale_sec` | `0.50` |
@@ -387,3 +475,7 @@ Current Gazebo owners populate them with `source_mode=SOURCE_SIMULATION`.
 the shared filter, controller, fill, state, or event interfaces. Phase 03 does
 not guess a photoresistor, Vicon, physical launch, calibration, room-boundary,
 or collision topic; those remain unavailable until the Phase 09 inventory.
+The Phase 04 bounds are a configured virtual operating envelope. The audited
+Gazebo world has no inferred walls/contact owner, so passing these checks is
+not a physical collision-safety claim. Setting `recenter_after_escape=False`
+selects the unbounded robust path and bypasses bounds and recentering.
