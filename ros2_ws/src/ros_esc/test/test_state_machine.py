@@ -173,11 +173,29 @@ def test_single_redesign_enters_assist_and_preserves_escape_deadline():
             fill_result="success",
             fill_source_timestamp=12.0,
             fill_id=5,
+            active_fill_count=1,
         ),
     )
     assert transition.current == State.ESCAPE_ASSIST
     assert machine.escape_started_sec == escape_start
-    assert machine.active_fill_count == 2
+    assert machine.active_fill_count == 1
+
+
+def test_successful_revision_replaces_authoritative_active_cluster_count():
+    machine = SupervisorStateMachine()
+    enter_design(machine)
+    transition = machine.step(
+        5.1,
+        TransitionInputs(
+            fill_result="success",
+            fill_source_timestamp=11.0,
+            fill_id=9,
+            active_fill_count=3,
+        ),
+    )
+    assert transition.current == State.ESCAPE_REPULSE
+    assert machine.active_fill_count == 3
+    assert machine.active_escape_fill_id == 9
 
 
 def test_escape_and_assisted_escape_share_total_timeout():

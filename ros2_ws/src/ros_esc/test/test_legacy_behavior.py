@@ -18,11 +18,13 @@ from ros_esc.cost_function_node.cost_function_objects.cost_function_objects impo
     Position_Based_Sympy_Expression,
 )
 from ros_esc.gaussian_fill_node.gaussian_fill_script import GaussianFill
+from ros_esc.gaussian_fill_node.basin_estimator import CostSnapshot, PoseSnapshot
 from ros_esc.modified_cost_node.modified_cost_script import ModifiedCost2D
 from ros_esc_interfaces.msg import (
     AlgorithmEvent,
     AlgorithmState,
     CostBreakdown,
+    GaussianFill as GaussianFillMessage,
     StampedFloat64MultiArray,
 )
 
@@ -257,6 +259,65 @@ def test_robust_weighted_cost_keeps_raw_sample_and_evaluates_bias_once(monkeypat
         assert breakdown.gaussian_weight == 1.0
         assert breakdown.affine_weight == 1.0
         assert list(breakdown.augmented_cost) == [5.0]
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_robust_anisotropic_revision_replaces_without_double_count(monkeypatch):
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["modified_cost_node", "/test/raw", "/test/fill", "/test/out"],
+    )
+    rclpy.init(
+        args=[
+            "--ros-args",
+            "-p",
+            "algorithm_profile:=robust_gaussian_v1",
+            "-p",
+            "enable_affine_bias:=false",
+        ]
+    )
+    node = ModifiedCost2D()
+    try:
+        def fill(fill_id, revision, amplitude, active=True, superseded=False):
+            message = GaussianFillMessage()
+            message.source_timestamp = float(revision)
+            message.source_timestamp_valid = True
+            message.fill_id = fill_id
+            message.cluster_id = 1
+            message.revision = revision
+            message.center_x = 0.0
+            message.center_y = 0.0
+            message.amplitude = amplitude
+            message.covariance_xx = 0.25
+            message.covariance_xy = 0.05
+            message.covariance_yy = 0.16
+            message.sigma_major = 0.52
+            message.sigma_minor = 0.37
+            message.covariance_valid = True
+            message.principal_widths_valid = True
+            message.active = active
+            message.superseded = superseded
+            return message
+
+        first = fill(1, 1, 1.0)
+        node.robust_fill_cb(first)
+        assert node._gaussian_bias_at_xy(0.0, 0.0) == pytest.approx(1.0)
+
+        tombstone = fill(1, 1, 1.0, active=False, superseded=True)
+        node.robust_fill_cb(tombstone)
+        assert node._gaussian_bias_at_xy(0.0, 0.0) == 0.0
+
+        replacement = fill(2, 2, 2.0)
+        node.robust_fill_cb(replacement)
+        assert node._gaussian_bias_at_xy(0.0, 0.0) == pytest.approx(2.0)
+        assert list(node.robust_terms) == [2]
+
+        node.robust_fill_cb(first)
+        assert node._gaussian_bias_at_xy(0.0, 0.0) == pytest.approx(2.0)
+        assert list(node.robust_terms) == [2]
     finally:
         node.destroy_node()
         rclpy.shutdown()
@@ -504,6 +565,84 @@ def test_gaussian_fill_keeps_legacy_layout_and_publishes_fit_record(monkeypatch)
         assert len(created) == 1
         assert len(created[0].value_names) == len(created[0].values)
         assert all(np.isfinite(created[0].values))
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_robust_fill_owner_merges_into_one_frozen_revision(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["gaussian_fill_node"])
+    rclpy.init(
+        args=[
+            "--ros-args",
+            "-p",
+            "algorithm_profile:=robust_gaussian_v1",
+            "-p",
+            "minimum_valid_samples:=20",
+            "-p",
+            "maximum_position_speed_mps:=100.0",
+            "-p",
+            "amplitude_max:=10.0",
+            "-p",
+            "sigma_ceiling_m:=2.0",
+            "-p",
+            "max_fills:=1",
+        ]
+    )
+    node = GaussianFill()
+    try:
+        node.pub = Recorder()
+        node.gaussian_fill_diagnostics_publisher = Recorder()
+        node.algorithm_event_publisher = Recorder()
+
+        def load_window(center_x):
+            node.pose_snapshots.clear()
+            node.cost_snapshots.clear()
+            for index in range(60):
+                stamp = -5.9 + index * 0.1
+                angle = index * 2.0 * np.pi / 20.0
+                radius = 0.30 - 0.003 * index
+                x_value = center_x + radius * np.cos(angle)
+                y_value = radius * np.sin(angle)
+                cost = 0.05 * ((x_value - center_x) ** 2 + y_value ** 2)
+                node.pose_snapshots.append(
+                    PoseSnapshot(stamp, x_value, y_value, angle, True)
+                )
+                node.cost_snapshots.append(
+                    CostSnapshot(
+                        stamp,
+                        float("nan"),
+                        False,
+                        cost,
+                        0.2,
+                        True,
+                        AlgorithmState.STATE_DESIGN_OR_MERGE_FILL,
+                        True,
+                    )
+                )
+
+        trigger = StampedFloat64MultiArray()
+        trigger.data = [0.0] * 8
+        load_window(0.0)
+        trigger.timestamp = 42.0
+        node.trigger_cb(trigger)
+        load_window(0.05)
+        trigger.timestamp = 43.0
+        node.trigger_cb(trigger)
+
+        lifecycle = node.gaussian_fill_diagnostics_publisher.messages
+        assert [message.fill_id for message in lifecycle] == [1, 1, 2]
+        assert [message.revision for message in lifecycle] == [1, 1, 2]
+        assert lifecycle[1].active is False
+        assert lifecycle[1].superseded is True
+        assert lifecycle[2].cluster_id == 1
+        assert lifecycle[2].active is True
+        assert node.fill_registry.active_count == 1
+        assert len(node.pub.messages) == 2
+        assert any(
+            event.event_type == AlgorithmEvent.EVENT_FILL_MERGED
+            for event in node.algorithm_event_publisher.messages
+        )
     finally:
         node.destroy_node()
         rclpy.shutdown()

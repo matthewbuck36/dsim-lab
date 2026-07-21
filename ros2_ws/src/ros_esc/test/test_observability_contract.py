@@ -121,6 +121,61 @@ def test_isotropic_fill_contract_and_reserved_state_constants():
     assert AlgorithmState.STATE_SEARCH != AlgorithmState.STATE_UNAVAILABLE
     assert AlgorithmState.STATE_FAILSAFE != AlgorithmState.STATE_UNAVAILABLE
     assert AlgorithmEvent.EVENT_STATE_TRANSITION == 3
+    assert AlgorithmEvent.EVENT_FILL_MERGED == 22
+    assert AlgorithmEvent.EVENT_FILL_SUPERSEDED == 23
+    assert AlgorithmEvent.EVENT_FILL_DESIGN_ESCALATED == 24
+    assert AlgorithmEvent.EVENT_FILL_DESIGN_FAILED == 25
+    assert AlgorithmEvent.EVENT_FILL_LOW_CONFIDENCE == 26
+
+
+def test_robust_fill_lifecycle_and_all_designed_fields_are_explicit():
+    fill = GaussianFill()
+    fill.fill_id = 4
+    fill.cluster_id = 2
+    fill.revision = 3
+    fill.center_x = 1.0
+    fill.center_y = -2.0
+    fill.amplitude = 0.8
+    fill.covariance_xx = 0.25
+    fill.covariance_xy = 0.05
+    fill.covariance_yy = 0.16
+    fill.sigma_major = 0.52
+    fill.sigma_minor = 0.37
+    fill.orientation = 0.4
+    fill.support_radius = 1.56
+    fill.exit_radius = 1.30
+    fill.confidence = 0.75
+    fill.sample_count = 80
+    fill.fit_residual = 0.01
+    fill.fit_condition_number = 20.0
+    fill.design_escalations = 2
+    fill.covariance_valid = True
+    fill.principal_widths_valid = True
+    fill.support_radius_valid = True
+    fill.exit_radius_valid = True
+    fill.confidence_valid = True
+    fill.sample_count_valid = True
+    fill.fit_residual_valid = True
+    fill.fit_condition_number_valid = True
+    fill.design_escalations_valid = True
+    fill.active = True
+    fill.superseded = False
+
+    assert fill.fill_id != fill.cluster_id
+    assert fill.revision > 1
+    assert all(
+        (
+            fill.covariance_valid,
+            fill.principal_widths_valid,
+            fill.support_radius_valid,
+            fill.exit_radius_valid,
+            fill.confidence_valid,
+            fill.sample_count_valid,
+            fill.fit_residual_valid,
+            fill.fit_condition_number_valid,
+            fill.design_escalations_valid,
+        )
+    )
 
 
 def _make_cost_node(monkeypatch, enabled):
@@ -242,6 +297,46 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         "fill_request_topic": "/gesc_gaussian/fill_requests",
         "supervisor_command_topic": "/gesc_gaussian/supervisor_command",
         "supervisor_stop_topic": "/gesc_gaussian/stop_requested",
+        "gaussian_fill_pose_topic": "/odom",
+        "gaussian_fill_estimation_channel_index": "0",
+        "gaussian_fill_sample_sync_tolerance_sec": "0.05",
+        "gaussian_fill_maximum_position_speed_mps": "0.20",
+        "gaussian_fill_outlier_mad_threshold": "3.5",
+        "gaussian_fill_maximum_cluster_samples": "4000",
+        "gaussian_fill_estimation_window_sec": "8.0",
+        "gaussian_fill_minimum_valid_samples": "40",
+        "gaussian_fill_maximum_sample_age_sec": "12.0",
+        "gaussian_fill_mean_shift_iterations": "5",
+        "gaussian_fill_center_tolerance_m": "0.005",
+        "gaussian_fill_position_kernel_bandwidth_m": "0.25",
+        "gaussian_fill_cost_temperature_normalized": "0.05",
+        "gaussian_fill_covariance_eigenvalue_min_m2": "0.0025",
+        "gaussian_fill_covariance_eigenvalue_max_m2": "0.25",
+        "gaussian_fill_quadratic_ridge_lambda": "1e-6",
+        "gaussian_fill_quadratic_condition_number_max": "1e8",
+        "gaussian_fill_center_cost_percentile": "10",
+        "gaussian_fill_shoulder_cost_percentile": "80",
+        "gaussian_fill_inner_mahalanobis_radius": "1.0",
+        "gaussian_fill_minimum_basin_depth": "0.02",
+        "gaussian_fill_covariance_scale": "2.5",
+        "gaussian_fill_sigma_floor_m": "0.15",
+        "gaussian_fill_sigma_ceiling_m": "1.25",
+        "gaussian_fill_amplitude_depth_scale": "1.5",
+        "gaussian_fill_amplitude_curvature_scale": "1.2",
+        "gaussian_fill_amplitude_min": "0.10",
+        "gaussian_fill_amplitude_max": "3.00",
+        "gaussian_fill_validation_grid_points_per_axis": "41",
+        "gaussian_fill_validation_support_sigma": "3.0",
+        "gaussian_fill_maximum_design_escalations": "5",
+        "gaussian_fill_amplitude_escalation_factor": "1.5",
+        "gaussian_fill_width_escalation_factor": "1.25",
+        "gaussian_fill_grid_minimum_tolerance": "1e-9",
+        "gaussian_fill_support_sigma": "3.0",
+        "gaussian_fill_exit_sigma": "2.5",
+        "gaussian_fill_merge_bandwidth_m": "0.50",
+        "gaussian_fill_merge_radius_scale": "2.0",
+        "gaussian_fill_minimum_merge_probability": "0.60",
+        "gaussian_fill_low_confidence_threshold": "0.60",
     }
     for name, default in expected.items():
         assert args[name] == default
@@ -270,6 +365,19 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
     ]
     assert len(supervisor_commands) == 1
     assert "robust_gaussian_v1" in supervisor_commands[0].attrib["if"]
+    gaussian_commands = [
+        element
+        for element in root.findall("executable")
+        if "gaussian_fill_node" in element.attrib.get("cmd", "")
+    ]
+    modified_cost_commands = [
+        element
+        for element in root.findall("executable")
+        if "modified_cost_node" in element.attrib.get("cmd", "")
+    ]
+    assert len(gaussian_commands) == 1
+    assert len(modified_cost_commands) == 1
+    assert "gaussian_fill_diagnostics_topic" in modified_cost_commands[0].attrib["cmd"]
     controller_commands = [
         element
         for element in root.iter("executable")

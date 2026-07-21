@@ -80,6 +80,7 @@ class TransitionInputs:
     fill_result: Optional[str] = None
     fill_source_timestamp: Optional[float] = None
     fill_id: Optional[int] = None
+    active_fill_count: Optional[int] = None
     stable_exit: bool = False
     stalled: bool = False
     recenter_complete: bool = False
@@ -241,7 +242,14 @@ class SupervisorStateMachine:
             if not self._matching_fill_result(inputs.fill_source_timestamp):
                 return None
             if inputs.fill_result == "success":
-                self.active_fill_count += 1
+                if inputs.active_fill_count is None:
+                    self.active_fill_count += 1
+                elif int(inputs.active_fill_count) < 0:
+                    return self._transition(
+                        State.FAILSAFE, now_sec, "invalid active fill-cluster count"
+                    )
+                else:
+                    self.active_fill_count = int(inputs.active_fill_count)
                 if inputs.fill_id is not None and int(inputs.fill_id) > 0:
                     self.active_escape_fill_id = int(inputs.fill_id)
                 destination = (

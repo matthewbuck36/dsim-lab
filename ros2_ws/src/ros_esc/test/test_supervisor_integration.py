@@ -116,6 +116,8 @@ def test_supervisor_request_result_and_stop_failsafe():
         fill.source_timestamp = requests[0].timestamp
         fill.source_timestamp_valid = True
         fill.fill_id = 1
+        fill.cluster_id = 1
+        fill.revision = 1
         fill.active = True
         fill.covariance_valid = True
         fill.principal_widths_valid = True
@@ -128,6 +130,35 @@ def test_supervisor_request_result_and_stop_failsafe():
                 for state in states
             )
         )
+        assert supervisor.machine.active_fill_count == 1
+
+        superseded = GaussianFill()
+        superseded.source_timestamp = fill.source_timestamp
+        superseded.source_timestamp_valid = True
+        superseded.fill_id = 1
+        superseded.cluster_id = 1
+        superseded.revision = 1
+        superseded.active = False
+        superseded.superseded = True
+        fill_pub.publish(superseded)
+        assert _wait_for(lambda: not supervisor.active_fill_records)
+
+        replacement = GaussianFill()
+        replacement.source_timestamp = fill.source_timestamp
+        replacement.source_timestamp_valid = True
+        replacement.fill_id = 2
+        replacement.cluster_id = 1
+        replacement.revision = 2
+        replacement.active = True
+        replacement.covariance_valid = True
+        replacement.principal_widths_valid = True
+        replacement.sigma_major = 0.6
+        replacement.sigma_minor = 0.4
+        fill_pub.publish(replacement)
+        assert _wait_for(
+            lambda: supervisor.active_fill_records.get(1) == (2, 2)
+        )
+        assert supervisor.machine.active_fill_count == 1
 
         stop = Bool()
         stop.data = True

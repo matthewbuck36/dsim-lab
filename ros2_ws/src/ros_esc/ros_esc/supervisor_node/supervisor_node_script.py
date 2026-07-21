@@ -74,6 +74,7 @@ class SupervisorNode(Node):
         self.latest_convergence = None
         self.latest_convergence_receipt_sec = None
         self.pending_fill_result = None
+        self.active_fill_records = {}
         self.stop_requested = False
         self.controller_fault = False
         self.graph_fault = self._graph_fault()
@@ -235,6 +236,21 @@ class SupervisorNode(Node):
     def fill_callback(self, msg):
         if not msg.source_timestamp_valid:
             return
+        cluster_id = int(msg.cluster_id)
+        fill_id = int(msg.fill_id)
+        revision = int(msg.revision)
+        if cluster_id <= 0 or fill_id <= 0 or revision <= 0:
+            return
+        current = self.active_fill_records.get(cluster_id)
+        if msg.superseded or not msg.active:
+            if current is not None and current == (revision, fill_id):
+                del self.active_fill_records[cluster_id]
+            return
+        if current is not None:
+            if revision < current[0]:
+                return
+            if revision == current[0]:
+                return
         required = np.array(
             [
                 msg.center_x,
@@ -246,18 +262,19 @@ class SupervisorNode(Node):
             dtype=np.float64,
         )
         valid = bool(
-            msg.active
-            and msg.fill_id > 0
-            and msg.covariance_valid
+            msg.covariance_valid
             and msg.principal_widths_valid
             and np.all(np.isfinite(required))
             and msg.sigma_major > 0.0
             and msg.sigma_minor > 0.0
         )
+        if valid:
+            self.active_fill_records[cluster_id] = (revision, fill_id)
         self.pending_fill_result = (
             "success" if valid else "rejected",
             float(msg.source_timestamp),
-            int(msg.fill_id),
+            fill_id,
+            len(self.active_fill_records),
         )
 
     def stop_callback(self, msg):
@@ -271,13 +288,18 @@ class SupervisorNode(Node):
         ):
             self.controller_fault = True
         if (
-            msg.event_type == AlgorithmEvent.EVENT_FILL_REJECTED
+            msg.event_type
+            in (
+                AlgorithmEvent.EVENT_FILL_REJECTED,
+                AlgorithmEvent.EVENT_FILL_DESIGN_FAILED,
+            )
             and msg.source_timestamp_valid
         ):
             self.pending_fill_result = (
                 "rejected",
                 float(msg.source_timestamp),
                 None,
+                len(self.active_fill_records),
             )
 
     def timer_callback(self):
@@ -321,7 +343,7 @@ class SupervisorNode(Node):
             and self.latest_convergence is not None
             and float(self.latest_convergence.data[0]) <= 0.0
         )
-        fill_result = self.pending_fill_result or (None, None, None)
+        fill_result = self.pending_fill_result or (None, None, None, None)
         return TransitionInputs(
             convergence=convergence,
             source_score=self.latest_source_score,
@@ -333,6 +355,7 @@ class SupervisorNode(Node):
             fill_result=fill_result[0],
             fill_source_timestamp=fill_result[1],
             fill_id=fill_result[2],
+            active_fill_count=fill_result[3],
         )
 
     @staticmethod

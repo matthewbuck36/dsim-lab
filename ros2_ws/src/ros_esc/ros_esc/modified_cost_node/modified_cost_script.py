@@ -11,6 +11,7 @@ from ros_esc_interfaces.msg import (
     AlgorithmEvent,
     AlgorithmState,
     CostBreakdown,
+    GaussianFill,
     StampedFloat64MultiArray,
     StampedTransformMultiArray,
 )
@@ -147,6 +148,9 @@ class ModifiedCost2D(Node):
         self.declare_parameter("observability_source_mode", "simulation")
         self.declare_parameter("algorithm_profile", "legacy")
         self.declare_parameter("source_cost_topic", "/gesc_gaussian/source_cost")
+        self.declare_parameter(
+            "gaussian_fill_diagnostics_topic", "/gesc_gaussian/gaussian_fills"
+        )
 
         # Read parameters.
         self.bias_all = bool(self.get_parameter("bias_all_channels").value)
@@ -213,10 +217,13 @@ class ModifiedCost2D(Node):
         # Gaussian terms:
         # list[(A, mu_x, mu_y, sigma)]
         self.terms = []
+        self.robust_terms = {}
+        self.robust_cluster_fill_ids = {}
 
         # Affine terms:
         # list[{"anchor": np.array([x,y]), "b0": np.array([bx,by]), "t0": float}]
         self.affine_terms = []
+        self.robust_affine_terms = {}
 
         # Latest robot center position.
         self.xy = None
@@ -279,12 +286,20 @@ class ModifiedCost2D(Node):
                 10
             )
 
-        self.sub_fill = self.create_subscription(
-            StampedFloat64MultiArray,
-            args.input_fill_topic,
-            self.fill_cb,
-            10
-        )
+        if self.robust_profile:
+            self.sub_fill = self.create_subscription(
+                GaussianFill,
+                str(self.get_parameter("gaussian_fill_diagnostics_topic").value),
+                self.robust_fill_cb,
+                10,
+            )
+        else:
+            self.sub_fill = self.create_subscription(
+                StampedFloat64MultiArray,
+                args.input_fill_topic,
+                self.fill_cb,
+                10
+            )
 
         self.pub = self.create_publisher(
             StampedFloat64MultiArray,
@@ -470,6 +485,113 @@ class ModifiedCost2D(Node):
             f"decay_rate={self.affine_decay_rate:.3f}, "
             f"total affine terms={len(self.affine_terms)}"
         )
+
+    def robust_fill_cb(self, msg: GaussianFill):
+        """Apply typed anisotropic fill lifecycle updates without stacking revisions."""
+
+        cluster_id = int(msg.cluster_id)
+        fill_id = int(msg.fill_id)
+        revision = int(msg.revision)
+        if cluster_id <= 0 or fill_id <= 0 or revision <= 0:
+            return
+        current_fill_id = self.robust_cluster_fill_ids.get(cluster_id)
+        current = (
+            self.robust_terms.get(current_fill_id)
+            if current_fill_id is not None
+            else None
+        )
+        if current is not None:
+            if revision < current["revision"]:
+                return
+            if revision == current["revision"]:
+                if (msg.superseded or not msg.active) and fill_id == current_fill_id:
+                    del self.robust_terms[current_fill_id]
+                    del self.robust_cluster_fill_ids[cluster_id]
+                    self.robust_affine_terms.pop(cluster_id, None)
+                return
+
+        if msg.superseded or not msg.active:
+            if current is not None and fill_id == current_fill_id:
+                del self.robust_terms[current_fill_id]
+                del self.robust_cluster_fill_ids[cluster_id]
+                self.robust_affine_terms.pop(cluster_id, None)
+            return
+
+        finite = np.array(
+            [
+                msg.center_x,
+                msg.center_y,
+                msg.amplitude,
+                msg.covariance_xx,
+                msg.covariance_xy,
+                msg.covariance_yy,
+                msg.sigma_major,
+                msg.sigma_minor,
+            ],
+            dtype=np.float64,
+        )
+        if (
+            not msg.covariance_valid
+            or not msg.principal_widths_valid
+            or not np.all(np.isfinite(finite))
+            or msg.amplitude < 0.0
+            or msg.sigma_major <= 0.0
+            or msg.sigma_minor <= 0.0
+        ):
+            return
+        covariance = np.array(
+            [
+                [msg.covariance_xx, msg.covariance_xy],
+                [msg.covariance_xy, msg.covariance_yy],
+            ],
+            dtype=np.float64,
+        )
+        covariance = 0.5 * (covariance + covariance.T)
+        eigenvalues = np.linalg.eigvalsh(covariance)
+        if not np.all(np.isfinite(eigenvalues)) or np.min(eigenvalues) <= 0.0:
+            return
+        try:
+            inverse = np.linalg.inv(covariance)
+        except np.linalg.LinAlgError:
+            return
+
+        if current_fill_id is not None:
+            self.robust_terms.pop(current_fill_id, None)
+        self.robust_terms[fill_id] = {
+            "fill_id": fill_id,
+            "cluster_id": cluster_id,
+            "revision": revision,
+            "amplitude": float(msg.amplitude),
+            "center": np.array([msg.center_x, msg.center_y], dtype=np.float64),
+            "covariance": covariance,
+            "inverse": inverse,
+            "sigma_major": float(msg.sigma_major),
+        }
+        self.robust_cluster_fill_ids[cluster_id] = fill_id
+        self.robust_affine_terms.pop(cluster_id, None)
+        affine = self._build_affine_term(
+            float(msg.center_x), float(msg.center_y), float(msg.sigma_major)
+        )
+        if affine is not None:
+            self.robust_affine_terms[cluster_id] = affine
+
+    def _build_affine_term(self, mu_x, mu_y, sigma):
+        """Create one affine term using the existing direction policy."""
+
+        if not self.enable_affine_bias:
+            return None
+        direction = None
+        if self.use_pde_history_for_affine:
+            direction = self._get_direction_from_pde_history(mu_x, mu_y, sigma)
+        if direction is None:
+            direction = self._get_direction_from_filtered_odom()
+        if direction is None:
+            return None
+        return {
+            "anchor": np.array([mu_x, mu_y], dtype=np.float64),
+            "b0": self.affine_direction_sign * self.affine_gain * direction,
+            "t0": self._now_sec(),
+        }
 
     def algorithm_state_cb(self, msg: AlgorithmState):
         """Cache the supervisor-owned robust weight authorization."""
@@ -687,6 +809,15 @@ class ModifiedCost2D(Node):
         """
         Compute total Gaussian hole/fill correction at position (x,y).
         """
+        if self.robust_profile:
+            point = np.array([x, y], dtype=np.float64)
+            bias = 0.0
+            for term in self.robust_terms.values():
+                delta = point - term["center"]
+                exponent = -0.5 * float(delta.T @ term["inverse"] @ delta)
+                bias += term["amplitude"] * math.exp(exponent)
+            return float(bias)
+
         if not self.terms:
             return 0.0
 
@@ -710,7 +841,11 @@ class ModifiedCost2D(Node):
 
             b(t) = b0 exp(-affine_decay_rate * (t - t0))
         """
-        if not self.affine_terms:
+        if self.robust_profile:
+            terms = list(self.robust_affine_terms.items())
+        else:
+            terms = list(enumerate(self.affine_terms))
+        if not terms:
             return 0.0
 
         now = self._now_sec()
@@ -719,7 +854,7 @@ class ModifiedCost2D(Node):
 
         x_vec = np.array([x, y], dtype=np.float64)
 
-        for term in self.affine_terms:
+        for key, term in terms:
             anchor = term["anchor"]
             b0 = term["b0"]
             t0 = term["t0"]
@@ -736,10 +871,13 @@ class ModifiedCost2D(Node):
                 continue
 
             total += -float(np.dot(b_t, x_vec - anchor))
-            kept_terms.append(term)
+            kept_terms.append((key, term))
 
         # Remove expired or negligible affine terms.
-        self.affine_terms = kept_terms
+        if self.robust_profile:
+            self.robust_affine_terms = dict(kept_terms)
+        else:
+            self.affine_terms = [term for _, term in kept_terms]
 
         return float(total)
 

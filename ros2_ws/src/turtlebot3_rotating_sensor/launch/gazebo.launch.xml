@@ -63,6 +63,46 @@
     <arg name="gaussian_fill_min_event_center_distance_between_fills" default="0.0"/>
     <arg name="gaussian_fill_center_source" default="event_mean"/>
     <arg name="gaussian_fill_max_fit_center_distance_from_event" default="0.75"/>
+    <arg name="gaussian_fill_pose_topic" default="/odom"/>
+    <arg name="gaussian_fill_estimation_channel_index" default="0"/>
+    <arg name="gaussian_fill_sample_sync_tolerance_sec" default="0.05"/>
+    <arg name="gaussian_fill_maximum_position_speed_mps" default="0.20"/>
+    <arg name="gaussian_fill_outlier_mad_threshold" default="3.5"/>
+    <arg name="gaussian_fill_maximum_cluster_samples" default="4000"/>
+    <arg name="gaussian_fill_estimation_window_sec" default="8.0"/>
+    <arg name="gaussian_fill_minimum_valid_samples" default="40"/>
+    <arg name="gaussian_fill_maximum_sample_age_sec" default="12.0"/>
+    <arg name="gaussian_fill_mean_shift_iterations" default="5"/>
+    <arg name="gaussian_fill_center_tolerance_m" default="0.005"/>
+    <arg name="gaussian_fill_position_kernel_bandwidth_m" default="0.25"/>
+    <arg name="gaussian_fill_cost_temperature_normalized" default="0.05"/>
+    <arg name="gaussian_fill_covariance_eigenvalue_min_m2" default="0.0025"/>
+    <arg name="gaussian_fill_covariance_eigenvalue_max_m2" default="0.25"/>
+    <arg name="gaussian_fill_quadratic_ridge_lambda" default="1e-6"/>
+    <arg name="gaussian_fill_quadratic_condition_number_max" default="1e8"/>
+    <arg name="gaussian_fill_center_cost_percentile" default="10"/>
+    <arg name="gaussian_fill_shoulder_cost_percentile" default="80"/>
+    <arg name="gaussian_fill_inner_mahalanobis_radius" default="1.0"/>
+    <arg name="gaussian_fill_minimum_basin_depth" default="0.02"/>
+    <arg name="gaussian_fill_covariance_scale" default="2.5"/>
+    <arg name="gaussian_fill_sigma_floor_m" default="0.15"/>
+    <arg name="gaussian_fill_sigma_ceiling_m" default="1.25"/>
+    <arg name="gaussian_fill_amplitude_depth_scale" default="1.5"/>
+    <arg name="gaussian_fill_amplitude_curvature_scale" default="1.2"/>
+    <arg name="gaussian_fill_amplitude_min" default="0.10"/>
+    <arg name="gaussian_fill_amplitude_max" default="3.00"/>
+    <arg name="gaussian_fill_validation_grid_points_per_axis" default="41"/>
+    <arg name="gaussian_fill_validation_support_sigma" default="3.0"/>
+    <arg name="gaussian_fill_maximum_design_escalations" default="5"/>
+    <arg name="gaussian_fill_amplitude_escalation_factor" default="1.5"/>
+    <arg name="gaussian_fill_width_escalation_factor" default="1.25"/>
+    <arg name="gaussian_fill_grid_minimum_tolerance" default="1e-9"/>
+    <arg name="gaussian_fill_support_sigma" default="3.0"/>
+    <arg name="gaussian_fill_exit_sigma" default="2.5"/>
+    <arg name="gaussian_fill_merge_bandwidth_m" default="0.50"/>
+    <arg name="gaussian_fill_merge_radius_scale" default="2.0"/>
+    <arg name="gaussian_fill_minimum_merge_probability" default="0.60"/>
+    <arg name="gaussian_fill_low_confidence_threshold" default="0.60"/>
     <arg name="pde_cost_history_topic" default="/turtlebot3/cost_value_chatter"/>
     <arg name="modified_cost_enable_affine_bias" default="True"/>
     <arg name="modified_cost_affine_gain" default="0.5"/>
@@ -537,6 +577,7 @@
             -p enable_observability:=$(var enable_observability)
             -p algorithm_profile:=$(var algorithm_profile)
             -p source_cost_topic:=$(var source_cost_topic)
+            -p gaussian_fill_diagnostics_topic:=$(var gaussian_fill_diagnostics_topic)
             -p cost_breakdown_topic:=$(var cost_breakdown_topic)
             -p algorithm_state_topic:=$(var algorithm_state_topic)
             -p algorithm_event_topic:=$(var algorithm_event_topic)
@@ -599,6 +640,48 @@
             -p enable_observability:=$(var enable_observability)
             -p algorithm_profile:=$(var algorithm_profile)
             -p fill_request_topic:=$(var fill_request_topic)
+            -p pose_topic:=$(var gaussian_fill_pose_topic)
+            -p source_cost_topic:=$(var source_cost_topic)
+            -p algorithm_state_topic:=$(var algorithm_state_topic)
+            -p estimation_channel_index:=$(var gaussian_fill_estimation_channel_index)
+            -p sample_sync_tolerance_sec:=$(var gaussian_fill_sample_sync_tolerance_sec)
+            -p maximum_position_speed_mps:=$(var gaussian_fill_maximum_position_speed_mps)
+            -p outlier_mad_threshold:=$(var gaussian_fill_outlier_mad_threshold)
+            -p maximum_cluster_samples:=$(var gaussian_fill_maximum_cluster_samples)
+            -p estimation_window_sec:=$(var gaussian_fill_estimation_window_sec)
+            -p minimum_valid_samples:=$(var gaussian_fill_minimum_valid_samples)
+            -p maximum_sample_age_sec:=$(var gaussian_fill_maximum_sample_age_sec)
+            -p mean_shift_iterations:=$(var gaussian_fill_mean_shift_iterations)
+            -p center_tolerance_m:=$(var gaussian_fill_center_tolerance_m)
+            -p position_kernel_bandwidth_m:=$(var gaussian_fill_position_kernel_bandwidth_m)
+            -p cost_temperature_normalized:=$(var gaussian_fill_cost_temperature_normalized)
+            -p covariance_eigenvalue_min_m2:=$(var gaussian_fill_covariance_eigenvalue_min_m2)
+            -p covariance_eigenvalue_max_m2:=$(var gaussian_fill_covariance_eigenvalue_max_m2)
+            -p quadratic_ridge_lambda:=$(var gaussian_fill_quadratic_ridge_lambda)
+            -p quadratic_condition_number_max:=$(var gaussian_fill_quadratic_condition_number_max)
+            -p center_cost_percentile:=$(var gaussian_fill_center_cost_percentile)
+            -p shoulder_cost_percentile:=$(var gaussian_fill_shoulder_cost_percentile)
+            -p inner_mahalanobis_radius:=$(var gaussian_fill_inner_mahalanobis_radius)
+            -p minimum_basin_depth:=$(var gaussian_fill_minimum_basin_depth)
+            -p covariance_scale:=$(var gaussian_fill_covariance_scale)
+            -p sigma_floor_m:=$(var gaussian_fill_sigma_floor_m)
+            -p sigma_ceiling_m:=$(var gaussian_fill_sigma_ceiling_m)
+            -p amplitude_depth_scale:=$(var gaussian_fill_amplitude_depth_scale)
+            -p amplitude_curvature_scale:=$(var gaussian_fill_amplitude_curvature_scale)
+            -p amplitude_min:=$(var gaussian_fill_amplitude_min)
+            -p amplitude_max:=$(var gaussian_fill_amplitude_max)
+            -p validation_grid_points_per_axis:=$(var gaussian_fill_validation_grid_points_per_axis)
+            -p validation_support_sigma:=$(var gaussian_fill_validation_support_sigma)
+            -p maximum_design_escalations:=$(var gaussian_fill_maximum_design_escalations)
+            -p amplitude_escalation_factor:=$(var gaussian_fill_amplitude_escalation_factor)
+            -p width_escalation_factor:=$(var gaussian_fill_width_escalation_factor)
+            -p grid_minimum_tolerance:=$(var gaussian_fill_grid_minimum_tolerance)
+            -p support_sigma:=$(var gaussian_fill_support_sigma)
+            -p exit_sigma:=$(var gaussian_fill_exit_sigma)
+            -p merge_bandwidth_m:=$(var gaussian_fill_merge_bandwidth_m)
+            -p merge_radius_scale:=$(var gaussian_fill_merge_radius_scale)
+            -p minimum_merge_probability:=$(var gaussian_fill_minimum_merge_probability)
+            -p low_confidence_threshold:=$(var gaussian_fill_low_confidence_threshold)
             -p gaussian_fill_diagnostics_topic:=$(var gaussian_fill_diagnostics_topic)
             -p algorithm_event_topic:=$(var algorithm_event_topic)
         "
