@@ -1,10 +1,11 @@
 # GESC Gaussian Topic and Message Dictionary
 
-This dictionary is the resolved Phase 02 interface contract for the current
+This dictionary is the resolved Phase 03 interface contract for the current
 `dsim-lab` checkout. `algorithm_profile=legacy` remains the default and keeps
-the Phase 01/numerical legacy path. `robust_gaussian_v1` enables the explicit
+the numerical legacy path. `robust_gaussian_v1` enables the explicit
 supervisor, state-weighted cost composition, model-normalized simulation
-source score, and command watchdog.
+source score, robust synchronized basin estimation, adaptive anisotropic fill
+design, and revision-aware typed fill consumption.
 
 ## Common timestamp and validity contract
 
@@ -35,7 +36,7 @@ sample-driven.
 | `/gesc_gaussian/cost_breakdown` | `ros_esc_interfaces/msg/CostBreakdown` | Legacy final cost owner; `modified_cost_2d` in robust mode | Once per accepted raw-cost sample |
 | `/gesc_gaussian/gesc_diagnostics` | `ros_esc_interfaces/msg/GescDiagnostics` | `custom_filter` | Once per legacy filter output |
 | `/gesc_gaussian/control_diagnostics` | `ros_esc_interfaces/msg/ControlDiagnostics` | `custom_controller` | Once per legacy command output |
-| `/gesc_gaussian/gaussian_fills` | `ros_esc_interfaces/msg/GaussianFill` | `gaussian_fill` | Once per accepted fill |
+| `/gesc_gaussian/gaussian_fills` | `ros_esc_interfaces/msg/GaussianFill` | `gaussian_fill` | Once per new fill; superseded then active records on a merge revision |
 | `/gesc_gaussian/algorithm_state` | `ros_esc_interfaces/msg/AlgorithmState` | Legacy final cost owner, or robust supervisor | Sample-driven legacy placeholder; timer/transition-driven robust state |
 | `/gesc_gaussian/algorithm_events` | `ros_esc_interfaces/msg/AlgorithmEvent` | Source, modified-cost, convergence, and fill owners | At the corresponding configuration, convergence, fill-created, or fill-rejected site |
 | `/gesc_gaussian/source_cost` | `ros_esc_interfaces/msg/CostBreakdown` | `cost_function` | Each robust raw-cost sample, synchronized with model-normalized source score |
@@ -147,40 +148,63 @@ available from the generic controller output.
 
 ## `GaussianFill`
 
-The topic is an append-only registry stream. The latest revision for a
-`fill_id` defines registry state; Phase 01 creates revision one only.
+The topic is the authoritative registry stream in `robust_gaussian_v1`.
+`cluster_id` is the stable basin identity; `fill_id` identifies one immutable
+published version; and `revision` increases within a cluster. A merge publishes
+the old version once as `active=false, superseded=true`, then publishes the
+replacement as active. Consumers reject stale/out-of-order records and retain
+only one active version per cluster.
 
-| Field | Phase 01 meaning | Units/validity |
+| Field | Robust meaning | Units/validity |
 |---|---|---|
-| `frame_id` | `odom` | Frame name |
-| `fill_id` | One-based acceptance order | Valid |
-| `cluster_id` | Equal to `fill_id` | Valid |
-| `revision` | `1` | Valid |
-| `center_x`, `center_y` | Exact legacy published fill center | Meters |
-| `amplitude` | Exact legacy configured fill amplitude | Cost units |
-| `covariance_xx`, `covariance_yy` | `sigma^2` | Square meters, valid |
-| `covariance_xy` | `0.0` | Square meters, valid |
-| `sigma_major`, `sigma_minor` | Exact legacy isotropic sigma | Meters, valid |
-| `orientation` | `0.0` for isotropic fill | Radians |
-| `support_radius`, `exit_radius` | Not implemented | `NaN`, invalid |
-| `confidence` | Not implemented | `NaN`, invalid |
-| `sample_count` | Samples used by the existing least-squares fit | Valid |
-| `fit_residual` | Root-mean-square residual of that fit | Cost units, valid when finite |
-| `fit_condition_number` | Condition number of the existing fit Jacobian | Valid only when finite |
-| `design_escalations` | Not implemented | Zero placeholder, invalid |
-| `active` | Current accepted fill is active | True |
-| `superseded` | No Phase 01 supersession exists | False |
+| `frame_id` | `odom` in the current simulation adapter | Frame name |
+| `fill_id` | Globally monotonic concrete-version ID | Valid |
+| `cluster_id` | Stable basin identity | Valid |
+| `revision` | One-based version within the cluster | Valid |
+| `center_x`, `center_y` | Kernel/cost-weighted basin center | Meters |
+| `amplitude` | Maximum of minimum, depth, and curvature requirements after bounded escalation | Existing raw-cost units |
+| `covariance_xx`, `covariance_xy`, `covariance_yy` | Anisotropic fill covariance | Square meters, valid |
+| `sigma_major`, `sigma_minor`, `orientation` | Canonical principal geometry | Meters, meters, radians |
+| `support_radius` | `support_sigma * sigma_major` | Meters, valid |
+| `exit_radius` | `exit_sigma * sigma_major` | Meters, valid and frozen for the revision |
+| `confidence` | Mean of count, coverage, condition, residual, cap-use, and validation scores | Dimensionless `[0,1]`, valid |
+| `sample_count` | Valid retained samples used for the estimate | Valid |
+| `fit_residual` | Weighted quadratic-fit RMS | Raw-cost units, valid when finite |
+| `fit_condition_number` | Unregularized weighted-design condition | Valid only when finite |
+| `design_escalations` | Completed bounded escalation rounds | Valid |
+| `active`, `superseded` | Lifecycle state of this immutable version | Valid |
 
-Residual and condition diagnostics do not participate in fill acceptance.
-The legacy `/cost_bias` layout remains exactly
-`[amplitude, center_x, center_y, sigma]`.
+The robust owner pairs `/odom` and `/gesc_gaussian/source_cost` one-to-one by
+absolute ROS stamp within `sample_sync_tolerance_sec`. The cost stamp becomes
+the sample stamp. Request-time windows are duration-based and include pose,
+yaw, raw sensor validity/value, raw cost, source score, and controller mode.
+Invalid/stale/regressed/jump samples and MAD outliers are rejected before the
+minimum-sample gate. The robust estimator never uses the independently updated
+legacy `/pde_history` and `/pde_cost_history` buffers.
 
-Legacy continues subscribing directly to `/convergence_event` and preserves
-its publication behavior. Robust mode subscribes to
-`/gesc_gaussian/fill_requests`; an accepted typed `GaussianFill` or rejected
-`AlgorithmEvent` carries the request's exact `source_timestamp`. The accepted
-legacy `/cost_bias` payload is still published unchanged for the existing
-modified-cost owner.
+Center weighting uses a log-sum-exp-normalized spatial/cost kernel. Covariance
+is symmetrized and eigenvalue-clipped; the local quadratic records condition,
+rank, and residual; basin depth comes from center/shoulder percentiles. Width
+is deliberately expanded from the sample covariance, and amplitude scales
+with both depth and width-coupled positive curvature. A 41-by-41 principal-axis
+grid must contain no 8-neighbor interior minimum inside the exit support.
+Amplitude and width escalation are bounded; failure publishes
+`EVENT_FILL_DESIGN_FAILED` and leaves the registry unchanged.
+
+Soft association alone cannot force a merge: the probability threshold and
+the sigma-scaled hard-overlap radius must both pass. A merge combines retained
+sample windows, deterministically de-duplicates/caps them, re-estimates the
+basin, and commits one replacement only after validation. Published fill
+versions and the registry history are immutable.
+
+Legacy behavior remains separate: legacy still uses the original isotropic
+least-squares path and the legacy modified-cost owner still consumes
+`/cost_bias`. Robust modified cost consumes only `GaussianFill`, evaluates
+`A*exp(-0.5*delta^T*Sigma^-1*delta)`, and replaces both Gaussian and affine
+cluster terms on revision. `/cost_bias` remains exactly
+`[amplitude, center_x, center_y, sigma]`; robust publishes `sigma_major` as a
+lossy compatibility projection, so that topic is not authoritative and cannot
+retract a superseded revision.
 
 ## `AlgorithmState`
 
@@ -202,6 +226,10 @@ publishes at `supervisor_publish_rate_hz` plus immediately after transitions.
 The supervisor uses local ROS receipt time for freshness, carries a per-process
 `run_id`, reports previous/current state and transition reason, and correlates
 fill results to the one in-flight request by exact legacy source timestamp.
+Phase 03 derives `active_fill_count` from unique active typed clusters, not
+fill publications, and an accepted revision becomes `active_escape_fill_id`.
+Supersession tombstones are lifecycle updates and are never treated as a
+design rejection.
 Stable-exit, stall, and recenter-complete inputs exist only in the pure state
 machine in Phase 02; no timer or guessed geometry synthesizes success.
 
@@ -228,6 +256,19 @@ recenter-interface, timeout, and failsafe events from the supervisor. The
 controller emits `EVENT_FAILSAFE` for watchdog faults; the supervisor consumes
 that event and latches the global failsafe.
 
+Phase 03 adds:
+
+- `EVENT_FILL_MERGED=22` for an accepted replacement revision;
+- `EVENT_FILL_SUPERSEDED=23` for the frozen inactive prior version;
+- `EVENT_FILL_DESIGN_ESCALATED=24` with amplitude/width step counts;
+- `EVENT_FILL_DESIGN_FAILED=25` when bounded grid validation fails;
+- `EVENT_FILL_LOW_CONFIDENCE=26` when an accepted fill is below threshold.
+
+Robust design events publish finite paired diagnostics for sample/rejection
+counts, center/covariance, depth/curvature, fit validity/residual/condition,
+residual minima, escalation, six confidence components, association,
+identity, revision, and supersession.
+
 ## Legacy compatibility mapping
 
 | Legacy topic | Preserved type/layout | Typed relationship |
@@ -243,7 +284,7 @@ that event and latches the global failsafe.
 | `/tf`, `/tf_static` | Standard TF topics | Unchanged |
 
 No legacy topic, queue depth, array order, timestamp, cost sign, unit, command
-limit, or default launch behavior changes in Phase 02.
+limit, or default launch behavior changes in Phase 03.
 
 ## Launch and parameter reference
 
@@ -283,6 +324,52 @@ The central launch adds these arguments:
 | `supervisor_command_topic` | `/gesc_gaussian/supervisor_command` |
 | `supervisor_stop_topic` | `/gesc_gaussian/stop_requested` |
 
+Phase 03 adds these robust-fill launch arguments; each maps to the node
+parameter obtained by removing the `gaussian_fill_` prefix:
+
+| Launch argument | Default |
+|---|---:|
+| `gaussian_fill_pose_topic` | `/odom` |
+| `gaussian_fill_estimation_channel_index` | `0` |
+| `gaussian_fill_sample_sync_tolerance_sec` | `0.05` |
+| `gaussian_fill_maximum_position_speed_mps` | `0.20` |
+| `gaussian_fill_outlier_mad_threshold` | `3.5` |
+| `gaussian_fill_maximum_cluster_samples` | `4000` |
+| `gaussian_fill_estimation_window_sec` | `8.0` |
+| `gaussian_fill_minimum_valid_samples` | `40` |
+| `gaussian_fill_maximum_sample_age_sec` | `12.0` |
+| `gaussian_fill_mean_shift_iterations` | `5` |
+| `gaussian_fill_center_tolerance_m` | `0.005` |
+| `gaussian_fill_position_kernel_bandwidth_m` | `0.25` |
+| `gaussian_fill_cost_temperature_normalized` | `0.05` |
+| `gaussian_fill_covariance_eigenvalue_min_m2` | `0.0025` |
+| `gaussian_fill_covariance_eigenvalue_max_m2` | `0.25` |
+| `gaussian_fill_quadratic_ridge_lambda` | `1e-6` |
+| `gaussian_fill_quadratic_condition_number_max` | `1e8` |
+| `gaussian_fill_center_cost_percentile` | `10` |
+| `gaussian_fill_shoulder_cost_percentile` | `80` |
+| `gaussian_fill_inner_mahalanobis_radius` | `1.0` |
+| `gaussian_fill_minimum_basin_depth` | `0.02` |
+| `gaussian_fill_covariance_scale` | `2.5` |
+| `gaussian_fill_sigma_floor_m` | `0.15` |
+| `gaussian_fill_sigma_ceiling_m` | `1.25` |
+| `gaussian_fill_amplitude_depth_scale` | `1.5` |
+| `gaussian_fill_amplitude_curvature_scale` | `1.2` |
+| `gaussian_fill_amplitude_min` | `0.10` |
+| `gaussian_fill_amplitude_max` | `3.00` |
+| `gaussian_fill_validation_grid_points_per_axis` | `41` |
+| `gaussian_fill_validation_support_sigma` | `3.0` |
+| `gaussian_fill_maximum_design_escalations` | `5` |
+| `gaussian_fill_amplitude_escalation_factor` | `1.5` |
+| `gaussian_fill_width_escalation_factor` | `1.25` |
+| `gaussian_fill_grid_minimum_tolerance` | `1e-9` |
+| `gaussian_fill_support_sigma` | `3.0` |
+| `gaussian_fill_exit_sigma` | `2.5` |
+| `gaussian_fill_merge_bandwidth_m` | `0.50` |
+| `gaussian_fill_merge_radius_scale` | `2.0` |
+| `gaussian_fill_minimum_merge_probability` | `0.60` |
+| `gaussian_fill_low_confidence_threshold` | `0.60` |
+
 `cost_function_node`, `filter_node`, and `controller_node` receive the
 settings as optional CLI arguments. `modified_cost_node`,
 `convergence_detector_node`, and `gaussian_fill_node` receive equivalent ROS
@@ -297,6 +384,6 @@ owner in each profile. Robust observability is mandatory even when the legacy
 The typed topic names and message definitions are platform independent.
 Current Gazebo owners populate them with `source_mode=SOURCE_SIMULATION`.
 `SOURCE_PHYSICAL` is selectable for a future audited adapter without changing
-the shared filter, controller, fill, state, or event interfaces. Phase 01 does
+the shared filter, controller, fill, state, or event interfaces. Phase 03 does
 not guess a photoresistor, Vicon, physical launch, calibration, room-boundary,
 or collision topic; those remain unavailable until the Phase 09 inventory.

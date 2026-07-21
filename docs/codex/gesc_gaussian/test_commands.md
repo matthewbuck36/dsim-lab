@@ -317,3 +317,98 @@ Result: `929 tests, 0 errors, 875 failures, 1 skipped`. The failing-test
 count is unchanged from the Phase 00/01 baseline. The 44 Phase 02/retained
 focused behavior tests pass; the remaining failures are the existing flake8,
 pep257, and lint-cmake debt.
+
+## Phase 03 commands run
+
+### Context and pre-edit baseline
+
+```bash
+DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh 03 implement
+```
+
+Result: `Phase 03 implement context is complete.`
+
+```bash
+source /opt/ros/humble/setup.bash
+cd ros2_ws
+source install/setup.bash
+python3 -m pytest -q \
+  src/ros_esc/test/test_state_machine.py \
+  src/ros_esc/test/test_supervisor_integration.py \
+  src/ros_esc/test/test_observability_contract.py \
+  src/ros_esc/test/test_legacy_behavior.py
+```
+
+Pre-edit result: `44 passed in 1.03s`.
+
+### Build
+
+```bash
+source /opt/ros/humble/setup.bash
+cd ros2_ws
+COLCON_LOG_PATH=/tmp/dsim_phase03_build_log \
+  colcon build --packages-select \
+    ros_esc_interfaces ros_esc turtlebot3_rotating_sensor
+source install/setup.bash
+```
+
+Result: all three packages finished successfully.
+
+### Focused deterministic and integration tests
+
+```bash
+python3 -m pytest -q \
+  src/ros_esc/test/test_robust_gaussian_algorithm.py \
+  src/ros_esc/test/test_state_machine.py \
+  src/ros_esc/test/test_supervisor_integration.py \
+  src/ros_esc/test/test_observability_contract.py \
+  src/ros_esc/test/test_legacy_behavior.py
+```
+
+Result: `65 passed in 2.40s`. This includes all 13 specification categories,
+the three required synthetic claims, exact stable-weight/escalation fixtures,
+sample filtering and synchronization, immutable registry revisions, robust
+owner merge publication, anisotropic modified-cost replacement, supervisor
+cluster accounting, launch defaults, and retained legacy numerical behavior.
+
+### Generated interfaces and launch parsing
+
+```bash
+ros2 interface show ros_esc_interfaces/msg/GaussianFill
+ros2 interface show ros_esc_interfaces/msg/AlgorithmEvent
+ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml --show-args
+ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml \
+  algorithm_profile:=robust_gaussian_v1 \
+  use_pde_extensions:=True \
+  --show-args
+```
+
+Result: both interfaces include the Phase 03 lifecycle fields/constants; both
+profiles parse and expose all robust estimator/designer/registry defaults. The
+source launch contract contains one Gaussian owner, one modified-cost owner,
+one supervisor, and one controller/`/cmd_vel` owner.
+
+### Repository-standard package tests
+
+```bash
+COLCON_LOG_PATH=/tmp/dsim_phase03_test_log \
+  colcon test --packages-select \
+    ros_esc_interfaces ros_esc turtlebot3_rotating_sensor
+colcon test-result --all --verbose
+```
+
+Result: `950 tests, 0 errors, 875 failures, 1 skipped`. The failing count is
+unchanged from the Phase 00–02 baseline. Phase 03 adds 21 passing focused tests
+over the Phase 02 total; remaining failures are the existing flake8, pep257,
+and lint-cmake debt. No Gazebo motion or physical hardware was run.
+
+### Final documentation and repository checks
+
+```bash
+DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_required_docs.sh
+DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh 04 plan
+git diff --check
+```
+
+Result: required Phase 00 documents exist, the Phase 04 planning context is
+complete, and `git diff --check` passes with no output.
