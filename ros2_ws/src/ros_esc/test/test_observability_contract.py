@@ -330,6 +330,7 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
     }
     expected = {
         "algorithm_profile": "legacy",
+        "supervisor_use_sim_time": "True",
         "enable_observability": "False",
         "cost_breakdown_topic": "/gesc_gaussian/cost_breakdown",
         "gesc_diagnostics_topic": "/gesc_gaussian/gesc_diagnostics",
@@ -343,6 +344,9 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         "fill_request_topic": "/gesc_gaussian/fill_requests",
         "supervisor_command_topic": "/gesc_gaussian/supervisor_command",
         "supervisor_stop_topic": "/gesc_gaussian/stop_requested",
+        "recording_ready_required": "False",
+        "recording_ready_topic": "/gesc_gaussian/recording_ready",
+        "recording_ready_stale_sec": "0.50",
         "escape_exit_hold_sec": "1.0",
         "stall_window_sec": "3.0",
         "minimum_radial_progress_m": "0.05",
@@ -432,6 +436,10 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
     ]
     assert len(supervisor_commands) == 1
     assert "robust_gaussian_v1" in supervisor_commands[0].attrib["if"]
+    assert (
+        "-p use_sim_time:=$(var supervisor_use_sim_time)"
+        in supervisor_commands[0].attrib["cmd"]
+    )
     gaussian_commands = [
         element
         for element in root.findall("executable")
@@ -451,3 +459,9 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         if "controller_node" in element.attrib.get("cmd", "")
     ]
     assert len(controller_commands) == 1
+    controller_command = controller_commands[0].attrib["cmd"]
+    assert "--recording_ready_required" in controller_command
+    assert "$(var recording_ready_required)" in controller_command
+    assert "--recording_ready_topic" in controller_command
+    assert "$(var recording_ready_topic)" in controller_command
+    assert "--recording_ready_stale_sec" in controller_command

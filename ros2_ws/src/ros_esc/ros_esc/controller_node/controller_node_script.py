@@ -28,6 +28,7 @@ from ros_esc_interfaces.msg import (
 )
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
+from std_msgs.msg import Bool
 from ros_esc.config_parsing import parse_object_config
 from ros_esc.supervisor_node.state_machine import ROBUST_PROFILE, VALID_PROFILES
 
@@ -106,6 +107,11 @@ class CustomController(Node):
         parser.add_argument("--command_watchdog_rate_hz", type=float, default=20.0)
         parser.add_argument("--startup_timeout_sec", type=float, default=5.0)
         parser.add_argument("--zero_command_on_shutdown", default="True")
+        parser.add_argument("--recording_ready_required", default="False")
+        parser.add_argument(
+            "--recording_ready_topic", default="/gesc_gaussian/recording_ready"
+        )
+        parser.add_argument("--recording_ready_stale_sec", type=float, default=0.5)
         args = parser.parse_args()
 
         # Initialize variables
@@ -140,6 +146,10 @@ class CustomController(Node):
         self.latest_algorithm_state = None
         self.supervisor_command = np.zeros(6, dtype=np.float64)
         self.last_local_fault = None
+        self.recording_ready_required = _as_bool(args.recording_ready_required)
+        self.recording_ready_stale_sec = max(0.0, args.recording_ready_stale_sec)
+        self.recording_ready = False
+        self.recording_ready_receipt_monotonic = None
 
         # Expand the filepath if the ~ character is used
         config_filepath = os.path.expanduser(args.config)
@@ -193,6 +203,7 @@ class CustomController(Node):
             )
         self.algorithm_state_subscriber = None
         self.supervisor_command_subscriber = None
+        self.recording_ready_subscriber = None
         self.watchdog_timer = None
         if self.robust_profile:
             self.algorithm_event_publisher = self.create_publisher(
@@ -210,6 +221,14 @@ class CustomController(Node):
                 self.supervisor_command_callback,
                 10,
             )
+        if self.recording_ready_required:
+            self.recording_ready_subscriber = self.create_subscription(
+                Bool,
+                args.recording_ready_topic,
+                self.recording_ready_callback,
+                10,
+            )
+        if self.robust_profile or self.recording_ready_required:
             watchdog_rate = max(1e-6, float(args.command_watchdog_rate_hz))
             self.watchdog_timer = self.create_timer(
                 1.0 / watchdog_rate, self.watchdog_callback
@@ -279,6 +298,14 @@ class CustomController(Node):
         self.supervisor_command = _twist_to_six(msg)
         self.supervisor_command_receipt_sec = self._now_sec()
 
+    def recording_ready_callback(self, msg: Bool):
+        """Accept a fresh true recorder heartbeat or immediately force zero."""
+
+        self.recording_ready = bool(msg.data)
+        self.recording_ready_receipt_monotonic = time.monotonic()
+        if not self.recording_ready:
+            self._publish_zero("recording readiness is false", report_fault=False)
+
     def timekeeping_callback(self, msg: Timekeeper):
         """This function collects the information from the input timekeeping topic."""
 
@@ -327,6 +354,11 @@ class CustomController(Node):
                     output = self.controller_obj.saturate_command(
                         combined_unsaturated
                     )
+            recording_fault = self._recording_fault_reason()
+            if recording_fault is not None:
+                combined_unsaturated = np.zeros(6, dtype=np.float64)
+                supervisor_report = -gesc_unsaturated
+                output = np.zeros(6, dtype=np.float64)
             # Convert the values to floats
             output = [float(x) for x in output]
 
@@ -547,21 +579,38 @@ class CustomController(Node):
             return np.asarray(supervisor_command, dtype=np.float64)
         return np.zeros(6, dtype=np.float64)
 
+    def _recording_fault_reason(self):
+        if not self.recording_ready_required:
+            return None
+        receipt = self.recording_ready_receipt_monotonic
+        if receipt is None:
+            return "recording readiness heartbeat is missing"
+        age = time.monotonic() - receipt
+        if age < 0.0 or age > self.recording_ready_stale_sec:
+            return "recording readiness heartbeat is stale"
+        if not self.recording_ready:
+            return "recording readiness is false"
+        return None
+
     def watchdog_callback(self):
         """Continuously enforce zero output whenever robust authorization is absent."""
 
-        fault = self._robust_fault_reason()
+        fault = self._robust_fault_reason() if self.robust_profile else None
+        recording_fault = self._recording_fault_reason()
+        if recording_fault is not None:
+            fault = recording_fault
         state = self.latest_algorithm_state
         motion_authorized = (
-            state is not None
+            not self.robust_profile
+            or (state is not None
             and state.state in (
                 AlgorithmState.STATE_SEARCH,
                 AlgorithmState.STATE_ESCAPE_REPULSE,
                 AlgorithmState.STATE_ESCAPE_ASSIST,
                 AlgorithmState.STATE_RECENTER,
-            )
+            ))
         )
-        if fault is not None:
+        if fault is not None and recording_fault is None:
             if not fault.startswith("startup waiting"):
                 self._emit_local_fault_once(fault)
         if fault is not None or not motion_authorized:

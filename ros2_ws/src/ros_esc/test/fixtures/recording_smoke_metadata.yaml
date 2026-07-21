@@ -1,0 +1,23 @@
+schema_version: 1
+experiment_version: phase05-smoke-v1
+operator: codex-automated-test
+mode: simulation
+algorithm_profile: robust_gaussian_v1
+scenario_id: phase05-short-recording
+random_seed: 5005
+environment:
+  bounds_m: {x_min: -2.0, x_max: 2.0, y_min: -2.0, y_max: 2.0}
+  room_center_m: {x: 0.0, y: 0.0}
+robot_starting_pose: {x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+sources:
+  - {id: 1, x_m: 1.0, y_m: 0.5, relative_lumen_input: 450.0}
+  - {id: 2, x_m: 3.35, y_m: 3.20, relative_lumen_input: 1600.0}
+  - {id: 3, x_m: 3.75, y_m: 3.45, relative_lumen_input: 3000.0}
+calibration:
+  file: ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json
+  source_score_definition: dimensionless simulator model-range normalization
+parameter_files:
+  - ros_esc/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/gradient_methods/gesc_controller_full_rotation_voltage.json
+  - ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json
+human_intervention: false
+operator_notes: Automated Phase 05 short Gazebo recording smoke.

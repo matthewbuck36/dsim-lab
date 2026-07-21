@@ -21,6 +21,7 @@ from ros_esc.cost_function_node.cost_function_objects.cost_function_objects impo
 from ros_esc.gaussian_fill_node.gaussian_fill_script import GaussianFill
 from ros_esc.gaussian_fill_node.basin_estimator import CostSnapshot, PoseSnapshot
 from ros_esc.modified_cost_node.modified_cost_script import ModifiedCost2D
+from ros_esc.pde_cost_history_node import pde_cost_history_script
 from ros_esc.supervisor_node import supervisor_node_script
 from ros_esc_interfaces.msg import (
     AlgorithmEvent,
@@ -29,6 +30,7 @@ from ros_esc_interfaces.msg import (
     GaussianFill as GaussianFillMessage,
     StampedFloat64MultiArray,
 )
+from std_msgs.msg import Bool
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
@@ -55,11 +57,61 @@ class Recorder:
         self.messages.append(msg)
 
 
+def test_recording_interlock_disabled_is_a_noop():
+    controller = object.__new__(CustomController)
+    controller.recording_ready_required = False
+
+    assert controller._recording_fault_reason() is None
+
+
+def test_recording_interlock_false_missing_and_stale_force_zero(monkeypatch):
+    controller = object.__new__(CustomController)
+    controller.recording_ready_required = True
+    controller.recording_ready_stale_sec = 0.5
+    controller.recording_ready = False
+    controller.recording_ready_receipt_monotonic = None
+    published = []
+    controller._publish_zero = lambda reason, report_fault: published.append(reason)
+
+    assert "missing" in controller._recording_fault_reason()
+    message = Bool()
+    message.data = False
+    monkeypatch.setattr(controller_node_script.time, "monotonic", lambda: 10.0)
+    controller.recording_ready_callback(message)
+    assert published == ["recording readiness is false"]
+    assert controller._recording_fault_reason() == "recording readiness is false"
+
+    message.data = True
+    controller.recording_ready_callback(message)
+    assert controller._recording_fault_reason() is None
+    monkeypatch.setattr(controller_node_script.time, "monotonic", lambda: 10.6)
+    assert "stale" in controller._recording_fault_reason()
+
+
+def test_recording_watchdog_zero_does_not_emit_latching_failsafe():
+    controller = object.__new__(CustomController)
+    controller.robust_profile = False
+    controller.latest_algorithm_state = None
+    controller._recording_fault_reason = lambda: "recording readiness is false"
+    zeros = []
+    controller._publish_zero = lambda reason, report_fault: zeros.append(
+        (reason, report_fault)
+    )
+    controller._emit_local_fault_once = lambda reason: pytest.fail(
+        f"recording gate emitted a latching event: {reason}"
+    )
+
+    controller.watchdog_callback()
+
+    assert zeros == [("recording readiness is false", False)]
+
+
 @pytest.mark.parametrize(
     ("node_module", "node_factory_name"),
     [
         (controller_node_script, "CustomController"),
         (supervisor_node_script, "SupervisorNode"),
+        (pde_cost_history_script, "PDECostHistory"),
     ],
 )
 def test_sigint_cleanup_publishes_zero_before_context_shutdown(
