@@ -10,7 +10,9 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 import numpy as np
 import rclpy
+from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
+from rclpy.signals import SignalHandlerOptions
 from ros_esc_interfaces.msg import (
     AlgorithmEvent,
     AlgorithmState,
@@ -1093,15 +1095,22 @@ class SupervisorNode(Node):
 
 
 def main(args=None):
-    rclpy.init(args=args)
+    rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
     node = SupervisorNode()
+    executor = SingleThreadedExecutor()
+    executor.add_node(node)
     try:
-        rclpy.spin(node)
+        while rclpy.ok():
+            executor.spin_once(timeout_sec=0.05)
     except KeyboardInterrupt:
         pass
     finally:
-        node.destroy_node()
-        rclpy.try_shutdown()
+        executor.remove_node(node)
+        try:
+            node.destroy_node()
+        finally:
+            executor.shutdown()
+            rclpy.try_shutdown()
 
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 import rclpy
 
+from ros_esc.controller_node import controller_node_script
 from ros_esc.controller_node.controller_node_script import CustomController
 from ros_esc.controller_node.controller_objects.turtlebot_vehicle import (
     Directional_Controller,
@@ -20,6 +21,7 @@ from ros_esc.cost_function_node.cost_function_objects.cost_function_objects impo
 from ros_esc.gaussian_fill_node.gaussian_fill_script import GaussianFill
 from ros_esc.gaussian_fill_node.basin_estimator import CostSnapshot, PoseSnapshot
 from ros_esc.modified_cost_node.modified_cost_script import ModifiedCost2D
+from ros_esc.supervisor_node import supervisor_node_script
 from ros_esc_interfaces.msg import (
     AlgorithmEvent,
     AlgorithmState,
@@ -51,6 +53,74 @@ class Recorder:
 
     def publish(self, msg):
         self.messages.append(msg)
+
+
+@pytest.mark.parametrize(
+    ("node_module", "node_factory_name"),
+    [
+        (controller_node_script, "CustomController"),
+        (supervisor_node_script, "SupervisorNode"),
+    ],
+)
+def test_sigint_cleanup_publishes_zero_before_context_shutdown(
+    monkeypatch,
+    node_module,
+    node_factory_name,
+):
+    events = []
+
+    class FakeNode:
+        def destroy_node(self):
+            assert node_module.rclpy.ok()
+            events.append("zero_then_destroy")
+
+    class FakeExecutor:
+        def __init__(self):
+            events.append("executor_created")
+
+        def add_node(self, node):
+            assert isinstance(node, FakeNode)
+            events.append("node_added")
+
+        def spin_once(self, timeout_sec):
+            assert timeout_sec == 0.05
+            events.append("spin_once")
+            raise KeyboardInterrupt
+
+        def remove_node(self, node):
+            assert isinstance(node, FakeNode)
+            events.append("node_removed")
+
+        def shutdown(self):
+            events.append("executor_shutdown")
+
+    def fake_init(*, args, signal_handler_options):
+        assert args == ["--test"]
+        assert signal_handler_options == node_module.SignalHandlerOptions.NO
+        events.append("context_initialized_without_signal_handlers")
+
+    monkeypatch.setattr(node_module.rclpy, "init", fake_init)
+    monkeypatch.setattr(node_module.rclpy, "ok", lambda: True)
+    monkeypatch.setattr(
+        node_module.rclpy,
+        "try_shutdown",
+        lambda: events.append("context_shutdown"),
+    )
+    monkeypatch.setattr(node_module, "SingleThreadedExecutor", FakeExecutor)
+    monkeypatch.setattr(node_module, node_factory_name, FakeNode)
+
+    node_module.main(args=["--test"])
+
+    assert events == [
+        "context_initialized_without_signal_handlers",
+        "executor_created",
+        "node_added",
+        "spin_once",
+        "node_removed",
+        "zero_then_destroy",
+        "executor_shutdown",
+        "context_shutdown",
+    ]
 
 
 def _run_modified_cost(monkeypatch, observability, bias_all=True):

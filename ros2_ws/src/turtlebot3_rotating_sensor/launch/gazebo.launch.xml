@@ -80,8 +80,8 @@
     <arg name="gaussian_fill_covariance_eigenvalue_max_m2" default="0.25"/>
     <arg name="gaussian_fill_quadratic_ridge_lambda" default="1e-6"/>
     <arg name="gaussian_fill_quadratic_condition_number_max" default="1e8"/>
-    <arg name="gaussian_fill_center_cost_percentile" default="10"/>
-    <arg name="gaussian_fill_shoulder_cost_percentile" default="80"/>
+    <arg name="gaussian_fill_center_cost_percentile" default="10.0"/>
+    <arg name="gaussian_fill_shoulder_cost_percentile" default="80.0"/>
     <arg name="gaussian_fill_inner_mahalanobis_radius" default="1.0"/>
     <arg name="gaussian_fill_minimum_basin_depth" default="0.02"/>
     <arg name="gaussian_fill_covariance_scale" default="2.5"/>
