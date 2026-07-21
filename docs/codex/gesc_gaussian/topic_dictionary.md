@@ -411,6 +411,10 @@ The central launch adds these arguments:
 | `fill_request_topic` | `/gesc_gaussian/fill_requests` |
 | `supervisor_command_topic` | `/gesc_gaussian/supervisor_command` |
 | `supervisor_stop_topic` | `/gesc_gaussian/stop_requested` |
+| `recording_ready_required` | `False` |
+| `recording_ready_topic` | `/gesc_gaussian/recording_ready` |
+| `recording_ready_stale_sec` | `0.50` |
+| `supervisor_use_sim_time` | `True` |
 
 Phase 03 adds these robust-fill launch arguments; each maps to the node
 parameter obtained by removing the `gaussian_fill_` prefix:
@@ -479,3 +483,29 @@ The Phase 04 bounds are a configured virtual operating envelope. The audited
 Gazebo world has no inferred walls/contact owner, so passing these checks is
 not a physical collision-safety claim. Setting `recenter_after_escape=False`
 selects the unbounded robust path and bypasses bounds and recentering.
+
+## Phase 05 recording interface
+
+`/gesc_gaussian/recording_ready` uses `std_msgs/msg/Bool` and is owned by the
+single `record_run` process. It is a reliable 10 Hz heartbeat. The recorder
+publishes false during preflight and shutdown and true only after all required
+publishers, exact types, the `/custom_controller` interlock subscription, the
+rosbag subscriptions, and a gated zero `/cmd_vel` have been observed.
+Every required topic except the intentionally shared algorithm-event bus and
+the two-owner simulation `/joint_states` stream also requires exactly one live
+publisher endpoint. This prevents an orphaned prior launch from contaminating
+a new experiment even when the orphan reused the same ROS node name.
+
+The controller's three recording arguments are default-off. When
+`recording_ready_required=False`, no readiness subscription is created and
+the existing controller path is unchanged. When true, a missing, false, or
+older-than-`recording_ready_stale_sec` heartbeat forces all final command
+representations to zero. The gate adds no second saturation or `/cmd_vel`
+owner.
+
+The authoritative required/optional topic list, exact types, applicable
+modes, minimum counts, and semantic policies are installed from
+`ros_esc/experiment_recording/topic_manifest.yaml`. Simulation and physical
+modes use this same manifest and runner; Phase 05 does not invent the absent
+physical adapter or claim physical calibration. Full operator instructions
+are in `docs/codex/gesc_gaussian/recording_runs.md`.

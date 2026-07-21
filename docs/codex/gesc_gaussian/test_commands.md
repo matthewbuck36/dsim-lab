@@ -628,3 +628,71 @@ colcon test-result \
 Result: `978 tests, 0 errors, 875 failures, 1 skipped`. The failure count is
 unchanged; remaining failures are the documented repository-wide flake8,
 pep257, and lint-cmake baseline. No physical hardware was run.
+
+## Phase 05 commands run (blocked implementation)
+
+`validate_phase_context.sh 05 implement` passed. The retained current-source
+suite passed with `93 passed in 3.33s`. An isolated `/tmp` Humble probe proved
+that an explicitly named topic appearing after recorder startup is discovered,
+that `/rosbag2_recorder` is graph-visible as its subscriber, and that sqlite3
+finalizes readably.
+
+The partial implementation built all three packages and its focused suite
+reported `108 passed, 1 skipped in 3.34s`. The skip is the environment-gated
+visible Gazebo test; its exact command was then run directly three times with
+retained run directories.
+
+The final clean run is:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/2026-07-21/
+20260721T230813124669Z_simulation_phase05-short-recording_1e5e6063
+```
+
+It passes every required topic/type/count, sqlite3 readability, source
+semantics, parameter snapshot, coverage, final readiness false, and all three
+post-stop final-zero checks. It fails the approved 50 ms typed-stamp gate due
+wall/simulation clock mixing and 0.1-second regressions, and the clean-console
+gate because existing `pde_cost_history_node` exits with code 245. Exact
+evidence and required plan decisions are in `phase_05_handoff.md`. No physical
+hardware was run.
+
+### Amendment 1 completion
+
+The user authorized the saved-plan amendment documented in
+`phase_05_plan.md`. After applying the bounded clock, tolerance, readiness,
+PDE shutdown, publisher-ownership, parameter-snapshot, and descendant-cleanup
+corrections, the focused suite passed:
+
+```text
+113 passed, 1 skipped in 3.33s
+```
+
+The skip is the environment-gated visible Gazebo pytest. Its exact command was
+run directly and produced this accepted artifact:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/2026-07-21/
+20260721T232824094290Z_simulation_phase05-short-recording_92bb8be7
+```
+
+`completeness.json` reports `passed: true`, with zero failures and warnings.
+All 19 required topics have messages. Target and rosbag exit codes are zero,
+all three final-command representations contain a post-stop zero, and 21 of
+23 nodes supplied exact parameter values/types. The two optional spawner
+snapshot failures were recorded after those short-lived nodes exited. The
+post-run process and ROS graph checks were empty. No physical hardware ran.
+
+The repository-standard build passed for all three packages. The standard
+package test result was:
+
+```text
+Summary: 999 tests, 0 errors, 875 failures, 2 skipped
+```
+
+The 875 failures are the same documented repository-wide flake8, pep257, and
+lint-cmake baseline count from Phases 00-04. The functional `ros_esc` result
+was `113 passed, 2 skipped`; the second skip is the normal package-run skip
+accounting. Python compilation and `git diff --check` passed. The focused
+pytest process printed two non-failing rclpy `Destroyable` teardown notices
+after its result; they did not occur in the accepted recording console.
