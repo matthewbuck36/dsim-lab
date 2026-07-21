@@ -1,5 +1,6 @@
-"""Non-Gazebo ROS integration coverage for the Phase 02 supervisor."""
+"""Synthetic ROS integration coverage for Phase 04 supervisor behavior."""
 
+import math
 import threading
 import time
 
@@ -25,170 +26,338 @@ def _wait_for(predicate, timeout=3.0):
     while time.monotonic() < deadline:
         if predicate():
             return True
-        time.sleep(0.01)
+        time.sleep(0.005)
     return False
 
 
-def test_supervisor_request_result_and_stop_failsafe():
-    rclpy.init()
-    overrides = [
-        Parameter("supervisor_publish_rate_hz", value=100.0),
-        Parameter("startup_timeout_sec", value=1.0),
-        Parameter("convergence_hold_sec", value=0.05),
-        Parameter("goal_hold_sec", value=0.05),
-        Parameter("undesired_score_hold_sec", value=0.05),
-        Parameter("verification_max_sec", value=0.5),
-        Parameter("fill_design_timeout_sec", value=0.5),
-        Parameter("stale_pose_sec", value=0.5),
-        Parameter("stale_sensor_sec", value=0.5),
-    ]
-    supervisor = SupervisorNode(parameter_overrides=overrides)
-    peer = Node("phase02_supervisor_test_peer")
-    executor = MultiThreadedExecutor(num_threads=2)
-    executor.add_node(supervisor)
-    executor.add_node(peer)
+class Recorder:
+    """Minimal publisher replacement retaining shutdown output."""
 
-    states = []
-    requests = []
-    commands = []
-    events = []
-    peer.create_subscription(
-        AlgorithmState, "/gesc_gaussian/algorithm_state", states.append, 10
-    )
-    peer.create_subscription(
-        StampedFloat64MultiArray,
-        "/gesc_gaussian/fill_requests",
-        requests.append,
-        10,
-    )
-    peer.create_subscription(
-        Twist, "/gesc_gaussian/supervisor_command", commands.append, 10
-    )
-    peer.create_subscription(
-        AlgorithmEvent, "/gesc_gaussian/algorithm_events", events.append, 10
-    )
-    pose_pub = peer.create_publisher(Odometry, "/odom", 10)
-    source_pub = peer.create_publisher(
-        CostBreakdown, "/gesc_gaussian/source_cost", 10
-    )
-    convergence_pub = peer.create_publisher(
-        StampedFloat64MultiArray, "/gesc_gaussian/convergence_status", 10
-    )
-    fill_pub = peer.create_publisher(
-        GaussianFill, "/gesc_gaussian/gaussian_fills", 10
-    )
-    stop_pub = peer.create_publisher(Bool, "/gesc_gaussian/stop_requested", 10)
+    def __init__(self):
+        self.messages = []
 
-    thread = threading.Thread(target=executor.spin, daemon=True)
-    thread.start()
-    try:
-        odom = Odometry()
-        odom.pose.pose.orientation.w = 1.0
-        source = CostBreakdown()
-        source.source_timestamp = 7.0
-        source.source_timestamp_valid = True
-        source.channel_count = 1
-        source.raw_cost = [-1.0]
-        source.raw_cost_valid = True
-        source.source_score = [0.2]
-        source.source_score_valid = True
-        convergence = StampedFloat64MultiArray()
-        convergence.header = "CONVERGENCE_STATUS"
-        convergence.timestamp = 42.0
-        convergence.data = [-0.1, 0.0, 0.0, 1.0, 2.0, 0.9, 1.9, 3.0]
+    def publish(self, msg):
+        self.messages.append(msg)
 
-        deadline = time.monotonic() + 0.3
-        while time.monotonic() < deadline and not requests:
-            pose_pub.publish(odom)
-            source_pub.publish(source)
-            convergence_pub.publish(convergence)
-            time.sleep(0.01)
 
-        assert _wait_for(lambda: len(requests) == 1)
-        assert any(
-            state.state == AlgorithmState.STATE_DESIGN_OR_MERGE_FILL
-            for state in states
+def _pose(x, y=0.0, yaw=0.0):
+    msg = Odometry()
+    msg.pose.pose.position.x = float(x)
+    msg.pose.pose.position.y = float(y)
+    msg.pose.pose.orientation.z = math.sin(float(yaw) / 2.0)
+    msg.pose.pose.orientation.w = math.cos(float(yaw) / 2.0)
+    return msg
+
+
+def _source(score=0.2):
+    msg = CostBreakdown()
+    msg.source_timestamp = 7.0
+    msg.source_timestamp_valid = True
+    msg.channel_count = 1
+    msg.raw_cost = [-1.0]
+    msg.raw_cost_valid = True
+    msg.source_score = [float(score)]
+    msg.source_score_valid = True
+    return msg
+
+
+def _convergence():
+    msg = StampedFloat64MultiArray()
+    msg.header = "CONVERGENCE_STATUS"
+    msg.timestamp = 42.0
+    msg.data = [-0.1, 0.0, 0.0, 0.2, 0.0, 0.3, 0.0, 3.0]
+    return msg
+
+
+def _fill(source_timestamp, fill_id=1, revision=1, exit_radius=0.3):
+    msg = GaussianFill()
+    msg.source_timestamp = float(source_timestamp)
+    msg.source_timestamp_valid = True
+    msg.frame_id = "odom"
+    msg.fill_id = int(fill_id)
+    msg.cluster_id = 1
+    msg.revision = int(revision)
+    msg.active = True
+    msg.covariance_valid = True
+    msg.principal_widths_valid = True
+    msg.support_radius_valid = True
+    msg.exit_radius_valid = True
+    msg.center_x = 0.0
+    msg.center_y = 0.0
+    msg.sigma_major = 0.10
+    msg.sigma_minor = 0.10
+    msg.support_radius = 0.05
+    msg.exit_radius = float(exit_radius)
+    return msg
+
+
+class SupervisorHarness:
+    """Run one supervisor with typed publisher/subscriber peers."""
+
+    def __init__(self, overrides=None, name="phase04_supervisor_test_peer"):
+        values = [
+            Parameter("supervisor_publish_rate_hz", value=200.0),
+            Parameter("startup_timeout_sec", value=0.5),
+            Parameter("convergence_hold_sec", value=0.03),
+            Parameter("goal_hold_sec", value=0.03),
+            Parameter("undesired_score_hold_sec", value=0.03),
+            Parameter("verification_max_sec", value=0.5),
+            Parameter("fill_design_timeout_sec", value=0.5),
+            Parameter("escape_max_sec", value=2.0),
+            Parameter("escape_exit_hold_sec", value=0.03),
+            Parameter("stall_window_sec", value=0.20),
+            Parameter("minimum_radial_progress_m", value=0.02),
+            Parameter("approach_history_window_sec", value=0.05),
+            Parameter("direction_lookahead_m", value=0.20),
+            Parameter("fill_avoidance_margin_m", value=0.01),
+            Parameter("recenter_hold_sec", value=0.03),
+            Parameter("stale_pose_sec", value=2.0),
+            Parameter("stale_sensor_sec", value=2.0),
+        ]
+        values.extend(overrides or [])
+        self.supervisor = SupervisorNode(parameter_overrides=values)
+        self.peer = Node(name)
+        self.executor = MultiThreadedExecutor(num_threads=2)
+        self.executor.add_node(self.supervisor)
+        self.executor.add_node(self.peer)
+        self.states = []
+        self.requests = []
+        self.commands = []
+        self.events = []
+        self.peer.create_subscription(
+            AlgorithmState,
+            "/gesc_gaussian/algorithm_state",
+            self.states.append,
+            10,
         )
-        assert requests[0].timestamp == convergence.timestamp
-        assert list(requests[0].data) == list(convergence.data)
+        self.peer.create_subscription(
+            StampedFloat64MultiArray,
+            "/gesc_gaussian/fill_requests",
+            self.requests.append,
+            10,
+        )
+        self.peer.create_subscription(
+            Twist,
+            "/gesc_gaussian/supervisor_command",
+            self.commands.append,
+            10,
+        )
+        self.peer.create_subscription(
+            AlgorithmEvent,
+            "/gesc_gaussian/algorithm_events",
+            self.events.append,
+            10,
+        )
+        self.pose_pub = self.peer.create_publisher(Odometry, "/odom", 10)
+        self.source_pub = self.peer.create_publisher(
+            CostBreakdown, "/gesc_gaussian/source_cost", 10
+        )
+        self.convergence_pub = self.peer.create_publisher(
+            StampedFloat64MultiArray,
+            "/gesc_gaussian/convergence_status",
+            10,
+        )
+        self.fill_pub = self.peer.create_publisher(
+            GaussianFill, "/gesc_gaussian/gaussian_fills", 10
+        )
+        self.stop_pub = self.peer.create_publisher(
+            Bool, "/gesc_gaussian/stop_requested", 10
+        )
+        self.thread = threading.Thread(target=self.executor.spin, daemon=True)
+        self.thread.start()
 
-        fill = GaussianFill()
-        fill.source_timestamp = requests[0].timestamp
-        fill.source_timestamp_valid = True
-        fill.fill_id = 1
-        fill.cluster_id = 1
-        fill.revision = 1
-        fill.active = True
-        fill.covariance_valid = True
-        fill.principal_widths_valid = True
-        fill.sigma_major = 0.4
-        fill.sigma_minor = 0.4
-        fill_pub.publish(fill)
+    def publish_inputs(self, pose, convergence=None, duration=0.08):
+        deadline = time.monotonic() + duration
+        source = _source()
+        while time.monotonic() < deadline:
+            self.pose_pub.publish(pose)
+            self.source_pub.publish(source)
+            if convergence is not None:
+                self.convergence_pub.publish(convergence)
+            time.sleep(0.005)
+
+    def close(self):
+        self.executor.shutdown()
+        self.thread.join(timeout=1.0)
+        self.executor.remove_node(self.peer)
+        self.executor.remove_node(self.supervisor)
+        self.peer.destroy_node()
+        self.supervisor.destroy_node()
+
+
+def test_pure_repulsion_exits_without_redesign_and_recenter_completes():
+    rclpy.init()
+    harness = SupervisorHarness(name="phase04_pure_escape_peer")
+    try:
+        convergence = _convergence()
+        harness.publish_inputs(_pose(0.2), convergence, duration=0.12)
+        assert _wait_for(lambda: len(harness.requests) == 1)
+        assert harness.requests[0].header == "ROBUST_FILL_CREATE"
+        harness.fill_pub.publish(_fill(harness.requests[0].timestamp))
         assert _wait_for(
             lambda: any(
                 state.state == AlgorithmState.STATE_ESCAPE_REPULSE
-                for state in states
+                for state in harness.states
             )
         )
-        assert supervisor.machine.active_fill_count == 1
 
-        superseded = GaussianFill()
-        superseded.source_timestamp = fill.source_timestamp
-        superseded.source_timestamp_valid = True
-        superseded.fill_id = 1
-        superseded.cluster_id = 1
-        superseded.revision = 1
-        superseded.active = False
-        superseded.superseded = True
-        fill_pub.publish(superseded)
-        assert _wait_for(lambda: not supervisor.active_fill_records)
-
-        replacement = GaussianFill()
-        replacement.source_timestamp = fill.source_timestamp
-        replacement.source_timestamp_valid = True
-        replacement.fill_id = 2
-        replacement.cluster_id = 1
-        replacement.revision = 2
-        replacement.active = True
-        replacement.covariance_valid = True
-        replacement.principal_widths_valid = True
-        replacement.sigma_major = 0.6
-        replacement.sigma_minor = 0.4
-        fill_pub.publish(replacement)
+        harness.publish_inputs(_pose(0.5), duration=0.28)
         assert _wait_for(
-            lambda: supervisor.active_fill_records.get(1) == (2, 2)
+            lambda: any(
+                state.state == AlgorithmState.STATE_RECENTER
+                for state in harness.states
+            )
         )
-        assert supervisor.machine.active_fill_count == 1
+        assert any(
+            state.state == AlgorithmState.STATE_ESCAPE_REPULSE
+            and state.radial_distance_valid
+            and state.radial_progress_valid
+            and state.escape_geometry_valid
+            for state in harness.states
+        )
+        assert len(harness.requests) == 1
+        assert not any(
+            event.event_type == AlgorithmEvent.EVENT_ESCAPE_STALLED
+            for event in harness.events
+        )
+        assert _wait_for(
+            lambda: any(
+                abs(command.linear.x) > 0.0 or abs(command.angular.z) > 0.0
+                for command in harness.commands
+            )
+        )
+        assert harness.supervisor.active_fill_records
+        assert any(
+            event.event_type == AlgorithmEvent.EVENT_CONFIGURATION
+            and "room_bounds_x_min_m" in event.value_names
+            for event in harness.events
+        )
+
+        harness.publish_inputs(_pose(0.1), duration=0.08)
+        assert _wait_for(
+            lambda: any(
+                event.event_type == AlgorithmEvent.EVENT_RECENTER_COMPLETE
+                for event in harness.events
+            )
+        )
+        assert any(
+            state.state == AlgorithmState.STATE_SEARCH
+            for state in harness.states
+        )
+    finally:
+        harness.close()
+        rclpy.shutdown()
+
+
+def test_stall_requests_one_targeted_redesign_then_activates_assist():
+    rclpy.init()
+    harness = SupervisorHarness(
+        overrides=[Parameter("stall_window_sec", value=0.05)],
+        name="phase04_stalled_escape_peer",
+    )
+    try:
+        convergence = _convergence()
+        harness.publish_inputs(_pose(0.2), convergence, duration=0.12)
+        assert _wait_for(lambda: len(harness.requests) == 1)
+        harness.fill_pub.publish(
+            _fill(harness.requests[0].timestamp, exit_radius=0.5)
+        )
+        assert _wait_for(
+            lambda: any(
+                state.state == AlgorithmState.STATE_ESCAPE_REPULSE
+                for state in harness.states
+            )
+        )
+        harness.publish_inputs(_pose(0.2), duration=0.10)
+        assert _wait_for(lambda: len(harness.requests) == 2)
+        assert harness.requests[1].header == "ROBUST_FILL_REDESIGN:1"
+        assert sum(
+            event.event_type == AlgorithmEvent.EVENT_ESCAPE_STALLED
+            for event in harness.events
+        ) == 1
+
+        replacement = _fill(
+            harness.requests[1].timestamp,
+            fill_id=2,
+            revision=2,
+            exit_radius=0.7,
+        )
+        harness.fill_pub.publish(replacement)
+        assert _wait_for(
+            lambda: any(
+                state.state == AlgorithmState.STATE_ESCAPE_ASSIST
+                and state.safe_direction_valid
+                for state in harness.states
+            )
+        )
+        assisted = next(
+            state
+            for state in reversed(harness.states)
+            if state.state == AlgorithmState.STATE_ESCAPE_ASSIST
+            and state.safe_direction_valid
+        )
+        assert assisted.active_escape_fill_id == 2
+        assert assisted.escape_center_x == 0.0
+        assert assisted.escape_exit_radius == 0.5
+        assert assisted.safe_direction_revision == 1
+        assert len(harness.requests) == 2
+        harness.publish_inputs(_pose(0.2), duration=0.03)
+        revisions = {
+            state.safe_direction_revision
+            for state in harness.states
+            if state.state == AlgorithmState.STATE_ESCAPE_ASSIST
+            and state.safe_direction_valid
+        }
+        assert revisions == {1}
 
         stop = Bool()
         stop.data = True
-        stop_pub.publish(stop)
+        harness.stop_pub.publish(stop)
         assert _wait_for(
-            lambda: states and states[-1].state == AlgorithmState.STATE_FAILSAFE
+            lambda: harness.states
+            and harness.states[-1].state == AlgorithmState.STATE_FAILSAFE
         )
-        assert states[-1].failsafe is True
-        assert commands
+        assert harness.commands
+        assert harness.commands[-1].linear.x == 0.0
+        assert harness.commands[-1].angular.z == 0.0
+    finally:
+        harness.close()
+        rclpy.shutdown()
+
+
+def test_bounds_violation_fails_safe_and_publishes_only_zero():
+    rclpy.init()
+    harness = SupervisorHarness(name="phase04_wall_failsafe_peer")
+    try:
+        harness.publish_inputs(_pose(1.8), duration=0.08)
+        assert _wait_for(
+            lambda: harness.states
+            and harness.states[-1].state == AlgorithmState.STATE_FAILSAFE
+        )
+        assert any(
+            event.event_type == AlgorithmEvent.EVENT_FAILSAFE
+            and "operating bounds" in event.detail
+            for event in harness.events
+        )
+        assert harness.commands
         assert all(
             command.linear.x == 0.0 and command.angular.z == 0.0
-            for command in commands
-        )
-        transition_events = [
-            event
-            for event in events
-            if event.event_type == AlgorithmEvent.EVENT_STATE_TRANSITION
-        ]
-        assert len(transition_events) >= 4
-        assert _wait_for(
-            lambda: any(
-                event.event_type == AlgorithmEvent.EVENT_FAILSAFE
-                for event in events
-            )
+            for command in harness.commands
         )
     finally:
-        executor.shutdown()
-        thread.join(timeout=1.0)
-        executor.remove_node(peer)
-        executor.remove_node(supervisor)
-        peer.destroy_node()
-        supervisor.destroy_node()
+        harness.close()
+        rclpy.shutdown()
+
+
+def test_supervisor_shutdown_always_publishes_zero():
+    rclpy.init()
+    supervisor = SupervisorNode()
+    recorder = Recorder()
+    supervisor.command_publisher = recorder
+    supervisor.destroy_node()
+    try:
+        assert len(recorder.messages) == 1
+        assert recorder.messages[0].linear.x == 0.0
+        assert recorder.messages[0].angular.z == 0.0
+    finally:
         rclpy.shutdown()

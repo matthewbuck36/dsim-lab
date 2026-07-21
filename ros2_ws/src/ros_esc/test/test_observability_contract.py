@@ -10,6 +10,9 @@ import rclpy
 from rclpy.serialization import deserialize_message, serialize_message
 
 from ros_esc.cost_function_node.cost_function_node_script import CostFunction
+from ros_esc.gaussian_fill_node.gaussian_fill_script import (
+    robust_fill_redesign_target,
+)
 from ros_esc_interfaces.msg import (
     AlgorithmEvent,
     AlgorithmState,
@@ -126,6 +129,41 @@ def test_isotropic_fill_contract_and_reserved_state_constants():
     assert AlgorithmEvent.EVENT_FILL_DESIGN_ESCALATED == 24
     assert AlgorithmEvent.EVENT_FILL_DESIGN_FAILED == 25
     assert AlgorithmEvent.EVENT_FILL_LOW_CONFIDENCE == 26
+
+
+def test_escape_state_contract_and_robust_request_header_semantics():
+    state = AlgorithmState()
+    state.escape_center_x = 1.0
+    state.escape_center_y = -2.0
+    state.escape_exit_radius = 0.8
+    state.escape_geometry_valid = True
+    state.radial_distance = 0.5
+    state.radial_distance_valid = True
+    state.radial_progress = 0.1
+    state.radial_progress_valid = True
+    state.escape_stalled = False
+    state.escape_stalled_valid = True
+    state.safe_direction_x = 0.0
+    state.safe_direction_y = 1.0
+    state.safe_direction_clearance_m = 0.3
+    state.safe_direction_valid = True
+    state.safe_direction_revision = 2
+    state.safe_direction_revision_valid = True
+    state.recenter_target_x = 0.0
+    state.recenter_target_y = 0.0
+    state.recenter_target_valid = True
+    state.recenter_distance = 1.2
+    state.recenter_distance_valid = True
+
+    restored = deserialize_message(serialize_message(state), AlgorithmState)
+    assert restored.escape_geometry_valid is True
+    assert restored.radial_progress == 0.1
+    assert restored.safe_direction_revision == 2
+    assert restored.recenter_distance == 1.2
+    assert robust_fill_redesign_target("ROBUST_FILL_REDESIGN:17") == 17
+    assert robust_fill_redesign_target("ROBUST_FILL_CREATE") is None
+    assert robust_fill_redesign_target("older_request_header") is None
+    assert robust_fill_redesign_target("ROBUST_FILL_REDESIGN:bad") is None
 
 
 def test_robust_fill_lifecycle_and_all_designed_fields_are_explicit():
@@ -267,6 +305,14 @@ def test_robust_source_owner_publishes_score_without_state_duplication(monkeypat
         assert state.state == AlgorithmState.STATE_UNAVAILABLE
         assert state.state_valid is False
         assert state.algorithm_profile == "legacy"
+        assert state.escape_geometry_valid is False
+        assert math.isnan(state.escape_center_x)
+        assert state.radial_progress_valid is False
+        assert math.isnan(state.radial_progress)
+        assert state.safe_direction_revision == 0
+        assert state.safe_direction_revision_valid is False
+        assert state.recenter_target_valid is False
+        assert math.isnan(state.recenter_distance)
         assert all(
             len(event.value_names) == len(event.values)
             for event in enabled.algorithm_event_publisher.messages
@@ -297,6 +343,27 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         "fill_request_topic": "/gesc_gaussian/fill_requests",
         "supervisor_command_topic": "/gesc_gaussian/supervisor_command",
         "supervisor_stop_topic": "/gesc_gaussian/stop_requested",
+        "escape_exit_hold_sec": "1.0",
+        "stall_window_sec": "3.0",
+        "minimum_radial_progress_m": "0.05",
+        "approach_history_window_sec": "3.0",
+        "room_bounds_x_min_m": "-2.0",
+        "room_bounds_x_max_m": "2.0",
+        "room_bounds_y_min_m": "-2.0",
+        "room_bounds_y_max_m": "2.0",
+        "room_center_x_m": "0.0",
+        "room_center_y_m": "0.0",
+        "wall_margin_m": "0.35",
+        "direction_lookahead_m": "0.50",
+        "direction_candidate_step_rad": "0.7853981633974483",
+        "fill_avoidance_margin_m": "0.10",
+        "recenter_tolerance_m": "0.25",
+        "recenter_hold_sec": "1.0",
+        "recenter_linear_gain": "0.50",
+        "recenter_angular_gain": "1.50",
+        "recenter_max_linear_velocity_mps": "0.10",
+        "recenter_max_angular_velocity_rps": "0.40",
+        "recenter_rotate_in_place_angle_rad": "1.0471975511965976",
         "gaussian_fill_pose_topic": "/odom",
         "gaussian_fill_estimation_channel_index": "0",
         "gaussian_fill_sample_sync_tolerance_sec": "0.05",

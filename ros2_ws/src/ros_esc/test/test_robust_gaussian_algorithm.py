@@ -317,6 +317,29 @@ def test_superseded_fill_is_frozen_and_not_double_counted():
         old.center[0] = 99.0
 
 
+def test_targeted_redesign_resolves_old_id_and_requires_hard_overlap():
+    registry = FillRegistry()
+    _, first = registry.commit_new(
+        version_values((0, 0), 1.0, 0.3), [sample(1, 0, 0, 0)]
+    )
+    _, replacement = registry.commit_revision(
+        first.cluster_id,
+        version_values((0.05, 0), 1.2, 0.4, source_timestamp=2.0),
+        [sample(1, 0, 0, 0), sample(2, 0.05, 0, 0)],
+    )
+
+    resolved = registry.active_cluster_for_fill(first.fill_id)
+    overlap = registry.associate_target(first.fill_id, np.array([0.1, 0.0]), 0.3)
+    distant = registry.associate_target(
+        replacement.fill_id, np.array([2.0, 0.0]), 0.3
+    )
+    assert resolved.active_fill.fill_id == replacement.fill_id
+    assert overlap.cluster_id == first.cluster_id
+    assert overlap.merge is True
+    assert distant.merge is False
+    assert registry.associate_target(999, np.zeros(2), 0.3) is None
+
+
 def test_fill_gradient_descent_direction_points_outward_for_minimization():
     value = gaussian_value(np.array([1.0, 0.0]), np.zeros(2), 2.0, np.eye(2))
     gradient = gaussian_gradient(

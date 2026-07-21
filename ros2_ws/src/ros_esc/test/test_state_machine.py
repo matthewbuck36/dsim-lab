@@ -160,6 +160,34 @@ def test_bounded_and_unbounded_stable_exit_paths():
     assert unbounded.step(6.0, TransitionInputs(stable_exit=True)).current == State.SEARCH
 
 
+def test_stable_exit_wins_over_simultaneous_stall_before_timeout():
+    machine = SupervisorStateMachine()
+    enter_repulse(machine)
+    transition = machine.step(
+        6.0, TransitionInputs(stable_exit=True, stalled=True)
+    )
+    assert transition.current == State.RECENTER
+    assert machine.redesign_attempted is False
+
+
+def test_escape_timeout_wins_at_exact_deadline_and_second_stall_fails_safe():
+    timed = SupervisorStateMachine(config=config(escape_max_sec=1.0))
+    enter_repulse(timed)
+    transition = timed.step(
+        timed.escape_started_sec + 1.0,
+        TransitionInputs(stable_exit=True),
+    )
+    assert transition.current == State.FAILSAFE
+    assert transition.reason == "escape timeout"
+
+    stalled = SupervisorStateMachine()
+    enter_repulse(stalled)
+    stalled.redesign_attempted = True
+    transition = stalled.step(6.0, TransitionInputs(stalled=True))
+    assert transition.current == State.FAILSAFE
+    assert transition.reason == "escape stalled after redesign"
+
+
 def test_single_redesign_enters_assist_and_preserves_escape_deadline():
     machine = SupervisorStateMachine()
     enter_repulse(machine)

@@ -38,6 +38,24 @@ from ros_esc.gaussian_fill_node.fill_registry import (
 from ros_esc.supervisor_node.state_machine import ROBUST_PROFILE, VALID_PROFILES
 
 
+ROBUST_FILL_CREATE = "ROBUST_FILL_CREATE"
+ROBUST_FILL_REDESIGN_PREFIX = "ROBUST_FILL_REDESIGN:"
+
+
+def robust_fill_redesign_target(header):
+    """Return a positive targeted fill ID; older headers remain create requests."""
+
+    text = str(header).strip()
+    if not text.startswith(ROBUST_FILL_REDESIGN_PREFIX):
+        return None
+    suffix = text[len(ROBUST_FILL_REDESIGN_PREFIX):]
+    try:
+        target = int(suffix)
+    except ValueError:
+        return None
+    return target if target > 0 else None
+
+
 class GaussianFill(Node):
     """
     Adds Gaussian fills at detected trap locations.
@@ -485,7 +503,7 @@ class GaussianFill(Node):
         """Cache the most recent valid robust controller mode."""
 
         if msg.state_valid and int(msg.state) > 0:
-            self.latest_algorithm_state = int(msg.state)
+            self.latest_algorithm_state = msg
         else:
             self.latest_algorithm_state = None
 
@@ -526,7 +544,11 @@ class GaussianFill(Node):
                     else float("nan")
                 ),
                 source_score_valid=source_score_valid,
-                algorithm_state=int(self.latest_algorithm_state or 0),
+                algorithm_state=(
+                    int(self.latest_algorithm_state.state)
+                    if self.latest_algorithm_state is not None
+                    else 0
+                ),
                 algorithm_state_valid=self.latest_algorithm_state is not None,
             )
         )
@@ -535,6 +557,7 @@ class GaussianFill(Node):
         """Freeze, estimate, design, associate, and atomically commit a fill."""
 
         request_timestamp = float(msg.timestamp)
+        redesign_fill_id = robust_fill_redesign_target(msg.header)
         request_ros_time = self.get_clock().now().nanoseconds * 1e-9
         synchronized, unmatched = synchronize_samples(
             tuple(self.pose_snapshots),
@@ -563,12 +586,40 @@ class GaussianFill(Node):
             candidate_geometry = initial_fill_geometry(
                 candidate_estimate, self.design_config
             )
-            association = self.fill_registry.associate(
-                candidate_estimate.center,
-                candidate_geometry.sigma_major,
-            )
+            if redesign_fill_id is None:
+                association = self.fill_registry.associate(
+                    candidate_estimate.center,
+                    candidate_geometry.sigma_major,
+                )
+            else:
+                association = self.fill_registry.associate_target(
+                    redesign_fill_id,
+                    candidate_estimate.center,
+                    candidate_geometry.sigma_major,
+                )
+                if association is None:
+                    self._publish_robust_failure(
+                        AlgorithmEvent.EVENT_FILL_REJECTED,
+                        33,
+                        "targeted redesign fill is absent or has no active replacement",
+                        request_timestamp,
+                        window,
+                        unmatched,
+                    )
+                    return
+                if not association.merge:
+                    self._publish_robust_failure(
+                        AlgorithmEvent.EVENT_FILL_REJECTED,
+                        34,
+                        "targeted redesign estimate failed active-cluster overlap",
+                        request_timestamp,
+                        window,
+                        unmatched,
+                    )
+                    return
             if (
-                not association.merge
+                redesign_fill_id is None
+                and not association.merge
                 and self.max_fills > 0
                 and self.fill_registry.active_count >= self.max_fills
             ):

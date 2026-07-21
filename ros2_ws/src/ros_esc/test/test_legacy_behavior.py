@@ -323,6 +323,67 @@ def test_robust_anisotropic_revision_replaces_without_double_count(monkeypatch):
         rclpy.shutdown()
 
 
+def test_robust_affine_binds_once_to_supervisor_direction_revision(monkeypatch):
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["modified_cost_node", "/test/raw", "/test/fill", "/test/out"],
+    )
+    rclpy.init(
+        args=["--ros-args", "-p", "algorithm_profile:=robust_gaussian_v1"]
+    )
+    node = ModifiedCost2D()
+    try:
+        fill = GaussianFillMessage()
+        fill.fill_id = 1
+        fill.cluster_id = 1
+        fill.revision = 1
+        fill.active = True
+        fill.center_x = 0.0
+        fill.center_y = 0.0
+        fill.amplitude = 1.0
+        fill.covariance_xx = 0.16
+        fill.covariance_xy = 0.0
+        fill.covariance_yy = 0.16
+        fill.sigma_major = 0.4
+        fill.sigma_minor = 0.4
+        fill.covariance_valid = True
+        fill.principal_widths_valid = True
+        node.robust_fill_cb(fill)
+        assert not node.robust_affine_terms
+
+        state = AlgorithmState()
+        state.state = AlgorithmState.STATE_ESCAPE_ASSIST
+        state.state_valid = True
+        state.sensor_weight = 0.0
+        state.gaussian_weight = 1.0
+        state.affine_weight = 1.0
+        state.weights_valid = True
+        state.active_escape_fill_id = 1
+        state.active_escape_fill_id_valid = True
+        state.safe_direction_x = 0.0
+        state.safe_direction_y = 1.0
+        state.safe_direction_valid = True
+        state.safe_direction_revision = 1
+        state.safe_direction_revision_valid = True
+        node.algorithm_state_cb(state)
+
+        term = node.robust_affine_terms[1]
+        first_start = term["t0"]
+        assert term["b0"] == pytest.approx([0.0, node.affine_gain])
+        assert node._affine_bias_at_xy(0.0, 1.0) < 0.0
+        assert node._affine_bias_at_xy(0.0, -1.0) > 0.0
+
+        node.algorithm_state_cb(state)
+        assert node.robust_affine_terms[1]["t0"] == first_start
+        state.state = AlgorithmState.STATE_SEARCH
+        node.algorithm_state_cb(state)
+        assert not node.robust_affine_terms
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
 def _run_filter(monkeypatch, observability):
     argv = [
         "filter_node",
@@ -488,6 +549,16 @@ def test_robust_controller_combines_then_saturates_and_gates_goal(monkeypatch):
             0.1, 0.0, 0.0, 0.0, 0.0, 0.5,
         ]
 
+        node.latest_algorithm_state.state = AlgorithmState.STATE_RECENTER
+        node.publish_control_value()
+        diagnostics = node.control_diagnostics_publisher.messages[-1]
+        assert list(diagnostics.combined_command_unsaturated) == [
+            0.05, 0.0, 0.0, 0.0, 0.0, 0.4,
+        ]
+        assert list(diagnostics.final_command) == [
+            0.05, 0.0, 0.0, 0.0, 0.0, 0.4,
+        ]
+
         node.latest_algorithm_state.state = AlgorithmState.STATE_GOAL_HOLD
         node.publish_control_value()
         assert list(node.controller_publisher.messages[-1].data) == [0.0] * 6
@@ -628,6 +699,7 @@ def test_robust_fill_owner_merges_into_one_frozen_revision(monkeypatch):
         node.trigger_cb(trigger)
         load_window(0.05)
         trigger.timestamp = 43.0
+        trigger.header = "ROBUST_FILL_REDESIGN:1"
         node.trigger_cb(trigger)
 
         lifecycle = node.gaussian_fill_diagnostics_publisher.messages

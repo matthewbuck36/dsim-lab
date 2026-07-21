@@ -134,8 +134,29 @@
     <arg name="verification_max_sec" default="10.0"/>
     <arg name="fill_design_timeout_sec" default="5.0"/>
     <arg name="escape_max_sec" default="20.0"/>
+    <arg name="escape_exit_hold_sec" default="1.0"/>
+    <arg name="stall_window_sec" default="3.0"/>
+    <arg name="minimum_radial_progress_m" default="0.05"/>
+    <arg name="approach_history_window_sec" default="3.0"/>
     <arg name="recenter_after_escape" default="True"/>
     <arg name="recenter_max_sec" default="30.0"/>
+    <arg name="room_bounds_x_min_m" default="-2.0"/>
+    <arg name="room_bounds_x_max_m" default="2.0"/>
+    <arg name="room_bounds_y_min_m" default="-2.0"/>
+    <arg name="room_bounds_y_max_m" default="2.0"/>
+    <arg name="room_center_x_m" default="0.0"/>
+    <arg name="room_center_y_m" default="0.0"/>
+    <arg name="wall_margin_m" default="0.35"/>
+    <arg name="direction_lookahead_m" default="0.50"/>
+    <arg name="direction_candidate_step_rad" default="0.7853981633974483"/>
+    <arg name="fill_avoidance_margin_m" default="0.10"/>
+    <arg name="recenter_tolerance_m" default="0.25"/>
+    <arg name="recenter_hold_sec" default="1.0"/>
+    <arg name="recenter_linear_gain" default="0.50"/>
+    <arg name="recenter_angular_gain" default="1.50"/>
+    <arg name="recenter_max_linear_velocity_mps" default="0.10"/>
+    <arg name="recenter_max_angular_velocity_rps" default="0.40"/>
+    <arg name="recenter_rotate_in_place_angle_rad" default="1.0471975511965976"/>
     <arg name="stale_pose_sec" default="0.50"/>
     <arg name="stale_sensor_sec" default="0.50"/>
     <arg name="supervisor_state_stale_sec" default="0.50"/>
@@ -687,8 +708,8 @@
         "
     />
 
-    <!-- The robust supervisor is the sole robust algorithm-state owner. Its
-    Phase 02 command contribution is always zero; Phase 04 extends this topic. -->
+    <!-- The robust supervisor is the sole robust algorithm-state owner and
+    publishes the bounded recenter contribution on the existing command topic. -->
     <executable
         if="$(eval &quot;'$(var algorithm_profile)' == 'robust_gaussian_v1'&quot;)"
         cmd="
@@ -704,8 +725,29 @@
             -p verification_max_sec:=$(var verification_max_sec)
             -p fill_design_timeout_sec:=$(var fill_design_timeout_sec)
             -p escape_max_sec:=$(var escape_max_sec)
+            -p escape_exit_hold_sec:=$(var escape_exit_hold_sec)
+            -p stall_window_sec:=$(var stall_window_sec)
+            -p minimum_radial_progress_m:=$(var minimum_radial_progress_m)
+            -p approach_history_window_sec:=$(var approach_history_window_sec)
             -p recenter_after_escape:=$(var recenter_after_escape)
             -p recenter_max_sec:=$(var recenter_max_sec)
+            -p room_bounds_x_min_m:=$(var room_bounds_x_min_m)
+            -p room_bounds_x_max_m:=$(var room_bounds_x_max_m)
+            -p room_bounds_y_min_m:=$(var room_bounds_y_min_m)
+            -p room_bounds_y_max_m:=$(var room_bounds_y_max_m)
+            -p room_center_x_m:=$(var room_center_x_m)
+            -p room_center_y_m:=$(var room_center_y_m)
+            -p wall_margin_m:=$(var wall_margin_m)
+            -p direction_lookahead_m:=$(var direction_lookahead_m)
+            -p direction_candidate_step_rad:=$(var direction_candidate_step_rad)
+            -p fill_avoidance_margin_m:=$(var fill_avoidance_margin_m)
+            -p recenter_tolerance_m:=$(var recenter_tolerance_m)
+            -p recenter_hold_sec:=$(var recenter_hold_sec)
+            -p recenter_linear_gain:=$(var recenter_linear_gain)
+            -p recenter_angular_gain:=$(var recenter_angular_gain)
+            -p recenter_max_linear_velocity_mps:=$(var recenter_max_linear_velocity_mps)
+            -p recenter_max_angular_velocity_rps:=$(var recenter_max_angular_velocity_rps)
+            -p recenter_rotate_in_place_angle_rad:=$(var recenter_rotate_in_place_angle_rad)
             -p stale_pose_sec:=$(var stale_pose_sec)
             -p stale_sensor_sec:=$(var stale_sensor_sec)
             -p source_cost_topic:=$(var source_cost_topic)

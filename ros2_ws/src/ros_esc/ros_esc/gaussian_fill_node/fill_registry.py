@@ -178,6 +178,37 @@ class FillRegistry:
     def cluster(self, cluster_id):
         return self._clusters.get(int(cluster_id))
 
+    def active_cluster_for_fill(self, fill_id):
+        """Resolve any known fill version to its cluster's active record."""
+
+        fill_id = int(fill_id)
+        for cluster in self._clusters.values():
+            if cluster.active_fill.fill_id == fill_id:
+                return cluster
+        for version in reversed(self._history):
+            if version.fill_id == fill_id:
+                return self._clusters.get(version.cluster_id)
+        return None
+
+    def associate_target(self, fill_id, center, sigma_major):
+        """Apply the hard-overlap gate to one explicitly targeted cluster."""
+
+        cluster = self.active_cluster_for_fill(fill_id)
+        if cluster is None:
+            return None
+        candidate = np.asarray(center, dtype=np.float64)
+        distance = float(np.linalg.norm(candidate - cluster.active_fill.center))
+        hard_radius = self.config.merge_radius_scale * max(
+            float(sigma_major), cluster.active_fill.sigma_major
+        )
+        return Association(
+            cluster_id=cluster.active_fill.cluster_id,
+            probability=1.0,
+            distance_m=distance,
+            hard_radius_m=hard_radius,
+            merge=bool(distance <= hard_radius),
+        )
+
     def associate(self, center, sigma_major):
         return associate_candidate(
             center,

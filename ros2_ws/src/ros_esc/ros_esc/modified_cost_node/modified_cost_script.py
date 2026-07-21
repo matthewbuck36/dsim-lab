@@ -224,6 +224,7 @@ class ModifiedCost2D(Node):
         # list[{"anchor": np.array([x,y]), "b0": np.array([bx,by]), "t0": float}]
         self.affine_terms = []
         self.robust_affine_terms = {}
+        self.robust_affine_applied = None
 
         # Latest robot center position.
         self.xy = None
@@ -568,33 +569,10 @@ class ModifiedCost2D(Node):
             "sigma_major": float(msg.sigma_major),
         }
         self.robust_cluster_fill_ids[cluster_id] = fill_id
-        self.robust_affine_terms.pop(cluster_id, None)
-        affine = self._build_affine_term(
-            float(msg.center_x), float(msg.center_y), float(msg.sigma_major)
-        )
-        if affine is not None:
-            self.robust_affine_terms[cluster_id] = affine
-
-    def _build_affine_term(self, mu_x, mu_y, sigma):
-        """Create one affine term using the existing direction policy."""
-
-        if not self.enable_affine_bias:
-            return None
-        direction = None
-        if self.use_pde_history_for_affine:
-            direction = self._get_direction_from_pde_history(mu_x, mu_y, sigma)
-        if direction is None:
-            direction = self._get_direction_from_filtered_odom()
-        if direction is None:
-            return None
-        return {
-            "anchor": np.array([mu_x, mu_y], dtype=np.float64),
-            "b0": self.affine_direction_sign * self.affine_gain * direction,
-            "t0": self._now_sec(),
-        }
+        self._sync_robust_affine()
 
     def algorithm_state_cb(self, msg: AlgorithmState):
-        """Cache the supervisor-owned robust weight authorization."""
+        """Cache robust authorization and bind affine assistance by revision."""
 
         weights = np.array(
             [msg.sensor_weight, msg.gaussian_weight, msg.affine_weight],
@@ -602,8 +580,65 @@ class ModifiedCost2D(Node):
         )
         if not msg.state_valid or not msg.weights_valid or not np.all(np.isfinite(weights)):
             self.algorithm_state = None
+            self.robust_affine_terms.clear()
             return
         self.algorithm_state = msg
+        self._sync_robust_affine()
+
+    def _sync_robust_affine(self):
+        """Create exactly one robust affine term from the selected safe direction."""
+
+        state = self.algorithm_state
+        if (
+            not self.robust_profile
+            or not self.enable_affine_bias
+            or state is None
+            or state.state != AlgorithmState.STATE_ESCAPE_ASSIST
+            or not state.active_escape_fill_id_valid
+            or not state.safe_direction_valid
+            or not state.safe_direction_revision_valid
+            or int(state.safe_direction_revision) <= 0
+        ):
+            self.robust_affine_terms.clear()
+            self.robust_affine_applied = None
+            return
+        direction = np.array(
+            [state.safe_direction_x, state.safe_direction_y], dtype=np.float64
+        )
+        norm = float(np.linalg.norm(direction))
+        if not np.all(np.isfinite(direction)) or norm <= 1e-12:
+            self.robust_affine_terms.clear()
+            return
+        fill_id = int(state.active_escape_fill_id)
+        fill = self.robust_terms.get(fill_id)
+        if fill is None:
+            self.robust_affine_terms.clear()
+            return
+        cluster_id = int(fill["cluster_id"])
+        revision = int(state.safe_direction_revision)
+        current = self.robust_affine_terms.get(cluster_id)
+        if (
+            current is not None
+            and current.get("direction_revision") == revision
+            and current.get("fill_id") == fill_id
+        ):
+            self.robust_affine_terms = {cluster_id: current}
+            return
+        applied_key = (cluster_id, fill_id, revision)
+        if self.robust_affine_applied == applied_key:
+            self.robust_affine_terms.clear()
+            return
+        direction = direction / norm
+        self.robust_affine_terms = {
+            cluster_id: {
+                "anchor": np.array(fill["center"], dtype=np.float64, copy=True),
+                "b0": self.affine_direction_sign * self.affine_gain * direction,
+                "t0": self._now_sec(),
+                "direction_revision": revision,
+                "fill_id": fill_id,
+            }
+        }
+        self.robust_affine_applied = applied_key
 
     def source_cost_cb(self, msg: CostBreakdown):
         """Consume synchronized raw cost and source score in robust mode."""
@@ -992,6 +1027,29 @@ class ModifiedCost2D(Node):
         state.active_fill_count_valid = True
         state.active_escape_fill_id = 0
         state.active_escape_fill_id_valid = False
+        state.escape_center_x = float("nan")
+        state.escape_center_y = float("nan")
+        state.escape_exit_radius = float("nan")
+        state.escape_geometry_valid = False
+        state.radial_distance = float("nan")
+        state.radial_distance_valid = False
+        state.radial_progress = float("nan")
+        state.radial_progress_valid = False
+        state.escape_exit_hold_elapsed_sec = float("nan")
+        state.escape_exit_hold_elapsed_valid = False
+        state.escape_stalled = False
+        state.escape_stalled_valid = False
+        state.safe_direction_x = float("nan")
+        state.safe_direction_y = float("nan")
+        state.safe_direction_clearance_m = float("nan")
+        state.safe_direction_valid = False
+        state.safe_direction_revision = 0
+        state.safe_direction_revision_valid = False
+        state.recenter_target_x = float("nan")
+        state.recenter_target_y = float("nan")
+        state.recenter_target_valid = False
+        state.recenter_distance = float("nan")
+        state.recenter_distance_valid = False
         state.sensor_weight = sensor_weight
         state.gaussian_weight = gaussian_weight
         state.affine_weight = affine_weight
