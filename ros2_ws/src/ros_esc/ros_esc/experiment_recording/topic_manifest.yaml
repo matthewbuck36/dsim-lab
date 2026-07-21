@@ -1,0 +1,38 @@
+schema_version: 1
+storage_id: sqlite3
+validation:
+  timestamp_regression_tolerance_sec: 0.15
+topics:
+  - {alias: source_cost, topic: /gesc_gaussian/source_cost, type: ros_esc_interfaces/msg/CostBreakdown, modes: [simulation, physical], required: true, minimum_messages: 1, coverage: motion, singleton_publisher: true}
+  - {alias: cost_breakdown, topic: /gesc_gaussian/cost_breakdown, type: ros_esc_interfaces/msg/CostBreakdown, modes: [simulation, physical], required: true, minimum_messages: 1, coverage: motion, singleton_publisher: true}
+  - {alias: gesc_diagnostics, topic: /gesc_gaussian/gesc_diagnostics, type: ros_esc_interfaces/msg/GescDiagnostics, modes: [simulation, physical], required: true, minimum_messages: 1, coverage: motion, singleton_publisher: true}
+  - {alias: control_diagnostics, topic: /gesc_gaussian/control_diagnostics, type: ros_esc_interfaces/msg/ControlDiagnostics, modes: [simulation, physical], required: true, minimum_messages: 1, coverage: motion, final_zero: true, singleton_publisher: true}
+  - {alias: algorithm_state, topic: /gesc_gaussian/algorithm_state, type: ros_esc_interfaces/msg/AlgorithmState, modes: [simulation, physical], required: true, minimum_messages: 1, coverage: motion, singleton_publisher: true}
+  - {alias: algorithm_events, topic: /gesc_gaussian/algorithm_events, type: ros_esc_interfaces/msg/AlgorithmEvent, modes: [simulation, physical], required: true, minimum_messages: 1, coverage: none}
+  - {alias: raw_cost_legacy, topic: /turtlebot3/cost_value_chatter, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation, physical], required: true, minimum_messages: 1, coverage: none, singleton_publisher: true}
+  - {alias: augmented_cost_legacy, topic: /cost_modified, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation, physical], required: true, minimum_messages: 1, coverage: none, singleton_publisher: true}
+  - {alias: filter_output_legacy, topic: /turtlebot3/filter_value_chatter, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation, physical], required: true, minimum_messages: 1, coverage: none, singleton_publisher: true}
+  - {alias: command_array_final, topic: /turtlebot3/control_value_chatter, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation, physical], required: true, minimum_messages: 1, coverage: motion, final_zero: true, singleton_publisher: true}
+  - {alias: command_final, topic: /cmd_vel, type: geometry_msgs/msg/Twist, modes: [simulation, physical], required: true, minimum_messages: 1, coverage: motion, final_zero: true, singleton_publisher: true}
+  - {alias: pose, topic: /odom, type: nav_msgs/msg/Odometry, modes: [simulation, physical], required: true, minimum_messages: 1, coverage: motion, singleton_publisher: true}
+  - {alias: timekeeper, topic: /turtlebot3/timekeeper_chatter, type: ros_esc_interfaces/msg/Timekeeper, modes: [simulation, physical], required: true, minimum_messages: 1, coverage: none, singleton_publisher: true}
+  - {alias: recording_ready, topic: /gesc_gaussian/recording_ready, type: std_msgs/msg/Bool, modes: [simulation, physical], required: true, minimum_messages: 2, coverage: readiness, final_false: true, singleton_publisher: true}
+  - {alias: clock, topic: /clock, type: rosgraph_msgs/msg/Clock, modes: [simulation], required: true, minimum_messages: 1, coverage: run, singleton_publisher: true}
+  - {alias: encoder, topic: /turtlebot3/encoder_chatter, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation], required: true, minimum_messages: 1, coverage: none, singleton_publisher: true}
+  - {alias: sensor_transform, topic: /turtlebot3/sensor_transform_chatter, type: ros_esc_interfaces/msg/StampedTransformMultiArray, modes: [simulation], required: true, minimum_messages: 1, coverage: none, singleton_publisher: true}
+  - {alias: joint_states, topic: /joint_states, type: sensor_msgs/msg/JointState, modes: [simulation], required: true, minimum_messages: 1, coverage: none}
+  - {alias: sensor_rotation_command, topic: /velocity_controller/commands, type: std_msgs/msg/Float64MultiArray, modes: [simulation], required: true, minimum_messages: 1, coverage: none, singleton_publisher: true}
+  - {alias: gaussian_fills, topic: /gesc_gaussian/gaussian_fills, type: ros_esc_interfaces/msg/GaussianFill, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: conditional_fill}
+  - {alias: convergence_status, topic: /gesc_gaussian/convergence_status, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
+  - {alias: fill_requests, topic: /gesc_gaussian/fill_requests, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
+  - {alias: supervisor_command, topic: /gesc_gaussian/supervisor_command, type: geometry_msgs/msg/Twist, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
+  - {alias: stop_requested, topic: /gesc_gaussian/stop_requested, type: std_msgs/msg/Bool, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
+  - {alias: cost_bias, topic: /cost_bias, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
+  - {alias: pde_history, topic: /pde_history, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
+  - {alias: pde_cost_history, topic: /pde_cost_history, type: std_msgs/msg/Float64MultiArray, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
+  - {alias: convergence_metric, topic: /convergence_metric, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
+  - {alias: convergence_r, topic: /convergence_r, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
+  - {alias: convergence_count, topic: /convergence_count, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
+  - {alias: convergence_event, topic: /convergence_event, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
+  - {alias: tf, topic: /tf, type: tf2_msgs/msg/TFMessage, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
+  - {alias: tf_static, topic: /tf_static, type: tf2_msgs/msg/TFMessage, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}

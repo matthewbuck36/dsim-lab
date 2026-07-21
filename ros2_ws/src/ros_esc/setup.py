@@ -10,6 +10,11 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/' + package_name + '/experiment_recording', [
+            'ros_esc/experiment_recording/topic_manifest.yaml',
+            'ros_esc/experiment_recording/experiment_metadata.yaml',
+            'ros_esc/experiment_recording/qos_overrides.yaml',
+        ]),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -36,6 +41,8 @@ setup(
             "pde_cost_history_node = ros_esc.pde_cost_history_node.pde_cost_history_script:main",
             "cost_surface_plotter = ros_esc.plotting_scripts.cost_surface_plotter:main",
             "supervisor_node = ros_esc.supervisor_node.supervisor_node_script:main",
+            "record_run = ros_esc.experiment_recording.record_run:main",
+            "validate_run = ros_esc.experiment_recording.validate_run:main",
         ],
     },
 )
