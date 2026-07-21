@@ -1,0 +1,210 @@
+"""Deterministic numerical coverage for Phase 04 escape and recentering."""
+
+import math
+
+import numpy as np
+import pytest
+
+from ros_esc.supervisor_node.escape_recenter import (
+    DirectionConfig,
+    EscapeGeometry,
+    EscapeProgressConfig,
+    EscapeProgressTracker,
+    FillAvoidance,
+    OperatingBounds,
+    Pose2D,
+    RecenterControlConfig,
+    RecenterHoldTracker,
+    evaluate_direction,
+    preferred_escape_direction,
+    recent_approach,
+    recenter_command,
+    select_safe_direction,
+    wrap_angle,
+)
+
+
+def pose(stamp, x, y, yaw=0.0):
+    return Pose2D(float(stamp), float(x), float(y), float(yaw))
+
+
+def geometry(**overrides):
+    values = {
+        "initial_fill_id": 7,
+        "center_x": 0.0,
+        "center_y": 0.0,
+        "exit_radius": 1.0,
+        "started_sec": 0.0,
+        "approach_x": 1.0,
+        "approach_y": 0.0,
+    }
+    values.update(overrides)
+    return EscapeGeometry(**values)
+
+
+def test_radial_progress_is_interpolated_at_exact_window_boundary():
+    tracker = EscapeProgressTracker(
+        geometry(),
+        EscapeProgressConfig(stall_window_sec=3.0),
+    )
+    first = tracker.update(pose(0.0, 0.1, 0.0))
+    tracker.update(pose(2.0, 0.3, 0.0))
+    current = tracker.update(pose(4.0, 0.8, 0.0))
+
+    assert first.radial_distance == pytest.approx(0.1)
+    assert first.radial_progress_valid is False
+    assert math.isnan(first.radial_progress)
+    assert current.radial_progress_valid is True
+    assert current.radial_progress == pytest.approx(0.6)
+
+
+def test_stall_threshold_equality_is_not_stalled_but_inward_motion_is():
+    tracker = EscapeProgressTracker(
+        geometry(),
+        EscapeProgressConfig(
+            stall_window_sec=1.0,
+            minimum_radial_progress_m=0.05,
+        ),
+    )
+    tracker.update(pose(0.0, 0.5, 0.0))
+    exact = tracker.update(pose(1.0, 0.55, 0.0))
+    inward = tracker.update(pose(2.0, 0.50, 0.0))
+    assert exact.radial_progress == pytest.approx(0.05)
+    assert exact.stalled is False
+    assert inward.radial_progress < 0.0
+    assert inward.stalled is True
+
+
+def test_strict_exit_requires_nonnegative_progress_hold_and_resets():
+    tracker = EscapeProgressTracker(
+        geometry(),
+        EscapeProgressConfig(stall_window_sec=1.0, escape_exit_hold_sec=1.0),
+    )
+    tracker.update(pose(0.0, 0.9, 0.0))
+    at_radius = tracker.update(pose(1.0, 1.0, 0.0))
+    outside = tracker.update(pose(1.5, 1.1, 0.0))
+    held = tracker.update(pose(2.5, 1.1, 0.0))
+    reset = tracker.update(pose(3.0, 0.95, 0.0))
+    assert at_radius.exit_hold_elapsed_valid is False
+    assert outside.exit_hold_elapsed_sec == 0.0
+    assert outside.stalled is False
+    assert held.stable_exit is True
+    assert reset.exit_hold_elapsed_valid is False
+
+
+def test_frozen_geometry_is_not_changed_by_a_replacement_fill():
+    frozen = geometry(center_x=1.0, center_y=2.0, exit_radius=0.8)
+    tracker = EscapeProgressTracker(frozen)
+    replacement = geometry(
+        initial_fill_id=8,
+        center_x=9.0,
+        center_y=9.0,
+        exit_radius=4.0,
+    )
+    del replacement
+    tracker.update(pose(0.0, 1.4, 2.0))
+    assert tracker.geometry.initial_fill_id == 7
+    assert tracker.geometry.center.tolist() == [1.0, 2.0]
+    assert tracker.geometry.exit_radius == 0.8
+
+
+def test_recent_approach_interpolates_and_unbounded_policy_reverses_it():
+    history = [pose(0.0, 0.0, 0.0), pose(2.0, 2.0, 0.0), pose(4.0, 5.0, 0.0)]
+    approach = recent_approach(history, 3.0)
+    assert approach == pytest.approx([4.0, 0.0])
+    frozen = geometry(approach_x=approach[0], approach_y=approach[1])
+    preferred = preferred_escape_direction([5.0, 0.0], frozen, bounds=None)
+    assert preferred == pytest.approx([-1.0, 0.0])
+
+
+def test_bounded_policy_prefers_center_then_radial_fallback():
+    bounds = OperatingBounds()
+    preferred = preferred_escape_direction([1.0, 0.0], geometry(), bounds)
+    assert preferred == pytest.approx([-1.0, 0.0])
+    radial = preferred_escape_direction(
+        [0.0, 0.0],
+        geometry(center_x=-1.0, center_y=0.0, approach_x=0.0),
+        bounds,
+    )
+    assert radial == pytest.approx([1.0, 0.0])
+    with pytest.raises(ValueError, match="nonzero"):
+        preferred_escape_direction(
+            [0.0, 0.0],
+            geometry(approach_x=0.0, center_x=0.0),
+            bounds=None,
+        )
+
+
+def test_wall_rejection_selects_positive_rotation_before_negative_tie():
+    bounds = OperatingBounds()
+    selection = select_safe_direction(
+        [1.60, 0.0],
+        [1.0, 0.0],
+        [],
+        DirectionConfig(lookahead_m=0.5),
+        bounds,
+    )
+    assert selection is not None
+    assert selection.rotation_rad == pytest.approx(math.pi / 2.0)
+    assert selection.y > 0.0
+
+
+def test_fill_avoidance_rejects_entry_and_allows_only_outward_recovery():
+    fill = FillAvoidance(1, 1, 0.0, 0.0, 0.5)
+    config = DirectionConfig(lookahead_m=0.5)
+    safe, _ = evaluate_direction([0.6, 0.0], [-1.0, 0.0], [-1.0, 0.0], [fill], config)
+    assert safe is False
+    inward, _ = evaluate_direction([0.2, 0.0], [-1.0, 0.0], [-1.0, 0.0], [fill], config)
+    outward, clearance = evaluate_direction([0.2, 0.0], [1.0, 0.0], [1.0, 0.0], [fill], config)
+    assert inward is False
+    assert outward is True
+    assert clearance == pytest.approx(0.2)
+
+
+def test_no_safe_candidate_returns_none():
+    bounds = OperatingBounds(x_min=-0.5, x_max=0.5, y_min=-0.5, y_max=0.5, wall_margin=0.1)
+    selection = select_safe_direction(
+        [0.0, 0.0],
+        [1.0, 0.0],
+        [],
+        DirectionConfig(lookahead_m=1.0),
+        bounds,
+    )
+    assert selection is None
+
+
+def test_recenter_controller_wraps_rotates_and_caps_commands():
+    config = RecenterControlConfig()
+    assert wrap_angle(3.0 * math.pi) == pytest.approx(-math.pi)
+    linear, angular = recenter_command([1.0, 0.0], math.pi, 2.0, config)
+    assert linear == 0.0
+    assert abs(angular) == config.max_angular_velocity_rps
+    linear, angular = recenter_command([1.0, 0.0], 0.2, 2.0, config)
+    assert 0.0 < linear <= config.max_linear_velocity_mps
+    assert abs(angular) <= config.max_angular_velocity_rps
+
+
+def test_recenter_hold_completes_and_resets_after_leaving_tolerance():
+    tracker = RecenterHoldTracker(RecenterControlConfig(tolerance_m=0.25, hold_sec=1.0))
+    assert tracker.update(0.0, 0.2) is False
+    assert tracker.update(0.5, 0.3) is False
+    assert math.isnan(tracker.elapsed_sec)
+    assert tracker.update(1.0, 0.2) is False
+    assert tracker.update(2.0, 0.2) is True
+
+
+@pytest.mark.parametrize(
+    "factory",
+    [
+        lambda: OperatingBounds(x_min=1.0, x_max=0.0),
+        lambda: OperatingBounds(wall_margin=2.0),
+        lambda: OperatingBounds(center_x=1.9),
+        lambda: EscapeProgressConfig(stall_window_sec=0.0),
+        lambda: DirectionConfig(lookahead_m=math.nan),
+        lambda: RecenterControlConfig(max_linear_velocity_mps=0.0),
+        lambda: pose(0.0, math.nan, 0.0),
+    ],
+)
+def test_invalid_geometry_and_controller_settings_are_rejected(factory):
+    with pytest.raises(ValueError):
+        factory()

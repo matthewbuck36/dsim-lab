@@ -32,6 +32,33 @@ bool active_fill_count_valid
 uint64 active_escape_fill_id
 bool active_escape_fill_id_valid
 
+float64 escape_center_x
+float64 escape_center_y
+float64 escape_exit_radius
+bool escape_geometry_valid
+
+float64 radial_distance
+bool radial_distance_valid
+float64 radial_progress
+bool radial_progress_valid
+float64 escape_exit_hold_elapsed_sec
+bool escape_exit_hold_elapsed_valid
+bool escape_stalled
+bool escape_stalled_valid
+
+float64 safe_direction_x
+float64 safe_direction_y
+float64 safe_direction_clearance_m
+bool safe_direction_valid
+uint32 safe_direction_revision
+bool safe_direction_revision_valid
+
+float64 recenter_target_x
+float64 recenter_target_y
+bool recenter_target_valid
+float64 recenter_distance
+bool recenter_distance_valid
+
 float64 sensor_weight
 float64 gaussian_weight
 float64 affine_weight
