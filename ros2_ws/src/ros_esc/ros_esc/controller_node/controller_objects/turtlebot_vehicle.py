@@ -129,6 +129,26 @@ class Directional_Controller(ControllerObject):
             dtype=np.float64,
         )
 
+    def saturate_command(self, command):
+        """Apply the existing directional-controller limits to a six-vector."""
+
+        command = np.asarray(command, dtype=np.float64).reshape(-1)
+        if command.size != 6:
+            raise ValueError("directional controller commands require six values")
+        output = np.array(command, dtype=np.float64, copy=True)
+        saturation_flags = np.array([False] * 6, dtype=bool)
+        if np.abs(output[0]) > self.max_vx:
+            saturation_flags[0] = True
+            output[0] = float(self.max_vx * np.sign(output[0]))
+        if np.abs(output[5]) > self.max_wz:
+            saturation_flags[5] = True
+            output[5] = float(self.max_wz * np.sign(output[5]))
+
+        self.last_command_unsaturated = np.array(command, dtype=np.float64, copy=True)
+        self.last_command_saturated = np.array(output, dtype=np.float64, copy=True)
+        self.last_saturation_flags = saturation_flags
+        return output
+
     def controller_output(self, time, state, input_values):
         """This operates on the input arguments and produces the controller output.
 
@@ -145,33 +165,9 @@ class Directional_Controller(ControllerObject):
         # Angular velocity wz
         w_z = self.k_wz*input_values[1]
 
-        self.last_command_unsaturated = np.array(
-            [v_x, 0, 0, 0, 0, w_z], dtype=np.float64
-        )
-        saturation_flags = np.array(
-            [
-                np.abs(v_x) > self.max_vx,
-                False,
-                False,
-                False,
-                False,
-                np.abs(w_z) > self.max_wz,
-            ],
-            dtype=bool,
-        )
-
-        # Make sure these commands don't go over our vehicle constraints
-        if np.abs(v_x) > self.max_vx:
-            v_x = float(self.max_vx*np.sign(v_x))
-        if np.abs(w_z) > self.max_wz:
-            w_z = float(self.max_wz*np.sign(w_z))
-
         # Return a list of commanded velocities
         # [vx, vy, vz, wx, wy, wz]
-        output = np.array([v_x, 0, 0, 0, 0, w_z])
-
-        self.last_command_saturated = np.array(output, dtype=np.float64, copy=True)
-        self.last_saturation_flags = saturation_flags
+        output = self.saturate_command([v_x, 0, 0, 0, 0, w_z])
 
         return output
 

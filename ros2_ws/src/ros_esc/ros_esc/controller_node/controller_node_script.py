@@ -18,6 +18,8 @@ import numpy as np
 from rclpy.node import Node
 import rclpy.parameter
 from ros_esc_interfaces.msg import (
+    AlgorithmEvent,
+    AlgorithmState,
     ControlDiagnostics,
     StampedFloat64MultiArray,
     Timekeeper,
@@ -25,6 +27,7 @@ from ros_esc_interfaces.msg import (
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from ros_esc.config_parsing import parse_object_config
+from ros_esc.supervisor_node.state_machine import ROBUST_PROFILE, VALID_PROFILES
 
 class CustomController(Node):
     """This class creates a custom controller for use in experimentation."""
@@ -79,10 +82,28 @@ class CustomController(Node):
         parser.add_argument('out_twist_topic', type=str, help=output_twist_topic_msg)
         parser.add_argument('config', type=str, help=config_file_msg)
         parser.add_argument("--enable_observability", default="False")
+        parser.add_argument("--algorithm_profile", default="legacy")
         parser.add_argument(
             "--control_diagnostics_topic",
             default="/gesc_gaussian/control_diagnostics",
         )
+        parser.add_argument(
+            "--algorithm_state_topic", default="/gesc_gaussian/algorithm_state"
+        )
+        parser.add_argument(
+            "--algorithm_event_topic", default="/gesc_gaussian/algorithm_events"
+        )
+        parser.add_argument(
+            "--supervisor_command_topic",
+            default="/gesc_gaussian/supervisor_command",
+        )
+        parser.add_argument("--supervisor_state_stale_sec", type=float, default=0.5)
+        parser.add_argument("--supervisor_command_stale_sec", type=float, default=0.5)
+        parser.add_argument("--stale_pose_sec", type=float, default=0.5)
+        parser.add_argument("--stale_filter_sec", type=float, default=0.5)
+        parser.add_argument("--command_watchdog_rate_hz", type=float, default=20.0)
+        parser.add_argument("--startup_timeout_sec", type=float, default=5.0)
+        parser.add_argument("--zero_command_on_shutdown", default="True")
         args = parser.parse_args()
 
         # Initialize variables
@@ -91,7 +112,32 @@ class CustomController(Node):
         self.start_time = None
         self.input_value_timestamp = None
         self.timekeeping_mode = None
-        self.enable_observability = _as_bool(args.enable_observability)
+        self.algorithm_profile = str(args.algorithm_profile).strip()
+        if self.algorithm_profile not in VALID_PROFILES:
+            raise ValueError(
+                f"algorithm_profile must be one of {VALID_PROFILES}; "
+                f"received {self.algorithm_profile!r}"
+            )
+        self.robust_profile = self.algorithm_profile == ROBUST_PROFILE
+        self.enable_observability = (
+            _as_bool(args.enable_observability) or self.robust_profile
+        )
+        self.supervisor_state_stale_sec = max(0.0, args.supervisor_state_stale_sec)
+        self.supervisor_command_stale_sec = max(
+            0.0, args.supervisor_command_stale_sec
+        )
+        self.stale_pose_sec = max(0.0, args.stale_pose_sec)
+        self.stale_filter_sec = max(0.0, args.stale_filter_sec)
+        self.zero_command_on_shutdown = _as_bool(args.zero_command_on_shutdown)
+        self.startup_timeout_sec = max(0.0, args.startup_timeout_sec)
+        self.controller_started_sec = self._now_sec()
+        self.input_receipt_sec = None
+        self.pose_receipt_sec = None
+        self.supervisor_state_receipt_sec = None
+        self.supervisor_command_receipt_sec = None
+        self.latest_algorithm_state = None
+        self.supervisor_command = np.zeros(6, dtype=np.float64)
+        self.last_local_fault = None
 
         # Expand the filepath if the ~ character is used
         config_filepath = os.path.expanduser(args.config)
@@ -103,6 +149,10 @@ class CustomController(Node):
 
         # Get the initialized controller object
         self.controller_obj = parse_object_config(config_dict)
+        self.robust_controller_compatible = (
+            type(self.controller_obj).__name__ == "Directional_Controller"
+            and hasattr(self.controller_obj, "saturate_command")
+        )
 
         # Create a subscriber to the input value topic
         # This will give us the input values our custom controller will operate on
@@ -134,9 +184,33 @@ class CustomController(Node):
             StampedFloat64MultiArray, args.out_control_topic, 10
         )
         self.control_diagnostics_publisher = None
+        self.algorithm_event_publisher = None
         if self.enable_observability:
             self.control_diagnostics_publisher = self.create_publisher(
                 ControlDiagnostics, args.control_diagnostics_topic, 10
+            )
+        self.algorithm_state_subscriber = None
+        self.supervisor_command_subscriber = None
+        self.watchdog_timer = None
+        if self.robust_profile:
+            self.algorithm_event_publisher = self.create_publisher(
+                AlgorithmEvent, args.algorithm_event_topic, 10
+            )
+            self.algorithm_state_subscriber = self.create_subscription(
+                AlgorithmState,
+                args.algorithm_state_topic,
+                self.supervisor_state_callback,
+                10,
+            )
+            self.supervisor_command_subscriber = self.create_subscription(
+                Twist,
+                args.supervisor_command_topic,
+                self.supervisor_command_callback,
+                10,
+            )
+            watchdog_rate = max(1e-6, float(args.command_watchdog_rate_hz))
+            self.watchdog_timer = self.create_timer(
+                1.0 / watchdog_rate, self.watchdog_callback
             )
 
     def input_value_callback(self, msg: StampedFloat64MultiArray):
@@ -146,8 +220,17 @@ class CustomController(Node):
         self.input_value = msg.data
         # Get the input timestamp
         self.input_value_timestamp = msg.timestamp
+        self.input_receipt_sec = self._now_sec()
         # Use the controller and publish the result
-        self.publish_control_value()
+        try:
+            self.publish_control_value()
+        except Exception as exc:
+            if not self.robust_profile:
+                raise
+            self._publish_zero(
+                f"controller exception: {type(exc).__name__}: {exc}",
+                report_fault=True,
+            )
 
     def state_callback(self, msg: Odometry):
         """This function collects the robot's state."""
@@ -173,6 +256,26 @@ class CustomController(Node):
 
         # Update our state
         self.state_value = np.array([x_pos, y_pos, z_pos, roll, pitch, yaw])
+        self.pose_receipt_sec = self._now_sec()
+
+    def supervisor_state_callback(self, msg: AlgorithmState):
+        """Receive command authorization from the robust supervisor."""
+
+        self.latest_algorithm_state = msg
+        self.supervisor_state_receipt_sec = self._now_sec()
+        if msg.state not in (
+            AlgorithmState.STATE_SEARCH,
+            AlgorithmState.STATE_ESCAPE_REPULSE,
+            AlgorithmState.STATE_ESCAPE_ASSIST,
+            AlgorithmState.STATE_RECENTER,
+        ):
+            self._publish_zero("supervisor state disallows motion", report_fault=False)
+
+    def supervisor_command_callback(self, msg: Twist):
+        """Receive the Phase 02 zero command and future Phase 04 extension."""
+
+        self.supervisor_command = _twist_to_six(msg)
+        self.supervisor_command_receipt_sec = self._now_sec()
 
     def timekeeping_callback(self, msg: Timekeeper):
         """This function collects the information from the input timekeeping topic."""
@@ -197,6 +300,31 @@ class CustomController(Node):
             output = self.controller_obj.controller_output(
                 current_time, self.state_value, controller_inp
             )
+            gesc_unsaturated = np.asarray(
+                getattr(self.controller_obj, "last_command_unsaturated", output),
+                dtype=np.float64,
+            )
+            supervisor_report = None
+            combined_unsaturated = None
+            if self.robust_profile:
+                fault = self._robust_fault_reason()
+                if fault is None:
+                    combined_unsaturated = self._authorized_combination(
+                        gesc_unsaturated, self.supervisor_command
+                    )
+                    supervisor_report = combined_unsaturated - gesc_unsaturated
+                    output = self.controller_obj.saturate_command(
+                        combined_unsaturated
+                    )
+                    self.last_local_fault = None
+                else:
+                    if not fault.startswith("startup waiting"):
+                        self._emit_local_fault_once(fault)
+                    combined_unsaturated = np.zeros(6, dtype=np.float64)
+                    supervisor_report = -gesc_unsaturated
+                    output = self.controller_obj.saturate_command(
+                        combined_unsaturated
+                    )
             # Convert the values to floats
             output = [float(x) for x in output]
 
@@ -250,14 +378,31 @@ class CustomController(Node):
             self.controller_publisher.publish(msg)
 
             if self.enable_observability:
-                self.publish_control_diagnostics(current_time, output)
+                self.publish_control_diagnostics(
+                    current_time,
+                    output,
+                    gesc_unsaturated=gesc_unsaturated,
+                    supervisor_contribution=supervisor_report,
+                    combined_unsaturated=combined_unsaturated,
+                )
 
-    def publish_control_diagnostics(self, source_timestamp, output):
+    def publish_control_diagnostics(
+        self,
+        source_timestamp,
+        output,
+        gesc_unsaturated=None,
+        supervisor_contribution=None,
+        combined_unsaturated=None,
+    ):
         """Publish pre/post-saturation values retained by compatible controllers."""
 
         unavailable = [float("nan")] * 6
         controller = self.controller_obj
-        unsaturated = getattr(controller, "last_command_unsaturated", None)
+        unsaturated = (
+            gesc_unsaturated
+            if gesc_unsaturated is not None
+            else getattr(controller, "last_command_unsaturated", None)
+        )
         saturated = getattr(controller, "last_command_saturated", None)
         saturation_flags = getattr(controller, "last_saturation_flags", None)
         limit_valid = getattr(controller, "last_limit_valid", None)
@@ -305,8 +450,19 @@ class CustomController(Node):
             msg.lower_limits = unavailable
             msg.upper_limits = unavailable
 
-        msg.supervisor_contribution = unavailable
-        msg.supervisor_contribution_valid = False
+        if supervisor_contribution is None:
+            msg.supervisor_contribution = unavailable
+            msg.supervisor_contribution_valid = False
+        else:
+            msg.supervisor_contribution = _six_float_list(supervisor_contribution)
+            msg.supervisor_contribution_valid = bool(
+                np.all(np.isfinite(supervisor_contribution))
+            )
+        if combined_unsaturated is not None:
+            msg.combined_command_unsaturated = _six_float_list(combined_unsaturated)
+            msg.combined_command_unsaturated_valid = bool(
+                np.all(np.isfinite(combined_unsaturated))
+            )
         msg.final_command = _six_float_list(output)
         msg.final_command_valid = bool(np.all(np.isfinite(output)))
         k_vx = getattr(controller, "k_vx", None)
@@ -320,6 +476,147 @@ class CustomController(Node):
             msg.k_wz = float("nan")
             msg.gains_valid = False
         self.control_diagnostics_publisher.publish(msg)
+
+    def _now_sec(self):
+        return self.get_clock().now().nanoseconds * 1e-9
+
+    def _robust_fault_reason(self):
+        now_sec = self._now_sec()
+        if not self.robust_controller_compatible:
+            return "robust profile requires Directional_Controller"
+        freshness = (
+            ("supervisor state", self.supervisor_state_receipt_sec, self.supervisor_state_stale_sec),
+            ("supervisor command", self.supervisor_command_receipt_sec, self.supervisor_command_stale_sec),
+            ("pose", self.pose_receipt_sec, self.stale_pose_sec),
+            ("filter input", self.input_receipt_sec, self.stale_filter_sec),
+        )
+        for name, receipt, limit in freshness:
+            if receipt is None:
+                if now_sec - self.controller_started_sec <= self.startup_timeout_sec:
+                    return f"startup waiting for {name}"
+                return f"{name} missing or stale"
+            if now_sec - receipt > limit or now_sec < receipt:
+                return f"{name} missing or stale"
+        state = self.latest_algorithm_state
+        if (
+            state is None
+            or not state.state_valid
+            or state.algorithm_profile != ROBUST_PROFILE
+        ):
+            return "supervisor state invalid"
+        valid_states = {
+            AlgorithmState.STATE_SEARCH,
+            AlgorithmState.STATE_VERIFY_EXTREMUM,
+            AlgorithmState.STATE_DESIGN_OR_MERGE_FILL,
+            AlgorithmState.STATE_ESCAPE_REPULSE,
+            AlgorithmState.STATE_ESCAPE_ASSIST,
+            AlgorithmState.STATE_RECENTER,
+            AlgorithmState.STATE_GOAL_HOLD,
+            AlgorithmState.STATE_FAILSAFE,
+        }
+        weights = np.array(
+            [state.sensor_weight, state.gaussian_weight, state.affine_weight],
+            dtype=np.float64,
+        )
+        if (
+            state.state not in valid_states
+            or not state.weights_valid
+            or not np.all(np.isfinite(weights))
+        ):
+            return "supervisor state invalid"
+        numeric = np.concatenate([
+            np.asarray(self.input_value, dtype=np.float64).reshape(-1),
+            np.asarray(self.state_value, dtype=np.float64).reshape(-1),
+            np.asarray(self.supervisor_command, dtype=np.float64).reshape(-1),
+        ])
+        if not np.all(np.isfinite(numeric)):
+            return "nonfinite controller input"
+        return None
+
+    def _authorized_combination(self, gesc_command, supervisor_command):
+        state = self.latest_algorithm_state.state
+        if state in (
+            AlgorithmState.STATE_SEARCH,
+            AlgorithmState.STATE_ESCAPE_REPULSE,
+            AlgorithmState.STATE_ESCAPE_ASSIST,
+        ):
+            return np.asarray(gesc_command) + np.asarray(supervisor_command)
+        if state == AlgorithmState.STATE_RECENTER:
+            return np.asarray(supervisor_command, dtype=np.float64)
+        return np.zeros(6, dtype=np.float64)
+
+    def watchdog_callback(self):
+        """Continuously enforce zero output whenever robust authorization is absent."""
+
+        fault = self._robust_fault_reason()
+        state = self.latest_algorithm_state
+        motion_authorized = (
+            state is not None
+            and state.state in (
+                AlgorithmState.STATE_SEARCH,
+                AlgorithmState.STATE_ESCAPE_REPULSE,
+                AlgorithmState.STATE_ESCAPE_ASSIST,
+                AlgorithmState.STATE_RECENTER,
+            )
+        )
+        if fault is not None:
+            if not fault.startswith("startup waiting"):
+                self._emit_local_fault_once(fault)
+        if fault is not None or not motion_authorized:
+            self._publish_zero(fault or "supervisor state disallows motion", report_fault=False)
+
+    def _publish_zero(self, reason, report_fault=True):
+        zero = np.zeros(6, dtype=np.float64)
+        self.twist_publisher.publish(Twist())
+        if self.start_time is not None and self.timekeeping_mode in ("sim time", "real time"):
+            out = StampedFloat64MultiArray()
+            out.header = "Controller Value"
+            out.timestamp = self._relative_publish_time()
+            out.data = [0.0] * 6
+            self.controller_publisher.publish(out)
+        if self.control_diagnostics_publisher is not None:
+            gesc = getattr(self.controller_obj, "last_command_unsaturated", None)
+            if gesc is None or not np.all(np.isfinite(gesc)):
+                gesc = zero
+            self.publish_control_diagnostics(
+                float("nan"),
+                zero,
+                gesc_unsaturated=gesc,
+                supervisor_contribution=-np.asarray(gesc),
+                combined_unsaturated=zero,
+            )
+        if report_fault:
+            self._emit_local_fault_once(reason)
+
+    def _relative_publish_time(self):
+        if self.timekeeping_mode == "sim time":
+            return self._now_sec() - self.start_time
+        return float(time.time()) - self.start_time
+
+    def _emit_local_fault_once(self, reason):
+        if reason == self.last_local_fault or self.algorithm_event_publisher is None:
+            return
+        self.last_local_fault = reason
+        event = AlgorithmEvent()
+        event.stamp = self.get_clock().now().to_msg()
+        event.source_timestamp = float("nan")
+        event.source_timestamp_valid = False
+        event.event_type = AlgorithmEvent.EVENT_FAILSAFE
+        event.state = AlgorithmState.STATE_FAILSAFE
+        event.state_name = "FAILSAFE"
+        event.state_valid = True
+        event.fill_id = 0
+        event.fill_id_valid = False
+        event.reason_code = 1
+        event.detail = f"controller watchdog: {reason}"
+        event.value_names = []
+        event.values = []
+        self.algorithm_event_publisher.publish(event)
+
+    def destroy_node(self):
+        if self.robust_profile and self.zero_command_on_shutdown:
+            self._publish_zero("controller shutdown", report_fault=False)
+        return super().destroy_node()
 
 
 def _as_bool(value):
@@ -337,6 +634,22 @@ def _six_float_list(values):
     if flattened.size != 6:
         raise ValueError("controller diagnostics require exactly six values")
     return [float(value) for value in flattened]
+
+
+def _twist_to_six(msg):
+    """Convert a Twist to the repository's six-value command convention."""
+
+    return np.array(
+        [
+            msg.linear.x,
+            msg.linear.y,
+            msg.linear.z,
+            msg.angular.x,
+            msg.angular.y,
+            msg.angular.z,
+        ],
+        dtype=np.float64,
+    )
 
 
 def main(args=None):

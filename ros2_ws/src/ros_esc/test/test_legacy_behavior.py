@@ -12,10 +12,17 @@ from ros_esc.controller_node.controller_objects.turtlebot_vehicle import (
     Directional_Controller,
 )
 from ros_esc.filter_node.filter_node_script import CustomFilter
+from ros_esc.cost_function_node.cost_function_objects.cost_function_objects import (
+    Multi_Light_Source_Cost,
+    Photoresistor_Interpolated_Map,
+    Position_Based_Sympy_Expression,
+)
 from ros_esc.gaussian_fill_node.gaussian_fill_script import GaussianFill
 from ros_esc.modified_cost_node.modified_cost_script import ModifiedCost2D
 from ros_esc_interfaces.msg import (
     AlgorithmEvent,
+    AlgorithmState,
+    CostBreakdown,
     StampedFloat64MultiArray,
 )
 
@@ -152,6 +159,109 @@ def test_directional_controller_retains_exact_saturation_diagnostics():
     ]
 
 
+@pytest.mark.parametrize("mode", ["Resistance", "Voltage"])
+def test_photoresistor_source_score_uses_model_endpoints(mode):
+    model = Photoresistor_Interpolated_Map(
+        {"mode": mode, "x_optimal": 1.0, "y_optimal": 2.0}
+    )
+    dark = float(model.max_value)
+    near = float(model.min_value)
+    if mode == "Voltage":
+        dark = model.convert_resistance_to_voltage(dark)
+        near = model.convert_resistance_to_voltage(near)
+    assert model.source_score(dark) == pytest.approx(0.0)
+    assert model.source_score(near) == pytest.approx(1.0)
+    assert model.source_score((dark + near) / 2.0) == pytest.approx(0.5)
+    assert model.source_score(near + 10.0 * (near - dark)) == pytest.approx(1.0)
+
+
+def test_multi_light_score_does_not_depend_on_light_positions():
+    first = Multi_Light_Source_Cost(
+        {
+            "mode": "Voltage",
+            "light_sources": [{"x": 1.0, "y": 2.0, "intensity_lumens": 500.0}],
+        }
+    )
+    second = Multi_Light_Source_Cost(
+        {
+            "mode": "Voltage",
+            "light_sources": [{"x": 9.0, "y": -4.0, "intensity_lumens": 5000.0}],
+        }
+    )
+    cost = first._convert_resistance_to_voltage(1000.0)
+    assert first.source_score(cost) == second.source_score(cost)
+
+
+def test_unsupported_cost_model_reports_invalid_score():
+    model = Position_Based_Sympy_Expression(
+        {
+            "function": "x**2 + y**2",
+            "symbols": ["t", "x", "y", "z"],
+        }
+    )
+    assert np.isnan(model.source_score(0.0))
+
+
+def test_robust_weighted_cost_keeps_raw_sample_and_evaluates_bias_once(monkeypatch):
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["modified_cost_node", "/test/raw", "/test/fill", "/test/out"],
+    )
+    rclpy.init(
+        args=[
+            "--ros-args",
+            "-p",
+            "algorithm_profile:=robust_gaussian_v1",
+        ]
+    )
+    node = ModifiedCost2D()
+    try:
+        node.pub = Recorder()
+        node.cost_breakdown_publisher = Recorder()
+        node.algorithm_event_publisher = Recorder()
+        node.xy = np.array([0.0, 0.0])
+        calls = []
+
+        def components(_x, _y):
+            calls.append(1)
+            return 2.0, 3.0, 5.0
+
+        node._bias_components_at_xy = components
+        state = AlgorithmState()
+        state.algorithm_profile = "robust_gaussian_v1"
+        state.state = AlgorithmState.STATE_ESCAPE_ASSIST
+        state.state_valid = True
+        state.sensor_weight = 0.0
+        state.gaussian_weight = 1.0
+        state.affine_weight = 1.0
+        state.weights_valid = True
+        node.algorithm_state_cb(state)
+
+        source = CostBreakdown()
+        source.source_timestamp = 12.0
+        source.source_timestamp_valid = True
+        source.channel_count = 1
+        source.raw_cost = [-3.0]
+        source.raw_cost_valid = True
+        source.source_score = [0.4]
+        source.source_score_valid = True
+        node.source_cost_cb(source)
+
+        assert len(calls) == 1
+        assert list(node.pub.messages[-1].data) == [5.0]
+        breakdown = node.cost_breakdown_publisher.messages[-1]
+        assert list(breakdown.raw_cost) == [-3.0]
+        assert list(breakdown.source_score) == [0.4]
+        assert breakdown.sensor_weight == 0.0
+        assert breakdown.gaussian_weight == 1.0
+        assert breakdown.affine_weight == 1.0
+        assert list(breakdown.augmented_cost) == [5.0]
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
 def _run_filter(monkeypatch, observability):
     argv = [
         "filter_node",
@@ -254,6 +364,85 @@ def test_controller_legacy_and_typed_final_commands_match(monkeypatch):
         assert diagnostics.supervisor_contribution_valid is False
         assert twist.linear.x == legacy.data[0]
         assert twist.angular.z == legacy.data[5]
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_robust_controller_combines_then_saturates_and_gates_goal(monkeypatch):
+    argv = [
+        "controller_node",
+        "/test/filter",
+        "/test/odom",
+        "/test/timekeeper",
+        "/test/control",
+        "/test/cmd_vel",
+        str(CONTROLLER_CONFIG),
+        "--algorithm_profile",
+        "robust_gaussian_v1",
+        "--supervisor_state_stale_sec",
+        "5.0",
+        "--supervisor_command_stale_sec",
+        "5.0",
+        "--stale_pose_sec",
+        "5.0",
+        "--stale_filter_sec",
+        "5.0",
+    ]
+    monkeypatch.setattr(sys, "argv", argv)
+    rclpy.init(args=argv)
+    node = CustomController()
+    try:
+        node.twist_publisher = Recorder()
+        node.controller_publisher = Recorder()
+        node.control_diagnostics_publisher = Recorder()
+        node.algorithm_event_publisher = Recorder()
+        node.start_time = 0.0
+        node.timekeeping_mode = "sim time"
+        node.state_value = np.zeros(6)
+        node.input_value = [0.08, 0.04]
+        node.input_value_timestamp = 2.0
+        now_sec = node._now_sec()
+        node.pose_receipt_sec = now_sec
+        node.input_receipt_sec = now_sec
+        node.supervisor_state_receipt_sec = now_sec
+        node.supervisor_command_receipt_sec = now_sec
+        node.supervisor_command = np.array([0.05, 0, 0, 0, 0, 0.4])
+        state = AlgorithmState()
+        state.algorithm_profile = "robust_gaussian_v1"
+        state.state = AlgorithmState.STATE_SEARCH
+        state.state_valid = True
+        state.weights_valid = True
+        node.latest_algorithm_state = state
+
+        node.publish_control_value()
+        diagnostics = node.control_diagnostics_publisher.messages[-1]
+        assert list(diagnostics.gesc_command_unsaturated) == [
+            0.08, 0.0, 0.0, 0.0, 0.0, 0.2,
+        ]
+        assert list(diagnostics.combined_command_unsaturated) == pytest.approx([
+            0.13, 0.0, 0.0, 0.0, 0.0, 0.6,
+        ])
+        assert list(diagnostics.final_command) == [
+            0.1, 0.0, 0.0, 0.0, 0.0, 0.5,
+        ]
+
+        node.latest_algorithm_state.state = AlgorithmState.STATE_GOAL_HOLD
+        node.publish_control_value()
+        assert list(node.controller_publisher.messages[-1].data) == [0.0] * 6
+        assert list(node.control_diagnostics_publisher.messages[-1].final_command) == [
+            0.0
+        ] * 6
+
+        node.latest_algorithm_state.state = AlgorithmState.STATE_SEARCH
+        node.input_receipt_sec = None
+        node.controller_started_sec = node._now_sec() - 10.0
+        node.watchdog_callback()
+        assert node.twist_publisher.messages[-1].linear.x == 0.0
+        assert any(
+            event.event_type == AlgorithmEvent.EVENT_FAILSAFE
+            for event in node.algorithm_event_publisher.messages
+        )
     finally:
         node.destroy_node()
         rclpy.shutdown()

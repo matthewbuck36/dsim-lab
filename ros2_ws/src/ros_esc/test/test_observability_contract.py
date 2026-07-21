@@ -30,6 +30,11 @@ COST_CONFIG = (
     / "ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC"
     / "cost_function/2D_local_min.json"
 )
+PHOTORESISTOR_COST_CONFIG = (
+    REPOSITORY_ROOT
+    / "ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC"
+    / "cost_function/multi_light_source_photoresistor.json"
+)
 
 
 class Recorder:
@@ -115,6 +120,7 @@ def test_isotropic_fill_contract_and_reserved_state_constants():
     assert fill.sigma_major == fill.sigma_minor == sigma
     assert AlgorithmState.STATE_SEARCH != AlgorithmState.STATE_UNAVAILABLE
     assert AlgorithmState.STATE_FAILSAFE != AlgorithmState.STATE_UNAVAILABLE
+    assert AlgorithmEvent.EVENT_STATE_TRANSITION == 3
 
 
 def _make_cost_node(monkeypatch, enabled):
@@ -142,6 +148,43 @@ def test_cost_owner_creates_publishers_only_when_enabled(monkeypatch):
         assert disabled.algorithm_event_publisher is None
     finally:
         disabled.destroy_node()
+        rclpy.shutdown()
+
+
+def test_robust_source_owner_publishes_score_without_state_duplication(monkeypatch):
+    argv = [
+        "cost_function_node",
+        "/test/transforms",
+        "/test/timekeeper",
+        "/test/raw_cost",
+        str(PHOTORESISTOR_COST_CONFIG),
+        "--algorithm_profile",
+        "robust_gaussian_v1",
+        "--publish_final_breakdown",
+        "False",
+    ]
+    monkeypatch.setattr(sys, "argv", argv)
+    rclpy.init(args=argv)
+    node = CostFunction()
+    try:
+        assert node.source_cost_publisher is not None
+        assert node.cost_breakdown_publisher is None
+        assert node.algorithm_state_publisher is None
+        node.source_cost_publisher = Recorder()
+        node.algorithm_event_publisher = Recorder()
+        dark = node.cost_function._convert_resistance_to_voltage(
+            node.cost_function.max_value
+        )
+        near = node.cost_function._convert_resistance_to_voltage(
+            node.cost_function.min_value
+        )
+        node.publish_observability([dark, near], source_timestamp=2.0)
+        source = node.source_cost_publisher.messages[-1]
+        assert list(source.raw_cost) == [dark, near]
+        assert list(source.source_score) == pytest.approx([0.0, 1.0])
+        assert source.source_score_valid is True
+    finally:
+        node.destroy_node()
         rclpy.shutdown()
 
     enabled = _make_cost_node(monkeypatch, True)
@@ -185,6 +228,7 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         for element in root.findall("arg")
     }
     expected = {
+        "algorithm_profile": "legacy",
         "enable_observability": "False",
         "cost_breakdown_topic": "/gesc_gaussian/cost_breakdown",
         "gesc_diagnostics_topic": "/gesc_gaussian/gesc_diagnostics",
@@ -193,6 +237,11 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         "algorithm_state_topic": "/gesc_gaussian/algorithm_state",
         "algorithm_event_topic": "/gesc_gaussian/algorithm_events",
         "observability_source_mode": "simulation",
+        "source_cost_topic": "/gesc_gaussian/source_cost",
+        "convergence_status_topic": "/gesc_gaussian/convergence_status",
+        "fill_request_topic": "/gesc_gaussian/fill_requests",
+        "supervisor_command_topic": "/gesc_gaussian/supervisor_command",
+        "supervisor_stop_topic": "/gesc_gaussian/stop_requested",
     }
     for name, default in expected.items():
         assert args[name] == default
@@ -213,3 +262,17 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
     assert pde_tokens[pde_flag + 1] == "False"
     assert "$(var use_pde_extensions)" in non_pde.attrib["unless"]
     assert "$(var use_pde_extensions)" in pde.attrib["if"]
+
+    supervisor_commands = [
+        element
+        for element in root.findall("executable")
+        if "supervisor_node" in element.attrib.get("cmd", "")
+    ]
+    assert len(supervisor_commands) == 1
+    assert "robust_gaussian_v1" in supervisor_commands[0].attrib["if"]
+    controller_commands = [
+        element
+        for element in root.iter("executable")
+        if "controller_node" in element.attrib.get("cmd", "")
+    ]
+    assert len(controller_commands) == 1
