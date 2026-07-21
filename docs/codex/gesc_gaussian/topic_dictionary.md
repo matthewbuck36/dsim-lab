@@ -1,9 +1,10 @@
 # GESC Gaussian Topic and Message Dictionary
 
-This dictionary is the resolved Phase 01 interface contract for the current
-`dsim-lab` checkout. The new interface is additive and opt-in. The central
-Gazebo launch keeps `enable_observability=False` by default, so all legacy
-behavior and traffic remain unchanged unless observability is requested.
+This dictionary is the resolved Phase 02 interface contract for the current
+`dsim-lab` checkout. `algorithm_profile=legacy` remains the default and keeps
+the Phase 01/numerical legacy path. `robust_gaussian_v1` enables the explicit
+supervisor, state-weighted cost composition, model-normalized simulation
+source score, and command watchdog.
 
 ## Common timestamp and validity contract
 
@@ -23,19 +24,25 @@ zero and its validity field is false. Empty unavailable strings also have a
 false validity field. Consumers must inspect validity fields before using a
 value.
 
-All new publishers use queue depth 10. Publication is sample-driven; Phase 01
-adds no timer, synchronizer, polling loop, or control branch.
+All new publishers use queue depth 10. The robust supervisor and command
+watchdog publish at their configured rates; the other typed publishers remain
+sample-driven.
 
 ## Canonical typed topics
 
 | Topic | Message | Owner | Publication rate |
 |---|---|---|---|
-| `/gesc_gaussian/cost_breakdown` | `ros_esc_interfaces/msg/CostBreakdown` | `cost_function` without PDE extensions; `modified_cost_2d` with PDE extensions | Once per accepted raw-cost sample |
+| `/gesc_gaussian/cost_breakdown` | `ros_esc_interfaces/msg/CostBreakdown` | Legacy final cost owner; `modified_cost_2d` in robust mode | Once per accepted raw-cost sample |
 | `/gesc_gaussian/gesc_diagnostics` | `ros_esc_interfaces/msg/GescDiagnostics` | `custom_filter` | Once per legacy filter output |
 | `/gesc_gaussian/control_diagnostics` | `ros_esc_interfaces/msg/ControlDiagnostics` | `custom_controller` | Once per legacy command output |
 | `/gesc_gaussian/gaussian_fills` | `ros_esc_interfaces/msg/GaussianFill` | `gaussian_fill` | Once per accepted fill |
-| `/gesc_gaussian/algorithm_state` | `ros_esc_interfaces/msg/AlgorithmState` | Same mutually exclusive owner as final cost breakdown | Once per accepted raw-cost sample |
+| `/gesc_gaussian/algorithm_state` | `ros_esc_interfaces/msg/AlgorithmState` | Legacy final cost owner, or robust supervisor | Sample-driven legacy placeholder; timer/transition-driven robust state |
 | `/gesc_gaussian/algorithm_events` | `ros_esc_interfaces/msg/AlgorithmEvent` | Source, modified-cost, convergence, and fill owners | At the corresponding configuration, convergence, fill-created, or fill-rejected site |
+| `/gesc_gaussian/source_cost` | `ros_esc_interfaces/msg/CostBreakdown` | `cost_function` | Each robust raw-cost sample, synchronized with model-normalized source score |
+| `/gesc_gaussian/convergence_status` | `ros_esc_interfaces/msg/StampedFloat64MultiArray` | `convergence_detector` | Every valid post-startup convergence evaluation |
+| `/gesc_gaussian/fill_requests` | `ros_esc_interfaces/msg/StampedFloat64MultiArray` | supervisor | Once on each entry to fill design |
+| `/gesc_gaussian/supervisor_command` | `geometry_msgs/msg/Twist` | supervisor | Configured supervisor rate; always zero in Phase 02 |
+| `/gesc_gaussian/stop_requested` | `std_msgs/msg/Bool` | experiment operator/runner | `True` latches `FAILSAFE`; `False` is ignored |
 
 The two cost owners are mutually exclusive in `gazebo.launch.xml`. Multiple
 event publishers are intentional because each existing node retains ownership
@@ -62,19 +69,39 @@ audited physical adapters.
 | `raw_sensor_value[]` | No separate value exists in this checkout | Adapter-native sensor units | Invalid, `NaN` |
 | `filtered_sensor_value[]` | No separate value exists | Adapter-native sensor units | Invalid, `NaN` |
 | `raw_cost[]` | Legacy `/turtlebot3/cost_value_chatter` | Existing minimization cost units; voltage profiles retain negative-voltage sign | Valid when finite |
-| `source_score[]` | No calibration exists | Intended dimensionless source score | Invalid, `NaN` |
+| `source_score[]` | Compatible simulated photoresistor model endpoints | Dimensionless `[0,1]` model-range score | Valid in robust photoresistor profiles; otherwise invalid, `NaN` |
 | `gaussian_cost[]` | Existing Gaussian term evaluation | Cost units | Valid; zero when no fill contributes |
 | `affine_cost[]` | Existing decaying affine evaluation | Cost units | Valid; zero when disabled or inactive |
 | `augmented_cost[]` | Legacy raw or `/cost_modified` result | Cost units | Valid when finite |
-| `sensor_weight` | Fixed Phase 01 observation | Dimensionless | `1.0`, valid |
-| `gaussian_weight` | Fixed Phase 01 observation | Dimensionless | `0.0` in legacy mode, `1.0` in PDE mode |
-| `affine_weight` | Fixed Phase 01 observation | Dimensionless | `0.0` in legacy/disabled-affine mode, otherwise `1.0` |
+| `sensor_weight` | Profile/state policy | Dimensionless | Explicit and valid |
+| `gaussian_weight` | Profile/state policy | Dimensionless | Explicit and valid |
+| `affine_weight` | Profile/state policy | Dimensionless | Explicit and valid |
 
-In PDE mode the identity is:
+In legacy PDE mode the identity remains:
 
 ```text
 augmented_cost = raw_cost + gaussian_cost + affine_cost
 ```
+
+In `robust_gaussian_v1` the published identity is:
+
+```text
+augmented_cost = sensor_weight * raw_cost
+               + gaussian_weight * gaussian_cost
+               + affine_weight * affine_cost
+```
+
+All unweighted components are evaluated and published once even when their
+weight is zero. The raw source owner continues sampling and publishing on both
+the legacy raw topic and `/gesc_gaussian/source_cost` while
+`sensor_weight=0`.
+
+The simulation score is
+`clip((raw_cost-dark_cost)/(near_cost-dark_cost), 0, 1)` using the existing
+photoresistor resistance limits (`337260 ohm` dark and `100 ohm` near). It is
+computed after the configured noise object. This is a model-range score, not
+lux calibration and not a source-ground-truth position test. With multiple
+channels, the supervisor verifies the maximum finite channel score.
 
 `bias_all_channels=False` preserves the legacy first-channel-only correction;
 typed Gaussian and affine contributions for the other channels are zero.
@@ -106,8 +133,8 @@ angular components in radians per second.
 |---|---|
 | `controller_type` | Python controller class name |
 | `gesc_command_unsaturated[6]` | GESC command immediately before existing limit checks |
-| `supervisor_contribution[6]` | `NaN` and invalid; no Phase 01 supervisor exists |
-| `combined_command_unsaturated[6]` | Same as the unsaturated GESC command in Phase 01 |
+| `supervisor_contribution[6]` | Invalid in legacy; received/cancelling robust contribution in Phase 02 |
+| `combined_command_unsaturated[6]` | Legacy GESC command, or robust state-authorized combination before one final saturation |
 | `final_command[6]` | Exact post-saturation legacy command |
 | `saturation_flags[6]` | True where a component exceeded its configured limit |
 | `limit_valid[6]` | True for `vx` and `wz`; other components are structurally zero and have no declared numeric limit |
@@ -148,23 +175,35 @@ Residual and condition diagnostics do not participate in fill acceptance.
 The legacy `/cost_bias` layout remains exactly
 `[amplitude, center_x, center_y, sigma]`.
 
+Legacy continues subscribing directly to `/convergence_event` and preserves
+its publication behavior. Robust mode subscribes to
+`/gesc_gaussian/fill_requests`; an accepted typed `GaussianFill` or rejected
+`AlgorithmEvent` carries the request's exact `source_timestamp`. The accepted
+legacy `/cost_bias` payload is still published unchanged for the existing
+modified-cost owner.
+
 ## `AlgorithmState`
 
-The interface reserves `SEARCH`, `VERIFY_EXTREMUM`,
-`DESIGN_OR_MERGE_FILL`, `ESCAPE_REPULSE`, `ESCAPE_ASSIST`, `RECENTER`,
-`GOAL_HOLD`, and `FAILSAFE` for Phase 02. Phase 01 does not imitate that state
-machine.
+Legacy keeps the Phase 01 unavailable-state placeholder. In
+`robust_gaussian_v1`, `gesc_gaussian_supervisor` is the sole state owner and
+publishes at `supervisor_publish_rate_hz` plus immediately after transitions.
 
-| Field | Phase 01 value |
-|---|---|
-| `algorithm_profile` | `legacy` without PDE; `legacy_pde_gaussian` with PDE |
-| `state`, `state_name`, `state_valid` | `STATE_UNAVAILABLE`, `UNAVAILABLE`, false |
-| Previous state/transition/elapsed state | Explicitly unavailable |
-| `active_fill_count` | `0` in legacy mode; current accepted term count in PDE mode, valid |
-| `active_escape_fill_id` | Zero, invalid |
-| Weights | Same fixed observational weights as `CostBreakdown`, valid |
-| `failsafe` | False placeholder, invalid because no supervisor owns failsafe yet |
-| `run_id` | Empty, invalid until run metadata exists |
+| State | Weights `(raw, Gaussian, affine)` | Final-command policy |
+|---|---:|---|
+| `SEARCH` | `(1,1,0)` | GESC plus supervisor contribution |
+| `VERIFY_EXTREMUM` | `(1,1,0)` | Zero |
+| `DESIGN_OR_MERGE_FILL` | `(0,1,0)` | Zero |
+| `ESCAPE_REPULSE` | `(0,1,0)` | GESC plus supervisor contribution |
+| `ESCAPE_ASSIST` | `(0,1,1)` | GESC plus supervisor contribution |
+| `RECENTER` | `(0,1,0)` | Supervisor-only; Phase 02 publishes zero |
+| `GOAL_HOLD` | `(0,1,0)` | Zero, latched |
+| `FAILSAFE` | `(0,0,0)` | Zero, latched |
+
+The supervisor uses local ROS receipt time for freshness, carries a per-process
+`run_id`, reports previous/current state and transition reason, and correlates
+fill results to the one in-flight request by exact legacy source timestamp.
+Stable-exit, stall, and recenter-complete inputs exist only in the pure state
+machine in Phase 02; no timer or guessed geometry synthesizes success.
 
 ## `AlgorithmEvent`
 
@@ -184,9 +223,10 @@ Phase 01 emits:
 - `EVENT_FILL_REJECTED` at existing rejection paths and bounded silent policy
   gates.
 
-Goal, escape, recenter, timeout, and failsafe constants are reserved for later
-phases and are not emitted in Phase 01. Event state fields remain explicitly
-unavailable until the supervisor exists.
+Phase 02 adds `EVENT_STATE_TRANSITION=3` and emits transition, goal, escape,
+recenter-interface, timeout, and failsafe events from the supervisor. The
+controller emits `EVENT_FAILSAFE` for watchdog faults; the supervisor consumes
+that event and latches the global failsafe.
 
 ## Legacy compatibility mapping
 
@@ -203,7 +243,7 @@ unavailable until the supervisor exists.
 | `/tf`, `/tf_static` | Standard TF topics | Unchanged |
 
 No legacy topic, queue depth, array order, timestamp, cost sign, unit, command
-limit, or default launch behavior changes in Phase 01.
+limit, or default launch behavior changes in Phase 02.
 
 ## Launch and parameter reference
 
@@ -219,12 +259,38 @@ The central launch adds these arguments:
 | `algorithm_state_topic` | `/gesc_gaussian/algorithm_state` |
 | `algorithm_event_topic` | `/gesc_gaussian/algorithm_events` |
 | `observability_source_mode` | `simulation` |
+| `algorithm_profile` | `legacy` |
+| `supervisor_publish_rate_hz` | `20.0` |
+| `startup_timeout_sec` | `5.0` |
+| `convergence_hold_sec` | `2.0` |
+| `goal_score_threshold` | `0.95` |
+| `goal_hold_sec` | `3.0` |
+| `undesired_score_hold_sec` | `3.0` |
+| `verification_max_sec` | `10.0` |
+| `fill_design_timeout_sec` | `5.0` |
+| `escape_max_sec` | `20.0` |
+| `recenter_after_escape` | `True` |
+| `recenter_max_sec` | `30.0` |
+| `stale_pose_sec` | `0.50` |
+| `stale_sensor_sec` | `0.50` |
+| `supervisor_state_stale_sec` | `0.50` |
+| `supervisor_command_stale_sec` | `0.50` |
+| `command_watchdog_rate_hz` | `20.0` |
+| `zero_command_on_shutdown` | `True` |
+| `source_cost_topic` | `/gesc_gaussian/source_cost` |
+| `convergence_status_topic` | `/gesc_gaussian/convergence_status` |
+| `fill_request_topic` | `/gesc_gaussian/fill_requests` |
+| `supervisor_command_topic` | `/gesc_gaussian/supervisor_command` |
+| `supervisor_stop_topic` | `/gesc_gaussian/stop_requested` |
 
 `cost_function_node`, `filter_node`, and `controller_node` receive the
 settings as optional CLI arguments. `modified_cost_node`,
 `convergence_detector_node`, and `gaussian_fill_node` receive equivalent ROS
-parameters. The PDE and non-PDE cost executables are mutually exclusive so
-only the selected final owner publishes cost breakdown and algorithm state.
+parameters. The PDE and non-PDE cost executables remain mutually exclusive.
+The supervisor is launched only for `robust_gaussian_v1`; legacy cost owners
+retain the placeholder state, so there is one state owner and one `/cmd_vel`
+owner in each profile. Robust observability is mandatory even when the legacy
+`enable_observability` flag is false.
 
 ## Simulation and physical mapping boundary
 
