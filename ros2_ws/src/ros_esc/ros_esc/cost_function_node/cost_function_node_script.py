@@ -29,6 +29,7 @@ from ros_esc_interfaces.msg import (
     Timekeeper,
 )
 from ros_esc.config_parsing import parse_object_config
+from ros_esc.supervisor_node.state_machine import ROBUST_PROFILE, VALID_PROFILES
 
 class CostFunction(Node):
     """This class creates a cost function for use in Gazebo simulation."""
@@ -93,6 +94,11 @@ class CostFunction(Node):
                 default=None,
             )
         parser.add_argument("--enable_observability", default="False")
+        parser.add_argument("--algorithm_profile", default="legacy")
+        parser.add_argument(
+            "--source_cost_topic",
+            default="/gesc_gaussian/source_cost",
+        )
         parser.add_argument(
             "--publish_final_breakdown",
             default="False",
@@ -120,7 +126,16 @@ class CostFunction(Node):
         self.timekeeping_mode = None
         self.transforms = None
         self.transforms_tstamp = None
-        self.enable_observability = _as_bool(args.enable_observability)
+        self.algorithm_profile = str(args.algorithm_profile).strip()
+        if self.algorithm_profile not in VALID_PROFILES:
+            raise ValueError(
+                f"algorithm_profile must be one of {VALID_PROFILES}; "
+                f"received {self.algorithm_profile!r}"
+            )
+        self.robust_profile = self.algorithm_profile == ROBUST_PROFILE
+        self.enable_observability = (
+            _as_bool(args.enable_observability) or self.robust_profile
+        )
         self.publish_final_breakdown = _as_bool(args.publish_final_breakdown)
         self.observability_source_mode = _source_mode(
             args.observability_source_mode
@@ -172,16 +187,22 @@ class CostFunction(Node):
         )
 
         self.cost_breakdown_publisher = None
+        self.source_cost_publisher = None
         self.algorithm_state_publisher = None
         self.algorithm_event_publisher = None
         if self.enable_observability:
             self.algorithm_event_publisher = self.create_publisher(
                 AlgorithmEvent, args.algorithm_event_topic, 10
             )
+            if self.robust_profile:
+                self.source_cost_publisher = self.create_publisher(
+                    CostBreakdown, args.source_cost_topic, 10
+                )
             if self.publish_final_breakdown:
                 self.cost_breakdown_publisher = self.create_publisher(
                     CostBreakdown, args.cost_breakdown_topic, 10
                 )
+            if self.publish_final_breakdown and not self.robust_profile:
                 self.algorithm_state_publisher = self.create_publisher(
                     AlgorithmState, args.algorithm_state_topic, 10
                 )
@@ -300,13 +321,17 @@ class CostFunction(Node):
             self.publish_configuration_events(stamp)
             self.observability_configuration_published = True
 
-        if not self.publish_final_breakdown:
-            return
-
         values = [float(value) for value in np.asarray(cost_values).tolist()]
         channel_count = len(values)
         unavailable = [float("nan")] * channel_count
         zeros = [0.0] * channel_count
+        source_scores = [
+            float(self.cost_function.source_score(value)) for value in values
+        ]
+        source_score_valid = bool(
+            len(source_scores) == channel_count
+            and np.all(np.isfinite(source_scores))
+        )
 
         breakdown = CostBreakdown()
         breakdown.stamp = stamp
@@ -318,7 +343,7 @@ class CostFunction(Node):
         breakdown.raw_sensor_value = unavailable
         breakdown.filtered_sensor_value = unavailable
         breakdown.raw_cost = values
-        breakdown.source_score = unavailable
+        breakdown.source_score = source_scores if source_score_valid else unavailable
         breakdown.gaussian_cost = zeros
         breakdown.affine_cost = zeros
         breakdown.augmented_cost = values
@@ -328,12 +353,18 @@ class CostFunction(Node):
         breakdown.raw_sensor_valid = False
         breakdown.filtered_sensor_valid = False
         breakdown.raw_cost_valid = bool(np.all(np.isfinite(values)))
-        breakdown.source_score_valid = False
+        breakdown.source_score_valid = source_score_valid
         breakdown.gaussian_cost_valid = True
         breakdown.affine_cost_valid = True
         breakdown.augmented_cost_valid = breakdown.raw_cost_valid
         breakdown.weights_valid = True
-        self.cost_breakdown_publisher.publish(breakdown)
+        if self.source_cost_publisher is not None:
+            self.source_cost_publisher.publish(breakdown)
+        if self.cost_breakdown_publisher is not None:
+            self.cost_breakdown_publisher.publish(breakdown)
+
+        if self.algorithm_state_publisher is None:
+            return
 
         state = AlgorithmState()
         state.stamp = stamp
@@ -341,7 +372,7 @@ class CostFunction(Node):
         state.source_timestamp_valid = bool(np.isfinite(source_timestamp))
         state.run_id = ""
         state.run_id_valid = False
-        state.algorithm_profile = "legacy"
+        state.algorithm_profile = self.algorithm_profile
         state.state = AlgorithmState.STATE_UNAVAILABLE
         state.state_name = "UNAVAILABLE"
         state.state_valid = False
@@ -417,10 +448,19 @@ class CostFunction(Node):
         unavailable.fill_id = 0
         unavailable.fill_id_valid = False
         unavailable.reason_code = 1
-        unavailable.detail = (
-            "raw_sensor_value, filtered_sensor_value, and calibrated "
-            "source_score are unavailable in the current simulation adapter"
-        )
+        if self.cost_model_name in {
+            "Photoresistor_Interpolated_Map",
+            "Multi_Light_Source_Cost",
+        }:
+            unavailable.detail = (
+                "raw_sensor_value and filtered_sensor_value are unavailable; "
+                "source_score uses simulated photoresistor model endpoints"
+            )
+        else:
+            unavailable.detail = (
+                "raw_sensor_value, filtered_sensor_value, and source_score are "
+                "unavailable for this simulation cost model"
+            )
         unavailable.value_names = []
         unavailable.values = []
         self.algorithm_event_publisher.publish(unavailable)

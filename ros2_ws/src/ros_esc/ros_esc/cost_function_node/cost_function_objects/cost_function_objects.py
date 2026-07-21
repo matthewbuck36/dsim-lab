@@ -41,6 +41,12 @@ class CostFunction(ABC):
     describing this object.
     """
 
+    def source_score(self, cost_value):
+        """Return a normalized source score when the model exposes endpoints."""
+
+        del cost_value
+        return float("nan")
+
     @abstractmethod
     def cost_output(self, time, sensor_transform):
         """Every cost function must have an output function.
@@ -258,6 +264,19 @@ class Photoresistor_Interpolated_Map(CostFunction):
         voltage *= -1
 
         return voltage
+
+    def source_score(self, cost_value):
+        """Normalize a post-noise cost using the model's resistance limits."""
+
+        dark_cost = float(self.max_value)
+        near_cost = float(self.min_value)
+        if self.mode == "Voltage":
+            dark_cost = self.convert_resistance_to_voltage(dark_cost)
+            near_cost = self.convert_resistance_to_voltage(near_cost)
+        denominator = near_cost - dark_cost
+        if not np.isfinite(cost_value) or abs(denominator) <= 1e-15:
+            return float("nan")
+        return float(np.clip((cost_value - dark_cost) / denominator, 0.0, 1.0))
 
     def cost_output(self, time, sensor_transform):
         """This operates on input arguments and produces a cost value."""
@@ -496,6 +515,19 @@ class Multi_Light_Source_Cost(CostFunction):
         intensity_scale = source["intensity_lumens"] / self.reference_intensity_lumens
 
         return conductance_delta * intensity_scale
+
+    def source_score(self, cost_value):
+        """Normalize a post-noise cost using the model's resistance limits."""
+
+        dark_cost = float(self.max_value)
+        near_cost = float(self.min_value)
+        if self.mode == "Voltage":
+            dark_cost = self._convert_resistance_to_voltage(dark_cost)
+            near_cost = self._convert_resistance_to_voltage(near_cost)
+        denominator = near_cost - dark_cost
+        if not np.isfinite(cost_value) or abs(denominator) <= 1e-15:
+            return float("nan")
+        return float(np.clip((cost_value - dark_cost) / denominator, 0.0, 1.0))
 
     def cost_output(self, time, sensor_transform):
         """Evaluate the multi-light photoresistor cost."""

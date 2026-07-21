@@ -13,6 +13,7 @@ from ros_esc_interfaces.msg import (
     StampedFloat64MultiArray,
 )
 from std_msgs.msg import Float64MultiArray
+from ros_esc.supervisor_node.state_machine import ROBUST_PROFILE, VALID_PROFILES
 
 
 class GaussianFill(Node):
@@ -63,6 +64,8 @@ class GaussianFill(Node):
         self.declare_parameter(
             "algorithm_event_topic", "/gesc_gaussian/algorithm_events"
         )
+        self.declare_parameter("algorithm_profile", "legacy")
+        self.declare_parameter("fill_request_topic", "/gesc_gaussian/fill_requests")
 
         # Legacy parameter retained so older launch files do not fail.
         # The published fill amplitude now comes directly from "amplitude";
@@ -78,9 +81,18 @@ class GaussianFill(Node):
         self.use_pde_cost_mean_for_amplitude = bool(
             self.get_parameter("use_pde_cost_mean_for_amplitude").value
         )
+        self.algorithm_profile = str(
+            self.get_parameter("algorithm_profile").value
+        ).strip()
+        if self.algorithm_profile not in VALID_PROFILES:
+            raise ValueError(
+                f"algorithm_profile must be one of {VALID_PROFILES}; "
+                f"received {self.algorithm_profile!r}"
+            )
+        self.robust_profile = self.algorithm_profile == ROBUST_PROFILE
         self.enable_observability = bool(
             self.get_parameter("enable_observability").value
-        )
+        ) or self.robust_profile
         self.observability_configuration_published = False
         self.current_event_timestamp = None
         self.fit_min_amplitude = max(
@@ -158,7 +170,11 @@ class GaussianFill(Node):
         # ---- Subscribers ----
         self.sub_conv = self.create_subscription(
             StampedFloat64MultiArray,
-            "/convergence_event",
+            (
+                str(self.get_parameter("fill_request_topic").value)
+                if self.robust_profile
+                else "/convergence_event"
+            ),
             self.trigger_cb,
             10
         )
@@ -401,7 +417,8 @@ class GaussianFill(Node):
             float(sigma),
         ]
 
-        self.pub.publish(out)
+        if not self.robust_profile:
+            self.pub.publish(out)
 
         fill_id = self.fill_count + 1
         if self.enable_observability:
@@ -445,6 +462,9 @@ class GaussianFill(Node):
                 event_values,
                 fill_id=fill_id,
             )
+
+        if self.robust_profile:
+            self.pub.publish(out)
 
         self.fill_count += 1
         self.has_filled = self.fill_count > 0

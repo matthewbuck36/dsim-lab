@@ -14,6 +14,7 @@ from ros_esc_interfaces.msg import (
     StampedFloat64MultiArray,
     StampedTransformMultiArray,
 )
+from ros_esc.supervisor_node.state_machine import ROBUST_PROFILE, VALID_PROFILES
 
 
 class ModifiedCost2D(Node):
@@ -144,6 +145,8 @@ class ModifiedCost2D(Node):
             "algorithm_event_topic", "/gesc_gaussian/algorithm_events"
         )
         self.declare_parameter("observability_source_mode", "simulation")
+        self.declare_parameter("algorithm_profile", "legacy")
+        self.declare_parameter("source_cost_topic", "/gesc_gaussian/source_cost")
 
         # Read parameters.
         self.bias_all = bool(self.get_parameter("bias_all_channels").value)
@@ -188,9 +191,18 @@ class ModifiedCost2D(Node):
         self.history_direction_mode = str(
             self.get_parameter("history_direction_mode").value
         )
+        self.algorithm_profile = str(
+            self.get_parameter("algorithm_profile").value
+        ).strip()
+        if self.algorithm_profile not in VALID_PROFILES:
+            raise ValueError(
+                f"algorithm_profile must be one of {VALID_PROFILES}; "
+                f"received {self.algorithm_profile!r}"
+            )
+        self.robust_profile = self.algorithm_profile == ROBUST_PROFILE
         self.enable_observability = bool(
             self.get_parameter("enable_observability").value
-        )
+        ) or self.robust_profile
         self.observability_source_mode = self._source_mode(
             self.get_parameter("observability_source_mode").value
         )
@@ -218,6 +230,7 @@ class ModifiedCost2D(Node):
         # Latest PDE history positions.
         # Shape: (N, 2), where row 0 is newest.
         self.pde_history_xy = None
+        self.algorithm_state = None
 
         # ---------------- ROS subscriptions/publication ----------------
 
@@ -242,12 +255,29 @@ class ModifiedCost2D(Node):
             10
         )
 
-        self.sub_cost = self.create_subscription(
-            StampedFloat64MultiArray,
-            args.input_cost_topic,
-            self.cost_cb,
-            10
-        )
+        self.sub_cost = None
+        self.sub_source_cost = None
+        self.sub_algorithm_state = None
+        if self.robust_profile:
+            self.sub_source_cost = self.create_subscription(
+                CostBreakdown,
+                str(self.get_parameter("source_cost_topic").value),
+                self.source_cost_cb,
+                10,
+            )
+            self.sub_algorithm_state = self.create_subscription(
+                AlgorithmState,
+                str(self.get_parameter("algorithm_state_topic").value),
+                self.algorithm_state_cb,
+                10,
+            )
+        else:
+            self.sub_cost = self.create_subscription(
+                StampedFloat64MultiArray,
+                args.input_cost_topic,
+                self.cost_cb,
+                10
+            )
 
         self.sub_fill = self.create_subscription(
             StampedFloat64MultiArray,
@@ -271,11 +301,12 @@ class ModifiedCost2D(Node):
                 str(self.get_parameter("cost_breakdown_topic").value),
                 10,
             )
-            self.algorithm_state_publisher = self.create_publisher(
-                AlgorithmState,
-                str(self.get_parameter("algorithm_state_topic").value),
-                10,
-            )
+            if not self.robust_profile:
+                self.algorithm_state_publisher = self.create_publisher(
+                    AlgorithmState,
+                    str(self.get_parameter("algorithm_state_topic").value),
+                    10,
+                )
             self.algorithm_event_publisher = self.create_publisher(
                 AlgorithmEvent,
                 str(self.get_parameter("algorithm_event_topic").value),
@@ -440,11 +471,50 @@ class ModifiedCost2D(Node):
             f"total affine terms={len(self.affine_terms)}"
         )
 
+    def algorithm_state_cb(self, msg: AlgorithmState):
+        """Cache the supervisor-owned robust weight authorization."""
+
+        weights = np.array(
+            [msg.sensor_weight, msg.gaussian_weight, msg.affine_weight],
+            dtype=np.float64,
+        )
+        if not msg.state_valid or not msg.weights_valid or not np.all(np.isfinite(weights)):
+            self.algorithm_state = None
+            return
+        self.algorithm_state = msg
+
+    def source_cost_cb(self, msg: CostBreakdown):
+        """Consume synchronized raw cost and source score in robust mode."""
+
+        if (
+            not msg.source_timestamp_valid
+            or not np.isfinite(msg.source_timestamp)
+            or not msg.raw_cost_valid
+            or int(msg.channel_count) != len(msg.raw_cost)
+        ):
+            return
+        raw_cost = np.asarray(msg.raw_cost, dtype=np.float64)
+        if raw_cost.size == 0 or not np.all(np.isfinite(raw_cost)):
+            return
+        legacy = StampedFloat64MultiArray()
+        legacy.header = "Robust Source Cost"
+        legacy.timestamp = float(msg.source_timestamp)
+        legacy.data = [float(value) for value in raw_cost]
+        self._apply_cost(legacy, msg)
+
     def cost_cb(self, msg: StampedFloat64MultiArray):
         """
         Apply Gaussian + affine correction to incoming cost values.
         """
+        self._apply_cost(msg, None)
+
+    def _apply_cost(self, msg, source_breakdown):
+        """Apply legacy or state-weighted cost composition once per sample."""
+
         if self.xy is None and self.sensor_xy is None:
+            return
+
+        if self.robust_profile and self.algorithm_state is None:
             return
 
         cost_vals = np.array(msg.data, dtype=np.float64)
@@ -496,6 +566,16 @@ class ModifiedCost2D(Node):
                 gaussian_cost[0] = gaussian_bias
                 affine_cost[0] = affine_bias
 
+        if self.robust_profile:
+            sensor_weight = float(self.algorithm_state.sensor_weight)
+            gaussian_weight = float(self.algorithm_state.gaussian_weight)
+            affine_weight = float(self.algorithm_state.affine_weight)
+            cost_out = (
+                sensor_weight * cost_vals
+                + gaussian_weight * gaussian_cost
+                + affine_weight * affine_cost
+            )
+
         out = StampedFloat64MultiArray()
         out.header = "Modified Cost 2D"
         out.timestamp = msg.timestamp
@@ -509,6 +589,7 @@ class ModifiedCost2D(Node):
                 gaussian_cost,
                 affine_cost,
                 cost_out,
+                source_breakdown,
             )
 
     # ------------------------------------------------------------
@@ -682,6 +763,7 @@ class ModifiedCost2D(Node):
         gaussian_cost,
         affine_cost,
         augmented_cost,
+        source_breakdown=None,
     ):
         """Publish typed cost/state mirrors after the legacy modified cost."""
 
@@ -695,7 +777,25 @@ class ModifiedCost2D(Node):
         affine_values = [float(value) for value in affine_cost.tolist()]
         augmented_values = [float(value) for value in augmented_cost.tolist()]
         unavailable = [float("nan")] * len(raw_values)
-        affine_weight = 1.0 if self.enable_affine_bias else 0.0
+        if self.robust_profile:
+            sensor_weight = float(self.algorithm_state.sensor_weight)
+            gaussian_weight = float(self.algorithm_state.gaussian_weight)
+            affine_weight = float(self.algorithm_state.affine_weight)
+        else:
+            sensor_weight = 1.0
+            gaussian_weight = 1.0
+            affine_weight = 1.0 if self.enable_affine_bias else 0.0
+        source_score = unavailable
+        source_score_valid = False
+        if source_breakdown is not None:
+            candidate = [float(value) for value in source_breakdown.source_score]
+            if (
+                source_breakdown.source_score_valid
+                and len(candidate) == len(raw_values)
+                and np.all(np.isfinite(candidate))
+            ):
+                source_score = candidate
+                source_score_valid = True
 
         breakdown = CostBreakdown()
         breakdown.stamp = stamp
@@ -709,17 +809,17 @@ class ModifiedCost2D(Node):
         breakdown.raw_sensor_value = unavailable
         breakdown.filtered_sensor_value = unavailable
         breakdown.raw_cost = raw_values
-        breakdown.source_score = unavailable
+        breakdown.source_score = source_score
         breakdown.gaussian_cost = gaussian_values
         breakdown.affine_cost = affine_values
         breakdown.augmented_cost = augmented_values
-        breakdown.sensor_weight = 1.0
-        breakdown.gaussian_weight = 1.0
+        breakdown.sensor_weight = sensor_weight
+        breakdown.gaussian_weight = gaussian_weight
         breakdown.affine_weight = affine_weight
         breakdown.raw_sensor_valid = False
         breakdown.filtered_sensor_valid = False
         breakdown.raw_cost_valid = bool(np.all(np.isfinite(raw_cost)))
-        breakdown.source_score_valid = False
+        breakdown.source_score_valid = source_score_valid
         breakdown.gaussian_cost_valid = bool(
             np.all(np.isfinite(gaussian_cost))
         )
@@ -730,13 +830,16 @@ class ModifiedCost2D(Node):
         breakdown.weights_valid = True
         self.cost_breakdown_publisher.publish(breakdown)
 
+        if self.algorithm_state_publisher is None:
+            return
+
         state = AlgorithmState()
         state.stamp = stamp
         state.source_timestamp = float(source_msg.timestamp)
         state.source_timestamp_valid = bool(np.isfinite(source_msg.timestamp))
         state.run_id = ""
         state.run_id_valid = False
-        state.algorithm_profile = "legacy_pde_gaussian"
+        state.algorithm_profile = self.algorithm_profile
         state.state = AlgorithmState.STATE_UNAVAILABLE
         state.state_name = "UNAVAILABLE"
         state.state_valid = False
@@ -751,8 +854,8 @@ class ModifiedCost2D(Node):
         state.active_fill_count_valid = True
         state.active_escape_fill_id = 0
         state.active_escape_fill_id_valid = False
-        state.sensor_weight = 1.0
-        state.gaussian_weight = 1.0
+        state.sensor_weight = sensor_weight
+        state.gaussian_weight = gaussian_weight
         state.affine_weight = affine_weight
         state.weights_valid = True
         state.failsafe = False
@@ -760,7 +863,7 @@ class ModifiedCost2D(Node):
         self.algorithm_state_publisher.publish(state)
 
     def _publish_configuration_event(self, stamp):
-        """Publish the effective fixed Phase 01 weights once."""
+        """Publish the effective profile composition policy once."""
 
         event = AlgorithmEvent()
         event.stamp = stamp
@@ -774,9 +877,18 @@ class ModifiedCost2D(Node):
         event.fill_id_valid = False
         event.reason_code = 0
         event.detail = (
-            "legacy_pde_gaussian fixed observational weights; Phase 01 does "
-            "not switch controller contributions"
+            "state-driven robust weights"
+            if self.robust_profile
+            else "legacy fixed observational weights"
         )
+        if self.robust_profile and self.algorithm_state is not None:
+            sensor_weight = float(self.algorithm_state.sensor_weight)
+            gaussian_weight = float(self.algorithm_state.gaussian_weight)
+            affine_weight = float(self.algorithm_state.affine_weight)
+        else:
+            sensor_weight = 1.0
+            gaussian_weight = 1.0
+            affine_weight = 1.0 if self.enable_affine_bias else 0.0
         event.value_names = [
             "sensor_weight",
             "gaussian_weight",
@@ -784,9 +896,9 @@ class ModifiedCost2D(Node):
             "bias_all_channels",
         ]
         event.values = [
-            1.0,
-            1.0,
-            1.0 if self.enable_affine_bias else 0.0,
+            sensor_weight,
+            gaussian_weight,
+            affine_weight,
             1.0 if self.bias_all else 0.0,
         ]
         self.algorithm_event_publisher.publish(event)

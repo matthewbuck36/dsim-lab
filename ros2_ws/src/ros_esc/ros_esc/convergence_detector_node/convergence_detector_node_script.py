@@ -8,6 +8,7 @@ from ros_esc_interfaces.msg import (
     AlgorithmState,
     StampedFloat64MultiArray,
 )
+from ros_esc.supervisor_node.state_machine import ROBUST_PROFILE, VALID_PROFILES
 
 
 class ConvergenceDetector(Node):
@@ -74,6 +75,10 @@ class ConvergenceDetector(Node):
         self.declare_parameter(
             "algorithm_event_topic", "/gesc_gaussian/algorithm_events"
         )
+        self.declare_parameter("algorithm_profile", "legacy")
+        self.declare_parameter(
+            "convergence_status_topic", "/gesc_gaussian/convergence_status"
+        )
 
         self.k = int(self.get_parameter("k_periods").value)
         self.th = float(self.get_parameter("threshold").value)
@@ -99,9 +104,18 @@ class ConvergenceDetector(Node):
         self.reset_counter_after_event = bool(
             self.get_parameter("reset_counter_after_event").value
         )
+        self.algorithm_profile = str(
+            self.get_parameter("algorithm_profile").value
+        ).strip()
+        if self.algorithm_profile not in VALID_PROFILES:
+            raise ValueError(
+                f"algorithm_profile must be one of {VALID_PROFILES}; "
+                f"received {self.algorithm_profile!r}"
+            )
+        self.robust_profile = self.algorithm_profile == ROBUST_PROFILE
         self.enable_observability = bool(
             self.get_parameter("enable_observability").value
-        )
+        ) or self.robust_profile
         self.observability_configuration_published = False
 
         if self.count_start < 1:
@@ -159,10 +173,17 @@ class ConvergenceDetector(Node):
             10
         )
         self.algorithm_event_publisher = None
+        self.convergence_status_publisher = None
         if self.enable_observability:
             self.algorithm_event_publisher = self.create_publisher(
                 AlgorithmEvent,
                 str(self.get_parameter("algorithm_event_topic").value),
+                10,
+            )
+        if self.robust_profile:
+            self.convergence_status_publisher = self.create_publisher(
+                StampedFloat64MultiArray,
+                str(self.get_parameter("convergence_status_topic").value),
                 10,
             )
 
@@ -292,6 +313,22 @@ class ConvergenceDetector(Node):
         count_msg.timestamp = t
         count_msg.data = [float(self.count_remaining)]
         self.pub_count.publish(count_msg)
+
+        if self.convergence_status_publisher is not None:
+            status_msg = StampedFloat64MultiArray()
+            status_msg.header = "CONVERGENCE_STATUS"
+            status_msg.timestamp = t
+            status_msg.data = [
+                float(metric),
+                float(r_val),
+                float(decay_term),
+                float(mean_recent[0]),
+                float(mean_recent[1]),
+                float(mean_old[0]),
+                float(mean_old[1]),
+                float(self.count_remaining),
+            ]
+            self.convergence_status_publisher.publish(status_msg)
 
         # ---------------------------------------------------------------------
         # Crossing logic

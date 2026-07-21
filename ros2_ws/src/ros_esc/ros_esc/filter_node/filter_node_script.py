@@ -23,6 +23,7 @@ from ros_esc_interfaces.msg import (
     Timekeeper,
 )
 from ros_esc.config_parsing import parse_filter_config
+from ros_esc.supervisor_node.state_machine import ROBUST_PROFILE, VALID_PROFILES
 
 class CustomFilter(Node):
     """This class creates a custom filter for use in Gazebo simulation."""
@@ -85,6 +86,7 @@ class CustomFilter(Node):
         parser.add_argument('--append_encoder_data', type=str, dest="combine_enc_data",
                             help=encoder_inp_msg)
         parser.add_argument("--enable_observability", default="False")
+        parser.add_argument("--algorithm_profile", default="legacy")
         parser.add_argument(
             "--gesc_diagnostics_topic",
             default="/gesc_gaussian/gesc_diagnostics",
@@ -98,7 +100,16 @@ class CustomFilter(Node):
         self.input_value = None
         self.input_value_timestamp = None
         self.encoder_value = None
-        self.enable_observability = _as_bool(args.enable_observability)
+        self.algorithm_profile = str(args.algorithm_profile).strip()
+        if self.algorithm_profile not in VALID_PROFILES:
+            raise ValueError(
+                f"algorithm_profile must be one of {VALID_PROFILES}; "
+                f"received {self.algorithm_profile!r}"
+            )
+        self.enable_observability = (
+            _as_bool(args.enable_observability)
+            or self.algorithm_profile == ROBUST_PROFILE
+        )
 
         # Specify if we want to combine cost values and encoder values
         self.combine_data = False
