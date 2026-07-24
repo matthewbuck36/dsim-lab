@@ -1,18 +1,23 @@
 # GESC Gaussian Topic and Message Dictionary
 
-> Phase 04 source interfaces are implemented, but Phase 04 is not accepted.
-> The required visible Gazebo smoke exposed the launch/shutdown contradictions
-> recorded in `handoffs/phase_04_handoff.md`; do not treat this dictionary as a
-> completed simulation acceptance claim.
+> Phases 01-06 are implemented. Phase 04 passed its amended focused and visible
+> Gazebo/SIGINT gates, Phase 05 produced a complete retained sqlite3 run, and
+> Phase 06 composes the same launch/recording owners in a deterministic serial
+> scenario runner. These results establish implementation and recording
+> readiness only; they do not establish the Phase 08 simulation-robustness
+> acceptance claim.
 
-This dictionary is the resolved Phase 04 interface contract for the current
+This dictionary is the resolved Phase 05 interface contract for the current
 `dsim-lab` checkout. `algorithm_profile=legacy` remains the default and keeps
 the numerical legacy path. `robust_gaussian_v1` enables the explicit
 supervisor, state-weighted cost composition, model-normalized simulation
 source score, robust synchronized basin estimation, adaptive anisotropic fill
 design, and revision-aware typed fill consumption.
 Phase 04 adds measured radial escape, one targeted stall redesign,
-boundary-aware assisted direction, and bounded indoor recentering.
+boundary-aware assisted direction, and bounded indoor recentering. Phase 05
+adds the default-off recording interlock and the unified recorder contract.
+Phase 06 adds no algorithm topic or message; it adds only simulation
+orchestration, Gazebo execution arguments, and per-run metadata.
 
 ## Common timestamp and validity contract
 
@@ -46,7 +51,7 @@ sample-driven.
 | `/gesc_gaussian/gaussian_fills` | `ros_esc_interfaces/msg/GaussianFill` | `gaussian_fill` | Once per new fill; superseded then active records on a merge revision |
 | `/gesc_gaussian/algorithm_state` | `ros_esc_interfaces/msg/AlgorithmState` | Legacy final cost owner, or robust supervisor | Sample-driven legacy placeholder; timer/transition-driven robust state |
 | `/gesc_gaussian/algorithm_events` | `ros_esc_interfaces/msg/AlgorithmEvent` | Source, modified-cost, convergence, and fill owners | At the corresponding configuration, convergence, fill-created, or fill-rejected site |
-| `/gesc_gaussian/source_cost` | `ros_esc_interfaces/msg/CostBreakdown` | `cost_function` | Each robust raw-cost sample, synchronized with model-normalized source score |
+| `/gesc_gaussian/source_cost` | `ros_esc_interfaces/msg/CostBreakdown` | `cost_function` | Each opt-in simulation-observability raw-cost sample; robust photoresistor profiles also carry model-normalized source score |
 | `/gesc_gaussian/convergence_status` | `ros_esc_interfaces/msg/StampedFloat64MultiArray` | `convergence_detector` | Every valid post-startup convergence evaluation |
 | `/gesc_gaussian/fill_requests` | `ros_esc_interfaces/msg/StampedFloat64MultiArray` | supervisor | Once on each entry to fill design |
 | `/gesc_gaussian/supervisor_command` | `geometry_msgs/msg/Twist` | supervisor | Configured supervisor rate; nonzero only for bounded `RECENTER` |
@@ -351,7 +356,7 @@ Phase 04 emits:
 | `/tf`, `/tf_static` | Standard TF topics | Unchanged |
 
 No legacy topic, queue depth, array order, timestamp, cost sign, unit, command
-limit, or default launch behavior changes in Phase 04.
+limit, or direct-launch default changes in Phase 06.
 
 ## Launch and parameter reference
 
@@ -415,6 +420,14 @@ The central launch adds these arguments:
 | `recording_ready_topic` | `/gesc_gaussian/recording_ready` |
 | `recording_ready_stale_sec` | `0.50` |
 | `supervisor_use_sim_time` | `True` |
+| `gazebo_gui` | `True` |
+| `gazebo_use_random_seed` | `False` |
+| `gazebo_random_seed` | `0` |
+
+The three Gazebo execution arguments are additive. Direct launches remain
+visible and use Gazebo's prior unseeded behavior. `run_scenario` passes
+`gazebo_gui=False`, `gazebo_use_random_seed=True`, and the resolved explicit
+seed unless `--gui` is requested.
 
 Phase 03 adds these robust-fill launch arguments; each maps to the node
 parameter obtained by removing the `gaussian_fill_` prefix:
@@ -438,8 +451,8 @@ parameter obtained by removing the `gaussian_fill_` prefix:
 | `gaussian_fill_covariance_eigenvalue_max_m2` | `0.25` |
 | `gaussian_fill_quadratic_ridge_lambda` | `1e-6` |
 | `gaussian_fill_quadratic_condition_number_max` | `1e8` |
-| `gaussian_fill_center_cost_percentile` | `10` |
-| `gaussian_fill_shoulder_cost_percentile` | `80` |
+| `gaussian_fill_center_cost_percentile` | `10.0` |
+| `gaussian_fill_shoulder_cost_percentile` | `80.0` |
 | `gaussian_fill_inner_mahalanobis_radius` | `1.0` |
 | `gaussian_fill_minimum_basin_depth` | `0.02` |
 | `gaussian_fill_covariance_scale` | `2.5` |
@@ -509,3 +522,18 @@ modes, minimum counts, and semantic policies are installed from
 modes use this same manifest and runner; Phase 05 does not invent the absent
 physical adapter or claim physical calibration. Full operator instructions
 are in `docs/codex/gesc_gaussian/recording_runs.md`.
+
+## Phase 06 scenario runner interface
+
+`ros2 run ros_esc run_scenario SCENARIO_YAML --operator OPERATOR` is a
+non-ROS, simulation-only orchestration process. It owns no algorithm state,
+topic, recorder, validator, launch graph, or physical adapter. It expands
+schema-version-1 YAML serially and invokes the existing
+`ros2 run ros_esc record_run ... -- ros2 launch
+turtlebot3_rotating_sensor gazebo.launch.xml ...` command.
+
+The scenario seed is shared by Gazebo, supported Uniform noise, metadata, and
+the deterministic case key. Run IDs additionally contain a UTC timestamp and
+UUID fragment so reruns never overwrite an artifact. Ground-truth source roles
+and tolerances remain evaluation metadata and are never exposed to the
+controller. See `recording_runs.md` for commands and retained artifacts.

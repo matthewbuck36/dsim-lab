@@ -9,9 +9,11 @@ at zero until preflight passes, and validates the finished run.
 
 Build and source the workspace, prepare a metadata YAML from the installed
 `experiment_metadata.yaml` template, and fill every operator field honestly.
-`mode` must match the CLI and `algorithm_profile` must be
-`robust_gaussian_v1`. Simulation source levels are relative model inputs, not
-lux calibration.
+`mode` must match the CLI. Physical metadata still requires
+`algorithm_profile=robust_gaussian_v1`; audited simulation recording accepts
+`legacy` or `robust_gaussian_v1` without changing the shared manifest or
+completeness gates. Simulation source levels are relative model inputs, not lux
+calibration.
 
 ```bash
 source /opt/ros/humble/setup.bash
@@ -53,6 +55,46 @@ bag subscriptions, then snapshots exact ROS parameter values and types before
 publishing readiness true. On the audited simulation graph this can take about
 90 seconds in addition to Gazebo startup because Humble queries each live node;
 `--preflight-timeout-sec` applies to graph discovery, not parameter capture.
+
+## Run deterministic Gazebo scenario suites
+
+Phase 06 adds a simulation-only orchestration layer over the same
+`gazebo.launch.xml`, `record_run`, run directory, manifest, and validator. It
+runs one fresh Gazebo process at a time, assigns an explicit Gazebo/noise seed
+and unique run ID, enforces a scoped wall timeout, and checks that no new ROS
+nodes or processes from that run remain before continuing.
+
+```bash
+ros2 run ros_esc run_scenario \
+  src/ros_esc/ros_esc/scenario_runner/scenarios/phase06_smoke.yaml \
+  --operator "$USER" \
+  --dry-run
+
+ros2 run ros_esc run_scenario \
+  src/ros_esc/ros_esc/scenario_runner/scenarios/phase06_smoke.yaml \
+  --operator "$USER"
+```
+
+The runner is headless by default; add `--gui` for a visible one-off run.
+`--case-id CASE_ID` is repeatable, `--runs-root PATH` overrides the suite root,
+and `--summary-output PATH` selects an explicit suite summary. `--dry-run`
+validates and expands the YAML and prints exact recorder/launch argv without
+starting ROS, Gazebo, rosbag, or hardware.
+
+Every launched run retains the Phase 05 artifacts and adds
+`scenario_definition.yaml`, `resolved_scenario.yaml`,
+`scenario_result.yaml`, and, for seeded uniform noise,
+`resolved_cost_function.json`. Suite summaries distinguish
+controller-observable goal success from final-pose simulation ground truth.
+An ordinary failed case is preserved and may be followed by the next case;
+cleanup failure stops the suite to prevent contamination.
+
+`phase06_catalog.yaml` labels supported geometries as
+`executable_unverified`. Its unsupported records are not launched: no
+authoritative source-level map, deterministic Gaussian noise, sensor/pose
+delay, collision truth, static raw-attraction ablation, more than five
+sources, or plain non-PDE legacy recording exists in this simulator contract.
+The runner has no physical launch or mode.
 
 ## Stop a run
 

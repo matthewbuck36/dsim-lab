@@ -696,3 +696,253 @@ was `113 passed, 2 skipped`; the second skip is the normal package-run skip
 accounting. Python compilation and `git diff --check` passed. The focused
 pytest process printed two non-failing rclpy `Destroyable` teardown notices
 after its result; they did not occur in the accepted recording console.
+
+## Phase 05.5 commands run
+
+### Build and focused Phase 00-05 suite
+
+```bash
+source /opt/ros/humble/setup.bash
+cd ros2_ws
+colcon --log-base /tmp/dsim_phase055_build_log build \
+  --packages-select ros_esc_interfaces ros_esc turtlebot3_rotating_sensor
+source install/setup.bash
+python3 -m pytest -q \
+  src/ros_esc/test/test_state_machine.py \
+  src/ros_esc/test/test_supervisor_integration.py \
+  src/ros_esc/test/test_observability_contract.py \
+  src/ros_esc/test/test_legacy_behavior.py \
+  src/ros_esc/test/test_robust_gaussian_algorithm.py \
+  src/ros_esc/test/test_escape_recenter.py \
+  src/ros_esc/test/test_experiment_recording.py \
+  src/ros_esc/test/test_recording_integration.py
+```
+
+Result: build passed for all three packages; focused result was
+`113 passed, 1 skipped in 3.93s`. The skip is the environment-gated visible
+Gazebo pytest.
+
+### Accepted Phase 05 bag revalidation
+
+```bash
+ros2 run ros_esc validate_run \
+  /home/mattb/Experiments/GESC-Gaussian/runs/2026-07-21/20260721T232824094290Z_simulation_phase05-short-recording_92bb8be7
+```
+
+Result: `passed: true`, with no failures or warnings.
+
+### Repository-standard package baseline
+
+```bash
+colcon --log-base /tmp/dsim_phase055_test_log test \
+  --packages-select ros_esc_interfaces ros_esc turtlebot3_rotating_sensor
+colcon test-result --all --verbose
+```
+
+Result: `999 tests, 0 errors, 875 failures, 2 skipped`. The baseline stayed
+constant; failures remain inherited flake8, pep257, and lint-cmake debt.
+
+### Workflow/document validation
+
+The final Phase 05.5 validation checked every Phase 06-10 prompt for its saved
+plan path, all five Phase 00 audit files, the knowledge bridge, prior handoffs,
+durable Plan output, and Level A/B/C policy; checked Phase 06's exact Phase 05
+recorder/launch reuse constraints; ran the Phase 06 Plan context validator;
+checked required paths and relative Markdown links; ran shell syntax and
+recording-package Python compilation; checked trailing whitespace; and ran
+`git diff --check`.
+
+Result: all passed.
+
+## Phase 06 commands run
+
+### Context, ownership, and pre-edit baseline
+
+```bash
+DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh \
+  06 implement
+
+source /opt/ros/humble/setup.bash
+source ros2_ws/install/setup.bash
+python3 -m pytest -q \
+  ros2_ws/src/ros_esc/test/test_state_machine.py \
+  ros2_ws/src/ros_esc/test/test_supervisor_integration.py \
+  ros2_ws/src/ros_esc/test/test_observability_contract.py \
+  ros2_ws/src/ros_esc/test/test_legacy_behavior.py \
+  ros2_ws/src/ros_esc/test/test_robust_gaussian_algorithm.py \
+  ros2_ws/src/ros_esc/test/test_escape_recenter.py \
+  ros2_ws/src/ros_esc/test/test_experiment_recording.py \
+  ros2_ws/src/ros_esc/test/test_recording_integration.py
+```
+
+The context validator passed. The focused pre-edit baseline was
+`113 passed, 1 skipped in 3.74s`. Repository search confirmed there was no
+active GESC scenario/matrix owner to extend; the only similarly named runners
+are retired Heavy-Ball artifacts. `gazebo --help` and `gzserver --help`
+confirmed `--seed` support. No deterministic Gaussian or delay owner was
+present.
+
+### Build and focused suite
+
+```bash
+source /opt/ros/humble/setup.bash
+source ros2_ws/install/setup.bash
+colcon --log-base /tmp/dsim_phase06_commit_build build \
+  --base-paths ros2_ws/src \
+  --build-base ros2_ws/build \
+  --install-base ros2_ws/install \
+  --packages-select \
+    ros_esc_interfaces ros_esc turtlebot3_rotating_sensor
+
+python3 -m pytest -q -rs \
+  ros2_ws/src/ros_esc/test/test_scenario_schema.py \
+  ros2_ws/src/ros_esc/test/test_scenario_runner.py \
+  ros2_ws/src/ros_esc/test/test_experiment_recording.py \
+  ros2_ws/src/ros_esc/test/test_recording_integration.py \
+  ros2_ws/src/ros_esc/test/test_state_machine.py \
+  ros2_ws/src/ros_esc/test/test_supervisor_integration.py \
+  ros2_ws/src/ros_esc/test/test_observability_contract.py \
+  ros2_ws/src/ros_esc/test/test_legacy_behavior.py \
+  ros2_ws/src/ros_esc/test/test_robust_gaussian_algorithm.py \
+  ros2_ws/src/ros_esc/test/test_escape_recenter.py
+```
+
+Build result: all three packages passed. Final focused result:
+`143 passed, 2 skipped in 3.77s`. The skips were:
+
+- `RUN_GESC_PHASE06_GAZEBO_E2E=1` was not set in the ordinary focused pass;
+  that exact test was run separately and passed below.
+- `DSIM_RUN_GAZEBO_RECORDING_TEST=1` was not set, so the older visible Phase 05
+  smoke remained skipped.
+
+The two new Phase 06 test modules contribute 29 ordinary tests plus one
+environment-gated end-to-end test. They cover strict schema parsing, ordered
+matrix expansion, deterministic keys/seeds, unsupported dimensions, metadata
+and argv identity, no-shell composition, unique IDs, UTC-date-independent
+lookup, Uniform-noise repeatability, cleanup scoping, failure retention,
+stop-on-cleanup-failure, outcome separation, summaries, and dry runs.
+
+### Installed dry runs and launch interface
+
+```bash
+ros2 run ros_esc run_scenario \
+  ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase06_smoke.yaml \
+  --operator codex-automated-test \
+  --dry-run
+
+ros2 run ros_esc run_scenario \
+  ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase06_catalog.yaml \
+  --operator codex-automated-test \
+  --dry-run
+
+ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml --show-args
+```
+
+Results:
+
+- smoke: 2 resolved runs, 0 unsupported;
+- catalog: 26 resolved executable-unverified runs, 7 unsupported records;
+- direct launch defaults remained `gazebo_gui=True`,
+  `gazebo_use_random_seed=False`, and `gazebo_random_seed=0`.
+
+### Recorded headless robust and legacy smoke
+
+```bash
+RUN_GESC_PHASE06_GAZEBO_E2E=1 python3 -m pytest -q -s \
+  ros2_ws/src/ros_esc/test/test_scenario_runner.py::\
+test_recorded_short_headless_end_to_end
+```
+
+Result: `1 passed in 207.60s`. Both profiles ran serially through the existing
+`gazebo.launch.xml`, `record_run`, manifest, and validator. Both
+`completeness.json` files passed and both cleanup reports had no new nodes or
+session processes:
+
+```text
+/tmp/pytest-of-mattb/pytest-8/test_recorded_short_headless_e0/runs/2026-07-24/20260724T203530142261Z_simulation_phase06_smoke-recorded_profile_smoke-robust_gaussian_v1-f562307ac8_ed189846
+/tmp/pytest-of-mattb/pytest-8/test_recorded_short_headless_e0/runs/2026-07-24/20260724T203721764538Z_simulation_phase06_smoke-recorded_profile_smoke-legacy-5d2c1438c0_a06b57e6
+```
+
+The short smoke intentionally gates only recording and cleanup. The robust
+case observed `SEARCH` and `CONVERGENCE_CANDIDATE`; its controller-goal and
+final-pose ground-truth results were both `failed`. Legacy correctly reported
+controller goal `not_applicable`; its final-pose ground truth was `failed`.
+These separate fields are evidence, not Phase 08 robustness acceptance.
+
+### Accepted Phase 05 artifact regression
+
+```bash
+ros2 run ros_esc validate_run \
+  /home/mattb/Experiments/GESC-Gaussian/runs/2026-07-21/20260721T232824094290Z_simulation_phase05-short-recording_92bb8be7
+```
+
+Result: `passed: true`, with no failures or warnings after the profile-aware
+validator change.
+
+### Syntax, imports, XML/YAML, focused style, and diff
+
+```bash
+python3 -m compileall -q \
+  ros2_ws/src/ros_esc/ros_esc/scenario_runner \
+  ros2_ws/src/ros_esc/ros_esc/experiment_recording \
+  ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_node_script.py \
+  ros2_ws/src/turtlebot3_rotating_sensor/launch/empty_world.launch.py
+
+python3 -c \
+  'import ros_esc.scenario_runner.scenario_schema; import ros_esc.scenario_runner.run_scenario; import ros_esc.experiment_recording.record_run; import ros_esc.experiment_recording.validate_run'
+
+python3 -c \
+  'import xml.etree.ElementTree as ET; ET.parse("ros2_ws/src/turtlebot3_rotating_sensor/launch/gazebo.launch.xml")'
+
+python3 -m flake8 --select=E,W,F --ignore=E501,W503 \
+  ros2_ws/src/ros_esc/ros_esc/scenario_runner \
+  ros2_ws/src/ros_esc/ros_esc/experiment_recording/record_run.py \
+  ros2_ws/src/ros_esc/ros_esc/experiment_recording/validate_run.py \
+  ros2_ws/src/ros_esc/test/test_scenario_schema.py \
+  ros2_ws/src/ros_esc/test/test_scenario_runner.py \
+  ros2_ws/src/ros_esc/test/test_experiment_recording.py \
+  ros2_ws/src/ros_esc/test/test_observability_contract.py \
+  ros2_ws/src/ros_esc/test/test_legacy_behavior.py \
+  ros2_ws/src/turtlebot3_rotating_sensor/launch/empty_world.launch.py
+
+python3 -m flake8 --select=E9,F63,F7,F82 \
+  ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_node_script.py
+
+git diff --check
+```
+
+All listed focused checks passed. Both scenario YAML documents also loaded
+with `yaml.safe_load`. The legacy cost-function file still has unrelated
+historical E226/E231 style debt, so the focused check on that owner used the
+fatal syntax/undefined-name selection rather than claiming the whole legacy
+file is clean.
+
+Before the Phase 06 checkpoint, an external review correctly identified that
+the new modules/tests still contributed 1,413 findings to the repository's
+strict style scan. The 1,331 quote findings were normalized mechanically, then
+line length, imports, test docstrings, and function-docstring spacing were
+corrected. Final unfiltered flake8 and ament pep257 checks on all new Phase 06
+Python files pass with no findings. The unrelated legacy cost-function owner
+continues to use its bounded fatal lint selection.
+
+### Repository-standard package baseline
+
+```bash
+colcon --log-base /tmp/dsim_phase06_final_test_log test \
+  --base-paths ros2_ws/src \
+  --build-base ros2_ws/build \
+  --install-base ros2_ws/install \
+  --packages-select \
+    ros_esc_interfaces ros_esc turtlebot3_rotating_sensor
+
+colcon test-result --test-result-base ros2_ws/build --all
+```
+
+Result: `1027 tests, 0 errors, 872 failures, 3 skipped`. The authoritative
+Phase 05.5 baseline was `999 tests, 0 errors, 875 failures, 2 skipped`, so the
+trend is +28 test records, -3 inherited lint failures, and +1 explicit
+environment-gated skip. All remaining failure records are package-wide
+flake8, pep257, and lint-cmake results. The two existing `ros_esc` lint
+meta-tests now contain no finding from the new Phase 06 runner/schema/tests;
+the functional `ros_esc` result was `143 passed, 2 lint meta-test failures,
+3 skipped`.
