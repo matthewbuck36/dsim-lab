@@ -12,6 +12,7 @@ from ros_esc.controller_node.controller_node_script import CustomController
 from ros_esc.controller_node.controller_objects.turtlebot_vehicle import (
     Directional_Controller,
 )
+from ros_esc.cost_function_node import cost_function_node_script
 from ros_esc.filter_node.filter_node_script import CustomFilter
 from ros_esc.cost_function_node.cost_function_objects.cost_function_objects import (
     Multi_Light_Source_Cost,
@@ -110,6 +111,7 @@ def test_recording_watchdog_zero_does_not_emit_latching_failsafe():
     ("node_module", "node_factory_name"),
     [
         (controller_node_script, "CustomController"),
+        (cost_function_node_script, "CostFunction"),
         (supervisor_node_script, "SupervisorNode"),
         (pde_cost_history_script, "PDECostHistory"),
     ],

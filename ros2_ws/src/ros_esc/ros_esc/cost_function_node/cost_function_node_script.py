@@ -18,8 +18,10 @@ import json
 import argparse
 import numpy as np
 import rclpy
+from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
 import rclpy.parameter
+from rclpy.signals import SignalHandlerOptions
 from ros_esc_interfaces.msg import (
     AlgorithmEvent,
     AlgorithmState,
@@ -30,6 +32,7 @@ from ros_esc_interfaces.msg import (
 )
 from ros_esc.config_parsing import parse_object_config
 from ros_esc.supervisor_node.state_machine import ROBUST_PROFILE, VALID_PROFILES
+
 
 class CostFunction(Node):
     """This class creates a cost function for use in Gazebo simulation."""
@@ -194,10 +197,9 @@ class CostFunction(Node):
             self.algorithm_event_publisher = self.create_publisher(
                 AlgorithmEvent, args.algorithm_event_topic, 10
             )
-            if self.robust_profile:
-                self.source_cost_publisher = self.create_publisher(
-                    CostBreakdown, args.source_cost_topic, 10
-                )
+            self.source_cost_publisher = self.create_publisher(
+                CostBreakdown, args.source_cost_topic, 10
+            )
             if self.publish_final_breakdown:
                 self.cost_breakdown_publisher = self.create_publisher(
                     CostBreakdown, args.cost_breakdown_topic, 10
@@ -564,15 +566,22 @@ def _source_mode_name(value):
 def main(args=None):
     """This will initialize and launch the cost function node."""
 
-    rclpy.init(args=args)
+    rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
     node = CostFunction()
+    executor = SingleThreadedExecutor()
+    executor.add_node(node)
     try:
-        rclpy.spin(node)
+        while rclpy.ok():
+            executor.spin_once(timeout_sec=0.05)
     except KeyboardInterrupt:
         pass
     finally:
-        node.destroy_node()
-        rclpy.try_shutdown()
+        executor.remove_node(node)
+        try:
+            node.destroy_node()
+        finally:
+            executor.shutdown()
+            rclpy.try_shutdown()
 
 
 if __name__ == "__main__":

@@ -71,15 +71,27 @@ def test_generated_run_id_is_safe_and_deterministic_except_uuid():
     assert validate_run_id(run_id) == run_id
 
 
-def test_metadata_requires_matching_robust_mode(tmp_path):
+def test_metadata_accepts_audited_simulation_profiles_only(tmp_path):
     metadata = load_metadata_input(METADATA, "simulation")
     assert metadata["algorithm_profile"] == "robust_gaussian_v1"
 
+    metadata["algorithm_profile"] = "legacy"
+    legacy = tmp_path / "legacy.yaml"
+    legacy.write_text(yaml.safe_dump(metadata), encoding="utf-8")
+    assert load_metadata_input(legacy, "simulation")["algorithm_profile"] == "legacy"
+
+    metadata["algorithm_profile"] = "unknown"
+    unknown = tmp_path / "unknown.yaml"
+    unknown.write_text(yaml.safe_dump(metadata), encoding="utf-8")
+    with pytest.raises(ValueError, match="algorithm_profile"):
+        load_metadata_input(unknown, "simulation")
+
+    metadata["algorithm_profile"] = "legacy"
     metadata["mode"] = "physical"
     wrong = tmp_path / "wrong.yaml"
     wrong.write_text(yaml.safe_dump(metadata), encoding="utf-8")
-    with pytest.raises(ValueError, match="does not match"):
-        load_metadata_input(wrong, "simulation")
+    with pytest.raises(ValueError, match="algorithm_profile"):
+        load_metadata_input(wrong, "physical")
 
 
 def test_bag_command_uses_sqlite_explicit_topics_and_no_shell():

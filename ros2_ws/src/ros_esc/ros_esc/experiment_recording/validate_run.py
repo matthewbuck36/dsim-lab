@@ -13,7 +13,11 @@ import rosbag2_py
 from rosidl_runtime_py.utilities import get_message
 import yaml
 
-from .record_run import REQUIRED_METADATA, atomic_json
+from .record_run import (
+    REQUIRED_METADATA,
+    VALID_PROFILES_BY_MODE,
+    atomic_json,
+)
 
 
 FORBIDDEN_CONSOLE_MARKERS = (
@@ -332,10 +336,15 @@ def validate_run_directory(run_directory, write_report=True):
         report, "source_cost_semantics", source_semantics_ok,
         "source cost validity/source mode does not match run mode",
     )
+    mode = metadata.get("mode")
+    profile = metadata.get("algorithm_profile")
+    profile_ok = (
+        mode in VALID_PROFILES_BY_MODE
+        and profile in VALID_PROFILES_BY_MODE[mode]
+    )
     _check(
-        report, "robust_profile",
-        metadata.get("algorithm_profile") == "robust_gaussian_v1",
-        "algorithm_profile is not robust_gaussian_v1",
+        report, "audited_profile", profile_ok,
+        f"algorithm_profile {profile!r} is not audited for mode {mode!r}",
     )
 
     event_entry = by_alias.get("algorithm_events", {})

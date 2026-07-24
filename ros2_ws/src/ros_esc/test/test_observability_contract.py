@@ -237,6 +237,7 @@ def test_cost_owner_creates_publishers_only_when_enabled(monkeypatch):
     disabled = _make_cost_node(monkeypatch, False)
     try:
         assert disabled.cost_breakdown_publisher is None
+        assert disabled.source_cost_publisher is None
         assert disabled.algorithm_state_publisher is None
         assert disabled.algorithm_event_publisher is None
     finally:
@@ -283,16 +284,22 @@ def test_robust_source_owner_publishes_score_without_state_duplication(monkeypat
     enabled = _make_cost_node(monkeypatch, True)
     try:
         assert enabled.cost_breakdown_publisher is not None
+        assert enabled.source_cost_publisher is not None
         assert enabled.algorithm_state_publisher is not None
         assert enabled.algorithm_event_publisher is not None
 
         enabled.cost_breakdown_publisher = Recorder()
+        enabled.source_cost_publisher = Recorder()
         enabled.algorithm_state_publisher = Recorder()
         enabled.algorithm_event_publisher = Recorder()
         enabled.publish_observability([-1.5, -2.5], source_timestamp=3.0)
 
         breakdown = enabled.cost_breakdown_publisher.messages[-1]
+        source = enabled.source_cost_publisher.messages[-1]
         state = enabled.algorithm_state_publisher.messages[-1]
+        assert source.raw_cost == breakdown.raw_cost
+        assert all(math.isnan(value) for value in source.source_score)
+        assert all(math.isnan(value) for value in breakdown.source_score)
         assert breakdown.channel_count == 2
         assert list(breakdown.raw_cost) == [-1.5, -2.5]
         assert list(breakdown.augmented_cost) == list(breakdown.raw_cost)

@@ -30,6 +30,10 @@ import yaml
 
 
 VALID_MODES = {"simulation", "physical"}
+VALID_PROFILES_BY_MODE = {
+    "simulation": {"legacy", "robust_gaussian_v1"},
+    "physical": {"robust_gaussian_v1"},
+}
 RUN_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 REQUIRED_METADATA = (
     "experiment_version",
@@ -132,8 +136,11 @@ def load_metadata_input(path, mode):
         raise ValueError(f"metadata input missing fields: {', '.join(missing)}")
     if metadata["mode"] != mode:
         raise ValueError("metadata mode does not match --mode")
-    if metadata["algorithm_profile"] != "robust_gaussian_v1":
-        raise ValueError("Phase 05 recording requires robust_gaussian_v1")
+    if metadata["algorithm_profile"] not in VALID_PROFILES_BY_MODE[mode]:
+        allowed = ", ".join(sorted(VALID_PROFILES_BY_MODE[mode]))
+        raise ValueError(
+            f"algorithm_profile must be one of [{allowed}] for {mode}"
+        )
     for name in ("experiment_version", "operator", "scenario_id"):
         if not str(metadata[name]).strip():
             raise ValueError(f"metadata field {name} must not be empty")

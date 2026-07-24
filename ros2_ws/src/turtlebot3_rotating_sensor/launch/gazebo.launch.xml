@@ -4,6 +4,11 @@
     <!-- Set the default entity name -->
     <arg name="entity_name" default="turtlebot3" />
 
+    <!-- Preserve visible, unseeded direct launches; Phase 06 overrides these. -->
+    <arg name="gazebo_gui" default="True"/>
+    <arg name="gazebo_use_random_seed" default="False"/>
+    <arg name="gazebo_random_seed" default="0"/>
+
     <!-- Set the default initial position -->
     <arg name="init_x_position" default="0" />
     <arg name="init_y_position" default="0" />
@@ -239,7 +244,11 @@
 
 
     <!-- Launch the Gazebo world -->
-    <include file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/empty_world.launch.py"/>
+    <include file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/empty_world.launch.py">
+        <arg name="gazebo_gui" value="$(var gazebo_gui)"/>
+        <arg name="gazebo_use_random_seed" value="$(var gazebo_use_random_seed)"/>
+        <arg name="gazebo_random_seed" value="$(var gazebo_random_seed)"/>
+    </include>
 
     <!-- Publish URDF file in robot_description topic -->
     <include file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/robot_description.launch.py"/>
