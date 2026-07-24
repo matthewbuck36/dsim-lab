@@ -15,6 +15,10 @@ setup(
             'ros_esc/experiment_recording/experiment_metadata.yaml',
             'ros_esc/experiment_recording/qos_overrides.yaml',
         ]),
+        ('share/' + package_name + '/scenario_runner/scenarios', [
+            'ros_esc/scenario_runner/scenarios/phase06_smoke.yaml',
+            'ros_esc/scenario_runner/scenarios/phase06_catalog.yaml',
+        ]),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -43,6 +47,7 @@ setup(
             "supervisor_node = ros_esc.supervisor_node.supervisor_node_script:main",
             "record_run = ros_esc.experiment_recording.record_run:main",
             "validate_run = ros_esc.experiment_recording.validate_run:main",
+            "run_scenario = ros_esc.scenario_runner.run_scenario:main",
         ],
     },
 )

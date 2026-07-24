@@ -1,0 +1,329 @@
+"""Focused tests for Phase 06 scenario orchestration and classification."""
+
+import datetime as dt
+import json
+import os
+from pathlib import Path
+
+import pytest
+
+from ros_esc.cost_function_node.cost_function_objects.noise_objects import (
+    Uniform,
+)
+from ros_esc.experiment_recording.record_run import load_metadata_input
+from ros_esc.scenario_runner import run_scenario as runner
+from ros_esc.scenario_runner.run_scenario import (
+    build_launch_command,
+    build_metadata,
+    build_record_command,
+    classify_result,
+    cleanup_evidence,
+    execute_suite,
+    find_run_directory,
+    generate_scenario_run_id,
+    resolved_noise_config,
+)
+from ros_esc.scenario_runner.scenario_schema import expand_suite, load_suite
+
+import yaml
+
+
+PACKAGE_ROOT = Path(__file__).resolve().parents[1]
+SMOKE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/phase06_smoke.yaml'
+)
+
+
+def _resolved(profile='robust_gaussian_v1'):
+    suite = load_suite(SMOKE)
+    runs, _ = expand_suite(suite)
+    return next(run for run in runs if run['profile'] == profile)
+
+
+def test_launch_and_record_argv_compose_existing_owners_without_shell():
+    """Compose only the existing launch and recorder through direct argv."""
+    resolved = _resolved()
+    launch = build_launch_command(resolved, gui=False)
+    record = build_record_command(
+        resolved,
+        'safe-run',
+        '/tmp/metadata.yaml',
+        '/tmp/runs',
+        {
+            'run_timeout_sec': 5.0,
+            'preflight_timeout_sec': 10.0,
+            'shutdown_grace_sec': 3.0,
+        },
+        launch,
+    )
+
+    assert launch[:4] == [
+        'ros2', 'launch', 'turtlebot3_rotating_sensor', 'gazebo.launch.xml'
+    ]
+    assert 'gazebo_gui:=False' in launch
+    assert 'gazebo_use_random_seed:=True' in launch
+    assert 'gazebo_random_seed:=6001' in launch
+    assert 'algorithm_profile:=robust_gaussian_v1' in launch
+    assert 'recording_ready_required:=True' in launch
+    assert 'number_of_lights:=1' in launch
+    assert record[:4] == ['ros2', 'run', 'ros_esc', 'record_run']
+    assert record[record.index('--') + 1:] == launch
+    assert all(
+        not any(token in item for token in (';', '&&', '|'))
+        for item in record
+    )
+
+
+def test_metadata_and_launch_share_inputs(tmp_path):
+    """Derive metadata and launch inputs from the same resolved scenario."""
+    resolved = _resolved('legacy')
+    metadata = build_metadata(
+        resolved, 'codex-test', 'phase06-test', 'unit test'
+    )
+    path = tmp_path / 'metadata.yaml'
+    path.write_text(yaml.safe_dump(metadata), encoding='utf-8')
+    loaded = load_metadata_input(path, 'simulation')
+    launch = build_launch_command(resolved)
+
+    assert loaded['algorithm_profile'] == 'legacy'
+    assert loaded['random_seed'] == 6001
+    assert loaded['robot_starting_pose'] == {
+        'x_m': 0.0, 'y_m': 0.0, 'yaw_rad': 0.0
+    }
+    assert loaded['sources'][0]['relative_lumen_input'] == 1000.0
+    assert loaded['environment']['bounds_m']['x_min'] == -2.0
+    assert 'algorithm_profile:=legacy' in launch
+    assert 'light_1_intensity_lumens:=1000.0' in launch
+
+
+def test_unique_run_ids_are_safe_even_for_identical_case_and_time():
+    """Keep otherwise identical run IDs unique and Phase 05 compatible."""
+    resolved = _resolved()
+    now = dt.datetime(2026, 7, 24, tzinfo=dt.timezone.utc)
+    first = generate_scenario_run_id(resolved, now=now, unique='aaaaaaaa')
+    second = generate_scenario_run_id(resolved, now=now, unique='bbbbbbbb')
+
+    assert first != second
+    assert first.endswith('_aaaaaaaa')
+    assert '/' not in first
+    assert len(first) <= 128
+
+
+def test_run_directory_lookup_is_exact_across_utc_date_boundary(tmp_path):
+    """Find an exact run ID regardless of its containing UTC date."""
+    run_id = '20260724T235959999999Z_simulation_case_aaaaaaaa'
+    expected = tmp_path / '2026-07-25' / run_id
+    expected.mkdir(parents=True)
+    (tmp_path / '2026-07-24' / f'{run_id}-suffix').mkdir(parents=True)
+
+    assert find_run_directory(tmp_path, run_id) == expected
+
+
+def test_seeded_uniform_noise_config_does_not_mutate_base(tmp_path):
+    """Generate a seeded Uniform override without changing the base."""
+    resolved = _resolved()
+    resolved['disturbances']['sensor_noise'] = {
+        'model': 'uniform', 'bound': 0.125
+    }
+    path = resolved_noise_config(resolved, tmp_path / 'cost.json')
+    document = json.loads(path.read_text(encoding='utf-8'))
+
+    assert document['Noise']['object_name'] == 'Uniform'
+    assert document['Noise']['params'] == {'bound': 0.125, 'seed_num': 6001}
+
+
+def test_uniform_noise_repeats_exactly_for_the_same_seed():
+    """Verify identical Uniform seeds produce identical sample sequences."""
+    inputs = [0.0, 0.5, -0.5, 1.0]
+    first = Uniform({'bound': 0.125, 'seed_num': 6001})
+    first_samples = first.add_noise(0.0, inputs)
+    second = Uniform({'bound': 0.125, 'seed_num': 6001})
+    second_samples = second.add_noise(0.0, inputs)
+
+    assert list(first_samples) == list(second_samples)
+
+
+def test_component_ablations_map_only_to_existing_launch_controls():
+    """Map component ablations to existing launch controls only."""
+    resolved = _resolved()
+    resolved['algorithm']['ablations'] = {
+        'gaussian_fill_enabled': False,
+        'affine_assist_enabled': False,
+        'recenter_enabled': False,
+    }
+    launch = build_launch_command(resolved)
+
+    assert 'escape_policy:=none' in launch
+    assert 'modified_cost_enable_affine_bias:=False' in launch
+    assert 'recenter_after_escape:=False' in launch
+
+
+def test_controller_and_ground_truth_are_separate_classification_inputs():
+    """Keep controller-observed and ground-truth success independent."""
+    resolved = _resolved()
+    resolved['success']['all_of'] = [
+        'recording_complete', 'cleanup_complete', 'controller_goal'
+    ]
+    result = classify_result(
+        resolved,
+        {'passed': True},
+        {'passed': True},
+        {
+            'controller_goal': 'failed',
+            'simulation_ground_truth': 'passed',
+            'required_state_sequence_passed': True,
+            'required_events_passed': True,
+            'forbidden_events_absent': True,
+            'minimum_saturation_samples_passed': True,
+        },
+        {'timed_out': False, 'return_code': 1},
+    )
+
+    assert result['passed'] is False
+    assert result['predicate_results']['controller_goal'] is False
+
+
+def test_cleanup_compares_only_new_graph_and_exact_session(monkeypatch):
+    """Report only new graph nodes and exact-session survivors."""
+    monkeypatch.setattr(
+        runner, 'ros_graph_nodes', lambda: {'/baseline', '/new_node'}
+    )
+    monkeypatch.setattr(
+        runner,
+        'session_processes',
+        lambda session_id: [{'pid': 42, 'session_id': session_id}],
+    )
+
+    evidence = cleanup_evidence({'/baseline'}, 1234, settle_sec=0.0)
+
+    assert evidence['passed'] is False
+    assert evidence['remaining_new_nodes'] == ['/new_node']
+    assert evidence['remaining_session_processes'][0]['session_id'] == 1234
+
+
+def test_failed_run_is_retained_and_cleanup_failure_stops_suite(
+    monkeypatch, tmp_path
+):
+    """Retain a failed run and stop after a cleanup failure."""
+    runs_root = tmp_path / 'runs'
+    run_id = '20260724T000000000000Z_simulation_failed_aaaaaaaa'
+    run_directory = runs_root / '2026-07-24' / run_id
+    run_directory.mkdir(parents=True)
+    (run_directory / 'completeness.json').write_text(
+        json.dumps({'passed': False}), encoding='utf-8'
+    )
+    monkeypatch.setattr(runner, 'ensure_ros_daemon', lambda: None)
+    monkeypatch.setattr(runner, 'ros_graph_nodes', lambda: {'/baseline'})
+    monkeypatch.setattr(
+        runner, 'generate_scenario_run_id',
+        lambda resolved: run_id,
+    )
+    monkeypatch.setattr(
+        runner, 'run_record_process',
+        lambda *args, **kwargs: {
+            'return_code': 1,
+            'timed_out': False,
+            'stdout': 'retained failure',
+            'session_id': 1234,
+        },
+    )
+    monkeypatch.setattr(
+        runner, 'cleanup_evidence',
+        lambda *args, **kwargs: {
+            'passed': False,
+            'baseline_nodes': ['/baseline'],
+            'remaining_new_nodes': ['/leak'],
+            'remaining_session_processes': [],
+        },
+    )
+    monkeypatch.setattr(
+        runner, '_bag_outcomes',
+        lambda *args, **kwargs: {
+            'controller_goal': 'failed',
+            'simulation_ground_truth': 'failed',
+            'required_state_sequence_passed': True,
+            'required_events_passed': True,
+            'forbidden_events_absent': True,
+            'minimum_saturation_samples_passed': True,
+        },
+    )
+
+    summary = execute_suite(
+        SMOKE,
+        'codex-test',
+        runs_root=runs_root,
+        summary_output=tmp_path / 'summary.yaml',
+    )
+
+    assert summary['stopped_early_reason'] == 'cleanup_failure'
+    assert len(summary['runs']) == 1
+    assert run_directory.is_dir()
+    assert (run_directory / 'completeness.json').exists()
+    assert (run_directory / 'scenario_result.yaml').exists()
+    assert summary['runs'][0]['record_stdout_tail'] == 'retained failure'
+
+
+def test_dry_run_expands_profiles_without_default_summary(tmp_path):
+    """Expand both profiles without launch or a default summary."""
+    runs_root = tmp_path / 'runs'
+    summary = execute_suite(
+        SMOKE, 'codex-test', runs_root=runs_root, dry_run=True
+    )
+
+    assert summary['resolved_run_count'] == 2
+    assert [run['profile'] for run in summary['runs']] == [
+        'robust_gaussian_v1', 'legacy'
+    ]
+    assert not runs_root.exists()
+    assert all(run['record_argv'][:4] == [
+        'ros2', 'run', 'ros_esc', 'record_run'
+    ] for run in summary['runs'])
+
+
+def test_dry_run_writes_explicit_summary_and_preserves_unsupported(tmp_path):
+    """Write a dry-run summary containing unsupported cases."""
+    output = tmp_path / 'summary.yaml'
+    catalog = (
+        PACKAGE_ROOT
+        / 'ros_esc/scenario_runner/scenarios/phase06_catalog.yaml'
+    )
+    summary = execute_suite(
+        catalog,
+        'codex-test',
+        case_ids=['sensor_pose_delay'],
+        summary_output=output,
+        dry_run=True,
+    )
+
+    assert summary['runs'] == []
+    assert summary['unsupported'][0]['case_id'] == 'sensor_pose_delay'
+    assert yaml.safe_load(output.read_text(encoding='utf-8'))[
+        'unsupported_count'
+    ] == 1
+
+
+@pytest.mark.skipif(
+    os.environ.get('RUN_GESC_PHASE06_GAZEBO_E2E') != '1',
+    reason=(
+        'set RUN_GESC_PHASE06_GAZEBO_E2E=1 to run the recorded headless '
+        'Gazebo integration'
+    ),
+)
+def test_recorded_short_headless_end_to_end(tmp_path):
+    """Record and clean up short robust and legacy Gazebo runs."""
+    summary = execute_suite(
+        SMOKE,
+        'codex-automated-test',
+        case_ids=['recorded_profile_smoke'],
+        runs_root=tmp_path / 'runs',
+        summary_output=tmp_path / 'summary.yaml',
+    )
+
+    assert len(summary['runs']) == 2
+    assert all(run['recording_complete'] for run in summary['runs'])
+    assert all(run['cleanup']['passed'] for run in summary['runs'])
+    assert all(
+        (Path(run['run_directory']) / 'scenario_result.yaml').exists()
+        for run in summary['runs']
+    )

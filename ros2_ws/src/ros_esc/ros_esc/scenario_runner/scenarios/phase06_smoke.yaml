@@ -1,0 +1,62 @@
+schema_version: 1
+suite_id: phase06_smoke
+description: Short recorded orchestration checks for both audited profiles.
+mode: simulation
+
+execution:
+  max_parallel_runs: 1
+  gazebo_gui: false
+  runs_root: ~/Experiments/GESC-Gaussian/runs
+  preflight_timeout_sec: 150.0
+  run_timeout_sec: 5.0
+  wall_timeout_sec: 300.0
+  shutdown_grace_sec: 30.0
+  stop_on_run_failure: false
+  stop_on_cleanup_failure: true
+
+metadata:
+  experiment_version: phase06-v1
+  operator_notes: Automated Phase 06 recorded smoke.
+
+level_map: {}
+
+defaults:
+  bounds_m: [-2.0, 2.0, -2.0, 2.0]
+  room_center_m: [0.0, 0.0]
+  disturbances:
+    sensor_noise: {model: none, bound: 0.0}
+    sensor_delay_sec: 0.0
+    pose_delay_sec: 0.0
+
+cases:
+  - case_id: recorded_profile_smoke
+    family: smoke
+    description: Identical geometry for robust and legacy recording regression.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1, legacy]
+    seeds: [6001]
+    starts:
+      - {id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - id: source_1
+        x_m: 1.0
+        y_m: 0.5
+        relative_lumen_input: 1000.0
+        evaluation_role: goal
+    algorithm:
+      ablations:
+        gaussian_fill_enabled: true
+        affine_assist_enabled: true
+        recenter_enabled: true
+      launch_overrides: {}
+    success:
+      all_of: [recording_complete, cleanup_complete]
+      controller:
+        expected_terminal_state: null
+        required_state_sequence: []
+        required_events: []
+        forbidden_events: []
+      ground_truth:
+        goal_source_ids: [source_1]
+        final_position_tolerance_m: 0.35
+      minimum_saturation_samples: 0

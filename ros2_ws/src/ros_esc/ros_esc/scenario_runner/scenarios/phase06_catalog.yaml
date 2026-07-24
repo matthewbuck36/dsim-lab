@@ -1,0 +1,468 @@
+schema_version: 1
+suite_id: phase06_catalog
+description: Phase 06 supported-unverified coverage catalog and explicit gaps.
+mode: simulation
+
+execution:
+  max_parallel_runs: 1
+  gazebo_gui: false
+  runs_root: ~/Experiments/GESC-Gaussian/runs
+  preflight_timeout_sec: 150.0
+  run_timeout_sec: 180.0
+  wall_timeout_sec: 480.0
+  shutdown_grace_sec: 30.0
+  stop_on_run_failure: false
+  stop_on_cleanup_failure: true
+
+metadata:
+  experiment_version: phase06-v1
+  operator_notes: Phase 06 catalog; empirical expectations are not yet tuned.
+
+level_map: {}
+
+defaults:
+  bounds_m: [-2.0, 2.0, -2.0, 2.0]
+  room_center_m: [0.0, 0.0]
+  disturbances:
+    sensor_noise: {model: none, bound: 0.0}
+    sensor_delay_sec: 0.0
+    pose_delay_sec: 0.0
+
+cases:
+  - case_id: two_source_separation
+    family: two_source
+    description: Large, medium, close, and overlapping two-source geometries.
+    status: executable_unverified
+    profiles: [legacy, robust_gaussian_v1]
+    seeds: [6101]
+    starts:
+      - {id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+      - {id: southwest_north, x_m: -1.2, y_m: -1.2, yaw_rad: 1.5707963267948966}
+      - {id: northwest_south, x_m: -1.2, y_m: 1.2, yaw_rad: -1.5707963267948966}
+      - {id: southeast_west, x_m: 1.2, y_m: -1.2, yaw_rad: 3.141592653589793}
+      - {id: northeast_west, x_m: 1.2, y_m: 1.2, yaw_rad: 3.141592653589793}
+    sources:
+      - {id: local, x_m: -0.75, y_m: 0.0, relative_lumen_input: 600.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.25, y_m: 0.0, relative_lumen_input: 1800.0, evaluation_role: goal}
+    algorithm:
+      ablations: {gaussian_fill_enabled: true, affine_assist_enabled: true, recenter_enabled: true}
+      launch_overrides: {}
+    success:
+      all_of: [recording_complete, cleanup_complete]
+      controller: {expected_terminal_state: null, required_state_sequence: [], required_events: [], forbidden_events: [FAILSAFE]}
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      minimum_saturation_samples: 0
+
+  - case_id: overlapping_close_minima
+    family: close_minimum
+    description: Close residual minima and overlapping attraction regions.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [6102]
+    starts:
+      - {id: south_north, x_m: 0.0, y_m: -1.4, yaw_rad: 1.5707963267948966}
+    sources:
+      - {id: local_a, x_m: -0.20, y_m: 0.10, relative_lumen_input: 850.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.20, y_m: 0.10, relative_lumen_input: 900.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.45, y_m: 1.25, relative_lumen_input: 2000.0, evaluation_role: goal}
+    algorithm:
+      ablations: {gaussian_fill_enabled: true, affine_assist_enabled: true, recenter_enabled: true}
+      launch_overrides: {}
+    success:
+      all_of: [recording_complete, cleanup_complete]
+      controller: {expected_terminal_state: null, required_state_sequence: [], required_events: [], forbidden_events: []}
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      minimum_saturation_samples: 0
+
+  - case_id: multi_source_three_four
+    family: multi_source
+    description: Four differing source strengths; select edits can narrow to three.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [6103, 6104]
+    starts:
+      - {id: center_north, x_m: 0.0, y_m: 0.0, yaw_rad: 1.5707963267948966}
+    sources:
+      - {id: local_1, x_m: -1.20, y_m: -0.80, relative_lumen_input: 450.0, evaluation_role: local_minimum}
+      - {id: local_2, x_m: -0.20, y_m: 0.90, relative_lumen_input: 700.0, evaluation_role: local_minimum}
+      - {id: local_3, x_m: 0.65, y_m: -0.35, relative_lumen_input: 900.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.45, y_m: 1.35, relative_lumen_input: 2200.0, evaluation_role: goal}
+    algorithm:
+      ablations: {gaussian_fill_enabled: true, affine_assist_enabled: true, recenter_enabled: true}
+      launch_overrides: {}
+    success:
+      all_of: [recording_complete, cleanup_complete]
+      controller: {expected_terminal_state: null, required_state_sequence: [], required_events: [], forbidden_events: []}
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      minimum_saturation_samples: 0
+
+  - case_id: multi_source_three
+    family: multi_source
+    description: Three-source differing-strength case.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [6116]
+    starts:
+      - {id: center_north, x_m: 0.0, y_m: 0.0, yaw_rad: 1.5707963267948966}
+    sources:
+      - {id: local_1, x_m: -1.10, y_m: -0.70, relative_lumen_input: 500.0, evaluation_role: local_minimum}
+      - {id: local_2, x_m: 0.10, y_m: 0.90, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.40, y_m: 1.25, relative_lumen_input: 2000.0, evaluation_role: goal}
+    algorithm:
+      ablations: {gaussian_fill_enabled: true, affine_assist_enabled: true, recenter_enabled: true}
+      launch_overrides: {}
+    success:
+      all_of: [recording_complete, cleanup_complete]
+      controller: {expected_terminal_state: null, required_state_sequence: [], required_events: [], forbidden_events: []}
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      minimum_saturation_samples: 0
+
+  - case_id: virtual_boundary_corner
+    family: boundary
+    description: Virtual-boundary behavior only; no physical collision claim.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [6105]
+    starts:
+      - {id: corner_inward, x_m: -1.55, y_m: -1.55, yaw_rad: 0.7853981633974483}
+    sources:
+      - {id: local_wall, x_m: -1.65, y_m: -1.55, relative_lumen_input: 850.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.25, y_m: 1.25, relative_lumen_input: 1800.0, evaluation_role: goal}
+    algorithm:
+      ablations: {gaussian_fill_enabled: true, affine_assist_enabled: true, recenter_enabled: true}
+      launch_overrides: {wall_margin_m: 0.35}
+    success:
+      all_of: [recording_complete, cleanup_complete, no_forbidden_events]
+      controller: {expected_terminal_state: null, required_state_sequence: [], required_events: [], forbidden_events: [FAILSAFE]}
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      minimum_saturation_samples: 0
+
+  - case_id: seeded_uniform_noise
+    family: noise_delay
+    description: Seeded uniform sensor noise through a resolved cost JSON.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [6106, 6107]
+    starts:
+      - {id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - {id: goal, x_m: 1.25, y_m: 0.75, relative_lumen_input: 1500.0, evaluation_role: goal}
+    disturbances:
+      sensor_noise: {model: uniform, bound: 0.01}
+    algorithm:
+      ablations: {gaussian_fill_enabled: true, affine_assist_enabled: true, recenter_enabled: true}
+      launch_overrides: {}
+    success:
+      all_of: [recording_complete, cleanup_complete]
+      controller: {expected_terminal_state: null, required_state_sequence: [], required_events: [], forbidden_events: []}
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      minimum_saturation_samples: 0
+
+  - case_id: velocity_saturation
+    family: starts_saturation
+    description: Aggressive controller gains exercise final saturation flags.
+    status: executable_unverified
+    profiles: [legacy, robust_gaussian_v1]
+    seeds: [6108]
+    starts:
+      - {id: far_west_east, x_m: -1.65, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - {id: goal, x_m: 1.65, y_m: 0.0, relative_lumen_input: 2500.0, evaluation_role: goal}
+    algorithm:
+      ablations: {gaussian_fill_enabled: true, affine_assist_enabled: true, recenter_enabled: true}
+      launch_overrides: {recenter_linear_gain: 2.0, recenter_angular_gain: 5.0}
+    success:
+      all_of: [recording_complete, cleanup_complete, minimum_saturation_samples]
+      controller: {expected_terminal_state: null, required_state_sequence: [], required_events: [], forbidden_events: []}
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      minimum_saturation_samples: 1
+
+  - case_id: pure_repulsion_escape
+    family: escape
+    description: Expected pure-repulsion transition sequence.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [6109]
+    starts:
+      - {id: local_center, x_m: -0.8, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - {id: local, x_m: -0.8, y_m: 0.0, relative_lumen_input: 700.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.3, y_m: 0.8, relative_lumen_input: 1800.0, evaluation_role: goal}
+    algorithm:
+      ablations: {gaussian_fill_enabled: true, affine_assist_enabled: false, recenter_enabled: false}
+      launch_overrides: {}
+    success:
+      all_of: [recording_complete, cleanup_complete, required_state_sequence]
+      controller: {expected_terminal_state: null, required_state_sequence: [SEARCH, VERIFY_EXTREMUM, DESIGN_OR_MERGE_FILL, ESCAPE_REPULSE], required_events: [ESCAPE_STARTED], forbidden_events: [FAILSAFE]}
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      minimum_saturation_samples: 0
+
+  - case_id: stalled_assisted_escape
+    family: escape
+    description: Expected stall, targeted redesign, and assisted escape sequence.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [6110]
+    starts:
+      - {id: local_center, x_m: -0.7, y_m: -0.2, yaw_rad: 0.0}
+    sources:
+      - {id: local, x_m: -0.7, y_m: -0.2, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.4, y_m: 0.8, relative_lumen_input: 1900.0, evaluation_role: goal}
+    algorithm:
+      ablations: {gaussian_fill_enabled: true, affine_assist_enabled: true, recenter_enabled: true}
+      launch_overrides: {stall_window_sec: 2.0, minimum_radial_progress_m: 0.20}
+    success:
+      all_of: [recording_complete, cleanup_complete, required_state_sequence, required_events]
+      controller: {expected_terminal_state: null, required_state_sequence: [ESCAPE_REPULSE, ESCAPE_ASSIST], required_events: [ESCAPE_STALLED], forbidden_events: [FAILSAFE]}
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      minimum_saturation_samples: 0
+
+  - case_id: fill_merge
+    family: fill_merge
+    description: Close basins expected to exercise typed fill merge lifecycle.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [6111]
+    starts:
+      - {id: southwest_northeast, x_m: -1.4, y_m: -1.0, yaw_rad: 0.5}
+    sources:
+      - {id: local_a, x_m: -0.40, y_m: 0.0, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.15, y_m: 0.10, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.5, y_m: 1.3, relative_lumen_input: 2100.0, evaluation_role: goal}
+    algorithm:
+      ablations: {gaussian_fill_enabled: true, affine_assist_enabled: true, recenter_enabled: true}
+      launch_overrides: {gaussian_fill_merge_bandwidth_m: 0.75, gaussian_fill_merge_radius_scale: 2.5}
+    success:
+      all_of: [recording_complete, cleanup_complete, required_events]
+      controller: {expected_terminal_state: null, required_state_sequence: [], required_events: [FILL_MERGED], forbidden_events: [FAILSAFE]}
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      minimum_saturation_samples: 0
+
+  - case_id: recenter_resume
+    family: recenter_resume
+    description: Expected escape, center return, and resumed search sequence.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [6112]
+    starts:
+      - {id: local_west, x_m: -1.1, y_m: 0.2, yaw_rad: 0.0}
+    sources:
+      - {id: local, x_m: -1.1, y_m: 0.2, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.45, y_m: 1.0, relative_lumen_input: 1900.0, evaluation_role: goal}
+    algorithm:
+      ablations: {gaussian_fill_enabled: true, affine_assist_enabled: true, recenter_enabled: true}
+      launch_overrides: {}
+    success:
+      all_of: [recording_complete, cleanup_complete, required_state_sequence, required_events]
+      controller: {expected_terminal_state: null, required_state_sequence: [ESCAPE_REPULSE, RECENTER, SEARCH], required_events: [RECENTER_STARTED, RECENTER_COMPLETE], forbidden_events: [FAILSAFE]}
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      minimum_saturation_samples: 0
+
+  - case_id: component_ablations
+    family: ablation
+    description: Gaussian-disabled comparison; affine and recenter cases use sibling edits.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [6113]
+    starts:
+      - {id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - {id: local, x_m: -0.6, y_m: 0.0, relative_lumen_input: 650.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.3, y_m: 0.9, relative_lumen_input: 1800.0, evaluation_role: goal}
+    algorithm:
+      ablations: {gaussian_fill_enabled: false, affine_assist_enabled: true, recenter_enabled: true}
+      launch_overrides: {}
+    success:
+      all_of: [recording_complete, cleanup_complete]
+      controller: {expected_terminal_state: null, required_state_sequence: [], required_events: [], forbidden_events: []}
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      minimum_saturation_samples: 0
+
+  - case_id: affine_assist_ablation
+    family: ablation
+    description: Affine assistance disabled through its existing launch control.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [6114]
+    starts:
+      - {id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - {id: local, x_m: -0.6, y_m: 0.0, relative_lumen_input: 650.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.3, y_m: 0.9, relative_lumen_input: 1800.0, evaluation_role: goal}
+    algorithm:
+      ablations: {gaussian_fill_enabled: true, affine_assist_enabled: false, recenter_enabled: true}
+      launch_overrides: {}
+    success:
+      all_of: [recording_complete, cleanup_complete]
+      controller: {expected_terminal_state: null, required_state_sequence: [], required_events: [], forbidden_events: []}
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      minimum_saturation_samples: 0
+
+  - case_id: recenter_ablation
+    family: ablation
+    description: Recenter disabled through the existing supervisor policy switch.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [6115]
+    starts:
+      - {id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - {id: local, x_m: -0.6, y_m: 0.0, relative_lumen_input: 650.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.3, y_m: 0.9, relative_lumen_input: 1800.0, evaluation_role: goal}
+    algorithm:
+      ablations: {gaussian_fill_enabled: true, affine_assist_enabled: true, recenter_enabled: false}
+      launch_overrides: {}
+    success:
+      all_of: [recording_complete, cleanup_complete]
+      controller: {expected_terminal_state: null, required_state_sequence: [], required_events: [], forbidden_events: []}
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      minimum_saturation_samples: 0
+
+  - case_id: ordered_levels_1_to_5
+    family: two_source
+    description: Required 25 ordered combinations awaiting a versioned map.
+    status: unsupported
+    unsupported_reason: No authoritative mapping from discrete levels 1-5 to simulator-relative intensity exists.
+    profiles: [legacy, robust_gaussian_v1]
+    seeds: [6201]
+    starts:
+      - {id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - {id: source_a, x_m: -0.8, y_m: 0.0, levels: [1, 2, 3, 4, 5], evaluation_role: local_minimum}
+      - {id: source_b, x_m: 1.2, y_m: 0.5, levels: [1, 2, 3, 4, 5], evaluation_role: goal}
+    algorithm:
+      ablations: {gaussian_fill_enabled: true, affine_assist_enabled: true, recenter_enabled: true}
+      launch_overrides: {}
+    success:
+      all_of: [recording_complete, cleanup_complete]
+      controller: {expected_terminal_state: null, required_state_sequence: [], required_events: [], forbidden_events: []}
+      ground_truth: {goal_source_ids: [source_b], final_position_tolerance_m: 0.35}
+      minimum_saturation_samples: 0
+
+  - case_id: sensor_pose_delay
+    family: noise_delay
+    description: Delay dimensions retained explicitly without fake zero measurements.
+    status: unsupported
+    unsupported_reason: The current simulator has no sensor-delay or pose-delay injection owner.
+    profiles: [robust_gaussian_v1]
+    seeds: [6202]
+    starts:
+      - {id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - {id: goal, x_m: 1.0, y_m: 0.5, relative_lumen_input: 1000.0, evaluation_role: goal}
+    disturbances: {sensor_delay_sec: 0.1, pose_delay_sec: 0.1}
+    algorithm:
+      ablations: {gaussian_fill_enabled: true, affine_assist_enabled: true, recenter_enabled: true}
+      launch_overrides: {}
+    success:
+      all_of: [recording_complete, cleanup_complete]
+      controller: {expected_terminal_state: null, required_state_sequence: [], required_events: [], forbidden_events: []}
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      minimum_saturation_samples: 0
+
+  - case_id: deterministic_gaussian_noise
+    family: noise_delay
+    description: Gaussian implementation seeds Python but samples NumPy.
+    status: unsupported
+    unsupported_reason: Configured Gaussian noise is not deterministically seeded.
+    profiles: [robust_gaussian_v1]
+    seeds: [6203]
+    starts:
+      - {id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - {id: goal, x_m: 1.0, y_m: 0.5, relative_lumen_input: 1000.0, evaluation_role: goal}
+    disturbances:
+      sensor_noise: {model: gaussian, bound: 0.0, std_dev: 0.01}
+    algorithm:
+      ablations: {gaussian_fill_enabled: true, affine_assist_enabled: true, recenter_enabled: true}
+      launch_overrides: {}
+    success:
+      all_of: [recording_complete, cleanup_complete]
+      controller: {expected_terminal_state: null, required_state_sequence: [], required_events: [], forbidden_events: []}
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      minimum_saturation_samples: 0
+
+  - case_id: physical_wall_collision
+    family: boundary
+    description: Physical collision ground truth is unavailable.
+    status: unsupported
+    unsupported_reason: The current world has virtual bounds but no wall/contact sensor or collision outcome owner.
+    profiles: [robust_gaussian_v1]
+    seeds: [6204]
+    starts:
+      - {id: corner_inward, x_m: -1.5, y_m: -1.5, yaw_rad: 0.7853981633974483}
+    sources:
+      - {id: goal, x_m: 1.0, y_m: 1.0, relative_lumen_input: 1000.0, evaluation_role: goal}
+    algorithm:
+      ablations: {gaussian_fill_enabled: true, affine_assist_enabled: true, recenter_enabled: true}
+      launch_overrides: {}
+    success:
+      all_of: [recording_complete, cleanup_complete]
+      controller: {expected_terminal_state: null, required_state_sequence: [], required_events: [], forbidden_events: []}
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      minimum_saturation_samples: 0
+
+  - case_id: raw_attraction_static_ablation
+    family: ablation
+    description: Static raw-weight override conflicts with state invariants.
+    status: unsupported
+    unsupported_reason: Raw attraction weights are state-machine invariants, not a static launch component.
+    profiles: [robust_gaussian_v1]
+    seeds: [6205]
+    starts:
+      - {id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - {id: goal, x_m: 1.0, y_m: 0.5, relative_lumen_input: 1000.0, evaluation_role: goal}
+    algorithm:
+      ablations: {gaussian_fill_enabled: true, affine_assist_enabled: true, recenter_enabled: true}
+      launch_overrides: {}
+    success:
+      all_of: [recording_complete, cleanup_complete]
+      controller: {expected_terminal_state: null, required_state_sequence: [], required_events: [], forbidden_events: []}
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      minimum_saturation_samples: 0
+
+  - case_id: more_than_five_sources
+    family: multi_source
+    description: Source capacity boundary.
+    status: unsupported
+    unsupported_reason: The current simulator launch and cost owner expose at most five sources.
+    profiles: [robust_gaussian_v1]
+    seeds: [6206]
+    starts:
+      - {id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - {id: s1, x_m: -1.5, y_m: -1.5, relative_lumen_input: 500.0, evaluation_role: context}
+      - {id: s2, x_m: -1.0, y_m: -0.5, relative_lumen_input: 600.0, evaluation_role: context}
+      - {id: s3, x_m: -0.5, y_m: 0.5, relative_lumen_input: 700.0, evaluation_role: context}
+      - {id: s4, x_m: 0.0, y_m: 1.0, relative_lumen_input: 800.0, evaluation_role: context}
+      - {id: s5, x_m: 0.8, y_m: 0.5, relative_lumen_input: 900.0, evaluation_role: local_minimum}
+      - {id: s6, x_m: 1.5, y_m: 1.5, relative_lumen_input: 1800.0, evaluation_role: goal}
+    algorithm:
+      ablations: {gaussian_fill_enabled: true, affine_assist_enabled: true, recenter_enabled: true}
+      launch_overrides: {}
+    success:
+      all_of: [recording_complete, cleanup_complete]
+      controller: {expected_terminal_state: null, required_state_sequence: [], required_events: [], forbidden_events: []}
+      ground_truth: {goal_source_ids: [s6], final_position_tolerance_m: 0.35}
+      minimum_saturation_samples: 0
+
+  - case_id: plain_legacy_without_pde
+    family: ablation
+    description: Plain legacy graph cannot satisfy the unchanged Phase 05 manifest.
+    status: unsupported
+    unsupported_reason: use_pde_extensions=False omits required canonical and augmented-cost topics.
+    profiles: [legacy]
+    seeds: [6207]
+    starts:
+      - {id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - {id: goal, x_m: 1.0, y_m: 0.5, relative_lumen_input: 1000.0, evaluation_role: goal}
+    algorithm:
+      ablations: {gaussian_fill_enabled: true, affine_assist_enabled: true, recenter_enabled: true}
+      launch_overrides: {}
+    success:
+      all_of: [recording_complete, cleanup_complete]
+      controller: {expected_terminal_state: null, required_state_sequence: [], required_events: [], forbidden_events: []}
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      minimum_saturation_samples: 0
