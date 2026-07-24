@@ -2,6 +2,10 @@
 <robot name="turtlebot3_rotating_sensor"
   xmlns:xacro="http://ros.org/wiki/xacro">
 
+  <xacro:arg name="simulation_contacts_enabled" default="false"/>
+  <xacro:arg
+    name="simulation_contacts_topic"
+    default="/gesc_gaussian/simulation/contacts"/>
 
   <!-- Note the base footprint is used to calculate the
   turtlebot's position in global (x,y) coordinates. -->
@@ -22,7 +26,7 @@
       </geometry>
     </visual>
 
-    <collision>
+    <collision name="base_body_collision">
       <origin xyz="0 0 0.165" rpy="0 0 0"/>
       <geometry>
         <box size="0.140 0.140 0.33"/>
@@ -49,6 +53,26 @@
       <inertia ixx="1.92e-02" ixy="0" ixz="0" iyy="1.92e-02" iyz="0" izz="5.857e-03" />
     </inertial>
   </link>
+
+  <xacro:if value="$(arg simulation_contacts_enabled)">
+    <gazebo reference="base_link">
+      <sensor type="contact" name="base_body_contact">
+        <always_on>true</always_on>
+        <update_rate>100</update_rate>
+        <contact>
+          <collision>base_footprint_fixed_joint_lump__base_body_collision_collision</collision>
+        </contact>
+        <plugin
+          name="base_body_contact_publisher"
+          filename="libgazebo_ros_bumper.so">
+          <ros>
+            <remapping>bumper_states:=$(arg simulation_contacts_topic)</remapping>
+          </ros>
+          <frame_name>base_link</frame_name>
+        </plugin>
+      </sensor>
+    </gazebo>
+  </xacro:if>
 
   <joint name="imu_joint" type="fixed">
     <parent link="base_link"/>
@@ -125,7 +149,7 @@
       </geometry>
     </visual>
 
-    <collision>
+    <collision name="base_scan_collision">
       <origin xyz="0.015 0 -0.0065" rpy="0 0 0"/>
       <geometry>
         <cylinder length="0.0315" radius="0.055"/>
@@ -191,7 +215,7 @@
       </geometry>
     </visual>
 
-    <collision>
+    <collision name="wheel_left_collision">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
         <cylinder length="0.018" radius="0.033"/>
@@ -338,7 +362,7 @@
       </geometry>
     </visual>
 
-    <collision>
+    <collision name="rotating_frame_collision">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
         <box size="0.39 0.035 0.03"/>
@@ -351,6 +375,26 @@
       <inertia ixx="4.683e-4" ixy="0" ixz="0" iyy="4.43e-6" iyz="1.111e-5" izz="4.713e-04" />
     </inertial>
   </link>
+
+  <xacro:if value="$(arg simulation_contacts_enabled)">
+    <gazebo reference="rotating_frame_link">
+      <sensor type="contact" name="rotating_frame_contact">
+        <always_on>true</always_on>
+        <update_rate>100</update_rate>
+        <contact>
+          <collision>rotating_frame_link_fixed_joint_lump__rotating_frame_collision_collision</collision>
+        </contact>
+        <plugin
+          name="rotating_frame_contact_publisher"
+          filename="libgazebo_ros_bumper.so">
+          <ros>
+            <remapping>bumper_states:=$(arg simulation_contacts_topic)</remapping>
+          </ros>
+          <frame_name>rotating_frame_link</frame_name>
+        </plugin>
+      </sensor>
+    </gazebo>
+  </xacro:if>
 
   <gazebo reference="rotating_frame_link">
     <!-- Set static contact stiffness, higher is more rigid -->

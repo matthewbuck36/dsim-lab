@@ -23,6 +23,7 @@ from ros_esc.gaussian_fill_node.gaussian_fill_script import GaussianFill
 from ros_esc.gaussian_fill_node.basin_estimator import CostSnapshot, PoseSnapshot
 from ros_esc.modified_cost_node.modified_cost_script import ModifiedCost2D
 from ros_esc.pde_cost_history_node import pde_cost_history_script
+from ros_esc.rotate_frame_node import rotate_frame_node_script
 from ros_esc.supervisor_node import supervisor_node_script
 from ros_esc_interfaces.msg import (
     AlgorithmEvent,
@@ -114,6 +115,7 @@ def test_recording_watchdog_zero_does_not_emit_latching_failsafe():
         (cost_function_node_script, "CostFunction"),
         (supervisor_node_script, "SupervisorNode"),
         (pde_cost_history_script, "PDECostHistory"),
+        (rotate_frame_node_script, "RotateFrame"),
     ],
 )
 def test_sigint_cleanup_publishes_zero_before_context_shutdown(

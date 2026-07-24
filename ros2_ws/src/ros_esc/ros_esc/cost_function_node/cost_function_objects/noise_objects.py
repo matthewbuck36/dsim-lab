@@ -149,23 +149,29 @@ class Gaussian(NoiseObject):
         if "seed_num" in params:
             # Initialize random with requested seed
             random.seed(params["seed_num"])
+            # Gaussian sampling uses NumPy, so seed the generator that
+            # actually produces the configured noise.
+            self.generator = np.random.default_rng(params["seed_num"])
         # If no seed number is given
         else:
             # Initialize random with a random seed
             random.seed(None)
+            # Preserve the legacy unseeded global NumPy sampling path.
+            self.generator = None
 
     # pylint: disable=unused-argument
     def add_noise(self, time, cost):
         """This takes in the cost value and adds in noise."""
 
         # Generate an array of random numbers within the Gaussian distribution
-        noise_array = np.array(
-            [
-                float(np.random.normal(
-                    loc=0, scale=self.std_dev, size=None
-                )) for x in cost
-            ]
+        sampler = (
+            self.generator.normal
+            if self.generator is not None else np.random.normal
         )
+        noise_array = np.array([
+            float(sampler(loc=0, scale=self.std_dev, size=None))
+            for x in cost
+        ])
         # Add the noise to the cost value
         output = cost + noise_array
         # Convert from array to list

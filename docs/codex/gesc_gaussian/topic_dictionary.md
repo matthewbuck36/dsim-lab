@@ -1,6 +1,6 @@
 # GESC Gaussian Topic and Message Dictionary
 
-> Phases 01-06 are implemented. Phase 04 passed its amended focused and visible
+> Phases 01-07.5 are implemented. Phase 04 passed its amended focused and visible
 > Gazebo/SIGINT gates, Phase 05 produced a complete retained sqlite3 run, and
 > Phase 06 composes the same launch/recording owners in a deterministic serial
 > scenario runner. These results establish implementation and recording
@@ -18,6 +18,8 @@ boundary-aware assisted direction, and bounded indoor recentering. Phase 05
 adds the default-off recording interlock and the unified recorder contract.
 Phase 06 adds no algorithm topic or message; it adds only simulation
 orchestration, Gazebo execution arguments, and per-run metadata.
+Phase 07.5 adds default-off, simulation-only contact and delay evidence needed
+to make Phase 08 validation dimensions executable.
 
 ## Common timestamp and validity contract
 
@@ -537,6 +539,34 @@ the deterministic case key. Run IDs additionally contain a UTC timestamp and
 UUID fragment so reruns never overwrite an artifact. Ground-truth source roles
 and tolerances remain evaluation metadata and are never exposed to the
 controller. See `recording_runs.md` for commands and retained artifacts.
+
+## Phase 07.5 simulation-validation interface
+
+Schema version 2 preserves schema-version-1 parsing and case identities while
+adding a validation world, deterministic Gaussian noise, delayed algorithm
+inputs, contact truth, and per-run frozen-profile overrides. These controls are
+simulation-only and default off in direct launches.
+
+| Topic | Type | Owner |
+|---|---|---|
+| `/gesc_gaussian/simulation/raw_cost_delayed` | `ros_esc_interfaces/msg/StampedFloat64MultiArray` | simulation disturbance relay |
+| `/gesc_gaussian/simulation/source_cost_delayed` | `ros_esc_interfaces/msg/CostBreakdown` | simulation disturbance relay |
+| `/gesc_gaussian/simulation/pose_delayed` | `nav_msgs/msg/Odometry` | simulation disturbance relay |
+| `/gesc_gaussian/simulation/contacts` | `gazebo_msgs/msg/ContactsState` | opt-in Gazebo contact sensors |
+
+The delay relay retains the original message timestamps and releases messages
+against ROS simulation time. Algorithm consumers alone are routed to delayed
+topics; canonical publishers and recordings remain unchanged. The Phase 07
+analyzer pairs retained timestamps to report observed raw-cost, source-cost,
+and pose delay. Contact metrics are valid only when the opt-in Gazebo contact
+stream is present; valid empty messages mean no collision, and non-ground
+contact states mean a collision.
+
+The validation robot monitors the exact collision names produced by Gazebo's
+fixed-joint lumping. The four-wall validation world bounds the declared
+`[-2, 2] x [-2, 2] m` simulation envelope. A positive-control probe spawns a
+static collision object only after recording readiness, proving that the
+contact path detects physical Gazebo contacts rather than synthetic messages.
 
 ## Phase 07 offline analysis interface
 

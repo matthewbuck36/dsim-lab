@@ -34,6 +34,7 @@ from .bag_reader import (
     nearest_record,
     read_run_bag,
     records_for_alias,
+    stamp_nanoseconds,
 )
 from .plotting_helper_functions import init_plot_style
 
@@ -998,6 +999,146 @@ def _ground_truth_metric(run_directory, odometry):
     )
 
 
+def _resolved_scenario(run_directory):
+    path = Path(run_directory) / 'resolved_scenario.yaml'
+    if not path.is_file():
+        return {}
+    document = load_yaml(path)
+    return document if isinstance(document, dict) else {}
+
+
+def _contact_metric(bag_data):
+    scenario = _resolved_scenario(bag_data.run_directory)
+    enabled = bool(
+        scenario.get('validation', {}).get('contacts_enabled', False)
+    )
+    records = records_for_alias(
+        bag_data, 'simulation_contacts', readiness_only=True
+    )
+    if not enabled:
+        return unavailable(
+            'simulation contacts were not enabled for this scenario',
+            unit='boolean',
+            provenance='resolved scenario validation controls',
+        )
+    if not records:
+        return unavailable(
+            'enabled simulation contact topic has no readiness records',
+            unit='boolean',
+            provenance='/gesc_gaussian/simulation/contacts',
+            status='invalid',
+        )
+    contacts = [
+        {
+            'collision1': state.collision1_name,
+            'collision2': state.collision2_name,
+        }
+        for record in records
+        for state in record.message.states
+        if (
+            'ground_plane' not in state.collision1_name
+            and 'ground_plane' not in state.collision2_name
+        )
+    ]
+    return metric(
+        bool(contacts),
+        unit='boolean',
+        reason=(
+            f'{len(contacts)} non-ground contact state records'
+            if contacts else 'valid empty non-ground contact evidence'
+        ),
+        provenance='/gesc_gaussian/simulation/contacts',
+    )
+
+
+def _delay_key(record):
+    if record.ros_timestamp_ns is not None:
+        return ('ros', int(record.ros_timestamp_ns))
+    if record.source_timestamp_valid:
+        return ('source', round(float(record.source_timestamp_sec), 9))
+    return None
+
+
+def _observed_delay_metric(
+    bag_data,
+    original_alias,
+    delayed_alias,
+    configured_delay_sec,
+):
+    original = records_for_alias(
+        bag_data, original_alias, readiness_only=True
+    )
+    delayed = records_for_alias(
+        bag_data, delayed_alias, readiness_only=True
+    )
+    if configured_delay_sec <= 0.0:
+        return unavailable(
+            'delay was not enabled for this scenario',
+            unit='s',
+            provenance='resolved scenario disturbances',
+        )
+    clock = records_for_alias(bag_data, 'clock', readiness_only=False)
+    if not clock:
+        return unavailable(
+            'simulation clock is unavailable for delay measurement',
+            unit='s',
+            provenance='/clock and paired retained message stamps',
+            status='invalid',
+        )
+
+    def simulation_stamp(record):
+        clock_record, _ = nearest_record(
+            clock,
+            record.bag_timestamp_ns,
+            int(0.05 * NANOSECONDS_PER_SECOND),
+            'bag_timestamp_ns',
+        )
+        if clock_record is None:
+            return None
+        return stamp_nanoseconds(clock_record.message.clock)
+
+    by_key = defaultdict(list)
+    for record in original:
+        key = _delay_key(record)
+        stamp = simulation_stamp(record)
+        if key is not None and stamp is not None:
+            by_key[key].append(stamp)
+    offsets = []
+    used = defaultdict(int)
+    for record in delayed:
+        key = _delay_key(record)
+        candidates = by_key.get(key, [])
+        index = used[key]
+        delayed_stamp = simulation_stamp(record)
+        if index >= len(candidates) or delayed_stamp is None:
+            continue
+        used[key] += 1
+        offsets.append(
+            (delayed_stamp - candidates[index])
+            / NANOSECONDS_PER_SECOND
+        )
+    if not offsets:
+        return unavailable(
+            'original and delayed stamps could not be paired',
+            unit='s',
+            provenance=f'{original_alias} and {delayed_alias}',
+            status='invalid',
+        )
+    observed = statistics.median(offsets)
+    return metric(
+        observed,
+        unit='s',
+        reason=(
+            f'configured={configured_delay_sec:.6f} s; '
+            f'pairs={len(offsets)}'
+        ),
+        provenance=(
+            f'/clock-mapped bag receipt for paired retained stamps from '
+            f'{original_alias} and {delayed_alias}'
+        ),
+    )
+
+
 def _compute_metrics(
     bag_data,
     metadata,
@@ -1116,6 +1257,10 @@ def _compute_metrics(
             status='not_applicable',
         )
     )
+    scenario = _resolved_scenario(bag_data.run_directory)
+    disturbances = scenario.get('disturbances', {})
+    sensor_delay = float(disturbances.get('sensor_delay_sec', 0.0))
+    pose_delay = float(disturbances.get('pose_delay_sec', 0.0))
     return {
         'recording_complete': metric(
             bool(metadata.get('recording', {}).get('completeness_passed')),
@@ -1249,10 +1394,24 @@ def _compute_metrics(
             unit='boolean',
             provenance='in-readiness state and event evidence',
         ),
-        'collision': unavailable(
-            'no audited collision/contact truth topic exists',
-            unit='boolean',
-            provenance='Phase 00/06 interface audit',
+        'collision': _contact_metric(bag_data),
+        'observed_raw_cost_delay': _observed_delay_metric(
+            bag_data,
+            'raw_cost_legacy',
+            'simulation_raw_cost_delayed',
+            sensor_delay,
+        ),
+        'observed_source_cost_delay': _observed_delay_metric(
+            bag_data,
+            'source_cost',
+            'simulation_source_cost_delayed',
+            sensor_delay,
+        ),
+        'observed_pose_delay': _observed_delay_metric(
+            bag_data,
+            'pose',
+            'simulation_pose_delayed',
+            pose_delay,
         ),
         'event_counts': metric(
             dict(sorted(event_counts.items())),

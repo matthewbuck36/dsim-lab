@@ -1080,3 +1080,106 @@ The two focused skips were the guarded Phase 06 headless Gazebo E2E and Phase
 05 visible Gazebo recording tests. Both have retained prior passing evidence;
 Phase 07 did not rerun Gazebo, the 26-run Phase 08 behavioral matrix, unsupported
 scenario dimensions, physical hardware, Vicon, or robot commands.
+
+## Phase 07.5 commands run
+
+### Context, build, focused tests, and dry-run
+
+The Phase 08 pre-edit context validator passed before implementation. After
+the prerequisite handoff was written, the validator was extended to require
+that handoff for Phase 08 implementation.
+
+```bash
+source /opt/ros/humble/setup.bash
+cd ros2_ws
+colcon --log-base /tmp/dsim_phase075_build_final build --symlink-install \
+  --packages-select ros_esc_interfaces ros_esc turtlebot3_rotating_sensor
+source install/setup.bash
+
+python3 -m pytest -q -rs \
+  src/ros_esc/test/test_simulation_disturbances.py \
+  src/ros_esc/test/test_bag_analysis.py \
+  src/ros_esc/test/test_bag_analysis_integration.py \
+  src/ros_esc/test/test_scenario_schema.py \
+  src/ros_esc/test/test_scenario_runner.py \
+  src/ros_esc/test/test_experiment_recording.py \
+  src/ros_esc/test/test_recording_integration.py \
+  src/ros_esc/test/test_state_machine.py \
+  src/ros_esc/test/test_supervisor_integration.py \
+  src/ros_esc/test/test_observability_contract.py \
+  src/ros_esc/test/test_legacy_behavior.py \
+  src/ros_esc/test/test_robust_gaussian_algorithm.py \
+  src/ros_esc/test/test_escape_recenter.py
+
+ros2 run ros_esc run_scenario \
+  src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_validation_support.yaml \
+  --operator phase08 --dry-run \
+  --summary-output /tmp/phase08_support_dry_final.yaml
+```
+
+Build result: three packages passed. Focused result:
+`162 passed, 2 skipped in 7.90s`. The exact skips were the guarded Phase 06
+headless Gazebo E2E and Phase 05 visible Gazebo recording tests. The dry-run
+resolved five runs and zero unsupported records.
+
+### Retained runtime prerequisite
+
+Evidence root:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08/prerequisite
+```
+
+The accepted run IDs are:
+
+```text
+20260724T232457162985Z_simulation_phase08_validation_support-contact_positive-robust_gaussian_v1-bdb7e4c828_88b20a0e
+20260724T233032110244Z_simulation_phase08_validation_support-contact_negative-robust_gaussian_v1-925907a927_679a425c
+20260724T233225578431Z_simulation_phase08_validation_support-seeded_gaussian-robust_gaussian_v1-8f9764f2cb_27549de2
+20260724T233430348055Z_simulation_phase08_validation_support-sensor_delay-robust_gaussian_v1-3c1c885dad_49ca6486
+20260724T233631073890Z_simulation_phase08_validation_support-pose_delay-robust_gaussian_v1-b65df4d2f3_6e7657a5
+```
+
+All five passed Phase 05 completeness and process/graph cleanup. Phase 07
+analysis was `complete` for every run. Collision was valid and true for the
+static-contact positive control, and valid and false for the other four runs.
+The configured 100 ms sensor delay measured 0.100 s on both raw-cost and
+source-cost relays; the configured pose delay measured 0.100 s. Delay
+measurement maps bag receipt through recorded `/clock`, so accelerated
+headless simulation does not turn simulation time into wall time.
+
+The seeded-Gaussian run retained `std_dev: 0.01` and `seed_num: 8003`.
+Unit coverage separately verifies identical configured seeds generate
+identical NumPy sequences.
+
+Diagnostic failed runs were preserved. The decisive Level B corrections were:
+
+- Gazebo fixed-joint lumping renamed monitored collisions, so contact sensors
+  now reference the exact generated SDF names.
+- The rotating-frame node used rclpy's default signal handling and once exited
+  with status 245 during recorder shutdown; it now uses the established
+  explicit executor and `SignalHandlerOptions.NO` teardown sequence.
+- Initial delay analysis used wall-clock bag deltas; it now reports simulation
+  delay by mapping paired retained stamps through `/clock`.
+
+### Syntax, interface, focused style, and global trend
+
+Python compile/import checks, XML/YAML parsing, contact-enabled xacro,
+`check_urdf`, generated-SDF collision-name checks, launch `--show-args`,
+unfiltered `ament_flake8` and `ament_pep257` on new/clean touched owners,
+fatal-only flake8 on the inherited legacy rotate/test owners, and
+`git diff --check` passed.
+
+```bash
+colcon --log-base /tmp/dsim_phase075_test_global test \
+  --packages-select ros_esc_interfaces ros_esc turtlebot3_rotating_sensor
+colcon test-result --test-result-base build --all
+```
+
+Global result: `1031 tests, 0 errors, 856 failures, 3 skipped`. Relative to
+the Phase 07 documented baseline (`1037 / 0 / 872 / 3`), this is -6 generated
+test records, no new errors, -16 inherited lint failures, and unchanged skips.
+The differing generated record count reflects current package lint
+enumeration, not removed functional tests. All remaining failures are
+inherited package-wide flake8, pep257, and lint-cmake debt; the new and clean
+touched Phase 07.5 files contribute no findings.

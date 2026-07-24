@@ -18,6 +18,7 @@ setup(
         ('share/' + package_name + '/scenario_runner/scenarios', [
             'ros_esc/scenario_runner/scenarios/phase06_smoke.yaml',
             'ros_esc/scenario_runner/scenarios/phase06_catalog.yaml',
+            'ros_esc/scenario_runner/scenarios/phase08_validation_support.yaml',
         ]),
     ],
     install_requires=['setuptools'],
@@ -48,6 +49,7 @@ setup(
             "record_run = ros_esc.experiment_recording.record_run:main",
             "validate_run = ros_esc.experiment_recording.validate_run:main",
             "run_scenario = ros_esc.scenario_runner.run_scenario:main",
+            "simulation_disturbance_node = ros_esc.scenario_runner.simulation_disturbance_node:main",
             "analyze_run = ros_esc.plotting_scripts.gesc_gaussian_bag_analysis:main",
             "summarize_matrix = ros_esc.plotting_scripts.gesc_gaussian_bag_analysis:main_matrix",
         ],

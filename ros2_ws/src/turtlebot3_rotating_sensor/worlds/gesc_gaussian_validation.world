@@ -1,0 +1,68 @@
+<?xml version="1.0" ?>
+
+<sdf version="1.6">
+  <world name="gesc_gaussian_validation">
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <model name="validation_wall_east">
+      <static>true</static>
+      <pose>2.05 0 0.25 0 0 0</pose>
+      <link name="wall">
+        <collision name="collision">
+          <geometry><box><size>0.10 4.20 0.50</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.10 4.20 0.50</size></box></geometry>
+          <material><ambient>0.6 0.6 0.6 1</ambient></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="validation_wall_west">
+      <static>true</static>
+      <pose>-2.05 0 0.25 0 0 0</pose>
+      <link name="wall">
+        <collision name="collision">
+          <geometry><box><size>0.10 4.20 0.50</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.10 4.20 0.50</size></box></geometry>
+          <material><ambient>0.6 0.6 0.6 1</ambient></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="validation_wall_north">
+      <static>true</static>
+      <pose>0 2.05 0.25 0 0 0</pose>
+      <link name="wall">
+        <collision name="collision">
+          <geometry><box><size>4.00 0.10 0.50</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>4.00 0.10 0.50</size></box></geometry>
+          <material><ambient>0.6 0.6 0.6 1</ambient></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="validation_wall_south">
+      <static>true</static>
+      <pose>0 -2.05 0.25 0 0 0</pose>
+      <link name="wall">
+        <collision name="collision">
+          <geometry><box><size>4.00 0.10 0.50</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>4.00 0.10 0.50</size></box></geometry>
+          <material><ambient>0.6 0.6 0.6 1</ambient></material>
+        </visual>
+      </link>
+    </model>
+  </world>
+</sdf>

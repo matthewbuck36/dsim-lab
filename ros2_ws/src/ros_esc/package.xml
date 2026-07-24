@@ -10,6 +10,7 @@
   <depend>rclpy</depend>
   <exec_depend>ament_index_python</exec_depend>
   <depend>geometry_msgs</depend>
+  <exec_depend>gazebo_msgs</exec_depend>
   <depend>nav_msgs</depend>
   <depend>ros_esc_interfaces</depend>
   <exec_depend>ros2bag</exec_depend>

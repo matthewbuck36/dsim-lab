@@ -1,17 +1,18 @@
 """Versioned Phase 06 scenario validation and deterministic expansion."""
 
+from copy import deepcopy
 import hashlib
 import itertools
 import json
 import math
-import re
-from copy import deepcopy
 from pathlib import Path
+import re
 
 import yaml
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+SUPPORTED_SCHEMA_VERSIONS = {1, 2}
 PROFILES = {'legacy', 'robust_gaussian_v1'}
 STATUSES = {'executable_unverified', 'unsupported'}
 FAMILIES = {
@@ -44,6 +45,7 @@ SUCCESS_PREDICATES = {
     'required_events',
     'no_forbidden_events',
     'minimum_saturation_samples',
+    'collision_expectation',
 }
 LAUNCH_OVERRIDES = {
     'approach_history_window_sec',
@@ -98,7 +100,7 @@ LAUNCH_OVERRIDES = {
 
 TOP_LEVEL_KEYS = {
     'schema_version', 'suite_id', 'description', 'mode', 'execution',
-    'metadata', 'level_map', 'defaults', 'cases',
+    'metadata', 'level_map', 'defaults', 'frozen_profile', 'cases',
 }
 EXECUTION_KEYS = {
     'max_parallel_runs', 'gazebo_gui', 'runs_root', 'preflight_timeout_sec',
@@ -106,13 +108,17 @@ EXECUTION_KEYS = {
     'stop_on_run_failure', 'stop_on_cleanup_failure',
 }
 METADATA_KEYS = {'experiment_version', 'operator_notes'}
-DEFAULT_KEYS = {'bounds_m', 'room_center_m', 'disturbances'}
+DEFAULT_KEYS = {
+    'bounds_m', 'room_center_m', 'disturbances', 'validation_world',
+    'simulation_contacts_enabled',
+}
 DISTURBANCE_KEYS = {'sensor_noise', 'sensor_delay_sec', 'pose_delay_sec'}
 NOISE_KEYS = {'model', 'bound', 'std_dev'}
 CASE_KEYS = {
     'case_id', 'family', 'description', 'status', 'unsupported_reason',
     'profiles', 'seeds', 'starts', 'sources', 'bounds_m', 'room_center_m',
     'disturbances', 'algorithm', 'success',
+    'validation_world', 'simulation_contacts_enabled',
 }
 START_KEYS = {'id', 'x_m', 'y_m', 'yaw_rad'}
 SOURCE_KEYS = {
@@ -122,7 +128,9 @@ SOURCE_KEYS = {
 ALGORITHM_KEYS = {'ablations', 'launch_overrides'}
 SUCCESS_KEYS = {
     'all_of', 'controller', 'ground_truth', 'minimum_saturation_samples',
+    'collision_expected',
 }
+FROZEN_PROFILE_KEYS = {'profile_id', 'launch_overrides', 'sha256'}
 CONTROLLER_KEYS = {
     'expected_terminal_state', 'required_state_sequence', 'required_events',
     'forbidden_events',
@@ -149,6 +157,8 @@ DEFAULTS = {
         'sensor_delay_sec': 0.0,
         'pose_delay_sec': 0.0,
     },
+    'validation_world': False,
+    'simulation_contacts_enabled': False,
 }
 
 
@@ -246,7 +256,10 @@ def _validate_center(value, bounds, location):
     return center
 
 
-def _disturbance_support(disturbances):
+def _disturbance_support(disturbances, schema_version):
+    """Return an unsupported reason for a known unavailable disturbance."""
+    if schema_version >= 2:
+        return None
     noise = disturbances['sensor_noise']
     if disturbances['sensor_delay_sec'] > 0.0:
         return 'sensor delay injection is not implemented'
@@ -262,8 +275,29 @@ def load_suite(path):
     source_path = Path(path).expanduser().resolve()
     document = yaml.safe_load(source_path.read_text(encoding='utf-8'))
     _unknown(document, TOP_LEVEL_KEYS, 'suite')
-    if document.get('schema_version') != SCHEMA_VERSION:
-        raise ValueError(f'schema_version must equal {SCHEMA_VERSION}')
+    schema_version = document.get('schema_version')
+    if schema_version not in SUPPORTED_SCHEMA_VERSIONS:
+        raise ValueError(
+            'schema_version must equal one of '
+            + ', '.join(str(item) for item in sorted(SUPPORTED_SCHEMA_VERSIONS))
+        )
+    if schema_version == 1 and (
+        'frozen_profile' in document
+        or any(
+            name in document.get('defaults', {})
+            for name in (
+                'validation_world', 'simulation_contacts_enabled'
+            )
+        )
+        or any(
+            name in case
+            for case in document.get('cases', [])
+            for name in (
+                'validation_world', 'simulation_contacts_enabled'
+            )
+        )
+    ):
+        raise ValueError('schema version 2 is required for validation fields')
     suite_id = _identifier(document.get('suite_id'), 'suite_id')
     if document.get('mode') != 'simulation':
         raise ValueError('mode must be simulation')
@@ -305,6 +339,31 @@ def load_suite(path):
             intensity, f'level_map.{label}', minimum=0.0
         )
 
+    frozen_profile = document.get('frozen_profile')
+    if frozen_profile is not None:
+        _unknown(frozen_profile, FROZEN_PROFILE_KEYS, 'frozen_profile')
+        profile_id = _identifier(
+            frozen_profile.get('profile_id'), 'frozen_profile.profile_id'
+        )
+        frozen_overrides = frozen_profile.get('launch_overrides', {})
+        _unknown(
+            frozen_overrides, LAUNCH_OVERRIDES,
+            'frozen_profile.launch_overrides',
+        )
+        for name, value in frozen_overrides.items():
+            if isinstance(value, (dict, list)) or value is None:
+                raise ValueError(
+                    f'frozen_profile.launch_overrides.{name} must be scalar'
+                )
+        frozen_sha = str(frozen_profile.get('sha256', '')).strip()
+        if frozen_sha and not re.fullmatch('[0-9a-f]{64}', frozen_sha):
+            raise ValueError('frozen_profile.sha256 must be lowercase SHA-256')
+        frozen_profile = {
+            'profile_id': profile_id,
+            'launch_overrides': dict(frozen_overrides),
+            'sha256': frozen_sha or None,
+        }
+
     defaults = deepcopy(DEFAULTS)
     supplied_defaults = document.get('defaults', {})
     _unknown(supplied_defaults, DEFAULT_KEYS, 'defaults')
@@ -324,6 +383,11 @@ def load_suite(path):
         DEFAULTS['disturbances'], supplied_defaults.get('disturbances'),
         'defaults.disturbances',
     )
+    for name in ('validation_world', 'simulation_contacts_enabled'):
+        defaults[name] = _boolean(
+            supplied_defaults.get(name, DEFAULTS[name]),
+            f'defaults.{name}',
+        )
 
     cases = document.get('cases')
     if not isinstance(cases, list) or not cases:
@@ -384,6 +448,22 @@ def load_suite(path):
             defaults['disturbances'], case.get('disturbances'),
             f'{location}.disturbances',
         )
+        validation_world = _boolean(
+            case.get('validation_world', defaults['validation_world']),
+            f'{location}.validation_world',
+        )
+        contacts_enabled = _boolean(
+            case.get(
+                'simulation_contacts_enabled',
+                defaults['simulation_contacts_enabled'],
+            ),
+            f'{location}.simulation_contacts_enabled',
+        )
+        if contacts_enabled and not validation_world:
+            raise ValueError(
+                f'{location}.simulation_contacts_enabled requires '
+                'validation_world'
+            )
 
         starts = case.get('starts')
         if not isinstance(starts, list) or not starts:
@@ -500,6 +580,19 @@ def load_suite(path):
                     f'{location}.algorithm.launch_overrides.{name} '
                     'must be scalar'
                 )
+        if frozen_profile is not None:
+            overlap = sorted(
+                set(overrides) & set(frozen_profile['launch_overrides'])
+            )
+            if overlap:
+                raise ValueError(
+                    f'{location}.algorithm.launch_overrides conflicts with '
+                    'frozen_profile: ' + ', '.join(overlap)
+                )
+            overrides = {
+                **frozen_profile['launch_overrides'],
+                **overrides,
+            }
 
         success = case.get('success', {})
         _unknown(success, SUCCESS_KEYS, f'{location}.success')
@@ -539,6 +632,17 @@ def load_suite(path):
                 f'{location}.success.minimum_saturation_samples '
                 'must be a nonnegative integer'
             )
+        collision_expected = success.get('collision_expected')
+        if collision_expected is not None:
+            collision_expected = _boolean(
+                collision_expected,
+                f'{location}.success.collision_expected',
+            )
+            if not contacts_enabled:
+                raise ValueError(
+                    f'{location}.success.collision_expected requires '
+                    'simulation contacts'
+                )
         normalized_success = {
             'all_of': list(all_of),
             'controller': {
@@ -561,7 +665,9 @@ def load_suite(path):
             },
             'minimum_saturation_samples': minimum_saturation,
         }
-        support_reason = _disturbance_support(disturbances)
+        if schema_version >= 2:
+            normalized_success['collision_expected'] = collision_expected
+        support_reason = _disturbance_support(disturbances, schema_version)
         if support_reason and status == 'executable_unverified':
             status = 'unsupported'
             unsupported_reason = support_reason
@@ -578,6 +684,11 @@ def load_suite(path):
             'bounds_m': bounds,
             'room_center_m': center,
             'disturbances': disturbances,
+            'validation': {
+                'world': validation_world,
+                'contacts_enabled': contacts_enabled,
+            },
+            'frozen_profile': deepcopy(frozen_profile),
             'algorithm': {
                 'ablations': ablations,
                 'launch_overrides': dict(overrides),
@@ -587,7 +698,7 @@ def load_suite(path):
 
     return {
         'source_path': str(source_path),
-        'schema_version': SCHEMA_VERSION,
+        'schema_version': schema_version,
         'suite_id': suite_id,
         'description': str(document.get('description', '')),
         'mode': 'simulation',
@@ -598,6 +709,7 @@ def load_suite(path):
         },
         'level_map': normalized_levels,
         'defaults': defaults,
+        'frozen_profile': frozen_profile,
         'cases': normalized_cases,
         'original': document,
     }
@@ -615,12 +727,15 @@ def _level_combinations(case, level_map):
 
 def deterministic_case_key(resolved):
     """Return a stable digest of every dimension that identifies a run case."""
+    fields = [
+        'suite_id', 'case_id', 'profile', 'start', 'sources', 'bounds_m',
+        'room_center_m', 'disturbances', 'algorithm', 'success', 'seed',
+    ]
+    if resolved.get('schema_version', 1) >= 2:
+        fields.extend(('validation', 'frozen_profile'))
     identity = {
         name: resolved[name]
-        for name in (
-            'suite_id', 'case_id', 'profile', 'start', 'sources', 'bounds_m',
-            'room_center_m', 'disturbances', 'algorithm', 'success', 'seed',
-        )
+        for name in fields
     }
     payload = json.dumps(
         identity, sort_keys=True, separators=(',', ':'), allow_nan=False
@@ -668,7 +783,7 @@ def expand_suite(suite, case_ids=None):
                         sources.append(resolved_source)
                     for seed in case['seeds']:
                         resolved = {
-                            'schema_version': SCHEMA_VERSION,
+                            'schema_version': suite['schema_version'],
                             'suite_id': suite['suite_id'],
                             'case_id': case['case_id'],
                             'family': case['family'],
@@ -680,6 +795,10 @@ def expand_suite(suite, case_ids=None):
                             'bounds_m': list(case['bounds_m']),
                             'room_center_m': list(case['room_center_m']),
                             'disturbances': deepcopy(case['disturbances']),
+                            'validation': deepcopy(case['validation']),
+                            'frozen_profile': deepcopy(
+                                case['frozen_profile']
+                            ),
                             'algorithm': deepcopy(case['algorithm']),
                             'success': deepcopy(case['success']),
                             'seed': seed,

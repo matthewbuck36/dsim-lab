@@ -96,6 +96,31 @@ delay, collision truth, static raw-attraction ablation, more than five
 sources, or plain non-PDE legacy recording exists in this simulator contract.
 The runner has no physical launch or mode.
 
+## Prove Phase 08 simulation-validation support
+
+Phase 07.5 extends the same runner with schema version 2. Direct launch
+behavior and schema-version-1 case identities remain unchanged. The validation
+world, contact sensors, delayed-input relay, and contact positive-control probe
+are simulation-only and default off.
+
+```bash
+ros2 run ros_esc run_scenario \
+  src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_validation_support.yaml \
+  --operator "$USER" \
+  --dry-run
+
+ros2 run ros_esc run_scenario \
+  src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_validation_support.yaml \
+  --operator "$USER" \
+  --runs-root ~/Experiments/GESC-Gaussian/runs/phase08/prerequisite
+```
+
+The five probes cover valid empty contact evidence, a real static Gazebo
+contact positive control, configured seeded Gaussian noise, 100 ms sensor
+delay, and 100 ms pose delay. Analyze the retained run directories with the
+existing `analyze_run` command. Collision and observed-delay statuses must be
+valid; an unavailable or invalid result is not acceptable Phase 08 evidence.
+
 ## Stop a run
 
 For an indefinite run (`--duration-sec 0`), press Ctrl-C once in the

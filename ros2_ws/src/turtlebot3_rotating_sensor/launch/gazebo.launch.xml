@@ -8,6 +8,7 @@
     <arg name="gazebo_gui" default="True"/>
     <arg name="gazebo_use_random_seed" default="False"/>
     <arg name="gazebo_random_seed" default="0"/>
+    <arg name="gazebo_world" default="$(find-pkg-share turtlebot3_rotating_sensor)/worlds/gazebo_empty.world"/>
 
     <!-- Set the default initial position -->
     <arg name="init_x_position" default="0" />
@@ -173,6 +174,22 @@
     <arg name="recording_ready_topic" default="/gesc_gaussian/recording_ready"/>
     <arg name="recording_ready_stale_sec" default="0.50"/>
     <arg name="source_cost_topic" default="/gesc_gaussian/source_cost"/>
+    <!-- Default-off simulation validation routing. Canonical source topics
+    remain published even when algorithm consumers use delayed relays. -->
+    <arg name="algorithm_raw_cost_topic" default="/turtlebot3/cost_value_chatter"/>
+    <arg name="algorithm_source_cost_topic" default="/gesc_gaussian/source_cost"/>
+    <arg name="algorithm_pose_topic" default="/odom"/>
+    <arg name="simulation_disturbance_enabled" default="False"/>
+    <arg name="simulation_validation_support_enabled" default="False"/>
+    <arg name="simulation_sensor_delay_sec" default="0.0"/>
+    <arg name="simulation_pose_delay_sec" default="0.0"/>
+    <arg name="simulation_disturbance_publish_rate_hz" default="100.0"/>
+    <arg name="simulation_raw_cost_delayed_topic" default="/gesc_gaussian/simulation/raw_cost_delayed"/>
+    <arg name="simulation_source_cost_delayed_topic" default="/gesc_gaussian/simulation/source_cost_delayed"/>
+    <arg name="simulation_pose_delayed_topic" default="/gesc_gaussian/simulation/pose_delayed"/>
+    <arg name="simulation_contacts_enabled" default="False"/>
+    <arg name="simulation_contacts_topic" default="/gesc_gaussian/simulation/contacts"/>
+    <arg name="simulation_contact_probe_enabled" default="False"/>
     <arg name="convergence_status_topic" default="/gesc_gaussian/convergence_status"/>
     <arg name="fill_request_topic" default="/gesc_gaussian/fill_requests"/>
     <arg name="supervisor_command_topic" default="/gesc_gaussian/supervisor_command"/>
@@ -245,16 +262,40 @@
 
     <!-- Launch the Gazebo world -->
     <include file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/empty_world.launch.py">
+        <arg name="world" value="$(var gazebo_world)"/>
         <arg name="gazebo_gui" value="$(var gazebo_gui)"/>
         <arg name="gazebo_use_random_seed" value="$(var gazebo_use_random_seed)"/>
         <arg name="gazebo_random_seed" value="$(var gazebo_random_seed)"/>
     </include>
 
     <!-- Publish URDF file in robot_description topic -->
-    <include file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/robot_description.launch.py"/>
+    <include file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/robot_description.launch.py">
+        <arg name="simulation_contacts_enabled" value="$(var simulation_contacts_enabled)"/>
+        <arg name="simulation_contacts_topic" value="$(var simulation_contacts_topic)"/>
+    </include>
 
     <!-- Load the controllers -->
     <include file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/control.launch.py"/>
+
+    <executable
+        if="$(var simulation_validation_support_enabled)"
+        cmd="
+            ros2 run ros_esc simulation_disturbance_node
+            --ros-args
+            -p use_sim_time:=True
+            -p raw_cost_input_topic:=/turtlebot3/cost_value_chatter
+            -p source_cost_input_topic:=$(var source_cost_topic)
+            -p pose_input_topic:=/odom
+            -p raw_cost_output_topic:=$(var simulation_raw_cost_delayed_topic)
+            -p source_cost_output_topic:=$(var simulation_source_cost_delayed_topic)
+            -p pose_output_topic:=$(var simulation_pose_delayed_topic)
+            -p sensor_delay_sec:=$(var simulation_sensor_delay_sec)
+            -p pose_delay_sec:=$(var simulation_pose_delay_sec)
+            -p publish_rate_hz:=$(var simulation_disturbance_publish_rate_hz)
+            -p contact_probe_enabled:=$(var simulation_contact_probe_enabled)
+            -p recording_ready_topic:=$(var recording_ready_topic)
+        "
+    />
 
     <!-- Read robot_description topic and spawn in gazebo -->
     <node 
@@ -592,13 +633,13 @@
         if="$(var use_pde_extensions)"
         cmd="
             ros2 run ros_esc modified_cost_node
-            $(var entity_name)/cost_value_chatter
+            $(var algorithm_raw_cost_topic)
             /cost_bias
             /cost_modified
             --input_sensor_transform_topic
             $(var entity_name)/sensor_transform_chatter
             --input_odom_topic
-            /odom
+            $(var algorithm_pose_topic)
             --ros-args
             -p enable_affine_bias:=$(var modified_cost_enable_affine_bias)
             -p affine_gain:=$(var modified_cost_affine_gain)
@@ -610,7 +651,7 @@
             -p history_direction_mode:=$(var modified_cost_history_direction_mode)
             -p enable_observability:=$(var enable_observability)
             -p algorithm_profile:=$(var algorithm_profile)
-            -p source_cost_topic:=$(var source_cost_topic)
+            -p source_cost_topic:=$(var algorithm_source_cost_topic)
             -p gaussian_fill_diagnostics_topic:=$(var gaussian_fill_diagnostics_topic)
             -p cost_breakdown_topic:=$(var cost_breakdown_topic)
             -p algorithm_state_topic:=$(var algorithm_state_topic)
@@ -625,6 +666,7 @@
             ros2 run ros_esc pde_history_node
             --ros-args
             -p omega:=$(var pde_omega)
+            -r /odom:=$(var algorithm_pose_topic)
         "
     />
 
@@ -675,7 +717,7 @@
             -p algorithm_profile:=$(var algorithm_profile)
             -p fill_request_topic:=$(var fill_request_topic)
             -p pose_topic:=$(var gaussian_fill_pose_topic)
-            -p source_cost_topic:=$(var source_cost_topic)
+            -p source_cost_topic:=$(var algorithm_source_cost_topic)
             -p algorithm_state_topic:=$(var algorithm_state_topic)
             -p estimation_channel_index:=$(var gaussian_fill_estimation_channel_index)
             -p sample_sync_tolerance_sec:=$(var gaussian_fill_sample_sync_tolerance_sec)
@@ -764,7 +806,8 @@
             -p recenter_rotate_in_place_angle_rad:=$(var recenter_rotate_in_place_angle_rad)
             -p stale_pose_sec:=$(var stale_pose_sec)
             -p stale_sensor_sec:=$(var stale_sensor_sec)
-            -p source_cost_topic:=$(var source_cost_topic)
+            -p pose_topic:=$(var algorithm_pose_topic)
+            -p source_cost_topic:=$(var algorithm_source_cost_topic)
             -p convergence_status_topic:=$(var convergence_status_topic)
             -p fill_request_topic:=$(var fill_request_topic)
             -p supervisor_command_topic:=$(var supervisor_command_topic)
@@ -824,7 +867,7 @@
         <executable cmd="
             ros2 run ros_esc controller_node
             $(var entity_name)/filter_value_chatter
-            /odom
+            $(var algorithm_pose_topic)
             $(var entity_name)/timekeeper_chatter
             $(var entity_name)/control_value_chatter
             /cmd_vel

@@ -30,6 +30,10 @@ topics:
   - {alias: cost_bias, topic: /cost_bias, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
   - {alias: pde_history, topic: /pde_history, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
   - {alias: pde_cost_history, topic: /pde_cost_history, type: std_msgs/msg/Float64MultiArray, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
+  - {alias: simulation_contacts, topic: /gesc_gaussian/simulation/contacts, type: gazebo_msgs/msg/ContactsState, modes: [simulation], required: false, minimum_messages: 0, coverage: none}
+  - {alias: simulation_raw_cost_delayed, topic: /gesc_gaussian/simulation/raw_cost_delayed, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation], required: false, minimum_messages: 0, coverage: none}
+  - {alias: simulation_source_cost_delayed, topic: /gesc_gaussian/simulation/source_cost_delayed, type: ros_esc_interfaces/msg/CostBreakdown, modes: [simulation], required: false, minimum_messages: 0, coverage: none}
+  - {alias: simulation_pose_delayed, topic: /gesc_gaussian/simulation/pose_delayed, type: nav_msgs/msg/Odometry, modes: [simulation], required: false, minimum_messages: 0, coverage: none}
   - {alias: convergence_metric, topic: /convergence_metric, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
   - {alias: convergence_r, topic: /convergence_r, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
   - {alias: convergence_count, topic: /convergence_count, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}

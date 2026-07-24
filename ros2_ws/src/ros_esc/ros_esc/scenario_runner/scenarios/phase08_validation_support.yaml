@@ -1,0 +1,107 @@
+schema_version: 2
+suite_id: phase08_validation_support
+description: Runtime probes for deterministic Phase 08 validation evidence.
+mode: simulation
+execution:
+  max_parallel_runs: 1
+  gazebo_gui: false
+  preflight_timeout_sec: 120.0
+  run_timeout_sec: 10.0
+  wall_timeout_sec: 240.0
+  shutdown_grace_sec: 30.0
+  stop_on_run_failure: true
+  stop_on_cleanup_failure: true
+metadata:
+  experiment_version: phase08-validation-support-v1
+  operator_notes: No physical hardware; validation-world prerequisite probes.
+level_map: {}
+defaults:
+  bounds_m: [-2.0, 2.0, -2.0, 2.0]
+  room_center_m: [0.0, 0.0]
+  validation_world: true
+  simulation_contacts_enabled: true
+  disturbances:
+    sensor_noise: {model: none, bound: 0.0}
+    sensor_delay_sec: 0.0
+    pose_delay_sec: 0.0
+cases:
+  - case_id: contact_negative
+    family: boundary
+    description: Centered robot must publish valid empty collision evidence.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8001]
+    starts:
+      - {id: center, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - {id: goal, x_m: 0.5, y_m: 0.0, relative_lumen_input: 1000.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success:
+      all_of: [recording_complete, cleanup_complete, collision_expectation]
+      collision_expected: false
+      ground_truth: {goal_source_ids: []}
+
+  - case_id: contact_positive
+    family: boundary
+    description: A static obstacle is spawned at the robot after readiness.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8002]
+    starts:
+      - {id: center, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - {id: goal, x_m: 0.5, y_m: 0.0, relative_lumen_input: 1000.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success:
+      all_of: [recording_complete, cleanup_complete, collision_expectation]
+      collision_expected: true
+      ground_truth: {goal_source_ids: []}
+
+  - case_id: seeded_gaussian
+    family: noise_delay
+    description: Configured Gaussian noise uses the scenario seed.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8003]
+    starts:
+      - {id: center, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - {id: goal, x_m: 0.5, y_m: 0.0, relative_lumen_input: 1000.0, evaluation_role: goal}
+    disturbances:
+      sensor_noise: {model: gaussian, bound: 0.0, std_dev: 0.01}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success:
+      all_of: [recording_complete, cleanup_complete]
+      ground_truth: {goal_source_ids: []}
+
+  - case_id: sensor_delay
+    family: noise_delay
+    description: Raw and source cost are delayed by 100 ms in ROS time.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8004]
+    starts:
+      - {id: center, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - {id: goal, x_m: 0.5, y_m: 0.0, relative_lumen_input: 1000.0, evaluation_role: goal}
+    disturbances: {sensor_delay_sec: 0.10}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success:
+      all_of: [recording_complete, cleanup_complete]
+      ground_truth: {goal_source_ids: []}
+
+  - case_id: pose_delay
+    family: noise_delay
+    description: Algorithm pose consumers receive a 100 ms delayed stream.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8005]
+    starts:
+      - {id: center, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - {id: goal, x_m: 0.5, y_m: 0.0, relative_lumen_input: 1000.0, evaluation_role: goal}
+    disturbances: {pose_delay_sec: 0.10}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success:
+      all_of: [recording_complete, cleanup_complete]
+      ground_truth: {goal_source_ids: []}

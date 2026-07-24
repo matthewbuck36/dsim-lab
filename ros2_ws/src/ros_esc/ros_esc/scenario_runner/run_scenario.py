@@ -7,6 +7,7 @@ import datetime as dt
 import json
 import math
 import os
+from pathlib import Path
 import re
 import shutil
 import signal
@@ -15,8 +16,8 @@ import sys
 import tempfile
 import time
 import uuid
-from pathlib import Path
 
+from gazebo_msgs.msg import ContactsState
 from nav_msgs.msg import Odometry
 
 import rclpy
@@ -81,6 +82,11 @@ GESC_FILTER = (
     / 'ros_esc/filter_node/filter_config_files/turtlebot_vehicle/'
     'gradient_methods/gesc_filter_full_rotation.json'
 )
+VALIDATION_WORLD = (
+    REPOSITORY_ROOT
+    / 'ros2_ws/src/turtlebot3_rotating_sensor/worlds/'
+    'gesc_gaussian_validation.world'
+)
 STATE_NAMES = {
     value: name.removeprefix('STATE_')
     for name, value in vars(AlgorithmState).items()
@@ -131,6 +137,13 @@ def build_launch_command(resolved, cost_path=None, gui=False):
     bounds = resolved['bounds_m']
     center = resolved['room_center_m']
     start = resolved['start']
+    disturbances = resolved['disturbances']
+    sensor_delayed = disturbances['sensor_delay_sec'] > 0.0
+    pose_delayed = disturbances['pose_delay_sec'] > 0.0
+    disturbance_enabled = sensor_delayed or pose_delayed
+    contact_probe_enabled = (
+        resolved['success'].get('collision_expected') is True
+    )
     arguments = {
         'gazebo_gui': gui,
         'gazebo_use_random_seed': True,
@@ -162,7 +175,43 @@ def build_launch_command(resolved, cost_path=None, gui=False):
             'affine_assist_enabled'
         ],
         'recenter_after_escape': ablations['recenter_enabled'],
+        'gazebo_world': (
+            str(VALIDATION_WORLD)
+            if resolved['validation']['world'] else ''
+        ),
+        'simulation_contacts_enabled': resolved[
+            'validation'
+        ]['contacts_enabled'],
+        'simulation_disturbance_enabled': disturbance_enabled,
+        'simulation_validation_support_enabled': (
+            disturbance_enabled or contact_probe_enabled
+        ),
+        'simulation_contact_probe_enabled': contact_probe_enabled,
+        'simulation_sensor_delay_sec': disturbances['sensor_delay_sec'],
+        'simulation_pose_delay_sec': disturbances['pose_delay_sec'],
+        'algorithm_raw_cost_topic': (
+            '/gesc_gaussian/simulation/raw_cost_delayed'
+            if sensor_delayed else '/turtlebot3/cost_value_chatter'
+        ),
+        'algorithm_source_cost_topic': (
+            '/gesc_gaussian/simulation/source_cost_delayed'
+            if sensor_delayed else '/gesc_gaussian/source_cost'
+        ),
+        'algorithm_pose_topic': (
+            '/gesc_gaussian/simulation/pose_delayed'
+            if pose_delayed else '/odom'
+        ),
+        'gaussian_fill_pose_topic': (
+            '/gesc_gaussian/simulation/pose_delayed'
+            if pose_delayed else '/odom'
+        ),
+        'pde_cost_history_topic': (
+            '/gesc_gaussian/simulation/raw_cost_delayed'
+            if sensor_delayed else '/turtlebot3/cost_value_chatter'
+        ),
     }
+    if not resolved['validation']['world']:
+        arguments.pop('gazebo_world')
     for index, source in enumerate(resolved['sources'], start=1):
         arguments.update({
             f'light_{index}_x': source['x_m'],
@@ -206,6 +255,7 @@ def build_metadata(resolved, operator, experiment_version, operator_notes):
                 'y': resolved['room_center_m'][1],
             },
             'disturbances': resolved['disturbances'],
+            'validation': resolved['validation'],
         },
         'robot_starting_pose': {
             'x_m': resolved['start']['x_m'],
@@ -255,6 +305,8 @@ def build_metadata(resolved, operator, experiment_version, operator_notes):
             'bounds_m': resolved['bounds_m'],
             'room_center_m': resolved['room_center_m'],
             'disturbances': resolved['disturbances'],
+            'validation': resolved['validation'],
+            'frozen_profile': resolved['frozen_profile'],
             'algorithm': resolved['algorithm'],
             'success': resolved['success'],
         },
@@ -285,9 +337,21 @@ def build_record_command(
 
 
 def resolved_noise_config(resolved, output_path):
-    """Write exact cost JSON when seeded Uniform noise is requested."""
+    """Write exact cost JSON when seeded Uniform or Gaussian noise is used."""
     noise = resolved['disturbances']['sensor_noise']
-    if noise['model'] != 'uniform' or noise['bound'] <= 0.0:
+    if noise['model'] == 'uniform' and noise['bound'] > 0.0:
+        object_name = 'Uniform'
+        parameters = {
+            'bound': noise['bound'],
+            'seed_num': resolved['seed'],
+        }
+    elif noise['model'] == 'gaussian' and noise.get('std_dev', 0.0) > 0.0:
+        object_name = 'Gaussian'
+        parameters = {
+            'std_dev': noise['std_dev'],
+            'seed_num': resolved['seed'],
+        }
+    else:
         return None
     document = json.loads(MULTI_LIGHT_COST.read_text(encoding='utf-8'))
     document['Noise'] = {
@@ -295,11 +359,8 @@ def resolved_noise_config(resolved, output_path):
             '~/dsim-lab/ros2_ws/src/ros_esc/ros_esc/'
             'cost_function_node/cost_function_objects/noise_objects.py'
         ),
-        'object_name': 'Uniform',
-        'params': {
-            'bound': noise['bound'],
-            'seed_num': resolved['seed'],
-        },
+        'object_name': object_name,
+        'params': parameters,
     }
     output_path = Path(output_path)
     output_path.write_text(
@@ -462,6 +523,7 @@ def _bag_outcomes(run_directory, resolved):
         '/gesc_gaussian/algorithm_events': AlgorithmEvent,
         '/gesc_gaussian/control_diagnostics': ControlDiagnostics,
         '/odom': Odometry,
+        '/gesc_gaussian/simulation/contacts': ContactsState,
     }
     records = {name: [] for name in wanted}
     while reader.has_next():
@@ -506,6 +568,20 @@ def _bag_outcomes(run_directory, resolved):
     odometry = [
         message for stamp, message in records['/odom'] if inside(stamp)
     ]
+    contacts = [
+        message for stamp, message
+        in records['/gesc_gaussian/simulation/contacts'] if inside(stamp)
+    ]
+    collision_observed = any(
+        state
+        for message in contacts
+        for state in message.states
+        if (
+            'ground_plane' not in state.collision1_name
+            and 'ground_plane' not in state.collision2_name
+        )
+    )
+    collision_expected = resolved['success'].get('collision_expected')
     sampled_states = [
         (
             message.state_name
@@ -608,6 +684,13 @@ def _bag_outcomes(run_directory, resolved):
             saturation_samples
             >= resolved['success']['minimum_saturation_samples']
         ),
+        'collision_evidence_available': bool(contacts),
+        'collision_observed': collision_observed,
+        'collision_expectation_passed': (
+            collision_expected is None
+            or bool(contacts)
+            and collision_observed is collision_expected
+        ),
     }
 
 
@@ -629,6 +712,9 @@ def classify_result(resolved, completeness, cleanup, outcomes, process_result):
         ),
         'minimum_saturation_samples': outcomes.get(
             'minimum_saturation_samples_passed', False
+        ),
+        'collision_expectation': outcomes.get(
+            'collision_expectation_passed', False
         ),
     }
     all_of = resolved['success']['all_of']
