@@ -1183,3 +1183,35 @@ The differing generated record count reflects current package lint
 enumeration, not removed functional tests. All remaining failures are
 inherited package-wide flake8, pep257, and lint-cmake debt; the new and clean
 touched Phase 07.5 files contribute no findings.
+
+## Phase 08 harness and suite checks
+
+```bash
+source /opt/ros/humble/setup.bash
+cd ros2_ws
+colcon --log-base /tmp/dsim_phase08a_build build --symlink-install \
+  --packages-select ros_esc_interfaces ros_esc turtlebot3_rotating_sensor
+source install/setup.bash
+
+python3 -m pytest -q \
+  src/ros_esc/test/test_phase08_validation.py \
+  src/ros_esc/test/test_simulation_disturbances.py \
+  src/ros_esc/test/test_scenario_schema.py \
+  src/ros_esc/test/test_scenario_runner.py
+
+ros2 run ros_esc run_scenario \
+  src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_full_matrix.yaml \
+  --operator phase08 --dry-run \
+  --summary-output /tmp/phase08_full_dry.yaml
+```
+
+Initial harness result: `42 passed, 1 skipped in 1.96s`; the skip is the
+explicit Phase 06 recorded-headless-Gazebo environment gate. The build passed
+all three packages. The installed command exposes `sweep`, `freeze`, `holdout`,
+`full-pass`, and `report`. The full dry-run resolves exactly 519 runs and zero
+unsupported records; pure schema arithmetic independently verifies 81
+training runs, 12 holdouts, and a 483-run robust acceptance denominator.
+
+Out-of-order negative controls return 2: `freeze` without a completed sweep
+reports `sweep must complete before freeze`, and `full-pass` without holdout
+reports `holdout must run before the full matrix`.

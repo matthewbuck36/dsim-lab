@@ -121,6 +121,44 @@ delay, and 100 ms pose delay. Analyze the retained run directories with the
 existing `analyze_run` command. Collision and observed-delay statuses must be
 valid; an unavailable or invalid result is not acceptable Phase 08 evidence.
 
+## Execute the Phase 08 validation workflow
+
+The stage order is enforced and every stage preserves the existing run
+directories and analysis outputs:
+
+```bash
+EVIDENCE_ROOT=~/Experiments/GESC-Gaussian/runs/phase08
+
+ros2 run ros_esc validate_robustness sweep \
+  --operator "$USER" --evidence-root "$EVIDENCE_ROOT"
+
+ros2 run ros_esc validate_robustness freeze \
+  --operator "$USER" --evidence-root "$EVIDENCE_ROOT"
+```
+
+Commit the generated frozen profile and parameter-selection evidence before
+holdout. Holdout and every full pass require a clean checkout at that commit:
+
+```bash
+ros2 run ros_esc validate_robustness holdout \
+  --operator "$USER" --evidence-root "$EVIDENCE_ROOT"
+
+for pass_index in 1 2 3; do
+  ros2 run ros_esc validate_robustness full-pass \
+    --pass-index "$pass_index" \
+    --operator "$USER" --evidence-root "$EVIDENCE_ROOT"
+done
+
+ros2 run ros_esc validate_robustness report \
+  --operator "$USER" --evidence-root "$EVIDENCE_ROOT"
+```
+
+The sweep resumes at the next incomplete candidate and never overwrites
+accepted run IDs. No eligible candidate is a Level C stop before freeze.
+Holdout behavior is reported without retuning. Ordinary final behavioral
+failure remains evidence and does not alter the frozen matrix; cleanup
+contamination or changed freeze hashes stop execution.
+
 ## Stop a run
 
 For an indefinite run (`--duration-sec 0`), press Ctrl-C once in the

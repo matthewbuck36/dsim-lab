@@ -568,6 +568,40 @@ fixed-joint lumping. The four-wall validation world bounds the declared
 static collision object only after recording readiness, proving that the
 contact path detects physical Gazebo contacts rather than synthetic messages.
 
+## Phase 08 offline validation interface
+
+`validate_robustness` sequences the existing scenario runner, recorder,
+validator, and analyzer. It does not own an algorithm topic or launch graph:
+
+```text
+ros2 run ros_esc validate_robustness <subcommand>
+  --operator OPERATOR
+  --evidence-root PATH
+```
+
+Subcommands are `sweep`, `freeze`, `holdout`, `full-pass`, and `report`;
+`full-pass` additionally requires `--pass-index 1|2|3`. The command refuses
+out-of-order execution. Holdout and full passes require a clean committed
+freeze, and all later passes compare the exact commit/tree and input hashes.
+
+The fixed arithmetic is 9 candidates x 9 training runs = 81, 12 holdout runs,
+and 519 runs per full pass. Smoke, legacy, and three ablation groups contain
+36 diagnostics; the acceptance denominator is the remaining 483 robust runs
+per pass.
+
+Only these launch overrides are candidates for the Phase 08 profile file:
+
+| Override | Scope |
+|---|---|
+| `gaussian_fill_covariance_scale` | Gaussian design width factor |
+| `gaussian_fill_amplitude_depth_scale` | basin-depth amplitude factor |
+| `gaussian_fill_exit_sigma` | stable-exit geometry |
+| `stall_window_sec` | escape stall observation window |
+| `minimum_radial_progress_m` | minimum progress within the stall window |
+
+The generated `phase08_frozen_parameters.yaml` is applied only through the
+validation harness. It does not change a direct-launch or legacy default.
+
 ## Phase 07 offline analysis interface
 
 Phase 07 adds no ROS node, topic, message, parameter, launch argument, or

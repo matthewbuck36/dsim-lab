@@ -1,0 +1,128 @@
+schema_version: 2
+suite_id: phase08_training
+description: Fixed nine-run training subset used for all nine candidates.
+mode: simulation
+execution:
+  max_parallel_runs: 1
+  gazebo_gui: false
+  preflight_timeout_sec: 150.0
+  run_timeout_sec: 180.0
+  wall_timeout_sec: 480.0
+  shutdown_grace_sec: 30.0
+  stop_on_run_failure: false
+  stop_on_cleanup_failure: true
+metadata:
+  experiment_version: phase08-training-v1
+  operator_notes: Candidate selection only; no holdout or final-pass cases.
+level_map: {"1": 450.0, "2": 800.0, "3": 1200.0, "4": 1800.0, "5": 2500.0}
+defaults:
+  bounds_m: [-2.0, 2.0, -2.0, 2.0]
+  room_center_m: [0.0, 0.0]
+  validation_world: true
+  simulation_contacts_enabled: true
+  disturbances: {sensor_noise: {model: none, bound: 0.0}, sensor_delay_sec: 0.0, pose_delay_sec: 0.0}
+cases:
+  - case_id: training_two_source_starts
+    family: two_source
+    description: Three representative starts in one fixed two-source geometry.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8101]
+    starts:
+      - {id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+      - {id: southwest_north, x_m: -1.2, y_m: -1.2, yaw_rad: 1.5707963267948966}
+      - {id: northeast_west, x_m: 1.2, y_m: 1.2, yaw_rad: 3.141592653589793}
+    sources:
+      - {id: local, x_m: -0.75, y_m: 0.0, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.25, y_m: 0.0, relative_lumen_input: 1800.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success: &training_success
+      all_of: [recording_complete, cleanup_complete]
+      controller: {expected_terminal_state: null, required_state_sequence: [], required_events: [], forbidden_events: []}
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      collision_expected: false
+
+  - case_id: training_pure_repulsion
+    family: escape
+    description: Pure Gaussian repulsion exercise.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8102]
+    starts: [{id: local_center, x_m: -0.8, y_m: 0.0, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -0.8, y_m: 0.0, relative_lumen_input: 700.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.3, y_m: 0.8, relative_lumen_input: 1800.0, evaluation_role: goal}
+    algorithm: {ablations: {affine_assist_enabled: false, recenter_enabled: false}, launch_overrides: {}}
+    success: *training_success
+
+  - case_id: training_stalled_assist
+    family: escape
+    description: Stalled escape exercise using only candidate stall factors.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8103]
+    starts: [{id: local_center, x_m: -0.7, y_m: -0.2, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -0.7, y_m: -0.2, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.4, y_m: 0.8, relative_lumen_input: 1900.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success: *training_success
+
+  - case_id: training_fill_merge
+    family: fill_merge
+    description: Close basins exercise typed fill merge lifecycle.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8104]
+    starts: [{id: southwest_northeast, x_m: -1.4, y_m: -1.0, yaw_rad: 0.5}]
+    sources:
+      - {id: local_a, x_m: -0.40, y_m: 0.0, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.15, y_m: 0.10, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.5, y_m: 1.3, relative_lumen_input: 2100.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {gaussian_fill_merge_bandwidth_m: 0.75, gaussian_fill_merge_radius_scale: 2.5}}
+    success:
+      <<: *training_success
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+
+  - case_id: training_recenter_resume
+    family: recenter_resume
+    description: Escape, recenter, and resumed-search exercise.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8105]
+    starts: [{id: local_west, x_m: -1.1, y_m: 0.2, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -1.1, y_m: 0.2, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.45, y_m: 1.0, relative_lumen_input: 1900.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success: *training_success
+
+  - case_id: training_three_source
+    family: multi_source
+    description: Three-source training geometry.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8106]
+    starts: [{id: center_north, x_m: 0.0, y_m: 0.0, yaw_rad: 1.5707963267948966}]
+    sources:
+      - {id: local_1, x_m: -1.10, y_m: -0.70, relative_lumen_input: 500.0, evaluation_role: local_minimum}
+      - {id: local_2, x_m: 0.10, y_m: 0.90, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.40, y_m: 1.25, relative_lumen_input: 2000.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success:
+      <<: *training_success
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+
+  - case_id: training_uniform_noise
+    family: noise_delay
+    description: Seeded Uniform-noise training case.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8107]
+    starts: [{id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}]
+    sources: [{id: goal, x_m: 1.25, y_m: 0.75, relative_lumen_input: 1500.0, evaluation_role: goal}]
+    disturbances: {sensor_noise: {model: uniform, bound: 0.01}}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success:
+      <<: *training_success
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}

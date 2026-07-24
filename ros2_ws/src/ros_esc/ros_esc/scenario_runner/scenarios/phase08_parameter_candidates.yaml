@@ -1,0 +1,32 @@
+schema_version: 1
+candidate_set_id: phase08-nine-candidate-grid-v1
+selection_order:
+  - highest_end_to_end_success
+  - highest_local_escape_success
+  - highest_minimum_family_goal_success
+  - lowest_escape_time_p95
+  - lowest_escape_time_median
+  - lowest_orbit_count_median
+  - lowest_revisit_rate
+  - lowest_convergence_time_median
+  - lowest_path_length_median
+  - lowest_candidate_id
+candidates:
+  - candidate_id: C0
+    launch_overrides: {gaussian_fill_covariance_scale: 2.5, gaussian_fill_amplitude_depth_scale: 1.5, gaussian_fill_exit_sigma: 2.50, stall_window_sec: 3.0, minimum_radial_progress_m: 0.05}
+  - candidate_id: C1
+    launch_overrides: {gaussian_fill_covariance_scale: 2.0, gaussian_fill_amplitude_depth_scale: 1.2, gaussian_fill_exit_sigma: 2.25, stall_window_sec: 4.0, minimum_radial_progress_m: 0.03}
+  - candidate_id: C2
+    launch_overrides: {gaussian_fill_covariance_scale: 2.0, gaussian_fill_amplitude_depth_scale: 1.2, gaussian_fill_exit_sigma: 2.75, stall_window_sec: 2.0, minimum_radial_progress_m: 0.08}
+  - candidate_id: C3
+    launch_overrides: {gaussian_fill_covariance_scale: 2.0, gaussian_fill_amplitude_depth_scale: 1.8, gaussian_fill_exit_sigma: 2.25, stall_window_sec: 2.0, minimum_radial_progress_m: 0.08}
+  - candidate_id: C4
+    launch_overrides: {gaussian_fill_covariance_scale: 2.0, gaussian_fill_amplitude_depth_scale: 1.8, gaussian_fill_exit_sigma: 2.75, stall_window_sec: 4.0, minimum_radial_progress_m: 0.03}
+  - candidate_id: C5
+    launch_overrides: {gaussian_fill_covariance_scale: 3.0, gaussian_fill_amplitude_depth_scale: 1.2, gaussian_fill_exit_sigma: 2.25, stall_window_sec: 2.0, minimum_radial_progress_m: 0.08}
+  - candidate_id: C6
+    launch_overrides: {gaussian_fill_covariance_scale: 3.0, gaussian_fill_amplitude_depth_scale: 1.2, gaussian_fill_exit_sigma: 2.75, stall_window_sec: 4.0, minimum_radial_progress_m: 0.03}
+  - candidate_id: C7
+    launch_overrides: {gaussian_fill_covariance_scale: 3.0, gaussian_fill_amplitude_depth_scale: 1.8, gaussian_fill_exit_sigma: 2.25, stall_window_sec: 4.0, minimum_radial_progress_m: 0.03}
+  - candidate_id: C8
+    launch_overrides: {gaussian_fill_covariance_scale: 3.0, gaussian_fill_amplitude_depth_scale: 1.8, gaussian_fill_exit_sigma: 2.75, stall_window_sec: 2.0, minimum_radial_progress_m: 0.08}

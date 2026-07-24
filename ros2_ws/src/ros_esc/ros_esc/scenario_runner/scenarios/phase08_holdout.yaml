@@ -1,0 +1,111 @@
+schema_version: 2
+suite_id: phase08_holdout
+description: Twelve fixed holdout runs hidden from candidate selection.
+mode: simulation
+execution:
+  max_parallel_runs: 1
+  gazebo_gui: false
+  preflight_timeout_sec: 150.0
+  run_timeout_sec: 180.0
+  wall_timeout_sec: 480.0
+  shutdown_grace_sec: 30.0
+  stop_on_run_failure: false
+  stop_on_cleanup_failure: true
+metadata:
+  experiment_version: phase08-holdout-v1
+  operator_notes: Run once after a committed parameter freeze; never retune from these results.
+level_map: {"1": 450.0, "2": 800.0, "3": 1200.0, "4": 1800.0, "5": 2500.0}
+defaults:
+  bounds_m: [-2.0, 2.0, -2.0, 2.0]
+  room_center_m: [0.0, 0.0]
+  validation_world: true
+  simulation_contacts_enabled: true
+  disturbances: {sensor_noise: {model: none, bound: 0.0}, sensor_delay_sec: 0.0, pose_delay_sec: 0.0}
+cases:
+  - case_id: holdout_tuple_low_high
+    family: two_source
+    description: First unseen ordered intensity tuple and unseen starts.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8201, 8202]
+    starts:
+      - {id: south_northwest, x_m: 0.2, y_m: -1.35, yaw_rad: 2.356194490192345}
+      - {id: east_southwest, x_m: 1.35, y_m: 0.25, yaw_rad: -2.356194490192345}
+    sources:
+      - {id: local, x_m: -0.85, y_m: -0.15, relative_lumen_input: 450.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.15, y_m: 0.55, relative_lumen_input: 2500.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success: &holdout_success
+      all_of: [recording_complete, cleanup_complete]
+      controller: {expected_terminal_state: null, required_state_sequence: [], required_events: [], forbidden_events: []}
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      collision_expected: false
+
+  - case_id: holdout_tuple_high_mid
+    family: two_source
+    description: Second unseen ordered intensity tuple and unseen starts.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8203, 8204]
+    starts:
+      - {id: south_northwest, x_m: 0.2, y_m: -1.35, yaw_rad: 2.356194490192345}
+      - {id: east_southwest, x_m: 1.35, y_m: 0.25, yaw_rad: -2.356194490192345}
+    sources:
+      - {id: local, x_m: -0.85, y_m: -0.15, relative_lumen_input: 1800.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.15, y_m: 0.55, relative_lumen_input: 1200.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success: *holdout_success
+
+  - case_id: holdout_four_source_overlap
+    family: separation_overlap
+    description: Four-source close and overlapping holdout geometry.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8205]
+    starts: [{id: southwest, x_m: -1.30, y_m: -1.20, yaw_rad: 0.7853981633974483}]
+    sources:
+      - {id: local_a, x_m: -0.25, y_m: 0.05, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.10, y_m: 0.10, relative_lumen_input: 900.0, evaluation_role: local_minimum}
+      - {id: context, x_m: 0.55, y_m: -0.45, relative_lumen_input: 1200.0, evaluation_role: context}
+      - {id: goal, x_m: 1.35, y_m: 1.30, relative_lumen_input: 2500.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success:
+      <<: *holdout_success
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+
+  - case_id: holdout_corner_boundary
+    family: boundary
+    description: Unseen corner-boundary holdout.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8206]
+    starts: [{id: northeast_inward, x_m: 1.55, y_m: 1.55, yaw_rad: -2.356194490192345}]
+    sources:
+      - {id: local, x_m: 1.65, y_m: 1.55, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: -1.25, y_m: -1.25, relative_lumen_input: 2500.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {wall_margin_m: 0.35}}
+    success: *holdout_success
+
+  - case_id: holdout_gaussian_noise
+    family: noise_delay
+    description: Seeded Gaussian-noise holdout.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8207]
+    starts: [{id: northwest, x_m: -1.1, y_m: 1.1, yaw_rad: -0.7853981633974483}]
+    sources: [{id: goal, x_m: 1.2, y_m: -0.8, relative_lumen_input: 1800.0, evaluation_role: goal}]
+    disturbances: {sensor_noise: {model: gaussian, bound: 0.0, std_dev: 0.015}}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success: *holdout_success
+
+  - case_id: holdout_combined_delay
+    family: noise_delay
+    description: Combined 100 ms sensor and pose delay holdout.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8208]
+    starts: [{id: southeast, x_m: 1.1, y_m: -1.1, yaw_rad: 2.356194490192345}]
+    sources: [{id: goal, x_m: -1.15, y_m: 0.95, relative_lumen_input: 1800.0, evaluation_role: goal}]
+    disturbances: {sensor_delay_sec: 0.10, pose_delay_sec: 0.10}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success: *holdout_success

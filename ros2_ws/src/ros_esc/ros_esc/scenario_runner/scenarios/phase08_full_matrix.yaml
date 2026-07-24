@@ -1,0 +1,363 @@
+schema_version: 2
+suite_id: phase08_full_matrix
+description: Frozen 519-run Phase 08 simulation validation matrix.
+mode: simulation
+execution:
+  max_parallel_runs: 1
+  gazebo_gui: false
+  preflight_timeout_sec: 150.0
+  run_timeout_sec: 180.0
+  wall_timeout_sec: 480.0
+  shutdown_grace_sec: 30.0
+  stop_on_run_failure: false
+  stop_on_cleanup_failure: true
+metadata:
+  experiment_version: phase08-full-matrix-v1
+  operator_notes: Frozen final matrix; never retune code, parameters, cases, or seeds between passes.
+level_map: {"1": 450.0, "2": 800.0, "3": 1200.0, "4": 1800.0, "5": 2500.0}
+defaults:
+  bounds_m: [-2.0, 2.0, -2.0, 2.0]
+  room_center_m: [0.0, 0.0]
+  validation_world: true
+  simulation_contacts_enabled: true
+  disturbances: {sensor_noise: {model: none, bound: 0.0}, sensor_delay_sec: 0.0, pose_delay_sec: 0.0}
+cases:
+  - case_id: diagnostic_recorded_smoke
+    family: smoke
+    description: Robust and legacy recording diagnostics outside the robust denominator.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1, legacy]
+    seeds: [8300]
+    starts: [{id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}]
+    sources: [{id: goal, x_m: 0.8, y_m: 0.0, relative_lumen_input: 1200.0, evaluation_role: goal}]
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success: &standard_success
+      all_of: [recording_complete, cleanup_complete]
+      controller: {expected_terminal_state: null, required_state_sequence: [], required_events: [], forbidden_events: []}
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      collision_expected: false
+
+  - case_id: robust_ordered_levels
+    family: two_source
+    description: 25 ordered level pairs across five starts and three seeds.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8301, 8302, 8303]
+    starts:
+      - {id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+      - {id: southwest_north, x_m: -1.2, y_m: -1.2, yaw_rad: 1.5707963267948966}
+      - {id: northwest_south, x_m: -1.2, y_m: 1.2, yaw_rad: -1.5707963267948966}
+      - {id: southeast_west, x_m: 1.2, y_m: -1.2, yaw_rad: 3.141592653589793}
+      - {id: northeast_west, x_m: 1.2, y_m: 1.2, yaw_rad: 3.141592653589793}
+    sources:
+      - {id: source_a, x_m: -0.8, y_m: 0.0, levels: [1, 2, 3, 4, 5], evaluation_role: local_minimum}
+      - {id: source_b, x_m: 1.2, y_m: 0.5, levels: [1, 2, 3, 4, 5], evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success:
+      <<: *standard_success
+      ground_truth: {goal_source_ids: [source_b], final_position_tolerance_m: 0.35}
+
+  - case_id: robust_three_source
+    family: multi_source
+    description: Three-source coverage across three starts and seeds.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: &three_seeds [8311, 8312, 8313]
+    starts: &three_starts
+      - {id: center_north, x_m: 0.0, y_m: 0.0, yaw_rad: 1.5707963267948966}
+      - {id: southwest, x_m: -1.2, y_m: -1.1, yaw_rad: 0.7853981633974483}
+      - {id: northeast, x_m: 1.2, y_m: 1.1, yaw_rad: -2.356194490192345}
+    sources:
+      - {id: local_1, x_m: -1.10, y_m: -0.70, relative_lumen_input: 500.0, evaluation_role: local_minimum}
+      - {id: local_2, x_m: 0.10, y_m: 0.90, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.40, y_m: 1.25, relative_lumen_input: 2000.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success: *standard_success
+
+  - case_id: robust_four_source
+    family: multi_source
+    description: Four-source coverage across three starts and seeds.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: *three_seeds
+    starts: *three_starts
+    sources:
+      - {id: local_1, x_m: -1.20, y_m: -0.80, relative_lumen_input: 450.0, evaluation_role: local_minimum}
+      - {id: local_2, x_m: -0.20, y_m: 0.90, relative_lumen_input: 700.0, evaluation_role: local_minimum}
+      - {id: local_3, x_m: 0.65, y_m: -0.35, relative_lumen_input: 900.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.45, y_m: 1.35, relative_lumen_input: 2200.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success: *standard_success
+
+  - case_id: robust_overlap
+    family: separation_overlap
+    description: Overlapping attraction regions across three starts and seeds.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: *three_seeds
+    starts: *three_starts
+    sources:
+      - {id: local_a, x_m: -0.15, y_m: 0.05, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.10, y_m: 0.10, relative_lumen_input: 900.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.40, y_m: 1.30, relative_lumen_input: 2200.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success: *standard_success
+
+  - case_id: robust_close_minimum
+    family: close_minimum
+    description: Close residual minima across three starts and seeds.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: *three_seeds
+    starts: *three_starts
+    sources:
+      - {id: local_a, x_m: -0.35, y_m: 0.10, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.35, y_m: 0.10, relative_lumen_input: 900.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.40, y_m: 1.30, relative_lumen_input: 2200.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success: *standard_success
+
+  - case_id: robust_wall_boundary
+    family: boundary
+    description: Wall-boundary starts across two starts and three seeds.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: *three_seeds
+    starts:
+      - {id: west_inward, x_m: -1.55, y_m: 0.0, yaw_rad: 0.0}
+      - {id: east_inward, x_m: 1.55, y_m: 0.0, yaw_rad: 3.141592653589793}
+    sources:
+      - {id: local, x_m: -1.65, y_m: 0.0, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.25, y_m: 1.0, relative_lumen_input: 2200.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {wall_margin_m: 0.35}}
+    success: *standard_success
+
+  - case_id: robust_corner_boundary
+    family: boundary
+    description: Corner-boundary starts across two starts and three seeds.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: *three_seeds
+    starts:
+      - {id: southwest_inward, x_m: -1.55, y_m: -1.55, yaw_rad: 0.7853981633974483}
+      - {id: northeast_inward, x_m: 1.55, y_m: 1.55, yaw_rad: -2.356194490192345}
+    sources:
+      - {id: local, x_m: -1.65, y_m: -1.55, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.25, y_m: 1.25, relative_lumen_input: 2200.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {wall_margin_m: 0.35}}
+    success: *standard_success
+
+  - case_id: robust_uniform_noise
+    family: noise_delay
+    description: Six seeded Uniform-noise runs.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8401, 8402, 8403, 8404, 8405, 8406]
+    starts: [{id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}]
+    sources: [{id: goal, x_m: 1.25, y_m: 0.75, relative_lumen_input: 1800.0, evaluation_role: goal}]
+    disturbances: {sensor_noise: {model: uniform, bound: 0.01}}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success: *standard_success
+
+  - case_id: robust_gaussian_noise
+    family: noise_delay
+    description: Six seeded Gaussian-noise runs.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8411, 8412, 8413, 8414, 8415, 8416]
+    starts: [{id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}]
+    sources: [{id: goal, x_m: 1.25, y_m: 0.75, relative_lumen_input: 1800.0, evaluation_role: goal}]
+    disturbances: {sensor_noise: {model: gaussian, bound: 0.0, std_dev: 0.015}}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success: *standard_success
+
+  - case_id: robust_sensor_delay
+    family: noise_delay
+    description: Five sensor-delay runs.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8421, 8422, 8423, 8424, 8425]
+    starts: [{id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}]
+    sources: [{id: goal, x_m: 1.25, y_m: 0.75, relative_lumen_input: 1800.0, evaluation_role: goal}]
+    disturbances: {sensor_delay_sec: 0.10}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success: *standard_success
+
+  - case_id: robust_pose_delay
+    family: noise_delay
+    description: Five pose-delay runs.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8431, 8432, 8433, 8434, 8435]
+    starts: [{id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}]
+    sources: [{id: goal, x_m: 1.25, y_m: 0.75, relative_lumen_input: 1800.0, evaluation_role: goal}]
+    disturbances: {pose_delay_sec: 0.10}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success: *standard_success
+
+  - case_id: robust_combined_delay
+    family: noise_delay
+    description: Five combined sensor-and-pose-delay runs.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8441, 8442, 8443, 8444, 8445]
+    starts: [{id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}]
+    sources: [{id: goal, x_m: 1.25, y_m: 0.75, relative_lumen_input: 1800.0, evaluation_role: goal}]
+    disturbances: {sensor_delay_sec: 0.10, pose_delay_sec: 0.10}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success: *standard_success
+
+  - case_id: robust_linear_saturation
+    family: starts_saturation
+    description: Nine linear-saturation diagnostic runs.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: *three_seeds
+    starts: *three_starts
+    sources: [{id: goal, x_m: 1.65, y_m: 0.0, relative_lumen_input: 2500.0, evaluation_role: goal}]
+    algorithm: {ablations: {}, launch_overrides: {recenter_linear_gain: 2.0}}
+    success:
+      <<: *standard_success
+      minimum_saturation_samples: 1
+
+  - case_id: robust_angular_saturation
+    family: starts_saturation
+    description: Nine angular-saturation diagnostic runs.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: *three_seeds
+    starts: *three_starts
+    sources: [{id: goal, x_m: 0.0, y_m: 1.65, relative_lumen_input: 2500.0, evaluation_role: goal}]
+    algorithm: {ablations: {}, launch_overrides: {recenter_angular_gain: 5.0}}
+    success:
+      <<: *standard_success
+      minimum_saturation_samples: 1
+
+  - case_id: robust_pure_escape
+    family: escape
+    description: Designated pure-repulsion state and event coverage.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8501, 8502, 8503]
+    starts: [{id: local_center, x_m: -0.8, y_m: 0.0, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -0.8, y_m: 0.0, relative_lumen_input: 700.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.3, y_m: 0.8, relative_lumen_input: 1800.0, evaluation_role: goal}
+    algorithm: {ablations: {affine_assist_enabled: false, recenter_enabled: false}, launch_overrides: {}}
+    success:
+      <<: *standard_success
+      controller: {expected_terminal_state: null, required_state_sequence: [SEARCH, VERIFY_EXTREMUM, DESIGN_OR_MERGE_FILL, ESCAPE_REPULSE], required_events: [ESCAPE_STARTED], forbidden_events: [FAILSAFE]}
+
+  - case_id: robust_assisted_escape
+    family: escape
+    description: Designated stalled and assisted-escape coverage.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8511, 8512, 8513]
+    starts: [{id: local_center, x_m: -0.7, y_m: -0.2, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -0.7, y_m: -0.2, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.4, y_m: 0.8, relative_lumen_input: 1900.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success:
+      <<: *standard_success
+      controller: {expected_terminal_state: null, required_state_sequence: [ESCAPE_REPULSE, ESCAPE_ASSIST], required_events: [ESCAPE_STALLED], forbidden_events: [FAILSAFE]}
+
+  - case_id: robust_fill_merge
+    family: fill_merge
+    description: Designated typed fill-merge coverage.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8521, 8522, 8523]
+    starts: [{id: southwest_northeast, x_m: -1.4, y_m: -1.0, yaw_rad: 0.5}]
+    sources:
+      - {id: local_a, x_m: -0.40, y_m: 0.0, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.15, y_m: 0.10, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.5, y_m: 1.3, relative_lumen_input: 2100.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {gaussian_fill_merge_bandwidth_m: 0.75, gaussian_fill_merge_radius_scale: 2.5}}
+    success:
+      <<: *standard_success
+      controller: {expected_terminal_state: null, required_state_sequence: [], required_events: [FILL_MERGED], forbidden_events: [FAILSAFE]}
+
+  - case_id: robust_recenter
+    family: recenter_resume
+    description: Designated escape, recenter, and resume coverage.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8531, 8532, 8533]
+    starts: [{id: local_west, x_m: -1.1, y_m: 0.2, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -1.1, y_m: 0.2, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.45, y_m: 1.0, relative_lumen_input: 1900.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success:
+      <<: *standard_success
+      controller: {expected_terminal_state: null, required_state_sequence: [ESCAPE_REPULSE, RECENTER, SEARCH], required_events: [RECENTER_STARTED, RECENTER_COMPLETE], forbidden_events: [FAILSAFE]}
+
+  - case_id: robust_revisit
+    family: fill_merge
+    description: Multiple-prior-fill and revisit coverage.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8541, 8542, 8543]
+    starts: [{id: west_east, x_m: -1.5, y_m: 0.0, yaw_rad: 0.0}]
+    sources:
+      - {id: local_a, x_m: -0.75, y_m: 0.0, relative_lumen_input: 700.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.15, y_m: 0.65, relative_lumen_input: 850.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.45, y_m: -0.50, relative_lumen_input: 2200.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success: *standard_success
+
+  - case_id: diagnostic_legacy_ordered_levels
+    family: two_source
+    description: Twenty-five legacy ordered-level regression diagnostics.
+    status: executable_unverified
+    profiles: [legacy]
+    seeds: [8601]
+    starts: [{id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}]
+    sources:
+      - {id: source_a, x_m: -0.8, y_m: 0.0, levels: [1, 2, 3, 4, 5], evaluation_role: local_minimum}
+      - {id: source_b, x_m: 1.2, y_m: 0.5, levels: [1, 2, 3, 4, 5], evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success:
+      <<: *standard_success
+      ground_truth: {goal_source_ids: [source_b], final_position_tolerance_m: 0.35}
+
+  - case_id: diagnostic_gaussian_ablation
+    family: ablation
+    description: Gaussian-fill-disabled diagnostics outside the robust denominator.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8611, 8612, 8613]
+    starts: [{id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -0.6, y_m: 0.0, relative_lumen_input: 650.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.3, y_m: 0.9, relative_lumen_input: 1800.0, evaluation_role: goal}
+    algorithm: {ablations: {gaussian_fill_enabled: false}, launch_overrides: {}}
+    success: *standard_success
+
+  - case_id: diagnostic_affine_ablation
+    family: ablation
+    description: Affine-assist-disabled diagnostics outside the robust denominator.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8621, 8622, 8623]
+    starts: [{id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -0.6, y_m: 0.0, relative_lumen_input: 650.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.3, y_m: 0.9, relative_lumen_input: 1800.0, evaluation_role: goal}
+    algorithm: {ablations: {affine_assist_enabled: false}, launch_overrides: {}}
+    success: *standard_success
+
+  - case_id: diagnostic_recenter_ablation
+    family: ablation
+    description: Recenter-disabled diagnostics outside the robust denominator.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8631, 8632, 8633]
+    starts: [{id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -0.6, y_m: 0.0, relative_lumen_input: 650.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.3, y_m: 0.9, relative_lumen_input: 1800.0, evaluation_role: goal}
+    algorithm: {ablations: {recenter_enabled: false}, launch_overrides: {}}
+    success: *standard_success
