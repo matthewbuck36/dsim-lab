@@ -1,0 +1,221 @@
+Speaker A: Or your sensor went bad. How can you distinguish between the two?
+
+Speaker B: Um, I'm not sure.
+
+Speaker A: One is you just record what the sensor values are, and then you record what is the output of the augmented cost function.
+
+Speaker B: Uh-huh, okay, so you have the raw and then—
+
+Speaker C: yeah.
+
+Speaker A: And the augmented.
+
+Speaker C: Yeah.
+
+Speaker A: So you need to be recording both of those.
+
+Speaker B: Okay, okay, and then plotting them on the—
+
+Speaker A: Well, so you don't have to plot. I mean, it would be good to plot both the original and the augmented. But namely for experiments, you need to have inputs and outputs of everything.
+
+Speaker D: Mm-hmm.
+
+Speaker A: So if you are, you know, obviously you have raw stuff coming in. So you need to be recording whatever commands that we sent it.
+
+Speaker D: Mm-hmm.
+
+Speaker A: Because I need to know switch timings between like, this is what it was doing when we were telling it to ESC, this is when it wasn't on. So you need to have all that data of what's happening. And then at every single software part, so like, you know, going into the ESC algorithm is the cost function or the augmented cost function. You need to know that. But because we're augmenting the cost function, the augmentation is a separate part. So I need to know the input to that, which is the raw cost function.
+
+Speaker C: Okay, yeah.
+
+Speaker A: And then the output, the augmented cost function. Of only the augmented?
+
+Speaker C: Yes. Okay.
+
+Speaker A: Well, you need to measure both.
+
+Speaker C: Yeah, okay.
+
+Speaker A: Whether or not you plot it is one thing, but in your experiment you need to be recording all inputs and all outputs. Not just of the TurtleBot, but every single software part. So that when I get— when we have a question of like, oh, it's dimming, or the light seems to be dimming, we can then go Reach into the raw cost function history, look at specific portions where it was over there, because we would have recorded that and time-synced everything.
+
+Speaker C: Yeah.
+
+Speaker A: And then be like, oh, we know from like, you know, t1 to t2 is roughly within here. And then go look at that and see if we can see like, distinguish that like, oh yes indeed, the light was going dim. Or if so, by how much?
+
+Speaker C: Okay.
+
+Speaker A: Does that make sense?
+
+Speaker C: Yeah, yeah.
+
+Speaker A: So you need to record not only the cost function, which is what Nick did, because Nick wasn't dealing with augmented cost function, but also now your augmented cost function.
+
+Speaker B: Okay, yeah, got it.
+
+Speaker C: So I'm recording both, both. You need to record both.
+
+Speaker A: Every time you do any software thing, you always need to record the input and you always need to record the output.
+
+Speaker C: Okay, okay.
+
+Speaker D: Can you also record like the parameters for the Gaussian, like the amplitude?
+
+Speaker B: Oh yeah, yeah, yeah.
+
+Speaker D: I mean, we can see it in the terminal, the Gazebo, but with the experiment, I don't think we can.
+
+Speaker A: Yeah, yeah, that's a message.
+
+Speaker C: Yeah.
+
+Speaker A: And you publish it and you have something recording every message.
+
+Speaker C: Yeah.
+
+Speaker A: Then it's going to take it and be like, at this time step, this was the calculation.
+
+Speaker B: It does it for the Gazebo, but it currently doesn't for the physical simulations. Yeah, so I just have to like—
+
+Speaker A: I guess my question is, why isn't that? Because I imagine it would have all been implemented in ROS.
+
+Speaker D: Sorry?
+
+Speaker A: It would have all been implemented in ROS. So like, why is that not a node?
+
+Speaker B: Um, it is a node. I just— I think I mainly just implemented the 5 new nodes we have, and I didn't modify the, um, data— yeah, the data collection node.
+
+Speaker C: Okay. Yeah.
+
+Speaker E: So I had to do a lot for my stuff.
+
+Speaker B: Yeah, I just did the main— yeah, I just did the main source code stuff and the algorithm nodes, but not the— I think I might have skipped the data collection one.
+
+Speaker D: I know that I didn't. Oh, okay.
+
+Speaker C: Yeah.
+
+Speaker A: I guess my question is, isn't there like a rosbag that just automatically records all messages?
+
+Speaker C: Yeah.
+
+Speaker D: Pretty sure there is.
+
+Speaker A: I mean, from what I've seen, uh, I know Nick was like recording subsets of the ROS stuff.
+
+Speaker B: All I know is, yeah, the rosbag section should—
+
+Speaker A: yeah, get everything, and then inside the bag then you can parse out everything.
+
+Speaker B: Yeah, I believe so.
+
+Speaker D: I mean, it's also easier if you can just change the mode. Yeah, instead of like going through all that.
+
+Speaker B: Yeah, just move everything from Gazebo and To physical.
+
+Speaker D: Yeah.
+
+Speaker C: Yeah.
+
+Speaker D: You should be okay.
+
+Speaker C: Yeah.
+
+Speaker D: Just that on top of the raw data.
+
+Speaker C: Yeah. Okay.
+
+Speaker A: Timestamp. I'm sure you— the timestamp of when you do this calculation, the interval that it's doing it over.
+
+Speaker D: Yeah, okay.
+
+Speaker A: And then the calculated values.
+
+Speaker C: Yeah.
+
+Speaker B: We also wanted it to print to the console as well, because right now in the console for the physical, it just says like the, you know, like, oh, activated the node, activated this node, convergence detector. But in the Gazebo sims, it's like, oh, convergence event. And it says it publishes it over and over, and then it says when it does the fill, and it logs the time and everything. But it doesn't do it for the physical node yet, if that makes sense.
+
+Speaker A: I guess I'm confused as to why there's this physical-software split.
+
+Speaker B: In terms of the data collection or in general?
+
+Speaker A: In general. Like, well, there's— it's— yeah, because my thought is there's this abstracted TurtleBot And you run— every time you run the TurtleBot in the abstraction, legitimate stuff gets populated. And then there's all a bunch of nodes associated then with the TurtleBot. So the TurtleBot has a command, it should be then reading in a bunch of sensors and having those as topics and things like that.
+
+Speaker C: Uh-huh.
+
+Speaker A: And that should be happening regardless of whether that's in the physical or whether that's Gazebo.
+
+Speaker E: Did you have to make publishers and stuff to put out modified documents?
+
+Speaker B: Well, there was some things like, for example, with Gazebo using simulated odometry or whatever versus the physical robot using Vicon.
+
+Speaker E: I believe Nick's previous launch files accounted for both, but for example, when I had to add some new publishers for certain things, Like I had 3 angle readings instead of 1. I had to modify some things to deal with that.
+
+Speaker A: But every time you start your thing, it publishes regardless of if it's just simulation or the real world, it publishes 3 servos.
+
+Speaker E: Yeah, but like the thing, the script he made disabled that, which is what I've been using. Which I know you said there's a bag that has all of it, but I didn't actually know that. You probably just need to edit the current data saving node or whatever it's called just to add that extra stuff in there.
+
+Speaker D: So yeah, I think we agree about— I mean, to see it on the console.
+
+Speaker A: Yeah, because getting this log on the console is something different.
+
+Speaker C: Yeah, yeah.
+
+Speaker A: But like, you should have like all nodes be populated regardless of if it's digital or physical, right?
+
+Speaker E: Yeah, let's do that.
+
+Speaker D: Oh yes, you can check it like in the code.
+
+Speaker A: So yeah. Perhaps with the data logging, it would be better if we moved to a script that starts running a ROS bag.
+
+Speaker C: Okay.
+
+Speaker A: Because then you just record a bunch at once.
+
+Speaker B: For both simulation and physical?
+
+Speaker A: Well, ROS bag records all ROS topics.
+
+Speaker C: Yeah, alright. So—
+
+Speaker A: For both.
+
+Speaker C: Yeah, for both.
+
+Speaker A: And then you might write a script that parses the ROS bag to get the data you want. I don't need to publish every time the battery status is, right?
+
+Speaker C: Yeah, yeah, yeah.
+
+Speaker A: It doesn't matter if that's a ROS topic. I just—
+
+Speaker B: yeah, all the—
+
+Speaker A: like, I have a rosbag that contains all the data. Yeah, in a compressed method. But then I have a script that parses and plots things. And then if there's a question of like, oh, what was your actual data? Then you go into the— like, pull it from the rosbag, and then you can plot it versus your augmented Because the data is already saved. So now it's like, okay, now we're going to have to run a bunch of things again.
+
+Speaker C: Yeah. Okay.
+
+Speaker D: But for the next experiment, we can put it.
+
+Speaker C: It's okay. Yeah.
+
+Speaker B: For the next set of experiments.
+
+Speaker C: Yeah. Yeah.
+
+Speaker D: Once we get the new lamps.
+
+Speaker B: The new lamps.
+
+Speaker C: Yeah.
+
+Speaker D: And we will discuss the algorithm.
+
+Speaker C: Yeah. Yeah.
+
+Speaker B: We got to discuss the algorithm too.
+
+Speaker A: Yeah. We can discuss the algorithm next time.
+
+Speaker C: Okay.
+
+Speaker E: So Alex and

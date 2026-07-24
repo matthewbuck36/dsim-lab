@@ -1,0 +1,77 @@
+# Initial simulation defaults for the robust_gaussian_v1 profile.
+# Phase 00/02 must place these under the repository's actual parameter hierarchy.
+# Raw sensor/cost calibration is intentionally separate from these normalized values.
+
+algorithm_profile: robust_gaussian_v1
+
+supervisor:
+  convergence_hold_sec: 2.0
+  goal_score_threshold: 0.95
+  goal_hold_sec: 3.0
+  escape_exit_hold_sec: 1.0
+  stall_window_sec: 3.0
+  minimum_radial_progress_m: 0.05
+  escape_max_sec: 20.0
+  recenter_after_escape: true
+  recenter_tolerance_m: 0.25
+  recenter_hold_sec: 1.0
+  recenter_max_sec: 30.0
+  wall_margin_m: 0.35
+
+weights:
+  search:
+    sensor: 1.0
+    gaussian: 1.0
+    affine: 0.0
+  escape_repulse:
+    sensor: 0.0
+    gaussian: 1.0
+    affine: 0.0
+  escape_assist:
+    sensor: 0.0
+    gaussian: 1.0
+    affine: 1.0
+
+basin_estimator:
+  estimation_window_sec: 8.0
+  minimum_valid_samples: 40
+  maximum_sample_age_sec: 12.0
+  mean_shift_iterations: 5
+  center_tolerance_m: 0.005
+  position_kernel_bandwidth_m: 0.25
+  cost_temperature_normalized: 0.05
+  covariance_eigenvalue_min_m2: 0.0025
+  covariance_eigenvalue_max_m2: 0.25
+  center_cost_percentile: 10.0
+  shoulder_cost_percentile: 80.0
+  inner_mahalanobis_radius: 1.0
+  minimum_basin_depth: 0.02
+
+fill_designer:
+  covariance_scale: 2.5
+  sigma_floor_m: 0.15
+  sigma_ceiling_m: 1.25
+  amplitude_depth_scale: 1.5
+  amplitude_curvature_scale: 1.2
+  amplitude_min: 0.10
+  amplitude_max: 3.00
+  validation_grid_points_per_axis: 41
+  validation_support_sigma: 3.0
+  maximum_design_escalations: 5
+  amplitude_escalation_factor: 1.5
+  width_escalation_factor: 1.25
+  support_sigma: 3.0
+  exit_sigma: 2.5
+
+fill_merging:
+  merge_bandwidth_m: 0.50
+  merge_radius_scale: 2.0
+  minimum_merge_probability: 0.60
+
+safety:
+  # Replace with repository's audited safe limits.
+  maximum_linear_velocity_mps: 0.10
+  maximum_angular_velocity_rps: 0.40
+  stale_pose_sec: 0.50
+  stale_sensor_sec: 0.50
+  zero_command_on_shutdown: true

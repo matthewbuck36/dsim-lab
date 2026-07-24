@@ -1,0 +1,52 @@
+schema_version: 1
+
+# Phase 05 must replace logical aliases with actual audited topic names and types.
+
+required:
+  - alias: raw_sensor
+    topic: TO_BE_RESOLVED
+    type: TO_BE_RESOLVED
+  - alias: raw_cost
+    topic: TO_BE_RESOLVED
+    type: TO_BE_RESOLVED
+  - alias: source_score
+    topic: TO_BE_RESOLVED
+    type: TO_BE_RESOLVED
+  - alias: cost_breakdown
+    topic: TO_BE_RESOLVED
+    type: TO_BE_RESOLVED
+  - alias: algorithm_state
+    topic: TO_BE_RESOLVED
+    type: TO_BE_RESOLVED
+  - alias: gaussian_fills
+    topic: TO_BE_RESOLVED
+    type: TO_BE_RESOLVED
+  - alias: algorithm_events
+    topic: TO_BE_RESOLVED
+    type: TO_BE_RESOLVED
+  - alias: command_unsaturated
+    topic: TO_BE_RESOLVED
+    type: TO_BE_RESOLVED
+  - alias: command_final
+    topic: TO_BE_RESOLVED
+    type: TO_BE_RESOLVED
+  - alias: pose
+    topic: TO_BE_RESOLVED
+    type: TO_BE_RESOLVED
+
+optional:
+  - alias: vicon_pose
+    topic: TO_BE_RESOLVED
+    type: TO_BE_RESOLVED
+  - alias: odometry
+    topic: TO_BE_RESOLVED
+    type: TO_BE_RESOLVED
+  - alias: tf
+    topic: /tf
+    type: tf2_msgs/msg/TFMessage
+  - alias: tf_static
+    topic: /tf_static
+    type: tf2_msgs/msg/TFMessage
+  - alias: collision
+    topic: TO_BE_RESOLVED
+    type: TO_BE_RESOLVED

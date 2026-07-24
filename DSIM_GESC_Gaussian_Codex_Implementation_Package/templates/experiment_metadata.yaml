@@ -1,0 +1,53 @@
+schema_version: 1
+run_id: REQUIRED
+experiment_version: REQUIRED
+created_utc: REQUIRED
+operator: REQUIRED
+
+git:
+  repository: dsim-lab
+  branch: REQUIRED
+  commit: REQUIRED
+  dirty: REQUIRED
+  diff_hash: REQUIRED_IF_DIRTY
+
+execution:
+  mode: simulation  # simulation | physical
+  algorithm_profile: robust_gaussian_v1
+  ros_distribution: humble
+  launch_command: REQUIRED
+  use_sim_time: true
+  host: REQUIRED
+
+scenario:
+  scenario_id: REQUIRED
+  random_seed: REQUIRED
+  bounds_m: [xmin, xmax, ymin, ymax]
+  room_center_m: [x, y]
+  robot_start: [x, y, yaw]
+  sources:
+    - id: source_1
+      position_m: [x, y]
+      level: 1
+      role_for_evaluation: local_or_goal
+
+calibration:
+  file: REQUIRED
+  source_score_definition: REQUIRED
+  goal_score_threshold: 0.95
+
+parameters:
+  files: []
+  resolved_snapshot: resolved_parameters.yaml
+
+recording:
+  required_topic_manifest: resolved_topics.yaml
+  bag_start_ros_time: REQUIRED
+  bag_end_ros_time: REQUIRED
+  completeness_passed: false
+
+human_intervention:
+  occurred: false
+  description: ""
+
+notes: ""

@@ -1,0 +1,279 @@
+Dr. Nili meeting, mainly GESC+ Gaussian algorithm
+7/15/2026, 2:43:04 PM · 0:00
+
+(0:00) I talked to Patrick about your problem.
+(0:04) Oh, yeah.
+(0:05) This is the start.
+(0:06) So I think you want to bring them to the literature?
+(0:11) I can bring it.
+(0:12) Oh, no worries.
+(0:13) I understand that.
+(0:14) Yeah, it's going to be quick for you to format you.
+(0:16) I just wanted to show you what we discussed.
+(0:20) So I think you can now...
+(0:23) This is your project, right? Yeah. So I want you can now... this is your project, right? Yeah.
+(0:25) So I want you to focus...
+(0:28) Oh, thank you, thank you.
+(0:30) Focus on this project, because I think this is...
+(0:35) It turns out to be more complex than we thought, you know,
+(0:39) so more difficult to make it robust.
+(0:42) So I think it needs more time than we expected
+(0:45) so and for the in terms of the images what we have is fine for now in terms of
+(0:52) the video yeah yeah we can show it in the talk and say yeah, I'm sorry, say yeah, this is not robust yet.
+(1:07) Yeah. This is what we did a physical demonstration.
+(1:12) It's not working yet.
+(1:16) So now, in terms of your cost, right?
+(1:21) Cost function. You have three components in your cost function.
+(1:24) The cost value value which is the
+(1:25) sensor value then you have the repulsion part the Gaussian field okay and then you have the affine
+(1:34) part right yeah so I think this this tree can be on and off at any time you know it's not that
+(1:44) This three can be on and off at any time, you know, it's not that
+(1:48) like, for example, all the time cost value is on.
+(1:50) So that's what you're doing right now, right?
+(1:51) Cost value is always up.
+(1:57) Yeah. But that shouldn't be the case for, for example, when you want to
+(2:03) be repossed from a local, you can turn that off and then turn that on
+(2:08) when you get out of the region of attraction of the undesired minimum. Do you see what I mean?
+(2:14) Oh yes. So currently you get to a local minimum and then you say okay this is not the desired
+(2:23) one I want to get out. And then you add a rep, this is not the desired one. I want to get out.
+(2:25) And then you add a repulsion to your current cost,
+(2:30) to the sense of value.
+(2:32) I'm just saying you don't need to necessarily do that.
+(2:36) You can just turn off the cost value
+(2:41) and just use that repulsion.
+(2:43) Just it would be a stronger repulsion
+(2:45) to take you completely out of that region of attraction.
+(2:49) So you can do that.
+(2:50) I mean, these are the things you can do.
+(2:52) I'm not saying you should do it.
+(2:54) I'm just saying these are the best to improve the robust.
+(2:58) Maybe, you know.
+(3:00) And this code is nothing that you cannot modify.
+(3:05) You just take freedom to modify it and make it.
+(3:09) This is your work.
+(3:13) And you want to make this method perfect.
+(3:16) Yes.
+(3:17) So you should take freedom.
+(3:19) Whatever you want to do to make it more robust to any scenario.
+(3:22) Yeah.
+(3:23) Okay. do to make it more robust to any scenario. Yeah, okay. These are just ideas, you know, these are the three things and you can see based on the feedback you get from
+(3:31) your test. Yeah. And I'm just talking about the gazebo test. You don't do
+(3:35) physical tests unless you know it's very robust in gazebo in all scenarios. Okay.
+(3:40) Yeah. So I'm just saying you can turn this off
+(3:45) and I can put the weight for them zero or one
+(3:48) and then turn them on and off.
+(3:52) Wherever you want any of them to be active.
+(3:55) - Okay, okay.
+(3:56) - Like for example, you just use pure repulsion
+(3:59) to get out of a minimum.
+(4:01) And then once you're out,
+(4:03) then you turn on the cost value to measure any nearby
+(4:11) a new local. You turn on the cost value and then you see okay and still keep the repulsion on
+(4:21) to make sure you don't get back to the previous thing.
+(4:25) So the time that you want to turn it on, turn that off, again that comes from the experience
+(4:32) you get from your testing.
+(4:35) Okay, the simulation.
+(4:37) In different environments, and you have to have a long for testing to make sure this
+(4:41) is what tests should I do to make sure this is robust.
+(4:46) And then for indoor, this is another day for indoor, when you have a closed environment
+(4:55) like this, right?
+(4:58) And then your robot starts from here, this is your first local, right?
+(5:07) Yeah.
+(5:08) And this is your global, right?
+(5:11) And then, this is the robot, this is the light.
+(5:14) This is the light, or you can say this is the robot.
+(5:17) Something like that.
+(5:19) But then the problem might be that when you get, like this, let's say this is robot.
+(5:33) Let's say the robot comes here and then gets stuck here, right?
+(5:38) And then we say do not move in the previous direction, then it moves in this direction. Oh yeah. It might get like collided above.
+(5:46) It's a closed environment.
+(5:49) Yeah.
+(5:50) So we...
+(5:51) Oh, well, before we do that, the distance from here is here is same.
+(5:58) No, I mean, I don't...
+(6:00) I mean, no, it's not the same.
+(6:03) What do you already ask?
+(6:05) Oh, so I know the best, but
+(6:07) So let's say this is far from...
+(6:09) And also you need this one,
+(6:11) spread this one
+(6:13) Yeah, yeah
+(6:14) Otherwise it will not go here, it goes from the previous rhythm
+(6:18) Yeah, yeah, yeah
+(6:20) So let's say this is not discovered, let's say this is
+(6:29) like the region of attraction of this. Right?
+(6:32) Then this is the region of attraction of this.
+(6:36) Or they overlap.
+(6:38) Yeah, because this.
+(6:42) Yeah. Anyway, I'm just saying maybe this is again another alternative, some alternative in indoor
+(6:50) environments.
+(6:51) Maybe after discovering each local, you go back to the center of the environment with
+(7:00) some type of planning, just go to the center. Yeah.
+(7:05) While keeping the repulsion on,
+(7:08) do not go back to that previous discovery.
+(7:14) And then from the center again,
+(7:17) you try to sense new cost values.
+(7:21) And it should be.
+(7:23) That's the reason for this is that sometimes for some locals,
+(7:30) because you have this affine part that doesn't let you to go back
+(7:35) to the previous direction, it will drive you to the bottom.
+(7:39) Right?
+(7:40) It's a fine part that we said, like your movement and your direction. So, so, coming to the center, make
+(7:47) sure that you, you don't run into the walls and you just move it in. This is just for
+(7:53) enduring moments. So, for enduring moments, we might face more problems.
+(7:57) I feel it from our experience, from my experience, this doesn't influence a lot, also you'll
+(8:03) go this way. As long as you escape the, you know, the rig of influence a lot also your courses as well as you escape the you know
+(8:06) to re-contraction a little bit then it will converge to here easily as well as you
+(8:12) leave the direction it didn't influence a lot. Okay so yeah this is just in case
+(8:17) because your experiments I mean you had that deeming problem and stuff. Yeah, they did.
+(8:25) Yeah, yeah, yeah.
+(8:26) It repeats, it repeats to see. Yeah.
+(8:29) But did you have very robust experiments in disabled?
+(8:33) I have, yeah, tons of light.
+(8:36) For two sources, depends on what scenarios actually it is.
+(8:41) For two sources, it was pretty reliable.
+(8:45) - For three, it wasn't.
+(8:46) - For three, it wasn't.
+(8:46) At least with the space we had.
+(8:48) - Because without him limiting the space
+(8:51) to four times four, it's really, you know,
+(8:54) although in the lab you think it's very large,
+(8:56) but actually if you want to put three resource,
+(9:00) it's really small.
+(9:01) Also from the rear latte experiment,
+(9:03) one four five meter is, you know, meter is a very good distance for two-source to
+(9:08) get rid of each other.
+(9:09) Don't give us a lot.
+(9:11) Yeah, yeah.
+(9:12) My point five is a good meter, but if you want to put three-source, you don't have enough
+(9:18) space for the three-source.
+(9:19) Okay, so let's say we don't have any restrictions.
+(9:23) Yeah, I mean, just show the two source borders
+(9:26) because if we want to--
+(9:27) I don't care about the talk.
+(9:29) The talk is about two source tests.
+(9:32) I'm just saying about the robustness.
+(9:34) I'm talking about the robustness of our algorithm.
+(9:36) So is it robust to a different--
+(9:39) let's say we don't have that problem.
+(9:42) The robustness can also change the different decibels.
+(9:46) So for example, for now, we choose the level two
+(9:48) and level four for each light.
+(9:50) But if you want to conform the robustness,
+(9:53) you can also change the level set of the light
+(9:57) because for now we can use a person-taged
+(9:59) for different levels.
+(10:01) And then if all of the different level, Luma is work, then you can also show this.
+(10:08) So hold on. So you're saying that because the last experiment you showed me,
+(10:16) it didn't work with... It's not repeat. You had to leave it, you had level one for the first source
+(10:23) and all the different levels for the second source.
+(10:26) It didn't work for any of them.
+(10:28) Yeah.
+(10:29) And then you had a level two for the second source and all the different levels for second source.
+(10:34) It worked only with four and five.
+(10:35) Yeah.
+(10:36) Yeah.
+(10:36) Exactly.
+(10:37) Yeah.
+(10:38) So, still your algorithm is not through posturing.
+(10:40) Yeah.
+(10:41) So you cannot successfully escape with no level after
+(10:46) basically. For the first one. So when I say robots means that you have to be
+(10:53) able to escape any local, no matter the depth. Right? And then you have to be able to find the global regardless of the number of local
+(11:11) things happening in the environment. So not only two, not only three, any number. Like
+(11:17) if next we're gonna test acoustic source in the lab or some of reflected. - Yeah. - Then you have to be able to escape those
+(11:25) small local minimums that are near each other.
+(11:28) - Yeah.
+(11:29) - So that's a very difficult problem.
+(11:31) Because make tested, we had a lot of locals in the lab.
+(11:34) - Oh yeah.
+(11:35) - For the accuracy.
+(11:36) Very close.
+(11:37) - Yeah, yeah.
+(11:38) - So you have to escape each one
+(11:40) and then go to the next one,
+(11:42) to explore and explore a find the global.
+(11:45) Yeah, I wasn't sure if it was a source code thing or if it was actually like a
+(11:50) sensor thing or maybe the lights themselves is if they're really close
+(11:55) they kind of bleed into each other so like you know there's some sort of at
+(12:00) least when they're too close I guess like sometimes the robot kind of
+(12:06) got stuck in the middle and it would have to sort of keep going around.
+(12:10) Eventually it would converge like that at least with the level 4 and 5. It did
+(12:15) go really slowly as you saw in the videos but yeah I don't know if it's
+(12:21) like the space we have or the maybe the photo resistor itself. Oh, I'm trying this
+(12:27) It's not it is just
+(12:29) You use this voting is correct from the cost bank is good. Yeah, okay, okay
+(12:35) So yeah, these are all the things you have to figure out. Yeah, so also it cannot I
+(12:42) Mean it's very it takes
+(12:51) It's very, it doesn't look good if we have to go ten times around the source to be able to escape. It should be faster.
+(12:53) It should, yeah.
+(12:54) So, I have probably one time to be able to have the Gaussian.
+(13:00) Yeah, then publish to the film. Yeah, so you know, so these are this is your project
+(13:07) Yeah, what are you can to?
+(13:10) Make it more robust make it robust
+(13:13) Different scenarios and at the end of the day if we want to make sure we can
+(13:18) Run it in an acoustic field
+(13:21) Yeah, it's good low cost that we have around the room
+(13:21) Yeah. Like, yeah.
+(13:22) Like, yeah.
+(13:23) Like, yeah.
+(13:24) Like, yeah.
+(13:25) Like, yeah.
+(13:26) Yeah.
+(13:27) Yeah.
+(13:28) Like, yeah.
+(13:29) Like, yeah.
+(13:30) Like, yeah.
+(13:31) Like, yeah.
+(13:32) Yeah.
+(13:33) Yeah.
+(13:34) Yeah.
+(13:35) Yeah.
+(13:36) Yeah.
+(13:37) Yeah.
+(13:38) Yeah.
+(13:39) Yeah.
+(13:40) Yeah.
+(13:41) Yeah.
+(13:42) Yeah.
+(13:43) Yeah.
+(13:44) Yeah. Yeah. Yeah. Yeah. Yeah. We want to converge to that but because the environment is so reflective We find we will have local that we cannot see
+(13:48) Yeah, but they exist. Yeah, then do you I don't know if I'm sure automatically escape them. Yeah even without you knowing
+(13:56) Yeah, you don't know this local existed because we didn't have the upper signal of the room. Yeah
+(14:01) Like the light experience you are doing. Yeah, so you have to excite them. Yeah, that's true.
+(14:05) Yes.
+(14:06) So you are going to be autonomous enough, and without you interfering, you know, trying
+(14:13) to do loopholes to actually escape.
+(14:16) Yeah, it should ignore all the like small local networks.
+(14:19) Yeah, this is our problem now.
+(14:21) I mean, I mean, the problem also is delayed that we have everything.
+(14:25) But the problem we have in many environments like in the pool that they tested,
+(14:33) we can converge from up to 6 meters or 5 meters, not longer than all the way we can hear.
+(14:41) It might be the local problem, it might be the delay problem.
+(14:44) But at least we can solve the local
+(14:48) Yeah
+(14:56) Yeah
+(14:58) Okay, yeah, so I'll work on these two. Can I take a picture of this other?
+(15:04) Oh you sense me? So I'll work on these two... Can I take a picture of this other... I'm gonna send you...
+(15:05) Oh, you'll send to me?
+(15:06) What would you want?
+(15:07) To the director side?
+(15:09) Yeah.
+(15:10) I'm gonna send you the director side.
+(15:12) And as Patrick said, you know, always, you can take...
+(15:16) You feel slightly larger and stuff that...
+(15:19) This is, again, something to test.
+(15:21) Yeah.
+(15:22) I know, I wish I took notes when he was telling me
+(15:25) that but I was mostly like listening to him and like I understand what he
+(15:29) suggested but I wish I like kind of I don't know yeah I'll like be like hold on
+(15:38) I'll be like wait you're going too. - Yeah, 'cause he goes kind of fast and I was like,
+(15:45) oh wait, I got it.
+(15:46) - Mm-hmm, so I know.
+(15:48) - Yeah, so, okay, next time, I mean, like, yeah.
+(15:51) But I do remember the idea of what he was saying though,
+(15:56) yeah, like, I have the photo of the whiteboard and all that.
+(15:58) - Okay, cool.
+(15:59) - Yeah, okay.
+(16:00) - Send me that photo, I don't know. - Yeah, okay, I'll send you that. - Okay. - Send me that to a whiteau. - Yeah, okay, I'll send you that.
+(16:02) - Okay.

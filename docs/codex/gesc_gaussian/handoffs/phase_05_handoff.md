@@ -109,9 +109,14 @@ phase exceeds ten files:
 DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh 05 implement
 PASS: Phase 05 implement context is complete.
 
-Focused Phase 05/source regression suite
-PASS: 111 passed, 1 skipped (before final endpoint/parameter tests).
-PASS: 49 passed in 1.22s for the amended recorder/observability/legacy subset.
+Final focused Phase 05/source regression suite
+PASS: 113 passed, 1 skipped in 3.33s.
+
+The skip is the environment-gated visible-Gazebo pytest. Its exact command was
+run directly and produced the accepted retained run below. Earlier intermediate
+results (`108 passed, 1 skipped`, `111 passed, 1 skipped`, and the 49-test
+amended subset) are preserved in `test_commands.md` as implementation history;
+they are not the final authoritative total.
 
 colcon build --packages-select ros_esc_interfaces ros_esc turtlebot3_rotating_sensor
 PASS: all 3 packages finished.
@@ -132,7 +137,11 @@ that exited normally before their snapshot calls. No recorder, ROS, Gazebo, or
 experiment process remained after completion.
 
 Repository-standard package tests and final syntax/lint results are recorded
-in `docs/codex/gesc_gaussian/test_commands.md`.
+in `docs/codex/gesc_gaussian/test_commands.md`. The final package result was
+`999 tests, 0 errors, 875 failures, 2 skipped`. The 875 failures are the
+unchanged inherited flake8, pep257, and lint-cmake baseline; the functional
+`ros_esc` result was `113 passed, 2 skipped`. Python compilation and
+`git diff --check` passed.
 
 ## Known limitations
 

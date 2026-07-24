@@ -1,0 +1,40 @@
+schema_version: 1
+scenario_id: two_source_level_matrix_example
+mode: simulation
+bounds_m: [-2.0, 2.0, -2.0, 2.0]
+room_center_m: [0.0, 0.0]
+run_timeout_sec: 180.0
+
+algorithm_profiles:
+  - robust_gaussian_v1
+
+repeats:
+  deterministic_seeds: [101, 102, 103]
+
+robot_starts:
+  - [-1.5, -1.5, 0.0]
+  - [-1.5,  1.5, -1.57]
+  - [ 1.5, -1.5, 1.57]
+  - [ 0.0, -1.5, 0.78]
+  - [ 0.0,  0.0, 0.0]
+
+sources:
+  positions:
+    - [-0.75, 0.50]
+    - [ 0.90, 0.75]
+  level_grid:
+    source_1: [1, 2, 3, 4, 5]
+    source_2: [1, 2, 3, 4, 5]
+
+disturbances:
+  sensor_noise_std: 0.0
+  sensor_delay_sec: 0.0
+  pose_delay_sec: 0.0
+
+recording:
+  enabled: true
+  topic_manifest: config/experiment_topics.yaml
+
+success:
+  controller_goal_score_threshold: 0.95
+  evaluation_goal_position_tolerance_m: 0.35
