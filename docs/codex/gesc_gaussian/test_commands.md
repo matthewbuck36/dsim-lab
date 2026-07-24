@@ -946,3 +946,137 @@ flake8, pep257, and lint-cmake results. The two existing `ros_esc` lint
 meta-tests now contain no finding from the new Phase 06 runner/schema/tests;
 the functional `ros_esc` result was `143 passed, 2 lint meta-test failures,
 3 skipped`.
+
+## Phase 07 commands run
+
+### Context, backend, and pre-edit baseline
+
+```bash
+DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh \
+  07 implement
+
+source /opt/ros/humble/setup.bash
+source ros2_ws/install/setup.bash
+python3 -m pytest -q -rs <Phase 00-06 focused suite>
+```
+
+The context validator passed. `rosbag2_py.get_registered_readers()` and
+`get_registered_writers()` both contained `sqlite3`; all six generated typed
+diagnostic imports resolved. The retained accepted and failed Phase 05 run
+directories were readable. The pre-edit result was
+`143 passed, 2 skipped in 3.72s`.
+
+### Build, new tests, and retained focused suite
+
+```bash
+source /opt/ros/humble/setup.bash
+cd ros2_ws
+colcon --log-base /tmp/dsim_phase07_build_log_final build \
+  --packages-select ros_esc_interfaces ros_esc turtlebot3_rotating_sensor
+source install/setup.bash
+
+python3 -m pytest -q -rs \
+  src/ros_esc/test/test_bag_analysis.py \
+  src/ros_esc/test/test_bag_analysis_integration.py
+
+python3 -m pytest -q -rs \
+  src/ros_esc/test/test_bag_analysis.py \
+  src/ros_esc/test/test_bag_analysis_integration.py \
+  src/ros_esc/test/test_scenario_schema.py \
+  src/ros_esc/test/test_scenario_runner.py \
+  src/ros_esc/test/test_experiment_recording.py \
+  src/ros_esc/test/test_recording_integration.py \
+  src/ros_esc/test/test_state_machine.py \
+  src/ros_esc/test/test_supervisor_integration.py \
+  src/ros_esc/test/test_observability_contract.py \
+  src/ros_esc/test/test_legacy_behavior.py \
+  src/ros_esc/test/test_robust_gaussian_algorithm.py \
+  src/ros_esc/test/test_escape_recenter.py
+```
+
+Build result: all three packages passed. New Phase 07 result:
+`10 passed in 4.38s`. Final retained focused result:
+`153 passed, 2 skipped in 7.77s`.
+
+The new tests cover exact timestamp retention, bounded nearest and causal
+matching, no interpolation, state-gap invalidation, validity statuses,
+generated sqlite3 deserialization, all standard files, path/escape/radial/
+revisit/fill/merge/saturation/success metrics, failed-run partial evidence,
+critical-topic invalidation, placeholder figures, raw bag hash/mtime
+preservation, atomic non-overwriting output, and complete/partial matrix
+aggregation.
+
+### Retained passed and failed bag analysis
+
+```bash
+ros2 run ros_esc analyze_run <accepted-phase05-run> \
+  --output-dir <temporary-root>/accepted
+ros2 run ros_esc analyze_run <failed-phase05-run> \
+  --output-dir <temporary-root>/failed
+ros2 run ros_esc summarize_matrix <temporary-root> \
+  --output-dir <temporary-root>/matrix
+```
+
+Final temporary evidence root:
+
+```text
+/tmp/dsim_phase07_real_bags_final.WKZRlx
+```
+
+The accepted run reported `complete` with fresh Phase 05 validation passed.
+The failed run reported `partial` and retained the Phase 05 timestamp-regression
+and console-marker failures. Each produced 11 CSV tables and 8 separate PNG
+figures. The matrix found two runs: one complete and one partial. Neither real
+short smoke contained fill/escape behavior, so those metrics were explicitly
+`not_applicable`. SHA-256 values for both `.db3` files and both root
+`completeness.json` files were identical before and after analysis.
+
+### Syntax, imports, focused style, and diff
+
+```bash
+python3 -m compileall -q \
+  ros2_ws/src/ros_esc/ros_esc/plotting_scripts/bag_reader.py \
+  ros2_ws/src/ros_esc/ros_esc/plotting_scripts/gesc_gaussian_bag_analysis.py \
+  ros2_ws/src/ros_esc/test/test_bag_analysis.py \
+  ros2_ws/src/ros_esc/test/test_bag_analysis_integration.py
+
+python3 -c \
+  'import ros_esc.plotting_scripts.bag_reader; import ros_esc.plotting_scripts.gesc_gaussian_bag_analysis'
+
+ament_flake8 \
+  ros_esc/plotting_scripts/bag_reader.py \
+  ros_esc/plotting_scripts/gesc_gaussian_bag_analysis.py \
+  test/test_bag_analysis.py \
+  test/test_bag_analysis_integration.py
+
+ament_pep257 \
+  ros_esc/plotting_scripts/bag_reader.py \
+  ros_esc/plotting_scripts/gesc_gaussian_bag_analysis.py \
+  test/test_bag_analysis.py \
+  test/test_bag_analysis_integration.py
+
+git diff --check
+```
+
+All listed focused checks passed. The final package-wide flake8 and pep257
+meta-test reports contain zero findings from the Phase 07 reader, analyzer, or
+tests.
+
+### Repository-standard package baseline
+
+```bash
+colcon --log-base /tmp/dsim_phase07_test_log_authoritative test \
+  --packages-select ros_esc_interfaces ros_esc turtlebot3_rotating_sensor
+colcon test-result --test-result-base ros2_ws/build --all
+```
+
+Result: `1037 tests, 0 errors, 872 failures, 3 skipped`. Relative to Phase 06,
+the trend is +10 test records, 0 new errors, 0 new failures, and 0 new skips.
+The 872 failures remain inherited package-wide flake8, pep257, and lint-cmake
+debt. The functional `ros_esc` result was `153 passed, 2 lint meta-test
+failures, 3 skipped`.
+
+The two focused skips were the guarded Phase 06 headless Gazebo E2E and Phase
+05 visible Gazebo recording tests. Both have retained prior passing evidence;
+Phase 07 did not rerun Gazebo, the 26-run Phase 08 behavioral matrix, unsupported
+scenario dimensions, physical hardware, Vicon, or robot commands.

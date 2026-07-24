@@ -48,6 +48,8 @@ setup(
             "record_run = ros_esc.experiment_recording.record_run:main",
             "validate_run = ros_esc.experiment_recording.validate_run:main",
             "run_scenario = ros_esc.scenario_runner.run_scenario:main",
+            "analyze_run = ros_esc.plotting_scripts.gesc_gaussian_bag_analysis:main",
+            "summarize_matrix = ros_esc.plotting_scripts.gesc_gaussian_bag_analysis:main_matrix",
         ],
     },
 )

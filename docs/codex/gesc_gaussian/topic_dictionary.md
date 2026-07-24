@@ -537,3 +537,51 @@ the deterministic case key. Run IDs additionally contain a UTC timestamp and
 UUID fragment so reruns never overwrite an artifact. Ground-truth source roles
 and tolerances remain evaluation metadata and are never exposed to the
 controller. See `recording_runs.md` for commands and retained artifacts.
+
+## Phase 07 offline analysis interface
+
+Phase 07 adds no ROS node, topic, message, parameter, launch argument, or
+controller behavior. The existing plotting owner provides two offline console
+commands:
+
+```text
+ros2 run ros_esc analyze_run RUN_DIRECTORY
+  [--output-dir PATH]
+  [--channel-index N]
+  [--sync-tolerance-sec SEC]
+
+ros2 run ros_esc summarize_matrix INPUT [...]
+  --output-dir PATH
+```
+
+`analyze_run` reads the run-specific `resolved_topics.yaml`, sqlite3 bag, real
+generated message types, metadata, resolved parameters, stored completeness,
+and a fresh non-mutating Phase 05 validation result. Defaults are:
+
+| Option | Default and precedence |
+|---|---|
+| `--output-dir` | `<RUN_DIRECTORY>/analysis/phase07` |
+| `--channel-index` | captured `estimation_channel_index`, else `0` with warning |
+| `--sync-tolerance-sec` | captured `sample_sync_tolerance_sec`, else `0.05` with warning |
+
+The synchronized CSV uses `/gesc_gaussian/cost_breakdown` as its anchor.
+Source cost, GESC diagnostics, pose, and control diagnostics use nearest
+absolute typed/header ROS time within the explicit tolerance. Algorithm state
+uses the latest causal sample within the same tolerance. No critical numeric
+data is interpolated, extrapolated, or forward-filled. Every raw table retains
+the original bag timestamp, typed/header ROS timestamp when available, legacy
+source timestamp and validity, readiness membership, and motion-relative
+time.
+
+The command writes eleven CSV tables, eight separate PNG figures,
+`summary_metrics.json`, `summary_metrics.csv`, and
+`analysis_completeness.json`. Metrics use the statuses `valid`,
+`not_applicable`, `unavailable`, and `invalid`, each with an explicit value,
+unit, reason, and provenance. Missing behavior is not silently converted to
+zero. A readable failed run is analyzed as first-class partial or invalid
+evidence; analysis-process failure alone returns exit code 2.
+
+`summarize_matrix` aggregates existing per-run `summary_metrics.json` files
+into `matrix_summary.csv` and `matrix_summary.json`. Both commands reject
+existing output directories. They never modify raw bags, root metadata,
+`completeness.json`, per-run summaries, or Phase 05 validation results.

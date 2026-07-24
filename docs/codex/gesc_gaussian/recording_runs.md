@@ -107,6 +107,40 @@ rosbag last. Do not kill Gazebo or rosbag separately during normal shutdown.
 Success requires `completeness.json` to contain `"passed": true`. The raw bag
 is retained regardless of validation outcome.
 
+## Analyze a recorded run
+
+Phase 07 analyzes complete and failed runs through the same offline command:
+
+```bash
+ros2 run ros_esc analyze_run <run-directory>
+```
+
+The default output is `<run-directory>/analysis/phase07`. The command exports
+CSV by default, creates eight separate standard figures, and writes
+validity-marked per-run metrics and analysis completeness. It preserves all
+raw bags, recorded timestamps, root metadata, and `completeness.json`.
+Critical missing or out-of-tolerance samples are marked rather than
+interpolated.
+
+To keep an existing analysis immutable, rerun to a new destination:
+
+```bash
+ros2 run ros_esc analyze_run <run-directory> \
+  --output-dir <new-analysis-directory>
+```
+
+After analyzing each run in a scenario matrix:
+
+```bash
+ros2 run ros_esc summarize_matrix <run-or-analysis-directory> [...] \
+  --output-dir <new-matrix-summary-directory>
+```
+
+Analysis does not replace `validate_run`, and a readable failed run can
+legitimately produce useful partial or invalid analysis evidence with process
+exit code 0. Experimental success and completeness remain fields in the
+reports rather than being inferred from the analysis command's exit code.
+
 ## Validate or recover a failed run
 
 Run the validator at any time:
