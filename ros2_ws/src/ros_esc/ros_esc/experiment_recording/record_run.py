@@ -56,6 +56,7 @@ ZERO_TOPICS = (
     "/turtlebot3/control_value_chatter",
     "/gesc_gaussian/control_diagnostics",
 )
+PARAMETER_SNAPSHOT_TIMEOUT_SEC = 15.0
 
 
 def _utc_now():
@@ -502,7 +503,8 @@ def _full_node_name(name, namespace):
 def _parameter_types(full_name):
     result = subprocess.run(
         ["ros2", "param", "list", full_name, "--param-type"],
-        check=True, capture_output=True, text=True, timeout=5.0,
+        check=True, capture_output=True, text=True,
+        timeout=PARAMETER_SNAPSHOT_TIMEOUT_SEC,
     )
     types = {}
     pattern = re.compile(r"^\s*(.+?)\s+\(type:\s*(.+?)\)\s*$")
@@ -532,7 +534,8 @@ def _capture_parameters(node_names, required_publishers, parameter_service_nodes
         try:
             result = subprocess.run(
                 ["ros2", "param", "dump", full_name, "--print"],
-                check=True, capture_output=True, text=True, timeout=5.0,
+                check=True, capture_output=True, text=True,
+                timeout=PARAMETER_SNAPSHOT_TIMEOUT_SEC,
             )
             return full_name, {
                 "parameter_services_exposed": True,
@@ -552,7 +555,7 @@ def _capture_parameters(node_names, required_publishers, parameter_service_nodes
                 "error": f"{type(exc).__name__}: {exc}",
             }
 
-    workers = min(4, len(available))
+    workers = min(2, len(available))
     if workers:
         with ThreadPoolExecutor(max_workers=workers) as executor:
             captured = list(executor.map(capture, available))

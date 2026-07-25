@@ -1220,9 +1220,9 @@ reports `holdout must run before the full matrix`.
 
 Before the training sweep, one 10-second Phase 07.5 probe still took about
 130 seconds because `record_run` queried each parameter service serially.
-Parameter snapshots are independent, so the recorder now uses at most four
-workers while preserving exact values/types, deterministic node/failure order,
-and the unchanged required-publisher failure gate.
+Parameter snapshots are independent, so the recorder uses bounded workers
+while preserving exact values/types, deterministic node/failure order, and
+the unchanged required-publisher failure gate.
 
 Focused recorder/harness result: `22 passed, 1 skipped in 1.36s`; the skip is
 the visible Gazebo recording environment gate. A new negative test retains
@@ -1234,5 +1234,14 @@ Retained runtime proof:
 /home/mattb/Experiments/GESC-Gaussian/runs/phase08/prerequisite_parallel/2026-07-25/20260725T000048254880Z_simulation_phase08_validation_support-contact_negative-robust_gaussian_v1-925907a927_990ce7ce
 ```
 
-The run passed recording completeness, final-zero, and cleanup. Total wall
-time was 44 seconds; target start through readiness was about 27 seconds.
+The one-source run passed recording completeness, final-zero, and cleanup.
+Total wall time was 44 seconds; target start through readiness was about
+27 seconds.
+
+The first two-source C0 training attempts then failed honestly because four
+workers caused the required `/gazebo` parameter dump to hit its original
+5-second timeout. The failed bags were preserved under
+`phase08/sweep/C0/runs`; no candidate checkpoint was written. The corrected
+bound is two workers with a 15-second per-call timeout. This is a throughput
+bound, not a relaxed snapshot gate: any required publisher still fails the run
+if its values and types cannot be captured.

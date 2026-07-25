@@ -52,10 +52,11 @@ target graph.
 
 Preflight holds every final command at zero. It waits for the target graph and
 bag subscriptions, then snapshots exact ROS parameter values and types before
-publishing readiness true. Independent node snapshots run with at most four
-workers; node records and failures are sorted deterministically before writing.
-The Phase 08 runtime proof reduced graph-start-through-readiness to about
-27 seconds while retaining the same required-publisher failure policy.
+publishing readiness true. Independent node snapshots run with at most two
+workers and a 15-second per-call timeout; node records and failures are sorted
+deterministically before writing. The bounds retain the same
+required-publisher failure policy without overloading Gazebo's parameter
+service.
 `--preflight-timeout-sec` applies to graph discovery, not parameter capture.
 
 ## Run deterministic Gazebo scenario suites
@@ -155,7 +156,7 @@ ros2 run ros_esc validate_robustness report \
   --operator "$USER" --evidence-root "$EVIDENCE_ROOT"
 ```
 
-The sweep resumes at the next incomplete candidate and never overwrites
+The sweep resumes after each completed candidate and never overwrites
 accepted run IDs. No eligible candidate is a Level C stop before freeze.
 Holdout behavior is reported without retuning. Ordinary final behavioral
 failure remains evidence and does not alter the frozen matrix; cleanup

@@ -191,7 +191,7 @@ def test_parallel_parameter_capture_preserves_order_types_and_failures(
     def fake_run(command, **_kwargs):
         node = command[3]
         if node == "/bad":
-            raise __import__('subprocess').TimeoutExpired(command, 5.0)
+            raise __import__('subprocess').TimeoutExpired(command, 15.0)
         if command[2] == "dump":
             return SimpleNamespace(
                 stdout=f"/{node.lstrip('/')}:\n  ros__parameters:\n"
@@ -222,7 +222,7 @@ def test_parallel_parameter_capture_preserves_order_types_and_failures(
         "required_topic_publisher": True,
         "parameter_services_exposed": True,
         "error": "TimeoutExpired: Command '['ros2', 'param', 'dump', "
-        "'/bad', '--print']' timed out after 5.0 seconds",
+        "'/bad', '--print']' timed out after 15.0 seconds",
     }]
 
 
