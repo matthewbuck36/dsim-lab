@@ -40,6 +40,12 @@ order, and any migration effect.
 Provide a decision-complete ordered sequence that another engineer or Codex
 chat can execute without choosing architecture or behavior.
 
+## Milestones and checkpoints
+
+Split the sequence into bounded milestones. For each milestone state its
+implementation boundary, exact focused/regression checks, artifact or log path,
+next acceptance criterion, and whether a failed result stops later work.
+
 ## Tests and acceptance criteria
 
 List exact tests, fixtures, commands, expected results, and regression checks.

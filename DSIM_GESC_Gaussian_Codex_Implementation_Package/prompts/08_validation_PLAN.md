@@ -39,21 +39,29 @@ Plan the exact test execution order using the repository's implemented scenario 
 
 Specify:
 - smoke tests,
+- the ten-run activation gate and exact state/event coverage,
 - parameter sweep ranges,
 - selection criterion,
-- holdout scenarios,
-- full matrix,
-- three-pass regression,
+- three candidates run on the same ten training cases,
+- 20 new hidden holdout scenarios,
+- the additional 50-run unique validation allocation,
+- ten predeclared reproducibility repeats,
 - acceptance calculation,
+- early-stop criteria,
+- bounded implementation/empirical milestones with focused checks, retained
+  artifact paths, live-status updates, and checkpoint boundaries,
 - parameter freeze,
 - Git tag,
 - generated validation report.
 
 Avoid tuning on every scenario. Reserve a holdout subset to detect overfitting.
-Freeze one parameter set before the final matrix, require three repeated
-full-suite passes without code or parameter changes, preserve failed runs, and
-plan a structured failure report. A simulation-ready tag is permitted only if
-every declared gate passes.
+Use the amended 120-run budget: 10 activation + 30 tuning + 20 hidden holdout +
+50 additional unique validation + 10 reproducibility repeats. Freeze one
+parameter set before holdout. Activation or holdout failure stops later
+expensive stages without weakening their thresholds. Preserve failed runs and
+plan a structured failure report. The former 519 x 3 design is historical v1
+evidence and must not be resumed or counted toward v2 acceptance. A
+simulation-ready tag is permitted only if every amended gate passes.
 
 # Required durable Plan artifact
 

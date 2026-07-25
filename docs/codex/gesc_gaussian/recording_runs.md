@@ -123,10 +123,12 @@ delay, and 100 ms pose delay. Analyze the retained run directories with the
 existing `analyze_run` command. Collision and observed-delay statuses must be
 valid; an unavailable or invalid result is not acceptable Phase 08 evidence.
 
-## Execute the Phase 08 validation workflow
+## Historical Phase 08 v1 workflow — do not resume
 
-The stage order is enforced and every stage preserves the existing run
-directories and analysis outputs:
+The installed workflow below produced the retained failed/incomplete v1
+evidence. It is shown only so those artifacts remain interpretable. Do not
+execute it for future acceptance, do not resume its partial full pass, and do
+not reuse its evidence root:
 
 ```bash
 EVIDENCE_ROOT=~/Experiments/GESC-Gaussian/runs/phase08
@@ -155,11 +157,46 @@ ros2 run ros_esc validate_robustness report \
   --operator "$USER" --evidence-root "$EVIDENCE_ROOT"
 ```
 
-The sweep resumes after each completed candidate and never overwrites
-accepted run IDs. No eligible candidate is a Level C stop before freeze.
-Holdout behavior is reported without retuning. Ordinary final behavioral
-failure remains evidence and does not alter the frozen matrix; cleanup
-contamination or changed freeze hashes stop execution.
+The v1 arithmetic was 81 training runs, 12 holdouts, and three planned
+519-run passes. Its scenarios, frozen profile, selection result, and run
+directories are immutable historical evidence and do not count toward v2.
+
+## Planned Phase 08 v2 workflow — not yet installed
+
+Implementation must extend the same `validate_robustness` owner, use workflow
+schema version 2, and write to a new evidence root. After the v2 command and
+scenarios are implemented and tested, the enforced stage order is:
+
+```bash
+PHASE08_V2_ROOT=~/Experiments/GESC-Gaussian/runs/phase08_v2
+
+ros2 run ros_esc validate_robustness activation \
+  --operator "$USER" --evidence-root "$PHASE08_V2_ROOT"
+
+ros2 run ros_esc validate_robustness sweep \
+  --operator "$USER" --evidence-root "$PHASE08_V2_ROOT"
+
+ros2 run ros_esc validate_robustness freeze \
+  --operator "$USER" --evidence-root "$PHASE08_V2_ROOT"
+
+ros2 run ros_esc validate_robustness holdout \
+  --operator "$USER" --evidence-root "$PHASE08_V2_ROOT"
+
+ros2 run ros_esc validate_robustness validation \
+  --operator "$USER" --evidence-root "$PHASE08_V2_ROOT"
+
+ros2 run ros_esc validate_robustness reproducibility \
+  --operator "$USER" --evidence-root "$PHASE08_V2_ROOT"
+
+ros2 run ros_esc validate_robustness report \
+  --operator "$USER" --evidence-root "$PHASE08_V2_ROOT"
+```
+
+The declared budget is 10 activation, 30 tuning, 20 new hidden holdout, 50
+additional unique validation, and 10 targeted reproducibility runs. A failed
+activation stage stops tuning; a failed holdout stops the additional
+validation and repeat stages. Every completed or failed attempt remains
+evidence. No stage may retune after freeze or weaken a gate.
 
 ## Stop a run
 

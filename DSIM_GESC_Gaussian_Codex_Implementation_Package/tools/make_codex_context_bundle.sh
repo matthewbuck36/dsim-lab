@@ -9,10 +9,25 @@ cd "$ROOT"
 {
   echo "# DSIM Codex Context Bundle"
   echo
+  echo "## Repository agent instructions"
+  if [[ -s AGENTS.md ]]; then
+    sed -n '1,260p' AGENTS.md
+  else
+    echo "AGENTS.md is missing."
+  fi
+  echo
   echo "## Git"
   git status --short --branch
   echo
   git log -5 --oneline
+  echo
+  echo "### Unstaged diff"
+  git diff --stat
+  git diff --name-only
+  echo
+  echo "### Staged diff"
+  git diff --cached --stat
+  git diff --cached --name-only
   echo
   echo "## Repository tree (filtered)"
   find . \
@@ -39,6 +54,13 @@ cd "$ROOT"
   echo
   echo "## Implementation handoffs"
   find docs/codex/gesc_gaussian/handoffs -maxdepth 1 -type f -name 'phase_*_handoff.md' -print 2>/dev/null | sort || true
+  echo
+  echo "## Live phase statuses"
+  while IFS= read -r f; do
+    echo
+    echo "### $f"
+    sed -n '1,260p' "$f"
+  done < <(find docs/codex/gesc_gaussian/status -maxdepth 1 -type f -name 'phase_*_status.md' -print 2>/dev/null | sort)
   echo
   echo "## Phase checkpoints"
   find docs/codex/gesc_gaussian/checkpoints -maxdepth 1 -type f -name 'phase_*_checkpoint.txt' -print 2>/dev/null | sort || true

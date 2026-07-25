@@ -1341,3 +1341,86 @@ sha256=b1531988de3eb650fbced657555532baf1eb66056c0203dd21908c4def8f093e
 
 No launch default, cost sign/unit, public topic, legacy behavior, or physical
 semantics changed.
+
+## Phase 08 staged-validation amendment (2026-07-25)
+
+This documentation-only amendment retires the 519-run pass repeated three
+times as a future acceptance design and preserves every v1 command/result
+above as historical evidence. No ROS build, pytest suite, Gazebo run, bag
+recording, parameter freeze, acceptance gate, or tag was executed for this
+amendment.
+
+The approved v2 plan declares exactly 120 runs: 10 activation, 30 tuning
+(three candidates over the same ten cases), 20 new hidden holdouts, 50
+additional unique validation cases, and 10 targeted reproducibility repeats.
+The installed `validate_robustness` command remains the historical v1
+implementation until the v2 interface and scenario files are implemented and
+tested.
+
+Documentation checks run for this amendment:
+
+```bash
+DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh 08 plan
+DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh 08 implement
+git diff --check
+```
+
+Exact outcomes:
+
+```text
+Phase 08 plan context is complete.
+Phase 08 implement context is complete.
+git diff --check: pass
+```
+
+`validate_required_docs.sh` also reported
+`All Phase 00 audit documents exist.` Do not infer a runtime or behavioral pass
+from these documentation/context checks.
+
+## Compaction-safe context-retention hardening (2026-07-25)
+
+The repository now carries live execution state between the saved plan and
+final handoff. This change added root `AGENTS.md`, a phase-status template and
+initializer, required Implement-context status validation, semantic milestone
+checkpoints, post-compaction recovery instructions, and live-status content in
+the context bundle. All Implement prompts now require live status updates,
+bounded logs/commands, milestone checkpoints, and repository-based recovery.
+
+Commands run:
+
+```bash
+bash -n \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/init_phase_status.sh \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/checkpoint_phase.sh \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/make_codex_context_bundle.sh \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh
+
+DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/init_phase_status.sh 08
+DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh 08 plan
+DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh 08 implement
+DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_required_docs.sh
+DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/checkpoint_phase.sh 08
+DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/make_codex_context_bundle.sh \
+  /home/mattb/dsim-lab /tmp/dsim_phase08_context_bundle.txt
+git diff --check
+```
+
+Exact results:
+
+```text
+shell syntax checks: pass
+existing Phase 08 status non-overwrite check: pass
+fresh temporary-repository Phase 09 status initialization: pass
+fresh status second-call preservation: pass
+invalid phase 11 exit: 2
+Phase 08 plan context is complete.
+Phase 08 implement context is complete.
+All Phase 00 audit documents exist.
+Phase 08 checkpoint written with plan/status hashes and live-status snapshot.
+context bundle contains AGENTS.md and Phase 08 live status/recovery sections.
+git diff --check: pass
+```
+
+No ROS build, pytest suite, Gazebo run, bag recording, parameter freeze,
+acceptance gate, physical command, commit, or tag was executed by this
+documentation/tooling hardening.

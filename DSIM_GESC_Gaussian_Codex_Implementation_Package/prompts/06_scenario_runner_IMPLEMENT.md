@@ -12,9 +12,10 @@ Read:
 - `docs/codex/gesc_gaussian/knowledge_bridge_phase_00_05.md`
 - every previous phase handoff, including `phase_05_5_handoff.md`.
 
-Before editing, run:
+Before editing, initialize the live status, verify it against Git, and run:
 
 ```bash
+DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/init_phase_status.sh 06
 DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh 06 implement
 ```
 
@@ -23,6 +24,13 @@ claims against the current repository and prior handoffs. Apply the three-level
 policy in `07_CODEX_WORKFLOW_AND_CONTEXT_RETENTION.md`: stop for Level A;
 document and test a local Level B correction; complete evidence and report a
 Level C acceptance failure without weakening the gate.
+
+Long-run continuity:
+- Maintain `docs/codex/gesc_gaussian/status/phase_06_status.md` throughout execution.
+- After each verified milestone, record exact evidence and run `checkpoint_phase.sh 06`.
+- After compaction or interruption, reread the plan/status, inspect Git status and diff, and resume from the next incomplete criterion.
+- Bound long commands and retain verbose logs by path rather than in chat.
+- Do not repeat a recorded failed approach or restructure validated milestone work without failing-test evidence.
 
 Rules:
 1. Follow the repository's existing conventions exactly.

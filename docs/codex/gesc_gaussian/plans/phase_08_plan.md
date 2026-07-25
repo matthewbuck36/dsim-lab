@@ -2,15 +2,67 @@
 
 Target save path: `docs/codex/gesc_gaussian/plans/phase_08_plan.md`
 
+## Amendment 1 — staged validation v2
+
+Approved on 2026-07-25 after Phase 08 v1 exposed an unreachable supervisor
+activation contract, an unsuitable instantaneous goal-score dwell, zero escape
+attempts in the 81-run sweep, 0/12 controller holdout success, and a safely
+stopped first full pass.
+
+The former 519-run pass repeated three times is retired for all future
+acceptance work. Its code, frozen C8 profile, parameter-selection file, partial
+run directories, and observed failure results are immutable historical v1
+evidence. They must not be resumed, overwritten, relabeled, or counted toward
+v2 acceptance.
+
+The amended empirical budget is exactly 120 declared runs:
+
+```text
+10 activation
+30 tuning (3 candidates x the same 10 cases)
+20 new hidden holdout
+50 additional unique validation
+10 reproducibility repeats
+---
+120 total
+```
+
+The 20 holdouts plus 50 additional unique cases form a 70-run acceptance
+denominator. The ten repeats test reproducibility and do not inflate the
+denominator. Failed infrastructure attempts are retained as evidence but do not
+replace a declared run.
+
+## Amendment 2 — compaction-safe execution
+
+Phase 08 v2 must maintain
+`docs/codex/gesc_gaussian/status/phase_08_status.md` throughout implementation.
+After every verified milestone or empirical stage, record completed work,
+decisions and rationale, exact tests/results, artifact paths, current Git state,
+remaining work, and actions not to repeat; then run `checkpoint_phase.sh 08`.
+
+After any context compaction, interruption, or model switch, reread
+`AGENTS.md`, this plan, and the live status; inspect Git status and the relevant
+diff; identify the next incomplete acceptance criterion; and continue only from
+that reconstructed repository state. Never rerun an expensive v1 or v2 batch
+merely to recover conversational context.
+
 ## Objective and scope
 
-Validate `robust_gaussian_v1` over a fixed, documented simulation envelope; tune only on a bounded training subset; reserve holdout cases; freeze one parameter set; execute three unchanged full-suite passes; calculate every gate in `06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md`; preserve all failed evidence; and create a simulation-ready tag only if every gate passes.
+Repair and prove the detector-to-supervisor activation and rotation-aware goal
+verification contracts; validate `robust_gaussian_v1` over a fixed,
+predeclared stratified simulation sample; tune only on a bounded training
+subset; reserve new holdout cases; freeze one parameter set; execute one unique
+validation sample plus a targeted reproducibility subset; calculate every gate
+in `06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md`; preserve all failed evidence; and
+create a simulation-ready tag only if every amended gate passes.
 
 In scope:
 
 - A prerequisite Phase 07.5 subphase adding deterministic simulation disturbances and collision evidence.
 - Existing Phase 06 scenario orchestration, Phase 05 recording/validation, and Phase 07 analysis reuse.
-- Nine training candidates, one frozen parameter set, a 12-run holdout, and three complete validation passes.
+- Ten activation proofs, three tuning candidates, one frozen parameter set, 20
+  new hidden holdouts, 50 additional unique validation runs, and ten targeted
+  reproducibility repeats.
 - Structured success or Level C failure reporting.
 
 Out of scope:
@@ -25,6 +77,10 @@ The required preflight passed on branch `feature/gesc-gaussian-robustness-v1` at
 ```text
 Phase 08 plan context is complete.
 ```
+
+That preflight and HEAD are historical v1 planning evidence. V2 implementation
+must rerun the live context validator and record its actual branch, HEAD, and
+worktree state before editing.
 
 ## Repository findings
 
@@ -90,15 +146,27 @@ level_map:
 ### Phase 08 validation
 
 - `ros2_ws/src/ros_esc/setup.py`
-  - Register `validate_robustness`.
+  - Keep `validate_robustness` as the sole validation command and extend it for
+    v2 activation, tuning, holdout, unique validation, reproducibility, and
+    partial/final reporting.
+- `ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py`
+  - Preserve v1 evidence compatibility, refuse to treat v1 `full-pass` results
+    as v2 acceptance, enforce the 120-run stage order and early-stop gates, and
+    calculate confidence intervals without adding a second validator.
 - `docs/codex/gesc_gaussian/test_commands.md`
-  - Record exact smoke, sweep, holdout, pass, analysis, gate, and tag commands.
+  - Preserve executed v1 commands as history and record exact v2 activation,
+    tuning, holdout, validation, reproducibility, analysis, gate, and tag
+    commands in a new section.
 - `docs/codex/gesc_gaussian/topic_dictionary.md`
-  - Document the test-only topics and offline validation command.
+  - Document the retired v1 interface and the implemented v2 stage contract
+    without describing planned commands as already available.
+- `docs/codex/gesc_gaussian/status/phase_08_status.md`
+  - Maintain verified milestone, decision, validation, artifact, Git, blocker,
+    do-not-repeat, and next-criterion state throughout v2 execution.
 
 No controller, supervisor, Gaussian-design, message-definition, Heavy-Ball, or physical source file is modified for tuning.
 
-## Files to create
+## Files to create or retain
 
 ### Phase 07.5 prerequisite
 
@@ -113,20 +181,41 @@ No controller, supervisor, Gaussian-design, message-definition, Heavy-Ball, or p
 
 ### Phase 08
 
-- `ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py`
-  - Sequences the existing runner and analyzer, enforces stage order and freeze hashes, calculates gates, and writes reports.
+Existing v1 scenario inputs to retain byte-for-byte:
+
 - `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_parameter_candidates.yaml`
 - `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_training.yaml`
 - `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_holdout.yaml`
 - `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_full_matrix.yaml`
 - `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_frozen_parameters.yaml`
-  - Generated after selection and committed before holdout/final execution.
+
+New v2 scenario inputs and tests:
+
+- `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml`
+- `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v2_training.yaml`
+- `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v2_holdout.yaml`
+- `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v2_validation.yaml`
+- `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v2_reproducibility.yaml`
+- `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v2_frozen_parameters.yaml`
+  - Generate the v2 frozen file after selection and commit it before holdout.
 - `ros2_ws/src/ros_esc/test/test_phase08_validation.py`
+
+Existing v1 durable evidence to retain:
+
 - `docs/codex/gesc_gaussian/validation/phase_08_parameter_selection.json`
-- `docs/codex/gesc_gaussian/validation/phase_08_run_manifest.json`
-- `docs/codex/gesc_gaussian/validation/phase_08_gate_results.json`
-- `docs/codex/gesc_gaussian/validation/phase_08_validation_report.md`
-- `docs/codex/gesc_gaussian/validation/phase_08_failure_report.md`, only if any gate fails.
+  - Retain as the historical v1 selection record; do not regenerate it.
+
+New closeout and v2 durable evidence:
+
+- `docs/codex/gesc_gaussian/validation/phase_08_v1_failure_closeout.md`
+  - Inventory and summarize the immutable failed/incomplete v1 evidence before
+    v2 implementation; do not mutate the v1 run root.
+- `docs/codex/gesc_gaussian/validation/phase_08_v2_parameter_selection.json`
+- `docs/codex/gesc_gaussian/validation/phase_08_v2_run_manifest.json`
+- `docs/codex/gesc_gaussian/validation/phase_08_v2_gate_results.json`
+- `docs/codex/gesc_gaussian/validation/phase_08_v2_validation_report.md`
+- `docs/codex/gesc_gaussian/validation/phase_08_v2_failure_report.md`, only if any
+  amended gate fails.
 - `docs/codex/gesc_gaussian/handoffs/phase_08_handoff.md`
 
 The implementation exceeds ten files because simulation disturbance injection, physical collision evidence, existing recording/analysis integration, scenario definitions, validation orchestration, tests, and durable reports have separate owners. Split it into Phase 07.5 support, Phase 08 harness, parameter freeze, and final evidence commits.
@@ -171,23 +260,27 @@ ros2 run ros_esc validate_robustness <subcommand>
   --evidence-root PATH
 ```
 
-Subcommands are `sweep`, `freeze`, `holdout`, `full-pass`, and `report`. `full-pass` requires `--pass-index 1|2|3`. The command refuses out-of-order stages, an unclean frozen checkout, changed scenario/frozen-file hashes, or a different Git commit after freeze.
+The currently installed v1 subcommands (`sweep`, `freeze`, `holdout`,
+`full-pass`, and `report`) are retained only to read and report historical v1
+evidence. They are not an acceptance path.
+
+V2 extends the same command owner with `activation`, `sweep`, `freeze`,
+`holdout`, `validation`, `reproducibility`, and `report`. Every v2 invocation
+requires workflow schema version 2 and a new evidence root such as
+`~/Experiments/GESC-Gaussian/runs/phase08_v2`. The command refuses mixed v1/v2
+evidence, out-of-order stages, an unclean frozen checkout, changed
+scenario/frozen-file hashes, or a different Git commit after freeze.
 
 ## Parameter sweep and selection
 
-Only four factor groups are tuned. All other algorithm values remain the defaults fixed by the freeze commit.
+Only the five listed values are tuned. All other algorithm values remain the
+defaults fixed by the freeze commit.
 
 | Candidate | Covariance scale | Depth scale | Exit sigma | Stall window | Minimum radial progress |
 |---|---:|---:|---:|---:|---:|
-| `C0` | 2.5 | 1.5 | 2.50 | 3.0 s | 0.05 m |
-| `C1` | 2.0 | 1.2 | 2.25 | 4.0 s | 0.03 m |
-| `C2` | 2.0 | 1.2 | 2.75 | 2.0 s | 0.08 m |
-| `C3` | 2.0 | 1.8 | 2.25 | 2.0 s | 0.08 m |
-| `C4` | 2.0 | 1.8 | 2.75 | 4.0 s | 0.03 m |
-| `C5` | 3.0 | 1.2 | 2.25 | 2.0 s | 0.08 m |
-| `C6` | 3.0 | 1.2 | 2.75 | 4.0 s | 0.03 m |
-| `C7` | 3.0 | 1.8 | 2.25 | 4.0 s | 0.03 m |
-| `C8` | 3.0 | 1.8 | 2.75 | 2.0 s | 0.08 m |
+| `V2-C0` | 2.5 | 1.5 | 2.50 | 3.0 s | 0.05 m |
+| `V2-C1` | 2.0 | 1.2 | 2.25 | 4.0 s | 0.03 m |
+| `V2-C2` | 3.0 | 1.8 | 2.75 | 2.0 s | 0.08 m |
 
 The mapped launch arguments are:
 
@@ -199,9 +292,25 @@ stall_window_sec
 minimum_radial_progress_m
 ```
 
-Each candidate runs the same nine training runs: three two-source starts, pure-repulsion escape, stalled assisted escape, fill merge, recenter/resume, one three-source case, and one seeded-Uniform-noise case. Total training execution: 81 recorded runs.
+Before tuning, ten activation runs must prove the corrected detector-supervisor
+and rotation-aware goal contracts. The fixed set covers easy one-source goals
+at low, medium, and high level; fill creation; pure escape; stalled assist;
+merge; recenter/resume; boundary/contact-negative behavior; and one
+noise/delay case. The declared lifecycle state/event must be observed in every
+designated case. Zero fills, zero escape attempts, or an unobserved required
+state/event stops the workflow before tuning.
 
-A candidate is eligible only if every run has complete recording/analysis, clean process/graph cleanup, valid collision evidence with no collision, and bounded completion. Among eligible candidates select lexicographically:
+Each candidate then runs the same ten training cases: three two-source starts,
+pure-repulsion escape, stalled assisted escape, fill merge, recenter/resume,
+one three-source case, one seeded-noise case, and one delay case. Total tuning
+execution is 30 recorded runs. The numerical values reused by `V2-C2` do not
+make the historical v1 `C8` profile a v2 winner; selection starts again from
+the corrected activation contract and new evidence.
+
+A candidate is eligible only if every run has complete recording/analysis,
+clean process/graph cleanup, valid collision evidence with no collision,
+bounded completion, and its designated lifecycle coverage. Among eligible
+candidates select lexicographically:
 
 1. Highest end-to-end success, defined as both controller goal and simulation ground truth.
 2. Highest local-escape success.
@@ -211,55 +320,77 @@ A candidate is eligible only if every run has complete recording/analysis, clean
 6. Lowest revisit rate.
 7. Lowest median convergence time, path length, then candidate ID.
 
-If no candidate is eligible, stop before freeze, classify the outcome as Level C, preserve all runs, write the failure report, and do not run holdout/final passes.
+If no candidate is eligible, or if all candidates again have zero fill/escape
+activation or zero end-to-end success, stop before freeze, classify the
+outcome as Level C, preserve all runs, write the failure report, and do not run
+holdout or validation.
 
-## Holdout and final matrix
+## Holdout, unique validation, and reproducibility
 
-The 12 holdout runs are not exposed during selection:
+The 20 v2 holdout runs are newly generated, sealed by manifest hash before
+tuning, and unopened by the validation command until after the freeze.
+"Hidden" is a selection-blind workflow rule, not a security boundary: their
+identities and outcomes cannot be used for candidate selection. The exposed v1
+holdout cases and results are excluded. The v2 set is allocated across ordered
+two-source levels, multi-source/close/overlap, wall/corner, noise/delay,
+saturation/timeout/safe-failure, and lifecycle
+escape/assist/merge/recenter/revisit families.
 
-- Eight two-source runs from two unseen intensity tuples, two unseen starts/headings, and two unseen seeds.
-- One four-source close/overlap run.
-- One corner-boundary run.
-- One seeded Gaussian-noise run.
-- One combined sensor/pose-delay run.
+Holdout is executed once after the freeze commit, without retuning. It must
+produce at least 18/20 end-to-end successes, complete/valid evidence for all 20
+runs, no collision, the declared state/event coverage, and no unexplained
+failsafe. A miss is an honest Level C result and stops the later 50-run and
+10-repeat stages.
 
-Holdout is executed once after the freeze commit. Its outcome is reported without retuning. Behavioral failure does not change parameters or code and does not suppress the final evidence collection; only cleanup contamination, unreadable artifacts, invalid collision evidence, or loss of the frozen checkout stops execution.
+The holdout plus the 50 additional unique validation runs must meet this
+predeclared allocation:
 
-Each complete final pass contains 519 recorded scenarios:
+| Family | Hidden holdout | Additional validation | Unique total | Repeats |
+|---|---:|---:|---:|---:|
+| All 25 ordered two-source level pairs, one balanced case each | 7 | 18 | 25 | 2 |
+| Multi-source, close, and overlap | 3 | 6 | 9 | 2 |
+| Wall and corner | 2 | 6 | 8 | 1 |
+| Noise and delay | 2 | 6 | 8 | 1 |
+| Saturation, timeout, and safe failure | 2 | 6 | 8 | 1 |
+| Escape, assist, merge, recenter, and revisit lifecycle | 4 | 8 | 12 | 3 |
+| **Total** | **20** | **50** | **70** | **10** |
 
-| Group | Runs |
-|---|---:|
-| Existing robust/legacy recorded smoke | 2 |
-| Ordered two-source levels: 25 combinations × 5 starts × 3 seeds | 375 |
-| Three- and four-source: 2 cases × 3 starts × 3 seeds | 18 |
-| Overlap and close-minimum: 2 cases × 3 starts × 3 seeds | 18 |
-| Wall and corner boundary: 2 cases × 2 starts × 3 seeds | 12 |
-| Uniform, Gaussian, sensor delay, pose delay, combined delay | 27 |
-| Linear/angular saturation cases | 18 |
-| Pure escape, assisted escape, merge, recenter | 12 |
-| Multiple-prior-fill/revisit case | 3 |
-| Legacy ordered-level regression: 25 combinations × 1 start × 1 seed | 25 |
-| Gaussian, affine, and recenter ablation diagnostics | 9 |
+Starts, headings, and seeds are balanced across the allocation and recorded in
+the immutable v2 manifest. This is a stratified empirical sample, not an
+exhaustive Cartesian-product proof.
 
-The required robust acceptance denominator is 483 runs per pass. Smoke, legacy comparator, and ablation runs are reported separately. Three passes execute 1,557 scenarios with identical code, parameter file, scenario hashes, and deterministic seeds.
+After all unique gates pass, repeat ten predeclared cases selected across the
+six families. Repeats use the same source, freeze file, scenario definition,
+start, seed, and environment. They are reported separately and never added to
+the 70-run success denominator.
 
 ## Acceptance calculation
 
-Calculate every gate separately for each pass and over the pooled three-pass evidence. Every pass must pass; pooled success cannot hide a failed pass.
+Calculate gates over the 70 unique cases and report observed rates with
+two-sided 95% Wilson score confidence intervals overall and by family. Small-family
+intervals are descriptive; they do not replace the predeclared point-estimate
+gates. Reproducibility is a separate ten-run gate.
 
 1. Functional unit/integration tests all pass; repository-wide lint does not worsen from the documented inherited baseline.
-2. Every required run passes Phase 05 completeness and Phase 07 analysis completeness.
-3. Collision evidence is valid for every required run and contains zero non-ground contacts.
-4. Local-escape success is successful escape attempts divided by all valid observed escape attempts and is at least 95%; designated escape cases must actually exercise their declared state/event coverage.
-5. End-to-end goal success is runs with both controller success and simulation-ground-truth success divided by all 483 required robust runs and is at least 90%.
-6. Every required family has at least 80% end-to-end goal success.
-7. Median successful escape time is at most 20 seconds.
-8. 95th-percentile successful escape time is at most 45 seconds.
-9. Median valid post-fill orbit count is at most 1.5.
-10. Every run terminates normally or through a recorded safe algorithm timeout; no wall timeout, orphan, indefinite circle, or missing terminal evidence is permitted.
-11. Revisit rate is successful goal runs with at least one active fill and `revisit_count > 0`, divided by successful goal runs with valid fill/revisit evidence; it must be below 5%.
-12. Passes 1, 2, and 3 all pass without source, parameter, scenario, or freeze-hash changes.
-13. Only after gates 1–12 pass, create the annotated tag.
+2. All ten activation proofs pass before any tuning.
+3. The new 20-run holdout passes its 18/20 early gate before additional validation.
+4. Every required run passes Phase 05 completeness and Phase 07 analysis completeness.
+5. Collision evidence is valid for every required run and contains zero non-ground contacts.
+6. Local-escape success is successful escape attempts divided by all valid observed escape attempts and is at least 95%; designated escape cases must actually exercise their declared state/event coverage.
+7. End-to-end goal success is runs with both controller success and simulation-ground-truth success divided by all 70 unique required runs and is at least 90%.
+8. Every required family has at least 80% end-to-end goal success.
+9. Median successful escape time is at most 20 seconds.
+10. 95th-percentile successful escape time is at most 45 seconds.
+11. Median valid post-fill orbit count is at most 1.5.
+12. Every run terminates normally or through a recorded safe algorithm timeout; no wall timeout, orphan, indefinite circle, or missing terminal evidence is permitted.
+13. Revisit rate is successful goal runs with at least one active fill and `revisit_count > 0`, divided by successful goal runs with valid fill/revisit evidence; it must be below 5%.
+14. All ten reproducibility repeats preserve goal/timeout/failsafe/collision
+    categorical outcomes and required state/event coverage. Relative to the
+    corresponding unique run, escape and convergence times differ by no more
+    than the greater of 2 seconds or 10%, path length by no more than the
+    greater of 0.25 m or 10%, orbit count by no more than 0.25, and final
+    goal-distance by no more than 0.10 m.
+15. Only after gates 1–14 pass, create the annotated tag.
 
 Unsupported or invalid metric status fails the corresponding gate; it is never converted to zero or excluded silently.
 
@@ -269,27 +400,53 @@ Unsupported or invalid metric status fails the corresponding gate; it is never c
 - Scenario-schema version 1 files retain their current parsing, expansion, deterministic identity, and behavior. Phase 08 uses schema version 2.
 - The relay and contact plugins are simulation-only and default off.
 - Canonical topics remain the recorded source of algorithm behavior; validation-only original/delayed topics are additional evidence.
-- No frozen value becomes a global launch default. `phase08_frozen_parameters.yaml` is applied only by the Phase 08 validation command.
+- No frozen value becomes a global launch default. The historical
+  `phase08_frozen_parameters.yaml` remains v1-only;
+  `phase08_v2_frozen_parameters.yaml` is applied only by the v2 validation
+  command.
 - The freeze consists of the exact Git commit, the frozen override file, scenario hashes, launch/config hashes, and resolved parameter snapshots.
 - Physical integration receives no inferred topic or calibration migration.
 
 ## Implementation sequence
 
-1. Save this plan verbatim and run `validate_phase_context.sh 08 implement`.
-2. Implement Phase 07.5 disturbance/contact support in existing owners, add its tests and runtime probes, write `phase_07_5_handoff.md`, and commit:
-   `phase 07.5: add deterministic validation disturbances and collision evidence`.
-3. Rerun the updated Phase 08 context validator. Stop if the prerequisite handoff or live support probes are incomplete.
-4. Implement the Phase 08 orchestration, candidate and scenario files, gate evaluator, tests, and documentation. Commit:
-   `phase 08a: add robustness validation harness and suites`.
-5. Build and run the retained functional suite, new tests, schema dry-runs, and recorded robust/legacy smoke.
-6. Execute all 81 training runs, analyze every run, and generate `phase_08_parameter_selection.json`.
-7. Select the winner by the frozen criterion; create `phase08_frozen_parameters.yaml`, record source/config/scenario hashes, and commit:
-   `phase 08b: freeze robust Gaussian simulation parameters`.
-8. Require a clean worktree at that freeze commit. Execute holdout once without retuning.
-9. Execute full passes 1, 2, and 3 consecutively. Continue after ordinary Level C behavioral failures; stop immediately for cleanup contamination or corrupted evidence.
-10. Generate the run manifest, per-pass/pooled gate JSON, Markdown report, and conditional failure report.
-11. If any gate fails, do not create a tag. Record the smallest evidence-supported next engineering phase.
-12. If gates 1–12 all pass and the tag does not already exist, tag the tested freeze commit without force or rewrite:
+After every numbered milestone that changes code or produces evidence, update
+the live Phase 08 status from observed results, inspect the bounded diff, and
+run `checkpoint_phase.sh 08`. A checkpoint does not replace the exact
+validation record or authorize a commit.
+
+1. Preserve and close v1: inventory its hashes and partial results, write the
+   v1 failure closeout, and do not resume or mutate its evidence root.
+2. Save this amendment and run `validate_phase_context.sh 08 implement`.
+3. Confirm the completed Phase 07.5 support and its handoff still pass live
+   probes.
+4. Repair the detector-to-supervisor activation and rotation-aware goal
+   verification contracts in their existing owners. Add focused unit,
+   integration, and representative bag-replay regression tests before running
+   new simulation batches.
+5. Extend the existing Phase 08 orchestration, v2 scenario files, gate
+   evaluator, tests, and documentation. Keep v1 reporting readable and commit:
+   `phase 08a: add staged robustness validation v2`.
+6. Build and run the retained functional suite, new regression tests, schema
+   dry-runs, and recorded robust/legacy smoke.
+7. Execute all ten activation runs. If any required activation/state/event gate
+   fails, preserve evidence and stop before tuning.
+8. Execute the three candidates over the same ten training cases (30 runs),
+   analyze every run, and generate `phase_08_v2_parameter_selection.json`.
+9. Select the winner by the frozen criterion; create
+   `phase08_v2_frozen_parameters.yaml`, record source/config/scenario hashes,
+   and commit: `phase 08b: freeze staged robust Gaussian parameters`.
+10. Require a clean worktree at that freeze commit. Execute the 20 new hidden
+    holdouts once without retuning. Stop later stages if the early gate fails.
+11. Execute the 50 additional unique validation cases only after the holdout
+    passes. Evaluate the 70-run unique gates.
+12. Execute ten targeted reproducibility repeats only after the unique gates
+    pass.
+13. Generate the run manifest, gate JSON, confidence intervals, Markdown
+    report, and conditional failure report.
+14. If any gate fails, do not create a tag. Record the smallest
+    evidence-supported next engineering phase.
+15. If gates 1–14 all pass and the tag does not already exist, tag the tested
+    freeze commit without force or rewrite:
 
 ```bash
 git tag -a gesc-gaussian-simulation-ready-v1 <freeze-commit> \
@@ -297,7 +454,7 @@ git tag -a gesc-gaussian-simulation-ready-v1 <freeze-commit> \
 ```
 
 Do not push the tag automatically.
-13. Write `phase_08_handoff.md`, update durable test evidence, and commit:
+16. Write `phase_08_handoff.md`, update durable test evidence, and commit:
    `phase 08: validate and freeze robust Gaussian profile`.
 
 ## Tests and commands
@@ -305,6 +462,7 @@ Do not push the tag automatically.
 Core validation:
 
 ```bash
+DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/init_phase_status.sh 08
 DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh 08 implement
 
 source /opt/ros/humble/setup.bash
@@ -334,42 +492,69 @@ python3 -m pytest -q -rs \
   src/ros_esc/test/test_escape_recenter.py
 ```
 
-Scenario dry-runs and prerequisite runtime:
+The focused suite must include detector-supervisor activation, goal-verification
+dwell, and representative v1-bag replay regressions before simulation
+acceptance begins.
+
+Scenario dry-runs:
 
 ```bash
 ros2 run ros_esc run_scenario \
-  src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_validation_support.yaml \
-  --operator phase08 --dry-run --summary-output /tmp/phase08_support_dry.yaml
+  src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml \
+  --operator phase08_v2 --dry-run \
+  --summary-output /tmp/phase08_v2_activation_dry.yaml
 
 ros2 run ros_esc run_scenario \
-  src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_full_matrix.yaml \
-  --operator phase08 --dry-run --summary-output /tmp/phase08_full_dry.yaml
+  src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v2_training.yaml \
+  --operator phase08_v2 --dry-run \
+  --summary-output /tmp/phase08_v2_training_dry.yaml
+
+ros2 run ros_esc run_scenario \
+  src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v2_holdout.yaml \
+  --operator phase08_v2 --dry-run \
+  --summary-output /tmp/phase08_v2_holdout_dry.yaml
+
+ros2 run ros_esc run_scenario \
+  src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v2_validation.yaml \
+  --operator phase08_v2 --dry-run \
+  --summary-output /tmp/phase08_v2_validation_dry.yaml
+
+ros2 run ros_esc run_scenario \
+  src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v2_reproducibility.yaml \
+  --operator phase08_v2 --dry-run \
+  --summary-output /tmp/phase08_v2_reproducibility_dry.yaml
 ```
 
-The second dry-run must resolve exactly 519 runs and no unsupported Phase 08 record.
+The files must resolve to 10 activation, 10 training cases per candidate, 20
+holdout, 50 additional unique validation, and 10 reproducibility cases. The
+orchestrator expands the training set over three candidates for 30 executions.
 
-Execution:
+Planned v2 execution, available only after the existing command owner is
+implemented and tested:
 
 ```bash
+PHASE08_V2_ROOT=~/Experiments/GESC-Gaussian/runs/phase08_v2
+
+ros2 run ros_esc validate_robustness activation \
+  --operator phase08_v2 --evidence-root "$PHASE08_V2_ROOT"
+
 ros2 run ros_esc validate_robustness sweep \
-  --operator phase08 --evidence-root ~/Experiments/GESC-Gaussian/runs/phase08
+  --operator phase08_v2 --evidence-root "$PHASE08_V2_ROOT"
 
 ros2 run ros_esc validate_robustness freeze \
-  --operator phase08 --evidence-root ~/Experiments/GESC-Gaussian/runs/phase08
+  --operator phase08_v2 --evidence-root "$PHASE08_V2_ROOT"
 
 ros2 run ros_esc validate_robustness holdout \
-  --operator phase08 --evidence-root ~/Experiments/GESC-Gaussian/runs/phase08
+  --operator phase08_v2 --evidence-root "$PHASE08_V2_ROOT"
 
-for pass_index in 1 2 3; do
-  ros2 run ros_esc validate_robustness full-pass \
-    --pass-index "$pass_index" \
-    --operator phase08 \
-    --evidence-root ~/Experiments/GESC-Gaussian/runs/phase08
-done
+ros2 run ros_esc validate_robustness validation \
+  --operator phase08_v2 --evidence-root "$PHASE08_V2_ROOT"
+
+ros2 run ros_esc validate_robustness reproducibility \
+  --operator phase08_v2 --evidence-root "$PHASE08_V2_ROOT"
 
 ros2 run ros_esc validate_robustness report \
-  --operator phase08 \
-  --evidence-root ~/Experiments/GESC-Gaussian/runs/phase08
+  --operator phase08_v2 --evidence-root "$PHASE08_V2_ROOT"
 ```
 
 Final checks:
@@ -398,8 +583,14 @@ Report exact focused/global/skipped totals and compare global failures against t
 - Stop before tuning if measured sensor/pose delays do not match configured values within one 100 Hz relay period plus scheduler tolerance.
 - Stop immediately on failed cleanup, orphaned processes/nodes, duplicate canonical publishers, corrupted bags, missing frozen hashes, changed freeze commit, or insufficient disk capacity.
 - A bounded local runtime correction is Level B only when it preserves architecture and gates; record its assumption, evidence, files, and tests.
-- Performance, holdout, or final gate misses are Level C. Finish the declared safe evidence collection, preserve every run, generate the structured failure report, and do not retune or weaken thresholds.
-- Runtime is substantial: 81 training runs, 12 holdout runs, and 1,557 final-pass runs, with recorder parameter snapshots and raw sqlite3 storage. Verify storage and uninterrupted execution capacity before starting each stage.
+- Performance, holdout, or final gate misses are Level C. Finish the current
+  declared stage, preserve every run, generate the structured failure report,
+  and obey the predeclared early stop before any later expensive stage. Do not
+  retune or weaken thresholds.
+- Runtime is bounded but still material: 10 activation, 30 tuning, 20 holdout,
+  50 additional unique validation, and 10 reproducibility runs. Verify storage
+  and uninterrupted execution capacity before each stage; retries remain
+  evidence and do not silently replace declared runs.
 
 ## Implementation-time verification
 
@@ -410,7 +601,18 @@ Report exact focused/global/skipped totals and compare global failures against t
 - Verify schema-version-1 case keys remain unchanged and schema-version-2 keys include world, disturbance, frozen parameters, and seed.
 - Verify all validation topics are recorded and original plus delayed stamps can be paired.
 - Verify Phase 07 analysis remains read-only and preserves raw bag hashes.
-- Verify the dry-run counts: 81 training runs, 12 holdout runs, and 519 runs per final pass.
-- Verify `phase08_frozen_parameters.yaml` and the freeze commit remain byte-identical during holdout and all three passes.
+- Verify the dry-run counts: 10 activation, 10 cases expanded over three
+  candidates, 20 holdout, 50 additional unique validation, and 10
+  reproducibility runs.
+- Verify the unique manifest meets the 25/9/8/8/8/12 family allocation and that
+  the 20 plus 50 unique case IDs have no duplicates.
+- Verify `phase08_v2_frozen_parameters.yaml` and the freeze commit remain
+  byte-identical during holdout, validation, and reproducibility.
+- Verify the historical v1 scenario, freeze, parameter-selection, and run
+  evidence hashes remain unchanged and are not referenced by the v2 manifest.
 - Verify the proposed tag name is absent before creation; never overwrite an existing tag.
+- Verify the live status agrees with Git, retained artifacts, and the next
+  incomplete acceptance criterion before and after every compaction.
+- Verify verbose logs and large run artifacts are retained at recorded paths
+  rather than copied into the live status or conversation.
 - Treat current code, runtime graph, tests, and completed handoffs as authoritative if any older audit or memory statement differs.

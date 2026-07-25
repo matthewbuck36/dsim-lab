@@ -579,15 +579,23 @@ ros2 run ros_esc validate_robustness <subcommand>
   --evidence-root PATH
 ```
 
-Subcommands are `sweep`, `freeze`, `holdout`, `full-pass`, and `report`;
-`full-pass` additionally requires `--pass-index 1|2|3`. The command refuses
-out-of-order execution. Holdout and full passes require a clean committed
-freeze, and all later passes compare the exact commit/tree and input hashes.
+The currently installed interface is v1: `sweep`, `freeze`, `holdout`,
+`full-pass`, and `report`, with `--pass-index 1|2|3` for `full-pass`. Its fixed
+arithmetic is 9 candidates x 9 training runs = 81, 12 holdouts, and 519 runs
+per full pass. That interface and its outputs are retained only for historical
+v1 evidence. Do not execute or resume it for a new acceptance claim.
 
-The fixed arithmetic is 9 candidates x 9 training runs = 81, 12 holdout runs,
-and 519 runs per full pass. Smoke, legacy, and three ablation groups contain
-36 diagnostics; the acceptance denominator is the remaining 483 robust runs
-per pass.
+The approved v2 interface is planned, not yet installed: `activation`,
+`sweep`, `freeze`, `holdout`, `validation`, `reproducibility`, and `report`.
+It uses workflow schema version 2 and a separate evidence root. Its arithmetic
+is 10 activation + 30 tuning + 20 new hidden holdout + 50 additional unique
+validation + 10 targeted repeats = 120 declared runs. Holdout plus additional
+validation form the 70-run unique acceptance denominator; repeats remain
+separate.
+
+The v2 command must refuse mixed v1/v2 evidence and out-of-order execution.
+Holdout, validation, and reproducibility require a clean committed freeze and
+must compare the exact commit/tree, frozen profile, and input hashes.
 
 Only these launch overrides are candidates for the Phase 08 profile file:
 
@@ -599,8 +607,9 @@ Only these launch overrides are candidates for the Phase 08 profile file:
 | `stall_window_sec` | escape stall observation window |
 | `minimum_radial_progress_m` | minimum progress within the stall window |
 
-The generated `phase08_frozen_parameters.yaml` is applied only through the
-validation harness. It does not change a direct-launch or legacy default.
+The generated historical `phase08_frozen_parameters.yaml` is v1-only.
+The planned `phase08_v2_frozen_parameters.yaml` is applied only through the
+v2 validation harness. Neither changes a direct-launch or legacy default.
 
 ## Phase 07 offline analysis interface
 

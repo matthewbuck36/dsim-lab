@@ -37,10 +37,14 @@ PACKAGE="$ROOT/DSIM_GESC_Gaussian_Codex_Implementation_Package"
 DOCS="$ROOT/docs/codex/gesc_gaussian"
 
 required=(
+  "$ROOT/AGENTS.md"
   "$PACKAGE/START_HERE.md"
   "$PACKAGE/00_MASTER_IMPLEMENTATION_PLAN.md"
   "$PACKAGE/01_RESEARCH_DECISIONS_AND_ASSUMPTIONS.md"
   "$PACKAGE/07_CODEX_WORKFLOW_AND_CONTEXT_RETENTION.md"
+  "$PACKAGE/templates/codex_phase_status.md"
+  "$PACKAGE/tools/init_phase_status.sh"
+  "$PACKAGE/tools/checkpoint_phase.sh"
 )
 
 if (( PHASE_NUMBER > 0 )); then
@@ -70,7 +74,10 @@ if (( PHASE_NUMBER == 8 )) && [[ "$STAGE" == "implement" ]]; then
 fi
 
 if [[ "$STAGE" == "implement" ]]; then
-  required+=("$DOCS/plans/phase_${PHASE}_plan.md")
+  required+=(
+    "$DOCS/plans/phase_${PHASE}_plan.md"
+    "$DOCS/status/phase_${PHASE}_status.md"
+  )
 fi
 
 missing=0
@@ -84,6 +91,42 @@ done
 if (( missing != 0 )); then
   echo "Phase $PHASE $STAGE context validation failed." >&2
   exit 1
+fi
+
+for path in \
+  "$PACKAGE/tools/init_phase_status.sh" \
+  "$PACKAGE/tools/checkpoint_phase.sh"; do
+  if [[ ! -x "$path" ]]; then
+    echo "Required context tool is not executable: $path" >&2
+    missing=1
+  fi
+done
+
+if (( missing != 0 )); then
+  echo "Phase $PHASE $STAGE context validation failed." >&2
+  exit 1
+fi
+
+if [[ "$STAGE" == "implement" ]]; then
+  status="$DOCS/status/phase_${PHASE}_status.md"
+  headings=(
+    "## Verified repository state"
+    "## Current milestone"
+    "## Validation checkpoints"
+    "## Attempts not to repeat"
+    "## Remaining work"
+    "## Compaction recovery"
+  )
+  for heading in "${headings[@]}"; do
+    if ! grep -Fqx "$heading" "$status"; then
+      echo "Live status is missing required heading: $heading" >&2
+      missing=1
+    fi
+  done
+  if (( missing != 0 )); then
+    echo "Phase $PHASE $STAGE context validation failed." >&2
+    exit 1
+  fi
 fi
 
 echo "Phase $PHASE $STAGE context is complete."

@@ -19,8 +19,10 @@ before starting the Implement chat.
 | 10 | `10_documentation_PLAN.md` | `docs/codex/gesc_gaussian/plans/phase_10_plan.md` | `10_documentation_IMPLEMENT.md` |
 
 Each prompt runs the phase-aware context preflight. A Plan chat requires the
-Phase 00 audit documents and all prior handoffs after Phase 00. An Implement
-chat additionally requires the saved Plan artifact for its own phase.
+Phase 00 audit documents and all prior handoffs after Phase 00. Before an
+Implement preflight, initialize or resume
+`docs/codex/gesc_gaussian/status/phase_XX_status.md`. The Implement check
+requires both the saved Plan and live status for its own phase.
 
 For Phases 06-10 the preflight also requires:
 
@@ -37,7 +39,7 @@ current-phase plan, then applies the Level A/B/C contradiction policy in
 
 Phase 00 must not be skipped. It converts generic logical names in this package into the real repository's names and file paths.
 
-On the current branch, Phases 00-05 and the Phase 05.5 knowledge consolidation
-are complete. The next workflow step is `06_scenario_runner_PLAN.md`; save its
-final response as `docs/codex/gesc_gaussian/plans/phase_06_plan.md` before
-opening the Phase 06 Implement chat.
+On the current branch, Phases 00-07.5 are implemented. Phase 08 v1 is retained
+as failed/incomplete historical evidence, and the staged v2 plan is saved. The
+next workflow step is `08_validation_IMPLEMENT.md`, beginning from the saved
+Phase 08 plan, current live status, and current Git state.

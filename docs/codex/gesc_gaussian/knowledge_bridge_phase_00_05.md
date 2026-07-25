@@ -400,8 +400,8 @@ ros2 run ros_esc validate_run \
 - Parameter snapshotting can add about 90 seconds while motion remains gated.
 - No automated scenario infrastructure exists yet.
 - No physical adapters or authorization have been established.
-- Final tuning, robustness rates, holdout behavior, and repeated full-suite
-  results remain Phase 08 work.
+- Final tuning, robustness rates, new hidden holdout behavior, one stratified
+  validation sample, and targeted reproducibility results remain Phase 08 work.
 
 ## Lessons from Phase 04 and Phase 05 interruptions
 
@@ -441,9 +441,13 @@ ros2 run ros_esc validate_run \
   timestamps/bags, mark critical missing data, synchronize explicitly, analyze
   successful and failed runs, and compute escape/state/fill/command/revisit/
   saturation metrics.
-- Phase 08: separate tuning and holdout scenarios, freeze one parameter set,
-  run the final matrix and three unchanged repetitions, report Level C failures,
-  and tag simulation-ready only if all declared gates pass.
+- Phase 08: prove activation in 10 runs; tune three candidates over the same
+  10 cases (30 runs); freeze one parameter set; run 20 new hidden holdouts, 50
+  additional unique validation cases, and 10 targeted repeats; report Level C
+  failures and two-sided 95% Wilson score confidence intervals; and tag
+  simulation-ready only if all declared gates pass. The 120-run v2 budget
+  replaces, but does not erase, the failed/incomplete historical
+  519-by-three v1 design.
 - Phase 09: require the simulation-ready gate and explicit authorization;
   inventory physical adapters, reuse the shared algorithm and Phase 05
   recording graph, and stop on any safety or architectural hard contradiction.
@@ -453,16 +457,18 @@ ros2 run ros_esc validate_run \
 
 ## Files every future chat reads first
 
-1. `DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md`
-2. `00_MASTER_IMPLEMENTATION_PLAN.md`
-3. `01_RESEARCH_DECISIONS_AND_ASSUMPTIONS.md`
-4. the phase-specific package specifications
-5. `docs/codex/gesc_gaussian/repo_audit.md`
-6. `docs/codex/gesc_gaussian/repo_map.md`
-7. `docs/codex/gesc_gaussian/interface_map.md`
-8. `docs/codex/gesc_gaussian/test_commands.md`
-9. `docs/codex/gesc_gaussian/implementation_sequence.md`
-10. this knowledge bridge
-11. all completed handoffs, including `phase_05_5_handoff.md`
-12. the saved plan for the current Implement phase
-13. current Git status/history and the live source/launch/tests in scope
+1. root `AGENTS.md`
+2. `DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md`
+3. `00_MASTER_IMPLEMENTATION_PLAN.md`
+4. `01_RESEARCH_DECISIONS_AND_ASSUMPTIONS.md`
+5. the phase-specific package specifications
+6. `docs/codex/gesc_gaussian/repo_audit.md`
+7. `docs/codex/gesc_gaussian/repo_map.md`
+8. `docs/codex/gesc_gaussian/interface_map.md`
+9. `docs/codex/gesc_gaussian/test_commands.md`
+10. `docs/codex/gesc_gaussian/implementation_sequence.md`
+11. this knowledge bridge
+12. all completed handoffs, including `phase_05_5_handoff.md`
+13. the saved plan for the current Implement phase
+14. `docs/codex/gesc_gaussian/status/phase_XX_status.md`
+15. current Git status/history and the live source/launch/tests in scope

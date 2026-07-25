@@ -70,17 +70,22 @@ For every phase:
 7. Stay on the same Git branch.
 8. Start a new Codex chat in implementation/goal mode.
 9. Paste the corresponding `*_IMPLEMENT.md` prompt.
-10. Let the implementation preflight verify the saved current plan, Phase 00
-    audit documents, and prior implementation handoffs.
-11. Require Codex to run the tests named in the prompt and write
+10. Initialize or resume
+    `docs/codex/gesc_gaussian/status/phase_XX_status.md`; verify it against Git,
+    then let the implementation preflight verify the saved plan, live status,
+    Phase 00 audit documents, and prior handoffs.
+11. Require Codex to update the live status and create a repository checkpoint
+    after every verified milestone.
+12. Require Codex to run the tests named in the prompt and write
     `docs/codex/gesc_gaussian/handoffs/phase_XX_handoff.md`.
-12. Commit the phase before beginning the next one.
+13. Close the live status and commit the phase before beginning the next one.
 
 Use the phases in numeric order. Do not skip Phase 00.
 
-Treat each new chat as fresh context. Experimental Codex memory may be useful,
-but the version-controlled audit documents, saved phase plan, implementation
-handoffs, current repository state, and Git history are the source of truth.
+Treat each new chat and every post-compaction continuation as fresh context.
+Experimental Codex memory may be useful, but `AGENTS.md`, the version-controlled
+audit documents, saved phase plan, live phase status, implementation handoffs,
+current repository state, and Git history are the source of truth.
 
 For Phases 06-10, every Plan and Implement chat must also read:
 
@@ -117,19 +122,19 @@ docs/codex/gesc_gaussian/plans/phase_00_plan.md
 The Phase 00 Implement chat must read and verify that file before creating the
 audit documents.
 
-## Current checkpoint after Phase 05.5
+## Current checkpoint at Phase 08
 
-Phases 00-05 are implemented. The next prompt for the current branch is:
+Phases 00-07.5 are implemented. Phase 08 v1 failed/incompletely executed and is
+retained as historical evidence. The amended staged Phase 08 v2 plan is saved.
+The next implementation prompt for the current branch is:
 
 ```text
-prompts/06_scenario_runner_PLAN.md
+prompts/08_validation_IMPLEMENT.md
 ```
 
-Before using it, read
-`docs/codex/gesc_gaussian/knowledge_bridge_phase_00_05.md` and
-`docs/codex/gesc_gaussian/handoffs/phase_05_5_handoff.md`. The Phase 00 section
-above remains the bootstrap procedure for a repository that has not completed
-the prior phases.
+Before using it, read the saved Phase 08 plan and
+`docs/codex/gesc_gaussian/status/phase_08_status.md`, then inspect Git state.
+Do not resume the retired v1 full-pass workflow.
 
 ---
 
@@ -157,10 +162,11 @@ the prior phases.
   objective and public architecture and does not weaken acceptance criteria.
   The handoff must record the original assumption, observed contradiction,
   exact correction, files, tests, and scope justification.
-- **Level C — acceptance or research failure:** finish the declared evidence
-  collection, report the failed gate honestly, preserve failed runs, and name
-  the smallest justified next step. Do not relabel failure as incomplete work
-  or weaken a threshold without a versioned justification.
+- **Level C — acceptance or research failure:** finish the current declared
+  stage, obey predeclared early-stop gates before later expensive stages,
+  report the failed gate honestly, preserve failed runs, and name the smallest
+  justified next step. Do not relabel failure as incomplete work or weaken a
+  threshold without a versioned justification.
 
 ## Test reporting contract
 

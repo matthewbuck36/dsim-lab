@@ -261,7 +261,8 @@ outputs on a recorded reference bag.
 
 ## Phase 08 - simulation validation and freeze
 
-Goal: run the documented robustness matrix, separate tuning from holdouts,
+Goal: repair and prove the activation/goal-verification contracts, run the
+documented staged robustness sample, separate tuning from new hidden holdouts,
 freeze one parameter set, and publish an honest acceptance report.
 
 Proposed durable output area:
@@ -272,6 +273,26 @@ Extend the Phase 06 runner and Phase 07 analysis; do not add another algorithm
 implementation. Produce scenario manifests, frozen parameters, machine-readable
 results, and a report. A failed gate must remain failed and must block Phase 09
 trials.
+
+The amended Phase 08 v2 budget is exactly 120 declared runs: 10 activation,
+30 tuning (three candidates over the same ten cases), 20 new hidden holdouts,
+50 additional unique validation cases, and 10 targeted reproducibility
+repeats. The 20 plus 50 unique cases form the 70-run acceptance denominator;
+repeats are reported separately. Run one predeclared stratified sample and
+report two-sided 95% confidence intervals rather than claiming exhaustive
+Cartesian coverage.
+
+The failed/incomplete v1 design of 81 training runs, 12 exposed holdouts, and
+three 519-run passes is historical evidence only. Preserve its scenario files,
+frozen profile, selection record, and run directories; do not resume,
+overwrite, or count them toward v2. Stop before later expensive stages when
+the activation or holdout early gate fails.
+
+Maintain `docs/codex/gesc_gaussian/status/phase_08_status.md` while Phase 08 is
+active. Update it and run `checkpoint_phase.sh 08` after every verified
+implementation milestone or empirical stage. After compaction or interruption,
+reconstruct state from the plan, status, Git diff, tests, and retained
+artifacts; do not repeat a batch merely to recover conversation context.
 The matrix must include the corrected runtime parameter-type startup gate and
 controlled shutdown-zero/clean-exit gate. The controller spawners use a
 30-second service-call timeout for bounded Gazebo startup latency; this is

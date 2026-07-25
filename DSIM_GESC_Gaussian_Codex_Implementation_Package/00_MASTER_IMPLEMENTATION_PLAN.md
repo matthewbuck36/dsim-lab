@@ -235,14 +235,22 @@ Establish a fixed parameter set and prove performance within a declared robustne
 
 1. Unit tests.
 2. Synthetic field tests.
-3. Single-scenario integration tests.
-4. Two-source full light-level matrix.
-5. Multi-source tests.
-6. Boundary tests.
-7. Noise/delay tests.
-8. Regression against legacy behavior.
-9. Three consecutive full-suite passes with fixed code and parameters.
-10. Tag the simulation-ready commit.
+3. Ten-run activation proof covering the intended supervisor, goal, fill,
+   escape, merge, recenter, collision, disturbance, and analysis lifecycle.
+4. Thirty-run bounded tuning stage: three candidates on the same ten cases.
+5. Freeze and commit one parameter set.
+6. Twenty new hidden holdouts; stop before later stages if this gate fails.
+7. Fifty additional unique stratified validation runs. Together with holdout,
+   these form the 70-run acceptance denominator and cover all 25 ordered
+   two-source level pairs plus multi-source, boundary, disturbance, constraint,
+   and lifecycle families.
+8. Ten fixed-profile reproducibility repeats selected across families.
+9. Regression against legacy behavior and a structured success/failure report.
+10. Tag the simulation-ready commit only if every amended gate passes.
+
+The empirical budget is 120 declared runs, replacing the retired 519-run pass
+repeated three times. The amended claim is over a predeclared stratified sample,
+not every start/seed Cartesian product.
 
 No physical trial before the gate in `06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md` is satisfied.
 

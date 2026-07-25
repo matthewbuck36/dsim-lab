@@ -44,8 +44,10 @@ The uncertain whiteboard ideas are resolved into the following implementation:
 - `05_DATA_COLLECTION_AND_ROSBAG_SPEC.md` — complete observability plan.
 - `06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md` — required testing and readiness criteria.
 - `prompts/` — copy/paste Plan and Implement prompts for Codex.
-- `templates/` — starting Plan, handoff, YAML, and data-contract templates.
-- `tools/` — repository-context validation and checkpoint helpers.
+- `templates/` — starting Plan, live-status, handoff, YAML, and data-contract
+  templates.
+- `tools/` — repository-context validation, status initialization, context
+  bundle, and milestone checkpoint helpers.
 - `source_material/` — supplied transcripts, audio, whiteboards, and consolidated decisions.
 
 ## Why the phases are separated
@@ -56,12 +58,15 @@ Each phase produces:
 
 1. A saved Plan artifact at
    `docs/codex/gesc_gaussian/plans/phase_XX_plan.md`.
-2. A limited, reviewable change set.
-3. Tests.
-4. A Git checkpoint.
-5. An implementation handoff at
+2. A continuously verified live status at
+   `docs/codex/gesc_gaussian/status/phase_XX_status.md`.
+3. A limited, reviewable change set.
+4. Tests and retained evidence paths.
+5. Milestone checkpoints and bounded Git commits.
+6. An implementation handoff at
    `docs/codex/gesc_gaussian/handoffs/phase_XX_handoff.md`.
 
-Together, the Phase 00 audits, current saved plan, prior implementation
-handoffs, repository state, and Git history carry context between fresh Codex
-chats. Do not rely on experimental memory for exact interfaces or decisions.
+Together, root `AGENTS.md`, the Phase 00 audits, current saved plan and live
+status, prior implementation handoffs, repository state, and Git history carry
+context between fresh Codex chats and context compactions. Do not rely on
+experimental memory for exact interfaces, decisions, or execution state.

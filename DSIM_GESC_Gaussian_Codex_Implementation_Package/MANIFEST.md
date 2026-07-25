@@ -1,6 +1,6 @@
 # Package Manifest
 
-Generated: 2026-07-17T00:44:25.190897
+Updated: 2026-07-25T16:35:31-07:00
 
 ## Files
 
@@ -50,12 +50,14 @@ Generated: 2026-07-17T00:44:25.190897
 - `source_material/whiteboard_switchable_cost_recenter.jpeg`
 - `templates/codex_phase_handoff.md`
 - `templates/codex_phase_plan.md`
+- `templates/codex_phase_status.md`
 - `templates/experiment_metadata.yaml`
 - `templates/repo_audit_output_template.md`
 - `templates/robust_gaussian_defaults.yaml`
 - `templates/scenario_example.yaml`
 - `templates/topic_manifest.yaml`
 - `tools/checkpoint_phase.sh`
+- `tools/init_phase_status.sh`
 - `tools/make_codex_context_bundle.sh`
 - `tools/validate_phase_context.sh`
 - `tools/validate_required_docs.sh`

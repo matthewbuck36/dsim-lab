@@ -8,6 +8,8 @@
 - Commit:
 - Working tree:
 - Build/install/log handling:
+- Live status final state:
+- Final checkpoint:
 
 ## Files changed
 
