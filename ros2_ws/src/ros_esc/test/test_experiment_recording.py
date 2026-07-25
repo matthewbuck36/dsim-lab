@@ -8,6 +8,7 @@ import pytest
 import yaml
 
 from ros_esc.experiment_recording.record_run import (
+    _capture_parameters,
     _full_node_name,
     _parameter_types,
     applicable_topics,
@@ -181,6 +182,48 @@ def test_parameter_snapshot_helpers_preserve_node_paths_and_ros_types(monkeypatc
         "enabled": "bool",
         "gains": "double_array",
     }
+
+
+def test_parallel_parameter_capture_preserves_order_types_and_failures(
+    monkeypatch,
+):
+    """Retain deterministic snapshot semantics across independent workers."""
+    def fake_run(command, **_kwargs):
+        node = command[3]
+        if node == "/bad":
+            raise __import__('subprocess').TimeoutExpired(command, 5.0)
+        if command[2] == "dump":
+            return SimpleNamespace(
+                stdout=f"/{node.lstrip('/')}:\n  ros__parameters:\n"
+                "    enabled: true\n"
+            )
+        return SimpleNamespace(stdout="  enabled (type: bool)\n")
+
+    monkeypatch.setattr(
+        "ros_esc.experiment_recording.record_run.subprocess.run",
+        fake_run,
+    )
+
+    snapshot = _capture_parameters(
+        [("z", "/"), ("bad", "/"), ("a", "/"), ("no_params", "/")],
+        {"/bad"},
+        {"/a", "/bad", "/z"},
+    )
+
+    assert list(snapshot["nodes"]) == ["/a", "/bad", "/no_params", "/z"]
+    assert snapshot["nodes"]["/a"]["parameter_types"] == {"enabled": "bool"}
+    assert snapshot["nodes"]["/no_params"] == {
+        "parameter_services_exposed": False,
+        "available": False,
+        "parameters": {},
+    }
+    assert snapshot["failures"] == [{
+        "node": "/bad",
+        "required_topic_publisher": True,
+        "parameter_services_exposed": True,
+        "error": "TimeoutExpired: Command '['ros2', 'param', 'dump', "
+        "'/bad', '--print']' timed out after 5.0 seconds",
+    }]
 
 
 def test_amended_timestamp_tolerance_accepts_measured_boundary_only():

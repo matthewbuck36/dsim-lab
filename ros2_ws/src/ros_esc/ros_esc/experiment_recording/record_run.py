@@ -3,6 +3,7 @@
 """Run one motion-gated experiment and record its complete ROS interface."""
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import datetime as dt
 import hashlib
 import json
@@ -515,6 +516,7 @@ def _parameter_types(full_name):
 def _capture_parameters(node_names, required_publishers, parameter_service_nodes):
     snapshot = {"captured_at_utc": _iso_now(), "nodes": {}, "failures": []}
     required_publishers = set(required_publishers)
+    available = []
     for name, namespace in sorted(node_names):
         full_name = _full_node_name(name, namespace)
         if full_name not in parameter_service_nodes:
@@ -524,25 +526,41 @@ def _capture_parameters(node_names, required_publishers, parameter_service_nodes
                 "parameters": {},
             }
             continue
+        available.append(full_name)
+
+    def capture(full_name):
         try:
             result = subprocess.run(
                 ["ros2", "param", "dump", full_name, "--print"],
                 check=True, capture_output=True, text=True, timeout=5.0,
             )
-            snapshot["nodes"][full_name] = {
+            return full_name, {
                 "parameter_services_exposed": True,
                 "available": True,
                 "parameters": yaml.safe_load(result.stdout) or {},
                 "parameter_types": _parameter_types(full_name),
-            }
+            }, None
         except (subprocess.SubprocessError, yaml.YAMLError) as exc:
-            snapshot["nodes"][full_name] = {"available": False, "parameters": {}}
-            snapshot["failures"].append({
+            return full_name, {
+                "parameter_services_exposed": True,
+                "available": False,
+                "parameters": {},
+            }, {
                 "node": full_name,
                 "required_topic_publisher": full_name in required_publishers,
                 "parameter_services_exposed": True,
                 "error": f"{type(exc).__name__}: {exc}",
-            })
+            }
+
+    workers = min(4, len(available))
+    if workers:
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            captured = list(executor.map(capture, available))
+        for full_name, node_snapshot, failure in captured:
+            snapshot["nodes"][full_name] = node_snapshot
+            if failure is not None:
+                snapshot["failures"].append(failure)
+    snapshot["nodes"] = dict(sorted(snapshot["nodes"].items()))
     return snapshot
 
 

@@ -52,8 +52,10 @@ target graph.
 
 Preflight holds every final command at zero. It waits for the target graph and
 bag subscriptions, then snapshots exact ROS parameter values and types before
-publishing readiness true. On the audited simulation graph this can take about
-90 seconds in addition to Gazebo startup because Humble queries each live node;
+publishing readiness true. Independent node snapshots run with at most four
+workers; node records and failures are sorted deterministically before writing.
+The Phase 08 runtime proof reduced graph-start-through-readiness to about
+27 seconds while retaining the same required-publisher failure policy.
 `--preflight-timeout-sec` applies to graph discovery, not parameter capture.
 
 ## Run deterministic Gazebo scenario suites
