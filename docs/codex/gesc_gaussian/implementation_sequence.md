@@ -210,7 +210,12 @@ backend. Keep
 available as the legacy CSV path.
 Recording completeness must include the final zero produced by the corrected
 Phase 04 shutdown lifecycle; recording code must not replace or bypass that
-lifecycle.
+lifecycle. Parameter snapshots use the recorder node's native parameter-service
+clients. Required-topic publishers receive three bounded attempts; optional
+short-lived nodes receive one. Coordinated simulation shutdown signals live
+leaf executables with a 0.1-second stagger, and Python algorithm owners defer
+signals until the active callback returns before executor/node/context
+teardown.
 
 ## Phase 06 - deterministic scenario runner
 
@@ -264,7 +269,9 @@ implementation. Produce scenario manifests, frozen parameters, machine-readable
 results, and a report. A failed gate must remain failed and must block Phase 09
 trials.
 The matrix must include the corrected runtime parameter-type startup gate and
-controlled shutdown-zero/clean-exit gate.
+controlled shutdown-zero/clean-exit gate. The controller spawners use a
+30-second service-call timeout for bounded Gazebo startup latency; this is
+launch reliability only and does not alter controller or algorithm parameters.
 
 ## Phase 09 - physical integration
 

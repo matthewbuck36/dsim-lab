@@ -1,7 +1,10 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-"""This script is used to launch two controllers that are used to rotate
+"""
+Launch the two rotating-sensor controllers.
+
+The controllers rotate
 the sensor frame in simulation. The joint state broadcaster will publish
 the joint state, while the velocity controller will accept velocity commands
 and then move the revolute joints where the sensor frame is attached.
@@ -15,25 +18,32 @@ To check the active controllers with an active gazebo simulation use the
 following command in a separate terminal: ros2 control list_controllers
 """
 
-
-from launch_ros.actions import Node
 from launch import LaunchDescription
+from launch_ros.actions import Node
+
 
 def generate_launch_description():
-    """This function generates a launch description for two controllers."""
-
+    """Generate a launch description for the two controllers."""
     spawn_joint_state_broadcaster = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["joint_state_broadcaster"],
-        output="screen",
+        package='controller_manager',
+        executable='spawner',
+        arguments=[
+            'joint_state_broadcaster',
+            '--service-call-timeout',
+            '30.0',
+        ],
+        output='screen',
     )
 
     spawn_velocity_controller = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["velocity_controller"],
-        output="screen",
+        package='controller_manager',
+        executable='spawner',
+        arguments=[
+            'velocity_controller',
+            '--service-call-timeout',
+            '30.0',
+        ],
+        output='screen',
     )
 
     # Create and return launch description object

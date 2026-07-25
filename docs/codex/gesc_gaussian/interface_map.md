@@ -144,6 +144,14 @@ PDE history, convergence, and Gaussian-fill interfaces use ROS parameters
 rather than positional topic arguments, except the hard-coded topic names
 listed above.
 
+Recorder parameter snapshots call each node's native `list_parameters`,
+`get_parameters`, and `describe_parameters` services. Required-topic
+publishers receive three bounded capture attempts and optional nodes receive
+one. This changes recorder transport and retry policy only; parameter names,
+types, values, public topics, and launch defaults are unchanged. The
+joint-state and velocity-controller spawners allow 30 seconds per controller
+manager service call to accommodate bounded Gazebo startup latency.
+
 ## PDE/Gaussian ROS parameters
 
 ### `pde_history_node`

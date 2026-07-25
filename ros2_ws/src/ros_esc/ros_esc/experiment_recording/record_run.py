@@ -20,9 +20,11 @@ import uuid
 
 from ament_index_python.packages import get_package_share_directory
 from geometry_msgs.msg import Twist
+from rcl_interfaces.srv import DescribeParameters, GetParameters, ListParameters
 import rclpy
 from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
+from rclpy.parameter import Parameter, parameter_value_to_python
 from ros_esc_interfaces.msg import ControlDiagnostics, StampedFloat64MultiArray
 import rosbag2_py
 from std_msgs.msg import Bool
@@ -56,6 +58,10 @@ ZERO_TOPICS = (
     "/gesc_gaussian/control_diagnostics",
 )
 PARAMETER_SNAPSHOT_TIMEOUT_SEC = 15.0
+PARAMETER_SERVICE_AVAILABILITY_TIMEOUT_SEC = 1.0
+REQUIRED_PARAMETER_CAPTURE_ATTEMPTS = 3
+PARAMETER_CAPTURE_RETRY_DELAY_SEC = 0.25
+LEAF_SHUTDOWN_STAGGER_SEC = 0.1
 
 
 def _utc_now():
@@ -397,8 +403,13 @@ def _process_tree(root_pid):
             ).read_text(encoding="utf-8")
         except OSError:
             continue
-        snapshot[pid] = {"start_ticks": stat[21], "command": command}
-        pending.extend(int(value) for value in children_text.split())
+        children = [int(value) for value in children_text.split()]
+        snapshot[pid] = {
+            "start_ticks": stat[21],
+            "command": command,
+            "children": children,
+        }
+        pending.extend(children)
     return snapshot
 
 
@@ -410,8 +421,13 @@ def _same_process(pid, start_ticks):
     return len(fields) > 21 and fields[21] == start_ticks
 
 
-def _signal_snapshot(snapshot, names, signum):
-    for pid, identity in snapshot.items():
+def _signal_snapshot(snapshot, names, signum, interval_sec=0.0):
+    targets = [
+        (pid, identity)
+        for pid, identity in sorted(snapshot.items())
+        if identity["command"] in names
+    ]
+    for index, (pid, identity) in enumerate(targets):
         if identity["command"] not in names:
             continue
         if _same_process(pid, identity["start_ticks"]):
@@ -419,6 +435,8 @@ def _signal_snapshot(snapshot, names, signum):
                 os.kill(pid, signum)
             except ProcessLookupError:
                 pass
+        if interval_sec > 0.0 and index + 1 < len(targets):
+            time.sleep(interval_sec)
 
 
 def _live_snapshot_processes(snapshot, names=None):
@@ -429,7 +447,22 @@ def _live_snapshot_processes(snapshot, names=None):
     }
 
 
-def _stop_process(process, timeout_sec, stop_named_descendants=()):
+def _live_leaf_processes(snapshot):
+    live = _live_snapshot_processes(snapshot)
+    live_pids = set(live)
+    return {
+        pid: identity
+        for pid, identity in live.items()
+        if not live_pids.intersection(identity.get("children", ()))
+    }
+
+
+def _stop_process(
+    process,
+    timeout_sec,
+    stop_named_descendants=(),
+    signal_descendant_leaves=False,
+):
     if process is None:
         return None, True
     descendants = {}
@@ -445,7 +478,16 @@ def _stop_process(process, timeout_sec, stop_named_descendants=()):
                 and _live_snapshot_processes(descendants, names)
             ):
                 time.sleep(0.05)
-        os.killpg(process.pid, signal.SIGINT)
+        if signal_descendant_leaves:
+            leaves = _live_leaf_processes(descendants)
+            _signal_snapshot(
+                leaves,
+                {identity["command"] for identity in leaves.values()},
+                signal.SIGINT,
+                interval_sec=LEAF_SHUTDOWN_STAGGER_SEC,
+            )
+        else:
+            os.killpg(process.pid, signal.SIGINT)
         try:
             process.wait(timeout=timeout_sec)
         except subprocess.TimeoutExpired:
@@ -499,22 +541,101 @@ def _full_node_name(name, namespace):
     return f"{namespace}/{name}" if namespace else f"/{name}"
 
 
-def _parameter_types(full_name):
-    result = subprocess.run(
-        ["ros2", "param", "list", full_name, "--param-type"],
-        check=True, capture_output=True, text=True,
-        timeout=PARAMETER_SNAPSHOT_TIMEOUT_SEC,
+def _wait_for_parameter_response(client, request):
+    service_name = client.srv_name
+    if not client.wait_for_service(
+        timeout_sec=PARAMETER_SERVICE_AVAILABILITY_TIMEOUT_SEC
+    ):
+        raise TimeoutError(f"service unavailable after timeout: {service_name}")
+    future = client.call_async(request)
+    deadline = time.monotonic() + PARAMETER_SNAPSHOT_TIMEOUT_SEC
+    while not future.done() and time.monotonic() < deadline:
+        time.sleep(0.01)
+    if not future.done():
+        future.cancel()
+        raise TimeoutError(f"service response timed out: {service_name}")
+    if future.exception() is not None:
+        raise RuntimeError(
+            f"service call failed for {service_name}: {future.exception()}"
+        )
+    return future.result()
+
+
+def _insert_parameter(parameters, name, value):
+    target = parameters
+    components = name.split(".")
+    for component in components[:-1]:
+        target = target.setdefault(component, {})
+    target[components[-1]] = value
+
+
+def _capture_node_parameters_once(node, full_name):
+    service_types = (
+        (ListParameters, "list_parameters"),
+        (GetParameters, "get_parameters"),
+        (DescribeParameters, "describe_parameters"),
     )
-    types = {}
-    pattern = re.compile(r"^\s*(.+?)\s+\(type:\s*(.+?)\)\s*$")
-    for line in result.stdout.splitlines():
-        match = pattern.match(line)
-        if match:
-            types[match.group(1)] = match.group(2)
-    return types
+    clients = {
+        suffix: node.create_client(service_type, f"{full_name}/{suffix}")
+        for service_type, suffix in service_types
+    }
+    try:
+        listed = _wait_for_parameter_response(
+            clients["list_parameters"],
+            ListParameters.Request(),
+        )
+        names = sorted(listed.result.names)
+        get_request = GetParameters.Request()
+        get_request.names = names
+        values = _wait_for_parameter_response(
+            clients["get_parameters"],
+            get_request,
+        ).values
+        describe_request = DescribeParameters.Request()
+        describe_request.names = names
+        descriptors = _wait_for_parameter_response(
+            clients["describe_parameters"],
+            describe_request,
+        ).descriptors
+    finally:
+        for client in clients.values():
+            node.destroy_client(client)
+
+    if len(values) != len(names) or len(descriptors) != len(names):
+        raise RuntimeError(
+            f"parameter response length mismatch for {full_name}: "
+            f"{len(names)} names, {len(values)} values, "
+            f"{len(descriptors)} descriptors"
+        )
+    parameters = {}
+    parameter_types = {}
+    for name, value, descriptor in zip(names, values, descriptors):
+        _insert_parameter(parameters, name, parameter_value_to_python(value))
+        parameter_types[name] = Parameter.Type(descriptor.type).name.lower()
+    return {
+        full_name: {
+            "ros__parameters": parameters,
+        }
+    }, parameter_types
 
 
-def _capture_parameters(node_names, required_publishers, parameter_service_nodes):
+def _capture_node_parameters(node, full_name, attempts=1):
+    attempts = max(1, int(attempts))
+    for attempt in range(attempts):
+        try:
+            return _capture_node_parameters_once(node, full_name)
+        except (RuntimeError, TimeoutError, ValueError):
+            if attempt + 1 >= attempts:
+                raise
+            time.sleep(PARAMETER_CAPTURE_RETRY_DELAY_SEC)
+
+
+def _capture_parameters(
+    node,
+    node_names,
+    required_publishers,
+    parameter_service_nodes,
+):
     snapshot = {"captured_at_utc": _iso_now(), "nodes": {}, "failures": []}
     required_publishers = set(required_publishers)
     for name, namespace in sorted(node_names):
@@ -527,18 +648,22 @@ def _capture_parameters(node_names, required_publishers, parameter_service_nodes
             }
             continue
         try:
-            result = subprocess.run(
-                ["ros2", "param", "dump", full_name, "--print"],
-                check=True, capture_output=True, text=True,
-                timeout=PARAMETER_SNAPSHOT_TIMEOUT_SEC,
+            parameters, parameter_types = _capture_node_parameters(
+                node,
+                full_name,
+                attempts=(
+                    REQUIRED_PARAMETER_CAPTURE_ATTEMPTS
+                    if full_name in required_publishers
+                    else 1
+                ),
             )
             snapshot["nodes"][full_name] = {
                 "parameter_services_exposed": True,
                 "available": True,
-                "parameters": yaml.safe_load(result.stdout) or {},
-                "parameter_types": _parameter_types(full_name),
+                "parameters": parameters,
+                "parameter_types": parameter_types,
             }
-        except (subprocess.SubprocessError, yaml.YAMLError) as exc:
+        except (RuntimeError, TimeoutError, ValueError) as exc:
             snapshot["nodes"][full_name] = {
                 "parameter_services_exposed": True,
                 "available": False,
@@ -742,6 +867,7 @@ def run(arguments):
             and "rcl_interfaces/srv/ListParameters" in types
         }
         parameter_snapshot = _capture_parameters(
+            node,
             node.get_node_names_and_namespaces(),
             required_publishers,
             parameter_service_nodes,
@@ -794,6 +920,7 @@ def run(arguments):
             target_process,
             arguments.target_exit_timeout_sec,
             stop_named_descendants=("gazebo", "gzserver", "gzclient"),
+            signal_descendant_leaves=True,
         )
         bag_code, bag_clean = _stop_process(bag_process, 15.0)
         if executor is not None and node is not None:

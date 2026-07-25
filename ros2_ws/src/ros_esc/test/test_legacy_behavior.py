@@ -173,8 +173,8 @@ def test_sigint_cleanup_publishes_zero_before_context_shutdown(
         "node_added",
         "spin_once",
         "node_removed",
-        "zero_then_destroy",
         "executor_shutdown",
+        "zero_then_destroy",
         "context_shutdown",
     ]
 

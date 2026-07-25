@@ -28,6 +28,10 @@ LAUNCH_FILE = (
     REPOSITORY_ROOT
     / "ros2_ws/src/turtlebot3_rotating_sensor/launch/gazebo.launch.xml"
 )
+CONTROL_LAUNCH_FILE = (
+    REPOSITORY_ROOT
+    / "ros2_ws/src/turtlebot3_rotating_sensor/launch/control.launch.py"
+)
 COST_CONFIG = (
     REPOSITORY_ROOT
     / "ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC"
@@ -472,3 +476,10 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
     assert "--recording_ready_topic" in controller_command
     assert "$(var recording_ready_topic)" in controller_command
     assert "--recording_ready_stale_sec" in controller_command
+
+
+def test_controller_spawners_allow_bounded_gazebo_startup_latency():
+    source = CONTROL_LAUNCH_FILE.read_text(encoding="utf-8")
+
+    assert source.count("'--service-call-timeout'") == 2
+    assert source.count("'30.0'") == 2

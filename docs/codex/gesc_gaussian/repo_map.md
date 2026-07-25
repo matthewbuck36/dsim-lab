@@ -272,6 +272,14 @@ directory name as evidence that the active controller is Heavy-Ball.
 | Analysis | Existing plotting scripts | Bag reader/analysis modules after Phase 07 approval |
 | Physical pose/sensor adapters | Absent | Phase 09 inventory decides exact paths |
 
+Phase 08 recorder/shutdown support remains inside the existing owners:
+`experiment_recording/record_run.py` owns native parameter snapshots and
+process-tree coordination, `deferred_signal_shutdown.py` is the shared
+callback-safe Python signal helper, and
+`turtlebot3_rotating_sensor/launch/control.launch.py` owns the bounded
+controller-spawner timeout. None is a second recorder, controller, or launch
+graph.
+
 ## Known absence map
 
 No tracked source path implements a Vicon adapter, physical photoresistor

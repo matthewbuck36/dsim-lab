@@ -2,15 +2,18 @@
 
 import datetime as dt
 from pathlib import Path
+import signal
 from types import SimpleNamespace
 
 import pytest
+from rcl_interfaces.msg import ParameterDescriptor, ParameterType, ParameterValue
 import yaml
 
 from ros_esc.experiment_recording.record_run import (
     _capture_parameters,
     _full_node_name,
-    _parameter_types,
+    _insert_parameter,
+    _stop_process,
     applicable_topics,
     build_bag_command,
     generate_run_id,
@@ -172,46 +175,129 @@ def test_parameter_snapshot_helpers_preserve_node_paths_and_ros_types(monkeypatc
     assert _full_node_name("supervisor", "/") == "/supervisor"
     assert _full_node_name("supervisor", "/robot") == "/robot/supervisor"
 
-    monkeypatch.setattr(
-        "ros_esc.experiment_recording.record_run.subprocess.run",
-        lambda *args, **kwargs: SimpleNamespace(
-            stdout="  enabled (type: bool)\n  gains (type: double_array)\n"
-        ),
-    )
-    assert _parameter_types("/supervisor") == {
-        "enabled": "bool",
-        "gains": "double_array",
+    parameters = {}
+    _insert_parameter(parameters, "enabled", True)
+    _insert_parameter(parameters, "nested.gains", [1.0, 2.0])
+    assert parameters == {
+        "enabled": True,
+        "nested": {"gains": [1.0, 2.0]},
     }
 
 
-def test_parameter_capture_preserves_order_types_and_failures(
-    monkeypatch,
-):
+def test_parameter_capture_preserves_order_types_and_failures(monkeypatch):
     """Retain deterministic snapshot semantics and required failures."""
-    def fake_run(command, **_kwargs):
-        node = command[3]
-        if node == "/bad":
-            raise __import__('subprocess').TimeoutExpired(command, 15.0)
-        if command[2] == "dump":
-            return SimpleNamespace(
-                stdout=f"/{node.lstrip('/')}:\n  ros__parameters:\n"
-                "    enabled: true\n"
-            )
-        return SimpleNamespace(stdout="  enabled (type: bool)\n")
+    service_waits = {}
 
+    class FakeFuture:
+        def __init__(self, response):
+            self.response = response
+
+        def done(self):
+            return True
+
+        def cancel(self):
+            raise AssertionError("completed fake future must not be cancelled")
+
+        def exception(self):
+            return None
+
+        def result(self):
+            return self.response
+
+    class FakeClient:
+        def __init__(self, service_name):
+            self.srv_name = service_name
+
+        def wait_for_service(self, timeout_sec):
+            assert timeout_sec == 1.0
+            service_waits[self.srv_name] = service_waits.get(self.srv_name, 0) + 1
+            if self.srv_name.startswith("/bad/"):
+                return False
+            if self.srv_name == "/flaky/list_parameters":
+                return service_waits[self.srv_name] > 1
+            return True
+
+        def call_async(self, request):
+            if self.srv_name.endswith("/list_parameters"):
+                response = SimpleNamespace(
+                    result=SimpleNamespace(names=["enabled", "nested.gains"])
+                )
+            elif self.srv_name.endswith("/get_parameters"):
+                assert request.names == ["enabled", "nested.gains"]
+                response = SimpleNamespace(values=[
+                    ParameterValue(
+                        type=ParameterType.PARAMETER_BOOL,
+                        bool_value=True,
+                    ),
+                    ParameterValue(
+                        type=ParameterType.PARAMETER_DOUBLE_ARRAY,
+                        double_array_value=[1.0, 2.0],
+                    ),
+                ])
+            else:
+                assert request.names == ["enabled", "nested.gains"]
+                response = SimpleNamespace(descriptors=[
+                    ParameterDescriptor(
+                        name="enabled",
+                        type=ParameterType.PARAMETER_BOOL,
+                    ),
+                    ParameterDescriptor(
+                        name="nested.gains",
+                        type=ParameterType.PARAMETER_DOUBLE_ARRAY,
+                    ),
+                ])
+            return FakeFuture(response)
+
+    class FakeNode:
+        def __init__(self):
+            self.destroyed = []
+
+        def create_client(self, _service_type, service_name):
+            return FakeClient(service_name)
+
+        def destroy_client(self, client):
+            self.destroyed.append(client.srv_name)
+
+    node = FakeNode()
     monkeypatch.setattr(
-        "ros_esc.experiment_recording.record_run.subprocess.run",
-        fake_run,
+        "ros_esc.experiment_recording.record_run.time.sleep",
+        lambda _seconds: None,
     )
 
     snapshot = _capture_parameters(
-        [("z", "/"), ("bad", "/"), ("a", "/"), ("no_params", "/")],
-        {"/bad"},
-        {"/a", "/bad", "/z"},
+        node,
+        [
+            ("z", "/"),
+            ("bad", "/"),
+            ("a", "/"),
+            ("flaky", "/"),
+            ("no_params", "/"),
+        ],
+        {"/bad", "/flaky"},
+        {"/a", "/bad", "/flaky", "/z"},
     )
 
-    assert list(snapshot["nodes"]) == ["/a", "/bad", "/no_params", "/z"]
-    assert snapshot["nodes"]["/a"]["parameter_types"] == {"enabled": "bool"}
+    assert list(snapshot["nodes"]) == [
+        "/a",
+        "/bad",
+        "/flaky",
+        "/no_params",
+        "/z",
+    ]
+    assert snapshot["nodes"]["/a"]["parameters"] == {
+        "/a": {
+            "ros__parameters": {
+                "enabled": True,
+                "nested": {"gains": [1.0, 2.0]},
+            },
+        },
+    }
+    assert snapshot["nodes"]["/a"]["parameter_types"] == {
+        "enabled": "bool",
+        "nested.gains": "double_array",
+    }
+    assert snapshot["nodes"]["/flaky"]["available"] is True
+    assert service_waits["/flaky/list_parameters"] == 2
     assert snapshot["nodes"]["/no_params"] == {
         "parameter_services_exposed": False,
         "available": False,
@@ -221,9 +307,92 @@ def test_parameter_capture_preserves_order_types_and_failures(
         "node": "/bad",
         "required_topic_publisher": True,
         "parameter_services_exposed": True,
-        "error": "TimeoutExpired: Command '['ros2', 'param', 'dump', "
-        "'/bad', '--print']' timed out after 15.0 seconds",
+        "error": "TimeoutError: service unavailable after timeout: "
+        "/bad/list_parameters",
     }]
+    assert len(node.destroyed) == 21
+
+
+def test_coordinated_shutdown_signals_only_descendant_leaves(monkeypatch):
+    live_pids = {1234, 1235, 1236, 1237, 1238}
+
+    class FakeProcess:
+        pid = 1234
+        returncode = 0
+
+        def poll(self):
+            return None
+
+        def wait(self, timeout):
+            assert timeout == 30.0
+            live_pids.clear()
+            return self.returncode
+
+    signals = []
+    snapshot = {
+        1234: {
+            "start_ticks": "1",
+            "command": "ros2",
+            "children": [1235, 1237],
+        },
+        1235: {
+            "start_ticks": "2",
+            "command": "ros2",
+            "children": [1236],
+        },
+        1236: {
+            "start_ticks": "3",
+            "command": "python3",
+            "children": [],
+        },
+        1237: {
+            "start_ticks": "4",
+            "command": "ros2",
+            "children": [1238],
+        },
+        1238: {
+            "start_ticks": "5",
+            "command": "python3",
+            "children": [],
+        },
+    }
+    monkeypatch.setattr(
+        'ros_esc.experiment_recording.record_run._process_tree',
+        lambda _pid: snapshot,
+    )
+    monkeypatch.setattr(
+        'ros_esc.experiment_recording.record_run._same_process',
+        lambda pid, _start_ticks: pid in live_pids,
+    )
+    monkeypatch.setattr(
+        'ros_esc.experiment_recording.record_run.os.kill',
+        lambda pid, signum: signals.append((pid, signum)),
+    )
+    monkeypatch.setattr(
+        'ros_esc.experiment_recording.record_run.os.killpg',
+        lambda _pid, _signum: pytest.fail(
+            'coordinated shutdown must not signal the process group'
+        ),
+    )
+    sleeps = []
+    monkeypatch.setattr(
+        'ros_esc.experiment_recording.record_run.time.sleep',
+        lambda seconds: sleeps.append(seconds),
+    )
+
+    return_code, clean = _stop_process(
+        FakeProcess(),
+        30.0,
+        signal_descendant_leaves=True,
+    )
+
+    assert return_code == 0
+    assert clean
+    assert signals == [
+        (1236, signal.SIGINT),
+        (1238, signal.SIGINT),
+    ]
+    assert sleeps == [0.1]
 
 
 def test_amended_timestamp_tolerance_accepts_measured_boundary_only():

@@ -1219,32 +1219,64 @@ reports `holdout must run before the full matrix`.
 ### Phase 08 recorder throughput correction
 
 Before the training sweep, one 10-second Phase 07.5 probe still took about
-130 seconds because `record_run` queried each parameter service serially.
-Parameter snapshots are independent, so the recorder uses bounded workers
-while preserving exact values/types, deterministic node/failure order, and
-the unchanged required-publisher failure gate.
+130 seconds because `record_run` launched two `ros2 param` subprocesses for
+every node. Bounded subprocess workers reduced latency but made required
+Gazebo/supervisor snapshots intermittently fail. Those attempts and their
+failed bags remain preserved; they are not Phase 08 selection evidence.
 
-Focused recorder/harness result: `22 passed, 1 skipped in 1.36s`; the skip is
-the visible Gazebo recording environment gate. A new negative test retains
-unavailable-node markers and required-publisher failure details.
+The final recorder path uses the native `ListParameters`, `GetParameters`, and
+`DescribeParameters` services from the existing recording coordinator.
+Capture remains deterministically serial, preserves nested YAML and exact ROS
+types, and gives required-topic publishers three attempts separated by
+0.25 seconds. Optional nodes receive one attempt so transient launch helpers
+cannot multiply preflight latency. Any exhausted required-publisher attempt
+still fails completeness.
+
+The same stress exposed a pre-existing ROS 2 Python teardown race: simultaneous
+process-group SIGINT could interrupt native DDS work and intermittently produce
+exit 245 in different algorithm nodes. The recorder now snapshots the target
+process tree and sends SIGINT only to live leaf executables, in PID order, with
+a 0.1-second stagger. The six Python owners in this launch graph defer
+SIGINT/SIGTERM until the current single-threaded callback returns, then shut
+down the executor before destroying the node while the ROS context remains
+valid. Launch/controller ownership, final-zero publication, cost semantics,
+topics, and algorithm parameters are unchanged. Both controller spawners use
+the supported 30-second service-call timeout to tolerate bounded Gazebo startup
+latency.
+
+Focused result after the final correction:
+
+```text
+63 passed in 1.87s
+3 selected packages built successfully
+python compile, fatal flake8 selection, and git diff check: pass
+```
+
+The focused set covers deferred signals, parameter snapshot values/types and
+required retries, descendant-leaf signaling/stagger, legacy final-zero order,
+simulation disturbances, launch ownership, and the controller-spawner timeout.
 
 Retained runtime proof:
 
 ```text
-/home/mattb/Experiments/GESC-Gaussian/runs/phase08/prerequisite_parallel/2026-07-25/20260725T000048254880Z_simulation_phase08_validation_support-contact_negative-robust_gaussian_v1-925907a927_990ce7ce
+/tmp/phase08-staggered-leaf-repeat.ZhYIlm
+/tmp/phase08-final-correction-smoke.NhthzD
+/tmp/phase08-final-correction-repeat.bZq9Ma
+/tmp/phase08-poststyle-smoke.WlvBG6
 ```
 
-The one-source run passed recording completeness, final-zero, and cleanup.
-Total wall time was 44 seconds; target start through readiness was about
-27 seconds.
-
-The first two-source C0 training attempts then failed honestly because four
-workers caused the required `/gazebo` parameter dump to hit its original
-5-second timeout. A two-worker, 15-second retry produced two complete runs but
-then timed out the required supervisor snapshot on run 3. The failed bags were
-preserved under `phase08/sweep/C0/runs`; no candidate checkpoint was written.
-
-The final correction restores serial parameter capture and retains the
-15-second per-call timeout. Reliability takes precedence over projected matrix
-throughput: any required publisher still fails the run if its values and types
-cannot be captured.
+The first 60-run stagger probe produced 58 complete runs, one controller
+spawner startup timeout, one required `/gazebo/list_parameters` response
+timeout, and zero exit-245/139, segmentation-fault, or forced-termination
+matches. After the bounded timeout and retry corrections, the installed-path
+smoke passed every completeness check with readiness at 8.14 seconds. The
+unchanged final correction then passed 60/60 consecutive 20-second recorder
+cycles: all had complete bags, required parameter snapshots, clean target and
+bag exits, and final-zero evidence. There were zero former fault-string
+matches, zero required-publisher parameter failures, one Git diff hash, one
+target argument vector, and no leaked ROS/Gazebo process. Optional short-lived
+spawner/light nodes remained explicitly marked unavailable when they exited
+before snapshot; these do not satisfy or weaken any required-publisher gate.
+After formatting the touched controller launch owner, one rebuilt installed-path
+smoke again passed all completeness, final-zero, clean-exit, and fault-log
+checks.

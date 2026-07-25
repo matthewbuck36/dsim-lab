@@ -28,6 +28,7 @@ from rclpy.node import Node
 import rclpy.parameter
 from rclpy.signals import SignalHandlerOptions
 from std_msgs.msg import Float64MultiArray
+from ros_esc.deferred_signal_shutdown import DeferredSignalShutdown
 from ros_esc_interfaces.msg import Timekeeper, StampedFloat64MultiArray
 from ros_esc.config_parsing import parse_object_config
 
@@ -221,18 +222,21 @@ def main(args=None):
     node = RotateFrame()
     executor = SingleThreadedExecutor()
     executor.add_node(node)
-    try:
-        while rclpy.ok():
-            executor.spin_once(timeout_sec=0.05)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        executor.remove_node(node)
+    with DeferredSignalShutdown() as shutdown:
         try:
-            node.destroy_node()
+            while rclpy.ok() and not shutdown.requested:
+                executor.spin_once(timeout_sec=0.05)
+        except KeyboardInterrupt:
+            shutdown.request()
         finally:
-            executor.shutdown()
-            rclpy.try_shutdown()
+            executor.remove_node(node)
+            try:
+                executor.shutdown()
+            finally:
+                try:
+                    node.destroy_node()
+                finally:
+                    rclpy.try_shutdown()
 
 if __name__ == "__main__":
     main()
