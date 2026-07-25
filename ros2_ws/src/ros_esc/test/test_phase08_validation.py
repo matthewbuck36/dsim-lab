@@ -1,6 +1,9 @@
 """Focused tests for the Phase 08 validation harness and frozen suites."""
 
 from collections import Counter
+from pathlib import Path
+
+import yaml
 
 from ros_esc.scenario_runner.phase08_validation import (
     _materialize_suite,
@@ -18,6 +21,14 @@ from ros_esc.scenario_runner.phase08_validation import (
     validate_suite_counts,
 )
 from ros_esc.scenario_runner.scenario_schema import expand_suite, load_suite
+
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
+FROZEN_PATH = (
+    REPOSITORY_ROOT
+    / 'ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/'
+    'phase08_frozen_parameters.yaml'
+)
 
 
 def _metric(value, status='valid'):
@@ -79,6 +90,22 @@ def test_candidate_grid_is_exact_and_hashed_deterministically():
     assert canonical_sha256({'b': 2, 'a': 1}) == canonical_sha256(
         {'a': 1, 'b': 2}
     )
+
+
+def test_selected_profile_is_frozen_and_package_installed():
+    """Retain the selected C8 values without changing launch defaults."""
+    document = yaml.safe_load(FROZEN_PATH.read_text(encoding='utf-8'))
+    selected = load_candidates()['candidates'][8]
+    setup_source = (
+        REPOSITORY_ROOT / 'ros2_ws/src/ros_esc/setup.py'
+    ).read_text(encoding='utf-8')
+
+    assert document['selected_candidate_id'] == 'C8'
+    assert document['launch_overrides'] == selected['launch_overrides']
+    assert document['sha256'] == canonical_sha256(
+        document['launch_overrides']
+    )
+    assert 'phase08_frozen_parameters.yaml' in setup_source
 
 
 def test_checked_in_suite_arithmetic_is_frozen():

@@ -1,0 +1,11 @@
+schema_version: 1
+profile_id: robust_gaussian_v1_phase08_frozen
+selected_candidate_id: C8
+selection_source: docs/codex/gesc_gaussian/validation/phase_08_parameter_selection.json
+launch_overrides:
+  gaussian_fill_covariance_scale: 3.0
+  gaussian_fill_amplitude_depth_scale: 1.8
+  gaussian_fill_exit_sigma: 2.75
+  stall_window_sec: 2.0
+  minimum_radial_progress_m: 0.08
+sha256: b1531988de3eb650fbced657555532baf1eb66056c0203dd21908c4def8f093e

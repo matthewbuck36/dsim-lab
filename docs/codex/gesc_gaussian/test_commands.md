@@ -1312,3 +1312,32 @@ The pre-correction and indexed outputs have byte-identical
 CSV tables, and complete relative file set. The raw bag remained unchanged.
 This establishes metric/gate equivalence while removing repeated timestamp-list
 construction.
+
+### Phase 08 training selection and freeze
+
+The authoritative sweep executed 81/81 training runs at clean commit
+`d073f2b479a9510d999c72b90aecd20fab2bbdb7`. The harness functional precheck
+reported `171 passed, 2 skipped in 8.23s`; the skips are the two explicit
+opt-in Gazebo recording tests.
+
+Candidates C0-C5, C7, and C8 were infrastructure-eligible. C6 was ineligible
+because one preserved three-source run exhausted the required
+`/gazebo/list_parameters` response attempts, failed recording completeness,
+and retained valid cleanup evidence. All nine candidates had 0% end-to-end
+success and zero escape attempts. The declared tie-break selected C8 by its
+lowest median path length, `13.228608734409306 m`; this is not an acceptance
+pass.
+
+The frozen validation-only profile is:
+
+```text
+gaussian_fill_covariance_scale=3.0
+gaussian_fill_amplitude_depth_scale=1.8
+gaussian_fill_exit_sigma=2.75
+stall_window_sec=2.0
+minimum_radial_progress_m=0.08
+sha256=b1531988de3eb650fbced657555532baf1eb66056c0203dd21908c4def8f093e
+```
+
+No launch default, cost sign/unit, public topic, legacy behavior, or physical
+semantics changed.

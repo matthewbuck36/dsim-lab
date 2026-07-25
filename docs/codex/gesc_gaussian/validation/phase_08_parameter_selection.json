@@ -1,0 +1,374 @@
+{
+  "candidates": [
+    {
+      "candidate_id": "C0",
+      "launch_overrides": {
+        "gaussian_fill_amplitude_depth_scale": 1.5,
+        "gaussian_fill_covariance_scale": 2.5,
+        "gaussian_fill_exit_sigma": 2.5,
+        "minimum_radial_progress_m": 0.05,
+        "stall_window_sec": 3.0
+      },
+      "metrics": {
+        "candidate_id": "C0",
+        "convergence_time_median_sec": null,
+        "eligible": true,
+        "end_to_end_success_rate": 0.0,
+        "escape_attempt_count": 0,
+        "escape_time_median_sec": null,
+        "escape_time_p95_sec": null,
+        "family_goal_success_rates": {
+          "escape": 0.0,
+          "fill_merge": 0.0,
+          "multi_source": 0.0,
+          "noise_delay": 0.0,
+          "recenter_resume": 0.0,
+          "two_source": 0.0
+        },
+        "ineligible_run_ids": [],
+        "local_escape_success_rate": 0.0,
+        "minimum_family_goal_success_rate": 0.0,
+        "orbit_count_median": null,
+        "path_length_median_m": 13.452235057882287,
+        "revisit_rate": 0.0,
+        "run_count": 9
+      },
+      "scenario_summary_path": null
+    },
+    {
+      "candidate_id": "C1",
+      "launch_overrides": {
+        "gaussian_fill_amplitude_depth_scale": 1.2,
+        "gaussian_fill_covariance_scale": 2.0,
+        "gaussian_fill_exit_sigma": 2.25,
+        "minimum_radial_progress_m": 0.03,
+        "stall_window_sec": 4.0
+      },
+      "metrics": {
+        "candidate_id": "C1",
+        "convergence_time_median_sec": null,
+        "eligible": true,
+        "end_to_end_success_rate": 0.0,
+        "escape_attempt_count": 0,
+        "escape_time_median_sec": null,
+        "escape_time_p95_sec": null,
+        "family_goal_success_rates": {
+          "escape": 0.0,
+          "fill_merge": 0.0,
+          "multi_source": 0.0,
+          "noise_delay": 0.0,
+          "recenter_resume": 0.0,
+          "two_source": 0.0
+        },
+        "ineligible_run_ids": [],
+        "local_escape_success_rate": 0.0,
+        "minimum_family_goal_success_rate": 0.0,
+        "orbit_count_median": null,
+        "path_length_median_m": 13.749154846376973,
+        "revisit_rate": 0.0,
+        "run_count": 9
+      },
+      "scenario_summary_path": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08/sweep/C1/scenario_summary.yaml"
+    },
+    {
+      "candidate_id": "C2",
+      "launch_overrides": {
+        "gaussian_fill_amplitude_depth_scale": 1.2,
+        "gaussian_fill_covariance_scale": 2.0,
+        "gaussian_fill_exit_sigma": 2.75,
+        "minimum_radial_progress_m": 0.08,
+        "stall_window_sec": 2.0
+      },
+      "metrics": {
+        "candidate_id": "C2",
+        "convergence_time_median_sec": null,
+        "eligible": true,
+        "end_to_end_success_rate": 0.0,
+        "escape_attempt_count": 0,
+        "escape_time_median_sec": null,
+        "escape_time_p95_sec": null,
+        "family_goal_success_rates": {
+          "escape": 0.0,
+          "fill_merge": 0.0,
+          "multi_source": 0.0,
+          "noise_delay": 0.0,
+          "recenter_resume": 0.0,
+          "two_source": 0.0
+        },
+        "ineligible_run_ids": [],
+        "local_escape_success_rate": 0.0,
+        "minimum_family_goal_success_rate": 0.0,
+        "orbit_count_median": null,
+        "path_length_median_m": 13.698550129648709,
+        "revisit_rate": 0.0,
+        "run_count": 9
+      },
+      "scenario_summary_path": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08/sweep/C2/scenario_summary.yaml"
+    },
+    {
+      "candidate_id": "C3",
+      "launch_overrides": {
+        "gaussian_fill_amplitude_depth_scale": 1.8,
+        "gaussian_fill_covariance_scale": 2.0,
+        "gaussian_fill_exit_sigma": 2.25,
+        "minimum_radial_progress_m": 0.08,
+        "stall_window_sec": 2.0
+      },
+      "metrics": {
+        "candidate_id": "C3",
+        "convergence_time_median_sec": null,
+        "eligible": true,
+        "end_to_end_success_rate": 0.0,
+        "escape_attempt_count": 0,
+        "escape_time_median_sec": null,
+        "escape_time_p95_sec": null,
+        "family_goal_success_rates": {
+          "escape": 0.0,
+          "fill_merge": 0.0,
+          "multi_source": 0.0,
+          "noise_delay": 0.0,
+          "recenter_resume": 0.0,
+          "two_source": 0.0
+        },
+        "ineligible_run_ids": [],
+        "local_escape_success_rate": 0.0,
+        "minimum_family_goal_success_rate": 0.0,
+        "orbit_count_median": null,
+        "path_length_median_m": 13.36846389323255,
+        "revisit_rate": 0.0,
+        "run_count": 9
+      },
+      "scenario_summary_path": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08/sweep/C3/scenario_summary.yaml"
+    },
+    {
+      "candidate_id": "C4",
+      "launch_overrides": {
+        "gaussian_fill_amplitude_depth_scale": 1.8,
+        "gaussian_fill_covariance_scale": 2.0,
+        "gaussian_fill_exit_sigma": 2.75,
+        "minimum_radial_progress_m": 0.03,
+        "stall_window_sec": 4.0
+      },
+      "metrics": {
+        "candidate_id": "C4",
+        "convergence_time_median_sec": null,
+        "eligible": true,
+        "end_to_end_success_rate": 0.0,
+        "escape_attempt_count": 0,
+        "escape_time_median_sec": null,
+        "escape_time_p95_sec": null,
+        "family_goal_success_rates": {
+          "escape": 0.0,
+          "fill_merge": 0.0,
+          "multi_source": 0.0,
+          "noise_delay": 0.0,
+          "recenter_resume": 0.0,
+          "two_source": 0.0
+        },
+        "ineligible_run_ids": [],
+        "local_escape_success_rate": 0.0,
+        "minimum_family_goal_success_rate": 0.0,
+        "orbit_count_median": null,
+        "path_length_median_m": 13.587821347577748,
+        "revisit_rate": 0.0,
+        "run_count": 9
+      },
+      "scenario_summary_path": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08/sweep/C4/scenario_summary.yaml"
+    },
+    {
+      "candidate_id": "C5",
+      "launch_overrides": {
+        "gaussian_fill_amplitude_depth_scale": 1.2,
+        "gaussian_fill_covariance_scale": 3.0,
+        "gaussian_fill_exit_sigma": 2.25,
+        "minimum_radial_progress_m": 0.08,
+        "stall_window_sec": 2.0
+      },
+      "metrics": {
+        "candidate_id": "C5",
+        "convergence_time_median_sec": null,
+        "eligible": true,
+        "end_to_end_success_rate": 0.0,
+        "escape_attempt_count": 0,
+        "escape_time_median_sec": null,
+        "escape_time_p95_sec": null,
+        "family_goal_success_rates": {
+          "escape": 0.0,
+          "fill_merge": 0.0,
+          "multi_source": 0.0,
+          "noise_delay": 0.0,
+          "recenter_resume": 0.0,
+          "two_source": 0.0
+        },
+        "ineligible_run_ids": [],
+        "local_escape_success_rate": 0.0,
+        "minimum_family_goal_success_rate": 0.0,
+        "orbit_count_median": null,
+        "path_length_median_m": 13.778016078204779,
+        "revisit_rate": 0.0,
+        "run_count": 9
+      },
+      "scenario_summary_path": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08/sweep/C5/scenario_summary.yaml"
+    },
+    {
+      "candidate_id": "C6",
+      "launch_overrides": {
+        "gaussian_fill_amplitude_depth_scale": 1.2,
+        "gaussian_fill_covariance_scale": 3.0,
+        "gaussian_fill_exit_sigma": 2.75,
+        "minimum_radial_progress_m": 0.03,
+        "stall_window_sec": 4.0
+      },
+      "metrics": {
+        "candidate_id": "C6",
+        "convergence_time_median_sec": null,
+        "eligible": false,
+        "end_to_end_success_rate": 0.0,
+        "escape_attempt_count": 0,
+        "escape_time_median_sec": null,
+        "escape_time_p95_sec": null,
+        "family_goal_success_rates": {
+          "escape": 0.0,
+          "fill_merge": 0.0,
+          "multi_source": 0.0,
+          "noise_delay": 0.0,
+          "recenter_resume": 0.0,
+          "two_source": 0.0
+        },
+        "ineligible_run_ids": [
+          "20260725T072633864202Z_simulation_phase08_training-training_three_source-robust_gaussian_v1-1c97795960_b2d61d70"
+        ],
+        "local_escape_success_rate": 0.0,
+        "minimum_family_goal_success_rate": 0.0,
+        "orbit_count_median": null,
+        "path_length_median_m": 13.338694360147155,
+        "revisit_rate": 0.0,
+        "run_count": 9
+      },
+      "scenario_summary_path": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08/sweep/C6/scenario_summary.yaml"
+    },
+    {
+      "candidate_id": "C7",
+      "launch_overrides": {
+        "gaussian_fill_amplitude_depth_scale": 1.8,
+        "gaussian_fill_covariance_scale": 3.0,
+        "gaussian_fill_exit_sigma": 2.25,
+        "minimum_radial_progress_m": 0.03,
+        "stall_window_sec": 4.0
+      },
+      "metrics": {
+        "candidate_id": "C7",
+        "convergence_time_median_sec": null,
+        "eligible": true,
+        "end_to_end_success_rate": 0.0,
+        "escape_attempt_count": 0,
+        "escape_time_median_sec": null,
+        "escape_time_p95_sec": null,
+        "family_goal_success_rates": {
+          "escape": 0.0,
+          "fill_merge": 0.0,
+          "multi_source": 0.0,
+          "noise_delay": 0.0,
+          "recenter_resume": 0.0,
+          "two_source": 0.0
+        },
+        "ineligible_run_ids": [],
+        "local_escape_success_rate": 0.0,
+        "minimum_family_goal_success_rate": 0.0,
+        "orbit_count_median": null,
+        "path_length_median_m": 13.552909523505424,
+        "revisit_rate": 0.0,
+        "run_count": 9
+      },
+      "scenario_summary_path": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08/sweep/C7/scenario_summary.yaml"
+    },
+    {
+      "candidate_id": "C8",
+      "launch_overrides": {
+        "gaussian_fill_amplitude_depth_scale": 1.8,
+        "gaussian_fill_covariance_scale": 3.0,
+        "gaussian_fill_exit_sigma": 2.75,
+        "minimum_radial_progress_m": 0.08,
+        "stall_window_sec": 2.0
+      },
+      "metrics": {
+        "candidate_id": "C8",
+        "convergence_time_median_sec": null,
+        "eligible": true,
+        "end_to_end_success_rate": 0.0,
+        "escape_attempt_count": 0,
+        "escape_time_median_sec": null,
+        "escape_time_p95_sec": null,
+        "family_goal_success_rates": {
+          "escape": 0.0,
+          "fill_merge": 0.0,
+          "multi_source": 0.0,
+          "noise_delay": 0.0,
+          "recenter_resume": 0.0,
+          "two_source": 0.0
+        },
+        "ineligible_run_ids": [],
+        "local_escape_success_rate": 0.0,
+        "minimum_family_goal_success_rate": 0.0,
+        "orbit_count_median": null,
+        "path_length_median_m": 13.228608734409306,
+        "revisit_rate": 0.0,
+        "run_count": 9
+      },
+      "scenario_summary_path": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08/sweep/C8/scenario_summary.yaml"
+    }
+  ],
+  "completed": true,
+  "counts": {
+    "full": 519,
+    "holdout": 12,
+    "required": 483,
+    "training_per_candidate": 9,
+    "training_total": 81,
+    "unsupported": 0
+  },
+  "functional_tests": {
+    "command": [
+      "/usr/bin/python3",
+      "-m",
+      "pytest",
+      "-q",
+      "-rs",
+      "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/test/test_simulation_disturbances.py",
+      "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/test/test_phase08_validation.py",
+      "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/test/test_bag_analysis.py",
+      "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/test/test_bag_analysis_integration.py",
+      "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/test/test_scenario_schema.py",
+      "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/test/test_scenario_runner.py",
+      "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/test/test_experiment_recording.py",
+      "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/test/test_recording_integration.py",
+      "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/test/test_state_machine.py",
+      "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/test/test_supervisor_integration.py",
+      "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/test/test_observability_contract.py",
+      "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/test/test_legacy_behavior.py",
+      "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/test/test_robust_gaussian_algorithm.py",
+      "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/test/test_escape_recenter.py"
+    ],
+    "output_tail": ".....................................................s.................. [ 41%]\ns....................................................................... [ 83%]\n.............................                                            [100%]\n=========================== short test summary info ============================\nSKIPPED [1] src/ros_esc/test/test_scenario_runner.py:306: set RUN_GESC_PHASE06_GAZEBO_E2E=1 to run the recorded headless Gazebo integration\nSKIPPED [1] src/ros_esc/test/test_recording_integration.py:56: set DSIM_RUN_GAZEBO_RECORDING_TEST=1 for the visible Gazebo smoke\n171 passed, 2 skipped in 8.23s\n",
+    "passed": true,
+    "return_code": 0
+  },
+  "level_c_no_eligible_candidate": false,
+  "repository": {
+    "clean": true,
+    "commit": "d073f2b479a9510d999c72b90aecd20fab2bbdb7",
+    "input_hashes": {
+      "ros2_ws/src/ros_esc/ros_esc/plotting_scripts/gesc_gaussian_bag_analysis.py": "0cfdd1cdcfc9cfb54a449b954987f65252b4ae3340d086dd7303b28239dfbc89",
+      "ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py": "5df8fe3eab1f6e558189c22a118ff352f6739ec69e9d713eca60ade5291ada99",
+      "ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_full_matrix.yaml": "2786ba6aa58ab1e2eeb49b995b1c4abd68c71c1fe3f1eea13b6a993c5ef000e0",
+      "ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_holdout.yaml": "f6d9a627f0157ad62f12279f8bde40fef815b0ebdaa487398f0d3641c5172b83",
+      "ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_parameter_candidates.yaml": "e2b1db60cccb570653b629de85d9916e6a6b6700a37944434018d3fdfd1175a9",
+      "ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_training.yaml": "9ac9c47e3bc76097d97396da3bd2868cf5986f0c25de42e36c13847019014fce",
+      "ros2_ws/src/turtlebot3_rotating_sensor/launch/gazebo.launch.xml": "fc58a3f4cd5790a96f3c21f71464644edce9cb1941ca5ee89f71633876684149"
+    },
+    "tree": "e31bdf6ba320616ba4353863c188f0bb485255de"
+  },
+  "schema_version": 1,
+  "selected_candidate_id": "C8",
+  "stage": "sweep"
+}

@@ -152,6 +152,16 @@ types, values, public topics, and launch defaults are unchanged. The
 joint-state and velocity-controller spawners allow 30 seconds per controller
 manager service call to accommodate bounded Gazebo startup latency.
 
+### Phase 08 frozen validation profile
+
+The training sweep selected candidate `C8` by the declared lexicographic
+metrics. The validation-only frozen file sets
+`gaussian_fill_covariance_scale=3.0`,
+`gaussian_fill_amplitude_depth_scale=1.8`,
+`gaussian_fill_exit_sigma=2.75`, `stall_window_sec=2.0`, and
+`minimum_radial_progress_m=0.08`. These values are applied only by the Phase 08
+validation harness; no global launch default or legacy profile changes.
+
 ## PDE/Gaussian ROS parameters
 
 ### `pde_history_node`

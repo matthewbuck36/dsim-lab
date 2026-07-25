@@ -23,6 +23,7 @@ setup(
             'ros_esc/scenario_runner/scenarios/phase08_training.yaml',
             'ros_esc/scenario_runner/scenarios/phase08_holdout.yaml',
             'ros_esc/scenario_runner/scenarios/phase08_full_matrix.yaml',
+            'ros_esc/scenario_runner/scenarios/phase08_frozen_parameters.yaml',
         ]),
     ],
     install_requires=['setuptools'],
