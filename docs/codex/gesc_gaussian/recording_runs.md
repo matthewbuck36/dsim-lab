@@ -52,11 +52,10 @@ target graph.
 
 Preflight holds every final command at zero. It waits for the target graph and
 bag subscriptions, then snapshots exact ROS parameter values and types before
-publishing readiness true. Independent node snapshots run with at most two
-workers and a 15-second per-call timeout; node records and failures are sorted
-deterministically before writing. The bounds retain the same
-required-publisher failure policy without overloading Gazebo's parameter
-service.
+publishing readiness true. Node snapshots run serially with a 15-second
+per-call timeout because concurrent ROS parameter CLI requests proved
+nondeterministic under the full two-source graph. This retains deterministic
+node/failure order and the unchanged required-publisher failure policy.
 `--preflight-timeout-sec` applies to graph discovery, not parameter capture.
 
 ## Run deterministic Gazebo scenario suites

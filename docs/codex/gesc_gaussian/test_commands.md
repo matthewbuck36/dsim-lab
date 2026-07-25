@@ -1240,8 +1240,11 @@ Total wall time was 44 seconds; target start through readiness was about
 
 The first two-source C0 training attempts then failed honestly because four
 workers caused the required `/gazebo` parameter dump to hit its original
-5-second timeout. The failed bags were preserved under
-`phase08/sweep/C0/runs`; no candidate checkpoint was written. The corrected
-bound is two workers with a 15-second per-call timeout. This is a throughput
-bound, not a relaxed snapshot gate: any required publisher still fails the run
-if its values and types cannot be captured.
+5-second timeout. A two-worker, 15-second retry produced two complete runs but
+then timed out the required supervisor snapshot on run 3. The failed bags were
+preserved under `phase08/sweep/C0/runs`; no candidate checkpoint was written.
+
+The final correction restores serial parameter capture and retains the
+15-second per-call timeout. Reliability takes precedence over projected matrix
+throughput: any required publisher still fails the run if its values and types
+cannot be captured.

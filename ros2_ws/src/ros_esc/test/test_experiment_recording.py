@@ -184,10 +184,10 @@ def test_parameter_snapshot_helpers_preserve_node_paths_and_ros_types(monkeypatc
     }
 
 
-def test_parallel_parameter_capture_preserves_order_types_and_failures(
+def test_parameter_capture_preserves_order_types_and_failures(
     monkeypatch,
 ):
-    """Retain deterministic snapshot semantics across independent workers."""
+    """Retain deterministic snapshot semantics and required failures."""
     def fake_run(command, **_kwargs):
         node = command[3]
         if node == "/bad":
