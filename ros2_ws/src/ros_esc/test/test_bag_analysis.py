@@ -6,7 +6,10 @@ import pytest
 
 from ros_esc.plotting_scripts.bag_reader import (
     BagRecord,
+    build_timestamp_index,
+    causal_indexed_record,
     causal_record,
+    nearest_indexed_record,
     nearest_record,
 )
 from ros_esc.plotting_scripts.gesc_gaussian_bag_analysis import (
@@ -67,6 +70,30 @@ def test_causal_match_never_uses_a_future_state():
 
     assert selected.bag_timestamp_ns == 100
     assert skew == -150
+
+
+def test_prepared_timestamp_index_preserves_lookup_semantics():
+    """Prepared indexes must match the original one-shot lookup contract."""
+    records = [
+        _record(100),
+        _record(200, ros_timestamp=None),
+        _record(300),
+    ]
+    index = build_timestamp_index(records, 'ros_timestamp_ns')
+
+    assert index.records == tuple(records)
+    assert index.timestamps == (100, 200, 300)
+    for target, tolerance in ((50, 100), (220, 90), (400, 50)):
+        assert nearest_indexed_record(index, target, tolerance) == (
+            nearest_record(
+                records, target, tolerance, 'ros_timestamp_ns'
+            )
+        )
+        assert causal_indexed_record(index, target, tolerance) == (
+            causal_record(
+                records, target, tolerance, 'ros_timestamp_ns'
+            )
+        )
 
 
 def test_metric_statuses_do_not_fabricate_missing_values():

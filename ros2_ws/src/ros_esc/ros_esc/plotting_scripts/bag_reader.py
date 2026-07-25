@@ -46,6 +46,15 @@ class BagData:
     readiness_end_ns: int | None
 
 
+@dataclass(frozen=True)
+class TimestampIndex:
+    """Prepared records and timestamps for repeated bounded lookup."""
+
+    records: tuple
+    timestamps: tuple
+    field: str
+
+
 def load_yaml(path):
     """Load one YAML document."""
     with Path(path).open('r', encoding='utf-8') as stream:
@@ -211,46 +220,67 @@ def _timestamp(record, field):
     return value if value is not None else record.bag_timestamp_ns
 
 
-def nearest_record(records, target_timestamp_ns, tolerance_ns, field):
-    """Return the nearest record within tolerance without interpolation."""
+def build_timestamp_index(records, field):
+    """Prepare one timestamp index for repeated lookup against a stream."""
     usable = [
         record for record in records
         if getattr(record, field) is not None
     ]
-    values = [_timestamp(record, field) for record in usable]
-    index = bisect_left(values, target_timestamp_ns)
+    return TimestampIndex(
+        records=tuple(usable),
+        timestamps=tuple(_timestamp(record, field) for record in usable),
+        field=field,
+    )
+
+
+def nearest_indexed_record(index, target_timestamp_ns, tolerance_ns):
+    """Return the nearest indexed record without interpolation."""
+    position = bisect_left(index.timestamps, target_timestamp_ns)
     candidates = []
-    if index < len(usable):
-        candidates.append(usable[index])
-    if index:
-        candidates.append(usable[index - 1])
+    if position < len(index.records):
+        candidates.append(index.records[position])
+    if position:
+        candidates.append(index.records[position - 1])
     if not candidates:
         return None, None
     selected = min(
         candidates,
         key=lambda record: (
-            abs(_timestamp(record, field) - target_timestamp_ns),
-            _timestamp(record, field),
+            abs(_timestamp(record, index.field) - target_timestamp_ns),
+            _timestamp(record, index.field),
         ),
     )
-    skew = _timestamp(selected, field) - target_timestamp_ns
+    skew = _timestamp(selected, index.field) - target_timestamp_ns
     if abs(skew) > tolerance_ns:
         return None, None
     return selected, skew
+
+
+def causal_indexed_record(index, target_timestamp_ns, tolerance_ns):
+    """Return the latest causal indexed record within tolerance."""
+    position = bisect_right(index.timestamps, target_timestamp_ns) - 1
+    if position < 0:
+        return None, None
+    selected = index.records[position]
+    skew = _timestamp(selected, index.field) - target_timestamp_ns
+    if abs(skew) > tolerance_ns:
+        return None, None
+    return selected, skew
+
+
+def nearest_record(records, target_timestamp_ns, tolerance_ns, field):
+    """Return the nearest record within tolerance without interpolation."""
+    return nearest_indexed_record(
+        build_timestamp_index(records, field),
+        target_timestamp_ns,
+        tolerance_ns,
+    )
 
 
 def causal_record(records, target_timestamp_ns, tolerance_ns, field):
     """Return the latest causal record within tolerance."""
-    usable = [
-        record for record in records
-        if getattr(record, field) is not None
-    ]
-    values = [_timestamp(record, field) for record in usable]
-    index = bisect_right(values, target_timestamp_ns) - 1
-    if index < 0:
-        return None, None
-    selected = usable[index]
-    skew = _timestamp(selected, field) - target_timestamp_ns
-    if abs(skew) > tolerance_ns:
-        return None, None
-    return selected, skew
+    return causal_indexed_record(
+        build_timestamp_index(records, field),
+        target_timestamp_ns,
+        tolerance_ns,
+    )

@@ -28,10 +28,11 @@ from ros_esc_interfaces.msg import AlgorithmEvent, AlgorithmState
 import yaml
 
 from .bag_reader import (
-    causal_record,
+    build_timestamp_index,
+    causal_indexed_record,
     load_yaml,
     NANOSECONDS_PER_SECOND,
-    nearest_record,
+    nearest_indexed_record,
     read_run_bag,
     records_for_alias,
     stamp_nanoseconds,
@@ -389,6 +390,11 @@ def _synchronized_rows(bag_data, channel_index, tolerance_sec):
     states = records_for_alias(
         bag_data, 'algorithm_state', readiness_only=True
     )
+    source_index = build_timestamp_index(sources, 'ros_timestamp_ns')
+    gesc_index = build_timestamp_index(gesc, 'ros_timestamp_ns')
+    control_index = build_timestamp_index(control, 'ros_timestamp_ns')
+    odometry_index = build_timestamp_index(odometry, 'ros_timestamp_ns')
+    state_index = build_timestamp_index(states, 'ros_timestamp_ns')
     rows = []
     for anchor in anchors:
         timestamp = _record_time(anchor)
@@ -411,8 +417,8 @@ def _synchronized_rows(bag_data, channel_index, tolerance_sec):
                 and row['augmented_cost'] is not None
             ),
         })
-        source, skew = nearest_record(
-            sources, timestamp, tolerance_ns, 'ros_timestamp_ns'
+        source, skew = nearest_indexed_record(
+            source_index, timestamp, tolerance_ns
         )
         _sync_match(
             row, 'source', source, skew,
@@ -425,8 +431,8 @@ def _synchronized_rows(bag_data, channel_index, tolerance_sec):
                 ),
             },
         )
-        gesc_record, skew = nearest_record(
-            gesc, timestamp, tolerance_ns, 'ros_timestamp_ns'
+        gesc_record, skew = nearest_indexed_record(
+            gesc_index, timestamp, tolerance_ns
         )
         _sync_match(
             row, 'gesc', gesc_record, skew,
@@ -435,8 +441,8 @@ def _synchronized_rows(bag_data, channel_index, tolerance_sec):
                 'gesc_output_y': _value_at(item.filter_output, 1),
             },
         )
-        pose_record, skew = nearest_record(
-            odometry, timestamp, tolerance_ns, 'ros_timestamp_ns'
+        pose_record, skew = nearest_indexed_record(
+            odometry_index, timestamp, tolerance_ns
         )
         _sync_match(
             row, 'pose', pose_record, skew,
@@ -450,8 +456,8 @@ def _synchronized_rows(bag_data, channel_index, tolerance_sec):
                 'measured_wz_rps': float(item.twist.twist.angular.z),
             },
         )
-        control_record, skew = nearest_record(
-            control, timestamp, tolerance_ns, 'ros_timestamp_ns'
+        control_record, skew = nearest_indexed_record(
+            control_index, timestamp, tolerance_ns
         )
 
         def control_values(item):
@@ -471,8 +477,8 @@ def _synchronized_rows(bag_data, channel_index, tolerance_sec):
         _sync_match(
             row, 'control', control_record, skew, control_values
         )
-        state_record, skew = causal_record(
-            states, timestamp, tolerance_ns, 'ros_timestamp_ns'
+        state_record, skew = causal_indexed_record(
+            state_index, timestamp, tolerance_ns
         )
         _sync_match(
             row, 'state', state_record, skew,
@@ -1086,12 +1092,13 @@ def _observed_delay_metric(
             status='invalid',
         )
 
+    clock_index = build_timestamp_index(clock, 'bag_timestamp_ns')
+
     def simulation_stamp(record):
-        clock_record, _ = nearest_record(
-            clock,
+        clock_record, _ = nearest_indexed_record(
+            clock_index,
             record.bag_timestamp_ns,
             int(0.05 * NANOSECONDS_PER_SECOND),
-            'bag_timestamp_ns',
         )
         if clock_record is None:
             return None

@@ -1280,3 +1280,35 @@ before snapshot; these do not satisfy or weaken any required-publisher gate.
 After formatting the touched controller launch owner, one rebuilt installed-path
 smoke again passed all completeness, final-zero, clean-exit, and fault-log
 checks.
+
+### Phase 08 analysis throughput correction
+
+The clean C0 training suite completed all nine recordings before candidate
+aggregation. During aggregation, Phase 07 synchronization rebuilt each source,
+GESC, pose, control, and state timestamp list for every cost anchor. One
+180-second bag required about ten minutes of CPU analysis, projecting the
+required matrix into multiple days beyond recording time. The sweep was
+interrupted only after all nine C0 bags and `scenario_summary.yaml` had been
+atomically finalized; no C0 raw evidence was removed or relabeled.
+
+This bounded Level B correction adds one immutable timestamp index per stream
+and reuses the existing bisect selection logic. One-shot `nearest_record` and
+`causal_record` behavior remains available and delegates to the same indexed
+implementation. Focused analysis, integration, and Phase 08 harness tests:
+
+```text
+16 passed in 4.89s
+python compile, fatal flake8 selection, and git diff check: pass
+```
+
+The first completed C0 bag was analyzed into a separate comparison directory:
+
+```text
+elapsed=48.72 user=49.19 system=2.51 max_rss_kb=1120880
+```
+
+The pre-correction and indexed outputs have byte-identical
+`summary_metrics.json`, summary CSV, analysis completeness report, all eleven
+CSV tables, and complete relative file set. The raw bag remained unchanged.
+This establishes metric/gate equivalence while removing repeated timestamp-list
+construction.

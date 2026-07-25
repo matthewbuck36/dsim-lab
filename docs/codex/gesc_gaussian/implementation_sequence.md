@@ -254,6 +254,10 @@ Add small known bag fixtures or generated fixtures at Phase-07-approved test
 paths. Preserve timestamps and flag incomplete runs.
 Missing final-zero evidence or an unclean controller/supervisor shutdown must
 be one of the explicit incomplete-run conditions.
+For matrix throughput, build each timestamp lookup index once per topic stream
+and reuse the existing nearest/causal bisect semantics for every anchor.
+Optimization must retain byte-identical metrics, completeness, and table
+outputs on a recorded reference bag.
 
 ## Phase 08 - simulation validation and freeze
 
