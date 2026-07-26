@@ -100,13 +100,14 @@ Per run:
 - timeout/failsafe,
 - data-completeness status.
 
-## Staged Phase 08 validation design
+## Phase 08 experiment-version design
 
 The former 519-run pass repeated three times is retired for future acceptance.
 It remains historical Phase 08 v1 evidence and must not be deleted, relabeled,
 or counted toward the amended gate.
 
-The amended empirical workflow contains exactly 120 declared runs:
+The exact 120-run workflow below was Phase 08 v2 and is now closed failed
+historical evidence:
 
 1. **Activation proof — 10 runs.** Exercise easy goal hold, local-minimum
    classification, fill creation, pure repulsion, assisted escape, fill merge,
@@ -129,7 +130,7 @@ The amended empirical workflow contains exactly 120 declared runs:
    coverage, and gate disposition with numerical metrics inside declared
    tolerances.
 
-The 70 unique validation runs use this fixed family allocation:
+Its 70 unique validation runs used this fixed family allocation:
 
 | Family | Hidden holdout | Additional validation | Unique total | Repeats |
 |---|---:|---:|---:|---:|
@@ -149,16 +150,45 @@ This is a stratified empirical claim over the declared scenario sample, not an
 exhaustive claim over every start/seed Cartesian product. Report observed rates
 and two-sided 95% Wilson score confidence intervals overall and by family.
 
-Activation and holdout are explicit early-stop gates. A failed early stage is a
-Level C result: preserve its evidence, write the failure report, and do not
-spend the remaining run budget.
+V2 activation failed and its later stages remain unrun.
+
+### Future diagnostic/development stages
+
+Diagnostic activation establishes:
+
+- recording, analysis, collision, final-zero, and cleanup integrity;
+- reachability of each intended lifecycle branch across targeted,
+  scenario-specific cases;
+- analytical or recorded reachability of every goal-score expectation;
+- bounded fill-design and startup latency;
+- separation of controller goal classification from simulation ground truth.
+
+It is not an end-to-end acceptance denominator and may be iterated under a
+versioned, bounded development plan. Advanced behavior such as assisted escape,
+merge, and recenter may be developed/tuned after their branch is reachable;
+initial parameter misses do not by themselves forbid tuning.
+
+Before formal acceptance, seal one machine-readable contract containing the
+fixed commit/config/scenario hashes, unique denominator, family allocations,
+holdout subset, repeat subset, thresholds, minimum metric denominators,
+infrastructure-invalid attempt policy, and exact pass/fail/N/A semantics.
+Embed its hash in the run manifest, gate JSON, and report.
+
+Objectively pre-readiness infrastructure-invalid attempts may receive at most
+the predeclared bounded replacement for that experiment. Retain and link every
+attempt and report infrastructure invalidity separately. Never replace a valid
+behavioral outcome after observing it.
+
+A holdout or acceptance failure closes that experiment version. It forbids
+retuning or continuing later acceptance stages in the same version, but it
+does not forbid separately planned diagnosis, correction, and a new version.
 
 ## Simulation-ready gate
 
 All must be true with one fixed code commit and one fixed parameter set:
 
 1. All unit and integration tests pass.
-2. The 10-run activation gate passes before tuning.
+2. The versioned diagnostic-readiness contract passes before formal freeze.
 3. The 20-run hidden holdout gate passes before the additional validation runs.
 4. No required-topic, analysis-completeness, cleanup, or frozen-hash failure
    occurs in the 70 unique validation runs or ten repeats.
@@ -179,6 +209,11 @@ All must be true with one fixed code commit and one fixed parameter set:
     path length by no more than the greater of 0.25 m or 10%, orbit count by no
     more than 0.25, and final goal-distance by no more than 0.10 m.
 15. Git commit is tagged as simulation-ready only after gates 1–14 pass.
+
+For a future contract, express small-family percentage thresholds as exact
+counts, declare the minimum number of successful escape attempts needed for
+median/p95 statistics, and define the zero-denominator revisit result. Wilson
+intervals remain descriptive and never substitute for predeclared point gates.
 
 The exact physical time thresholds may be revised once the repository's current
 velocity limits are audited, but any revision must be written, justified,

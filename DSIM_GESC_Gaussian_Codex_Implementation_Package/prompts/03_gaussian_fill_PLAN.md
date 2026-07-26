@@ -4,7 +4,7 @@ Read these files before doing anything:
 - `DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md`
 - `DSIM_GESC_Gaussian_Codex_Implementation_Package/00_MASTER_IMPLEMENTATION_PLAN.md`
 - `DSIM_GESC_Gaussian_Codex_Implementation_Package/01_RESEARCH_DECISIONS_AND_ASSUMPTIONS.md`
-- all prior files under `docs/codex/gesc_gaussian/`, if they exist.
+- current Plan/status files and any older artifact needed to resolve a specific current claim.
 
 Rules:
 1. Preserve the repository's package organization, node conventions, topic naming, parameter style, launch style, and test conventions.
@@ -53,7 +53,7 @@ Include deterministic unit-test fields and expected numerical outcomes.
 # Required durable Plan artifact
 
 At the end of this Plan task, produce one self-contained Markdown document
-suitable for saving verbatim as:
+suitable for review and persistence as:
 
 `docs/codex/gesc_gaussian/plans/phase_03_plan.md`
 

@@ -1,11 +1,10 @@
 # GESC Gaussian Topic and Message Dictionary
 
-> Phases 01-07.5 are implemented. Phase 04 passed its amended focused and visible
+> Phases 01-07.5 and the Phase 08 v2 harness are implemented. Phase 04 passed its amended focused and visible
 > Gazebo/SIGINT gates, Phase 05 produced a complete retained sqlite3 run, and
 > Phase 06 composes the same launch/recording owners in a deterministic serial
-> scenario runner. These results establish implementation and recording
-> readiness only; they do not establish the Phase 08 simulation-robustness
-> acceptance claim.
+> scenario runner. Phase 08 v2 stopped failed at activation and produced no
+> frozen profile or robustness acceptance. Phase 08.1 diagnosis is active.
 
 This dictionary is the resolved Phase 05 interface contract for the current
 `dsim-lab` checkout. `algorithm_profile=legacy` remains the default and keeps
@@ -511,10 +510,11 @@ Current Gazebo owners populate them with `source_mode=SOURCE_SIMULATION`.
 the shared filter, controller, fill, state, or event interfaces. Phase 03 does
 not guess a photoresistor, Vicon, physical launch, calibration, room-boundary,
 or collision topic; those remain unavailable until the Phase 09 inventory.
-The Phase 04 bounds are a configured virtual operating envelope. The audited
-Gazebo world has no inferred walls/contact owner, so passing these checks is
-not a physical collision-safety claim. Setting `recenter_after_escape=False`
-selects the unbounded robust path and bypasses bounds and recentering.
+The Phase 04 bounds are a configured virtual operating envelope. Phase 07.5
+added an opt-in validation world and Gazebo contact publishers on
+`/gesc_gaussian/simulation/contacts`; they are simulation evidence and not a
+physical collision-safety claim. Setting `recenter_after_escape=False` selects
+the unbounded robust path and bypasses bounds and recentering.
 
 ## Phase 05 recording interface
 

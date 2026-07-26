@@ -1,5 +1,20 @@
 # Research Decisions and Assumptions
 
+## Invariants and provisional policy
+
+The fixed research invariants are robust autonomous escape, safe bounded
+motion, avoidance of known minima, calibrated goal classification, complete
+structured evidence, independently switchable cost contributions, selectable
+legacy behavior, and shared simulation/physical algorithm semantics.
+
+Pure-repulsion-first sequencing, one redesign before assistance, automatic
+recentering, the current estimator/fit/grid/escalation mechanics, fill
+retention, timeouts, and numeric thresholds are adopted engineering
+hypotheses. They are configurable and may be replaced by evidence-backed,
+versioned changes before formal freeze. Once a fixed-profile holdout starts,
+code, scenarios, parameters, and acceptance thresholds remain immutable for
+that experiment version.
+
 This document resolves the uncertainties from the meetings into one adopted implementation plan.
 
 ## Fixed research decisions

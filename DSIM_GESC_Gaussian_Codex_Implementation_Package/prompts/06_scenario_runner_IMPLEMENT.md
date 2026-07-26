@@ -4,13 +4,9 @@ Read:
 - `DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md`
 - the phase specification named in this prompt,
 - `docs/codex/gesc_gaussian/plans/phase_06_plan.md`
-- `docs/codex/gesc_gaussian/repo_audit.md`
-- `docs/codex/gesc_gaussian/repo_map.md`
-- `docs/codex/gesc_gaussian/interface_map.md`
-- `docs/codex/gesc_gaussian/test_commands.md`
 - `docs/codex/gesc_gaussian/implementation_sequence.md`
 - `docs/codex/gesc_gaussian/knowledge_bridge_phase_00_05.md`
-- every previous phase handoff, including `phase_05_5_handoff.md`.
+- the Phase 05.5 bridge/handoff and latest relevant dependency handoff(s), with older handoffs consulted on demand.
 
 Before editing, initialize the live status, verify it against Git, and run:
 
@@ -27,7 +23,7 @@ Level C acceptance failure without weakening the gate.
 
 Long-run continuity:
 - Maintain `docs/codex/gesc_gaussian/status/phase_06_status.md` throughout execution.
-- After each verified milestone, record exact evidence and run `checkpoint_phase.sh 06`.
+- Record exact evidence continuously and run `checkpoint_phase.sh 06` at material or independently reviewable boundaries.
 - After compaction or interruption, reread the plan/status, inspect Git status and diff, and resume from the next incomplete criterion.
 - Bound long commands and retain verbose logs by path rather than in chat.
 - Do not repeat a recorded failed approach or restructure validated milestone work without failing-test evidence.
@@ -40,7 +36,7 @@ Rules:
 5. Do not run physical hardware.
 6. Add focused tests for every new behavior.
 7. Run the repository-standard format/lint/build/test commands relevant to changed packages.
-8. Keep the change bounded. If it exceeds roughly 10 implementation files, split it into coherent subcommits and explain why.
+8. Keep changes coherent, reviewable, owner-aligned, and independently tested; split only at meaningful review/test boundaries.
 9. Update documentation and parameter references.
 10. Write the required phase handoff under `docs/codex/gesc_gaussian/handoffs/`.
 11. End with Git status, tests, unresolved issues, and a recommended commit message.

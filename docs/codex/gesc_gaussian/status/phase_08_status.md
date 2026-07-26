@@ -1,14 +1,15 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-25T18:33:32-07:00`
-Status: `FAILED — LEVEL C`
+Last verified: `2026-07-25T19:09:02-07:00`
+Status: `IN PROGRESS — PHASE 08.1 DIAGNOSTIC RECOVERY`
 
 ## Objective
 
-Implement the amended staged Phase 08 v2 workflow, repair and prove the
-activation and rotation-aware goal-verification contracts, freeze one selected
-profile, and evaluate the declared 120-run empirical design without mutating or
-counting historical v1 evidence.
+Diagnose the closed failed Phase 08 v2 activation evidence, correct bounded
+implementation and scenario-contract defects, simplify obstructive workflow
+rules, and prove the corrections with focused tests and minimal versioned
+simulation probes. Historical v1 and v2 evidence remains immutable and cannot
+count toward a future acceptance attempt.
 
 ## Verified repository state
 
@@ -63,26 +64,54 @@ counting historical v1 evidence.
 - Gate 2 therefore failed and the plan's early-stop rule closed Phase 08 before
   tuning. Partial and failure reports mark Gates 3–14 `NOT RUN`; no v2 profile
   was selected or frozen.
+- Phase 08.1 M1 audited all 58 package files and all 37 `docs/` files. JSON
+  validation and local Markdown-link checks passed; the 4,041-line v2 manifest
+  parsed with the expected 10/30/20/50/10 structure and 70-case unique
+  denominator.
+- M1 separated direct research requirements from provisional pure-repulsion,
+  redesign, recenter, fill-design, timeout, and threshold hypotheses.
+- M1 replaced mandatory fresh chats, verbatim Plan copying, all-history
+  rereads, blanket drift/dirty-tree/test-unavailable stops, per-small-milestone
+  checkpoints, and the arbitrary file-count cap with current-state,
+  Level A/B/C, coherent-owner, and material-boundary rules.
+- M1 preserved hard compatibility, final-zero, cleanup, evidence retention,
+  freeze/holdout, no-tag, and no-physical-motion gates.
+- The historical plan/report threshold mismatch is recorded in
+  `validation/phase_08_v2_contract_erratum.md`; historical v2 artifacts were
+  not rewritten.
 
 ## Current milestone
 
-- Milestone: ten-run Phase 08 v2 activation gate — **FAILED and closed**.
-- Implementation complete: `yes` at `8aab27c`.
-- Empirical acceptance: `no`; Gate 2 observed `1/10`, required `10/10`.
-- Next acceptance criterion: none remains inside Phase 08. Further empirical
-  work requires a new bounded Phase 08.1 plan.
+- Historical milestone: ten-run Phase 08 v2 activation gate — **FAILED and
+  closed** at `2d796dd`.
+- Completed milestone: Phase 08.1 M1 durable diagnosis and workflow correction.
+- Current milestone: Phase 08.1 M2 fill-latency correction.
+- Current plan:
+  `docs/codex/gesc_gaussian/plans/phase_08_1_plan.md`.
+- Next criterion: prefilter the estimator window, replace repeated full-set
+  sorting with deterministic efficient synchronization, add realistic
+  equivalence/latency coverage and design-duration diagnostics, then run the
+  focused fill regressions.
 
 ## Current problem or blocker
 
 - No Level A blocker is present.
-- The missed activation criterion is a Level C terminal result, not an
-  implementation permission to retune or weaken the gate.
-- Six cases failed completeness because a late stale-source `FILL_CREATED`
-  followed timeout/failsafe and regressed typed ROS time by more than 0.150
-  seconds. One stalled-assist case separately failed the required publisher
-  parameter snapshot. Two complete cases missed their designated lifecycle.
-- The retained bags are sufficient for the next diagnosis; do not rerun the
-  activation stage merely to recover context.
+- V2 remains a Level C failure and cannot be resumed, retuned, relabeled, or
+  counted toward a new claim.
+- Offline diagnosis found that repeated full-history sample sorting blocked the
+  fill node for 5.5–15.7 seconds, causing both the five-second design timeout
+  and stale-clock late event ordering.
+- Four activation goal expectations were inconsistent with the adopted
+  calibrated `source_score >= 0.95` rule. Only the high calibrated case was
+  reachable as `GOAL_HOLD`; ground-truth proximity did not make the others
+  controller goals.
+- Rotation evidence was accumulated during `SEARCH`, so the high goal pass did
+  not prove two fresh post-verification rotations.
+- The stalled-assist attempt was infrastructure-invalid during Gazebo/controller
+  startup, and recenter/resume failed from a pre-behavior watchdog/pose startup
+  race.
+- The retained bags are sufficient for code and contract diagnosis. Do not
+  rerun the historical activation stage.
 
 ## Files currently relevant
 
@@ -216,6 +245,14 @@ counting historical v1 evidence.
   counted.
 - No tuning, parameter selection, freeze, holdout, 70-run validation,
   reproducibility, physical command, or tag was executed.
+- Phase 08.1 M1 shell/context checks:
+  `bash -n` passed for `validate_phase_context.sh`, `checkpoint_phase.sh`,
+  `init_phase_status.sh`, and `make_codex_context_bundle.sh`;
+  both normal and `--strict-history` Phase 08 Implement validation passed;
+  both changed template YAML files parsed; `git diff --check` passed.
+- Phase 08.1 M1 material-boundary checkpoint:
+  `checkpoint_phase.sh 08` passed and wrote the compact precommit snapshot at
+  `docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt`.
 
 ## Attempts not to repeat
 
@@ -235,13 +272,18 @@ counting historical v1 evidence.
 
 ## Remaining work
 
-No remaining work is authorized inside Phase 08. The smallest justified next
-phase is a separately planned Phase 08.1 diagnosis of:
+Follow `phase_08_1_plan.md` milestones M1–M7:
 
-1. late stale-source typed-event timestamp ordering;
-2. fill-design timeout/failsafe behavior after confirmed low/medium minima;
-3. stalled-assist publisher-parameter snapshot reliability; and
-4. the boundary of the rotation score window before verification.
+1. durable diagnosis/workflow correction;
+2. bounded fill-latency correction;
+3. verification-boundary correction;
+4. simulation readiness and timestamp/evidence semantics;
+5. reachable scenario contracts;
+6. minimal versioned simulation probes;
+7. Phase 08.1 handoff and a separately reviewed v3 recommendation.
+
+No v3 tuning, holdout, acceptance denominator, tag, or physical motion is
+authorized in this plan.
 
 ## Stop conditions
 
@@ -255,7 +297,8 @@ phase is a separately planned Phase 08.1 diagnosis of:
 
 ## Compaction recovery
 
-Phase 08 is terminally closed. A future chat must reread the plan, this status,
-the Phase 08 handoff, and the retained failure reports; inspect Git and the
-v2 evidence state; and begin only from an approved Phase 08.1 plan. It must not
-resume the v2 stage order from this failed state.
+Phase 08 v2 is terminally closed; Phase 08.1 is active. Reread `AGENTS.md`,
+`phase_08_plan.md`, `phase_08_1_plan.md`, and this status; inspect Git status
+and the relevant diff; identify the next incomplete Phase 08.1 milestone; and
+continue from retained evidence. Never resume or relabel v1/v2, and never rerun
+their matrices merely to recover context.

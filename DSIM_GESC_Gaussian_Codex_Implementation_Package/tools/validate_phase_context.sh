@@ -2,16 +2,26 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: validate_phase_context.sh <phase 0-10> <plan|implement>" >&2
+  echo "Usage: validate_phase_context.sh <phase 0-10> <plan|implement> [--strict-history]" >&2
 }
 
-if [[ "$#" -ne 2 ]]; then
+if [[ "$#" -lt 2 || "$#" -gt 3 ]]; then
   usage
   exit 2
 fi
 
 PHASE_INPUT="$1"
 STAGE="$2"
+STRICT_HISTORY=false
+
+if [[ "$#" -eq 3 ]]; then
+  if [[ "$3" != "--strict-history" ]]; then
+    echo "Invalid option: $3" >&2
+    usage
+    exit 2
+  fi
+  STRICT_HISTORY=true
+fi
 
 if [[ ! "$PHASE_INPUT" =~ ^(0?[0-9]|10)$ ]]; then
   echo "Invalid phase: $PHASE_INPUT" >&2
@@ -46,20 +56,26 @@ required=(
   "$PACKAGE/tools/init_phase_status.sh"
   "$PACKAGE/tools/checkpoint_phase.sh"
 )
+historical=()
 
 if (( PHASE_NUMBER > 0 )); then
   required+=(
+    "$DOCS/implementation_sequence.md"
+  )
+  historical+=(
     "$DOCS/repo_audit.md"
     "$DOCS/repo_map.md"
     "$DOCS/interface_map.md"
     "$DOCS/test_commands.md"
-    "$DOCS/implementation_sequence.md"
   )
 
   for ((i = 0; i < PHASE_NUMBER; i++)); do
     printf -v prior "%02d" "$i"
-    required+=("$DOCS/handoffs/phase_${prior}_handoff.md")
+    historical+=("$DOCS/handoffs/phase_${prior}_handoff.md")
   done
+
+  printf -v immediate_prior "%02d" "$((PHASE_NUMBER - 1))"
+  required+=("$DOCS/handoffs/phase_${immediate_prior}_handoff.md")
 fi
 
 if (( PHASE_NUMBER >= 6 )); then
@@ -67,6 +83,10 @@ if (( PHASE_NUMBER >= 6 )); then
     "$DOCS/knowledge_bridge_phase_00_05.md"
     "$DOCS/handoffs/phase_05_5_handoff.md"
   )
+fi
+
+if [[ "$STRICT_HISTORY" == true ]]; then
+  required+=("${historical[@]}")
 fi
 
 if (( PHASE_NUMBER == 8 )) && [[ "$STAGE" == "implement" ]]; then
@@ -91,6 +111,15 @@ done
 if (( missing != 0 )); then
   echo "Phase $PHASE $STAGE context validation failed." >&2
   exit 1
+fi
+
+if [[ "$STRICT_HISTORY" == false ]]; then
+  for path in "${historical[@]}"; do
+    if [[ ! -s "$path" ]]; then
+      echo "Historical context warning: missing or empty: $path" >&2
+      echo "Reconstruct the needed claim from current code, Git, and relevant retained evidence." >&2
+    fi
+  done
 fi
 
 for path in \

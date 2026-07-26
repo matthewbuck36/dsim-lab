@@ -1,13 +1,19 @@
-# Initial simulation defaults for the robust_gaussian_v1 profile.
-# Phase 00/02 must place these under the repository's actual parameter hierarchy.
-# Raw sensor/cost calibration is intentionally separate from these normalized values.
+# Illustrative initial simulation defaults, not a generated current freeze.
+# Resolve live defaults from the current launch/parameter owners and record
+# exact resolved parameters for each experiment version.
+# Raw sensor/cost calibration is intentionally separate from normalized values.
 
 algorithm_profile: robust_gaussian_v1
 
 supervisor:
   convergence_hold_sec: 2.0
   goal_score_threshold: 0.95
+  goal_score_rotation_period_sec: 3.0
+  goal_score_required_rotations: 2
+  # Rotation evidence begins fresh on entry to VERIFY_EXTREMUM.
   goal_hold_sec: 3.0
+  undesired_score_hold_sec: 3.0
+  verification_max_sec: 10.0
   escape_exit_hold_sec: 1.0
   stall_window_sec: 3.0
   minimum_radial_progress_m: 0.05

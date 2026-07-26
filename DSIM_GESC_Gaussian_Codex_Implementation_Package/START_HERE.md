@@ -51,7 +51,9 @@ git status
 git switch -c feature/gesc-gaussian-robustness-v1
 ```
 
-Do not begin from a dirty working tree unless the current changes are intentionally committed or stashed.
+Inspect a dirty working tree before editing. Preserve and work around
+non-overlapping user changes; stop only when intended edits overlap or cannot
+be preserved safely.
 
 ---
 
@@ -59,26 +61,23 @@ Do not begin from a dirty working tree unless the current changes are intentiona
 
 For every phase:
 
-1. Start a **new Codex chat**.
-2. Use **Plan mode** first.
-3. Paste the phase's `*_PLAN.md` prompt.
-4. Let the prompt's context validator confirm that the required audit and
-   prior-handoff files exist.
-5. Review the exact file-level plan that Codex produces.
-6. Save the complete final Plan response at
-   `docs/codex/gesc_gaussian/plans/phase_XX_plan.md`.
-7. Stay on the same Git branch.
-8. Start a new Codex chat in implementation/goal mode.
-9. Paste the corresponding `*_IMPLEMENT.md` prompt.
-10. Initialize or resume
+1. Inspect current code, tests, Git, the active Plan/status, retained evidence,
+   and latest relevant dependency handoffs.
+2. Run the phase's Plan context validator.
+3. Create or amend the durable Plan at
+   `docs/codex/gesc_gaussian/plans/phase_XX_plan.md`; a manual verbatim chat
+   export is not required.
+4. Review the file-level Plan and remain on the same Git branch.
+5. Initialize or resume
     `docs/codex/gesc_gaussian/status/phase_XX_status.md`; verify it against Git,
-    then let the implementation preflight verify the saved plan, live status,
-    Phase 00 audit documents, and prior handoffs.
-11. Require Codex to update the live status and create a repository checkpoint
-    after every verified milestone.
-12. Require Codex to run the tests named in the prompt and write
+    then run the implementation preflight.
+6. Implement milestone by milestone in the same or a new chat. Update live
+   status continuously and create a checkpoint at material evidence, expensive
+   empirical, or independently reviewable implementation boundaries.
+7. Run the tests named in the Plan and write
     `docs/codex/gesc_gaussian/handoffs/phase_XX_handoff.md`.
-13. Close the live status and commit the phase before beginning the next one.
+8. Close the live status and commit the coherent phase before beginning the
+   next one.
 
 Use the phases in numeric order. Do not skip Phase 00.
 
@@ -87,7 +86,7 @@ Experimental Codex memory may be useful, but `AGENTS.md`, the version-controlled
 audit documents, saved phase plan, live phase status, implementation handoffs,
 current repository state, and Git history are the source of truth.
 
-For Phases 06-10, every Plan and Implement chat must also read:
+For Phases 06-10, use these as the default historical summary:
 
 ```text
 docs/codex/gesc_gaussian/knowledge_bridge_phase_00_05.md
@@ -95,9 +94,8 @@ docs/codex/gesc_gaussian/handoffs/phase_05_5_handoff.md
 ```
 
 The bridge is the current cross-phase summary; the Phase 00 audit remains the
-historical baseline. Implement chats must read all previous handoffs and their
-saved current-phase plan. Plan chats are read-only and must end with a complete
-Markdown plan suitable for manual saving at the documented path.
+historical baseline. Read older audits and handoffs through targeted
+dependency/conflict lookup rather than reloading all of them by default.
 
 ---
 
@@ -122,19 +120,19 @@ docs/codex/gesc_gaussian/plans/phase_00_plan.md
 The Phase 00 Implement chat must read and verify that file before creating the
 audit documents.
 
-## Current checkpoint at Phase 08
+## Current checkpoint at Phase 08.1
 
-Phases 00-07.5 are implemented. Phase 08 v1 failed/incompletely executed and is
-retained as historical evidence. The amended staged Phase 08 v2 plan is saved.
-The next implementation prompt for the current branch is:
+Phases 00-07.5 are implemented. Phase 08 v1 and v2 are closed failed historical
+evidence. The active work is the bounded Phase 08.1 diagnosis and recovery
+defined in:
 
 ```text
-prompts/08_validation_IMPLEMENT.md
+docs/codex/gesc_gaussian/plans/phase_08_1_plan.md
 ```
 
-Before using it, read the saved Phase 08 plan and
-`docs/codex/gesc_gaussian/status/phase_08_status.md`, then inspect Git state.
-Do not resume the retired v1 full-pass workflow.
+Read it with the saved Phase 08 plan and live status, then inspect Git state.
+Do not resume or relabel either historical evidence root. Large tuning,
+holdout, acceptance, tagging, and physical motion are outside Phase 08.1.
 
 ---
 

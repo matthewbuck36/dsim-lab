@@ -1,5 +1,8 @@
 schema_version: 1
-scenario_id: two_source_level_matrix_example
+scenario_id: two_source_sparse_example
+# Schema illustration only. Do not use Cartesian expansion as an acceptance
+# design. Formal cases, starts, and seeds must be sparsely predeclared and
+# sealed in a versioned manifest.
 mode: simulation
 bounds_m: [-2.0, 2.0, -2.0, 2.0]
 room_center_m: [0.0, 0.0]
@@ -9,22 +12,18 @@ algorithm_profiles:
   - robust_gaussian_v1
 
 repeats:
-  deterministic_seeds: [101, 102, 103]
+  deterministic_seeds: [101]
 
 robot_starts:
   - [-1.5, -1.5, 0.0]
-  - [-1.5,  1.5, -1.57]
-  - [ 1.5, -1.5, 1.57]
-  - [ 0.0, -1.5, 0.78]
-  - [ 0.0,  0.0, 0.0]
 
 sources:
   positions:
     - [-0.75, 0.50]
     - [ 0.90, 0.75]
   level_grid:
-    source_1: [1, 2, 3, 4, 5]
-    source_2: [1, 2, 3, 4, 5]
+    source_1: [2]
+    source_2: [5]
 
 disturbances:
   sensor_noise_std: 0.0

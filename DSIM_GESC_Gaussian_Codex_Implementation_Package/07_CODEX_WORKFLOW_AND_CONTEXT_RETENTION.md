@@ -1,12 +1,12 @@
 # Codex Workflow and Context Retention
 
-## One phase per Codex context
+## Durable phase state independent of chat boundaries
 
-Use a new chat for each Plan prompt and each Implement prompt.
-
-Treat every new chat as fresh context. Do not ask one Codex session or
-experimental memory to preserve exact decisions from earlier phases. Make the
-repository carry the memory.
+A Plan and its implementation may occur in the same or different chats.
+Chat boundaries are operational choices, not gates. The repository must carry
+the exact decisions either way, and every continuation reconstructs current
+state from code, Git, the active Plan/amendment, live status, retained evidence,
+and relevant handoffs rather than relying on conversation memory.
 
 ## Four-part repository memory
 
@@ -20,7 +20,7 @@ docs/codex/gesc_gaussian/test_commands.md
 docs/codex/gesc_gaussian/implementation_sequence.md
 ```
 
-Every Plan chat produces a self-contained response that the user saves as:
+Every approved Plan is persisted as:
 
 ```text
 docs/codex/gesc_gaussian/plans/phase_XX_plan.md
@@ -50,38 +50,40 @@ and the current checkout remain authoritative for actual file contents.
 
 For Phase `XX`:
 
-1. Start a new Plan-mode chat and paste `prompts/XX_*_PLAN.md`.
-2. Run the prompt's `validate_phase_context.sh XX plan` preflight.
-3. Review the final self-contained Plan response.
-4. Save it verbatim as
-   `docs/codex/gesc_gaussian/plans/phase_XX_plan.md`.
-5. Start a new implementation/goal chat and paste
-   `prompts/XX_*_IMPLEMENT.md`.
-6. Run `init_phase_status.sh XX`, verify the generated live status against the
+1. Review the current repository/evidence state and run
+   `validate_phase_context.sh XX plan`.
+2. Create or amend the durable Plan at
+   `docs/codex/gesc_gaussian/plans/phase_XX_plan.md`; it need not be a verbatim
+   chat transcript.
+3. Review and approve the durable Plan.
+4. Run `init_phase_status.sh XX`, verify the generated live status against the
    current checkout, then run `validate_phase_context.sh XX implement`.
-7. Verify the saved plan and live status against the current checkout.
-8. Implement milestone by milestone. Update the live status and run
-   `checkpoint_phase.sh XX` after every verified milestone.
-9. Test and write
+5. Verify the Plan, any active amendment/subphase Plan, and live status against
+   the current checkout.
+6. Implement milestone by milestone. Update live status continuously and run
+   `checkpoint_phase.sh XX` at material evidence, expensive empirical, or
+   independently reviewable implementation boundaries.
+7. Test and write
    `docs/codex/gesc_gaussian/handoffs/phase_XX_handoff.md`.
-10. Close the live status, review, and commit the bounded phase before starting
+8. Close the live status, review, and commit the coherent phase before starting
     Phase `XX+1`.
 
-Do not open the Implement chat until the saved Plan artifact exists and passes
-validation.
+Do not begin implementation until the durable Plan exists and passes
+validation. A failed fixed experiment version may be followed by an approved
+diagnostic amendment or subphase without pretending the failed version passed.
 
-## What a fresh chat must read
+## What a continuation must read
 
-A phase Implement chat reads:
+An implementation continuation reads:
 
 ```text
+AGENTS.md
 START_HERE.md
-+ master and phase specifications
-+ Phase 00 audit documents
-+ previous implementation handoffs
 + current phase saved plan
++ active amendment/subphase plan, if any
 + current live phase status
 + current repository state and Git history
++ latest dependency handoff(s) and retained evidence needed by the milestone
 = complete working context
 ```
 
@@ -92,10 +94,12 @@ docs/codex/gesc_gaussian/knowledge_bridge_phase_00_05.md
 docs/codex/gesc_gaussian/handoffs/phase_05_5_handoff.md
 ```
 
-Every remaining Implement chat must explicitly read all five Phase 00 audit
-files, the knowledge bridge, every prior implementation handoff including
-Phase 05.5, and its saved `phase_XX_plan.md`. Every remaining Plan chat is
-read-only and must return a complete plan artifact suitable for manual saving.
+The Phase 00 audits and older handoffs are indexed historical context. Read
+them through targeted dependency/conflict lookup when the current milestone
+depends on their claims. Do not require every continuation to reload every
+historical artifact. The knowledge bridge and latest relevant handoffs provide
+the default history summary; current code, tests, resolved interfaces, and Git
+remain authoritative.
 
 The Implement chat must verify the plan and live status against the current
 checkout before editing and apply the three-level contradiction policy below.
@@ -121,7 +125,7 @@ is a concise semantic shift log, not a second plan or final handoff. It records:
 - attempts and expensive actions not to repeat;
 - remaining work and active stop conditions.
 
-After each meaningful milestone:
+At each material boundary:
 
 1. run milestone-specific and relevant regression tests;
 2. update the live status from observed evidence;
@@ -261,11 +265,13 @@ DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh 
 DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh XX implement
 ```
 
-The Plan check verifies the core specifications and, after Phase 00, all Phase
-00 audit documents and previous phase handoffs. Before the Implement check,
-initialize and verify the current live status. The Implement check adds the
-saved Plan and live status artifacts and validates the required status
-headings. Missing or empty context is a blocking error.
+The Plan check hard-requires current navigation, core safety/research
+specifications, and the current repository's durable context. Historical
+audits and prior handoffs are checked and reported as warnings by default when
+current code/Git permit reconstruction; use `--strict-history` for archival
+audits that require the complete chain. Before the Implement check, initialize
+and verify current live status. The Implement check hard-requires the saved
+Plan and live status and validates required status headings.
 
 `tools/validate_required_docs.sh` remains available as the Phase 00 audit-only
 compatibility check.
@@ -292,26 +298,27 @@ phase 10: finalize documentation and reproducibility
 
 Codex must stop and report instead of guessing when:
 
-- the audit files are absent,
 - the current phase plan is absent,
-- a required previous handoff is absent,
-- the repository contradicts the saved phase plan,
 - current code contradicts the assumed cost sign,
 - two active nodes publish the same canonical output,
 - a required package dependency is unavailable,
 - a message change would break an external package without a migration path,
-- tests cannot be run,
-- physical hardware would be required before Phase 09,
-- the working tree contains unrelated uncommitted changes.
+- physical motion lacks the required phase gate or explicit authorization,
+- unrelated changes overlap the intended edits and cannot be preserved,
+- current repository evidence exposes a Level A objective, safety,
+  compatibility, or architecture contradiction.
+
+A missing historical artifact, non-overlapping dirty worktree, unavailable
+noncritical test, or bounded repository/Plan difference is not automatically a
+stop. Reconstruct or warn, preserve user work, run other safe checks, and apply
+the Level A/B/C policy. Never claim an unrun gate passed.
 
 ## Change-size control
 
-A phase should normally change no more than:
-
-- 6–10 implementation files,
-- plus tests/config/docs.
-
-If Codex predicts a larger change, it must split the phase into subphases and write that split into the Plan response.
+Bound changes by coherent ownership, risk, reviewability, and independent test
+evidence. Split work when doing so creates meaningful review/test boundaries,
+not to satisfy an arbitrary file count. Cross-owner changes must explain why
+each owner is involved and use coherent commits.
 
 ## End-of-phase handoff
 

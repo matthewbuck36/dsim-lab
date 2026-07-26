@@ -4,9 +4,10 @@ Read these files before doing anything:
 - `DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md`
 - `DSIM_GESC_Gaussian_Codex_Implementation_Package/00_MASTER_IMPLEMENTATION_PLAN.md`
 - `DSIM_GESC_Gaussian_Codex_Implementation_Package/01_RESEARCH_DECISIONS_AND_ASSUMPTIONS.md`
-- the five Phase 00 audit files under `docs/codex/gesc_gaussian/`;
 - `docs/codex/gesc_gaussian/knowledge_bridge_phase_00_05.md`;
-- every prior handoff, including `handoffs/phase_05_5_handoff.md`.
+- `handoffs/phase_05_5_handoff.md`, the Phase 07/07.5 handoffs, the current
+  Phase 08 status/failure report, and older artifacts only when a current claim
+  depends on them.
 
 Rules:
 1. Preserve the repository's package organization, node conventions, topic naming, parameter style, launch style, and test conventions.
@@ -18,7 +19,7 @@ Rules:
 7. In this Plan task, do not edit source code.
 8. Produce a file-level plan with exact paths, interfaces, tests, and migration effects.
 9. Identify anything already implemented and explain how it will be extended rather than duplicated.
-10. Apply the Level A/B/C contradiction policy in `07_CODEX_WORKFLOW_AND_CONTEXT_RETENTION.md`; Phase 08 gate misses are Level C results, not permission to weaken thresholds.
+10. Apply the Level A/B/C contradiction policy in `07_CODEX_WORKFLOW_AND_CONTEXT_RETENTION.md`; a gate miss closes that experiment version honestly but permits separately planned diagnosis, correction, and a new version.
 
 
 Before planning, run:
@@ -29,23 +30,30 @@ DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh 
 
 If validation fails, stop and report the missing durable context.
 
-# Phase 08 task: plan robustness validation and parameter freeze
+# Phase 08 task: plan diagnostic development, robustness validation, and freeze
 
 Read:
 - `DSIM_GESC_Gaussian_Codex_Implementation_Package/06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md`
-- all prior phase handoffs.
+- the active Phase 08.1 Plan and relevant retained evidence.
 
-Plan the exact test execution order using the repository's implemented scenario suites.
+If v1 or v2 already failed, preserve them and plan a new version; never resume,
+overwrite, relabel, or count their evidence.
+
+Separate development from formal acceptance:
 
 Specify:
 - smoke tests,
-- the ten-run activation gate and exact state/event coverage,
-- parameter sweep ranges,
+- retained-evidence diagnosis and minimal runtime probes,
+- diagnostic infrastructure/readiness checks and scenario-specific aggregate
+  lifecycle reachability,
+- bounded versioned development/tuning ranges,
 - selection criterion,
-- three candidates run on the same ten training cases,
-- 20 new hidden holdout scenarios,
-- the additional 50-run unique validation allocation,
-- ten predeclared reproducibility repeats,
+- one machine-readable acceptance contract and its hash,
+- a sealed selection-blind holdout,
+- a fixed additional unique validation allocation,
+- predeclared reproducibility repeats,
+- minimum metric denominators and exact pass/fail/N/A semantics,
+- bounded infrastructure-invalid replacement policy,
 - acceptance calculation,
 - early-stop criteria,
 - bounded implementation/empirical milestones with focused checks, retained
@@ -54,19 +62,18 @@ Specify:
 - Git tag,
 - generated validation report.
 
-Avoid tuning on every scenario. Reserve a holdout subset to detect overfitting.
-Use the amended 120-run budget: 10 activation + 30 tuning + 20 hidden holdout +
-50 additional unique validation + 10 reproducibility repeats. Freeze one
-parameter set before holdout. Activation or holdout failure stops later
-expensive stages without weakening their thresholds. Preserve failed runs and
-plan a structured failure report. The former 519 x 3 design is historical v1
-evidence and must not be resumed or counted toward v2 acceptance. A
-simulation-ready tag is permitted only if every amended gate passes.
+Avoid tuning on every scenario. Development attempts are retained and bounded
+but do not enter the acceptance denominator. Freeze one parameter set before
+holdout. A holdout or acceptance failure stops later stages in that experiment
+version without weakening thresholds; a subsequent attempt requires a new
+version and fresh evidence root. The former 519 x 3 v1 and exact 120-run v2
+designs are historical evidence. A simulation-ready tag is permitted only if
+every newly sealed gate passes.
 
 # Required durable Plan artifact
 
 At the end of this Plan task, produce one self-contained Markdown document
-suitable for saving verbatim as:
+suitable for review and persistence as:
 
 `docs/codex/gesc_gaussian/plans/phase_08_plan.md`
 

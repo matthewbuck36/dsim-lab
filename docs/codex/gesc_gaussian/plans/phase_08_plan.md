@@ -2,6 +2,36 @@
 
 Target save path: `docs/codex/gesc_gaussian/plans/phase_08_plan.md`
 
+## Amendment 3 — Phase 08.1 diagnostic recovery and future v3
+
+Approved on 2026-07-25 after the retained v2 activation evidence was diagnosed
+against the current code, package source material, all package files, and all
+`docs/` artifacts.
+
+Phase 08 v2 remains a closed failed experiment. Its ten activation attempts,
+manifest, reports, hashes, and 120-run contract are immutable historical
+evidence. They must not be resumed, overwritten, relabeled, or counted in a
+future experiment.
+
+The v2 failure closes only that declared experiment version. It does not forbid
+offline diagnosis, bounded engineering corrections, targeted simulation
+probes, or a new versioned experiment. Those activities are governed by
+`docs/codex/gesc_gaussian/plans/phase_08_1_plan.md`.
+
+The exact 120-run design below is therefore historical v2 scope, not a
+permanent development budget. A future v3 contract must separate:
+
+- versioned diagnostic/development runs, which are retained and reported but
+  never enter the acceptance denominator;
+- a fixed, selection-blind holdout and unique validation denominator declared
+  before formal freeze;
+- reproducibility repeats reported separately from unique-case success.
+
+No v3 holdout, fixed-profile acceptance run, simulation-ready tag, or physical
+motion is authorized by this amendment. A machine-readable v3 acceptance
+contract and fresh evidence root must be reviewed and sealed before those
+stages.
+
 ## Amendment 1 — staged validation v2
 
 Approved on 2026-07-25 after Phase 08 v1 exposed an unreachable supervisor

@@ -4,9 +4,9 @@ Read these files before doing anything:
 - `DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md`
 - `DSIM_GESC_Gaussian_Codex_Implementation_Package/00_MASTER_IMPLEMENTATION_PLAN.md`
 - `DSIM_GESC_Gaussian_Codex_Implementation_Package/01_RESEARCH_DECISIONS_AND_ASSUMPTIONS.md`
-- the five Phase 00 audit files under `docs/codex/gesc_gaussian/`;
 - `docs/codex/gesc_gaussian/knowledge_bridge_phase_00_05.md`;
-- every prior handoff, including `handoffs/phase_05_5_handoff.md`.
+- `handoffs/phase_05_5_handoff.md`, the latest simulation-readiness handoff,
+  and older artifacts only when a current claim depends on them.
 
 Rules:
 1. Preserve the repository's package organization, node conventions, topic naming, parameter style, launch style, and test conventions.
@@ -18,7 +18,7 @@ Rules:
 7. In this Plan task, do not edit source code.
 8. Produce a file-level plan with exact paths, interfaces, tests, and migration effects.
 9. Identify anything already implemented and explain how it will be extended rather than duplicated.
-10. Apply the Level A/B/C contradiction policy in `07_CODEX_WORKFLOW_AND_CONTEXT_RETENTION.md`; physical safety, missing authorization, adapter absence requiring redesign, or simulation-gate failure is Level A.
+10. Apply the Level A/B/C contradiction policy in `07_CODEX_WORKFLOW_AND_CONTEXT_RETENTION.md`; physical safety, missing authorization for motion, or adapter absence requiring redesign is Level A. A missing simulation-ready gate limits scope to offline/read-only preparation but does not block planning.
 
 
 Before planning, run:
@@ -37,7 +37,10 @@ Read:
 
 Do not command hardware in Plan mode.
 
-Verify that the simulation-ready gate passed. If it did not, stop.
+Verify whether the simulation-ready gate passed. If it did not, record the gap
+and limit the Plan to inventory, offline adapters, metadata, tests, safety
+logic, and inert preflight preparation. Do not plan or authorize physical
+motion.
 
 Inventory live physical sensor, Vicon/pose, command, stop, and launch adapters;
 do not infer their existence from package specifications. Reuse the shared
@@ -60,7 +63,7 @@ Plan:
 # Required durable Plan artifact
 
 At the end of this Plan task, produce one self-contained Markdown document
-suitable for saving verbatim as:
+suitable for review and persistence as:
 
 `docs/codex/gesc_gaussian/plans/phase_09_plan.md`
 

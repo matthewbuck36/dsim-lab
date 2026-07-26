@@ -123,35 +123,15 @@ delay, and 100 ms pose delay. Analyze the retained run directories with the
 existing `analyze_run` command. Collision and observed-delay statuses must be
 valid; an unavailable or invalid result is not acceptable Phase 08 evidence.
 
-## Historical Phase 08 v1 workflow — do not resume
+## Historical Phase 08 v1 workflow — report only, do not execute
 
-The installed workflow below produced the retained failed/incomplete v1
-evidence. It is shown only so those artifacts remain interpretable. Do not
-execute it for future acceptance, do not resume its partial full pass, and do
-not reuse its evidence root:
+The retired workflow produced retained failed/incomplete v1 evidence. Execution
+commands are intentionally omitted to avoid accidental resume. Do not run
+`sweep`, `freeze`, `holdout`, or `full-pass` against that root. The only safe
+workflow command is a read-only report:
 
 ```bash
 EVIDENCE_ROOT=~/Experiments/GESC-Gaussian/runs/phase08
-
-ros2 run ros_esc validate_robustness sweep \
-  --operator "$USER" --evidence-root "$EVIDENCE_ROOT"
-
-ros2 run ros_esc validate_robustness freeze \
-  --operator "$USER" --evidence-root "$EVIDENCE_ROOT"
-```
-
-Commit the generated frozen profile and parameter-selection evidence before
-holdout. Holdout and every full pass require a clean checkout at that commit:
-
-```bash
-ros2 run ros_esc validate_robustness holdout \
-  --operator "$USER" --evidence-root "$EVIDENCE_ROOT"
-
-for pass_index in 1 2 3; do
-  ros2 run ros_esc validate_robustness full-pass \
-    --pass-index "$pass_index" \
-    --operator "$USER" --evidence-root "$EVIDENCE_ROOT"
-done
 
 ros2 run ros_esc validate_robustness report \
   --operator "$USER" --evidence-root "$EVIDENCE_ROOT"
@@ -161,42 +141,24 @@ The v1 arithmetic was 81 training runs, 12 holdouts, and three planned
 519-run passes. Its scenarios, frozen profile, selection result, and run
 directories are immutable historical evidence and do not count toward v2.
 
-## Planned Phase 08 v2 workflow — not yet installed
+## Historical Phase 08 v2 workflow — report only, do not execute
 
-Implementation must extend the same `validate_robustness` owner, use workflow
-schema version 2, and write to a new evidence root. After the v2 command and
-scenarios are implemented and tested, the enforced stage order is:
+The v2 commands and scenarios were installed, but activation failed at 1/10 and
+closed the version before tuning. Do not execute activation, sweep, freeze,
+holdout, validation, or reproducibility against this root. The only safe
+workflow command is its read-only report:
 
 ```bash
 PHASE08_V2_ROOT=~/Experiments/GESC-Gaussian/runs/phase08_v2
-
-ros2 run ros_esc validate_robustness activation \
-  --operator "$USER" --evidence-root "$PHASE08_V2_ROOT"
-
-ros2 run ros_esc validate_robustness sweep \
-  --operator "$USER" --evidence-root "$PHASE08_V2_ROOT"
-
-ros2 run ros_esc validate_robustness freeze \
-  --operator "$USER" --evidence-root "$PHASE08_V2_ROOT"
-
-ros2 run ros_esc validate_robustness holdout \
-  --operator "$USER" --evidence-root "$PHASE08_V2_ROOT"
-
-ros2 run ros_esc validate_robustness validation \
-  --operator "$USER" --evidence-root "$PHASE08_V2_ROOT"
-
-ros2 run ros_esc validate_robustness reproducibility \
-  --operator "$USER" --evidence-root "$PHASE08_V2_ROOT"
 
 ros2 run ros_esc validate_robustness report \
   --operator "$USER" --evidence-root "$PHASE08_V2_ROOT"
 ```
 
-The declared budget is 10 activation, 30 tuning, 20 new hidden holdout, 50
-additional unique validation, and 10 targeted reproducibility runs. A failed
-activation stage stops tuning; a failed holdout stops the additional
-validation and repeat stages. Every completed or failed attempt remains
-evidence. No stage may retune after freeze or weaken a gate.
+The historical declared budget was 10 activation, 30 tuning, 20 new hidden
+holdout, 50 additional unique validation, and 10 repeats. Only activation ran.
+Phase 08.1 uses a fresh development-only root for minimal probes; any future
+formal attempt requires a new version and sealed contract.
 
 ## Stop a run
 

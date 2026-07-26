@@ -231,26 +231,33 @@ Turn bags into synchronized, inspectable experimental evidence.
 
 Establish a fixed parameter set and prove performance within a declared robustness envelope.
 
-## Required sequence
+## Historical v2 outcome
+
+The exact 120-run v2 design is closed failed historical evidence. Its ten
+activation attempts stopped the version before tuning; it must not be resumed,
+overwritten, relabeled, or counted toward a future claim.
+
+## Phase 08.1 diagnostic/development sequence
 
 1. Unit tests.
 2. Synthetic field tests.
-3. Ten-run activation proof covering the intended supervisor, goal, fill,
-   escape, merge, recenter, collision, disturbance, and analysis lifecycle.
-4. Thirty-run bounded tuning stage: three candidates on the same ten cases.
-5. Freeze and commit one parameter set.
-6. Twenty new hidden holdouts; stop before later stages if this gate fails.
-7. Fifty additional unique stratified validation runs. Together with holdout,
-   these form the 70-run acceptance denominator and cover all 25 ordered
-   two-source level pairs plus multi-source, boundary, disturbance, constraint,
-   and lifecycle families.
-8. Ten fixed-profile reproducibility repeats selected across families.
+3. Retained-bag diagnosis and bounded implementation corrections.
+4. Diagnostic activation proving infrastructure integrity and targeted
+   scenario-specific lifecycle reachability. Behavioral misses inform
+   development; they do not consume or contaminate formal acceptance data.
+5. Bounded, versioned parameter/policy development with every attempt retained.
+6. Declare and hash one machine-readable acceptance contract before freeze.
+7. Freeze and commit one code/parameter/scenario set.
+8. Run a new selection-blind holdout and fixed unique validation denominator
+   once for that version, followed by separately reported repeats.
 9. Regression against legacy behavior and a structured success/failure report.
-10. Tag the simulation-ready commit only if every amended gate passes.
+10. Tag the simulation-ready commit only if every declared gate passes.
 
-The empirical budget is 120 declared runs, replacing the retired 519-run pass
-repeated three times. The amended claim is over a predeclared stratified sample,
-not every start/seed Cartesian product.
+Development runs are bounded by their approved diagnostic plan but are not part
+of the acceptance denominator. The former 120-run arithmetic is a historical
+v2 design, not a permanent cap. A future acceptance sample must be
+predeclared, stratified, and reported with uncertainty; it must not be selected
+after observing results.
 
 No physical trial before the gate in `06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md` is satisfied.
 

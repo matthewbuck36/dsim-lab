@@ -1,8 +1,8 @@
 # Prompt Sequence
 
-Use each pair in numeric order. Start a new Codex chat for every table cell.
-After each Plan chat, save its final self-contained response at the listed path
-before starting the Implement chat.
+Use each pair in numeric order. The Plan must be persisted and reviewed at the
+listed path before implementation; chat boundaries and manual verbatim copying
+are not gates.
 
 | Phase | Plan chat | Saved Plan artifact | Implement chat |
 |---|---|---|---|
@@ -18,9 +18,10 @@ before starting the Implement chat.
 | 09 | `09_physical_PLAN.md` | `docs/codex/gesc_gaussian/plans/phase_09_plan.md` | `09_physical_IMPLEMENT.md` |
 | 10 | `10_documentation_PLAN.md` | `docs/codex/gesc_gaussian/plans/phase_10_plan.md` | `10_documentation_IMPLEMENT.md` |
 
-Each prompt runs the phase-aware context preflight. A Plan chat requires the
-Phase 00 audit documents and all prior handoffs after Phase 00. Before an
-Implement preflight, initialize or resume
+Each prompt runs the phase-aware context preflight. Current Plan/status and core
+safety/research context are hard requirements; older audits and handoffs are
+targeted history and become hard requirements only with `--strict-history`.
+Before an Implement preflight, initialize or resume
 `docs/codex/gesc_gaussian/status/phase_XX_status.md`. The Implement check
 requires both the saved Plan and live status for its own phase.
 
@@ -31,15 +32,15 @@ docs/codex/gesc_gaussian/knowledge_bridge_phase_00_05.md
 docs/codex/gesc_gaussian/handoffs/phase_05_5_handoff.md
 ```
 
-Every remaining Plan prompt is read-only and must end with a complete durable
-Markdown plan for manual saving. Every remaining Implement prompt reads the
-five Phase 00 audit files, the bridge, all previous handoffs, and its saved
-current-phase plan, then applies the Level A/B/C contradiction policy in
-`07_CODEX_WORKFLOW_AND_CONTEXT_RETENTION.md`.
+Every Plan must become a complete durable Markdown artifact. Implementations
+read the active Plan/status, current repository state, bridge, and latest
+relevant dependency handoffs, then consult older artifacts on demand and apply
+the Level A/B/C policy.
 
 Phase 00 must not be skipped. It converts generic logical names in this package into the real repository's names and file paths.
 
-On the current branch, Phases 00-07.5 are implemented. Phase 08 v1 is retained
-as failed/incomplete historical evidence, and the staged v2 plan is saved. The
-next workflow step is `08_validation_IMPLEMENT.md`, beginning from the saved
-Phase 08 plan, current live status, and current Git state.
+On the current branch, Phases 00-07.5 are implemented. Phase 08 v1 and v2 are
+closed failed historical evidence. The current workflow step is the Phase 08.1
+diagnosis/recovery Plan at
+`docs/codex/gesc_gaussian/plans/phase_08_1_plan.md`; do not rerun the historical
+activation or advance to physical work.

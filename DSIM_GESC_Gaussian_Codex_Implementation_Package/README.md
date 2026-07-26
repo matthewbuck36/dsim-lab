@@ -18,9 +18,9 @@ complete time-synchronized experimental data collection
 
 The physical cost field is generated with light sources and measured with the existing light sensor/photoresistor system. Acoustic fields remain a future application and motivation.
 
-## Chosen working interpretation of the whiteboard discussions
+## Current testable interpretation of the whiteboard discussions
 
-The uncertain whiteboard ideas are resolved into the following implementation:
+The uncertain whiteboard ideas currently use the following implementation:
 
 - The controller cost is decomposed into raw sensor cost, Gaussian repulsion, and affine/directional contributions.
 - Those contributions are independently weighted and logged.
@@ -35,6 +35,13 @@ The uncertain whiteboard ideas are resolved into the following implementation:
 - In bounded indoor mode, the robot returns to the configured room center after escape.
 - A calibrated source-score threshold prevents the true source from being filled as though it were an undesired minimum.
 - ROS bags and structured ROS messages are the authoritative experimental record.
+
+The meeting source presents pure repulsion, recentering, and wider fills as
+ideas to test and explicitly grants implementation freedom. The exact
+estimator, fit, escalation, sequencing, and recenter policies are therefore
+engineering hypotheses, not immutable research mandates. They may change under
+versioned evidence before formal acceptance freeze while safety, interfaces,
+observability, and shared simulation/physical semantics remain fixed.
 
 ## Package sections
 
@@ -52,7 +59,10 @@ The uncertain whiteboard ideas are resolved into the following implementation:
 
 ## Why the phases are separated
 
-The implementation touches controller logic, Gaussian generation, ROS interfaces, physical/simulation abstraction, rosbag recording, analysis, and automated tests. Combining all of that in one Codex chat would increase context loss and make regressions more likely.
+The implementation touches controller logic, Gaussian generation, ROS
+interfaces, physical/simulation abstraction, rosbag recording, analysis, and
+automated tests. Durable Plans, live status, focused checkpoints, and coherent
+commits control that scope; a particular number of chats or files does not.
 
 Each phase produces:
 

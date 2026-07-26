@@ -4,13 +4,10 @@ Read these files before doing anything:
 - `DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md`
 - `DSIM_GESC_Gaussian_Codex_Implementation_Package/00_MASTER_IMPLEMENTATION_PLAN.md`
 - `DSIM_GESC_Gaussian_Codex_Implementation_Package/01_RESEARCH_DECISIONS_AND_ASSUMPTIONS.md`
-- `docs/codex/gesc_gaussian/repo_audit.md`
-- `docs/codex/gesc_gaussian/repo_map.md`
-- `docs/codex/gesc_gaussian/interface_map.md`
-- `docs/codex/gesc_gaussian/test_commands.md`
 - `docs/codex/gesc_gaussian/implementation_sequence.md`
 - `docs/codex/gesc_gaussian/knowledge_bridge_phase_00_05.md`
-- every prior handoff, including `handoffs/phase_05_5_handoff.md`.
+- `handoffs/phase_05_5_handoff.md`, the latest relevant dependency handoff,
+  and older artifacts only when a current claim depends on them.
 
 Rules:
 1. Preserve the repository's package organization, node conventions, topic naming, parameter style, launch style, and test conventions.
@@ -77,7 +74,7 @@ Prefer serial execution initially to protect simulation stability and Codex/debu
 # Required durable Plan artifact
 
 At the end of this Plan task, produce one self-contained Markdown document
-suitable for saving verbatim as:
+suitable for review and persistence as:
 
 `docs/codex/gesc_gaussian/plans/phase_06_plan.md`
 

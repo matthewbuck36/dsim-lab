@@ -4,11 +4,7 @@ Read:
 - `DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md`
 - the phase specification named in this prompt,
 - `docs/codex/gesc_gaussian/plans/phase_04_plan.md`
-- `docs/codex/gesc_gaussian/repo_audit.md`
-- `docs/codex/gesc_gaussian/repo_map.md`
-- `docs/codex/gesc_gaussian/interface_map.md`
-- `docs/codex/gesc_gaussian/test_commands.md`
-- every previous phase handoff.
+- latest relevant dependency handoff(s), with older handoffs consulted on demand.
 
 Before editing, initialize the live status, verify it against Git, and run:
 
@@ -17,14 +13,13 @@ DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/init_phase_status.sh 04
 DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh 04 implement
 ```
 
-The saved Phase 04 plan is the authoritative handoff from Plan mode. Verify its
-claims against the current repository and prior implementation handoffs before
-editing. If the repository has changed or contradicts the plan, stop and
-document the exact contradiction rather than silently replacing the plan.
+The saved Phase 04 plan is the authoritative implementation intent. Verify its
+claims against the current repository and relevant handoffs, then triage
+differences through Level A/B/C rather than stopping on every bounded drift.
 
 Long-run continuity:
 - Maintain `docs/codex/gesc_gaussian/status/phase_04_status.md` throughout execution.
-- After each verified milestone, record exact evidence and run `checkpoint_phase.sh 04`.
+- Record exact evidence continuously and run `checkpoint_phase.sh 04` at material or independently reviewable boundaries.
 - After compaction or interruption, reread the plan/status, inspect Git status and diff, and resume from the next incomplete criterion.
 - Bound long commands and retain verbose logs by path rather than in chat.
 - Do not repeat a recorded failed approach or restructure validated milestone work without failing-test evidence.
@@ -37,7 +32,7 @@ Rules:
 5. Do not run physical hardware.
 6. Add focused tests for every new behavior.
 7. Run the repository-standard format/lint/build/test commands relevant to changed packages.
-8. Keep the change bounded. If it exceeds roughly 10 implementation files, split it into coherent subcommits and explain why.
+8. Keep changes coherent, reviewable, owner-aligned, and independently tested; split only at meaningful review/test boundaries.
 9. Update documentation and parameter references.
 10. Write the required phase handoff under `docs/codex/gesc_gaussian/handoffs/`.
 11. End with Git status, tests, unresolved issues, and a recommended commit message.

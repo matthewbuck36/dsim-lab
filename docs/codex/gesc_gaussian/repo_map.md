@@ -3,6 +3,11 @@
 This map records exact ownership in the Phase 00 checkout. Paths are relative
 to `/home/mattb/dsim-lab`.
 
+> Historical Phase 00 snapshot with a small later recorder addendum. Absence
+> claims below describe Phase 00 and are not current. Consult current source,
+> Git, `topic_dictionary.md`, and completed handoffs for implemented
+> Phases 01–08.
+
 ## Top-level structure
 
 ```text
@@ -255,7 +260,7 @@ The multi-light file remains under a historical `heavy_ball_PDE_ESC` directory,
 but the selected cost class is controller-independent. Do not interpret its
 directory name as evidence that the active controller is Heavy-Ball.
 
-## Later-phase owner map
+## Historical later-phase owner plan
 
 | Capability | Existing owner to extend | New owner allowed only if still absent |
 |---|---|---|
@@ -280,8 +285,10 @@ callback-safe Python signal helper, and
 controller-spawner timeout. None is a second recorder, controller, or launch
 graph.
 
-## Known absence map
+## Phase 00 known absence map
 
-No tracked source path implements a Vicon adapter, physical photoresistor
-reader, physical GESC-plus-Gaussian launch, supervisor, state machine, Nav2
-planner, recenter controller, rosbag runner, scenario schema, or bag parser.
+At Phase 00, no tracked source path implemented a Vicon adapter, physical
+photoresistor reader, physical GESC-plus-Gaussian launch, supervisor, state
+machine, Nav2 planner, recenter controller, rosbag runner, scenario schema, or
+bag parser. Several simulation-side absences were filled in later phases; this
+sentence is retained only as audit history.

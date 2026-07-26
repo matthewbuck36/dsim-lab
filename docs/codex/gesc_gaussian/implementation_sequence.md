@@ -259,11 +259,18 @@ and reuse the existing nearest/causal bisect semantics for every anchor.
 Optimization must retain byte-identical metrics, completeness, and table
 outputs on a recorded reference bag.
 
-## Phase 08 - simulation validation and freeze
+## Phase 08 - simulation validation, diagnosis, and freeze
 
-Goal: repair and prove the activation/goal-verification contracts, run the
-documented staged robustness sample, separate tuning from new hidden holdouts,
-freeze one parameter set, and publish an honest acceptance report.
+Historical disposition: v1 and v2 are closed failed experiment versions. V1
+retains its incomplete large-matrix evidence. V2 retains ten activation
+attempts and stopped before tuning at Gate 2. Neither may be resumed,
+overwritten, relabeled, or counted toward a future claim.
+
+Current goal: execute the bounded Phase 08.1 retained-evidence diagnosis,
+correct fill latency, verification boundaries, startup readiness, and
+unreachable scenario expectations, then use minimal development-only runtime
+probes. A future v3 tuning/acceptance design requires a separate sealed contract
+and evidence root.
 
 Proposed durable output area:
 
@@ -274,25 +281,24 @@ implementation. Produce scenario manifests, frozen parameters, machine-readable
 results, and a report. A failed gate must remain failed and must block Phase 09
 trials.
 
-The amended Phase 08 v2 budget is exactly 120 declared runs: 10 activation,
-30 tuning (three candidates over the same ten cases), 20 new hidden holdouts,
-50 additional unique validation cases, and 10 targeted reproducibility
-repeats. The 20 plus 50 unique cases form the 70-run acceptance denominator;
-repeats are reported separately. Run one predeclared stratified sample and
-report two-sided 95% confidence intervals rather than claiming exhaustive
-Cartesian coverage.
+The Phase 08 v2 budget was exactly 120 declared runs: 10 activation, 30 tuning,
+20 new hidden holdouts, 50 additional unique validation cases, and 10 repeats.
+It is historical v2 scope, not a permanent development cap. Future work
+separates bounded, versioned development attempts from a preregistered
+fixed-profile acceptance denominator and separately reported repeats.
 
 The failed/incomplete v1 design of 81 training runs, 12 exposed holdouts, and
 three 519-run passes is historical evidence only. Preserve its scenario files,
-frozen profile, selection record, and run directories; do not resume,
-overwrite, or count them toward v2. Stop before later expensive stages when
-the activation or holdout early gate fails.
+frozen profile, selection record, and run directories. A failed frozen
+experiment version stops its later empirical stages but permits separately
+planned diagnosis, engineering correction, and a new version.
 
-Maintain `docs/codex/gesc_gaussian/status/phase_08_status.md` while Phase 08 is
-active. Update it and run `checkpoint_phase.sh 08` after every verified
-implementation milestone or empirical stage. After compaction or interruption,
-reconstruct state from the plan, status, Git diff, tests, and retained
-artifacts; do not repeat a batch merely to recover conversation context.
+Maintain `docs/codex/gesc_gaussian/status/phase_08_status.md` while Phase 08.1
+is active. Update it continuously and run `checkpoint_phase.sh 08` at material
+evidence, expensive empirical, or independently reviewable implementation
+boundaries. After compaction or interruption, reconstruct state from the Plan,
+active subphase Plan, status, Git diff, tests, and retained artifacts; do not
+repeat a batch merely to recover conversation context.
 The matrix must include the corrected runtime parameter-type startup gate and
 controlled shutdown-zero/clean-exit gate. The controller spawners use a
 30-second service-call timeout for bounded Gazebo startup latency; this is

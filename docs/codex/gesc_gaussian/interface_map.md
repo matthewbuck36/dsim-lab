@@ -1,7 +1,13 @@
 # GESC Gaussian Interface Map
 
-This file maps the Phase 00 logical architecture to the exact public and
-internal ROS interfaces in the current checkout.
+> Historical Phase 00 snapshot. This file maps the interfaces that existed at
+> the Phase 00 audit commit; it is not a current Phase 08 interface inventory.
+> Consult current message definitions, launch files,
+> `topic_dictionary.md`, completed handoffs, and resolved run artifacts for
+> current interfaces.
+
+This file maps the Phase 00 logical architecture to the public and internal ROS
+interfaces that existed at that audit.
 
 ## Interface conventions
 
@@ -302,7 +308,7 @@ It writes no ROS topics. It creates six files in a timestamped `Test_*`
 directory. CSV rows contain no header line; positional meanings are defined in
 the callback docstrings.
 
-## Logical target to current-interface mapping
+## Logical target to Phase 00 interface mapping
 
 | Required logical concept | Current source | Status |
 |---|---|---|
@@ -327,7 +333,7 @@ the callback docstrings.
 | Source configuration | launch arguments and cost JSON | Not published |
 | Room bounds/center | none | Missing |
 
-## Phase 01 compatibility direction
+## Historical Phase 01 compatibility direction
 
 Phase 01 must:
 
