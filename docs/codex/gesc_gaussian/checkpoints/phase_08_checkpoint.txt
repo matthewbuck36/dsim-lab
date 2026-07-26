@@ -1,114 +1,38 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-26T02:09:17+00:00
-Base HEAD: 2d796dde1e7050c863c4a3151c3cf6e71f635697
+Generated: 2026-07-26T02:22:38+00:00
+Base HEAD: 88634d6ef07fe9c8bfbf23a455f70b39c2357dc7
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 394a2a7b6ffd3c05101c0ab09f68bf569b0a9aa0f243ff48c0cc065258add74d
+Status sha256: a9dc1a63655d02e321eaf1a6f4644b29ef62f47565bd6126a94684ee652d00c0
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: 3f6e8b18ece6f9ca0c4e0c90e1999727182d9d59e127eb8cf9141ef079e70655
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_1_plan.md
 Active subphase plan sha256: 144126babee42d4dfa4da707911b02fc496f1d2aa0e68a4023e61f013cc402df
-Unstaged diff sha256: 9518135070121f9759eb40850689e823683f087d345d5a97fc31a1b525c610aa
+Unstaged diff sha256: c147596a155ea738170a5a1057b79c68dfdfebcd5463c0db784c3c3f15bf16d0
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 3]
- M AGENTS.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/00_MASTER_IMPLEMENTATION_PLAN.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/01_RESEARCH_DECISIONS_AND_ASSUMPTIONS.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/07_CODEX_WORKFLOW_AND_CONTEXT_RETENTION.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/README.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/00_repo_audit_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/00_repo_audit_PLAN.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/01_observability_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/01_observability_PLAN.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/02_state_machine_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/02_state_machine_PLAN.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/03_gaussian_fill_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/03_gaussian_fill_PLAN.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/04_escape_recenter_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/04_escape_recenter_PLAN.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/05_rosbag_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/05_rosbag_PLAN.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/06_scenario_runner_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/06_scenario_runner_PLAN.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/07_analysis_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/07_analysis_PLAN.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/08_validation_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/08_validation_PLAN.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_PLAN.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/10_documentation_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/10_documentation_PLAN.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/README.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/source_material/CONSOLIDATED_MEETING_DECISIONS.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/templates/robust_gaussian_defaults.yaml
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/templates/scenario_example.yaml
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/checkpoint_phase.sh
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 4]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
- M docs/codex/gesc_gaussian/implementation_sequence.md
- M docs/codex/gesc_gaussian/interface_map.md
- M docs/codex/gesc_gaussian/plans/phase_08_plan.md
- M docs/codex/gesc_gaussian/recording_runs.md
- M docs/codex/gesc_gaussian/repo_map.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
- M docs/codex/gesc_gaussian/topic_dictionary.md
-?? docs/codex/gesc_gaussian/plans/phase_08_1_plan.md
-?? docs/codex/gesc_gaussian/validation/phase_08_v2_contract_erratum.md
+ M ros2_ws/src/ros_esc/ros_esc/gaussian_fill_node/basin_estimator.py
+ M ros2_ws/src/ros_esc/ros_esc/gaussian_fill_node/gaussian_fill_script.py
+ M ros2_ws/src/ros_esc/test/test_legacy_behavior.py
+ M ros2_ws/src/ros_esc/test/test_robust_gaussian_algorithm.py
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- AGENTS.md                                          |  38 ++-
- .../00_MASTER_IMPLEMENTATION_PLAN.md               |  37 ++-
- .../01_RESEARCH_DECISIONS_AND_ASSUMPTIONS.md       |  15 +
- .../06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md         |  49 ++-
- .../07_CODEX_WORKFLOW_AND_CONTEXT_RETENTION.md     | 105 +++---
- .../README.md                                      |  16 +-
- .../START_HERE.md                                  |  60 ++--
- .../prompts/00_repo_audit_IMPLEMENT.md             |  13 +-
- .../prompts/00_repo_audit_PLAN.md                  |   4 +-
- .../prompts/01_observability_IMPLEMENT.md          |  17 +-
- .../prompts/01_observability_PLAN.md               |   4 +-
- .../prompts/02_state_machine_IMPLEMENT.md          |  17 +-
- .../prompts/02_state_machine_PLAN.md               |   4 +-
- .../prompts/03_gaussian_fill_IMPLEMENT.md          |  17 +-
- .../prompts/03_gaussian_fill_PLAN.md               |   4 +-
- .../prompts/04_escape_recenter_IMPLEMENT.md        |  17 +-
- .../prompts/04_escape_recenter_PLAN.md             |   4 +-
- .../prompts/05_rosbag_IMPLEMENT.md                 |  17 +-
- .../prompts/05_rosbag_PLAN.md                      |   4 +-
- .../prompts/06_scenario_runner_IMPLEMENT.md        |  10 +-
- .../prompts/06_scenario_runner_PLAN.md             |   9 +-
- .../prompts/07_analysis_IMPLEMENT.md               |  10 +-
- .../prompts/07_analysis_PLAN.md                    |   6 +-
- .../prompts/08_validation_IMPLEMENT.md             |  53 +--
- .../prompts/08_validation_PLAN.md                  |  49 +--
- .../prompts/09_physical_IMPLEMENT.md               |  17 +-
- .../prompts/09_physical_PLAN.md                    |  13 +-
- .../prompts/10_documentation_IMPLEMENT.md          |  10 +-
- .../prompts/10_documentation_PLAN.md               |   6 +-
- .../prompts/README.md                              |  31 +-
- .../CONSOLIDATED_MEETING_DECISIONS.md              |  32 +-
- .../templates/robust_gaussian_defaults.yaml        |  12 +-
- .../templates/scenario_example.yaml                |  15 +-
- .../tools/checkpoint_phase.sh                      |  28 +-
- .../tools/validate_phase_context.sh                |  37 ++-
- .../checkpoints/phase_08_checkpoint.txt            | 354 ++++-----------------
- .../codex/gesc_gaussian/implementation_sequence.md |  46 +--
- docs/codex/gesc_gaussian/interface_map.md          |  14 +-
- docs/codex/gesc_gaussian/plans/phase_08_plan.md    |  30 ++
- docs/codex/gesc_gaussian/recording_runs.md         |  66 +---
- docs/codex/gesc_gaussian/repo_map.md               |  17 +-
- docs/codex/gesc_gaussian/status/phase_08_status.md | 101 ++++--
- docs/codex/gesc_gaussian/topic_dictionary.md       |  16 +-
- 43 files changed, 674 insertions(+), 750 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 119 ++-------------------
+ docs/codex/gesc_gaussian/status/phase_08_status.md |  62 +++++++++--
+ .../ros_esc/gaussian_fill_node/basin_estimator.py  |  49 ++++++---
+ .../gaussian_fill_node/gaussian_fill_script.py     |  60 ++++++++++-
+ ros2_ws/src/ros_esc/test/test_legacy_behavior.py   |  28 +++++
+ .../ros_esc/test/test_robust_gaussian_algorithm.py | 100 +++++++++++++++++
+ 6 files changed, 283 insertions(+), 135 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
@@ -116,13 +40,14 @@ unstaged and staged: pass
 - Historical milestone: ten-run Phase 08 v2 activation gate — **FAILED and
   closed** at `2d796dd`.
 - Completed milestone: Phase 08.1 M1 durable diagnosis and workflow correction.
-- Current milestone: Phase 08.1 M2 fill-latency correction.
+- Completed milestone: Phase 08.1 M2 fill-latency correction.
+- Current milestone: Phase 08.1 M3 verification-boundary correction.
 - Current plan:
   `docs/codex/gesc_gaussian/plans/phase_08_1_plan.md`.
-- Next criterion: prefilter the estimator window, replace repeated full-set
-  sorting with deterministic efficient synchronization, add realistic
-  equivalence/latency coverage and design-duration diagnostics, then run the
-  focused fill regressions.
+- Next criterion: reset rotation evidence on entry to `VERIFY_EXTREMUM`,
+  accumulate valid scores only while verifying, prove SEARCH-era maxima cannot
+  satisfy goal classification, and validate the timeout against two fresh
+  rotations plus dwell and scheduling margin.
 
 
 This file describes the base HEAD and diff before the next commit; it is

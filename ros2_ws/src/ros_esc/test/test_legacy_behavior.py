@@ -795,6 +795,23 @@ def test_robust_fill_owner_merges_into_one_frozen_revision(monkeypatch):
         def load_window(center_x):
             node.pose_snapshots.clear()
             node.cost_snapshots.clear()
+            for index in range(10):
+                stamp = -100.0 + index * 0.1
+                node.pose_snapshots.append(
+                    PoseSnapshot(stamp, center_x, 0.0, 0.0, True)
+                )
+                node.cost_snapshots.append(
+                    CostSnapshot(
+                        stamp,
+                        float('nan'),
+                        False,
+                        1.0,
+                        0.2,
+                        True,
+                        AlgorithmState.STATE_SEARCH,
+                        True,
+                    )
+                )
             for index in range(60):
                 stamp = -5.9 + index * 0.1
                 angle = index * 2.0 * np.pi / 20.0
@@ -841,6 +858,17 @@ def test_robust_fill_owner_merges_into_one_frozen_revision(monkeypatch):
             event.event_type == AlgorithmEvent.EVENT_FILL_MERGED
             for event in node.algorithm_event_publisher.messages
         )
+        created = next(
+            event
+            for event in node.algorithm_event_publisher.messages
+            if event.event_type == AlgorithmEvent.EVENT_FILL_CREATED
+        )
+        diagnostics = dict(zip(created.value_names, created.values))
+        assert diagnostics['pose_snapshot_count'] == 70.0
+        assert diagnostics['cost_snapshot_count'] == 70.0
+        assert diagnostics['candidate_pose_count'] == 60.0
+        assert diagnostics['candidate_cost_count'] == 60.0
+        assert 0.0 <= diagnostics['design_duration_wall_sec'] < 1.0
     finally:
         node.destroy_node()
         rclpy.shutdown()

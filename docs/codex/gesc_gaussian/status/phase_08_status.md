@@ -1,6 +1,6 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-25T19:09:02-07:00`
+Last verified: `2026-07-25T19:21:23-07:00`
 Status: `IN PROGRESS — PHASE 08.1 DIAGNOSTIC RECOVERY`
 
 ## Objective
@@ -79,28 +79,38 @@ count toward a future acceptance attempt.
 - The historical plan/report threshold mismatch is recorded in
   `validation/phase_08_v2_contract_erratum.md`; historical v2 artifacts were
   not rewritten.
+- Phase 08.1 M2 prefilters pose/cost snapshots to the estimator's actual
+  request window, rejects nonfinite stamps, and replaces repeated full-set
+  sorting with deterministic ordered nearest matching that preserves the
+  historical `(absolute delta, pose stamp, original index)` tie rule.
+- M2 adds request snapshot/candidate counts and callback-entry wall duration to
+  every robust fill success/failure diagnostic path. At the retained
+  4,000-pose/14,000-cost scale, synchronization completed in about 0.07 seconds
+  rather than the observed 5.5–15.7 seconds.
 
 ## Current milestone
 
 - Historical milestone: ten-run Phase 08 v2 activation gate — **FAILED and
   closed** at `2d796dd`.
 - Completed milestone: Phase 08.1 M1 durable diagnosis and workflow correction.
-- Current milestone: Phase 08.1 M2 fill-latency correction.
+- Completed milestone: Phase 08.1 M2 fill-latency correction.
+- Current milestone: Phase 08.1 M3 verification-boundary correction.
 - Current plan:
   `docs/codex/gesc_gaussian/plans/phase_08_1_plan.md`.
-- Next criterion: prefilter the estimator window, replace repeated full-set
-  sorting with deterministic efficient synchronization, add realistic
-  equivalence/latency coverage and design-duration diagnostics, then run the
-  focused fill regressions.
+- Next criterion: reset rotation evidence on entry to `VERIFY_EXTREMUM`,
+  accumulate valid scores only while verifying, prove SEARCH-era maxima cannot
+  satisfy goal classification, and validate the timeout against two fresh
+  rotations plus dwell and scheduling margin.
 
 ## Current problem or blocker
 
 - No Level A blocker is present.
 - V2 remains a Level C failure and cannot be resumed, retuned, relabeled, or
   counted toward a new claim.
-- Offline diagnosis found that repeated full-history sample sorting blocked the
-  fill node for 5.5–15.7 seconds, causing both the five-second design timeout
-  and stale-clock late event ordering.
+- M2 removed the repeated full-history synchronization delay that blocked the
+  fill node for 5.5–15.7 seconds. It does not claim formal timestamp
+  monotonicity: the fill node still uses a single-threaded executor, so M4 must
+  test producer/stream ordering and concurrent clock servicing separately.
 - Four activation goal expectations were inconsistent with the adopted
   calibrated `source_score >= 0.95` rule. Only the high calibrated case was
   reachable as `GOAL_HOLD`; ground-truth proximity did not make the others
@@ -116,6 +126,7 @@ count toward a future acceptance attempt.
 ## Files currently relevant
 
 - `docs/codex/gesc_gaussian/plans/phase_08_plan.md`
+- `docs/codex/gesc_gaussian/plans/phase_08_1_plan.md`
 - `docs/codex/gesc_gaussian/validation/phase_08_v1_failure_closeout.md`
 - `docs/codex/gesc_gaussian/validation/phase_08_v2_run_manifest.json`
 - `docs/codex/gesc_gaussian/validation/phase_08_v2_gate_results.json`
@@ -126,7 +137,11 @@ count toward a future acceptance attempt.
 - `ros2_ws/src/ros_esc/ros_esc/convergence_detector_node/convergence_detector_node_script.py`
 - `ros2_ws/src/ros_esc/ros_esc/supervisor_node/state_machine.py`
 - `ros2_ws/src/ros_esc/ros_esc/supervisor_node/supervisor_node_script.py`
+- `ros2_ws/src/ros_esc/ros_esc/gaussian_fill_node/basin_estimator.py`
+- `ros2_ws/src/ros_esc/ros_esc/gaussian_fill_node/gaussian_fill_script.py`
 - `ros2_ws/src/ros_esc/test/test_phase08_validation.py`
+- `ros2_ws/src/ros_esc/test/test_robust_gaussian_algorithm.py`
+- `ros2_ws/src/ros_esc/test/test_legacy_behavior.py`
 
 ## Decisions and rationale
 
@@ -151,6 +166,11 @@ count toward a future acceptance attempt.
 - D-08-07: the 20 holdout identities are sealed before tuning. The manifest
   excludes historical v1 run paths/hashes and later stages require exact
   scenario hashes plus a clean, unchanged freeze commit/tree.
+- D-08-08: preserve the existing greedy cost-order synchronization and tie
+  semantics while bounding its candidate set and implementation cost. Keep the
+  five-second design timeout unchanged; measured computation, not a relaxed
+  timeout, resolves the observed M2 defect. Defer formal multi-producer
+  timestamp semantics and any needed concurrent clock servicing to M4.
 
 ## Validation checkpoints
 
@@ -253,6 +273,30 @@ count toward a future acceptance attempt.
 - Phase 08.1 M1 material-boundary checkpoint:
   `checkpoint_phase.sh 08` passed and wrote the compact precommit snapshot at
   `docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt`.
+- The first M2 combined fill test exposed two real matcher assertions plus a
+  test-environment failure: `12 failed, 32 passed in 2.17s`. The ROS logging
+  path under `/home/mattb/.ros` was read-only and caused the later rclpy context
+  failures; reruns used `ROS_LOG_DIR=/tmp/dsim_phase08_1_ros_logs`. The matcher
+  was corrected to choose the lowest original index across duplicate nearest
+  stamps, and the retained-scale expected match count was corrected from 3,501
+  to 3,502.
+- M2 estimator regression after correction: `21 passed in 1.30s`; pytest
+  duration reporting measured the 4,000-pose/14,000-cost synchronization case
+  at about 0.07 seconds.
+- M2 fill/legacy regression with a writable ROS log directory:
+  `44 passed in 2.07s`.
+- M2 final fill, legacy, and observability regression:
+  `59 passed in 2.31s`; bag-analysis regressions:
+  `11 passed in 5.46s`.
+- M2 Python compile and `git diff --check`: passed. Direct `ament_flake8`
+  still reports 683 inherited whole-file style findings in the four old source
+  and test owners; same-configuration HEAD/current counts are unchanged at
+  `41/41`, `410/410`, `27/27`, and `190/190`, respectively. Direct
+  `ament_pep257` reports 23 inherited findings; the new diagnostic method does
+  not add one.
+- Phase 08.1 M2 material-boundary checkpoint:
+  `checkpoint_phase.sh 08` passed and refreshed the compact precommit snapshot
+  at `docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt`.
 
 ## Attempts not to repeat
 

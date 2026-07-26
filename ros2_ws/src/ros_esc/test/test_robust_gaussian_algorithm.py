@@ -2,6 +2,7 @@
 
 from dataclasses import replace
 import math
+import time
 
 import numpy as np
 import pytest
@@ -142,6 +143,105 @@ def test_synchronization_is_closest_one_to_one_with_cost_stamp():
     assert synchronized[0].stamp_sec == 1.03
     assert (synchronized[0].x, synchronized[0].y) == (1.0, 2.0)
     assert unmatched == 2
+
+
+def _cost_snapshot(stamp, value=0.0):
+    return CostSnapshot(
+        stamp,
+        math.nan,
+        False,
+        value,
+        0.2,
+        True,
+        1,
+        True,
+    )
+
+
+def _reference_synchronize_samples(poses, costs, tolerance_sec):
+    unused = set(range(len(poses)))
+    matched = []
+    unmatched = 0
+    for cost in costs:
+        if not unused:
+            unmatched += 1
+            continue
+        candidates = sorted(
+            unused,
+            key=lambda index: (
+                abs(poses[index].stamp_sec - cost.stamp_sec),
+                poses[index].stamp_sec,
+                index,
+            ),
+        )
+        pose_index = candidates[0]
+        if abs(poses[pose_index].stamp_sec - cost.stamp_sec) > tolerance_sec:
+            unmatched += 1
+            continue
+        unused.remove(pose_index)
+        matched.append((cost.stamp_sec, poses[pose_index].x))
+    return matched, unmatched + len(unused)
+
+
+def test_synchronization_matches_reference_for_unsorted_and_tied_samples():
+    rng = np.random.default_rng(8201)
+    pose_stamps = np.round(rng.uniform(-2.0, 2.0, 80), 2)
+    cost_stamps = np.round(rng.uniform(-2.0, 2.0, 120), 2)
+    poses = [
+        PoseSnapshot(stamp, float(index), 0.0, 0.0)
+        for index, stamp in enumerate(pose_stamps)
+    ]
+    costs = [
+        _cost_snapshot(stamp, float(index))
+        for index, stamp in enumerate(cost_stamps)
+    ]
+
+    synchronized, unmatched = synchronize_samples(poses, costs, 0.05)
+    expected, expected_unmatched = _reference_synchronize_samples(
+        poses, costs, 0.05
+    )
+
+    assert [
+        (sample.stamp_sec, sample.x) for sample in synchronized
+    ] == expected
+    assert unmatched == expected_unmatched
+
+
+def test_synchronization_rejects_nonfinite_stamps_without_hanging():
+    poses = [
+        PoseSnapshot(math.nan, 0.0, 0.0, 0.0),
+        PoseSnapshot(1.0, 1.0, 0.0, 0.0),
+    ]
+    costs = [
+        _cost_snapshot(math.nan),
+        _cost_snapshot(1.0),
+    ]
+
+    synchronized, unmatched = synchronize_samples(poses, costs, 0.05)
+
+    assert [(sample.stamp_sec, sample.x) for sample in synchronized] == [
+        (1.0, 1.0)
+    ]
+    assert unmatched == 2
+
+
+def test_synchronization_is_bounded_at_retained_activation_scale():
+    poses = [
+        PoseSnapshot(index * 0.04, float(index), 0.0, 0.0)
+        for index in range(4000)
+    ]
+    costs = [
+        _cost_snapshot(index * 0.01, float(index))
+        for index in range(14000)
+    ]
+
+    started = time.perf_counter()
+    synchronized, unmatched = synchronize_samples(poses, costs, 0.05)
+    elapsed = time.perf_counter() - started
+
+    assert len(synchronized) == 3502
+    assert unmatched == len(poses) + len(costs) - 2 * len(synchronized)
+    assert elapsed < 1.0
 
 
 def test_kernel_weights_sum_to_one_and_prefer_lower_cost():

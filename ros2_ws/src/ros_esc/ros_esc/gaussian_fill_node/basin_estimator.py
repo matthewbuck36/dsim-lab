@@ -1,5 +1,6 @@
 """Pure robust sample synchronization and basin estimation helpers."""
 
+from bisect import bisect_left
 from dataclasses import dataclass
 import math
 from typing import Dict, Iterable, Optional, Sequence, Tuple
@@ -149,30 +150,49 @@ def synchronize_samples(
 
     if not math.isfinite(tolerance_sec) or tolerance_sec < 0.0:
         raise ValueError("synchronization tolerance must be finite and nonnegative")
-    unused = set(range(len(poses)))
+    active_poses = sorted(
+        (float(pose.stamp_sec), index)
+        for index, pose in enumerate(poses)
+        if math.isfinite(float(pose.stamp_sec))
+    )
+    invalid_pose_count = len(poses) - len(active_poses)
     synchronized = []
     unmatched = 0
     for cost in costs:
-        if not unused:
+        cost_stamp = float(cost.stamp_sec)
+        if not math.isfinite(cost_stamp) or not active_poses:
             unmatched += 1
             continue
-        candidates = sorted(
-            unused,
-            key=lambda index: (
-                abs(float(poses[index].stamp_sec) - float(cost.stamp_sec)),
-                float(poses[index].stamp_sec),
-                index,
+
+        insertion = bisect_left(active_poses, (cost_stamp, -1))
+        candidate_positions = []
+        if insertion > 0:
+            predecessor_stamp = active_poses[insertion - 1][0]
+            candidate_positions.append(
+                bisect_left(active_poses, (predecessor_stamp, -1))
+            )
+        if insertion < len(active_poses):
+            successor_stamp = active_poses[insertion][0]
+            candidate_positions.append(
+                bisect_left(active_poses, (successor_stamp, -1))
+            )
+        selected_position = min(
+            candidate_positions,
+            key=lambda position: (
+                abs(active_poses[position][0] - cost_stamp),
+                active_poses[position][0],
+                active_poses[position][1],
             ),
         )
-        pose_index = candidates[0]
+        pose_stamp, pose_index = active_poses[selected_position]
         pose = poses[pose_index]
-        if abs(float(pose.stamp_sec) - float(cost.stamp_sec)) > tolerance_sec:
+        if abs(pose_stamp - cost_stamp) > tolerance_sec:
             unmatched += 1
             continue
-        unused.remove(pose_index)
+        active_poses.pop(selected_position)
         synchronized.append(
             BasinSample(
-                stamp_sec=float(cost.stamp_sec),
+                stamp_sec=cost_stamp,
                 x=float(pose.x) if pose.valid else float("nan"),
                 y=float(pose.y) if pose.valid else float("nan"),
                 yaw=float(pose.yaw) if pose.valid else float("nan"),
@@ -186,7 +206,10 @@ def synchronize_samples(
                 ),
             )
         )
-    return tuple(synchronized), unmatched + len(unused)
+    return (
+        tuple(synchronized),
+        unmatched + len(active_poses) + invalid_pose_count,
+    )
 
 
 def _modified_z_scores(values):

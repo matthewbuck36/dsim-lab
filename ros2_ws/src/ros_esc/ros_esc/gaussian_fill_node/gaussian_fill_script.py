@@ -2,6 +2,7 @@
 
 from collections import deque
 import math
+import time
 
 import rclpy
 import numpy as np
@@ -260,6 +261,7 @@ class GaussianFill(Node):
         )
         self.pose_snapshots = deque(maxlen=20000)
         self.cost_snapshots = deque(maxlen=20000)
+        self.robust_request_diagnostics = None
         self.latest_algorithm_state = None
         self.estimator_config = None
         self.design_config = None
@@ -556,13 +558,46 @@ class GaussianFill(Node):
     def _robust_trigger_cb(self, msg):
         """Freeze, estimate, design, associate, and atomically commit a fill."""
 
+        request_started_wall_sec = time.monotonic()
         request_timestamp = float(msg.timestamp)
         redesign_fill_id = robust_fill_redesign_target(msg.header)
         request_ros_time = self.get_clock().now().nanoseconds * 1e-9
+        pose_snapshots = tuple(self.pose_snapshots)
+        cost_snapshots = tuple(self.cost_snapshots)
+        lower_bound = max(
+            request_ros_time - self.estimator_config.estimation_window_sec,
+            request_ros_time - self.estimator_config.maximum_sample_age_sec,
+        )
+        tolerance = self.estimator_config.sample_sync_tolerance_sec
+        candidate_poses = tuple(
+            pose for pose in pose_snapshots
+            if (
+                math.isfinite(float(pose.stamp_sec))
+                and lower_bound - tolerance
+                <= float(pose.stamp_sec)
+                <= request_ros_time + tolerance
+            )
+        )
+        candidate_costs = tuple(
+            cost for cost in cost_snapshots
+            if (
+                math.isfinite(float(cost.stamp_sec))
+                and lower_bound
+                <= float(cost.stamp_sec)
+                <= request_ros_time
+            )
+        )
+        self.robust_request_diagnostics = {
+            'request_started_wall_sec': request_started_wall_sec,
+            'pose_snapshot_count': float(len(pose_snapshots)),
+            'cost_snapshot_count': float(len(cost_snapshots)),
+            'candidate_pose_count': float(len(candidate_poses)),
+            'candidate_cost_count': float(len(candidate_costs)),
+        }
         synchronized, unmatched = synchronize_samples(
-            tuple(self.pose_snapshots),
-            tuple(self.cost_snapshots),
-            self.estimator_config.sample_sync_tolerance_sec,
+            candidate_poses,
+            candidate_costs,
+            tolerance,
         )
         window = freeze_sample_window(
             synchronized,
@@ -848,6 +883,7 @@ class GaussianFill(Node):
             names.append(f"rejected_{name}")
             values.append(float(window.rejected[name]))
         diagnostics = {
+            **self._request_diagnostic_values(),
             "center_x_m": estimate.center[0],
             "center_y_m": estimate.center[1],
             "covariance_xx_m2": covariance[0, 0],
@@ -883,6 +919,21 @@ class GaussianFill(Node):
         names.extend(diagnostics)
         values.extend(float(value) for value in diagnostics.values())
         return names, values
+
+    def _request_diagnostic_values(self):
+        """Return finite bounded-computation diagnostics for one fill request."""
+        if self.robust_request_diagnostics is None:
+            return {}
+        diagnostics = {
+            name: value
+            for name, value in self.robust_request_diagnostics.items()
+            if name != 'request_started_wall_sec'
+        }
+        started = self.robust_request_diagnostics['request_started_wall_sec']
+        diagnostics['design_duration_wall_sec'] = max(
+            0.0, time.monotonic() - started
+        )
+        return diagnostics
 
     def _publish_robust_design_event(
         self,
@@ -928,6 +979,9 @@ class GaussianFill(Node):
         for name in sorted(window.rejected):
             names.append(f"rejected_{name}")
             values.append(float(window.rejected[name]))
+        for name, value in self._request_diagnostic_values().items():
+            names.append(name)
+            values.append(float(value))
         self._publish_event(
             event_type,
             detail,
