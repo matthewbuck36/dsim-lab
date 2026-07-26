@@ -1,56 +1,32 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-26T05:59:28+00:00
-Base HEAD: 2b3afb62442f2504ab4a38e5113873292c835d6e
+Generated: 2026-07-26T06:27:48+00:00
+Base HEAD: 8ca59d178d4acc0704f300b46c26ed60deaf22df
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 704e50de4916e58388aaa5a5d7f8b31349ba9ebdf3857e059526f3d8684a173a
+Status sha256: d297a8a6d69420883a29f2520764319818b064252825e41264cf200a9ac27d70
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_1_plan.md
 Active subphase plan sha256: da5fac1ea2b271e0812c1dccdf48dc61617f6c2d7efcd644789271b49b599172
-Unstaged diff sha256: 6037f007a21e67113811f350f97aa8d6b17f2c38ee9cf2f2ff61d4e39945a0a3
+Unstaged diff sha256: 2b89c0fe5e1272cd2204c9cd78a2d6e26de9a8d7abe7be9a24e972996d3b5cfc
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 7]
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 8]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
- M docs/codex/gesc_gaussian/implementation_sequence.md
- M docs/codex/gesc_gaussian/plans/phase_08_1_plan.md
- M docs/codex/gesc_gaussian/plans/phase_08_plan.md
- M docs/codex/gesc_gaussian/recording_runs.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
  M docs/codex/gesc_gaussian/test_commands.md
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py
- M ros2_ws/src/ros_esc/setup.py
- M ros2_ws/src/ros_esc/test/test_legacy_behavior.py
- M ros2_ws/src/ros_esc/test/test_scenario_runner.py
- M ros2_ws/src/ros_esc/test/test_scenario_schema.py
-?? docs/codex/gesc_gaussian/validation/phase_08_1_activation_contract.md
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_1_diagnostic_activation.yaml
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md         |  16 +
- .../checkpoints/phase_08_checkpoint.txt            |  74 +--
- .../codex/gesc_gaussian/implementation_sequence.md |   9 +
- docs/codex/gesc_gaussian/plans/phase_08_1_plan.md  |  20 +-
- docs/codex/gesc_gaussian/plans/phase_08_plan.md    |   8 +
- docs/codex/gesc_gaussian/recording_runs.md         |  30 ++
- docs/codex/gesc_gaussian/status/phase_08_status.md | 125 ++++-
- docs/codex/gesc_gaussian/test_commands.md          | 123 +++++
- .../ros_esc/scenario_runner/run_scenario.py        | 145 +++++-
- .../ros_esc/scenario_runner/scenario_schema.py     | 503 ++++++++++++++++++++-
- ros2_ws/src/ros_esc/setup.py                       |   1 +
- ros2_ws/src/ros_esc/test/test_legacy_behavior.py   |  93 ++++
- ros2_ws/src/ros_esc/test/test_scenario_runner.py   | 310 +++++++++++++
- ros2_ws/src/ros_esc/test/test_scenario_schema.py   | 322 ++++++++++++-
- 14 files changed, 1662 insertions(+), 117 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  73 +---------
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 145 ++++++++++++++++---
+ docs/codex/gesc_gaussian/test_commands.md          | 157 +++++++++++++++++++++
+ 3 files changed, 287 insertions(+), 88 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
@@ -64,15 +40,14 @@ unstaged and staged: pass
   correction. The first implementation's review gaps were corrected; its
   earlier evidence is superseded by the final source-state gates below.
 - Completed milestone: Phase 08.1 M5 scenario-contract correction.
-- Current milestone: Phase 08.1 M6 minimal simulation probes.
-- Pending milestone: Phase 08.1 M7 handoff.
+- Completed milestone: Phase 08.1 M6 minimal simulation probes, with one full
+  contract pass and one retained mixed-result/full-contract failure.
+- Current milestone: Phase 08.1 M7 handoff and next-step recommendation.
 - Current plan:
   `docs/codex/gesc_gaussian/plans/phase_08_1_plan.md`.
-- Next criterion: execute the predeclared calibrated goal probe under the
-  fresh Phase 08.1 development root, analyze it once, and verify cleanup and
-  final zero. Execute the predeclared fill-create probe next only after the
-  first probe closes cleanly and because it answers the distinct local-minimum
-  route question.
+- Next criterion: write the Phase 08.1 handoff, preserve the M6 mixed result,
+  and recommend the smallest versioned recenter diagnostic correction without
+  executing another probe or any v3 acceptance stage.
 
 ### M6 pre-execution declaration
 
@@ -83,6 +58,7 @@ unstaged and staged: pass
   `1e030602ecee99c2d1f563a0ae19e65b1c8e6608662e178eb52b8766edc5a9a7`.
 - Probe 1: `activation_goal_high`, one serial headless finite run. Question:
   does post-M3 verification observe two fresh rotations and enter
+  `GOAL_HOLD` without readiness, timestamp, collision, cleanup, or final-zero
 
 This file describes the base HEAD and diff before the next commit; it is
 not a claim that the eventual commit contains itself or that tests passed.

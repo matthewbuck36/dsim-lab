@@ -2005,3 +2005,160 @@ material-boundary snapshot.
 
 No Gazebo process, physical command, formal acceptance run, tuning, holdout,
 simulation-ready tag, or historical-v1/v2 evidence rewrite occurred in M5.
+
+## Phase 08.1 M6 minimal runtime probes
+
+### Probe 1 — calibrated goal verification
+
+Predeclared case: `activation_goal_high`. Committed M5 HEAD: `8ca59d1`.
+Suite SHA-256:
+`1e030602ecee99c2d1f563a0ae19e65b1c8e6608662e178eb52b8766edc5a9a7`.
+The fresh evidence root was absent before execution and 327 GiB was free.
+
+```bash
+timeout --signal=INT --kill-after=45s 600s bash -lc '
+  source /opt/ros/humble/setup.bash &&
+  source /home/mattb/dsim-lab/ros2_ws/install/setup.bash &&
+  source /tmp/dsim_phase08_1_m4_install/setup.bash &&
+  source /tmp/dsim_phase08_1_m5_install_final3/setup.bash &&
+  export ROS_DOMAIN_ID=68 &&
+  export ROS_LOG_DIR=/tmp/dsim_phase08_1_m6_goal_ros_logs &&
+  export MPLCONFIGDIR=/tmp/dsim_phase08_1_m6_goal_mpl &&
+  export TURTLEBOT3_MODEL=burger &&
+  unset DISPLAY &&
+  ros2 run ros_esc run_scenario \
+    /tmp/dsim_phase08_1_m5_install_final3/ros_esc/share/ros_esc/scenario_runner/scenarios/phase08_1_diagnostic_activation.yaml \
+    --operator phase08_1_m6 \
+    --case-id activation_goal_high \
+    --runs-root /home/mattb/Experiments/GESC-Gaussian/runs/phase08_1_m6 \
+    --summary-output /home/mattb/Experiments/GESC-Gaussian/runs/phase08_1_m6/activation_goal_high_summary.yaml'
+```
+
+Result: exit 0; `record_run` returned 0 without timeout; recording,
+classification, and cleanup passed. The collapsed state path was
+`SEARCH -> VERIFY_EXTREMUM -> GOAL_HOLD`; all required predicates passed,
+forbidden states/events were absent, collision was false, and no new node or
+session process remained. Completeness passed no-motion-before-readiness,
+clean-preauthorization-lifecycle, fresh/nonregressing typed timestamps,
+event-source causality, final readiness false, strict finite JSON, and final
+zero on all three command evidence streams.
+
+Retained run:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_1_m6/2026-07-26/20260726T060431139250Z_simulation_phase08_1_diagnostic_activation-activation_goal_high-robust_gaussian_v1-5ca0c583_860f0907
+```
+
+Standard one-time analysis:
+
+```bash
+timeout 300s bash -lc '
+  source /opt/ros/humble/setup.bash &&
+  source /home/mattb/dsim-lab/ros2_ws/install/setup.bash &&
+  source /tmp/dsim_phase08_1_m4_install/setup.bash &&
+  source /tmp/dsim_phase08_1_m5_install_final3/setup.bash &&
+  export ROS_DOMAIN_ID=68 &&
+  export ROS_LOG_DIR=/tmp/dsim_phase08_1_m6_goal_analysis_ros_logs &&
+  export MPLCONFIGDIR=/tmp/dsim_phase08_1_m6_goal_analysis_mpl &&
+  ros2 run ros_esc analyze_run \
+    /home/mattb/Experiments/GESC-Gaussian/runs/phase08_1_m6/2026-07-26/20260726T060431139250Z_simulation_phase08_1_diagnostic_activation-activation_goal_high-robust_gaussian_v1-5ca0c583_860f0907 \
+    --output-dir \
+    /home/mattb/Experiments/GESC-Gaussian/runs/phase08_1_m6/2026-07-26/20260726T060431139250Z_simulation_phase08_1_diagnostic_activation-activation_goal_high-robust_gaussian_v1-5ca0c583_860f0907/analysis'
+```
+
+The analyzer returned `analysis_status=complete` with no recording or analysis
+failures. It retained 11 tables, eight plots, and 23,261 synchronized rows.
+Controller and ground-truth success were valid; convergence time was
+`98.543209938 s`, terminal state was `GOAL_HOLD`, final goal distance was
+`0.2803891005 m`, and collision/failsafe/timeout were false. Raw bag SHA-256:
+`9b9905db133be446039570a8d6c9897726d87e00830625326af48cdc7c9bb652`.
+
+Probe 1 cleanup satisfied the declared condition for the distinct
+`activation_fill_create` Probe 2. No replacement or additional probe was
+introduced.
+
+### Probe 2 — fill creation and escape
+
+Predeclared case: `activation_fill_create`. It ran serially only after Probe 1
+cleanup passed, using the same committed M5 HEAD and suite hash.
+
+```bash
+timeout --signal=INT --kill-after=45s 600s bash -lc '
+  source /opt/ros/humble/setup.bash &&
+  source /home/mattb/dsim-lab/ros2_ws/install/setup.bash &&
+  source /tmp/dsim_phase08_1_m4_install/setup.bash &&
+  source /tmp/dsim_phase08_1_m5_install_final3/setup.bash &&
+  export ROS_DOMAIN_ID=69 &&
+  export ROS_LOG_DIR=/tmp/dsim_phase08_1_m6_fill_ros_logs &&
+  export MPLCONFIGDIR=/tmp/dsim_phase08_1_m6_fill_mpl &&
+  export TURTLEBOT3_MODEL=burger &&
+  unset DISPLAY &&
+  ros2 run ros_esc run_scenario \
+    /tmp/dsim_phase08_1_m5_install_final3/ros_esc/share/ros_esc/scenario_runner/scenarios/phase08_1_diagnostic_activation.yaml \
+    --operator phase08_1_m6 \
+    --case-id activation_fill_create \
+    --runs-root /home/mattb/Experiments/GESC-Gaussian/runs/phase08_1_m6 \
+    --summary-output /home/mattb/Experiments/GESC-Gaussian/runs/phase08_1_m6/activation_fill_create_summary.yaml'
+```
+
+Result: exit 1 after about `216.7 s`. The process exit represents the retained
+valid behavioral classification failure; it was not an infrastructure or
+orchestration failure. `record_run` returned 0 without timeout, recording and
+completeness passed, infrastructure status was `completed`, cleanup passed,
+and no new node or session process remained.
+
+Retained run:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_1_m6/2026-07-26/20260726T061155030660Z_simulation_phase08_1_diagnostic_activation-activation_fill_create-robust_gaussian_v1-66aad7_9bba343b
+```
+
+Standard one-time analysis:
+
+```bash
+timeout 300s bash -lc '
+  source /opt/ros/humble/setup.bash &&
+  source /home/mattb/dsim-lab/ros2_ws/install/setup.bash &&
+  source /tmp/dsim_phase08_1_m4_install/setup.bash &&
+  source /tmp/dsim_phase08_1_m5_install_final3/setup.bash &&
+  export ROS_DOMAIN_ID=69 &&
+  export ROS_LOG_DIR=/tmp/dsim_phase08_1_m6_fill_analysis_ros_logs &&
+  export MPLCONFIGDIR=/tmp/dsim_phase08_1_m6_fill_analysis_mpl &&
+  ros2 run ros_esc analyze_run \
+    /home/mattb/Experiments/GESC-Gaussian/runs/phase08_1_m6/2026-07-26/20260726T061155030660Z_simulation_phase08_1_diagnostic_activation-activation_fill_create-robust_gaussian_v1-66aad7_9bba343b \
+    --output-dir \
+    /home/mattb/Experiments/GESC-Gaussian/runs/phase08_1_m6/2026-07-26/20260726T061155030660Z_simulation_phase08_1_diagnostic_activation-activation_fill_create-robust_gaussian_v1-66aad7_9bba343b/analysis'
+```
+
+The analyzer returned `analysis_status=complete` with no recording or analysis
+failures. It retained one active fill, one successful escape, and eight plots.
+Raw bag SHA-256:
+`f10924891a97478add654d373301a76047fce9921c0fb348ecd3a1987de1122e`.
+
+The activation subclaim passed:
+
+- `SEARCH -> VERIFY_EXTREMUM -> DESIGN_OR_MERGE_FILL -> ESCAPE_REPULSE`;
+- required `CONVERGENCE_CONFIRMED`, `FILL_CREATED`, and `ESCAPE_STARTED`
+  evidence;
+- `0.091432122 s` reported fill-design wall time and approximately
+  `0.092409 s` request-to-fill receipt latency against the unchanged `5.0 s`
+  limit;
+- exact request, result, and lifecycle source timestamp correlation;
+- one successful `8.714248035 s` escape with `0.204169 m` maximum radial
+  progress, no stall, no assist, and no collision;
+- typed timestamp, readiness, pre-authorization, strict-JSON, cleanup, and
+  final-zero completeness.
+
+The full global contract correctly failed. The later path was
+`RECENTER -> FAILSAFE`, with `TIMEOUT` and `FAILSAFE` events after
+`30.046870124 s`. Recenter began inside the retained fill's `0.608675 m`
+avoidance disk. The clearance-first shared direction selector accumulated 141
+direction revisions and the robot traveled about `2.738 m`, but minimum room
+center distance was only `0.658224 m`, outside the `0.25 m` tolerance. All 300
+unique recenter control samples were unsaturated and command tracking was
+close, so this was a guidance-policy failure rather than simulator or actuator
+tracking failure.
+
+No replacement, third M6 probe, timeout-only rerun, matrix, tuning, holdout,
+GUI, tag, or physical command was run. Both predeclared M6 questions were
+answered; another unchanged run would repeat diagnosed evidence.

@@ -1,6 +1,6 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-25T22:54:22-07:00`
+Last verified: `2026-07-25T23:25:29-07:00`
 Status: `IN PROGRESS — PHASE 08.1 DIAGNOSTIC RECOVERY`
 
 ## Objective
@@ -177,15 +177,14 @@ count toward a future acceptance attempt.
   correction. The first implementation's review gaps were corrected; its
   earlier evidence is superseded by the final source-state gates below.
 - Completed milestone: Phase 08.1 M5 scenario-contract correction.
-- Current milestone: Phase 08.1 M6 minimal simulation probes.
-- Pending milestone: Phase 08.1 M7 handoff.
+- Completed milestone: Phase 08.1 M6 minimal simulation probes, with one full
+  contract pass and one retained mixed-result/full-contract failure.
+- Current milestone: Phase 08.1 M7 handoff and next-step recommendation.
 - Current plan:
   `docs/codex/gesc_gaussian/plans/phase_08_1_plan.md`.
-- Next criterion: execute the predeclared calibrated goal probe under the
-  fresh Phase 08.1 development root, analyze it once, and verify cleanup and
-  final zero. Execute the predeclared fill-create probe next only after the
-  first probe closes cleanly and because it answers the distinct local-minimum
-  route question.
+- Next criterion: write the Phase 08.1 handoff, preserve the M6 mixed result,
+  and recommend the smallest versioned recenter diagnostic correction without
+  executing another probe or any v3 acceptance stage.
 
 ### M6 pre-execution declaration
 
@@ -205,6 +204,64 @@ count toward a future acceptance attempt.
 - Each retained attempt will be analyzed once. No replacement, third probe,
   matrix, tuning, holdout, tag, GUI, or physical command is predeclared.
 
+### M6 retained results
+
+- Probe 1 `activation_goal_high`: **PASSED** at committed M5 HEAD `8ca59d1`.
+  The finite headless run completed without outer or inner timeout and retained
+  run ID
+  `20260726T060431139250Z_simulation_phase08_1_diagnostic_activation-activation_goal_high-robust_gaussian_v1-5ca0c583_860f0907`.
+- Recording completeness, classification, cleanup, controller goal,
+  ground-truth goal, expected terminal, first-verification path, required and
+  forbidden lifecycle evidence, no-collision evidence, final readiness false,
+  no motion before readiness, clean pre-authorization lifecycle, fresh event
+  timestamps, strict finite JSON, and final-zero checks all passed.
+- The collapsed path was
+  `SEARCH -> VERIFY_EXTREMUM -> GOAL_HOLD`; verification lasted about
+  `9.118 s`, the first goal event occurred `98.543 s` after readiness, and the
+  final goal distance was `0.280389 m`.
+- Cleanup retained no new node or session process. The standard Phase 07
+  analyzer ran exactly once into the run-local `analysis/` directory and
+  completed with no recording or analysis failures. Raw bag SHA-256:
+  `9b9905db133be446039570a8d6c9897726d87e00830625326af48cdc7c9bb652`.
+- Probe 1 summary:
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_1_m6/activation_goal_high_summary.yaml`.
+- Probe 2 `activation_fill_create`: **ACTIVATION SUBCLAIM PASSED; FULL
+  CONTRACT FAILED** at the same committed M5 HEAD. The finite headless run
+  retained run ID
+  `20260726T061155030660Z_simulation_phase08_1_diagnostic_activation-activation_fill_create-robust_gaussian_v1-66aad7_9bba343b`.
+- Recording, completeness, cleanup, readiness, strict JSON, collision,
+  timestamp, request/source causality, and final-zero evidence passed. The
+  required first-verification path and required activation events also passed:
+  `SEARCH -> VERIFY_EXTREMUM -> DESIGN_OR_MERGE_FILL -> ESCAPE_REPULSE`.
+  Fill design completed in about `0.091 s`, request-to-fill receipt latency was
+  about `0.092 s` against the unchanged `5.0 s` limit, and fill request,
+  result, and lifecycle source timestamps correlated exactly.
+- Escape completed successfully in `8.714 s`, with `0.204169 m` maximum
+  radial progress, no stall, no assist, no collision, and a transition to
+  `RECENTER`.
+- The global schema-v3 contract correctly failed because the later lifecycle
+  was
+  `RECENTER -> FAILSAFE` after a `30.0469 s` recenter timeout, so the globally
+  forbidden `FAILSAFE` state and `TIMEOUT`/`FAILSAFE` events were present.
+  This valid behavioral failure is not reclassified or hidden by the passing
+  activation prefix.
+- Recenter started `0.970 m` from room center while inside the retained fill's
+  `0.608675 m` avoidance disk. The direct center route was unsafe, and the
+  shared safe-direction selector ranked clearance before center alignment.
+  The robot accumulated 141 direction revisions and traveled about `2.738 m`
+  tangentially, but its best center distance was only `0.658224 m`, outside
+  the `0.25 m` tolerance. No command saturation or tracking defect explains
+  the trace.
+- The standard analyzer ran exactly once into the run-local `analysis/`
+  directory and completed with no recording or analysis failures. Raw bag
+  SHA-256:
+  `f10924891a97478add654d373301a76047fce9921c0fb348ecd3a1987de1122e`.
+  Summary:
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_1_m6/activation_fill_create_summary.yaml`.
+- No replacement or third probe was run. Both predeclared M6 questions were
+  answered, and another unchanged or timeout-only run would repeat diagnosed
+  evidence rather than resolve a distinct question.
+
 ## Current problem or blocker
 
 - No Level A blocker is present.
@@ -215,9 +272,9 @@ count toward a future acceptance attempt.
   order from true stale emission. All Gaussian-fill mutable callbacks now
   share a dedicated mutually exclusive callback group under a two-thread
   executor, and an in-process test proves `/clock` advances during a
-  deliberately blocked real design callback. Runtime
-  receipt-skew confirmation still requires a new M6 probe; historical v2 bags
-  are not reclassified.
+  deliberately blocked real design callback. Both M6 probes confirmed fresh
+  timestamps, and Probe 2 confirmed exact fill request/result causality.
+  Historical v2 bags are not reclassified.
 - Four activation goal expectations were inconsistent with the adopted
   calibrated `source_score >= 0.95` rule. Only the high calibrated case was
   reachable as `GOAL_HOLD`; ground-truth proximity did not make the others
@@ -229,9 +286,12 @@ count toward a future acceptance attempt.
   race.
 - The retained bags are sufficient for code and contract diagnosis. Do not
   rerun the historical activation stage.
-- M5 analytical and synthetic evidence establishes scenario-contract
-  plausibility, not closed-loop behavioral success. M6 is the first fresh
-  runtime evidence for the corrected goal and fill-create contracts.
+- M6 confirms the corrected calibrated-goal contract and the fill-create plus
+  escape activation prefix. Its second full-run contract remains failed
+  because the provisional recenter direction policy did not converge. This is
+  a Level C result for that retained probe and a bounded Level B engineering
+  question for a future versioned diagnostic iteration, not a Level A
+  conflict and not permission to weaken the global safety predicates.
 
 ## Files currently relevant
 
@@ -339,6 +399,14 @@ count toward a future acceptance attempt.
 - D-08-19: M6 starts with exactly the calibrated high goal and conditional
   fill-create cases under a fresh development-only root. They answer distinct
   post-M3 and post-M2/M4 questions; no full suite is authorized.
+- D-08-20: preserve Probe 2 as a mixed-result, globally failed diagnostic.
+  Its activation prefix proves the M2/M4/M5 fill-and-escape question, while
+  its later recenter timeout independently fails the full lifecycle contract.
+  Do not delete global forbiddens, raise the timeout, weaken the retained-fill
+  radius, or rerun unchanged. The smallest next Level B correction is
+  recenter-only progress/alignment-first selection among candidates that
+  already pass the existing hard fill and wall checks; escape assistance
+  remains clearance-first.
 
 ## Validation checkpoints
 
@@ -564,6 +632,39 @@ count toward a future acceptance attempt.
   `git diff --check` passed.
 - Phase 08.1 M5 material-boundary checkpoint passed and refreshed
   `docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt`.
+- M6 Probe 1 bounded scenario command returned exit 0 after `217.7 s` of
+  orchestration for one 180-second recording; `record_run` returned 0 without
+  timeout, completeness passed, classification passed, and cleanup passed.
+- Probe 1 completeness contains no failures or warnings. In particular,
+  `typed_timestamps_nonregressing`, `typed_timestamps_within_clock`,
+  `algorithm_event_emission_fresh`, `no_motion_before_readiness`,
+  `clean_lifecycle_before_readiness`, `final_readiness_false`,
+  `final_commands_zero`, `collision_expectation`, and `strict_json_finite`
+  passed.
+- Probe 1 one-time offline analysis returned
+  `{"analysis_status":"complete"}` with no recording or analysis failures,
+  23 event rows, 3,655 state rows, 5,371 odometry rows, 23,261 synchronized
+  rows, and eight plots. No Gazebo, recorder, bag-record, or scenario-runner
+  process remained.
+- M6 Probe 2 bounded scenario command returned exit 1 after about `216.7 s`;
+  this was the expected process representation of a valid behavioral
+  classification failure. `record_run` returned 0 without timeout, recording
+  and completeness passed, infrastructure status was `completed`, cleanup
+  passed, and no process remained.
+- Probe 2 completeness passed the typed timestamp, source-causality,
+  fill-lifecycle, readiness, pre-authorization, strict-JSON, collision, and
+  final-zero checks. The required activation path/events passed. The global
+  contract failed only because later `RECENTER -> FAILSAFE` introduced the
+  forbidden state and timeout/failsafe events.
+- Probe 2 one-time offline analysis returned
+  `{"analysis_status":"complete"}` with no recording or analysis failures,
+  one active fill, one successful escape, no collision, and eight plots.
+  Recenter lasted `30.0469 s`, reached a minimum center distance of
+  `0.658224 m`, and timed out. No replacement, third probe, formal matrix,
+  GUI, tag, or physical command was run.
+- M6 normal and strict-history Phase 08 Implement context validation,
+  required-document validation, `git diff --check`, process cleanup, and the
+  material-boundary Phase 08 checkpoint passed.
 
 ## Attempts not to repeat
 
@@ -580,13 +681,17 @@ count toward a future acceptance attempt.
   failed gate, or compute Wilson intervals without the 70-run denominator.
 - Do not treat the one passing high-level goal or one real escape/recenter
   sequence as whole-gate acceptance.
+- Do not relabel Probe 2 as a full pass merely because its activation prefix
+  passed, and do not hide the useful activation evidence merely because its
+  downstream full-run contract failed.
+- Do not repeat Probe 2 unchanged, increase its recenter timeout, or weaken
+  fill/wall safety to chase a pass. Correct and test the progress policy in a
+  separately versioned development iteration first.
 
 ## Remaining work
 
-Phase 08.1 M1–M5 are complete. Follow `phase_08_1_plan.md` for:
-
-1. M6 minimal versioned simulation probes;
-2. M7 Phase 08.1 handoff and a separately reviewed v3 recommendation.
+Phase 08.1 M1–M6 are complete. Follow `phase_08_1_plan.md` for M7: write the
+Phase 08.1 handoff and separately reviewed next-step recommendation.
 
 No v3 tuning, holdout, acceptance denominator, tag, or physical motion is
 authorized in this plan.
@@ -607,8 +712,8 @@ authorized in this plan.
 
 ## Compaction recovery
 
-Phase 08 v2 is terminally closed; Phase 08.1 M6 is active. Reread `AGENTS.md`,
+Phase 08 v2 is terminally closed; Phase 08.1 M7 is active. Reread `AGENTS.md`,
 `phase_08_plan.md`, `phase_08_1_plan.md`, and this status; inspect Git status
 and the relevant diff; identify the next incomplete Phase 08.1 milestone; and
 continue from retained evidence. Never resume or relabel v1/v2, and never rerun
-their matrices merely to recover context.
+their matrices or the completed M6 probes merely to recover context.
