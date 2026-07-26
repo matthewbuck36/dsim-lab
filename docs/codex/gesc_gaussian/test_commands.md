@@ -1236,13 +1236,15 @@ The same stress exposed a pre-existing ROS 2 Python teardown race: simultaneous
 process-group SIGINT could interrupt native DDS work and intermittently produce
 exit 245 in different algorithm nodes. The recorder now snapshots the target
 process tree and sends SIGINT only to live leaf executables, in PID order, with
-a 0.1-second stagger. The six Python owners in this launch graph defer
-SIGINT/SIGTERM until the current single-threaded callback returns, then shut
-down the executor before destroying the node while the ROS context remains
-valid. Launch/controller ownership, final-zero publication, cost semantics,
-topics, and algorithm parameters are unchanged. Both controller spawners use
-the supported 30-second service-call timeout to tolerate bounded Gazebo startup
-latency.
+a 0.1-second stagger. At this Phase 07.5 evidence boundary, the six Python
+owners in this launch graph deferred SIGINT/SIGTERM until the current
+single-threaded callback returned, then shut down the executor before destroying
+the node while the ROS context remained valid. Phase 08.1 M4 later moved only
+the Gaussian-fill executable to a two-thread executor while keeping its mutable
+callbacks serialized. Launch/controller ownership, final-zero publication,
+cost semantics, topics, and algorithm parameters are unchanged. Both controller
+spawners use the supported 30-second service-call timeout to tolerate bounded
+Gazebo startup latency.
 
 Focused result after the final correction:
 
@@ -1693,3 +1695,190 @@ The repository-standard package result remains the pre-activation
 after the two-file reporting-only correction. No tuning, parameter selection,
 freeze, holdout, 70-run validation, reproducibility, physical test, or
 simulation-ready tag was run after the activation early-stop.
+
+## Phase 08.1 M4 readiness and evidence semantics
+
+The retained v2 bags were inspected read-only; their stored metadata,
+completeness reports, and bags were not regenerated. The six apparent
+`AlgorithmEvent` regressions were cross-producer ordering on a shared bus, but
+the same evidence also exposed real Gaussian event-emission lag of 4.0–15.6
+seconds. The stalled-assist and recenter/resume failures separately exposed a
+non-operational controller manager and a pre-readiness controller fault race.
+
+Lifecycle-history regression:
+
+```bash
+timeout 180s bash -lc '
+  source /opt/ros/humble/setup.bash &&
+  source ros2_ws/install/setup.bash &&
+  export ROS_LOG_DIR=/tmp/dsim_phase08_1_m4_ros_logs &&
+  python3 -m pytest -q \
+    ros2_ws/src/ros_esc/test/test_experiment_recording.py \
+    -k "preauthorization or atomic_authorization or run_validator_wires"'
+```
+
+Final result: `8 passed, 49 deselected in 0.41s`. The tests cover every
+independent live and retained-bag lifecycle signal: non-`SEARCH`, failsafe,
+prior transition, active fill, and active escape. They also observe
+`VERIFY_EXTREMUM`, then clean `SEARCH`, reset the heartbeat epoch, and still
+reject authorization. A never-authorized shutdown closes monitoring before
+the explicit-stop `FAILSAFE`, and both bag state and command scans stop at the
+first stop receipt, so post-stop evidence is not mislabeled as
+pre-authorization behavior.
+
+Focused recorder, runner, and controller regression:
+
+```bash
+timeout 240s bash -lc '
+  source /opt/ros/humble/setup.bash &&
+  source ros2_ws/install/setup.bash &&
+  export ROS_LOG_DIR=/tmp/dsim_phase08_1_m4_ros_logs &&
+  python3 -m pytest -q \
+    ros2_ws/src/ros_esc/test/test_experiment_recording.py \
+    ros2_ws/src/ros_esc/test/test_scenario_runner.py \
+    ros2_ws/src/ros_esc/test/test_legacy_behavior.py'
+```
+
+Final source-state result: `104 passed, 1 skipped in 2.33s`. The skip is the
+explicit `RUN_GESC_PHASE06_GAZEBO_E2E=1` recorded headless-Gazebo gate. A preceding
+invocation without `ROS_LOG_DIR` produced `12 failed, 84 passed, 1 skipped`
+after rclpy could not write under `/home/mattb/.ros`; that environment-invalid
+attempt is not test evidence. The writable-log rerun above started a fresh
+process and passed.
+
+Broad M2–M4 recording/analysis/state regression:
+
+```bash
+timeout 300s bash -lc '
+  source /opt/ros/humble/setup.bash &&
+  source ros2_ws/install/setup.bash &&
+  export ROS_LOG_DIR=/tmp/dsim_phase08_1_m4_ros_logs &&
+  export MPLCONFIGDIR=/tmp/dsim_phase08_1_m4_matplotlib &&
+  python3 -m pytest -q -rs \
+    ros2_ws/src/ros_esc/test/test_experiment_recording.py \
+    ros2_ws/src/ros_esc/test/test_recording_integration.py \
+    ros2_ws/src/ros_esc/test/test_scenario_runner.py \
+    ros2_ws/src/ros_esc/test/test_observability_contract.py \
+    ros2_ws/src/ros_esc/test/test_legacy_behavior.py \
+    ros2_ws/src/ros_esc/test/test_phase08_validation.py \
+    ros2_ws/src/ros_esc/test/test_bag_analysis.py \
+    ros2_ws/src/ros_esc/test/test_bag_analysis_integration.py \
+    ros2_ws/src/ros_esc/test/test_state_machine.py \
+    ros2_ws/src/ros_esc/test/test_supervisor_integration.py'
+```
+
+Final source-state result: `182 passed, 2 skipped in 12.08s`. The skips are the
+explicit
+`DSIM_RUN_GAZEBO_RECORDING_TEST=1` visible-Gazebo recording test and the
+explicit recorded headless-Gazebo scenario test. Neither was enabled in M4.
+
+The final tests cover:
+
+- two fresh operational epochs around parameter capture, with readiness
+  remaining false when the controller-manager service disappears;
+- permanent rejection of robust pre-authorization non-`SEARCH`, failsafe,
+  prior-transition, active-fill, and active-escape evidence even after a later
+  clean `SEARCH` and a fresh epoch reset, with the same history checked from
+  retained bag messages and coordinator metadata;
+- an authorization-or-stop boundary that prevents expected post-stop state or
+  command evidence from being mislabeled as pre-authorization behavior;
+- an absolute-deadline crossing during the final service/authorization path;
+- run-specific promotion of selected heartbeat streams to required graph,
+  singleton-publisher, rosbag, parameter-owner, and minimum-count evidence;
+- all four zero/nonzero sensor/pose delay combinations and exact canonical
+  consumer-topic routing;
+- a code-enforced physical-mode bypass of Gazebo/controller-manager checks;
+- exact rather than near-equal fill request/source correlation;
+- strict JSON rejection/normalization, invalid timestamp tolerance, nonfinite
+  terminal odometry, and finite-coordinate distance overflow;
+- the real Gaussian-fill callback under live `/clock`, plus the production
+  two-thread executor add/spin/remove/shutdown lifecycle; and
+- infrastructure-invalid, runtime-failed, evidence-extraction-failed,
+  recording-invalid, and cleanup-failed runner classifications without an
+  automatic retry.
+
+Isolated selected-package build:
+
+```bash
+timeout 180s bash -lc '
+  source /opt/ros/humble/setup.bash &&
+  cd ros2_ws &&
+  colcon --log-base /tmp/dsim_phase08_1_m4_colcon_logs_final build \
+    --build-base /tmp/dsim_phase08_1_m4_build \
+    --install-base /tmp/dsim_phase08_1_m4_install \
+    --packages-select ros_esc_interfaces ros_esc'
+```
+
+Final exact-source follow-up and installed smoke:
+
+```bash
+timeout 120s bash -lc '
+  source /opt/ros/humble/setup.bash &&
+  cd ros2_ws &&
+  colcon --log-base /tmp/dsim_phase08_1_m4_colcon_logs_final_boundary build \
+    --build-base /tmp/dsim_phase08_1_m4_build \
+    --install-base /tmp/dsim_phase08_1_m4_install \
+    --packages-select ros_esc'
+
+timeout 60s bash -lc '
+  source /opt/ros/humble/setup.bash &&
+  source /tmp/dsim_phase08_1_m4_install/setup.bash &&
+  export ROS_LOG_DIR=/tmp/dsim_phase08_1_m4_ros_logs &&
+  ros2 run ros_esc record_run --help &&
+  ros2 run ros_esc run_scenario --help &&
+  python3 -c "from ros_esc.gaussian_fill_node.gaussian_fill_script import \
+GaussianFill, main; assert GaussianFill and main"'
+```
+
+The clean isolated build completed `2 packages finished in 2min 30s`. A first
+incremental rebuild after docstring-style and single-evaluation cleanup
+completed in `31.2s`; the authorization/shutdown-boundary source rebuilt in
+`31.0s`; and the final matching offline command boundary rebuilt `ros_esc` in
+`30.9s` against that unchanged isolated interface install. From the final
+isolated install, both
+`ros2 run ros_esc record_run --help` and
+`ros2 run ros_esc run_scenario --help` returned exit 0, and the actual
+`GaussianFill` class plus production `main` imported successfully. A first
+smoke command requested the nonexistent symbol `GaussianFillNode`; it failed
+only that import after both help commands passed. Replacing the mistaken
+symbol with the source-owned `GaussianFill` reran the complete smoke and
+passed.
+
+Same-configuration `ament_flake8` current/HEAD findings are:
+
+```text
+record_run.py:              371 / 375
+validate_run.py:            191 / 193
+run_scenario.py:              0 / 0
+gaussian_fill_script.py:     410 / 410
+controller_node_script.py:   134 / 135
+test_experiment_recording.py: 259 / 259
+test_scenario_runner.py:       0 / 0
+test_legacy_behavior.py:     190 / 190
+```
+
+The remaining findings are inherited D/E/I/Q debt; M4 adds none and removes
+seven. `ament_pep257` reports inherited findings in the older owners
+(`record_run.py` 13, `validate_run.py` 5, `gaussian_fill_script.py` 11, and
+`controller_node_script.py` 22) and no problems in the three changed test
+files or `run_scenario.py`. Fatal pyflakes/parse selection
+`E9,F63,F7,F82` passed over all eight changed Python owners.
+
+Final repository/document checks:
+
+```bash
+DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh \
+  08 implement
+DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh \
+  08 implement --strict-history
+DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_required_docs.sh
+git diff --check
+```
+
+Both normal and strict context validation returned
+`Phase 08 implement context is complete`; required-doc validation returned
+`All Phase 00 audit documents exist`; shell syntax, Python compile, package
+XML, topic-manifest YAML, fatal flake8, and `git diff --check` passed.
+
+No Gazebo process, physical command, tuning, holdout, acceptance run,
+simulation-ready tag, or historical-v1/v2 evidence rewrite occurred in M4.

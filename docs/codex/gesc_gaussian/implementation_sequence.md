@@ -272,6 +272,25 @@ unreachable scenario expectations, then use minimal development-only runtime
 probes. A future v3 tuning/acceptance design requires a separate sealed contract
 and evidence root.
 
+The Phase 08.1 readiness correction remains inside the existing controller,
+recorder, completeness validator, and scenario runner. Simulation uses two
+fresh data/controller-manager barriers around bounded parameter capture and an
+atomic final authorization. The barrier covers the controller's actual
+pose/filter/timekeeper/state/command inputs, the supervisor's source semantics,
+and a clean robust `SEARCH` startup state; delayed-input metadata must agree
+with the canonical target's profile, relay gate, and all actual consumer-topic
+arguments. Selected operational streams become run-specific required,
+single-publisher, retained rosbag evidence. Physical mode is code-enforced not
+to inherit Gazebo-specific checks. Shared `AlgorithmEvent` ordering is
+validated per established producer, signed emission skew is checked against
+receipt-ordered `/clock`,
+and fill-request causality remains an exact source-timestamp contract. Strict
+JSON evidence normalizes corrupt nonfinite diagnostics to `null` and fails an
+explicit finiteness check. The fill node services `/clock` concurrently with
+its serialized data/design callbacks in both profiles. A never-ready attempt
+is infrastructure-invalid with unavailable behavioral outcomes and is never
+retried automatically.
+
 Proposed durable output area:
 
 - `docs/codex/gesc_gaussian/validation/`.

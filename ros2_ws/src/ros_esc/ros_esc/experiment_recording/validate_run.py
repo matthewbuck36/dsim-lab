@@ -17,6 +17,7 @@ from .record_run import (
     REQUIRED_METADATA,
     VALID_PROFILES_BY_MODE,
     atomic_json,
+    preauthorization_lifecycle_errors,
 )
 
 
@@ -37,6 +38,7 @@ MOTION_COVERAGE_ALIASES = {
     "command_array_final",
 }
 FILL_EVENT_TYPES = {20, 22, 23}
+FILL_OWNER_EVENT_TYPES = set(range(20, 27))
 
 
 def _stamp_nanoseconds(stamp):
@@ -63,6 +65,152 @@ def timestamp_regressions(values, tolerance_nanoseconds):
             regressions.append({"previous": previous, "current": current})
         previous = current
     return regressions
+
+
+def algorithm_event_producer_stream(message):
+    """Identify the producer of one shared-bus event."""  # noqa: Q000
+    event_type = int(message.event_type)
+    detail = str(message.detail)
+    if event_type in (10, 11):
+        return 'convergence_detector'
+    if event_type in FILL_OWNER_EVENT_TYPES:
+        return 'gaussian_fill'
+    if event_type in (3, 30, 40, 41, 50, 51, 60):
+        return 'supervisor'
+    if event_type == 70:
+        reason_code = int(message.reason_code)
+        if detail.startswith('controller watchdog:') and reason_code == 1:
+            return 'controller'
+        if not detail.startswith('controller watchdog:') and reason_code == 0:
+            return 'supervisor'
+        return None
+    if event_type == 2:
+        return 'cost_function'
+    if event_type != 1:
+        return None
+    configuration_prefixes = (
+        ('source_mode=', 'cost_function'),
+        ('state-driven robust weights', 'modified_cost'),
+        ('legacy fixed observational weights', 'modified_cost'),
+        ('convergence detector configuration', 'convergence_detector'),
+        ('robust Gaussian estimator', 'gaussian_fill'),
+        ('Gaussian fill configuration', 'gaussian_fill'),
+        ('measured escape', 'supervisor'),
+    )
+    return next(
+        (
+            producer
+            for prefix, producer in configuration_prefixes
+            if detail.startswith(prefix)
+        ),
+        None,
+    )
+
+
+def algorithm_event_stream_regressions(records, tolerance_nanoseconds):
+    """Check AlgorithmEvent stamps independently per producer."""  # noqa: Q000
+    streams = {}
+    unidentified = []
+    for bag_stamp, message in records:
+        producer = algorithm_event_producer_stream(message)
+        if producer is None:
+            unidentified.append({
+                'bag_timestamp': int(bag_stamp),
+                'event_type': int(message.event_type),
+                'detail': str(message.detail),
+            })
+            continue
+        streams.setdefault(producer, []).append(
+            (int(bag_stamp), _message_stamp_nanoseconds(message))
+        )
+    regressions = []
+    for producer, values in streams.items():
+        previous = None
+        for bag_stamp, current in values:
+            if current is None:
+                continue
+            if (
+                previous is not None
+                and current + tolerance_nanoseconds < previous['stamp']
+            ):
+                regressions.append({
+                    'producer_stream': producer,
+                    'previous': previous['stamp'],
+                    'current': current,
+                    'previous_bag_timestamp': previous['bag_timestamp'],
+                    'current_bag_timestamp': bag_stamp,
+                })
+            previous = {
+                'stamp': current,
+                'bag_timestamp': bag_stamp,
+            }
+    return regressions, unidentified
+
+
+def algorithm_event_emission_lags(event_records, clock_records):
+    """Map event receipts to the latest received simulation clock."""  # noqa: Q000
+    clocks = sorted(
+        (
+            int(bag_stamp),
+            _stamp_nanoseconds(message.clock),
+        )
+        for bag_stamp, message in clock_records
+        if message is not None
+    )
+    results = []
+    clock_index = 0
+    latest_clock = None
+    for bag_stamp, message in sorted(event_records, key=lambda item: item[0]):
+        while (
+            clock_index < len(clocks)
+            and clocks[clock_index][0] <= int(bag_stamp)
+        ):
+            latest_clock = clocks[clock_index][1]
+            clock_index += 1
+        event_stamp = _message_stamp_nanoseconds(message)
+        results.append({
+            'bag_timestamp': int(bag_stamp),
+            'producer_stream': algorithm_event_producer_stream(message),
+            'event_stamp': event_stamp,
+            'clock_at_receipt': latest_clock,
+            'clock_skew_nanoseconds': (
+                None
+                if latest_clock is None or event_stamp is None
+                else latest_clock - event_stamp
+            ),
+        })
+    return results
+
+
+def fill_event_source_causality(event_records, request_records):
+    """Require exact fill-event correlation to a recorded request."""  # noqa: Q000
+    request_sources = [
+        float(message.timestamp)
+        for _, message in request_records
+        if message is not None and math.isfinite(float(message.timestamp))
+    ]
+    failures = []
+    for bag_stamp, message in event_records:
+        if message is None:
+            continue
+        if int(message.event_type) not in FILL_OWNER_EVENT_TYPES:
+            continue
+        source = float(message.source_timestamp)
+        matched = (
+            message.source_timestamp_valid
+            and math.isfinite(source)
+            and source in request_sources
+        )
+        if not matched:
+            failures.append({
+                'bag_timestamp': int(bag_stamp),
+                'event_type': int(message.event_type),
+                'source_timestamp': source if math.isfinite(source) else None,
+                'source_timestamp_valid': bool(
+                    message.source_timestamp_valid
+                ),
+            })
+    return failures
 
 
 def timestamps_within_clock(values, clock_minimum, clock_maximum, tolerance_nanoseconds):
@@ -110,6 +258,43 @@ def _check(report, name, passed, failure=None, detail=None):
     report["checks"][name] = item
     if not passed and failure:
         report["failures"].append(failure)
+
+
+def _json_compatible(value, path='$', nonfinite_paths=None):
+    """Replace nonfinite evidence scalars with null and retain their paths."""
+    if nonfinite_paths is None:
+        nonfinite_paths = []
+    if isinstance(value, dict):
+        converted = {}
+        for index, (key, item) in enumerate(value.items()):
+            converted_key = key
+            if isinstance(key, float) and not math.isfinite(key):
+                nonfinite_paths.append(f'{path}.<nonfinite-key>')
+                converted_key = f'<nonfinite-key-{index}>'
+            elif not isinstance(
+                key,
+                (str, int, float, bool, type(None)),
+            ):
+                converted_key = str(key)
+            converted[converted_key] = _json_compatible(
+                item,
+                f'{path}.{converted_key}',
+                nonfinite_paths,
+            )
+        return converted
+    if isinstance(value, (list, tuple)):
+        return [
+            _json_compatible(
+                item,
+                f'{path}[{index}]',
+                nonfinite_paths,
+            )
+            for index, item in enumerate(value)
+        ]
+    if isinstance(value, float) and not math.isfinite(value):
+        nonfinite_paths.append(path)
+        return None
+    return value
 
 
 def _load_yaml(path):
@@ -266,14 +451,36 @@ def validate_run_directory(run_directory, write_report=True):
         ),
         None,
     )
-    tolerance_sec = float(
-        resolved.get("validation", {}).get(
-            "timestamp_regression_tolerance_sec", 0.05
+    try:
+        tolerance_sec = float(
+            resolved.get("validation", {}).get(
+                "timestamp_regression_tolerance_sec", 0.05
+            )
         )
+    except (TypeError, ValueError):
+        tolerance_sec = float('nan')
+    tolerance_valid = (
+        math.isfinite(tolerance_sec)
+        and tolerance_sec >= 0.0
     )
+    _check(
+        report,
+        'timestamp_tolerance_valid',
+        tolerance_valid,
+        'timestamp regression tolerance is invalid',
+        {
+            'configured_sec': (
+                tolerance_sec if math.isfinite(tolerance_sec) else None
+            ),
+        },
+    )
+    if not tolerance_valid:
+        tolerance_sec = 0.0
     tolerance_nanoseconds = int(tolerance_sec * 1_000_000_000)
     stamp_regressions = []
     typed_stamps_in_interval = []
+    event_topic = by_alias.get('algorithm_events', {}).get('topic', '')
+    event_interval_records = []
     for topic, topic_messages in messages.items():
         topic_stamps = []
         for bag_stamp, message in topic_messages:
@@ -285,12 +492,33 @@ def validate_run_directory(run_directory, write_report=True):
                 continue
             current = _message_stamp_nanoseconds(message)
             if current is not None:
-                topic_stamps.append(current)
                 typed_stamps_in_interval.append({"topic": topic, "stamp": current})
-        for regression in timestamp_regressions(
-            topic_stamps, tolerance_nanoseconds
-        ):
-            stamp_regressions.append({"topic": topic, **regression})
+                if topic == event_topic:
+                    event_interval_records.append((bag_stamp, message))
+                else:
+                    topic_stamps.append(current)
+        if topic != event_topic:
+            for regression in timestamp_regressions(
+                topic_stamps, tolerance_nanoseconds
+            ):
+                stamp_regressions.append({'topic': topic, **regression})
+    event_regressions, unidentified_events = (
+        algorithm_event_stream_regressions(
+            event_interval_records,
+            tolerance_nanoseconds,
+        )
+    )
+    stamp_regressions.extend(
+        {'topic': event_topic, **regression}
+        for regression in event_regressions
+    )
+    _check(
+        report,
+        'algorithm_event_producer_identified',
+        not unidentified_events,
+        'one or more AlgorithmEvent producers could not be identified',
+        unidentified_events[:20],
+    )
     _check(
         report, "typed_timestamps_nonregressing", not stamp_regressions,
         f"typed ROS timestamps regressed by more than {tolerance_sec:.3f} s",
@@ -309,6 +537,23 @@ def validate_run_directory(run_directory, write_report=True):
             not out_of_clock,
             "typed ROS timestamps fall outside the recorded simulation clock",
             out_of_clock[:20],
+        )
+        event_lags = algorithm_event_emission_lags(
+            event_interval_records,
+            clock_messages,
+        )
+        stale_events = [
+            item for item in event_lags
+            if item['clock_skew_nanoseconds'] is None
+            or abs(item['clock_skew_nanoseconds']) > tolerance_nanoseconds
+        ]
+        _check(
+            report,
+            'algorithm_event_emission_fresh',
+            not stale_events,
+            'AlgorithmEvent emission stamps lead or lag receipt-time '
+            'simulation clock',
+            stale_events[:20],
         )
 
     source_entry = by_alias.get("source_cost", {})
@@ -354,6 +599,26 @@ def validate_run_directory(run_directory, write_report=True):
         for _, message in event_messages
     )
     _check(report, "event_value_pairs", event_lengths_ok, "AlgorithmEvent value_names/values mismatch")
+    fill_request_entry = by_alias.get('fill_requests', {})
+    source_causality_failures = (
+        fill_event_source_causality(
+            event_messages,
+            messages.get(fill_request_entry.get('topic', ''), []),
+        )
+        if profile == 'robust_gaussian_v1'
+        else []
+    )
+    _check(
+        report,
+        'algorithm_event_source_causality',
+        not source_causality_failures,
+        'fill-owner AlgorithmEvent source timestamps lack a recorded request',
+        (
+            source_causality_failures[:20]
+            if profile == 'robust_gaussian_v1'
+            else {'status': 'not_applicable'}
+        ),
+    )
 
     state_entry = by_alias.get("algorithm_state", {})
     state_messages = messages.get(state_entry.get("topic", ""), [])
@@ -391,9 +656,100 @@ def validate_run_directory(run_directory, write_report=True):
     ]
     stop_entry = by_alias.get("stop_requested", {})
     stop_times = [
-        stamp for stamp, message in messages.get(stop_entry.get("topic", ""), [])
+        stamp
+        for stamp, message in messages.get(stop_entry.get("topic", ""), [])
         if message is not None and message.data
     ]
+    first_stop_true = stop_times[0] if stop_times else None
+    preauthorization_boundaries = [
+        boundary
+        for boundary in (first_ready_true, first_stop_true)
+        if boundary is not None
+    ]
+    preauthorization_boundary = (
+        min(preauthorization_boundaries)
+        if preauthorization_boundaries
+        else None
+    )
+    pre_ready_nonzero = [
+        {'alias': alias, 'bag_timestamp': stamp}
+        for alias, records in command_records.items()
+        for stamp, values in records
+        if (
+            not _is_zero(values)
+            and (
+                preauthorization_boundary is None
+                or stamp < preauthorization_boundary
+            )
+        )
+    ]
+    recording = (
+        metadata.get('recording', {})
+        if isinstance(metadata, dict)
+        else {}
+    )
+    metadata_pre_ready_nonzero = (
+        recording.get('pre_ready_nonzero_topics', {})
+        if isinstance(recording, dict)
+        else {}
+    )
+    _check(
+        report,
+        'no_motion_before_readiness',
+        not pre_ready_nonzero and not metadata_pre_ready_nonzero,
+        'nonzero command was recorded before motion readiness',
+        {
+            'bag_observations': pre_ready_nonzero[:20],
+            'coordinator_observations': metadata_pre_ready_nonzero,
+        },
+    )
+    bag_lifecycle_violations = []
+    for stamp, message in state_messages:
+        if (
+            message is None
+            or (
+                preauthorization_boundary is not None
+                and stamp >= preauthorization_boundary
+            )
+        ):
+            continue
+        lifecycle_errors = preauthorization_lifecycle_errors(
+            message,
+            profile,
+        )
+        if lifecycle_errors:
+            bag_lifecycle_violations.append({
+                'bag_timestamp': stamp,
+                'errors': lifecycle_errors,
+            })
+    metadata_lifecycle_violations = (
+        recording.get('pre_ready_lifecycle_violations', [])
+        if isinstance(recording, dict)
+        else []
+    )
+    lifecycle_clean = (
+        profile != 'robust_gaussian_v1'
+        or (
+            not bag_lifecycle_violations
+            and not metadata_lifecycle_violations
+        )
+    )
+    _check(
+        report,
+        'clean_lifecycle_before_readiness',
+        lifecycle_clean,
+        'robust lifecycle advanced before recording readiness',
+        (
+            {
+                'bag_observations': bag_lifecycle_violations[:20],
+                'coordinator_observations': (
+                    metadata_lifecycle_violations
+                ),
+            }
+            if profile == 'robust_gaussian_v1'
+            else {'status': 'not_applicable'}
+        ),
+    )
     shutdown_boundary = stop_times[-1] if stop_times else (
         readiness_records[-1][0] if readiness_records else None
     )
@@ -449,7 +805,17 @@ def validate_run_directory(run_directory, write_report=True):
         coverage_failures,
     )
 
-    recording = metadata.get("recording", {}) if isinstance(metadata, dict) else {}
+    readiness_metadata_consistent = (
+        'readiness_ever_true' not in recording
+        or bool(recording.get('readiness_ever_true'))
+        == (first_ready_true is not None)
+    )
+    _check(
+        report,
+        'readiness_metadata_consistent',
+        readiness_metadata_consistent,
+        'recording readiness metadata disagrees with the bag',
+    )
     process_ok = (
         recording.get("complete") is True
         and recording.get("bag_clean_shutdown") is True
@@ -491,6 +857,18 @@ def validate_run_directory(run_directory, write_report=True):
         "console contains a ROS/process failure marker", console_failures,
     )
 
+    nonfinite_paths = []
+    report = _json_compatible(
+        report,
+        nonfinite_paths=nonfinite_paths,
+    )
+    _check(
+        report,
+        'strict_json_finite',
+        not nonfinite_paths,
+        'nonfinite evidence values were normalized to null',
+        {'normalized_paths': nonfinite_paths},
+    )
     report["passed"] = not report["failures"]
     if write_report:
         atomic_json(run_directory / "completeness.json", report)
@@ -512,7 +890,7 @@ def main(args=None):
     except Exception as exc:
         print(f"validate_run: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 2
-    print(json.dumps(report, indent=2))
+    print(json.dumps(report, indent=2, allow_nan=False))
     return 0 if report["passed"] else 1
 
 

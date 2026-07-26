@@ -50,13 +50,50 @@ The generated directory is
 manifest, but must not be run until Phase 09 supplies and audits the physical
 target graph.
 
-Preflight holds every final command at zero. It waits for the target graph and
-bag subscriptions, then snapshots exact ROS parameter values and types before
-publishing readiness true. Node snapshots run serially with a 15-second
-per-call timeout because concurrent ROS parameter CLI requests proved
-nondeterministic under the full two-source graph. This retains deterministic
-node/failure order and the unchanged required-publisher failure policy.
-`--preflight-timeout-sec` applies to graph discovery, not parameter capture.
+Preflight holds every final command at zero. It first requires the target
+graph, exact types/publisher counts, bag subscriptions, controller interlock,
+and a gated zero command. Simulation then starts a fresh receipt epoch and
+requires valid, current pose, source-cost, filter-output, and timekeeper
+messages. Robust runs additionally require a finite supervisor command and a
+valid, finite-weight, non-failsafe `SEARCH` state. An actual
+`/controller_manager/list_controllers` response must report
+`joint_state_broadcaster` and `velocity_controller` active. Delayed scenarios
+check the resolved delayed pose/source streams consumed by the algorithm, and
+the recorder requires the canonical Gazebo target and rejects profile, delay,
+relay-gate, or pose/source/raw-history consumer routes that disagree with
+metadata. Every selected operational stream is promoted for that run to a
+required singleton publisher, required rosbag subscription, required parameter
+owner, and minimum one retained message even when the base manifest lists the
+topic as conditionally optional.
+
+Only after that barrier does the recorder snapshot exact ROS parameter values
+and types. Node snapshots remain serial and retain their local 15-second
+response cap, but graph discovery, operational readiness, every service wait
+and response, retry delay, parameter capture, and a second post-capture
+readiness epoch all share the single `--preflight-timeout-sec` deadline. The
+second barrier proves the controller manager and data publishers survived
+parameter capture before readiness can become true. A callback lock pairs
+heartbeat messages with receipt times and performs one final service/data
+snapshot plus an atomic authorization. Any pre-readiness nonzero command is a
+permanent safety failure, including one observed between the ordinary barrier
+and the atomic authorization. Robust lifecycle evidence is also permanent:
+any pre-authorization non-`SEARCH`, failsafe, prior-transition, or active-fill
+or active-escape state survives both receipt-epoch resets and disqualifies the
+attempt even if the latest state returns to clean `SEARCH`. The monitor closes
+atomically when readiness opens or shutdown begins; the bag validator uses the
+earlier readiness/stop boundary, so expected post-stop `FAILSAFE` evidence is
+not mislabeled. The retained bag and coordinator metadata independently
+enforce the same completeness check. A
+controller-manager response that completes after the one absolute deadline is
+also rejected before readiness can change.
+
+The controller-manager/data-plane barrier is simulation-only; physical mode
+retains its prior graph/interlock gate until Phase 09 defines audited physical
+operational checks. Parameter capture remains bounded by the common preflight
+deadline in both modes. A simulation manifest cannot omit the operational
+block; the physical path deliberately has no such block, and manifest/runtime
+validation rejects a physical operational block rather than relying on that
+file convention.
 
 ## Run deterministic Gazebo scenario suites
 
@@ -90,6 +127,13 @@ Every launched run retains the Phase 05 artifacts and adds
 controller-observable goal success from final-pose simulation ground truth.
 An ordinary failed case is preserved and may be followed by the next case;
 cleanup failure stops the suite to prevent contamination.
+If readiness never becomes true, the runner reports
+`infrastructure_invalid` and marks behavior outcomes unavailable rather than
+failed. It never retries automatically; any allowed development replacement
+must be separately predeclared, identical, and retained under a new run ID.
+Finalized recorder runtime failures, malformed/missing completeness evidence,
+bag-outcome extraction failures, and cleanup leaks remain distinct
+infrastructure statuses instead of being mislabeled as completed runs.
 
 `phase06_catalog.yaml` labels supported geometries as
 `executable_unverified`. Its unsupported records are not launched: no
@@ -224,6 +268,16 @@ Inspect `console.log`, `resolved_topics.yaml`, `resolved_parameters.yaml`,
 `metadata.yaml`, and `completeness.json` for the exact failure. Never delete,
 rename for reuse, or overwrite the failed run. Correct the cause and start a
 new run ID. Parameter changes also require a new experiment version and run.
+`metadata.yaml` distinguishes `failure_stage`, `infrastructure_status`,
+whether readiness was ever true, initial versus total preflight completion,
+both barrier pass times, any observed pre-readiness nonzero command, and any
+permanently latched pre-authorization lifecycle violation.
+`resolved_topics.yaml` retains both operational barrier snapshots, heartbeat
+ages/validity, run-specific required heartbeat streams, the metadata/target
+delay and consumer-topic coupling, active controller states, and final
+authorization evidence. `completeness.json` is strict JSON. Corrupt nonfinite
+diagnostic values are changed to `null`, recorded by a failed
+`strict_json_finite` check, and never written as `NaN` or `Infinity`.
 
 If preflight reports duplicate publisher endpoints, an earlier launch is still
 alive. Do not bypass the singleton checks. Identify only the stale experiment

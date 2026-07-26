@@ -1,6 +1,6 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-25T19:32:36-07:00`
+Last verified: `2026-07-25T21:59:05-07:00`
 Status: `IN PROGRESS — PHASE 08.1 DIAGNOSTIC RECOVERY`
 
 ## Objective
@@ -96,6 +96,45 @@ count toward a future acceptance attempt.
   three-second operational margin. Configuration evidence now reports the
   rotation duration, remaining margin, and timing-sufficiency flag. Shorter
   timing remains available only for explicitly declared safe-timeout probes.
+- Phase 08.1 M4 implementation makes robust controller startup a one-time
+  input-readiness latch. Before a complete valid set arrives, missing/stale
+  gaps inside the
+  startup timeout remain zero and non-latching; after the latch, stale input is
+  strict immediately. After the timeout, both the timer and input-driven
+  command path still suppress robust-input fault events while the required
+  recording interlock is closed, without relaxing zero output. Normal latching
+  resumes when that interlock opens.
+- M4 adds a simulation-only operational barrier in the existing recorder:
+  fresh valid post-epoch pose, source-cost, legacy-filter-output, timekeeper,
+  and robust state/supervisor-command data on the actual canonical or delayed
+  algorithm inputs; an actual controller-manager response with both
+  controllers active; one total preflight/parameter deadline; and a second
+  fresh epoch after parameter capture. Selected heartbeat streams become
+  run-specific graph/type/singleton, rosbag-subscription, parameter-owner, and
+  minimum-count requirements. Any pre-readiness nonzero command is a permanent
+  failure. Any robust pre-authorization non-`SEARCH`, failsafe,
+  prior-transition, active-fill, or active-escape evidence is also permanently
+  latched across epoch resets and rechecked from the retained bag. The
+  pre-authorization monitor closes atomically at authorization or shutdown,
+  and the offline scan uses the earlier readiness/stop boundary so expected
+  post-stop evidence is not mislabeled. Physical mode does not inherit
+  Gazebo-specific checks.
+- M4 keeps the existing `AlgorithmEvent` schema readable and validates its six
+  publishers per semantic producer stream. A separate receipt-ordered
+  `/clock` comparison detects stale event emission, while exact fill-request
+  `source_timestamp` correlation remains a distinct causality contract.
+- M4 classifies a run that never reached true readiness as
+  `infrastructure_invalid`; controller and simulation-ground-truth outcomes
+  are unavailable rather than failed. The generic runner retains the attempt
+  and does not retry automatically.
+- M4 requires strict finite JSON evidence, treats invalid timestamp tolerance
+  as an explicit failed check, and turns nonfinite terminal odometry or
+  distance overflow into `evidence_extraction_failed` rather than a fabricated
+  behavioral result.
+- M4 places every mutable Gaussian-fill callback in one dedicated mutually
+  exclusive callback group in both profiles and uses the production
+  two-thread executor, allowing simulation time to advance during bounded fill
+  design without concurrent mutation.
 
 ## Current milestone
 
@@ -104,13 +143,16 @@ count toward a future acceptance attempt.
 - Completed milestone: Phase 08.1 M1 durable diagnosis and workflow correction.
 - Completed milestone: Phase 08.1 M2 fill-latency correction.
 - Completed milestone: Phase 08.1 M3 verification-boundary correction.
-- Current milestone: Phase 08.1 M4 readiness and evidence-semantics correction.
+- Completed milestone: Phase 08.1 M4 readiness and evidence-semantics
+  correction. The first implementation's review gaps were corrected; its
+  earlier evidence is superseded by the final source-state gates below.
+- Current milestone: Phase 08.1 M5 scenario-contract correction.
+- Pending milestones: Phase 08.1 M6 minimal simulation probes and M7 handoff.
 - Current plan:
   `docs/codex/gesc_gaussian/plans/phase_08_1_plan.md`.
-- Next criterion: add a bounded simulation readiness barrier for responsive
-  controller-manager/data publishers, correct the controller startup-watchdog
-  race, and validate event timestamps at producer/stream granularity without
-  weakening source/request causality.
+- Next criterion: prove every M5 activation contract is schema-valid,
+  scenario-specific, timing-sufficient, and behaviorally reachable without
+  running Gazebo; then run focused dry-run and schema regressions.
 
 ## Current problem or blocker
 
@@ -118,9 +160,13 @@ count toward a future acceptance attempt.
 - V2 remains a Level C failure and cannot be resumed, retuned, relabeled, or
   counted toward a new claim.
 - M2 removed the repeated full-history synchronization delay that blocked the
-  fill node for 5.5–15.7 seconds. It does not claim formal timestamp
-  monotonicity: the fill node still uses a single-threaded executor, so M4 must
-  test producer/stream ordering and concurrent clock servicing separately.
+  fill node for 5.5–15.7 seconds. M4 now distinguishes cross-producer event
+  order from true stale emission. All Gaussian-fill mutable callbacks now
+  share a dedicated mutually exclusive callback group under a two-thread
+  executor, and an in-process test proves `/clock` advances during a
+  deliberately blocked real design callback. Runtime
+  receipt-skew confirmation still requires a new M6 probe; historical v2 bags
+  are not reclassified.
 - Four activation goal expectations were inconsistent with the adopted
   calibrated `source_score >= 0.95` rule. Only the high calibrated case was
   reachable as `GOAL_HOLD`; ground-truth proximity did not make the others
@@ -149,7 +195,14 @@ count toward a future acceptance attempt.
 - `ros2_ws/src/ros_esc/ros_esc/supervisor_node/supervisor_node_script.py`
 - `ros2_ws/src/ros_esc/ros_esc/gaussian_fill_node/basin_estimator.py`
 - `ros2_ws/src/ros_esc/ros_esc/gaussian_fill_node/gaussian_fill_script.py`
+- `ros2_ws/src/ros_esc/ros_esc/controller_node/controller_node_script.py`
+- `ros2_ws/src/ros_esc/ros_esc/experiment_recording/record_run.py`
+- `ros2_ws/src/ros_esc/ros_esc/experiment_recording/validate_run.py`
+- `ros2_ws/src/ros_esc/ros_esc/experiment_recording/topic_manifest.yaml`
+- `ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py`
 - `ros2_ws/src/ros_esc/test/test_phase08_validation.py`
+- `ros2_ws/src/ros_esc/test/test_experiment_recording.py`
+- `ros2_ws/src/ros_esc/test/test_scenario_runner.py`
 - `ros2_ws/src/ros_esc/test/test_state_machine.py`
 - `ros2_ws/src/ros_esc/test/test_supervisor_integration.py`
 - `ros2_ws/src/ros_esc/test/test_observability_contract.py`
@@ -189,6 +242,30 @@ count toward a future acceptance attempt.
   required rotation-plus-dwell duration. Report rather than globally reject a
   shorter timing configuration because an explicit expected-FAILSAFE timeout
   probe is valid; require timing sufficiency in future GOAL/DESIGN contracts.
+- D-08-10: startup grace ends when the robust controller first validates its
+  complete input set, not merely when five seconds elapse. This prevents an
+  early stale receipt from latching before readiness while preserving strict
+  post-authorization watchdog behavior.
+- D-08-11: simulation motion readiness requires two fresh operational epochs,
+  active controller-manager state, pose/source/filter/timekeeper plus robust
+  state/command heartbeats, and parameter capture under one total deadline.
+  Promote selected streams into retained run requirements, couple every actual
+  consumer route to the canonical target, and permanently reject pre-ready
+  motion or pre-authorization lifecycle history even after an epoch reset.
+  Use metadata-resolved delayed input aliases when applicable; do not impose
+  Gazebo controller-manager semantics on physical mode.
+- D-08-12: preserve the existing `AlgorithmEvent` interface. Identify its
+  current producer from stable type/detail ownership, fail unknown ownership,
+  check regression per producer, check emission freshness separately, and use
+  `source_timestamp` only for exact request/result correlation.
+- D-08-13: no-true-readiness evidence is infrastructure-invalid and behavior is
+  unavailable. The generic scenario runner never retries; a development
+  replacement, if later needed, must be identical, predeclared, separately
+  retained, and limited to one.
+- D-08-14: evidence must remain strict JSON. Normalize corrupt nonfinite values
+  to `null` only while recording an explicit failed check; unavailable or
+  overflowed terminal geometry is an extraction failure, never a controller
+  success/failure inference.
 
 ## Validation checkpoints
 
@@ -334,6 +411,55 @@ count toward a future acceptance attempt.
 - Phase 08.1 M3 material-boundary checkpoint:
   `checkpoint_phase.sh 08` passed and refreshed
   `docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt`.
+- Superseded pre-review M4 focused recorder/runner/controller regression:
+  `58 passed, 1 skipped in 1.49s`; the skip is the explicit recorded
+  headless-Gazebo opt-in test.
+- Superseded pre-review M4 broad recording, analysis, state-machine,
+  supervisor, and Phase 08
+  regression: `136 passed, 2 skipped in 11.61s`. The skips are the explicit
+  visible-Gazebo recording and recorded headless-Gazebo opt-in tests; neither
+  Gazebo nor hardware ran.
+- Superseded pre-review M4 isolated build:
+  `2 packages finished in 1min 1s` under
+  `/tmp/dsim_phase08_1_m4_{build,install}`. The installed `record_run --help`
+  entry point returned exit 0.
+- Same-configuration `ament_flake8` HEAD/current findings for M4 owners are
+  `375/375`, `193/192`, `0/0`, `259/258`, `0/0`, `135/134`, and `190/190`.
+  M4 adds no finding and removes three. `ament_pep257` retains the inherited
+  `13/13` and `5/5` findings in the two old recorder/validator owners.
+- Final review reopened M4 because the original operational heartbeat set did
+  not include filter/timekeeper/supervisor command, state validity admitted a
+  non-clean lifecycle, readiness was not atomically authorized, future event
+  stamps could pass, and runner infrastructure statuses were incomplete.
+- Final M4 lifecycle-history targeted regression:
+  `8 passed, 49 deselected in 0.41s`. It covers each non-`SEARCH`, failsafe,
+  prior-transition, active-fill, and active-escape signal;
+  `VERIFY_EXTREMUM -> SEARCH -> fresh epoch` remaining permanently
+  unauthorized; corresponding retained-bag/coordinator completeness
+  rejection; and a never-authorized shutdown excluding post-stop evidence.
+- Final M4 focused recorder/runner/controller regression:
+  `104 passed, 1 skipped in 2.33s`; the skip is the explicit recorded
+  headless-Gazebo opt-in.
+- Final M4 broad recording/analysis/state regression:
+  `182 passed, 2 skipped in 12.08s`; the skips are the explicit visible-Gazebo
+  recording and recorded headless-Gazebo opt-ins. Neither was enabled.
+- Final isolated build completed both selected packages in `2min 30s`; the
+  exact final Python source then received incremental `ros_esc` rebuilds after
+  final cleanup (`31.2s`), the live shutdown-boundary correction (`31.0s`),
+  and the matching offline command boundary (`30.9s`).
+  Installed `record_run --help`, `run_scenario --help`,
+  `GaussianFill`, and production `main` all passed. A preceding smoke used the
+  nonexistent test symbol `GaussianFillNode`; the corrected full smoke passed.
+- Final same-configuration `ament_flake8` current/HEAD counts are
+  `371/375`, `191/193`, `0/0`, `410/410`, `134/135`, `259/259`, `0/0`, and
+  `190/190` for the eight M4 Python owners. M4 adds no finding and removes
+  seven. Fatal `E9,F63,F7,F82` and Python compilation pass. Remaining pep257
+  findings are inherited in the four older source owners.
+- Final normal and strict-history Phase 08 Implement context validation passed;
+  required-doc validation, package XML parsing, topic-manifest YAML parsing,
+  and `git diff --check` passed.
+- Phase 08.1 M4 material-boundary checkpoint passed and refreshed
+  `docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt`.
 
 ## Attempts not to repeat
 
@@ -353,28 +479,28 @@ count toward a future acceptance attempt.
 
 ## Remaining work
 
-Follow `phase_08_1_plan.md` milestones M1–M7:
+Phase 08.1 M1–M4 are complete. Follow `phase_08_1_plan.md` for:
 
-1. durable diagnosis/workflow correction;
-2. bounded fill-latency correction;
-3. verification-boundary correction;
-4. simulation readiness and timestamp/evidence semantics;
-5. reachable scenario contracts;
-6. minimal versioned simulation probes;
-7. Phase 08.1 handoff and a separately reviewed v3 recommendation.
+1. M5 reachable, scenario-specific activation contracts;
+2. M6 minimal versioned simulation probes;
+3. M7 Phase 08.1 handoff and a separately reviewed v3 recommendation.
 
 No v3 tuning, holdout, acceptance denominator, tag, or physical motion is
 authorized in this plan.
 
 ## Stop conditions
 
-- Stop for any Level A architectural, safety, ownership, cost-sign/unit, or
-  unrelated-work contradiction.
-- Stop before tuning if any activation case lacks its required state/event.
-- Stop after holdout if fewer than 18/20 runs succeed end to end or any required
-  evidence/collision/lifecycle gate is invalid.
-- Never create the simulation-ready tag unless every amended gate passes.
-- Gate 2 failed, so all later Phase 08 stages and the tag are forbidden.
+- Active Phase 08.1 work stops for a Level A architectural, safety, ownership,
+  cost-sign/unit, or unrelated-work contradiction. M5-M7 bounded development
+  and probes remain authorized by the recovery plan.
+- The closed v2 workflow would stop before tuning if any activation case lacked
+  its required state/event, and after holdout if fewer than 18/20 runs
+  succeeded or an evidence/collision/lifecycle gate were invalid. These rules
+  govern acceptance execution, not M5-M7 recovery development.
+- Historical v2 Gate 2 failed, so its later tuning, selection, holdout,
+  validation, reproducibility, and simulation-ready tag remain forbidden.
+- Never create any simulation-ready tag unless a separately authorized,
+  unchanged future attempt passes every amended gate.
 
 ## Compaction recovery
 

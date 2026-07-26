@@ -2,10 +2,15 @@
 
 from pathlib import Path
 import sys
+import threading
+import time
 
 import numpy as np
 import pytest
 import rclpy
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy
 
 from ros_esc.controller_node import controller_node_script
 from ros_esc.controller_node.controller_node_script import CustomController
@@ -19,6 +24,7 @@ from ros_esc.cost_function_node.cost_function_objects.cost_function_objects impo
     Photoresistor_Interpolated_Map,
     Position_Based_Sympy_Expression,
 )
+from ros_esc.gaussian_fill_node import gaussian_fill_script
 from ros_esc.gaussian_fill_node.gaussian_fill_script import GaussianFill
 from ros_esc.gaussian_fill_node.basin_estimator import CostSnapshot, PoseSnapshot
 from ros_esc.modified_cost_node.modified_cost_script import ModifiedCost2D
@@ -32,6 +38,7 @@ from ros_esc_interfaces.msg import (
     GaussianFill as GaussianFillMessage,
     StampedFloat64MultiArray,
 )
+from rosgraph_msgs.msg import Clock
 from std_msgs.msg import Bool
 
 
@@ -106,6 +113,78 @@ def test_recording_watchdog_zero_does_not_emit_latching_failsafe():
     controller.watchdog_callback()
 
     assert zeros == [("recording readiness is false", False)]
+
+
+def test_robust_startup_waits_once_then_latches_strict_freshness():
+    def controller_at(now_sec):
+        controller = object.__new__(CustomController)
+        controller.robust_profile = True
+        controller.robust_controller_compatible = True
+        controller.robust_inputs_ready = False
+        controller.controller_started_sec = 100.0
+        controller.startup_timeout_sec = 5.0
+        controller.supervisor_state_stale_sec = 0.5
+        controller.supervisor_command_stale_sec = 0.5
+        controller.stale_pose_sec = 0.5
+        controller.stale_filter_sec = 0.5
+        controller._now_sec = lambda: now_sec[0]
+        controller.input_value = np.zeros(2)
+        controller.state_value = np.zeros(6)
+        controller.supervisor_command = np.zeros(6)
+        state = AlgorithmState()
+        state.algorithm_profile = 'robust_gaussian_v1'
+        state.state = AlgorithmState.STATE_SEARCH
+        state.state_valid = True
+        state.weights_valid = True
+        controller.latest_algorithm_state = state
+        controller._recording_fault_reason = lambda: None
+        return controller
+
+    now_sec = [101.0]
+    controller = controller_at(now_sec)
+    controller.supervisor_state_receipt_sec = now_sec[0]
+    controller.supervisor_command_receipt_sec = now_sec[0]
+    controller.input_receipt_sec = now_sec[0]
+    controller.pose_receipt_sec = 100.0
+    zero_reasons = []
+    fault_reasons = []
+    controller._publish_zero = (
+        lambda reason, report_fault: zero_reasons.append(
+            (reason, report_fault)
+        )
+    )
+    controller._emit_local_fault_once = fault_reasons.append
+
+    assert controller._robust_fault_reason() == 'startup waiting for pose'
+    controller.watchdog_callback()
+    assert zero_reasons == [('startup waiting for pose', False)]
+    assert fault_reasons == []
+    assert controller.robust_inputs_ready is False
+
+    now_sec[0] = 101.1
+    controller.supervisor_state_receipt_sec = now_sec[0]
+    controller.supervisor_command_receipt_sec = now_sec[0]
+    controller.pose_receipt_sec = now_sec[0]
+    controller.input_receipt_sec = now_sec[0]
+    assert controller._robust_fault_reason() is None
+    assert controller.robust_inputs_ready is True
+
+    now_sec[0] = 101.8
+    controller.supervisor_state_receipt_sec = now_sec[0]
+    controller.supervisor_command_receipt_sec = now_sec[0]
+    controller.input_receipt_sec = now_sec[0]
+    controller.watchdog_callback()
+    assert fault_reasons == ['pose missing or stale']
+    assert zero_reasons[-1] == ('pose missing or stale', False)
+
+    never_ready_now = [106.0]
+    never_ready = controller_at(never_ready_now)
+    never_ready.supervisor_state_receipt_sec = never_ready_now[0]
+    never_ready.supervisor_command_receipt_sec = never_ready_now[0]
+    never_ready.input_receipt_sec = never_ready_now[0]
+    never_ready.pose_receipt_sec = 100.0
+    assert never_ready._robust_fault_reason() == 'pose missing or stale'
+    assert never_ready.robust_inputs_ready is False
 
 
 @pytest.mark.parametrize(
@@ -218,6 +297,217 @@ def _run_modified_cost(monkeypatch, observability, bias_all=True):
     finally:
         node.destroy_node()
         rclpy.shutdown()
+
+
+def test_robust_fill_design_services_clock_and_stamps_at_emission(monkeypatch):
+    """Keep /clock live while the bounded fill request callback is active."""
+    monkeypatch.setattr(sys, 'argv', ['gaussian_fill_node'])
+    rclpy.init(
+        args=[
+            '--ros-args',
+            '-p',
+            'algorithm_profile:=robust_gaussian_v1',
+            '-p',
+            'minimum_valid_samples:=20',
+            '-p',
+            'maximum_position_speed_mps:=100.0',
+            '-p',
+            'amplitude_max:=10.0',
+            '-p',
+            'sigma_ceiling_m:=2.0',
+        ]
+    )
+    node = GaussianFill()
+    peer = Node('gaussian_fill_clock_peer')
+    executor = MultiThreadedExecutor(num_threads=2)
+    executor.add_node(node)
+    executor.add_node(peer)
+    events = []
+    peer.create_subscription(
+        AlgorithmEvent,
+        '/gesc_gaussian/algorithm_events',
+        events.append,
+        10,
+    )
+    request_publisher = peer.create_publisher(
+        StampedFloat64MultiArray,
+        '/gesc_gaussian/fill_requests',
+        10,
+    )
+    clock_publisher = peer.create_publisher(
+        Clock,
+        '/clock',
+        QoSProfile(
+            depth=1,
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+        ),
+    )
+    design_entered = threading.Event()
+    release_design = threading.Event()
+    original_synchronize = gaussian_fill_script.synchronize_samples
+
+    def blocked_synchronize(*args, **kwargs):
+        design_entered.set()
+        assert release_design.wait(timeout=3.0)
+        return original_synchronize(*args, **kwargs)
+
+    monkeypatch.setattr(
+        gaussian_fill_script,
+        'synchronize_samples',
+        blocked_synchronize,
+    )
+    spin_thread = threading.Thread(target=executor.spin, daemon=True)
+    spin_thread.start()
+
+    def wait_for(predicate, timeout_sec=3.0):
+        deadline = time.monotonic() + timeout_sec
+        while time.monotonic() < deadline:
+            if predicate():
+                return True
+            time.sleep(0.01)
+        return False
+
+    def advance_clock(seconds):
+        message = Clock()
+        message.clock.sec = int(seconds)
+        message.clock.nanosec = int(
+            round((seconds - int(seconds)) * 1_000_000_000)
+        )
+        deadline = time.monotonic() + 3.0
+        expected = int(round(seconds * 1_000_000_000))
+        while time.monotonic() < deadline:
+            clock_publisher.publish(message)
+            if node.get_clock().now().nanoseconds == expected:
+                return True
+            time.sleep(0.01)
+        return False
+
+    try:
+        assert wait_for(
+            lambda: (
+                request_publisher.get_subscription_count() == 1
+                and clock_publisher.get_subscription_count() >= 1
+                and node.algorithm_event_publisher.get_subscription_count()
+                >= 1
+            )
+        )
+        assert advance_clock(1.0)
+        for index in range(60):
+            stamp = 0.41 + index * 0.01
+            angle = index * 2.0 * np.pi / 20.0
+            radius = 0.30 - 0.003 * index
+            x_value = radius * np.cos(angle)
+            y_value = radius * np.sin(angle)
+            cost = 0.05 * (x_value ** 2 + y_value ** 2)
+            node.pose_snapshots.append(
+                PoseSnapshot(stamp, x_value, y_value, angle, True)
+            )
+            node.cost_snapshots.append(
+                CostSnapshot(
+                    stamp,
+                    float('nan'),
+                    False,
+                    cost,
+                    0.2,
+                    True,
+                    AlgorithmState.STATE_DESIGN_OR_MERGE_FILL,
+                    True,
+                )
+            )
+        request = StampedFloat64MultiArray()
+        request.header = 'ROBUST_FILL_CREATE'
+        request.timestamp = 42.0
+        request.data = [0.0] * 8
+        request_publisher.publish(request)
+        assert design_entered.wait(timeout=3.0)
+
+        assert advance_clock(2.0)
+        release_design.set()
+        assert wait_for(
+            lambda: any(
+                20 <= event.event_type <= 26
+                for event in events
+            )
+        )
+        fill_event = next(
+            event
+            for event in events
+            if 20 <= event.event_type <= 26
+        )
+        assert fill_event.stamp.sec == 2
+        assert fill_event.stamp.nanosec == 0
+        assert fill_event.source_timestamp == 42.0
+        assert fill_event.source_timestamp_valid is True
+    finally:
+        release_design.set()
+        executor.shutdown()
+        spin_thread.join(timeout=1.0)
+        assert not spin_thread.is_alive()
+        executor.remove_node(peer)
+        executor.remove_node(node)
+        peer.destroy_node()
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_gaussian_fill_main_uses_two_thread_executor_and_cleans_up(
+    monkeypatch,
+):
+    """Exercise the production executor lifecycle without starting ROS."""
+    events = []
+
+    class FakeNode:
+        def destroy_node(self):
+            events.append('node_destroyed')
+
+    class FakeExecutor:
+        def __init__(self, *, num_threads):
+            assert num_threads == 2
+            events.append('executor_created')
+
+        def add_node(self, node):
+            assert isinstance(node, FakeNode)
+            events.append('node_added')
+
+        def spin(self):
+            events.append('executor_spun')
+
+        def remove_node(self, node):
+            assert isinstance(node, FakeNode)
+            events.append('node_removed')
+
+        def shutdown(self):
+            events.append('executor_shutdown')
+
+    monkeypatch.setattr(
+        gaussian_fill_script.rclpy,
+        'init',
+        lambda: events.append('context_initialized'),
+    )
+    monkeypatch.setattr(
+        gaussian_fill_script.rclpy,
+        'try_shutdown',
+        lambda: events.append('context_shutdown'),
+    )
+    monkeypatch.setattr(gaussian_fill_script, 'GaussianFill', FakeNode)
+    monkeypatch.setattr(
+        gaussian_fill_script,
+        'MultiThreadedExecutor',
+        FakeExecutor,
+    )
+
+    gaussian_fill_script.main()
+
+    assert events == [
+        'context_initialized',
+        'executor_created',
+        'node_added',
+        'executor_spun',
+        'node_removed',
+        'executor_shutdown',
+        'node_destroyed',
+        'context_shutdown',
+    ]
 
 
 def test_modified_cost_is_identical_with_observability_enabled(monkeypatch):
@@ -695,6 +985,17 @@ def test_robust_controller_combines_then_saturates_and_gates_goal(monkeypatch):
         node.latest_algorithm_state.state = AlgorithmState.STATE_SEARCH
         node.input_receipt_sec = None
         node.controller_started_sec = node._now_sec() - 10.0
+        node.recording_ready_required = True
+        node.recording_ready = False
+        node.recording_ready_receipt_monotonic = (
+            controller_node_script.time.monotonic()
+        )
+        node.algorithm_event_publisher.messages.clear()
+        node.publish_control_value()
+        assert list(node.controller_publisher.messages[-1].data) == [0.0] * 6
+        assert node.algorithm_event_publisher.messages == []
+
+        node.recording_ready_required = False
         node.watchdog_callback()
         assert node.twist_publisher.messages[-1].linear.x == 0.0
         assert any(

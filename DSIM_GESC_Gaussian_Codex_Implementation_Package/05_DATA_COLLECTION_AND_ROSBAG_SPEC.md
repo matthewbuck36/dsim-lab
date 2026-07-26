@@ -32,7 +32,18 @@ sensor measurement
 - Physical runs use the configured ROS clock consistently.
 - Every custom message contains a header or timestamp.
 - Static run metadata includes both wall-clock and ROS start time.
-- Timestamp regression or mixed-clock use is a run failure.
+- Timestamp regression within one producer stream or mixed-clock use is a run
+  failure. A shared multi-publisher topic is validated per identified producer,
+  not as one serialized publisher clock.
+- Producer emission time, recorder bag-receipt time, and upstream
+  source/request time remain separate evidence domains. Simulation checks event
+  emission lead and lag against the latest receipt-ordered `/clock`; source
+  time is used for exact request/result correlation rather than emission
+  ordering.
+- All Gaussian-fill data/history/request callbacks share a dedicated mutually
+  exclusive callback group in both profiles, and the fill process uses a
+  two-thread executor. Mutable fill histories and requests remain serialized,
+  while the internal `/clock` callback continues during bounded design.
 
 ## Required data categories
 
@@ -117,6 +128,28 @@ The recording launcher must:
 3. Fail before motion if a required topic is absent.
 4. Record optional topics when present.
 5. Save the resolved topic list into run metadata.
+6. In simulation, require active controllers and fresh valid post-epoch
+   heartbeats on actual pose, source, filter, timekeeper, and profile-specific
+   supervisor state/command streams before parameter capture. The robust
+   supervisor must still be in a valid non-failsafe `SEARCH` startup state.
+7. Keep readiness false through bounded parameter capture and repeat the
+   controller/data barrier before atomically authorizing motion.
+8. Treat any pre-readiness nonzero command or robust lifecycle excursion as a
+   permanent safety failure. The lifecycle latch includes valid non-`SEARCH`,
+   failsafe, prior-transition, active-fill, and active-escape evidence and
+   survives both heartbeat epoch resets; a later clean `SEARCH` cannot erase
+   it. Close the monitoring interval atomically at authorization or shutdown,
+   and bound offline pre-authorization evidence at the earlier of first
+   readiness true or first stop true.
+9. Reject simulation manifests that omit the operational barrier and reject a
+   noncanonical target or target whose profile, delay, relay gate, or actual
+   algorithm-consumer routes disagree with run metadata. Promote the selected
+   operational streams to run-specific graph, singleton-publisher, rosbag, and
+   minimum-message requirements so readiness evidence must be retained.
+   Physical mode retains the graph/interlock gate, and code rejects any attempt
+   to import Gazebo controller-manager readiness into that mode.
+10. Treat the preflight timeout as one absolute deadline. A service response
+    completed after it cannot authorize motion.
 
 ## Rosbag storage
 
@@ -167,6 +200,16 @@ A run is invalid unless:
 - raw and augmented costs are present,
 - pose is present,
 - final zero command appears at shutdown,
+- no nonzero command appears before readiness,
+- robust lifecycle state remains clean before the earlier of authorization or
+  shutdown, as verified independently from retained bag history and
+  coordinator metadata,
+- shared event stamps are monotonic per identified producer and fresh at
+  emission,
+- robust fill events correlate to a recorded request source timestamp,
+- all durable JSON is strict: nonfinite diagnostic evidence is represented as
+  `null`, makes its explicit finiteness check fail, and never emits
+  `NaN`/`Infinity` tokens,
 - metadata is complete.
 
 ## Console requirements

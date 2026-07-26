@@ -40,7 +40,7 @@ In six v2 runs, the fill request was followed by 5.5–15.7 seconds of blocked
 computation. `synchronize_samples` sorted all remaining poses for every cost
 sample before the estimator filtered to its recent window. The supervisor's
 five-second fill-design timeout therefore fired first. Because the fill node
-uses a single-threaded executor, its `/clock` processing also stopped; the late
+used a single-threaded executor in v2, its `/clock` processing also stopped; the late
 fill and event were emitted with the request-era ROS stamp after newer
 supervisor/detector events.
 
@@ -144,6 +144,20 @@ Exit: state-machine and synthetic ROS integration tests pass.
 - Add a bounded simulation readiness barrier covering controller-manager
   availability and required data heartbeats before parameter capture and
   motion readiness.
+- Promote the profile- and disturbance-resolved heartbeat streams to
+  run-specific required graph/type/singleton, recorder-subscription, parameter
+  owner, and minimum-count evidence.
+- Couple the barrier to the canonical simulation launch, metadata profile,
+  relay gate, and every actual pose/source/raw/history consumer topic; reject
+  a physical-mode Gazebo operational block in code.
+- Keep readiness false across two fresh epochs around parameter capture and
+  reject controller-manager responses or authorization after the one absolute
+  preflight deadline.
+- Permanently reject any robust pre-authorization non-`SEARCH`, failsafe,
+  prior-transition, active-fill, or active-escape evidence even if an epoch
+  reset or later clean `SEARCH` would otherwise hide the lifecycle excursion;
+  verify the same history from the retained bag and stop monitoring at the
+  earlier of authorization or shutdown.
 - Retain objectively infrastructure-invalid attempts and permit at most one
   identical, predeclared replacement attempt in development; never replace a
   valid behavioral failure.
@@ -151,9 +165,17 @@ Exit: state-machine and synthetic ROS integration tests pass.
 - Validate typed timestamp monotonicity at the correct producer/stream
   granularity; retain source/request causality separately from emission and bag
   receipt time.
+- Require exact float64 request/source equality, strict JSON artifacts, and an
+  explicit failure when corrupt nonfinite diagnostic evidence is normalized to
+  `null`.
+- Serialize Gaussian-fill mutable callbacks in both profiles while allowing
+  the internal simulation clock to advance under the production two-thread
+  executor.
 
 Exit: recorder/scenario tests cover slow startup, disappearing services,
-multi-producer events, and readiness remaining false.
+multi-producer events, two ordered readiness epochs, deadline crossing, strict
+evidence serialization, an erased-looking lifecycle excursion, and readiness
+remaining false.
 
 ### M5 — Scenario-contract correction
 

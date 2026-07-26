@@ -30,7 +30,20 @@ Every new message contains:
 - `source_timestamp`: the float timestamp on the legacy input that triggered
   the publication.
 - `source_timestamp_valid`: whether `source_timestamp` is meaningful and
-  finite. Configuration events have no upstream sample and set this false.
+  finite. Configuration-only publishers normally set this false. The
+  supervisor configuration event instead reports its latest valid source
+  sample because it shares the supervisor lifecycle publisher; consumers must
+  use the validity bit rather than infer semantics from the event type alone.
+
+These clocks have separate roles. Typed/header `stamp` is producer emission
+time, the rosbag timestamp is recorder receipt time, and `source_timestamp` is
+an origin/request correlation key rather than a second emission clock.
+Ordinary typed topics must be monotonic in topic order. The intentionally
+shared `AlgorithmEvent` bus is checked per semantic producer stream, while
+simulation also compares each event stamp with the latest `/clock` received
+before that event's bag receipt in both lead and lag directions. Robust
+fill-owner events correlate exactly to a recorded fill request by
+`source_timestamp`; bag-delivery order is not used as a causality claim.
 
 An unavailable floating-point scalar or array element is `NaN` and its
 corresponding validity field is false. An unavailable unsigned identifier is
@@ -51,7 +64,7 @@ sample-driven.
 | `/gesc_gaussian/control_diagnostics` | `ros_esc_interfaces/msg/ControlDiagnostics` | `custom_controller` | Once per legacy command output |
 | `/gesc_gaussian/gaussian_fills` | `ros_esc_interfaces/msg/GaussianFill` | `gaussian_fill` | Once per new fill; superseded then active records on a merge revision |
 | `/gesc_gaussian/algorithm_state` | `ros_esc_interfaces/msg/AlgorithmState` | Legacy final cost owner, or robust supervisor | Sample-driven legacy placeholder; timer/transition-driven robust state |
-| `/gesc_gaussian/algorithm_events` | `ros_esc_interfaces/msg/AlgorithmEvent` | Source, modified-cost, convergence, and fill owners | At the corresponding configuration, convergence, fill-created, or fill-rejected site |
+| `/gesc_gaussian/algorithm_events` | `ros_esc_interfaces/msg/AlgorithmEvent` | Cost/source, modified-cost, convergence, fill, supervisor, and controller owners | At the corresponding configuration, convergence, fill, state/lifecycle, timeout, or watchdog site |
 | `/gesc_gaussian/source_cost` | `ros_esc_interfaces/msg/CostBreakdown` | `cost_function` | Each opt-in simulation-observability raw-cost sample; robust photoresistor profiles also carry model-normalized source score |
 | `/gesc_gaussian/convergence_status` | `ros_esc_interfaces/msg/StampedFloat64MultiArray` | `convergence_detector` | Every valid post-startup convergence evaluation |
 | `/gesc_gaussian/fill_requests` | `ros_esc_interfaces/msg/StampedFloat64MultiArray` | supervisor | Once on each entry to fill design |
@@ -319,6 +332,24 @@ direction selector.
 included in the pair is finite. `reason_code` is zero for non-error events;
 fill rejections use stable local codes documented by their `detail` string.
 
+The current message schema intentionally remains unchanged so retained bags
+stay readable. Completeness validation derives the established producer
+stream from event type, reason code, and stable configuration/detail prefixes,
+checks timestamp regression within that stream, and fails if a new event
+cannot be attributed. Controller failsafe events require reason code `1` and
+the `controller watchdog:` prefix; current supervisor failsafes require reason
+code `0`. A future reason-code-zero failsafe publisher would need a new stable
+signature before its evidence could pass. The validator does not weaken the
+tolerance or treat six independent publishers as one clock. A separate signed
+emission-freshness check catches a producer that stamps an event from a stale
+or future locally serviced `/clock`.
+
+All Gaussian-fill request and mutable pose/cost/state/history callbacks use one
+dedicated mutually exclusive callback group in both profiles, and the fill
+executable uses a two-thread executor. Those callbacks remain serialized, while
+the internal `/clock` callback stays in the node's separate default group and
+can be serviced during design.
+
 Phase 01 emits:
 
 - `EVENT_CONFIGURATION` for the effective source, weight, convergence, and
@@ -528,6 +559,19 @@ single `record_run` process. It is a reliable 10 Hz heartbeat. The recorder
 publishes false during preflight and shutdown and true only after all required
 publishers, exact types, the `/custom_controller` interlock subscription, the
 rosbag subscriptions, and a gated zero `/cmd_vel` have been observed.
+Simulation additionally requires fresh, valid post-epoch pose, source-cost,
+filter-output, and timekeeper receipts. Robust runs also require a finite
+supervisor command and a valid, finite-weight, non-failsafe `SEARCH` state. An
+actual controller-manager response must report both simulation controllers
+active. Parameter capture and a second fresh receipt/controller-manager
+barrier share the same total preflight deadline, followed by a callback-locked
+atomic authorization. Delayed scenarios substitute the delayed pose/source
+aliases actually consumed by the algorithm. The canonical target identity,
+profile, relay gate, and pose/source/raw/history consumer-topic arguments must
+match metadata. Selected heartbeat aliases become run-specific required,
+singleton-publisher, rosbag-subscribed, minimum-count evidence. A late service
+response cannot cross the absolute deadline and authorize motion. Physical
+mode is code-enforced not to inherit these Gazebo-specific checks.
 Every required topic except the intentionally shared algorithm-event bus and
 the two-owner simulation `/joint_states` stream also requires exactly one live
 publisher endpoint. This prevents an orphaned prior launch from contaminating
@@ -540,12 +584,26 @@ older-than-`recording_ready_stale_sec` heartbeat forces all final command
 representations to zero. The gate adds no second saturation or `/cmd_vel`
 owner.
 
+Before the robust controller has once validated the complete state, command,
+pose, and filter input set, missing or stale inputs inside
+`startup_timeout_sec` remain zero-producing startup waits rather than latching
+faults. That one-time latch makes freshness strict immediately after the first
+complete set; later stale data fails without receiving the remainder of the
+startup grace. While the recording interlock is required and false, both the
+watchdog timer and input-driven command callback suppress latching robust-input
+events while continuing to publish zero. Normal watchdog reporting begins
+when recorder readiness opens.
+
 The authoritative required/optional topic list, exact types, applicable
 modes, minimum counts, and semantic policies are installed from
 `ros_esc/experiment_recording/topic_manifest.yaml`. Simulation and physical
 modes use this same manifest and runner; Phase 05 does not invent the absent
 physical adapter or claim physical calibration. Full operator instructions
 are in `docs/codex/gesc_gaussian/recording_runs.md`.
+
+`completeness.json` and validator stdout are strict JSON. Nonfinite diagnostic
+evidence is represented as `null` and fails `strict_json_finite`; evidence
+artifacts never contain the non-standard JSON tokens `NaN` or `Infinity`.
 
 ## Phase 06 scenario runner interface
 

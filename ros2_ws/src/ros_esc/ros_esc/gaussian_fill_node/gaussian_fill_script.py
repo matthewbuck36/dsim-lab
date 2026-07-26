@@ -7,6 +7,8 @@ import time
 import rclpy
 import numpy as np
 from nav_msgs.msg import Odometry
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 import rclpy.parameter
 from scipy.optimize import least_squares
@@ -369,6 +371,7 @@ class GaussianFill(Node):
             )
 
         # ---- Subscribers ----
+        self.fill_request_callback_group = MutuallyExclusiveCallbackGroup()
         self.sub_conv = self.create_subscription(
             StampedFloat64MultiArray,
             (
@@ -377,21 +380,24 @@ class GaussianFill(Node):
                 else "/convergence_event"
             ),
             self.trigger_cb,
-            10
+            10,
+            callback_group=self.fill_request_callback_group,
         )
 
         self.sub_buffer = self.create_subscription(
             StampedFloat64MultiArray,
             "/pde_history",
             self.buffer_cb,
-            10
+            10,
+            callback_group=self.fill_request_callback_group,
         )
 
         self.sub_cost_history = self.create_subscription(
             Float64MultiArray,
             "/pde_cost_history",
             self.cost_history_cb,
-            10
+            10,
+            callback_group=self.fill_request_callback_group,
         )
         self.sub_pose = None
         self.sub_source_cost = None
@@ -402,18 +408,21 @@ class GaussianFill(Node):
                 str(self.get_parameter("pose_topic").value),
                 self.pose_cb,
                 10,
+                callback_group=self.fill_request_callback_group,
             )
             self.sub_source_cost = self.create_subscription(
                 CostBreakdown,
                 str(self.get_parameter("source_cost_topic").value),
                 self.source_cost_cb,
                 10,
+                callback_group=self.fill_request_callback_group,
             )
             self.sub_algorithm_state = self.create_subscription(
                 AlgorithmState,
                 str(self.get_parameter("algorithm_state_topic").value),
                 self.algorithm_state_cb,
                 10,
+                callback_group=self.fill_request_callback_group,
             )
 
         # ---- Publisher ----
@@ -1699,12 +1708,16 @@ class GaussianFill(Node):
 def main():
     rclpy.init()
     node = GaussianFill()
+    executor = MultiThreadedExecutor(num_threads=2)
+    executor.add_node(node)
 
     try:
-        rclpy.spin(node)
+        executor.spin()
     except KeyboardInterrupt:
         pass
     finally:
+        executor.remove_node(node)
+        executor.shutdown()
         node.destroy_node()
         rclpy.try_shutdown()
 

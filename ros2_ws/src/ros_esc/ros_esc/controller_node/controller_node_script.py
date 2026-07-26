@@ -144,6 +144,7 @@ class CustomController(Node):
         self.pose_receipt_sec = None
         self.supervisor_state_receipt_sec = None
         self.supervisor_command_receipt_sec = None
+        self.robust_inputs_ready = False
         self.latest_algorithm_state = None
         self.supervisor_command = np.zeros(6, dtype=np.float64)
         self.last_local_fault = None
@@ -336,6 +337,7 @@ class CustomController(Node):
             )
             supervisor_report = None
             combined_unsaturated = None
+            recording_fault = self._recording_fault_reason()
             if self.robust_profile:
                 fault = self._robust_fault_reason()
                 if fault is None:
@@ -348,14 +350,16 @@ class CustomController(Node):
                     )
                     self.last_local_fault = None
                 else:
-                    if not fault.startswith("startup waiting"):
+                    if (
+                        recording_fault is None
+                        and not fault.startswith("startup waiting")
+                    ):
                         self._emit_local_fault_once(fault)
                     combined_unsaturated = np.zeros(6, dtype=np.float64)
                     supervisor_report = -gesc_unsaturated
                     output = self.controller_obj.saturate_command(
                         combined_unsaturated
                     )
-            recording_fault = self._recording_fault_reason()
             if recording_fault is not None:
                 combined_unsaturated = np.zeros(6, dtype=np.float64)
                 supervisor_report = -gesc_unsaturated
@@ -519,6 +523,11 @@ class CustomController(Node):
         now_sec = self._now_sec()
         if not self.robust_controller_compatible:
             return "robust profile requires Directional_Controller"
+        startup_elapsed_sec = now_sec - self.controller_started_sec
+        startup_waiting = (
+            not self.robust_inputs_ready
+            and 0.0 <= startup_elapsed_sec <= self.startup_timeout_sec
+        )
         freshness = (
             ("supervisor state", self.supervisor_state_receipt_sec, self.supervisor_state_stale_sec),
             ("supervisor command", self.supervisor_command_receipt_sec, self.supervisor_command_stale_sec),
@@ -526,11 +535,13 @@ class CustomController(Node):
             ("filter input", self.input_receipt_sec, self.stale_filter_sec),
         )
         for name, receipt, limit in freshness:
-            if receipt is None:
-                if now_sec - self.controller_started_sec <= self.startup_timeout_sec:
+            if (
+                receipt is None
+                or now_sec - receipt > limit
+                or now_sec < receipt
+            ):
+                if startup_waiting:
                     return f"startup waiting for {name}"
-                return f"{name} missing or stale"
-            if now_sec - receipt > limit or now_sec < receipt:
                 return f"{name} missing or stale"
         state = self.latest_algorithm_state
         if (
@@ -566,6 +577,7 @@ class CustomController(Node):
         ])
         if not np.all(np.isfinite(numeric)):
             return "nonfinite controller input"
+        self.robust_inputs_ready = True
         return None
 
     def _authorized_combination(self, gesc_command, supervisor_command):

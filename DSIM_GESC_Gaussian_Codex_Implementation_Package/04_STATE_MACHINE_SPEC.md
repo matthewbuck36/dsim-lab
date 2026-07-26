@@ -260,6 +260,46 @@ recenter_max_sec: 30.0
 
 ## Command pipeline
 
+### Phase 08.1 startup-authorization clarification
+
+Simulation recording readiness is an external motion-authorization interlock,
+not a supervisor state transition. While that required interlock is false,
+missing, or stale, every command representation remains zero. Recoverable
+robust-input gaps observed during this closed interval do not emit a latching
+controller `FAILSAFE`; the timer and input-driven callback follow the same
+rule.
+
+The controller grants startup grace only until the complete robust input set
+has once passed state, weight, numeric, and freshness checks. Before that latch,
+missing or stale inputs inside `startup_timeout_sec` remain a zero-producing
+startup wait. After the latch, freshness is strict immediately; a later stale
+or backward receipt emits the normal watchdog failure even if the original
+startup interval has not elapsed. A controller that never obtains a complete
+set reports and latches the bounded startup-timeout fault only when the
+recording interlock is not required or after the required interlock opens.
+While the required interlock remains closed, the controller continues zero
+output but suppresses the lifecycle fault so recorder startup cannot consume
+behavioral time.
+
+The simulation recorder may publish readiness true only after its graph,
+controller-manager, fresh pose/source/filter/timekeeper and robust
+state/command data, parameter-capture, and post-capture barriers pass. Robust
+startup state must still be valid non-failsafe `SEARCH`; lifecycle evidence
+cannot advance during a long preflight and then be admitted as a clean run.
+The recorder permanently latches any pre-authorization non-`SEARCH`,
+failsafe, prior-transition, active-fill, or active-escape state evidence,
+including evidence seen before a fresh heartbeat epoch and followed by a later
+clean `SEARCH`. This monitoring interval closes atomically at authorization or
+when shutdown begins, so an expected explicit-stop transition is not
+misreported as pre-authorization behavior.
+The recorder performs one final callback-locked safety snapshot and changes
+readiness atomically, so a pre-ready nonzero command or heartbeat race cannot
+fit between the final check and authorization. These checks do not authorize
+physical motion or change the Phase 09 physical integration boundary.
+Authorization also rechecks the one absolute preflight deadline after the
+controller-manager response; a response completed after that deadline cannot
+open readiness.
+
 Always publish:
 
 ```text

@@ -364,7 +364,8 @@ def resolved_noise_config(resolved, output_path):
     }
     output_path = Path(output_path)
     output_path.write_text(
-        json.dumps(document, indent=2) + '\n', encoding='utf-8'
+        json.dumps(document, indent=2, allow_nan=False) + '\n',
+        encoding='utf-8',
     )
     return output_path
 
@@ -508,6 +509,30 @@ def _subsequence(required, observed):
     )
 
 
+def _unavailable_outcomes(reason, readiness_interval_available=False):
+    """Return tri-state behavioral outcomes for invalid infrastructure."""
+    return {
+        'readiness_interval_available': readiness_interval_available,
+        'observed_state_sequence': [],
+        'observed_terminal_state': None,
+        'observed_events': [],
+        'controller_goal': 'unavailable',
+        'simulation_ground_truth': 'unavailable',
+        'final_position': None,
+        'final_goal_distances_m': {},
+        'required_state_sequence_passed': None,
+        'required_events_passed': None,
+        'forbidden_events_absent': None,
+        'expected_terminal_state_passed': None,
+        'saturation_sample_count': None,
+        'minimum_saturation_samples_passed': None,
+        'collision_evidence_available': False,
+        'collision_observed': None,
+        'collision_expectation_passed': None,
+        'outcome_error': reason,
+    }
+
+
 def _bag_outcomes(run_directory, resolved):
     bag_directory = Path(run_directory) / 'bag'
     reader = rosbag2_py.SequentialReader()
@@ -545,6 +570,11 @@ def _bag_outcomes(run_directory, resolved):
         ),
         None,
     )
+    if first_true is None:
+        return _unavailable_outcomes(
+            'no recorded true readiness interval',
+            readiness_interval_available=False,
+        )
 
     def inside(stamp):
         return (
@@ -602,21 +632,36 @@ def _bag_outcomes(run_directory, resolved):
         1 for message in diagnostics if any(message.saturation_flags)
     )
     final_position = None
+    outcome_error = None
     if odometry:
-        final_position = {
-            'x_m': odometry[-1].pose.pose.position.x,
-            'y_m': odometry[-1].pose.pose.position.y,
-        }
+        final_x = float(odometry[-1].pose.pose.position.x)
+        final_y = float(odometry[-1].pose.pose.position.y)
+        if math.isfinite(final_x) and math.isfinite(final_y):
+            final_position = {
+                'x_m': final_x,
+                'y_m': final_y,
+            }
+        else:
+            outcome_error = (
+                'terminal odometry contains a nonfinite position'
+            )
     distances = {}
     if final_position:
         for source in resolved['sources']:
             if source['id'] in resolved['success']['ground_truth'][
                 'goal_source_ids'
             ]:
-                distances[source['id']] = math.hypot(
+                distance = math.hypot(
                     final_position['x_m'] - source['x_m'],
                     final_position['y_m'] - source['y_m'],
                 )
+                if not math.isfinite(distance):
+                    distances = {}
+                    outcome_error = (
+                        'terminal goal distance is nonfinite'
+                    )
+                    break
+                distances[source['id']] = distance
     controller_goal = 'not_applicable'
     if resolved['profile'] == 'robust_gaussian_v1':
         controller_goal = (
@@ -629,7 +674,9 @@ def _bag_outcomes(run_directory, resolved):
         )
     goal_ids = resolved['success']['ground_truth']['goal_source_ids']
     ground_truth = 'not_applicable'
-    if goal_ids:
+    if outcome_error is not None:
+        ground_truth = 'unavailable'
+    elif goal_ids:
         tolerance = resolved['success']['ground_truth'][
             'final_position_tolerance_m'
         ]
@@ -691,45 +738,130 @@ def _bag_outcomes(run_directory, resolved):
             or bool(contacts)
             and collision_observed is collision_expected
         ),
+        'outcome_error': outcome_error,
     }
 
 
-def classify_result(resolved, completeness, cleanup, outcomes, process_result):
+def classify_result(
+    resolved,
+    completeness,
+    cleanup,
+    outcomes,
+    process_result,
+    metadata=None,
+    run_directory_available=None,
+):
     """Evaluate explicit predicates while keeping outcomes separate."""
+
+    def outcome_status(value):
+        if value in (None, 'unavailable'):
+            return None
+        return value == 'passed'
+
     facts = {
         'recording_complete': bool(completeness.get('passed')),
         'cleanup_complete': bool(cleanup.get('passed')),
-        'controller_goal': outcomes.get('controller_goal') == 'passed',
-        'ground_truth_goal': (
-            outcomes.get('simulation_ground_truth') == 'passed'
+        'controller_goal': outcome_status(outcomes.get('controller_goal')),
+        'ground_truth_goal': outcome_status(
+            outcomes.get('simulation_ground_truth')
         ),
         'required_state_sequence': outcomes.get(
-            'required_state_sequence_passed', False
+            'required_state_sequence_passed'
         ),
-        'required_events': outcomes.get('required_events_passed', False),
+        'required_events': outcomes.get('required_events_passed'),
         'no_forbidden_events': outcomes.get(
-            'forbidden_events_absent', False
+            'forbidden_events_absent'
         ),
         'minimum_saturation_samples': outcomes.get(
-            'minimum_saturation_samples_passed', False
+            'minimum_saturation_samples_passed'
         ),
         'collision_expectation': outcomes.get(
-            'collision_expectation_passed', False
+            'collision_expectation_passed'
         ),
     }
     all_of = resolved['success']['all_of']
-    passed = all(facts[name] for name in all_of)
+    passed = all(facts[name] is True for name in all_of)
+    if run_directory_available is None:
+        run_directory_available = bool(completeness)
+    recording = (
+        metadata.get('recording')
+        if isinstance(metadata, dict)
+        else None
+    )
+    metadata_no_readiness = (
+        isinstance(recording, dict)
+        and (
+            recording.get('readiness_ever_true') is False
+            or (
+                'readiness_ever_true' not in recording
+                and recording.get('status') == 'finalized'
+                and not recording.get('ready_at_utc')
+            )
+        )
+    )
     infrastructure_status = 'completed'
+    infrastructure_reason = None
+    failure_stage = None
     if process_result['timed_out']:
         infrastructure_status = 'wall_timeout'
-    elif not completeness:
+    elif not run_directory_available:
         infrastructure_status = 'run_directory_missing'
     elif process_result['return_code'] not in (0, 1):
         infrastructure_status = 'runner_or_recorder_failure'
+    elif (
+        outcomes.get('readiness_interval_available') is False
+        or metadata_no_readiness
+    ):
+        infrastructure_status = 'infrastructure_invalid'
+        infrastructure_reason = (
+            recording.get('run_error')
+            if isinstance(recording, dict)
+            else None
+        ) or outcomes.get(
+            'outcome_error',
+            'no recorded true readiness interval',
+        )
+        failure_stage = (
+            recording.get('failure_stage')
+            if isinstance(recording, dict)
+            else None
+        )
+    elif (
+        isinstance(recording, dict)
+        and recording.get('infrastructure_status') == 'runtime_failed'
+    ):
+        infrastructure_status = 'runtime_failed'
+        infrastructure_reason = (
+            recording.get('run_error') or 'recording runtime failed'
+        )
+        failure_stage = recording.get('failure_stage')
+    elif outcomes.get('outcome_error'):
+        infrastructure_status = 'evidence_extraction_failed'
+        infrastructure_reason = outcomes['outcome_error']
+    elif not completeness or completeness.get('passed') is not True:
+        infrastructure_status = 'recording_evidence_invalid'
+        infrastructure_reason = (
+            'completeness.json is missing, unreadable, or failed'
+        )
+    elif not cleanup.get('passed'):
+        infrastructure_status = 'cleanup_failed'
+        infrastructure_reason = (
+            'run-scoped ROS graph or process cleanup failed'
+        )
+    status = 'passed' if passed else 'failed'
+    if infrastructure_status != 'completed':
+        passed = False
+        status = (
+            'infrastructure_invalid'
+            if infrastructure_status == 'infrastructure_invalid'
+            else 'failed'
+        )
     return {
         'passed': passed,
-        'status': 'passed' if passed else 'failed',
+        'status': status,
         'infrastructure_status': infrastructure_status,
+        'infrastructure_reason': infrastructure_reason,
+        'failure_stage': failure_stage,
         'required_predicates': all_of,
         'predicate_results': {name: facts[name] for name in all_of},
     }
@@ -832,21 +964,47 @@ def execute_suite(
             )
             try:
                 run_directory = find_run_directory(root, run_id)
-                completeness_path = run_directory / 'completeness.json'
-                completeness = json.loads(
-                    completeness_path.read_text(encoding='utf-8')
-                )
-                outcomes = _bag_outcomes(run_directory, resolved)
-            except Exception as exc:
+            except Exception:
                 run_directory = None
-                completeness = {}
-                outcomes = {
-                    'controller_goal': 'unavailable',
-                    'simulation_ground_truth': 'unavailable',
-                    'outcome_error': f'{type(exc).__name__}: {exc}',
-                }
+            completeness = {}
+            finalized_metadata = {}
+            outcomes = _unavailable_outcomes(
+                'run directory is unavailable',
+                readiness_interval_available=None,
+            )
+            if run_directory is not None:
+                try:
+                    completeness_path = run_directory / 'completeness.json'
+                    completeness = json.loads(
+                        completeness_path.read_text(encoding='utf-8')
+                    )
+                except Exception:
+                    completeness = {}
+                try:
+                    finalized_metadata = yaml.safe_load(
+                        (run_directory / 'metadata.yaml').read_text(
+                            encoding='utf-8'
+                        )
+                    )
+                    if not isinstance(finalized_metadata, dict):
+                        finalized_metadata = {}
+                except Exception:
+                    finalized_metadata = {}
+                try:
+                    outcomes = _bag_outcomes(run_directory, resolved)
+                except Exception as exc:
+                    outcomes = _unavailable_outcomes(
+                        f'{type(exc).__name__}: {exc}',
+                        readiness_interval_available=None,
+                    )
             classification = classify_result(
-                resolved, completeness, cleanup, outcomes, process_result
+                resolved,
+                completeness,
+                cleanup,
+                outcomes,
+                process_result,
+                metadata=finalized_metadata,
+                run_directory_available=run_directory is not None,
             )
             record_stdout = process_result.pop('stdout')
             result = {

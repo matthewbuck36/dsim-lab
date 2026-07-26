@@ -2,6 +2,28 @@ schema_version: 1
 storage_id: sqlite3
 validation:
   timestamp_regression_tolerance_sec: 0.15
+operational_readiness:
+  simulation:
+    heartbeat_aliases: [pose, source_cost, filter_output_legacy, timekeeper]
+    profile_heartbeat_aliases:
+      robust_gaussian_v1: [algorithm_state, supervisor_command]
+    heartbeat_stale_sec: 0.5
+    heartbeat_alias_overrides:
+      sensor_delay_sec: {source_cost: simulation_source_cost_delayed}
+      pose_delay_sec: {pose: simulation_pose_delayed}
+    heartbeat_override_target_arguments:
+      sensor_delay_sec: simulation_sensor_delay_sec
+      pose_delay_sec: simulation_pose_delay_sec
+    heartbeat_override_consumer_topics:
+      sensor_delay_sec:
+        algorithm_raw_cost_topic: [/turtlebot3/cost_value_chatter, /gesc_gaussian/simulation/raw_cost_delayed]
+        algorithm_source_cost_topic: [/gesc_gaussian/source_cost, /gesc_gaussian/simulation/source_cost_delayed]
+        pde_cost_history_topic: [/turtlebot3/cost_value_chatter, /gesc_gaussian/simulation/raw_cost_delayed]
+      pose_delay_sec:
+        algorithm_pose_topic: [/odom, /gesc_gaussian/simulation/pose_delayed]
+        gaussian_fill_pose_topic: [/odom, /gesc_gaussian/simulation/pose_delayed]
+    controller_manager_service: /controller_manager/list_controllers
+    required_active_controllers: [joint_state_broadcaster, velocity_controller]
 topics:
   - {alias: source_cost, topic: /gesc_gaussian/source_cost, type: ros_esc_interfaces/msg/CostBreakdown, modes: [simulation, physical], required: true, minimum_messages: 1, coverage: motion, singleton_publisher: true}
   - {alias: cost_breakdown, topic: /gesc_gaussian/cost_breakdown, type: ros_esc_interfaces/msg/CostBreakdown, modes: [simulation, physical], required: true, minimum_messages: 1, coverage: motion, singleton_publisher: true}

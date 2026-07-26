@@ -4,6 +4,8 @@ import datetime as dt
 import json
 import os
 from pathlib import Path
+import sys
+from types import SimpleNamespace
 
 import pytest
 
@@ -178,10 +180,313 @@ def test_controller_and_ground_truth_are_separate_classification_inputs():
             'minimum_saturation_samples_passed': True,
         },
         {'timed_out': False, 'return_code': 1},
+        metadata={
+            'recording': {
+                'status': 'finalized',
+                'ready_at_utc': '2026-07-25T00:00:00Z',
+                'readiness_ever_true': True,
+                'infrastructure_status': 'completed',
+            }
+        },
     )
 
     assert result['passed'] is False
+    assert result['status'] == 'failed'
+    assert result['infrastructure_status'] == 'completed'
     assert result['predicate_results']['controller_goal'] is False
+
+
+def test_bag_without_true_readiness_marks_behavior_unavailable(
+    monkeypatch,
+    tmp_path,
+):
+    """Do not turn missing motion authorization into behavioral failure."""
+
+    class FakeReader:
+        def __init__(self):
+            self.records = [(
+                '/gesc_gaussian/recording_ready',
+                SimpleNamespace(data=False),
+                1,
+            )]
+
+        def open(self, *_args):  # noqa: A003 - matches rosbag reader API.
+            return None
+
+        def has_next(self):
+            return bool(self.records)
+
+        def read_next(self):
+            return self.records.pop(0)
+
+    monkeypatch.setattr(runner.rosbag2_py, 'SequentialReader', FakeReader)
+    monkeypatch.setattr(
+        runner,
+        'deserialize_message',
+        lambda serialized, _message_type: serialized,
+    )
+
+    outcomes = runner._bag_outcomes(tmp_path, _resolved())
+
+    assert outcomes['readiness_interval_available'] is False
+    assert outcomes['controller_goal'] == 'unavailable'
+    assert outcomes['simulation_ground_truth'] == 'unavailable'
+    assert outcomes['required_state_sequence_passed'] is None
+    assert outcomes['forbidden_events_absent'] is None
+    assert outcomes['collision_observed'] is None
+
+
+@pytest.mark.parametrize(
+    ('terminal_x', 'source_x', 'error_text'),
+    [
+        (float('nan'), None, 'nonfinite position'),
+        (sys.float_info.max, -sys.float_info.max, 'distance is nonfinite'),
+    ],
+)
+def test_nonfinite_terminal_evidence_is_extraction_failure(
+    monkeypatch,
+    tmp_path,
+    terminal_x,
+    source_x,
+    error_text,
+):
+    """Do not leak nonfinite pose evidence into strict downstream JSON."""
+
+    class FakeReader:
+        def __init__(self):
+            position = SimpleNamespace(x=terminal_x, y=0.0)
+            odometry = SimpleNamespace(
+                pose=SimpleNamespace(
+                    pose=SimpleNamespace(position=position),
+                ),
+            )
+            self.records = [
+                (
+                    '/gesc_gaussian/recording_ready',
+                    SimpleNamespace(data=True),
+                    1,
+                ),
+                ('/odom', odometry, 2),
+                (
+                    '/gesc_gaussian/recording_ready',
+                    SimpleNamespace(data=False),
+                    3,
+                ),
+            ]
+
+        def open(self, *_args):  # noqa: A003 - matches rosbag reader API.
+            return None
+
+        def has_next(self):
+            return bool(self.records)
+
+        def read_next(self):
+            return self.records.pop(0)
+
+    monkeypatch.setattr(runner.rosbag2_py, 'SequentialReader', FakeReader)
+    monkeypatch.setattr(
+        runner,
+        'deserialize_message',
+        lambda serialized, _message_type: serialized,
+    )
+
+    resolved = _resolved()
+    if source_x is not None:
+        for source in resolved['sources']:
+            source['x_m'] = source_x
+    outcomes = runner._bag_outcomes(tmp_path, resolved)
+    classification = classify_result(
+        resolved,
+        {'passed': True},
+        {'passed': True},
+        outcomes,
+        {'timed_out': False, 'return_code': 1},
+        metadata={
+            'recording': {
+                'readiness_ever_true': True,
+                'infrastructure_status': 'completed',
+            },
+        },
+        run_directory_available=True,
+    )
+
+    if source_x is None:
+        assert outcomes['final_position'] is None
+    else:
+        assert outcomes['final_position'] == {
+            'x_m': terminal_x,
+            'y_m': 0.0,
+        }
+    assert outcomes['final_goal_distances_m'] == {}
+    assert error_text in outcomes['outcome_error']
+    assert outcomes['simulation_ground_truth'] == 'unavailable'
+    assert classification['infrastructure_status'] == (
+        'evidence_extraction_failed'
+    )
+    json.dumps(outcomes, allow_nan=False)
+
+
+def test_readiness_never_true_is_infrastructure_invalid():
+    """Classify retained startup failure separately from algorithm behavior."""
+    resolved = _resolved()
+    resolved['success']['all_of'] = [
+        'recording_complete',
+        'cleanup_complete',
+        'controller_goal',
+    ]
+    outcomes = runner._unavailable_outcomes(
+        'no recorded true readiness interval'
+    )
+    result = classify_result(
+        resolved,
+        {'passed': False},
+        {'passed': True},
+        outcomes,
+        {'timed_out': False, 'return_code': 1},
+        metadata={
+            'recording': {
+                'status': 'finalized',
+                'readiness_ever_true': False,
+                'run_error': 'controller manager service unavailable',
+            }
+        },
+        run_directory_available=True,
+    )
+
+    assert result['passed'] is False
+    assert result['status'] == 'infrastructure_invalid'
+    assert result['infrastructure_status'] == 'infrastructure_invalid'
+    assert result['predicate_results']['controller_goal'] is None
+    assert 'controller manager' in result['infrastructure_reason']
+
+
+def test_runtime_failed_recording_cannot_be_classified_completed():
+    """Propagate a finalized runtime failure after readiness became true."""
+    resolved = _resolved()
+    resolved['success']['all_of'] = [
+        'recording_complete',
+        'cleanup_complete',
+    ]
+    result = classify_result(
+        resolved,
+        {'passed': True},
+        {'passed': True},
+        {
+            'controller_goal': 'passed',
+            'simulation_ground_truth': 'passed',
+            'required_state_sequence_passed': True,
+            'required_events_passed': True,
+            'forbidden_events_absent': True,
+            'minimum_saturation_samples_passed': True,
+            'readiness_interval_available': True,
+        },
+        {'timed_out': False, 'return_code': 1},
+        metadata={
+            'recording': {
+                'status': 'finalized',
+                'readiness_ever_true': True,
+                'infrastructure_status': 'runtime_failed',
+                'failure_stage': 'recording',
+                'run_error': 'rosbag process exited unexpectedly',
+            }
+        },
+        run_directory_available=True,
+    )
+
+    assert result['passed'] is False
+    assert result['infrastructure_status'] == 'runtime_failed'
+    assert result['failure_stage'] == 'recording'
+    assert 'rosbag process' in result['infrastructure_reason']
+
+
+def test_retained_readiness_failure_precedes_missing_completeness():
+    """Do not mislabel a retained preflight failure as a missing directory."""
+    result = classify_result(
+        _resolved(),
+        {},
+        {'passed': True},
+        runner._unavailable_outcomes('no true readiness interval'),
+        {'timed_out': False, 'return_code': 1},
+        metadata={
+            'recording': {
+                'status': 'finalized',
+                'readiness_ever_true': False,
+                'failure_stage': 'operational_preflight',
+                'run_error': 'operational readiness failed',
+            }
+        },
+        run_directory_available=True,
+    )
+
+    assert result['infrastructure_status'] == 'infrastructure_invalid'
+    assert result['failure_stage'] == 'operational_preflight'
+
+
+def test_completed_readiness_with_bag_error_is_evidence_failure():
+    """Do not pass an infrastructure-only case with unreadable outcomes."""
+    resolved = _resolved()
+    resolved['success']['all_of'] = [
+        'recording_complete',
+        'cleanup_complete',
+    ]
+    outcomes = runner._unavailable_outcomes(
+        'ValueError: bag outcome decoding failed',
+        readiness_interval_available=None,
+    )
+    result = classify_result(
+        resolved,
+        {'passed': True},
+        {'passed': True},
+        outcomes,
+        {'timed_out': False, 'return_code': 1},
+        metadata={
+            'recording': {
+                'status': 'finalized',
+                'readiness_ever_true': True,
+                'infrastructure_status': 'completed',
+            }
+        },
+        run_directory_available=True,
+    )
+
+    assert result['passed'] is False
+    assert result['infrastructure_status'] == 'evidence_extraction_failed'
+    assert 'decoding failed' in result['infrastructure_reason']
+
+
+def test_completed_readiness_with_cleanup_failure_is_infrastructure_failure():
+    """Do not label a process/graph leak as infrastructure completed."""
+    resolved = _resolved()
+    resolved['success']['all_of'] = [
+        'recording_complete',
+        'cleanup_complete',
+    ]
+    result = classify_result(
+        resolved,
+        {'passed': True},
+        {'passed': False},
+        {
+            'controller_goal': 'passed',
+            'simulation_ground_truth': 'passed',
+            'required_state_sequence_passed': True,
+            'required_events_passed': True,
+            'forbidden_events_absent': True,
+            'minimum_saturation_samples_passed': True,
+            'readiness_interval_available': True,
+        },
+        {'timed_out': False, 'return_code': 1},
+        metadata={
+            'recording': {
+                'status': 'finalized',
+                'readiness_ever_true': True,
+                'infrastructure_status': 'completed',
+            }
+        },
+        run_directory_available=True,
+    )
+
+    assert result['passed'] is False
+    assert result['infrastructure_status'] == 'cleanup_failed'
 
 
 def test_cleanup_compares_only_new_graph_and_exact_session(monkeypatch):
@@ -212,6 +517,16 @@ def test_failed_run_is_retained_and_cleanup_failure_stops_suite(
     run_directory.mkdir(parents=True)
     (run_directory / 'completeness.json').write_text(
         json.dumps({'passed': False}), encoding='utf-8'
+    )
+    (run_directory / 'metadata.yaml').write_text(
+        yaml.safe_dump({
+            'recording': {
+                'status': 'finalized',
+                'readiness_ever_true': False,
+                'run_error': 'operational readiness failed',
+            }
+        }),
+        encoding='utf-8',
     )
     monkeypatch.setattr(runner, 'ensure_ros_daemon', lambda: None)
     monkeypatch.setattr(runner, 'ros_graph_nodes', lambda: {'/baseline'})
@@ -262,6 +577,84 @@ def test_failed_run_is_retained_and_cleanup_failure_stops_suite(
     assert (run_directory / 'completeness.json').exists()
     assert (run_directory / 'scenario_result.yaml').exists()
     assert summary['runs'][0]['record_stdout_tail'] == 'retained failure'
+    assert summary['runs'][0]['classification'][
+        'infrastructure_status'
+    ] == 'infrastructure_invalid'
+
+
+def test_infrastructure_invalid_run_executes_once_without_retry(
+    monkeypatch,
+    tmp_path,
+):
+    """Retain one no-readiness attempt without silently retrying it."""
+    runs_root = tmp_path / 'runs'
+    run_id = '20260724T000000000000Z_simulation_noready_bbbbbbbb'
+    run_directory = runs_root / '2026-07-24' / run_id
+    run_directory.mkdir(parents=True)
+    (run_directory / 'metadata.yaml').write_text(
+        yaml.safe_dump({
+            'recording': {
+                'status': 'finalized',
+                'readiness_ever_true': False,
+                'failure_stage': 'operational_preflight',
+                'run_error': 'operational readiness failed',
+            }
+        }),
+        encoding='utf-8',
+    )
+    resolved = _resolved()
+    attempts = []
+    monkeypatch.setattr(
+        runner,
+        'expand_suite',
+        lambda _suite, case_ids=None: ([resolved], []),
+    )
+    monkeypatch.setattr(runner, 'ensure_ros_daemon', lambda: None)
+    monkeypatch.setattr(runner, 'ros_graph_nodes', lambda: {'/baseline'})
+    monkeypatch.setattr(
+        runner, 'generate_scenario_run_id', lambda _resolved: run_id
+    )
+
+    def run_once(*_args, **_kwargs):
+        attempts.append(run_id)
+        return {
+            'return_code': 1,
+            'timed_out': False,
+            'stdout': 'no readiness',
+            'session_id': 4321,
+        }
+
+    monkeypatch.setattr(runner, 'run_record_process', run_once)
+    monkeypatch.setattr(
+        runner,
+        'cleanup_evidence',
+        lambda *_args, **_kwargs: {
+            'passed': True,
+            'baseline_nodes': ['/baseline'],
+            'remaining_new_nodes': [],
+            'remaining_session_processes': [],
+        },
+    )
+    monkeypatch.setattr(
+        runner,
+        '_bag_outcomes',
+        lambda *_args, **_kwargs: runner._unavailable_outcomes(
+            'no recorded true readiness interval'
+        ),
+    )
+
+    summary = execute_suite(
+        SMOKE,
+        'codex-test',
+        runs_root=runs_root,
+        summary_output=tmp_path / 'summary.yaml',
+    )
+
+    assert attempts == [run_id]
+    assert len(summary['runs']) == 1
+    assert summary['runs'][0]['classification'][
+        'infrastructure_status'
+    ] == 'infrastructure_invalid'
 
 
 def test_dry_run_expands_profiles_without_default_summary(tmp_path):
