@@ -282,7 +282,7 @@ def test_command_sweep_blocks_inward_reentry_and_wall_crossing():
 
 
 @pytest.mark.parametrize(
-    "yaw,velocity,horizon",
+    'yaw,velocity,horizon',
     [
         (math.nan, 0.1, 0.5),
         (0.0, math.nan, 0.5),

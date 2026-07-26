@@ -362,13 +362,13 @@ def test_robust_source_owner_publishes_score_without_state_duplication(monkeypat
 def test_launch_contract_has_canonical_defaults_and_one_final_owner():
     root = ET.parse(LAUNCH_FILE).getroot()
     args = {
-        element.attrib["name"]: element.attrib.get("default")
-        for element in root.findall("arg")
+        element.attrib['name']: element.attrib.get('default')
+        for element in root.findall('arg')
     }
     expected = {
         "algorithm_profile": "legacy",
         "supervisor_use_sim_time": "True",
-        "supervisor_command_stale_sec": "0.50",
+        'supervisor_command_stale_sec': '0.50',
         "enable_observability": "False",
         "cost_breakdown_topic": "/gesc_gaussian/cost_breakdown",
         "gesc_diagnostics_topic": "/gesc_gaussian/gesc_diagnostics",
@@ -469,8 +469,8 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
 
     supervisor_commands = [
         element
-        for element in root.findall("executable")
-        if "supervisor_node" in element.attrib.get("cmd", "")
+        for element in root.findall('executable')
+        if 'supervisor_node' in element.attrib.get('cmd', '')
     ]
     assert len(supervisor_commands) == 1
     assert "robust_gaussian_v1" in supervisor_commands[0].attrib["if"]
@@ -479,8 +479,8 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         in supervisor_commands[0].attrib["cmd"]
     )
     assert (
-        "-p supervisor_command_stale_sec:=$(var supervisor_command_stale_sec)"
-        in supervisor_commands[0].attrib["cmd"]
+        '-p supervisor_command_stale_sec:=$(var supervisor_command_stale_sec)'
+        in supervisor_commands[0].attrib['cmd']
     )
     gaussian_commands = [
         element

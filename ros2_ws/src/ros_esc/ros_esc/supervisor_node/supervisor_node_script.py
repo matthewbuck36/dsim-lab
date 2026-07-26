@@ -24,21 +24,21 @@ from std_msgs.msg import Bool
 
 from ros_esc.deferred_signal_shutdown import DeferredSignalShutdown
 from ros_esc.supervisor_node.escape_recenter import (
+    command_sweep_is_safe,
     DirectionConfig,
     DirectionSelection,
     EscapeGeometry,
     EscapeProgressConfig,
     EscapeProgressTracker,
+    evaluate_direction,
     FillAvoidance,
     OperatingBounds,
     Pose2D,
-    RecenterControlConfig,
-    RecenterHoldTracker,
-    command_sweep_is_safe,
-    evaluate_direction,
     preferred_escape_direction,
     recent_approach,
     recenter_command,
+    RecenterControlConfig,
+    RecenterHoldTracker,
     select_recenter_direction,
     select_safe_direction,
 )
@@ -207,10 +207,10 @@ class SupervisorNode(Node):
                 'intentional safe-timeout scenario'
             )
         self.fill_avoidance_margin_m = self._nonnegative_float(
-            "fill_avoidance_margin_m"
+            'fill_avoidance_margin_m'
         )
         self.supervisor_command_stale_sec = self._nonnegative_float(
-            "supervisor_command_stale_sec"
+            'supervisor_command_stale_sec'
         )
         self.run_id = uuid.uuid4().hex
         self.latest_pose_receipt_sec = None
@@ -294,7 +294,7 @@ class SupervisorNode(Node):
         defaults = {
             "algorithm_profile": ROBUST_PROFILE,
             "supervisor_publish_rate_hz": 20.0,
-            "supervisor_command_stale_sec": 0.50,
+            'supervisor_command_stale_sec': 0.50,
             "startup_timeout_sec": 5.0,
             "convergence_hold_sec": 2.0,
             "goal_score_threshold": 0.95,
@@ -892,7 +892,7 @@ class SupervisorNode(Node):
                 self.bounds,
             )
             if selected is None:
-                return "no safe recenter direction candidate"
+                return 'no safe recenter direction candidate'
             self.safe_direction = selected
             self.safe_direction_revision += 1
             return None
@@ -1081,7 +1081,7 @@ class SupervisorNode(Node):
             "recenter_max_linear_velocity_mps",
             "recenter_max_angular_velocity_rps",
             "recenter_rotate_in_place_angle_rad",
-            "supervisor_command_stale_sec",
+            'supervisor_command_stale_sec',
         ]
         values = [
             1.0 if self.bounded_mode else 0.0,

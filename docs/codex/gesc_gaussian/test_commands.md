@@ -2462,3 +2462,106 @@ that replaced the sourced ROS message-package path. Pytest stopped during
 collection with `ModuleNotFoundError: geometry_msgs`; no tests executed. The
 corrected command above prepends the source tree to the existing ROS
 `PYTHONPATH` and passed.
+
+## Phase 08.2 M3 source-state validation
+
+The new schema-v3 development suite is installed as
+`phase08_2_recenter.yaml`. It declares one seed-8304 case and leaves the
+Phase 08.1 suite unchanged.
+
+Final focused and broad functional tests:
+
+```bash
+source /opt/ros/humble/setup.bash
+source /tmp/phase08_2_m3_install/setup.bash
+export PYTHONPATH=/home/mattb/dsim-lab/ros2_ws/src/ros_esc:$PYTHONPATH
+export ROS_LOG_DIR=/tmp/phase08_2_m3_final_ros_logs
+export MPLCONFIGDIR=/tmp/phase08_2_m3_final_mpl
+export ROS_DOMAIN_ID=68
+timeout 180s python3 -m pytest -q \
+  ros2_ws/src/ros_esc/test/test_escape_recenter.py \
+  ros2_ws/src/ros_esc/test/test_supervisor_integration.py \
+  ros2_ws/src/ros_esc/test/test_state_machine.py \
+  ros2_ws/src/ros_esc/test/test_observability_contract.py \
+  ros2_ws/src/ros_esc/test/test_legacy_behavior.py
+export ROS_DOMAIN_ID=69
+timeout 180s python3 -m pytest -q \
+  ros2_ws/src/ros_esc/test -m 'not linter'
+```
+
+Results: `112 passed in 3.56s`; and
+`289 passed, 2 skipped, 3 deselected in 15.57s`. The broad result is eleven
+passes above the Phase 08.1 M5 baseline
+`278 passed, 2 skipped, 3 deselected`. The two skips remain the explicit
+visible-Gazebo recording and recorded-headless-Gazebo opt-ins. The three
+deselections are repository linter markers.
+
+Final isolated build:
+
+```bash
+source /opt/ros/humble/setup.bash
+timeout 180s colcon \
+  --log-base /tmp/phase08_2_m3_colcon_logs build \
+  --base-paths ros2_ws/src \
+  --build-base /tmp/phase08_2_m3_build \
+  --install-base /tmp/phase08_2_m3_install \
+  --packages-select \
+    ros_esc_interfaces turtlebot3_rotating_sensor ros_esc \
+  --event-handlers console_cohesion+
+```
+
+Result: all three selected existing packages finished in `1.64s`. The
+complete output remains under `/tmp/phase08_2_m3_colcon_logs`.
+
+Installed dry run and launch/runtime instantiation:
+
+```bash
+source /opt/ros/humble/setup.bash
+source /tmp/phase08_2_m3_install/setup.bash
+export ROS_DOMAIN_ID=70
+export ROS_LOG_DIR=/tmp/phase08_2_m3_runtime_ros_logs
+timeout 60s ros2 run ros_esc run_scenario \
+  /tmp/phase08_2_m3_install/ros_esc/share/ros_esc/scenario_runner/scenarios/phase08_2_recenter.yaml \
+  --operator phase08_2 \
+  --case-id recenter_retained_fill_create \
+  --runs-root /tmp/phase08_2_m3_dry_runs \
+  --summary-output /tmp/phase08_2_m3_dry_run.yaml \
+  --gui --dry-run
+timeout 30s ros2 launch turtlebot3_rotating_sensor \
+  gazebo.launch.xml --show-args
+timeout --signal=INT --kill-after=5s 3s \
+  ros2 run ros_esc supervisor_node --ros-args \
+    -p supervisor_command_stale_sec:=0.50 \
+    -p use_sim_time:=false
+```
+
+The dry run resolved suite `phase08_2_recenter`, one run, zero unsupported
+cases, and case key
+`6eb811130559703b3253b7eb49d842165037902b12ad47b4d8747d408da70c47`.
+The summary is `/tmp/phase08_2_m3_dry_run.yaml`. Launch arguments exposed
+`gazebo_gui`, `algorithm_profile`, and `supervisor_command_stale_sec`. The
+bounded supervisor process produced expected timeout-wrapper exit `124` after
+SIGINT and left no supervisor, runner, or Gazebo process.
+
+One read-only parser immediately after the successful dry run incorrectly
+asserted `summary['suite']`; the schema uses `suite_id`. The corrected parser
+also asserted `resolved_run_count == 1` and `unsupported_count == 0` and
+passed. The scenario was not redispatched.
+
+Focused style trend:
+
+```text
+ament_flake8: 623 findings at db8bd66 -> 613 current
+ament_pep257: 7 findings at db8bd66 -> 7 current
+changed Phase 08.2 lines: 0 flake8 findings, 0 pep257 findings
+```
+
+The remaining findings are inherited whole-file D/E/I/Q debt. Final modified
+Python compilation and `git diff --check` passed. Suite SHA-256:
+
+```text
+1b116ef7984d8a679f69da919576125a1ad066da3d55098466da9afac2bae017
+```
+
+No Gazebo scenario, bag analysis, v3 stage, readiness tag, Phase 09 action, or
+physical hardware ran during M3.

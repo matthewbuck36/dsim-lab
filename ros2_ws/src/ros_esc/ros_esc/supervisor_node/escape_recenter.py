@@ -404,9 +404,8 @@ def evaluate_direction_safety(
     bounds: Optional[OperatingBounds] = None,
 ):
     """Return hard fill/wall eligibility without a progress preference."""
-
-    position = _finite_vector(position, "position")
-    direction = _unit(direction, "candidate direction")
+    position = _finite_vector(position, 'position')
+    direction = _unit(direction, 'candidate direction')
     endpoint = position + config.lookahead_m * direction
     clearance = config.lookahead_m
     if bounds is not None:
@@ -428,7 +427,7 @@ def evaluate_direction_safety(
 
 
 def _direction_candidates(preferred, config):
-    preferred = _unit(preferred, "preferred direction")
+    preferred = _unit(preferred, 'preferred direction')
     base_angle = math.atan2(preferred[1], preferred[0])
     step = config.candidate_step_rad
     rotations = (0.0, step, -step, 2 * step, -2 * step, 3 * step, -3 * step, math.pi)
@@ -492,14 +491,13 @@ def select_recenter_direction(
     bounds: Optional[OperatingBounds] = None,
 ):
     """Select the deterministic safe candidate with greatest center progress."""
-
     config = config or DirectionConfig()
-    position = _finite_vector(position, "position")
-    target = _finite_vector(target, "recenter target")
+    position = _finite_vector(position, 'position')
+    target = _finite_vector(target, 'recenter target')
     preferred_vector = target - position
     if float(np.linalg.norm(preferred_vector)) <= _EPSILON:
         return None
-    preferred = _unit(preferred_vector, "preferred direction")
+    preferred = _unit(preferred_vector, 'preferred direction')
     current_distance = float(np.linalg.norm(preferred_vector))
     selections = []
     for index, rotation, direction in _direction_candidates(preferred, config):
@@ -540,15 +538,14 @@ def command_sweep_is_safe(
     bounds: Optional[OperatingBounds] = None,
 ):
     """Check the current-yaw forward sweep for the command persistence horizon."""
-
-    position = _finite_vector(position, "position")
+    position = _finite_vector(position, 'position')
     values = np.asarray(
         [yaw, linear_velocity_mps, horizon_sec], dtype=np.float64
     )
     if not np.all(np.isfinite(values)):
-        raise ValueError("command sweep values must be finite")
+        raise ValueError('command sweep values must be finite')
     if linear_velocity_mps < 0.0 or horizon_sec < 0.0:
-        raise ValueError("command sweep velocity and horizon must be nonnegative")
+        raise ValueError('command sweep velocity and horizon must be nonnegative')
 
     heading = np.array([math.cos(float(yaw)), math.sin(float(yaw))])
     endpoint = position + float(linear_velocity_mps * horizon_sec) * heading

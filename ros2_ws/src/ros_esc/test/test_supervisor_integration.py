@@ -317,7 +317,7 @@ def test_recenter_suppresses_inward_translation_while_continuing_rotation():
     rclpy.init()
     node = SupervisorNode(
         parameter_overrides=[
-            Parameter("supervisor_command_stale_sec", value=0.5),
+            Parameter('supervisor_command_stale_sec', value=0.5),
         ]
     )
     try:
@@ -331,9 +331,9 @@ def test_recenter_suppresses_inward_translation_while_continuing_rotation():
         node.latest_pose_valid = True
         node.active_fill_records = {
             1: {
-                "fill_id": 1,
-                "center": [-0.625781953, -0.056395888],
-                "support_radius": 0.508674749,
+                'fill_id': 1,
+                'center': [-0.625781953, -0.056395888],
+                'support_radius': 0.508674749,
             }
         }
 

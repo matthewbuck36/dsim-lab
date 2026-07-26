@@ -29,6 +29,10 @@ DIAGNOSTIC_ACTIVATION = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_1_diagnostic_activation.yaml'
 )
+RECENTER_RECOVERY = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/phase08_2_recenter.yaml'
+)
 HISTORICAL_V2_ACTIVATION = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml'
@@ -160,9 +164,11 @@ def test_checked_in_suites_validate_and_catalog_marks_gaps():
     smoke = load_suite(SMOKE)
     catalog = load_suite(CATALOG)
     diagnostic = load_suite(DIAGNOSTIC_ACTIVATION)
+    recenter = load_suite(RECENTER_RECOVERY)
     smoke_runs, smoke_unsupported = expand_suite(smoke)
     catalog_runs, catalog_unsupported = expand_suite(catalog)
     diagnostic_runs, diagnostic_unsupported = expand_suite(diagnostic)
+    recenter_runs, recenter_unsupported = expand_suite(recenter)
 
     assert [run['profile'] for run in smoke_runs] == [
         'robust_gaussian_v1', 'legacy'
@@ -171,6 +177,16 @@ def test_checked_in_suites_validate_and_catalog_marks_gaps():
     assert len(catalog_runs) >= 20
     assert len(diagnostic_runs) == 10
     assert diagnostic_unsupported == []
+    assert len(recenter_runs) == 1
+    assert recenter_unsupported == []
+    assert recenter_runs[0]['success']['controller']['required_state_path'] == [
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'DESIGN_OR_MERGE_FILL',
+        'ESCAPE_REPULSE',
+        'RECENTER',
+        'SEARCH',
+    ]
     assert all(
         run['success']['controller']['verification_timing'][
             'selected_margin_sec'

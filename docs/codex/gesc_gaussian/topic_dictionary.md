@@ -5,8 +5,9 @@
 > Phase 06 composes the same launch/recording owners in a deterministic serial
 > scenario runner. Phase 08 v2 stopped failed at activation and produced no
 > frozen profile or robustness acceptance. Phase 08.1 completed its bounded
-> recovery but retained a downstream recenter timeout, so simulation readiness
-> remains unestablished.
+> recovery but retained a downstream recenter timeout. Phase 08.2 implements
+> the bounded deterministic correction; its fresh Gazebo proof remains
+> required, so simulation readiness remains unestablished.
 
 This dictionary is the resolved Phase 05 interface contract for the current
 `dsim-lab` checkout. `algorithm_profile=legacy` remains the default and keeps
@@ -302,7 +303,7 @@ to `NaN`, revisions to zero, and validity flags false.
 | `escape_exit_hold_elapsed_sec`, validity | Uninterrupted time beyond the strict exit radius with nonnegative valid progress |
 | `escape_stalled`, `escape_stalled_valid` | Valid complete-window progress below `minimum_radial_progress_m`, suppressed during a qualifying exit hold |
 | `safe_direction_x`, `safe_direction_y`, `safe_direction_clearance_m`, validity | Selected world-frame unit direction and predicted look-ahead clearance |
-| `safe_direction_revision`, validity | Increments only when a selected assisted/recenter direction changes |
+| `safe_direction_revision`, validity | Increments when assisted selection changes and on every recenter reselection |
 | `recenter_target_x`, `recenter_target_y`, validity | Configured room center in meters |
 | `recenter_distance`, validity | Current Euclidean distance to the recenter target in meters |
 
@@ -313,7 +314,7 @@ escape deadline. Stable exit requires `distance > exit_radius`, valid
 nonnegative progress, and the configured uninterrupted hold. Bounded mode
 then enters `RECENTER`; unbounded mode returns directly to `SEARCH`.
 
-Safe direction candidates are evaluated in deterministic rotation order
+Assisted-escape direction candidates are evaluated in deterministic rotation order
 `0,+step,-step,+2*step,-2*step,+3*step,-3*step,pi`. Candidates pointing away
 from the preferred half-plane, leaving the wall-margin inset, moving inward
 while already inside a fill avoidance circle, or entering another fill circle
@@ -321,18 +322,19 @@ are rejected. Remaining candidates maximize predicted clearance, alignment,
 then minimum rotation with positive-before-negative tie-breaking. Fill
 avoidance radius is `support_radius + fill_avoidance_margin_m`.
 
-That priority is the current shared `ESCAPE_ASSIST`/`RECENTER` implementation,
-not a permanent interface requirement. Phase 08.1 Probe 2 showed that
-clearance-first cached recenter directions can orbit an active fill rather
-than approach a nearby room center. The next bounded implementation should
-keep every existing hard rejection, retain clearance-first selection for
-assistance, and rank already-safe `RECENTER` candidates by greatest predicted
-center-distance reduction/alignment before clearance without a
-positive-progress eligibility predicate. Zero or negative center progress can
-be necessary for mandatory outward recovery while starting inside a fill
-disk. The actual commanded nonholonomic swept segment must not move inward
-during that recovery or re-enter the disk after exit. No current parameter
-default or topic is changed by this recorded limitation.
+That priority remains the `ESCAPE_ASSIST` implementation. Phase 08.1 Probe 2
+showed that sharing its clearance-first cached selection with `RECENTER` can
+orbit an active fill rather than approach a nearby room center. Phase 08.2
+keeps every existing hard rejection and assist behavior, but ranks already-safe
+`RECENTER` candidates on every update by greatest predicted center-distance
+reduction/alignment before clearance without a positive-progress eligibility
+predicate. Zero or negative center progress remains eligible when mandatory
+outward recovery starts inside a fill disk. The current-yaw commanded sweep
+over `supervisor_command_stale_sec` is independently checked: it cannot move
+inward while inside a fill, intersect or re-enter a fill after exit, or leave
+the wall-margin inset. An unsafe linear component becomes zero while the
+bounded angular command continues. The fresh Phase 08.2 Gazebo probe is still
+required to validate this source-state correction.
 
 In bounded mode the preferred direction is toward the configured room center;
 in unbounded assisted escape it is opposite the frozen recent approach, with
@@ -403,7 +405,7 @@ Phase 04 emits:
 - `EVENT_RECENTER_STARTED` with target and retained-fill count;
 - `EVENT_RECENTER_COMPLETE` after the uninterrupted tolerance dwell;
 - `EVENT_CONFIGURATION` with effective bounds, progress/direction settings,
-  recenter gains, and command caps;
+  recenter gains, command caps, and the command-sweep horizon;
 - existing timeout/failsafe events for stale/invalid input, bounds violation,
   no safe candidate, state timeout, exception, explicit stop, and watchdog
   faults.

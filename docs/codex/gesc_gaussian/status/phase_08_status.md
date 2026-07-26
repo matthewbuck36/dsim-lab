@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-26T00:35:40-07:00`
-Status: `IN PROGRESS — PHASE 08.2 RECENTER RECOVERY; M3 SOURCE-STATE VALIDATION`
+Last verified: `2026-07-26T00:48:09-07:00`
+Status: `IN PROGRESS — PHASE 08.2 RECENTER RECOVERY; M4 PROBE NOT DISPATCHED`
 
 ## Objective
 
@@ -194,12 +194,13 @@ remains immutable and cannot count toward a future acceptance attempt.
 - Completed milestone: Phase 08.1 M7 handoff and next-step recommendation.
 - Completed milestone: Phase 08.2 M1 plan and preflight.
 - Completed milestone: Phase 08.2 M2 deterministic recenter correction.
-- Current milestone: Phase 08.2 M3 source-state validation.
+- Completed milestone: Phase 08.2 M3 source-state validation.
+- Current milestone: Phase 08.2 M4 one retained Gazebo probe and closeout.
 - Current plan:
   `docs/codex/gesc_gaussian/plans/phase_08_2_plan.md`.
-- Next criterion: add and dry-run the one-case suite, run broad functional
-  regressions and isolated builds, instantiate the runtime launch, document
-  the additive parameter, and commit the clean probe candidate.
+- Next criterion: commit the validated M3 source state, record the exact
+  candidate commit and pre-execution declaration, then execute the sealed
+  one-case GUI Gazebo probe exactly once.
 - V3 acceptance, a readiness tag, Phase 09, and physical hardware remain
   unauthorized.
 
@@ -325,6 +326,7 @@ remains immutable and cannot count toward a future acceptance attempt.
 - `ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py`
 - `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py`
 - `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_1_diagnostic_activation.yaml`
+- `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_2_recenter.yaml`
 - `ros2_ws/src/ros_esc/ros_esc/convergence_detector_node/convergence_detector_node_script.py`
 - `ros2_ws/src/ros_esc/ros_esc/supervisor_node/state_machine.py`
 - `ros2_ws/src/ros_esc/ros_esc/supervisor_node/escape_recenter.py`
@@ -755,6 +757,37 @@ remains immutable and cannot count toward a future acceptance attempt.
   compilation and `git diff --check` passed. A prior collection command that
   replaced rather than prepended ROS `PYTHONPATH` ran no tests and was
   immediately corrected; it is not a source failure.
+- M3 final focused regression: `112 passed in 3.56 s`.
+- M3 final broad non-linter functional regression:
+  `289 passed, 2 skipped, 3 deselected in 15.57 s`, compared with the M5
+  baseline `278 passed, 2 skipped, 3 deselected`. The two skips are the
+  explicit visible and recorded-headless Gazebo opt-ins; the three
+  deselections are repository linter markers. Neither Gazebo nor physical
+  hardware ran.
+- The exact final M3 source built successfully in the isolated
+  `/tmp/phase08_2_m3_{build,install}` prefixes: all three selected existing
+  packages finished in `1.64 s`. Verbose build logs are retained under
+  `/tmp/phase08_2_m3_colcon_logs`.
+- Installed launch `--show-args` exposed `gazebo_gui`,
+  `algorithm_profile`, and `supervisor_command_stale_sec`. The installed
+  supervisor instantiated with the additive `0.50 s` parameter, stopped under
+  bounded SIGINT with expected timeout-wrapper exit `124`, and left no
+  process.
+- The installed Phase 08.2 suite dry-run resolved exactly one seed-8304 case,
+  no unsupported cases, and case key
+  `6eb811130559703b3253b7eb49d842165037902b12ad47b4d8747d408da70c47`.
+  Summary: `/tmp/phase08_2_m3_dry_run.yaml`.
+- Sealed one-case suite SHA-256:
+  `1b116ef7984d8a679f69da919576125a1ad066da3d55098466da9afac2bae017`.
+- Same-configuration focused style debt improved from `623` to `613`
+  `ament_flake8` findings across the seven Phase 08.2 Python owners;
+  `ament_pep257` remained `7/7`. A changed-line comparison against
+  `db8bd66` reports zero new flake8 and zero new pep257 findings. Python
+  compilation and `git diff --check` passed.
+- One read-only dry-run summary assertion initially used the nonexistent
+  `suite` key after the dry run itself had succeeded. The corrected parser used
+  canonical `suite_id`, `resolved_run_count`, and `unsupported_count` fields
+  and passed; no scenario was redispatched.
 
 ## Attempts not to repeat
 
@@ -781,10 +814,8 @@ remains immutable and cannot count toward a future acceptance attempt.
 
 ## Remaining work
 
-- M2: implement and focus-test the deterministic correction.
-- M3: run the broad functional suite, isolated build, runtime launch
-  instantiation, one-case dry run, and commit the probe candidate.
-- M4: seal and run one new recenter development probe, analyze it once, verify
+- M4: commit and seal the clean probe candidate; run one new recenter
+  development probe, analyze it once, verify
   cleanup/final zero, and close with a Phase 08.2 handoff.
 - No v3 tuning, holdout, acceptance denominator, tag, Phase 09, or physical
   motion is authorized.

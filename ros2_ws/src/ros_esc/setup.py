@@ -25,6 +25,7 @@ setup(
             'ros_esc/scenario_runner/scenarios/phase08_full_matrix.yaml',
             'ros_esc/scenario_runner/scenarios/phase08_frozen_parameters.yaml',
             'ros_esc/scenario_runner/scenarios/phase08_1_diagnostic_activation.yaml',
+            'ros_esc/scenario_runner/scenarios/phase08_2_recenter.yaml',
             'ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml',
             'ros_esc/scenario_runner/scenarios/phase08_v2_training.yaml',
             'ros_esc/scenario_runner/scenarios/phase08_v2_holdout.yaml',

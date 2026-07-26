@@ -1,44 +1,49 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-26T07:36:29+00:00
-Base HEAD: 1858f1e97a192701e3f777a8531c834c64a7bcea
+Generated: 2026-07-26T07:49:11+00:00
+Base HEAD: 8cefbfcb1ba52efea54fee6c31af638cccf7e0a9
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 5be1011ad1f17ab507465fd186c53bd67abcdb8410ddb697dc021b5c771c0274
+Status sha256: 1e92f227638a45ee25711cf436f02e536468a2a141177c6c2bfefb2a3ed953db
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_1_plan.md
 Active subphase plan sha256: da5fac1ea2b271e0812c1dccdf48dc61617f6c2d7efcd644789271b49b599172
-Unstaged diff sha256: b9ca1f02782b58e24406ddbc7e9b8ac7c3dd5883538216997c0ba7e3a9830773
+Unstaged diff sha256: f0af2e07f271c2642ec17367a556523d46eb5dd586b1dce7fff042b8eefa4307
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 11]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 12]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
  M docs/codex/gesc_gaussian/test_commands.md
+ M docs/codex/gesc_gaussian/topic_dictionary.md
  M ros2_ws/src/ros_esc/ros_esc/supervisor_node/escape_recenter.py
  M ros2_ws/src/ros_esc/ros_esc/supervisor_node/supervisor_node_script.py
+ M ros2_ws/src/ros_esc/setup.py
  M ros2_ws/src/ros_esc/test/test_escape_recenter.py
  M ros2_ws/src/ros_esc/test/test_observability_contract.py
+ M ros2_ws/src/ros_esc/test/test_scenario_schema.py
  M ros2_ws/src/ros_esc/test/test_supervisor_integration.py
- M ros2_ws/src/turtlebot3_rotating_sensor/launch/gazebo.launch.xml
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_2_recenter.yaml
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  58 ++----
- docs/codex/gesc_gaussian/status/phase_08_status.md |  27 ++-
- docs/codex/gesc_gaussian/test_commands.md          |  58 ++++++
- .../ros_esc/supervisor_node/escape_recenter.py     | 129 ++++++++++++-
- .../supervisor_node/supervisor_node_script.py      |  31 +++
- ros2_ws/src/ros_esc/test/test_escape_recenter.py   | 211 +++++++++++++++++++++
- .../ros_esc/test/test_observability_contract.py    |   5 +
- .../ros_esc/test/test_supervisor_integration.py    |  57 ++++++
- .../launch/gazebo.launch.xml                       |   1 +
- 9 files changed, 514 insertions(+), 63 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  60 ++----------
+ docs/codex/gesc_gaussian/status/phase_08_status.md |  51 ++++++++--
+ docs/codex/gesc_gaussian/test_commands.md          | 103 +++++++++++++++++++++
+ docs/codex/gesc_gaussian/topic_dictionary.md       |  36 +++----
+ .../ros_esc/supervisor_node/escape_recenter.py     |  21 ++---
+ .../supervisor_node/supervisor_node_script.py      |  18 ++--
+ ros2_ws/src/ros_esc/setup.py                       |   1 +
+ ros2_ws/src/ros_esc/test/test_escape_recenter.py   |   2 +-
+ .../ros_esc/test/test_observability_contract.py    |  14 +--
+ ros2_ws/src/ros_esc/test/test_scenario_schema.py   |  16 ++++
+ .../ros_esc/test/test_supervisor_integration.py    |   8 +-
+ 11 files changed, 219 insertions(+), 111 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
@@ -57,12 +62,13 @@ unstaged and staged: pass
 - Completed milestone: Phase 08.1 M7 handoff and next-step recommendation.
 - Completed milestone: Phase 08.2 M1 plan and preflight.
 - Completed milestone: Phase 08.2 M2 deterministic recenter correction.
-- Current milestone: Phase 08.2 M3 source-state validation.
+- Completed milestone: Phase 08.2 M3 source-state validation.
+- Current milestone: Phase 08.2 M4 one retained Gazebo probe and closeout.
 - Current plan:
   `docs/codex/gesc_gaussian/plans/phase_08_2_plan.md`.
-- Next criterion: add and dry-run the one-case suite, run broad functional
-  regressions and isolated builds, instantiate the runtime launch, document
-  the additive parameter, and commit the clean probe candidate.
+- Next criterion: commit the validated M3 source state, record the exact
+  candidate commit and pre-execution declaration, then execute the sealed
+  one-case GUI Gazebo probe exactly once.
 - V3 acceptance, a readiness tag, Phase 09, and physical hardware remain
   unauthorized.
 
@@ -70,7 +76,6 @@ unstaged and staged: pass
 
 - Evidence root:
   `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_1_m6`.
-- Suite:
 
 This file describes the base HEAD and diff before the next commit; it is
 not a claim that the eventual commit contains itself or that tests passed.
