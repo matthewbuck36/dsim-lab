@@ -216,6 +216,28 @@ The recenter controller provides the motion command.
 - Stop if pose becomes stale.
 - Prior fills remain active as avoidance terms.
 
+### Phase 08.1 evidence note — future correction, not current behavior
+
+The retained Phase 08.1 fill/escape probe showed that a shared
+clearance-first selector can orbit during `RECENTER` when the room center is
+near an active fill avoidance disk. The current behavior and evidence remain
+unchanged. A future bounded correction may keep the exact hard wall/fill
+eligibility checks and existing `ESCAPE_ASSIST` ranking, while ranking only
+already-safe recenter candidates by greatest predicted center-distance
+reduction/alignment before clearance without adding a positive-progress
+eligibility predicate. Zero or negative center progress can be necessary
+during mandatory outward recovery while starting inside an active avoidance
+disk. The actual commanded nonholonomic swept segment, not only the selected
+world-frame direction, must avoid inward translation during that recovery and
+must not re-enter a fill disk after exit.
+
+Do not increase `recenter_max_sec` or reduce wall/fill margins merely to
+reclassify Probe 2; any future parameter change requires separate versioned
+evidence. Preserve command caps and retained fills. Require an exact-geometry
+deterministic closed-loop regression before an initial predeclared development
+probe. This note does not authorize the code change or any v3/physical
+execution.
+
 Initial defaults:
 
 ```yaml

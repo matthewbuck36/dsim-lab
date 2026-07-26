@@ -254,6 +254,28 @@ Hold a selected assisted direction while it remains safe. Reselect only when
 it becomes unsafe. Increment a direction revision whenever selection changes.
 If no candidate is safe, enter `FAILSAFE`.
 
+#### Phase 08.1 post-implementation erratum
+
+The clearance-first order above records the Phase 04 implementation and
+remains the current runtime behavior; it is not a research invariant. Retained
+Phase 08.1 Probe 2 showed that reusing this order for `RECENTER` can select a
+tangential orbit when the room center lies just outside an active fill
+avoidance disk. The source discussion proposed returning with "some type of
+planning" and keeping repulsion active; it did not require one shared
+clearance-first objective for assistance and recenter.
+
+A future bounded correction should keep the exact wall/fill rejection rules,
+keep clearance-first behavior for `ESCAPE_ASSIST`, and rank already-safe
+`RECENTER` candidates by greatest predicted center-distance
+reduction/alignment before clearance without adding a positive-progress
+eligibility predicate. Zero or negative center progress can be necessary for
+mandatory outward recovery while starting inside an avoidance disk. The
+actual commanded nonholonomic swept segment must not move inward during that
+recovery or re-enter the disk after exit. This erratum does not retroactively
+change Phase 04 code or evidence and does not authorize another simulation
+probe without a reviewed successor Plan and deterministic closed-loop
+regression.
+
 ### Affine assistance
 
 Extend the existing `AlgorithmState` stream with the selected direction and

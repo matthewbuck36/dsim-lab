@@ -34,7 +34,8 @@ If validation fails, stop and report the missing durable context.
 
 Read:
 - `DSIM_GESC_Gaussian_Codex_Implementation_Package/06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md`
-- the active Phase 08.1 Plan and relevant retained evidence.
+- the completed Phase 08.1 Plan, status, handoff, relevant retained evidence,
+  and any separately approved successor Plan.
 
 If v1 or v2 already failed, preserve them and plan a new version; never resume,
 overwrite, relabel, or count their evidence.
@@ -72,12 +73,18 @@ every newly sealed gate passes.
 
 # Required durable Plan artifact
 
-At the end of this Plan task, produce one self-contained Markdown document
-suitable for review and persistence as:
+The existing `phase_08_plan.md` and `phase_08_1_plan.md` are historical,
+approved intent and must not be overwritten for a successor. At the current
+closed checkpoint, this prompt performs orientation only unless the user
+explicitly authorizes a new versioned subphase. An authorized successor must
+use a new unambiguous versioned path selected and reported by the planner, for
+example:
 
-`docs/codex/gesc_gaussian/plans/phase_08_plan.md`
+`docs/codex/gesc_gaussian/plans/phase_08_2_plan.md`
 
-The document must contain:
+If no successor is authorized, stop after reporting the current boundary
+rather than silently amending either historical Plan. The new document must
+contain:
 - objective and scope,
 - repository findings relevant to this phase,
 - existing implementations that will be reused or modified,
@@ -93,5 +100,5 @@ The document must contain:
 - assumptions requiring verification during implementation.
 
 Do not edit source code in Plan mode. Make the final Plan response complete
-enough to save without relying on the chat history. Before opening the Phase 08
-Implement chat, save that response at the exact path above.
+enough to save without relying on the chat history. Before opening a successor
+Implement chat, save and review it at the newly authorized exact path.

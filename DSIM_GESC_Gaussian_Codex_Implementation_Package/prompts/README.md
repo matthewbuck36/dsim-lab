@@ -40,7 +40,9 @@ the Level A/B/C policy.
 Phase 00 must not be skipped. It converts generic logical names in this package into the real repository's names and file paths.
 
 On the current branch, Phases 00-07.5 are implemented. Phase 08 v1 and v2 are
-closed failed historical evidence. The current workflow step is the Phase 08.1
-diagnosis/recovery Plan at
-`docs/codex/gesc_gaussian/plans/phase_08_1_plan.md`; do not rerun the historical
-activation or advance to physical work.
+closed failed historical evidence. Phase 08.1 completed its bounded recovery
+with a mixed diagnostic result; read
+`docs/codex/gesc_gaussian/handoffs/phase_08_1_handoff.md`. No successor is
+authorized merely by this prompt sequence. Create and review a bounded
+recenter-correction Plan before any new development probe, and do not rerun
+historical evidence, start v3 acceptance, or advance to physical work.

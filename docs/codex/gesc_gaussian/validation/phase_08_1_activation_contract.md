@@ -122,16 +122,38 @@ Sub-threshold global optima remain useful diagnostic classification/escape
 cases, but they cannot be counted as failed calibrated-goal cases merely
 because the absolute controller target is intentionally different.
 
-## M6 boundary
+## M6 retained outcome
 
-M5 performs schema validation, model-bound tests, and dry-run expansion only.
-It does not launch Gazebo. M6 begins with exactly two fresh, retained,
-development-only probes:
+M6 ran exactly the two predeclared fresh development probes at committed M5
+HEAD `8ca59d1`; it did not add a replacement or third probe.
 
-1. `activation_goal_high`;
-2. `activation_fill_create`, the local-extremum-plus-later-goal geometry.
+`activation_goal_high` passed its full contract. It observed
+`SEARCH -> VERIFY_EXTREMUM -> GOAL_HOLD` after the fresh post-M3 rotation
+window, passed controller and ground-truth goal checks, and retained complete
+timestamp, readiness, collision, cleanup, strict-JSON, and final-zero
+evidence.
 
-Another probe is added only if those results leave a distinct readiness or
-causality question. Complex assist, merge, and recenter contracts remain
-declared for targeted future development; their provisional policy misses do
-not reopen or weaken historical v2.
+`activation_fill_create` produced a mixed result:
+
+- its activation subclaim passed: first-verification below-target
+  classification, a correlated typed fill in about `0.09 s`, and a successful
+  pure-repulsion escape in `8.714 s`; and
+- its full global contract failed when the later `RECENTER` path timed out and
+  entered `FAILSAFE`.
+
+The full failure remains authoritative for the whole-run schema-v3 result.
+The passing prefix is retained as separately bounded evidence for the
+M2/M4/M5 question; it does not conceal or reclassify the later failure.
+If a future diagnostic needs independent machine evaluation of both scopes,
+it may add explicit activation-window and full-lifecycle result scopes while
+preserving global safety predicates as the default. That schema enhancement is
+not a prerequisite for the bounded recenter correction.
+
+The remaining defect is the provisional recenter policy, not fill latency,
+timestamp causality, readiness, cleanup, collision, final-zero behavior, or
+command tracking. The current shared selector ranks clearance before target
+alignment and held the robot in a tangential route around an active fill. A
+future bounded correction should retain all hard fill/wall rejection,
+separate recenter scoring from escape-assist scoring, and prove deterministic
+closed-loop center progress before one new predeclared probe. This does not
+reopen or weaken historical v2.

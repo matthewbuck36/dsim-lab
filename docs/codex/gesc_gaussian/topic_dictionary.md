@@ -4,7 +4,9 @@
 > Gazebo/SIGINT gates, Phase 05 produced a complete retained sqlite3 run, and
 > Phase 06 composes the same launch/recording owners in a deterministic serial
 > scenario runner. Phase 08 v2 stopped failed at activation and produced no
-> frozen profile or robustness acceptance. Phase 08.1 diagnosis is active.
+> frozen profile or robustness acceptance. Phase 08.1 completed its bounded
+> recovery but retained a downstream recenter timeout, so simulation readiness
+> remains unestablished.
 
 This dictionary is the resolved Phase 05 interface contract for the current
 `dsim-lab` checkout. `algorithm_profile=legacy` remains the default and keeps
@@ -318,6 +320,19 @@ while already inside a fill avoidance circle, or entering another fill circle
 are rejected. Remaining candidates maximize predicted clearance, alignment,
 then minimum rotation with positive-before-negative tie-breaking. Fill
 avoidance radius is `support_radius + fill_avoidance_margin_m`.
+
+That priority is the current shared `ESCAPE_ASSIST`/`RECENTER` implementation,
+not a permanent interface requirement. Phase 08.1 Probe 2 showed that
+clearance-first cached recenter directions can orbit an active fill rather
+than approach a nearby room center. The next bounded implementation should
+keep every existing hard rejection, retain clearance-first selection for
+assistance, and rank already-safe `RECENTER` candidates by greatest predicted
+center-distance reduction/alignment before clearance without a
+positive-progress eligibility predicate. Zero or negative center progress can
+be necessary for mandatory outward recovery while starting inside a fill
+disk. The actual commanded nonholonomic swept segment must not move inward
+during that recovery or re-enter the disk after exit. No current parameter
+default or topic is changed by this recorded limitation.
 
 In bounded mode the preferred direction is toward the configured room center;
 in unbounded assisted escape it is opposite the frozen recent approach, with

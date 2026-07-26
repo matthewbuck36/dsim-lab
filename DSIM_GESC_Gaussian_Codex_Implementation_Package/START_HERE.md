@@ -18,7 +18,9 @@ Implement a backward-compatible **GESC + robust Gaussian local-minimum escape sy
 7. Temporarily disables raw-cost attraction while escaping.
 8. Retains past fills so the robot does not return to known minima.
 9. Uses a deterministic assisted-escape fallback when pure repulsion stalls.
-10. Returns to the center of a bounded indoor environment before resuming search.
+10. Supports a selectable, simulation-tested bounded-indoor recenter strategy
+    before resuming search; the exact strategy remains a provisional research
+    policy rather than a fixed invariant.
 11. Records every important input, output, parameter, event, command, and state with synchronized ROS timestamps.
 12. Uses the same algorithm and logging interfaces in Gazebo and on the physical TurtleBot.
 13. Does not proceed to new physical trials until the simulation acceptance gates are met.
@@ -120,19 +122,26 @@ docs/codex/gesc_gaussian/plans/phase_00_plan.md
 The Phase 00 Implement chat must read and verify that file before creating the
 audit documents.
 
-## Current checkpoint at Phase 08.1
+## Current checkpoint after Phase 08.1
 
 Phases 00-07.5 are implemented. Phase 08 v1 and v2 are closed failed historical
-evidence. The active work is the bounded Phase 08.1 diagnosis and recovery
-defined in:
+evidence. Phase 08.1 completed its bounded diagnosis, implementation recovery,
+and two development-only runtime probes. Read:
 
 ```text
 docs/codex/gesc_gaussian/plans/phase_08_1_plan.md
+docs/codex/gesc_gaussian/handoffs/phase_08_1_handoff.md
 ```
 
-Read it with the saved Phase 08 plan and live status, then inspect Git state.
-Do not resume or relabel either historical evidence root. Large tuning,
-holdout, acceptance, tagging, and physical motion are outside Phase 08.1.
+The calibrated-goal probe passed. The fill/escape activation prefix passed,
+but its full lifecycle failed when the clearance-first recenter policy orbited
+until timeout. Simulation readiness is therefore not established. The
+smallest currently justified successor is a bounded recenter Plan with
+deterministic closed-loop regression. A v3 design may be planned separately,
+but no v3 tuning, freeze, or acceptance execution may begin until the recenter
+question is closed by passing evidence or a separately reviewed policy change.
+Do not resume or relabel either historical evidence root, rerun the completed
+probes unchanged, launch physical motion, or proceed to Phase 09.
 
 ---
 

@@ -239,21 +239,35 @@ The exact 120-run v2 design is closed failed historical evidence. Its ten
 activation attempts stopped the version before tuning; it must not be resumed,
 overwritten, relabeled, or counted toward a future claim.
 
-## Phase 08.1 diagnostic/development sequence
+## Phase 08 recovery and future-version boundary
 
-1. Unit tests.
-2. Synthetic field tests.
-3. Retained-bag diagnosis and bounded implementation corrections.
-4. Diagnostic activation proving infrastructure integrity and targeted
-   scenario-specific lifecycle reachability. Behavioral misses inform
-   development; they do not consume or contaminate formal acceptance data.
-5. Bounded, versioned parameter/policy development with every attempt retained.
-6. Declare and hash one machine-readable acceptance contract before freeze.
-7. Freeze and commit one code/parameter/scenario set.
-8. Run a new selection-blind holdout and fixed unique validation denominator
+Phase 08.1 completed only the bounded recovery sequence:
+
+1. Unit and synthetic tests.
+2. Retained-bag diagnosis and bounded implementation corrections.
+3. Diagnostic infrastructure/readiness and scenario-contract correction.
+4. Two predeclared development probes retained regardless of outcome.
+5. A closeout handoff reporting one full calibrated-goal pass and one mixed
+   fill/escape-prefix pass whose later recenter lifecycle failed at timeout.
+
+That result does not establish simulation readiness. The smallest currently
+justified successor is a separately reviewed recenter correction with
+deterministic closed-loop tests and, after they pass, an initial predeclared
+development probe. A successor Plan may choose another evidence-backed
+provisional recenter policy, but it must preserve the hard safety and evidence
+contracts.
+
+The following are future-version steps, not Phase 08.1 completion criteria or
+authorization:
+
+1. Complete any remaining bounded, versioned policy development with every
+   attempt retained.
+2. Declare and hash one machine-readable acceptance contract before freeze.
+3. Freeze and commit one code/parameter/scenario set.
+4. Run a new selection-blind holdout and fixed unique validation denominator
    once for that version, followed by separately reported repeats.
-9. Regression against legacy behavior and a structured success/failure report.
-10. Tag the simulation-ready commit only if every declared gate passes.
+5. Run legacy regression and write a structured success/failure report.
+6. Tag the simulation-ready commit only if every declared gate passes.
 
 Development runs are bounded by their approved diagnostic plan but are not part
 of the acceptance denominator. The former 120-run arithmetic is a historical

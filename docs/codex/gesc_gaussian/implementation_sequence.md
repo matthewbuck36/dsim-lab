@@ -266,11 +266,23 @@ retains its incomplete large-matrix evidence. V2 retains ten activation
 attempts and stopped before tuning at Gate 2. Neither may be resumed,
 overwritten, relabeled, or counted toward a future claim.
 
-Current goal: execute the bounded Phase 08.1 retained-evidence diagnosis,
-correct fill latency, verification boundaries, startup readiness, and
-unreachable scenario expectations, then use minimal development-only runtime
-probes. A future v3 tuning/acceptance design requires a separate sealed contract
-and evidence root.
+Phase 08.1 completed its bounded retained-evidence diagnosis, corrected fill
+latency, verification boundaries, startup readiness, evidence semantics, and
+unreachable scenario expectations, then ran two development-only probes. The
+calibrated goal contract passed. The fill/create/escape activation prefix
+passed, but its full lifecycle failed when the shared clearance-first recenter
+selector orbited until timeout. See
+[the Phase 08.1 handoff](handoffs/phase_08_1_handoff.md).
+
+The smallest currently justified next work is a separately reviewed, bounded
+recenter correction. Keep the current hard wall/fill rejection rules and
+assistance behavior; test recenter-only target-progress guidance and
+nonholonomic inward-motion prevention in deterministic closed loop before an
+initial predeclared probe. A v3 design may be planned separately, but v3
+tuning, freeze, or acceptance execution remains blocked until the recenter
+question is closed by passing evidence or a separately reviewed policy change.
+Any future v3 acceptance design still requires a separate sealed contract and
+fresh evidence root.
 
 Phase 08.1 diagnostic scenarios use schema-v3 binding contracts: a contiguous
 activation path anchored at the first `VERIFY_EXTREMUM`, required event
@@ -321,12 +333,12 @@ frozen profile, selection record, and run directories. A failed frozen
 experiment version stops its later empirical stages but permits separately
 planned diagnosis, engineering correction, and a new version.
 
-Maintain `docs/codex/gesc_gaussian/status/phase_08_status.md` while Phase 08.1
-is active. Update it continuously and run `checkpoint_phase.sh 08` at material
-evidence, expensive empirical, or independently reviewable implementation
-boundaries. After compaction or interruption, reconstruct state from the Plan,
-active subphase Plan, status, Git diff, tests, and retained artifacts; do not
-repeat a batch merely to recover conversation context.
+Phase 08.1 is closed in
+`docs/codex/gesc_gaussian/status/phase_08_status.md`. A successor must create or
+approve its own durable Plan before edits or runtime. After compaction or
+interruption, reconstruct state from the Plan, active subphase Plan, status,
+Git diff, tests, and retained artifacts; do not repeat a batch merely to
+recover conversation context.
 The matrix must include the corrected runtime parameter-type startup gate and
 controlled shutdown-zero/clean-exit gate. The controller spawners use a
 30-second service-call timeout for bounded Gazebo startup latency; this is

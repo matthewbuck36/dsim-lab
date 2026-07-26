@@ -174,6 +174,20 @@ predicates; decorative expectations do not constitute evidence. A legitimate
 later goal after local escape must not be forbidden merely because the first
 verification was a below-target classification.
 
+When one development case asks both an early activation question and a longer
+lifecycle question, report two explicit, non-aggregated result scopes:
+
+- an activation window anchored at the first `VERIFY_EXTREMUM` and ending at
+  the declared activation path/event boundary; and
+- the full post-readiness lifecycle through shutdown.
+
+The full-lifecycle result remains authoritative for the whole-run contract and
+all safety forbiddens default to that scope. A passing activation window must
+not conceal or reclassify a later timeout, failsafe, collision, or cleanup
+failure. Conversely, the later failure must not erase a separately declared
+and observed activation subclaim. Any future schema support must name the
+scope machine-readably and preserve the existing global behavior by default.
+
 It is not an end-to-end acceptance denominator and may be iterated under a
 versioned, bounded development plan. Advanced behavior such as assisted escape,
 merge, and recenter may be developed/tuned after their branch is reachable;

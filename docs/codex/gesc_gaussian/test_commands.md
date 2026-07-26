@@ -2162,3 +2162,192 @@ tracking failure.
 No replacement, third M6 probe, timeout-only rerun, matrix, tuning, holdout,
 GUI, tag, or physical command was run. Both predeclared M6 questions were
 answered; another unchanged run would repeat diagnosed evidence.
+
+## Phase 08.1 M7 diagnostic closeout
+
+M7 changed documentation and workflow-context tooling only; it changed no ROS
+or algorithm code. It did not rerun pytest, a build, Gazebo, either M6 probe,
+or bag analysis because the M6 code/evidence boundary was already committed
+at `c959ce1`.
+
+Read-only retained-evidence assertions:
+
+```bash
+python3 -c "
+import json, pathlib, yaml
+root = pathlib.Path(
+    '/home/mattb/Experiments/GESC-Gaussian/runs/phase08_1_m6'
+)
+goal = yaml.safe_load(
+    (root / 'activation_goal_high_summary.yaml').read_text()
+)
+fill = yaml.safe_load(
+    (root / 'activation_fill_create_summary.yaml').read_text()
+)
+assert goal['resolved_run_count'] == 1
+assert goal['runs'][0]['classification']['passed'] is True
+assert fill['resolved_run_count'] == 1
+fill_run = fill['runs'][0]
+assert fill_run['classification']['passed'] is False
+predicates = fill_run['classification']['predicate_results']
+assert predicates['required_state_path'] is True
+assert predicates['required_events'] is True
+assert predicates['no_forbidden_states'] is False
+assert predicates['no_forbidden_events'] is False
+runs = [
+    pathlib.Path(goal['runs'][0]['run_directory']),
+    pathlib.Path(fill_run['run_directory']),
+]
+expected = [
+    '9b9905db133be446039570a8d6c9897726d87e00830625326af48cdc7c9bb652',
+    'f10924891a97478add654d373301a76047fce9921c0fb348ecd3a1987de1122e',
+]
+for run, expected_hash in zip(runs, expected):
+    completeness = json.loads((run / 'completeness.json').read_text())
+    analysis = json.loads(
+        (run / 'analysis/analysis_completeness.json').read_text()
+    )
+    assert completeness['passed'] is True
+    assert completeness['failures'] == []
+    assert completeness['warnings'] == []
+    assert analysis['status'] == 'complete'
+    assert analysis['recording_failures'] == []
+    assert analysis['analysis_failures'] == []
+    assert list(analysis['raw_bag_sha256'].values()) == [expected_hash]
+print('M7 retained-evidence assertions passed')
+"
+```
+
+Result: `M7 retained-evidence assertions passed`. This parsed existing summary,
+completeness, and analysis documents only. The sqlite3 bags were neither
+rehashed nor reanalyzed.
+
+Current document/suite hash check:
+
+```bash
+sha256sum \
+  docs/codex/gesc_gaussian/validation/phase_08_1_activation_contract.md \
+  ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_1_diagnostic_activation.yaml \
+  ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml
+```
+
+Result:
+
+```text
+71a3f8033996298c0d13cebc7efb8c25b98812a3dd80023bd4a2057736214b1e  phase_08_1_activation_contract.md
+1e030602ecee99c2d1f563a0ae19e65b1c8e6608662e178eb52b8766edc5a9a7  phase08_1_diagnostic_activation.yaml
+a5e91d2132b3dacccedc24aba13bdacd9ef5ba4ec7c8ae7b69ced6eadaf47d72  phase08_v2_activation.yaml
+```
+
+The activation-contract hash at committed M5 HEAD `8ca59d1` remains separately
+recorded as
+`e787e226d3de4ef19e93867fcb148164d8c306dd7e0264d0354c519793ec3590`;
+the terminal M7 document is an additive retained-outcome amendment.
+
+Context, shell, and required-document validation:
+
+```bash
+bash -n \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh
+timeout 120s \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh \
+  08 implement
+timeout 120s \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh \
+  08 implement --strict-history
+timeout 120s \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh \
+  09 plan
+timeout 60s \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_required_docs.sh
+```
+
+Results:
+
+```text
+Phase 08 implement context is complete.
+Phase 08 implement context is complete.
+Phase 09 plan context is complete.
+All Phase 00 audit documents exist.
+```
+
+The Phase 09 smoke proves the new required
+`handoffs/phase_08_1_handoff.md` navigation boundary. It does not authorize
+Phase 09.
+
+M7 path, historical-evidence, tag, process, and diff checks:
+
+```bash
+python3 - <<'PY'
+import pathlib
+import re
+import subprocess
+
+files = subprocess.check_output(
+    ['git', 'ls-files', '-m', '-o', '--exclude-standard'],
+    text=True,
+).splitlines()
+errors = []
+checked = 0
+for name in files:
+    path = pathlib.Path(name)
+    if path.suffix.lower() != '.md' or not path.is_file():
+        continue
+    for match in re.finditer(
+        r'(?<!!)\[[^]]+\]\(([^)]+)\)',
+        path.read_text(encoding='utf-8'),
+    ):
+        target = match.group(1).strip().strip('<>')
+        if not target or target.startswith(
+            ('#', 'http://', 'https://', 'mailto:')
+        ):
+            continue
+        target = target.split('#', 1)[0]
+        resolved = (
+            pathlib.Path(target)
+            if target.startswith('/')
+            else path.parent / target
+        )
+        checked += 1
+        if not resolved.exists():
+            errors.append(f'{path}: {target}')
+if errors:
+    raise SystemExit('missing Markdown targets:\n' + '\n'.join(errors))
+print(f'M7 Markdown links passed: {checked} local targets')
+PY
+if git diff --name-only |
+  rg -q '(^|/)(phase_08_handoff\.md|phase_08_v1|phase_08_v2|phase08_v2_)'
+then
+  exit 1
+fi
+if git tag --list 'gesc-gaussian-simulation-ready*' | rg -q .
+then
+  exit 1
+fi
+if pgrep -af \
+  '[g]zserver|[g]zclient|[g]azebo|ros2 bag [r]ecord|[r]ecord_run|[r]un_scenario'
+then
+  exit 1
+fi
+git diff --check
+```
+
+Results: `M7 Markdown links passed: 5 local targets`; historical v1/v2 evidence
+and the historical `phase_08_handoff.md` were unchanged; no simulation-ready
+tag existed; no Gazebo, recorder, bag-record, or scenario-runner process
+existed; and `git diff --check` passed.
+
+M7 explicitly did not execute a new probe, replacement, matrix, tuning,
+parameter freeze, holdout, unique validation denominator, reproducibility
+repeat, Wilson interval, tag, GUI, Phase 09 action, or physical command.
+
+Terminal checkpoint:
+
+```bash
+timeout 120s \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/checkpoint_phase.sh 08
+git diff --check
+```
+
+Result: the checkpoint passed at clean M6 base `c959ce1` and captured the
+closed M7 status and full precommit diff. `git diff --check` passed again.

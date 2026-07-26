@@ -8,6 +8,7 @@ Read:
 - `docs/codex/gesc_gaussian/implementation_sequence.md`
 - `docs/codex/gesc_gaussian/knowledge_bridge_phase_00_05.md`
 - `docs/codex/gesc_gaussian/status/phase_08_status.md`
+- `docs/codex/gesc_gaussian/handoffs/phase_08_1_handoff.md` when it exists
 - the Phase 05.5 bridge/handoff, Phase 07/07.5 handoffs, and older handoffs only when a current claim depends on them.
 
 Before editing, initialize or resume the live status, verify it against Git,
@@ -60,6 +61,11 @@ Tasks:
 4. Under an approved Phase 08.1 Plan, correct bounded implementation,
    readiness, evidence, and scenario-contract defects with focused tests and
    minimal development-only simulation probes.
+
+At the current repository checkpoint, Phase 08.1 ends with its M7 handoff.
+Tasks 5-12 below are requirements for a separately planned and approved future
+experiment version; this prompt does not authorize executing them directly.
+
 5. For a future experiment version, prove diagnostic infrastructure and
    scenario-specific lifecycle reachability before formal freeze.
 6. Run a separately declared bounded development/tuning design; development
@@ -82,6 +88,8 @@ Tasks:
 Write:
 - `docs/codex/gesc_gaussian/validation/phase_08_v1_failure_closeout.md`
 - `docs/codex/gesc_gaussian/handoffs/phase_08_handoff.md`
+- `docs/codex/gesc_gaussian/handoffs/phase_08_1_handoff.md` for the bounded
+  recovery closeout
 - a validation report under `docs/codex/gesc_gaussian/validation/`
 
 Use a result-specific commit message. Do not claim validation or freeze when
