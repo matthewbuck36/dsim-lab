@@ -1,57 +1,35 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-26T06:50:17+00:00
-Base HEAD: c959ce16cc2fede338d701d360f6ddb924380037
+Generated: 2026-07-26T07:29:45+00:00
+Base HEAD: db8bd668592b06c5eed2b6a5cf81107d9ed686f1
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 5e9a41e894ba6f84bfea0a6dba51635ff08bfe64505ba02411d65ea9313e59f1
+Status sha256: 9258aff21a40aa1104f3736b7a25b0507c2d56fbe8b0aa4d31bf5c6b760eaeff
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_1_plan.md
 Active subphase plan sha256: da5fac1ea2b271e0812c1dccdf48dc61617f6c2d7efcd644789271b49b599172
-Unstaged diff sha256: 3e925a6fbad3cc32aff4f5f8908a57c105c849c49a3d697c195202eab5bdbaee
+Unstaged diff sha256: 768f2c3fd0d786e7da4687fe0b14be1d822fd0d7d476ddc3b9e4b88d17781154
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 9]
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/00_MASTER_IMPLEMENTATION_PLAN.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/04_STATE_MACHINE_SPEC.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/08_validation_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/08_validation_PLAN.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/README.md
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 10]
  M DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
- M docs/codex/gesc_gaussian/implementation_sequence.md
- M docs/codex/gesc_gaussian/plans/phase_04_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
  M docs/codex/gesc_gaussian/test_commands.md
- M docs/codex/gesc_gaussian/topic_dictionary.md
- M docs/codex/gesc_gaussian/validation/phase_08_1_activation_contract.md
-?? docs/codex/gesc_gaussian/handoffs/phase_08_1_handoff.md
+?? docs/codex/gesc_gaussian/plans/phase_08_2_plan.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../00_MASTER_IMPLEMENTATION_PLAN.md               |  42 +++--
- .../04_STATE_MACHINE_SPEC.md                       |  22 +++
- .../06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md         |  14 ++
- .../START_HERE.md                                  |  23 ++-
- .../prompts/08_validation_IMPLEMENT.md             |   8 +
- .../prompts/08_validation_PLAN.md                  |  21 ++-
- .../prompts/README.md                              |  10 +-
- .../tools/validate_phase_context.sh                |   4 +
- .../checkpoints/phase_08_checkpoint.txt            |  62 ++-----
- .../codex/gesc_gaussian/implementation_sequence.md |  34 ++--
- docs/codex/gesc_gaussian/plans/phase_04_plan.md    |  22 +++
- docs/codex/gesc_gaussian/status/phase_08_status.md |  99 ++++++++---
- docs/codex/gesc_gaussian/test_commands.md          | 189 +++++++++++++++++++++
- docs/codex/gesc_gaussian/topic_dictionary.md       |  17 +-
- .../validation/phase_08_1_activation_contract.md   |  48 ++++--
- 15 files changed, 490 insertions(+), 125 deletions(-)
+ .../tools/validate_phase_context.sh                |  5 +-
+ .../checkpoints/phase_08_checkpoint.txt            | 74 ++------------------
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 78 +++++++++++++++-------
+ docs/codex/gesc_gaussian/test_commands.md          | 53 +++++++++++++++
+ 4 files changed, 118 insertions(+), 92 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
@@ -68,11 +46,14 @@ unstaged and staged: pass
 - Completed milestone: Phase 08.1 M6 minimal simulation probes, with one full
   contract pass and one retained mixed-result/full-contract failure.
 - Completed milestone: Phase 08.1 M7 handoff and next-step recommendation.
-- Current milestone: none — Phase 08.1 is closed.
+- Completed milestone: Phase 08.2 M1 plan and preflight.
+- Current milestone: Phase 08.2 M2 deterministic recenter correction.
 - Current plan:
-  `docs/codex/gesc_gaussian/plans/phase_08_1_plan.md`.
-- Next criterion: none under Phase 08.1. Any recenter correction requires a
-  separately reviewed successor Plan; v3 acceptance and Phase 09 remain
+  `docs/codex/gesc_gaussian/plans/phase_08_2_plan.md`.
+- Next criterion: implement safety-only eligibility, recenter-specific
+  progress ranking, per-update reselection, and actual-command sweep
+  suppression with focused deterministic and integration coverage.
+- V3 acceptance, a readiness tag, Phase 09, and physical hardware remain
   unauthorized.
 
 ### M6 pre-execution declaration
@@ -81,9 +62,6 @@ unstaged and staged: pass
   `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_1_m6`.
 - Suite:
   `phase08_1_diagnostic_activation.yaml`, source SHA-256
-  `1e030602ecee99c2d1f563a0ae19e65b1c8e6608662e178eb52b8766edc5a9a7`.
-- Probe 1: `activation_goal_high`, one serial headless finite run. Question:
-  does post-M3 verification observe two fresh rotations and enter
 
 This file describes the base HEAD and diff before the next commit; it is
 not a claim that the eventual commit contains itself or that tests passed.

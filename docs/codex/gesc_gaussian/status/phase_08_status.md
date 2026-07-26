@@ -1,15 +1,16 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-25T23:48:05-07:00`
-Status: `CLOSED — PHASE 08.1 DIAGNOSTIC RECOVERY COMPLETE; MIXED DEVELOPMENT RESULT; SIMULATION READINESS NOT ESTABLISHED`
+Last verified: `2026-07-26T00:28:52-07:00`
+Status: `IN PROGRESS — PHASE 08.2 RECENTER RECOVERY; M2 DETERMINISTIC CORRECTION`
 
 ## Objective
 
-Diagnose the closed failed Phase 08 v2 activation evidence, correct bounded
-implementation and scenario-contract defects, simplify obstructive workflow
-rules, and prove the corrections with focused tests and minimal versioned
-simulation probes. Historical v1 and v2 evidence remains immutable and cannot
-count toward a future acceptance attempt.
+Correct the one currently observed Phase 08.1 M6 recenter failure without
+changing the escape-assist selector, safety geometry, timeout, controller
+ownership, or legacy behavior. Prove the bounded correction with deterministic
+and integration tests, source-state validation, and one newly versioned
+development-only Gazebo probe. Historical v1, v2, and Phase 08.1 evidence
+remains immutable and cannot count toward a future acceptance attempt.
 
 ## Verified repository state
 
@@ -22,6 +23,11 @@ count toward a future acceptance attempt.
 - Plan: `docs/codex/gesc_gaussian/plans/phase_08_plan.md`
 - Closed recovery Plan:
   `docs/codex/gesc_gaussian/plans/phase_08_1_plan.md`
+- Active recovery Plan:
+  `docs/codex/gesc_gaussian/plans/phase_08_2_plan.md`.
+- Phase 08.2 starting boundary: clean commit `db8bd66`
+  (`phase 08.1: close mixed diagnostic recovery`), branch ahead of origin by
+  ten commits.
 - Clean M6 evidence commit:
   `c959ce1` (`phase 08.1: retain minimal runtime probes`).
 - M7 documentation/checkpoint base: clean `c959ce1`; the bounded closeout
@@ -186,11 +192,14 @@ count toward a future acceptance attempt.
 - Completed milestone: Phase 08.1 M6 minimal simulation probes, with one full
   contract pass and one retained mixed-result/full-contract failure.
 - Completed milestone: Phase 08.1 M7 handoff and next-step recommendation.
-- Current milestone: none — Phase 08.1 is closed.
+- Completed milestone: Phase 08.2 M1 plan and preflight.
+- Current milestone: Phase 08.2 M2 deterministic recenter correction.
 - Current plan:
-  `docs/codex/gesc_gaussian/plans/phase_08_1_plan.md`.
-- Next criterion: none under Phase 08.1. Any recenter correction requires a
-  separately reviewed successor Plan; v3 acceptance and Phase 09 remain
+  `docs/codex/gesc_gaussian/plans/phase_08_2_plan.md`.
+- Next criterion: implement safety-only eligibility, recenter-specific
+  progress ranking, per-update reselection, and actual-command sweep
+  suppression with focused deterministic and integration coverage.
+- V3 acceptance, a readiness tag, Phase 09, and physical hardware remain
   unauthorized.
 
 ### M6 pre-execution declaration
@@ -304,6 +313,7 @@ count toward a future acceptance attempt.
 
 - `docs/codex/gesc_gaussian/plans/phase_08_plan.md`
 - `docs/codex/gesc_gaussian/plans/phase_08_1_plan.md`
+- `docs/codex/gesc_gaussian/plans/phase_08_2_plan.md`
 - `docs/codex/gesc_gaussian/validation/phase_08_v1_failure_closeout.md`
 - `docs/codex/gesc_gaussian/validation/phase_08_v2_run_manifest.json`
 - `docs/codex/gesc_gaussian/validation/phase_08_v2_gate_results.json`
@@ -316,6 +326,7 @@ count toward a future acceptance attempt.
 - `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_1_diagnostic_activation.yaml`
 - `ros2_ws/src/ros_esc/ros_esc/convergence_detector_node/convergence_detector_node_script.py`
 - `ros2_ws/src/ros_esc/ros_esc/supervisor_node/state_machine.py`
+- `ros2_ws/src/ros_esc/ros_esc/supervisor_node/escape_recenter.py`
 - `ros2_ws/src/ros_esc/ros_esc/supervisor_node/supervisor_node_script.py`
 - `ros2_ws/src/ros_esc/ros_esc/gaussian_fill_node/basin_estimator.py`
 - `ros2_ws/src/ros_esc/ros_esc/gaussian_fill_node/gaussian_fill_script.py`
@@ -431,6 +442,11 @@ count toward a future acceptance attempt.
   overwrite the historical Phase 08/08.1 Plans or implicitly authorize v3.
   Phase 09 context now requires the Phase 08.1 handoff as well as the
   historical Phase 08 handoff.
+- D-08-24: Phase 08.2 preserves `ESCAPE_ASSIST` selection and all existing
+  safety/timeout geometry. `RECENTER` receives a separate safety-filtered
+  center-progress ranking, per-update reselection, and current-yaw command
+  sweep guard using the existing `0.50 s` supervisor-command stale horizon.
+  Passing this bounded phase authorizes only a separate v3 Plan.
 
 ## Validation checkpoints
 
@@ -714,6 +730,16 @@ count toward a future acceptance attempt.
 - M7 terminal material-boundary `checkpoint_phase.sh 08` passed at clean M6
   base `c959ce1` and captured the closed status, complete M7 diff, plan hashes,
   and next-step boundary before the closeout commit.
+- Phase 08.2 M1 saved Plan SHA-256
+  `e8eac2725298116335c3f35f886e8b00057313108b836112f2d15f9728e6da14`.
+  The Phase 08.1 handoff and diagnostic suite remained
+  `cdd9ebd2c0649eb8d8e6fa603695aad4afab0c3147d6522ceefd7c615f00a7c2`
+  and
+  `1e030602ecee99c2d1f563a0ae19e65b1c8e6608662e178eb52b8766edc5a9a7`.
+- M1 focused baseline passed: `101 passed in 3.35 s`. Normal and
+  strict-history Phase 08 Implement context validation, validator shell
+  syntax, and `git diff --check` passed. ROS logs were bounded under
+  `/tmp/phase08_2_m1_ros_logs`.
 
 ## Attempts not to repeat
 
@@ -740,17 +766,23 @@ count toward a future acceptance attempt.
 
 ## Remaining work
 
-No work remains under the Phase 08.1 Plan. The known recenter failure and
-smallest justified successor are recorded in
-`handoffs/phase_08_1_handoff.md`.
-
-A separately reviewed Phase 08.2 Plan is required before any code or runtime
-work. No new probe, v3 tuning, holdout, acceptance denominator, tag, Phase 09,
-or physical motion is authorized by this closed Plan.
+- M2: implement and focus-test the deterministic correction.
+- M3: run the broad functional suite, isolated build, runtime launch
+  instantiation, one-case dry run, and commit the probe candidate.
+- M4: seal and run one new recenter development probe, analyze it once, verify
+  cleanup/final zero, and close with a Phase 08.2 handoff.
+- No v3 tuning, holdout, acceptance denominator, tag, Phase 09, or physical
+  motion is authorized.
 
 ## Stop conditions
 
-- Phase 08.1 is closed; its Plan authorizes no further edits or runtime.
+- Phase 08.1 is closed and immutable; Phase 08.2 may not rewrite or count its
+  evidence.
+- Stop before Gazebo if the deterministic retained-geometry regression,
+  focused regressions, build, launch instantiation, or dry run fails.
+- Stop runtime dispatch on cleanup/final-zero/collision/recording corruption.
+  Retain every attempt. Replace only an objectively pre-readiness invalid
+  attempt under the predeclared bounded policy.
 - The closed v2 workflow would stop before tuning if any activation case lacked
   its required state/event, and after holdout if fewer than 18/20 runs
   succeeded or an evidence/collision/lifecycle gate were invalid. These rules
@@ -763,8 +795,8 @@ or physical motion is authorized by this closed Plan.
 ## Compaction recovery
 
 Phase 08 v2 and Phase 08.1 are terminally closed. Reread `AGENTS.md`,
-`phase_08_plan.md`, `phase_08_1_plan.md`, this status, and
-`phase_08_1_handoff.md`; inspect Git state before planning anything new. There
-is no incomplete Phase 08.1 milestone. Never resume or relabel v1/v2, rerun
-their matrices or completed M6 probes merely to recover context, or infer
+`phase_08_plan.md`, `phase_08_1_plan.md`, `phase_08_2_plan.md`, this status,
+and `phase_08_1_handoff.md`; inspect Git state and resume at the next
+incomplete Phase 08.2 criterion. Never resume or relabel v1/v2, rerun their
+matrices or completed M6 probes merely to recover context, or infer
 authorization for v3 or physical work.

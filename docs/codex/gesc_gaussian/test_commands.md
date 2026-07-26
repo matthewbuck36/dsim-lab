@@ -2351,3 +2351,56 @@ git diff --check
 
 Result: the checkpoint passed at clean M6 base `c959ce1` and captured the
 closed M7 status and full precommit diff. `git diff --check` passed again.
+
+## Phase 08.2 M1 plan and preflight
+
+The approved bounded recenter recovery was saved as
+`plans/phase_08_2_plan.md` at clean starting commit `db8bd66`. Historical v1,
+v2, and Phase 08.1 evidence was read-only. No Gazebo, bag analysis, v3 stage,
+tag, Phase 09 action, or physical command ran during M1.
+
+Immutable boundary hashes:
+
+```text
+phase_08_2_plan.md:
+e8eac2725298116335c3f35f886e8b00057313108b836112f2d15f9728e6da14
+phase_08_1_handoff.md:
+cdd9ebd2c0649eb8d8e6fa603695aad4afab0c3147d6522ceefd7c615f00a7c2
+phase08_1_diagnostic_activation.yaml:
+1e030602ecee99c2d1f563a0ae19e65b1c8e6608662e178eb52b8766edc5a9a7
+```
+
+Focused baseline:
+
+```bash
+mkdir -p /tmp/phase08_2_m1_ros_logs
+export ROS_LOG_DIR=/tmp/phase08_2_m1_ros_logs
+source /opt/ros/humble/setup.bash
+source ros2_ws/install/setup.bash
+timeout 180s python3 -m pytest -q \
+  ros2_ws/src/ros_esc/test/test_escape_recenter.py \
+  ros2_ws/src/ros_esc/test/test_supervisor_integration.py \
+  ros2_ws/src/ros_esc/test/test_state_machine.py \
+  ros2_ws/src/ros_esc/test/test_observability_contract.py \
+  ros2_ws/src/ros_esc/test/test_legacy_behavior.py
+```
+
+Result: `101 passed in 3.35s`.
+
+Context and source checks:
+
+```bash
+bash -n \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh
+timeout 120s \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh \
+  08 implement
+timeout 120s \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh \
+  08 implement --strict-history
+git diff --check
+```
+
+Both context modes returned `Phase 08 implement context is complete.` Shell
+syntax and `git diff --check` passed. The context validator now requires the
+active Phase 08.2 Plan for Phase 08 implementation.

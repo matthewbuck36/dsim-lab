@@ -90,7 +90,10 @@ if [[ "$STRICT_HISTORY" == true ]]; then
 fi
 
 if (( PHASE_NUMBER == 8 )) && [[ "$STAGE" == "implement" ]]; then
-  required+=("$DOCS/handoffs/phase_07_5_handoff.md")
+  required+=(
+    "$DOCS/handoffs/phase_07_5_handoff.md"
+    "$DOCS/plans/phase_08_2_plan.md"
+  )
 fi
 
 if (( PHASE_NUMBER >= 9 )); then
