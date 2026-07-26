@@ -10,6 +10,8 @@ import rclpy
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from rclpy.parameter import Parameter
+from ros_esc.supervisor_node.escape_recenter import Pose2D, recenter_command
+from ros_esc.supervisor_node.state_machine import State
 from ros_esc.supervisor_node.supervisor_node_script import SupervisorNode
 from ros_esc_interfaces.msg import (
     AlgorithmEvent,
@@ -283,6 +285,7 @@ def test_pure_repulsion_exits_without_redesign_and_recenter_completes():
             zip(configuration.value_names, configuration.values)
         )
         assert 'room_bounds_x_min_m' in diagnostics
+        assert diagnostics['supervisor_command_stale_sec'] == 0.5
         assert diagnostics['goal_score_evidence_duration_sec'] == 0.01
         assert math.isclose(
             diagnostics['goal_score_verification_margin_sec'],
@@ -307,6 +310,60 @@ def test_pure_repulsion_exits_without_redesign_and_recenter_completes():
         )
     finally:
         harness.close()
+        rclpy.shutdown()
+
+
+def test_recenter_suppresses_inward_translation_while_continuing_rotation():
+    rclpy.init()
+    node = SupervisorNode(
+        parameter_overrides=[
+            Parameter("supervisor_command_stale_sec", value=0.5),
+        ]
+    )
+    try:
+        node.machine.state = State.RECENTER
+        node.latest_pose = Pose2D(
+            0.0,
+            -0.922899286,
+            0.299448541,
+            0.244951597,
+        )
+        node.latest_pose_valid = True
+        node.active_fill_records = {
+            1: {
+                "fill_id": 1,
+                "center": [-0.625781953, -0.056395888],
+                "support_radius": 0.508674749,
+            }
+        }
+
+        assert node._update_recenter(node._now_sec()) is None
+        raw_linear, _ = recenter_command(
+            node.safe_direction.direction,
+            node.latest_pose.yaw,
+            node.recenter_distance,
+            node.recenter_config,
+        )
+        assert raw_linear > 0.0
+        assert node.current_supervisor_command.linear.x == 0.0
+        assert abs(node.current_supervisor_command.angular.z) > 0.0
+        assert node.safe_direction_revision == 1
+
+        safe_yaw = math.atan2(
+            node.safe_direction.y,
+            node.safe_direction.x,
+        )
+        node.latest_pose = Pose2D(
+            0.1,
+            node.latest_pose.x,
+            node.latest_pose.y,
+            safe_yaw,
+        )
+        assert node._update_recenter(node._now_sec()) is None
+        assert node.current_supervisor_command.linear.x > 0.0
+        assert node.safe_direction_revision == 2
+    finally:
+        node.destroy_node()
         rclpy.shutdown()
 
 

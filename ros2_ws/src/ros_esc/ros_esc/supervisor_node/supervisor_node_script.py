@@ -34,10 +34,12 @@ from ros_esc.supervisor_node.escape_recenter import (
     Pose2D,
     RecenterControlConfig,
     RecenterHoldTracker,
+    command_sweep_is_safe,
     evaluate_direction,
     preferred_escape_direction,
     recent_approach,
     recenter_command,
+    select_recenter_direction,
     select_safe_direction,
 )
 from ros_esc.supervisor_node.state_machine import (
@@ -207,6 +209,9 @@ class SupervisorNode(Node):
         self.fill_avoidance_margin_m = self._nonnegative_float(
             "fill_avoidance_margin_m"
         )
+        self.supervisor_command_stale_sec = self._nonnegative_float(
+            "supervisor_command_stale_sec"
+        )
         self.run_id = uuid.uuid4().hex
         self.latest_pose_receipt_sec = None
         self.latest_pose_valid = False
@@ -289,6 +294,7 @@ class SupervisorNode(Node):
         defaults = {
             "algorithm_profile": ROBUST_PROFILE,
             "supervisor_publish_rate_hz": 20.0,
+            "supervisor_command_stale_sec": 0.50,
             "startup_timeout_sec": 5.0,
             "convergence_hold_sec": 2.0,
             "goal_score_threshold": 0.95,
@@ -877,6 +883,20 @@ class SupervisorNode(Node):
                 self.bounds,
             )
         fills = self._active_fill_avoidances()
+        if recenter:
+            selected = select_recenter_direction(
+                position,
+                self.bounds.center,
+                fills,
+                self.direction_config,
+                self.bounds,
+            )
+            if selected is None:
+                return "no safe recenter direction candidate"
+            self.safe_direction = selected
+            self.safe_direction_revision += 1
+            return None
+
         if self.safe_direction is not None:
             safe, clearance = evaluate_direction(
                 position,
@@ -936,6 +956,15 @@ class SupervisorNode(Node):
             self.recenter_distance,
             self.recenter_config,
         )
+        if not command_sweep_is_safe(
+            self.latest_pose.position,
+            self.latest_pose.yaw,
+            linear,
+            self.supervisor_command_stale_sec,
+            self._active_fill_avoidances(),
+            self.bounds,
+        ):
+            linear = 0.0
         command = Twist()
         command.linear.x = linear
         command.angular.z = angular
@@ -1052,6 +1081,7 @@ class SupervisorNode(Node):
             "recenter_max_linear_velocity_mps",
             "recenter_max_angular_velocity_rps",
             "recenter_rotate_in_place_angle_rad",
+            "supervisor_command_stale_sec",
         ]
         values = [
             1.0 if self.bounded_mode else 0.0,
@@ -1085,6 +1115,7 @@ class SupervisorNode(Node):
             self.recenter_config.max_linear_velocity_mps,
             self.recenter_config.max_angular_velocity_rps,
             self.recenter_config.rotate_in_place_angle_rad,
+            self.supervisor_command_stale_sec,
         ]
         self._publish_event(
             AlgorithmEvent.EVENT_CONFIGURATION,

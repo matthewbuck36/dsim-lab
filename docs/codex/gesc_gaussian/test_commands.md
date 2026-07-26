@@ -2404,3 +2404,61 @@ git diff --check
 Both context modes returned `Phase 08 implement context is complete.` Shell
 syntax and `git diff --check` passed. The context validator now requires the
 active Phase 08.2 Plan for Phase 08 implementation.
+
+## Phase 08.2 M2 deterministic recenter correction
+
+The correction separates hard fill/wall eligibility from the unchanged
+escape-assist preference rule, adds a recenter-only center-progress selector,
+reselects on every recenter update, and suppresses unsafe current-yaw forward
+translation over the existing `0.50 s` supervisor-command stale horizon.
+
+Focused source-state test:
+
+```bash
+export ROS_LOG_DIR=/tmp/phase08_2_m2_ros_logs
+mkdir -p "$ROS_LOG_DIR"
+source /opt/ros/humble/setup.bash
+source ros2_ws/install/setup.bash
+export PYTHONPATH=/home/mattb/dsim-lab/ros2_ws/src/ros_esc:$PYTHONPATH
+timeout 180s python3 -m pytest -q \
+  ros2_ws/src/ros_esc/test/test_escape_recenter.py \
+  ros2_ws/src/ros_esc/test/test_supervisor_integration.py \
+  ros2_ws/src/ros_esc/test/test_state_machine.py \
+  ros2_ws/src/ros_esc/test/test_observability_contract.py \
+  ros2_ws/src/ros_esc/test/test_legacy_behavior.py
+```
+
+Result: `112 passed in 3.51s`, up from the M1 `101 passed` baseline.
+
+The added coverage includes:
+
+- recenter-only negative/zero-progress eligibility and deterministic ranking;
+- multiple-fill, wall, tie, and no-candidate geometry;
+- inward, outward, re-entry, wall, zero-linear, and invalid command sweeps;
+- the exact retained M6 geometry with deterministic `dt=0.1 s`, unchanged
+  gains/caps/tolerance/hold, no fill/wall violation, and completion within
+  `20.0 s`;
+- ROS-adapter inward-linear suppression with angular recovery and per-update
+  direction revisions;
+- unchanged escape-assist, state-machine, observability, final-zero, and
+  legacy behavior.
+
+Modified-source compilation and diff checks:
+
+```bash
+timeout 60s python3 -m py_compile \
+  ros2_ws/src/ros_esc/ros_esc/supervisor_node/escape_recenter.py \
+  ros2_ws/src/ros_esc/ros_esc/supervisor_node/supervisor_node_script.py \
+  ros2_ws/src/ros_esc/test/test_escape_recenter.py \
+  ros2_ws/src/ros_esc/test/test_supervisor_integration.py \
+  ros2_ws/src/ros_esc/test/test_observability_contract.py
+git diff --check
+```
+
+Both passed.
+
+One intermediate collection command used an inline `PYTHONPATH` assignment
+that replaced the sourced ROS message-package path. Pytest stopped during
+collection with `ModuleNotFoundError: geometry_msgs`; no tests executed. The
+corrected command above prepends the source tree to the existing ROS
+`PYTHONPATH` and passed.

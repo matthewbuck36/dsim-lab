@@ -775,6 +775,7 @@
             -p use_sim_time:=$(var supervisor_use_sim_time)
             -p algorithm_profile:=$(var algorithm_profile)
             -p supervisor_publish_rate_hz:=$(var supervisor_publish_rate_hz)
+            -p supervisor_command_stale_sec:=$(var supervisor_command_stale_sec)
             -p startup_timeout_sec:=$(var startup_timeout_sec)
             -p convergence_hold_sec:=$(var convergence_hold_sec)
             -p goal_score_threshold:=$(var goal_score_threshold)

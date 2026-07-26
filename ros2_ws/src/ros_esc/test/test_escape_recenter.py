@@ -15,10 +15,13 @@ from ros_esc.supervisor_node.escape_recenter import (
     Pose2D,
     RecenterControlConfig,
     RecenterHoldTracker,
+    command_sweep_is_safe,
     evaluate_direction,
+    evaluate_direction_safety,
     preferred_escape_direction,
     recent_approach,
     recenter_command,
+    select_recenter_direction,
     select_safe_direction,
     wrap_angle,
 )
@@ -173,6 +176,126 @@ def test_no_safe_candidate_returns_none():
     assert selection is None
 
 
+def test_recenter_selector_allows_temporary_motion_away_from_target():
+    fill = FillAvoidance(1, 1, 0.0, 0.0, 0.5)
+    config = DirectionConfig(lookahead_m=0.5)
+    position = np.array([0.2, 0.0])
+    selection = select_recenter_direction(
+        position,
+        [0.0, 0.0],
+        [fill],
+        config,
+    )
+    assert selection is not None
+    endpoint = position + config.lookahead_m * selection.direction
+    assert np.linalg.norm(endpoint) > np.linalg.norm(position)
+    assert np.dot(selection.direction, -position) <= 1e-12
+    safe, _ = evaluate_direction_safety(
+        position,
+        selection.direction,
+        [fill],
+        config,
+    )
+    assert safe is True
+
+
+def test_recenter_selector_uses_deterministic_rotation_tie_break():
+    fill = FillAvoidance(1, 1, 0.0, 0.0, 0.4)
+    selection = select_recenter_direction(
+        [0.8, 0.0],
+        [-1.0, 0.0],
+        [fill],
+        DirectionConfig(lookahead_m=0.5),
+        OperatingBounds(),
+    )
+    assert selection is not None
+    assert selection.candidate_index == 1
+    assert selection.rotation_rad == pytest.approx(math.pi / 4.0)
+    assert selection.y < 0.0
+
+
+def test_recenter_selector_respects_multiple_fills_walls_and_no_candidate():
+    bounds = OperatingBounds()
+    fills = (
+        FillAvoidance(2, 2, 0.0, 0.3, 0.25),
+        FillAvoidance(1, 1, 0.0, -0.3, 0.25),
+    )
+    config = DirectionConfig(lookahead_m=0.5)
+    selection = select_recenter_direction(
+        [1.4, 0.0],
+        [0.0, 0.0],
+        fills,
+        config,
+        bounds,
+    )
+    assert selection is not None
+    safe, _ = evaluate_direction_safety(
+        [1.4, 0.0],
+        selection.direction,
+        fills,
+        config,
+        bounds,
+    )
+    assert safe is True
+
+    blocked_bounds = OperatingBounds(
+        x_min=-0.5,
+        x_max=0.5,
+        y_min=-0.5,
+        y_max=0.5,
+        wall_margin=0.1,
+    )
+    assert select_recenter_direction(
+        [0.0, 0.0],
+        [0.2, 0.0],
+        [],
+        DirectionConfig(lookahead_m=1.0),
+        blocked_bounds,
+    ) is None
+
+
+def test_command_sweep_blocks_inward_reentry_and_wall_crossing():
+    fill = FillAvoidance(1, 1, 0.0, 0.0, 0.5)
+    assert command_sweep_is_safe(
+        [0.2, 0.0], math.pi, 0.1, 0.5, [fill]
+    ) is False
+    assert command_sweep_is_safe(
+        [0.2, 0.0], 0.0, 0.1, 0.5, [fill]
+    ) is True
+    assert command_sweep_is_safe(
+        [0.6, 0.0], math.pi, 0.5, 0.5, [fill]
+    ) is False
+    assert command_sweep_is_safe(
+        [0.6, 0.0], math.pi / 2.0, 0.1, 0.5, [fill]
+    ) is True
+    assert command_sweep_is_safe(
+        [1.64, 0.0],
+        0.0,
+        0.1,
+        0.5,
+        [],
+        OperatingBounds(),
+    ) is False
+    assert command_sweep_is_safe(
+        [0.2, 0.0], math.pi, 0.0, 0.5, [fill]
+    ) is True
+
+
+@pytest.mark.parametrize(
+    "yaw,velocity,horizon",
+    [
+        (math.nan, 0.1, 0.5),
+        (0.0, math.nan, 0.5),
+        (0.0, 0.1, math.nan),
+        (0.0, -0.1, 0.5),
+        (0.0, 0.1, -0.5),
+    ],
+)
+def test_command_sweep_rejects_invalid_values(yaw, velocity, horizon):
+    with pytest.raises(ValueError):
+        command_sweep_is_safe([0.0, 0.0], yaw, velocity, horizon, [])
+
+
 def test_recenter_controller_wraps_rotates_and_caps_commands():
     config = RecenterControlConfig()
     assert wrap_angle(3.0 * math.pi) == pytest.approx(-math.pi)
@@ -191,6 +314,94 @@ def test_recenter_hold_completes_and_resets_after_leaving_tolerance():
     assert math.isnan(tracker.elapsed_sec)
     assert tracker.update(1.0, 0.2) is False
     assert tracker.update(2.0, 0.2) is True
+
+
+def test_retained_m6_recenter_geometry_completes_safely_with_margin():
+    position = np.array([-0.922899286, 0.299448541], dtype=np.float64)
+    yaw = -0.395048403
+    fill = FillAvoidance(
+        1,
+        1,
+        -0.625781953,
+        -0.056395888,
+        0.608674749,
+    )
+    fills = (fill,)
+    bounds = OperatingBounds(
+        x_min=-2.0,
+        x_max=2.0,
+        y_min=-2.0,
+        y_max=2.0,
+        wall_margin=0.35,
+    )
+    direction_config = DirectionConfig(
+        lookahead_m=0.5,
+        candidate_step_rad=math.pi / 4.0,
+    )
+    control_config = RecenterControlConfig()
+    hold = RecenterHoldTracker(control_config)
+    dt = 0.1
+    horizon_sec = 0.5
+    exited_fill = False
+    completed_at = None
+
+    for step in range(201):
+        now_sec = step * dt
+        distance = float(np.linalg.norm(bounds.center - position))
+        if hold.update(now_sec, distance):
+            completed_at = now_sec
+            break
+
+        if distance <= control_config.tolerance_m:
+            linear = 0.0
+            angular = 0.0
+        else:
+            selection = select_recenter_direction(
+                position,
+                bounds.center,
+                fills,
+                direction_config,
+                bounds,
+            )
+            assert selection is not None
+            linear, angular = recenter_command(
+                selection.direction,
+                yaw,
+                distance,
+                control_config,
+            )
+            if not command_sweep_is_safe(
+                position,
+                yaw,
+                linear,
+                horizon_sec,
+                fills,
+                bounds,
+            ):
+                linear = 0.0
+
+        assert 0.0 <= linear <= control_config.max_linear_velocity_mps
+        assert abs(angular) <= control_config.max_angular_velocity_rps
+        start_fill_distance = float(np.linalg.norm(position - fill.center))
+        next_position = position + linear * dt * np.array(
+            [math.cos(yaw), math.sin(yaw)]
+        )
+        next_fill_distance = float(
+            np.linalg.norm(next_position - fill.center)
+        )
+        if start_fill_distance <= fill.radius + 1e-12:
+            assert next_fill_distance >= start_fill_distance - 1e-12
+        else:
+            exited_fill = True
+            assert next_fill_distance > fill.radius
+        assert bounds.contains(next_position)
+        position = next_position
+        yaw = wrap_angle(yaw + angular * dt)
+
+    assert exited_fill is True
+    assert completed_at is not None
+    assert completed_at <= 20.0
+    assert np.linalg.norm(bounds.center - position) <= control_config.tolerance_m
 
 
 @pytest.mark.parametrize(

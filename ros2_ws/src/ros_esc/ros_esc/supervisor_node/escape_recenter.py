@@ -393,6 +393,20 @@ def evaluate_direction(
     preferred = _unit(preferred, "preferred direction")
     if float(np.dot(direction, preferred)) < -_EPSILON:
         return False, float("nan")
+    return evaluate_direction_safety(position, direction, fills, config, bounds)
+
+
+def evaluate_direction_safety(
+    position,
+    direction,
+    fills: Sequence[FillAvoidance],
+    config: DirectionConfig,
+    bounds: Optional[OperatingBounds] = None,
+):
+    """Return hard fill/wall eligibility without a progress preference."""
+
+    position = _finite_vector(position, "position")
+    direction = _unit(direction, "candidate direction")
     endpoint = position + config.lookahead_m * direction
     clearance = config.lookahead_m
     if bounds is not None:
@@ -413,6 +427,21 @@ def evaluate_direction(
     return True, float(min(config.lookahead_m, clearance))
 
 
+def _direction_candidates(preferred, config):
+    preferred = _unit(preferred, "preferred direction")
+    base_angle = math.atan2(preferred[1], preferred[0])
+    step = config.candidate_step_rad
+    rotations = (0.0, step, -step, 2 * step, -2 * step, 3 * step, -3 * step, math.pi)
+    seen = []
+    for index, rotation in enumerate(rotations):
+        angle = base_angle + rotation
+        direction = np.array([math.cos(angle), math.sin(angle)], dtype=np.float64)
+        if any(float(np.linalg.norm(direction - prior)) <= _EPSILON for prior in seen):
+            continue
+        seen.append(direction)
+        yield index, float(rotation), direction
+
+
 def select_safe_direction(
     position,
     preferred,
@@ -424,17 +453,8 @@ def select_safe_direction(
 
     config = config or DirectionConfig()
     preferred = _unit(preferred, "preferred direction")
-    base_angle = math.atan2(preferred[1], preferred[0])
-    step = config.candidate_step_rad
-    rotations = (0.0, step, -step, 2 * step, -2 * step, 3 * step, -3 * step, math.pi)
     selections = []
-    seen = []
-    for index, rotation in enumerate(rotations):
-        angle = base_angle + rotation
-        direction = np.array([math.cos(angle), math.sin(angle)], dtype=np.float64)
-        if any(float(np.linalg.norm(direction - prior)) <= _EPSILON for prior in seen):
-            continue
-        seen.append(direction)
+    for index, rotation, direction in _direction_candidates(preferred, config):
         safe, clearance = evaluate_direction(
             position, direction, preferred, fills, config, bounds
         )
@@ -462,6 +482,95 @@ def select_safe_direction(
         )
 
     return max(selections, key=score)
+
+
+def select_recenter_direction(
+    position,
+    target,
+    fills: Sequence[FillAvoidance],
+    config=None,
+    bounds: Optional[OperatingBounds] = None,
+):
+    """Select the deterministic safe candidate with greatest center progress."""
+
+    config = config or DirectionConfig()
+    position = _finite_vector(position, "position")
+    target = _finite_vector(target, "recenter target")
+    preferred_vector = target - position
+    if float(np.linalg.norm(preferred_vector)) <= _EPSILON:
+        return None
+    preferred = _unit(preferred_vector, "preferred direction")
+    current_distance = float(np.linalg.norm(preferred_vector))
+    selections = []
+    for index, rotation, direction in _direction_candidates(preferred, config):
+        safe, clearance = evaluate_direction_safety(
+            position, direction, fills, config, bounds
+        )
+        if not safe:
+            continue
+        endpoint = position + config.lookahead_m * direction
+        progress = current_distance - float(np.linalg.norm(target - endpoint))
+        alignment = float(np.dot(direction, preferred))
+        selection = DirectionSelection(
+            x=float(direction[0]),
+            y=float(direction[1]),
+            clearance_m=clearance,
+            rotation_rad=float(rotation),
+            candidate_index=index,
+        )
+        score = (
+            round(progress, 12),
+            round(alignment, 12),
+            round(clearance, 12),
+            -round(abs(rotation), 12),
+            -index,
+        )
+        selections.append((score, selection))
+    if not selections:
+        return None
+    return max(selections, key=lambda item: item[0])[1]
+
+
+def command_sweep_is_safe(
+    position,
+    yaw,
+    linear_velocity_mps,
+    horizon_sec,
+    fills: Sequence[FillAvoidance],
+    bounds: Optional[OperatingBounds] = None,
+):
+    """Check the current-yaw forward sweep for the command persistence horizon."""
+
+    position = _finite_vector(position, "position")
+    values = np.asarray(
+        [yaw, linear_velocity_mps, horizon_sec], dtype=np.float64
+    )
+    if not np.all(np.isfinite(values)):
+        raise ValueError("command sweep values must be finite")
+    if linear_velocity_mps < 0.0 or horizon_sec < 0.0:
+        raise ValueError("command sweep velocity and horizon must be nonnegative")
+
+    heading = np.array([math.cos(float(yaw)), math.sin(float(yaw))])
+    endpoint = position + float(linear_velocity_mps * horizon_sec) * heading
+    if bounds is not None and (
+        not bounds.contains(position) or not bounds.contains(endpoint)
+    ):
+        return False
+
+    translating = linear_velocity_mps > _EPSILON and horizon_sec > _EPSILON
+    for fill in sorted(fills, key=lambda item: (item.cluster_id, item.fill_id)):
+        offset = position - fill.center
+        start_distance = float(np.linalg.norm(offset))
+        endpoint_distance = float(np.linalg.norm(endpoint - fill.center))
+        if start_distance <= fill.radius + _EPSILON:
+            outward_projection = float(np.dot(heading, offset))
+            if translating and outward_projection < -_EPSILON:
+                return False
+            if endpoint_distance < start_distance - _EPSILON:
+                return False
+        elif _segment_clearance(position, endpoint, fill.center) <= fill.radius + _EPSILON:
+            return False
+    return True
 
 
 def wrap_angle(angle):

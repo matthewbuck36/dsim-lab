@@ -368,6 +368,7 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
     expected = {
         "algorithm_profile": "legacy",
         "supervisor_use_sim_time": "True",
+        "supervisor_command_stale_sec": "0.50",
         "enable_observability": "False",
         "cost_breakdown_topic": "/gesc_gaussian/cost_breakdown",
         "gesc_diagnostics_topic": "/gesc_gaussian/gesc_diagnostics",
@@ -475,6 +476,10 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
     assert "robust_gaussian_v1" in supervisor_commands[0].attrib["if"]
     assert (
         "-p use_sim_time:=$(var supervisor_use_sim_time)"
+        in supervisor_commands[0].attrib["cmd"]
+    )
+    assert (
+        "-p supervisor_command_stale_sec:=$(var supervisor_command_stale_sec)"
         in supervisor_commands[0].attrib["cmd"]
     )
     gaussian_commands = [

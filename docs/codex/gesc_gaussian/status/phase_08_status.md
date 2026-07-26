@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-26T00:28:52-07:00`
-Status: `IN PROGRESS — PHASE 08.2 RECENTER RECOVERY; M2 DETERMINISTIC CORRECTION`
+Last verified: `2026-07-26T00:35:40-07:00`
+Status: `IN PROGRESS — PHASE 08.2 RECENTER RECOVERY; M3 SOURCE-STATE VALIDATION`
 
 ## Objective
 
@@ -193,12 +193,13 @@ remains immutable and cannot count toward a future acceptance attempt.
   contract pass and one retained mixed-result/full-contract failure.
 - Completed milestone: Phase 08.1 M7 handoff and next-step recommendation.
 - Completed milestone: Phase 08.2 M1 plan and preflight.
-- Current milestone: Phase 08.2 M2 deterministic recenter correction.
+- Completed milestone: Phase 08.2 M2 deterministic recenter correction.
+- Current milestone: Phase 08.2 M3 source-state validation.
 - Current plan:
   `docs/codex/gesc_gaussian/plans/phase_08_2_plan.md`.
-- Next criterion: implement safety-only eligibility, recenter-specific
-  progress ranking, per-update reselection, and actual-command sweep
-  suppression with focused deterministic and integration coverage.
+- Next criterion: add and dry-run the one-case suite, run broad functional
+  regressions and isolated builds, instantiate the runtime launch, document
+  the additive parameter, and commit the clean probe candidate.
 - V3 acceptance, a readiness tag, Phase 09, and physical hardware remain
   unauthorized.
 
@@ -740,6 +741,20 @@ remains immutable and cannot count toward a future acceptance attempt.
   strict-history Phase 08 Implement context validation, validator shell
   syntax, and `git diff --check` passed. ROS logs were bounded under
   `/tmp/phase08_2_m1_ros_logs`.
+- M2 added safety-only fill/wall eligibility, a recenter-only deterministic
+  center-progress selector, per-update recenter reselection, and a current-yaw
+  command sweep guard. `ESCAPE_ASSIST` retains its existing preferred
+  hemisphere, clearance-first score, and cached selection.
+- The exact retained M6 pose/fill closed-loop regression passed with the
+  unchanged `0.25 m` tolerance, one-second hold, `30.0 s` state timeout,
+  current gains/caps, `0.5 m` lookahead, `pi/4` candidate spacing, and
+  `0.50 s` command horizon. It requires completion by `20.0 s`, no inward
+  motion while inside the disk, no post-exit re-entry, wall-inset containment,
+  and bounded commands.
+- M2 focused source-state result: `112 passed in 3.51 s`; modified Python
+  compilation and `git diff --check` passed. A prior collection command that
+  replaced rather than prepended ROS `PYTHONPATH` ran no tests and was
+  immediately corrected; it is not a source failure.
 
 ## Attempts not to repeat
 
