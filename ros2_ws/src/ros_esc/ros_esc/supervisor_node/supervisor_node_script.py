@@ -42,6 +42,7 @@ from ros_esc.supervisor_node.escape_recenter import (
 )
 from ros_esc.supervisor_node.state_machine import (
     ROBUST_PROFILE,
+    RotationScoreWindow,
     State,
     StateMachineConfig,
     SupervisorStateMachine,
@@ -51,6 +52,57 @@ from ros_esc.supervisor_node.state_machine import (
 
 ROBUST_FILL_CREATE = "ROBUST_FILL_CREATE"
 ROBUST_FILL_REDESIGN_PREFIX = "ROBUST_FILL_REDESIGN:"
+CONFIRMED_CONVERGENCE_VALUE_NAMES = (
+    "metric",
+    "r_mean_m2",
+    "decay",
+    "fill_center_x_m",
+    "fill_center_y_m",
+    "mean_old_x_m",
+    "mean_old_y_m",
+    "count_remaining",
+)
+
+
+def convergence_snapshot_from_confirmation(event, fallback=None):
+    """Build the canonical eight-value fill snapshot from a confirmed event."""
+
+    if (
+        event.event_type != AlgorithmEvent.EVENT_CONVERGENCE_CONFIRMED
+        or not event.source_timestamp_valid
+        or not math.isfinite(float(event.source_timestamp))
+    ):
+        return None
+
+    values = {
+        str(name): float(value)
+        for name, value in zip(event.value_names, event.values)
+        if math.isfinite(float(value))
+    }
+    if all(name in values for name in CONFIRMED_CONVERGENCE_VALUE_NAMES):
+        data = [values[name] for name in CONFIRMED_CONVERGENCE_VALUE_NAMES]
+    elif (
+        fallback is not None
+        and len(fallback.data) == 8
+        and all(math.isfinite(float(value)) for value in fallback.data)
+        and math.isclose(
+            float(fallback.timestamp),
+            float(event.source_timestamp),
+            rel_tol=0.0,
+            abs_tol=1e-9,
+        )
+    ):
+        data = [float(value) for value in fallback.data]
+        if "count_remaining" in values:
+            data[7] = values["count_remaining"]
+    else:
+        return None
+
+    snapshot = StampedFloat64MultiArray()
+    snapshot.header = "CONVERGED_FILL_READY"
+    snapshot.timestamp = float(event.source_timestamp)
+    snapshot.data = data
+    return snapshot
 
 
 class SupervisorNode(Node):
@@ -131,6 +183,10 @@ class SupervisorNode(Node):
         self.approach_history_window_sec = self._positive_float(
             "approach_history_window_sec"
         )
+        self.goal_score_window = RotationScoreWindow(
+            self._positive_float("goal_score_rotation_period_sec"),
+            self._positive_int("goal_score_required_rotations"),
+        )
         self.fill_avoidance_margin_m = self._nonnegative_float(
             "fill_avoidance_margin_m"
         )
@@ -147,6 +203,7 @@ class SupervisorNode(Node):
         self.latest_source_timestamp = None
         self.latest_convergence = None
         self.latest_convergence_receipt_sec = None
+        self.pending_convergence_confirmation_receipt_sec = None
         self.pending_fill_result = None
         self.active_fill_records = {}
         self.escape_tracker = None
@@ -218,6 +275,8 @@ class SupervisorNode(Node):
             "startup_timeout_sec": 5.0,
             "convergence_hold_sec": 2.0,
             "goal_score_threshold": 0.95,
+            "goal_score_rotation_period_sec": 3.0,
+            "goal_score_required_rotations": 2,
             "goal_hold_sec": 3.0,
             "undesired_score_hold_sec": 3.0,
             "verification_max_sec": 10.0,
@@ -276,6 +335,12 @@ class SupervisorNode(Node):
         value = self._float(name)
         if not math.isfinite(value) or value < 0.0:
             raise ValueError(f"{name} must be finite and nonnegative")
+        return value
+
+    def _positive_int(self, name):
+        value = int(self.get_parameter(name).value)
+        if value <= 0:
+            raise ValueError(f"{name} must be positive")
         return value
 
     def _string(self, name):
@@ -346,15 +411,18 @@ class SupervisorNode(Node):
             and scores.size > 0
             and np.all(np.isfinite(scores))
         )
-        self.latest_source_score = (
-            float(np.max(scores)) if self.latest_source_score_valid else None
-        )
+        receipt_sec = self._now_sec()
+        if self.latest_source_score_valid:
+            self.goal_score_window.update(receipt_sec, float(np.max(scores)))
+        else:
+            self.goal_score_window.reset()
+        self.latest_source_score = self.goal_score_window.score
         self.latest_source_timestamp = (
             float(msg.source_timestamp)
             if msg.source_timestamp_valid and math.isfinite(msg.source_timestamp)
             else None
         )
-        self.latest_source_receipt_sec = self._now_sec()
+        self.latest_source_receipt_sec = receipt_sec
 
     def convergence_callback(self, msg):
         data = np.asarray(msg.data, dtype=np.float64)
@@ -438,6 +506,15 @@ class SupervisorNode(Node):
             self.stop_requested = True
 
     def event_callback(self, msg):
+        if msg.event_type == AlgorithmEvent.EVENT_CONVERGENCE_CONFIRMED:
+            snapshot = convergence_snapshot_from_confirmation(
+                msg, fallback=self.latest_convergence
+            )
+            if snapshot is not None:
+                receipt_sec = self._now_sec()
+                self.latest_convergence = snapshot
+                self.latest_convergence_receipt_sec = receipt_sec
+                self.pending_convergence_confirmation_receipt_sec = receipt_sec
         if (
             msg.event_type == AlgorithmEvent.EVENT_FAILSAFE
             and msg.detail.startswith("controller watchdog:")
@@ -479,9 +556,10 @@ class SupervisorNode(Node):
                 if geometry_fault is not None:
                     self._force_failsafe(now_sec, geometry_fault)
                 else:
-                    transition = self.machine.step(
-                        now_sec, self._transition_inputs(now_sec)
-                    )
+                    inputs = self._transition_inputs(now_sec)
+                    transition = self.machine.step(now_sec, inputs)
+                    if inputs.convergence_confirmed:
+                        self.pending_convergence_confirmation_receipt_sec = None
                     self.pending_fill_result = None
                     if transition is not None:
                         self._handle_transition(transition, now_sec)
@@ -533,15 +611,10 @@ class SupervisorNode(Node):
             self._float("stale_sensor_sec"),
             now_sec,
         ) and self.latest_source_valid
-        convergence_fresh = self._fresh(
-            self.latest_convergence_receipt_sec,
+        convergence_confirmed = self._fresh(
+            self.pending_convergence_confirmation_receipt_sec,
             self._float("stale_sensor_sec"),
             now_sec,
-        )
-        convergence = bool(
-            convergence_fresh
-            and self.latest_convergence is not None
-            and float(self.latest_convergence.data[0]) <= 0.0
         )
         fill_result = self.pending_fill_result or (None, None, None, None)
         progress = (
@@ -550,9 +623,12 @@ class SupervisorNode(Node):
             else None
         )
         return TransitionInputs(
-            convergence=convergence,
+            convergence=False,
+            convergence_confirmed=convergence_confirmed,
             source_score=self.latest_source_score,
+            source_score_observed=self.latest_source_receipt_sec is not None,
             source_score_valid=self.latest_source_score_valid,
+            source_score_ready=self.goal_score_window.ready,
             pose_valid=pose_valid,
             sensor_valid=sensor_valid,
             explicit_stop=self.stop_requested,
@@ -934,6 +1010,8 @@ class SupervisorNode(Node):
             "room_center_x_m",
             "room_center_y_m",
             "wall_margin_m",
+            "goal_score_rotation_period_sec",
+            "goal_score_required_rotations",
             "escape_exit_hold_sec",
             "stall_window_sec",
             "minimum_radial_progress_m",
@@ -958,6 +1036,8 @@ class SupervisorNode(Node):
             self._float("room_center_x_m"),
             self._float("room_center_y_m"),
             self._float("wall_margin_m"),
+            self.goal_score_window.rotation_period_sec,
+            float(self.goal_score_window.required_rotations),
             self.escape_progress_config.escape_exit_hold_sec,
             self.escape_progress_config.stall_window_sec,
             self.escape_progress_config.minimum_radial_progress_m,

@@ -1,5 +1,6 @@
 """ROS-independent GESC/Gaussian supervisor state machine."""
 
+from collections import deque
 from dataclasses import dataclass
 from enum import IntEnum
 import math
@@ -71,8 +72,11 @@ class TransitionInputs:
     """One deterministic input sample for the state machine."""
 
     convergence: bool = False
+    convergence_confirmed: bool = False
     source_score: Optional[float] = None
+    source_score_observed: bool = True
     source_score_valid: bool = False
+    source_score_ready: bool = True
     pose_valid: bool = True
     sensor_valid: bool = True
     explicit_stop: bool = False
@@ -93,6 +97,78 @@ class Transition:
     previous: State
     current: State
     reason: str
+
+
+class RotationScoreWindow:
+    """Aggregate rotating-sensor scores over complete revolutions."""
+
+    def __init__(self, rotation_period_sec: float, required_rotations: int = 2):
+        rotation_period_sec = float(rotation_period_sec)
+        required_rotations = int(required_rotations)
+        if not math.isfinite(rotation_period_sec) or rotation_period_sec <= 0.0:
+            raise ValueError("rotation_period_sec must be finite and positive")
+        if required_rotations <= 0:
+            raise ValueError("required_rotations must be positive")
+        self.rotation_period_sec = rotation_period_sec
+        self.required_rotations = required_rotations
+        self.completed_maxima = deque(maxlen=required_rotations)
+        self.window_started_sec = None
+        self.current_maximum = None
+        self.last_stamp_sec = None
+
+    def reset(self):
+        """Discard incomplete and completed rotation evidence."""
+
+        self.completed_maxima.clear()
+        self.window_started_sec = None
+        self.current_maximum = None
+        self.last_stamp_sec = None
+
+    def update(self, stamp_sec: float, score: float):
+        """Add one valid score and close elapsed complete rotation windows."""
+
+        stamp_sec = float(stamp_sec)
+        score = float(score)
+        if not math.isfinite(stamp_sec) or not math.isfinite(score):
+            raise ValueError("rotation score samples must be finite")
+        if self.last_stamp_sec is not None and stamp_sec < self.last_stamp_sec:
+            self.reset()
+        self.last_stamp_sec = stamp_sec
+
+        if self.window_started_sec is None:
+            self.window_started_sec = stamp_sec
+            self.current_maximum = score
+            return
+
+        elapsed = stamp_sec - self.window_started_sec
+        if elapsed < self.rotation_period_sec:
+            self.current_maximum = max(self.current_maximum, score)
+            return
+
+        elapsed_windows = int(elapsed // self.rotation_period_sec)
+        if elapsed_windows > 1:
+            self.completed_maxima.clear()
+            self.window_started_sec = stamp_sec
+            self.current_maximum = score
+            return
+
+        self.completed_maxima.append(float(self.current_maximum))
+        self.window_started_sec += self.rotation_period_sec
+        self.current_maximum = score
+
+    @property
+    def ready(self) -> bool:
+        """Return whether the configured number of rotations is complete."""
+
+        return len(self.completed_maxima) == self.required_rotations
+
+    @property
+    def score(self) -> Optional[float]:
+        """Return the conservative peak score across completed rotations."""
+
+        if not self.ready:
+            return None
+        return float(min(self.completed_maxima))
 
 
 class SupervisorStateMachine:
@@ -187,6 +263,12 @@ class SupervisorStateMachine:
         return self._transition(State.FAILSAFE, now_sec, "unknown supervisor state")
 
     def _step_search(self, now_sec, inputs):
+        if inputs.convergence_confirmed:
+            return self._transition(
+                State.VERIFY_EXTREMUM,
+                now_sec,
+                "detector convergence confirmation received",
+            )
         if inputs.convergence:
             if self.convergence_started_sec is None:
                 self.convergence_started_sec = now_sec
@@ -202,11 +284,17 @@ class SupervisorStateMachine:
 
     def _step_verify(self, now_sec, inputs):
         score = inputs.source_score
-        if (
-            not inputs.source_score_valid
-            or score is None
-            or not math.isfinite(float(score))
-        ):
+        if not inputs.source_score_observed:
+            if self.elapsed(now_sec) >= self.config.verification_max_sec:
+                return self._transition(State.FAILSAFE, now_sec, "verification timeout")
+            return None
+        if not inputs.source_score_valid:
+            return self._transition(State.FAILSAFE, now_sec, "source score invalid")
+        if not inputs.source_score_ready:
+            if self.elapsed(now_sec) >= self.config.verification_max_sec:
+                return self._transition(State.FAILSAFE, now_sec, "verification timeout")
+            return None
+        if score is None or not math.isfinite(float(score)):
             return self._transition(State.FAILSAFE, now_sec, "source score invalid")
 
         if float(score) >= self.config.goal_score_threshold:

@@ -1,0 +1,499 @@
+schema_version: 2
+suite_id: phase08_v2_validation
+description: Fifty additional unique cases completing the 70-run v2 denominator.
+mode: simulation
+execution:
+  max_parallel_runs: 1
+  gazebo_gui: false
+  preflight_timeout_sec: 150.0
+  run_timeout_sec: 180.0
+  wall_timeout_sec: 480.0
+  shutdown_grace_sec: 30.0
+  stop_on_run_failure: false
+  stop_on_cleanup_failure: true
+metadata:
+  experiment_version: phase08-v2-validation
+  operator_notes: Execute only after the unchanged frozen holdout passes.
+level_map: {"1": 450.0, "2": 800.0, "3": 1200.0, "4": 1800.0, "5": 2500.0}
+defaults:
+  bounds_m: [-2.0, 2.0, -2.0, 2.0]
+  room_center_m: [0.0, 0.0]
+  validation_world: true
+  simulation_contacts_enabled: true
+  disturbances: {sensor_noise: {model: none, bound: 0.0}, sensor_delay_sec: 0.0, pose_delay_sec: 0.0}
+cases:
+  - &goal_case
+    case_id: v_ordered_01
+    family: two_source
+    description: Validation ordered level pair 2-3.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8501]
+    starts: [{id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["2"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["3"], evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success: &goal_success
+      all_of: [recording_complete, cleanup_complete, controller_goal, ground_truth_goal, required_state_sequence, required_events, collision_expectation]
+      controller:
+        expected_terminal_state: GOAL_HOLD
+        required_state_sequence: [SEARCH, VERIFY_EXTREMUM, GOAL_HOLD]
+        required_events: [CONVERGENCE_CONFIRMED, GOAL_REACHED]
+        forbidden_events: [FAILSAFE]
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      collision_expected: false
+
+  - <<: *goal_case
+    case_id: v_ordered_02
+    description: Validation ordered level pair 2-4.
+    seeds: [8502]
+    starts: [{id: southwest_north, x_m: -1.1, y_m: -1.0, yaw_rad: 1.5707963267948966}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["2"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["4"], evaluation_role: goal}
+  - <<: *goal_case
+    case_id: v_ordered_03
+    description: Validation ordered level pair 2-5.
+    seeds: [8503]
+    starts: [{id: northeast_west, x_m: 1.1, y_m: 1.0, yaw_rad: 3.141592653589793}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["2"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["5"], evaluation_role: goal}
+  - <<: *goal_case
+    case_id: v_ordered_04
+    description: Validation ordered level pair 3-1.
+    seeds: [8504]
+    starts: [{id: northwest_south, x_m: -1.0, y_m: 1.0, yaw_rad: -1.5707963267948966}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["3"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["1"], evaluation_role: goal}
+  - <<: *goal_case
+    case_id: v_ordered_05
+    description: Validation ordered level pair 3-2.
+    seeds: [8505]
+    starts: [{id: southeast_northwest, x_m: 1.0, y_m: -1.0, yaw_rad: 2.356194490192345}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["3"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["2"], evaluation_role: goal}
+  - <<: *goal_case
+    case_id: v_ordered_06
+    description: Validation ordered level pair 3-3.
+    seeds: [8506]
+    starts: [{id: south_north, x_m: 0.0, y_m: -1.2, yaw_rad: 1.5707963267948966}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["3"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["3"], evaluation_role: goal}
+  - <<: *goal_case
+    case_id: v_ordered_07
+    description: Validation ordered level pair 3-4.
+    seeds: [8507]
+    starts: [{id: north_south, x_m: 0.0, y_m: 1.2, yaw_rad: -1.5707963267948966}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["3"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["4"], evaluation_role: goal}
+  - <<: *goal_case
+    case_id: v_ordered_08
+    description: Validation ordered level pair 3-5.
+    seeds: [8508]
+    starts: [{id: center_west, x_m: 0.0, y_m: 0.0, yaw_rad: 3.141592653589793}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["3"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["5"], evaluation_role: goal}
+  - <<: *goal_case
+    case_id: v_ordered_09
+    description: Validation ordered level pair 4-1.
+    seeds: [8509]
+    starts: [{id: west_east, x_m: -1.1, y_m: 0.4, yaw_rad: 0.0}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["4"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["1"], evaluation_role: goal}
+  - <<: *goal_case
+    case_id: v_ordered_10
+    description: Validation ordered level pair 4-2.
+    seeds: [8510]
+    starts: [{id: east_west, x_m: 1.1, y_m: -0.4, yaw_rad: 3.141592653589793}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["4"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["2"], evaluation_role: goal}
+  - <<: *goal_case
+    case_id: v_ordered_11
+    description: Validation ordered level pair 4-3.
+    seeds: [8511]
+    starts: [{id: center_northeast, x_m: 0.0, y_m: 0.0, yaw_rad: 0.7853981633974483}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["4"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["3"], evaluation_role: goal}
+  - <<: *goal_case
+    case_id: v_ordered_12
+    description: Validation ordered level pair 4-4.
+    seeds: [8512]
+    starts: [{id: center_northwest, x_m: 0.0, y_m: 0.0, yaw_rad: 2.356194490192345}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["4"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["4"], evaluation_role: goal}
+  - <<: *goal_case
+    case_id: v_ordered_13
+    description: Validation ordered level pair 4-5.
+    seeds: [8513]
+    starts: [{id: center_southwest, x_m: 0.0, y_m: 0.0, yaw_rad: -2.356194490192345}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["4"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["5"], evaluation_role: goal}
+  - <<: *goal_case
+    case_id: v_ordered_14
+    description: Validation ordered level pair 5-1.
+    seeds: [8514]
+    starts: [{id: center_southeast, x_m: 0.0, y_m: 0.0, yaw_rad: -0.7853981633974483}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["5"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["1"], evaluation_role: goal}
+  - <<: *goal_case
+    case_id: v_ordered_15
+    description: Validation ordered level pair 5-2.
+    seeds: [8515]
+    starts: [{id: south_east, x_m: -0.4, y_m: -1.1, yaw_rad: 0.0}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["5"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["2"], evaluation_role: goal}
+  - <<: *goal_case
+    case_id: v_ordered_16
+    description: Validation ordered level pair 5-3.
+    seeds: [8516]
+    starts: [{id: north_west, x_m: 0.4, y_m: 1.1, yaw_rad: 3.141592653589793}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["5"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["3"], evaluation_role: goal}
+  - <<: *goal_case
+    case_id: v_ordered_17
+    description: Validation ordered level pair 5-4.
+    seeds: [8517]
+    starts: [{id: diagonal_ne, x_m: -0.8, y_m: -0.8, yaw_rad: 0.7853981633974483}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["5"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["4"], evaluation_role: goal}
+  - <<: *goal_case
+    case_id: v_ordered_18
+    description: Validation ordered level pair 5-5.
+    seeds: [8518]
+    starts: [{id: diagonal_sw, x_m: 0.8, y_m: 0.8, yaw_rad: -2.356194490192345}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["5"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["5"], evaluation_role: goal}
+
+  - <<: *goal_case
+    case_id: v_multi_01
+    family: multi_source
+    description: Validation three-source geometry one.
+    seeds: [8521]
+    starts: [{id: center_north, x_m: 0.0, y_m: 0.0, yaw_rad: 1.5707963267948966}]
+    sources:
+      - {id: local_a, x_m: -1.1, y_m: -0.7, relative_lumen_input: 500.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.1, y_m: 0.9, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.4, y_m: 1.25, relative_lumen_input: 2000.0, evaluation_role: goal}
+  - <<: *goal_case
+    case_id: v_multi_02
+    family: multi_source
+    description: Validation four-source geometry.
+    seeds: [8522]
+    starts: [{id: southwest_ne, x_m: -1.1, y_m: -1.1, yaw_rad: 0.7853981633974483}]
+    sources:
+      - {id: local_a, x_m: -1.0, y_m: 0.5, relative_lumen_input: 600.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.0, y_m: -0.8, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: context, x_m: 0.7, y_m: 0.5, relative_lumen_input: 900.0, evaluation_role: context}
+      - {id: goal, x_m: 1.35, y_m: 1.25, relative_lumen_input: 2100.0, evaluation_role: goal}
+  - <<: *goal_case
+    case_id: v_multi_03
+    family: close_minimum
+    description: Validation close-minimum geometry one.
+    seeds: [8523]
+    starts: [{id: west_east, x_m: -1.3, y_m: -0.6, yaw_rad: 0.0}]
+    sources:
+      - {id: local_a, x_m: -0.45, y_m: 0.0, relative_lumen_input: 700.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.05, y_m: 0.1, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.4, y_m: 1.0, relative_lumen_input: 2000.0, evaluation_role: goal}
+  - <<: *goal_case
+    case_id: v_multi_04
+    family: close_minimum
+    description: Validation close-minimum geometry two.
+    seeds: [8524]
+    starts: [{id: south_north, x_m: 0.2, y_m: -1.3, yaw_rad: 1.5707963267948966}]
+    sources:
+      - {id: local_a, x_m: -0.3, y_m: -0.1, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.25, y_m: 0.05, relative_lumen_input: 850.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.3, y_m: 1.3, relative_lumen_input: 2200.0, evaluation_role: goal}
+  - <<: *goal_case
+    case_id: v_multi_05
+    family: separation_overlap
+    description: Validation overlapping-basin geometry one.
+    seeds: [8525]
+    starts: [{id: north_south, x_m: -0.2, y_m: 1.3, yaw_rad: -1.5707963267948966}]
+    sources:
+      - {id: local_a, x_m: -0.5, y_m: 0.4, relative_lumen_input: 850.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.1, y_m: 0.45, relative_lumen_input: 900.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.4, y_m: -0.8, relative_lumen_input: 2200.0, evaluation_role: goal}
+  - <<: *goal_case
+    case_id: v_multi_06
+    family: separation_overlap
+    description: Validation overlapping-basin geometry two.
+    seeds: [8526]
+    starts: [{id: east_west, x_m: 1.3, y_m: 0.5, yaw_rad: 3.141592653589793}]
+    sources:
+      - {id: local_a, x_m: -0.2, y_m: -0.3, relative_lumen_input: 900.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.35, y_m: -0.2, relative_lumen_input: 950.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: -1.3, y_m: 1.2, relative_lumen_input: 2300.0, evaluation_role: goal}
+
+  - <<: *goal_case
+    case_id: v_wall_01
+    family: boundary
+    description: Validation west-wall start.
+    seeds: [8531]
+    starts: [{id: west_wall_east, x_m: -1.45, y_m: 0.0, yaw_rad: 0.0}]
+    sources: [{id: goal, x_m: 0.7, y_m: 0.0, relative_lumen_input: 1800.0, evaluation_role: goal}]
+  - <<: *goal_case
+    case_id: v_wall_02
+    family: boundary
+    description: Validation east-wall start.
+    seeds: [8532]
+    starts: [{id: east_wall_west, x_m: 1.45, y_m: 0.0, yaw_rad: 3.141592653589793}]
+    sources: [{id: goal, x_m: -0.7, y_m: 0.0, relative_lumen_input: 1800.0, evaluation_role: goal}]
+  - <<: *goal_case
+    case_id: v_wall_03
+    family: boundary
+    description: Validation north-wall start.
+    seeds: [8533]
+    starts: [{id: north_wall_south, x_m: 0.0, y_m: 1.45, yaw_rad: -1.5707963267948966}]
+    sources: [{id: goal, x_m: 0.0, y_m: -0.7, relative_lumen_input: 1800.0, evaluation_role: goal}]
+  - <<: *goal_case
+    case_id: v_wall_04
+    family: boundary
+    description: Validation south-wall start.
+    seeds: [8534]
+    starts: [{id: south_wall_north, x_m: 0.0, y_m: -1.45, yaw_rad: 1.5707963267948966}]
+    sources: [{id: goal, x_m: 0.0, y_m: 0.7, relative_lumen_input: 1800.0, evaluation_role: goal}]
+  - <<: *goal_case
+    case_id: v_wall_05
+    family: boundary
+    description: Validation northwest-corner start.
+    seeds: [8535]
+    starts: [{id: northwest_se, x_m: -1.35, y_m: 1.35, yaw_rad: -0.7853981633974483}]
+    sources: [{id: goal, x_m: 0.5, y_m: -0.5, relative_lumen_input: 1900.0, evaluation_role: goal}]
+  - <<: *goal_case
+    case_id: v_wall_06
+    family: boundary
+    description: Validation southeast-corner start.
+    seeds: [8536]
+    starts: [{id: southeast_nw, x_m: 1.35, y_m: -1.35, yaw_rad: 2.356194490192345}]
+    sources: [{id: goal, x_m: -0.5, y_m: 0.5, relative_lumen_input: 1900.0, evaluation_role: goal}]
+
+  - <<: *goal_case
+    case_id: v_noise_01
+    family: noise_delay
+    description: Validation Uniform-noise case.
+    seeds: [8541]
+    starts: [{id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}]
+    sources: [{id: goal, x_m: 1.1, y_m: 0.3, relative_lumen_input: 1700.0, evaluation_role: goal}]
+    disturbances: {sensor_noise: {model: uniform, bound: 0.01}}
+  - <<: *goal_case
+    case_id: v_noise_02
+    family: noise_delay
+    description: Validation seeded Gaussian-noise case.
+    seeds: [8542]
+    starts: [{id: center_north, x_m: 0.0, y_m: 0.0, yaw_rad: 1.5707963267948966}]
+    sources: [{id: goal, x_m: 0.3, y_m: 1.1, relative_lumen_input: 1700.0, evaluation_role: goal}]
+    disturbances: {sensor_noise: {model: gaussian, bound: 0.0, std_dev: 0.015}}
+  - <<: *goal_case
+    case_id: v_noise_03
+    family: noise_delay
+    description: Validation sensor-delay case.
+    seeds: [8543]
+    starts: [{id: center_west, x_m: 0.0, y_m: 0.0, yaw_rad: 3.141592653589793}]
+    sources: [{id: goal, x_m: -1.1, y_m: 0.3, relative_lumen_input: 1700.0, evaluation_role: goal}]
+    disturbances: {sensor_delay_sec: 0.10}
+  - <<: *goal_case
+    case_id: v_noise_04
+    family: noise_delay
+    description: Validation pose-delay case.
+    seeds: [8544]
+    starts: [{id: center_south, x_m: 0.0, y_m: 0.0, yaw_rad: -1.5707963267948966}]
+    sources: [{id: goal, x_m: 0.3, y_m: -1.1, relative_lumen_input: 1700.0, evaluation_role: goal}]
+    disturbances: {pose_delay_sec: 0.10}
+  - <<: *goal_case
+    case_id: v_noise_05
+    family: noise_delay
+    description: Validation combined-delay case.
+    seeds: [8545]
+    starts: [{id: center_ne, x_m: 0.0, y_m: 0.0, yaw_rad: 0.7853981633974483}]
+    sources: [{id: goal, x_m: 1.0, y_m: 1.0, relative_lumen_input: 1800.0, evaluation_role: goal}]
+    disturbances: {sensor_delay_sec: 0.05, pose_delay_sec: 0.05}
+  - <<: *goal_case
+    case_id: v_noise_06
+    family: noise_delay
+    description: Validation Gaussian-noise plus delay case.
+    seeds: [8546]
+    starts: [{id: center_nw, x_m: 0.0, y_m: 0.0, yaw_rad: 2.356194490192345}]
+    sources: [{id: goal, x_m: -1.0, y_m: 1.0, relative_lumen_input: 1800.0, evaluation_role: goal}]
+    disturbances:
+      sensor_noise: {model: gaussian, bound: 0.0, std_dev: 0.01}
+      sensor_delay_sec: 0.05
+      pose_delay_sec: 0.05
+
+  - <<: *goal_case
+    case_id: v_saturation_01
+    family: starts_saturation
+    description: Validation high-intensity saturation case one.
+    seeds: [8551]
+    starts: [{id: far_sw, x_m: -1.4, y_m: -1.4, yaw_rad: 0.7853981633974483}]
+    sources: [{id: goal, x_m: 1.25, y_m: 1.25, relative_lumen_input: 2500.0, evaluation_role: goal}]
+    success: &saturation_success
+      <<: *goal_success
+      all_of: [recording_complete, cleanup_complete, controller_goal, ground_truth_goal, required_state_sequence, required_events, minimum_saturation_samples, collision_expectation]
+      minimum_saturation_samples: 1
+  - <<: *goal_case
+    case_id: v_saturation_02
+    family: starts_saturation
+    description: Validation high-intensity saturation case two.
+    seeds: [8552]
+    starts: [{id: far_ne, x_m: 1.4, y_m: 1.4, yaw_rad: -2.356194490192345}]
+    sources: [{id: goal, x_m: -1.25, y_m: -1.25, relative_lumen_input: 2500.0, evaluation_role: goal}]
+    success: *saturation_success
+  - <<: *goal_case
+    case_id: v_saturation_03
+    family: starts_saturation
+    description: Validation high-intensity saturation case three.
+    seeds: [8553]
+    starts: [{id: far_nw, x_m: -1.4, y_m: 1.4, yaw_rad: -0.7853981633974483}]
+    sources: [{id: goal, x_m: 1.25, y_m: -1.25, relative_lumen_input: 2500.0, evaluation_role: goal}]
+    success: *saturation_success
+  - <<: *goal_case
+    case_id: v_saturation_04
+    family: starts_saturation
+    description: Validation high-intensity saturation case four.
+    seeds: [8554]
+    starts: [{id: far_se, x_m: 1.4, y_m: -1.4, yaw_rad: 2.356194490192345}]
+    sources: [{id: goal, x_m: -1.25, y_m: 1.25, relative_lumen_input: 2500.0, evaluation_role: goal}]
+    success: *saturation_success
+  - <<: *goal_case
+    case_id: v_saturation_05
+    family: starts_saturation
+    description: Validation bounded low-intensity recovery case.
+    seeds: [8555]
+    starts: [{id: far_west, x_m: -1.45, y_m: 0.0, yaw_rad: 0.0}]
+    sources: [{id: goal, x_m: 1.3, y_m: 0.0, relative_lumen_input: 450.0, evaluation_role: goal}]
+  - <<: *goal_case
+    case_id: v_saturation_06
+    family: starts_saturation
+    description: Validation bounded controller-timeout stress case.
+    seeds: [8556]
+    starts: [{id: far_east, x_m: 1.45, y_m: 0.0, yaw_rad: 3.141592653589793}]
+    sources: [{id: goal, x_m: -1.3, y_m: 0.0, relative_lumen_input: 800.0, evaluation_role: goal}]
+    algorithm: {ablations: {}, launch_overrides: {verification_max_sec: 12.0, escape_max_sec: 30.0}}
+
+  - <<: *goal_case
+    case_id: v_lifecycle_01
+    family: escape
+    description: Validation pure-escape lifecycle case one.
+    seeds: [8561]
+    starts: [{id: local_center, x_m: -0.8, y_m: 0.0, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -0.8, y_m: 0.0, relative_lumen_input: 700.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.3, y_m: 0.8, relative_lumen_input: 1800.0, evaluation_role: goal}
+    success: &escape_success
+      <<: *goal_success
+      controller:
+        expected_terminal_state: GOAL_HOLD
+        required_state_sequence: [DESIGN_OR_MERGE_FILL, ESCAPE_REPULSE, GOAL_HOLD]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED, GOAL_REACHED]
+        forbidden_events: [FAILSAFE]
+  - <<: *goal_case
+    case_id: v_lifecycle_02
+    family: escape
+    description: Validation pure-escape lifecycle case two.
+    seeds: [8562]
+    starts: [{id: local_south, x_m: -0.7, y_m: -0.4, yaw_rad: 0.3}]
+    sources:
+      - {id: local, x_m: -0.7, y_m: -0.4, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.35, y_m: 0.9, relative_lumen_input: 1900.0, evaluation_role: goal}
+    success: *escape_success
+  - <<: *goal_case
+    case_id: v_lifecycle_03
+    family: escape
+    description: Validation assisted-escape lifecycle case one.
+    seeds: [8563]
+    starts: [{id: local_center, x_m: -0.7, y_m: -0.2, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -0.7, y_m: -0.2, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.4, y_m: 0.8, relative_lumen_input: 1900.0, evaluation_role: goal}
+    success: &assist_success
+      <<: *goal_success
+      controller:
+        expected_terminal_state: GOAL_HOLD
+        required_state_sequence: [ESCAPE_REPULSE, DESIGN_OR_MERGE_FILL, ESCAPE_ASSIST, GOAL_HOLD]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED, ESCAPE_STALLED, GOAL_REACHED]
+        forbidden_events: [FAILSAFE]
+  - <<: *goal_case
+    case_id: v_lifecycle_04
+    family: escape
+    description: Validation assisted-escape lifecycle case two.
+    seeds: [8564]
+    starts: [{id: local_north, x_m: -0.6, y_m: 0.3, yaw_rad: -0.2}]
+    sources:
+      - {id: local, x_m: -0.6, y_m: 0.3, relative_lumen_input: 850.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.35, y_m: -0.9, relative_lumen_input: 2000.0, evaluation_role: goal}
+    success: *assist_success
+  - <<: *goal_case
+    case_id: v_lifecycle_05
+    family: fill_merge
+    description: Validation fill-merge lifecycle case one.
+    seeds: [8565]
+    starts: [{id: southwest_ne, x_m: -1.4, y_m: -1.0, yaw_rad: 0.5}]
+    sources:
+      - {id: local_a, x_m: -0.4, y_m: 0.0, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.15, y_m: 0.1, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.5, y_m: 1.3, relative_lumen_input: 2100.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {gaussian_fill_merge_bandwidth_m: 0.75, gaussian_fill_merge_radius_scale: 2.5}}
+    success: &merge_success
+      <<: *goal_success
+      controller:
+        expected_terminal_state: GOAL_HOLD
+        required_state_sequence: [DESIGN_OR_MERGE_FILL, ESCAPE_REPULSE, DESIGN_OR_MERGE_FILL, GOAL_HOLD]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED, FILL_MERGED, GOAL_REACHED]
+        forbidden_events: [FAILSAFE]
+  - <<: *goal_case
+    case_id: v_lifecycle_06
+    family: fill_merge
+    description: Validation fill-merge lifecycle case two.
+    seeds: [8566]
+    starts: [{id: northwest_se, x_m: -1.3, y_m: 1.1, yaw_rad: -0.5}]
+    sources:
+      - {id: local_a, x_m: -0.3, y_m: 0.15, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.2, y_m: -0.05, relative_lumen_input: 850.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.4, y_m: -1.2, relative_lumen_input: 2200.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {gaussian_fill_merge_bandwidth_m: 0.75, gaussian_fill_merge_radius_scale: 2.5}}
+    success: *merge_success
+  - <<: *goal_case
+    case_id: v_lifecycle_07
+    family: recenter_resume
+    description: Validation recenter-and-resume lifecycle case one.
+    seeds: [8567]
+    starts: [{id: local_west, x_m: -1.1, y_m: 0.2, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -1.1, y_m: 0.2, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.45, y_m: 1.0, relative_lumen_input: 1900.0, evaluation_role: goal}
+    success: &recenter_success
+      <<: *goal_success
+      controller:
+        expected_terminal_state: GOAL_HOLD
+        required_state_sequence: [ESCAPE_REPULSE, RECENTER, SEARCH, GOAL_HOLD]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED, RECENTER_COMPLETE, GOAL_REACHED]
+        forbidden_events: [FAILSAFE]
+  - <<: *goal_case
+    case_id: v_lifecycle_08
+    family: recenter_resume
+    description: Validation recenter-and-resume lifecycle case two.
+    seeds: [8568]
+    starts: [{id: local_east, x_m: 1.0, y_m: -0.3, yaw_rad: 3.141592653589793}]
+    sources:
+      - {id: local, x_m: 1.0, y_m: -0.3, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: -1.4, y_m: 1.0, relative_lumen_input: 2000.0, evaluation_role: goal}
+    success: *recenter_success

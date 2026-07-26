@@ -1424,3 +1424,112 @@ git diff --check: pass
 No ROS build, pytest suite, Gazebo run, bag recording, parameter freeze,
 acceptance gate, physical command, commit, or tag was executed by this
 documentation/tooling hardening.
+
+## Phase 08 v2 activation and staged harness implementation (2026-07-25)
+
+The historical v1 root was inventoried read-only and closed separately. The
+Phase 08a implementation gives detector confirmation sole robust-supervisor
+activation ownership, aggregates source score over complete rotating-sensor
+revolutions, installs the staged v2 validator interface, and adds five
+schema-v2 suites. Historical v1 execution commands now fail closed; its report
+reader remains available.
+
+Build and retained functional regression:
+
+```bash
+colcon --log-base /tmp/dsim_phase08_v2_m2_harness_build build \
+  --symlink-install \
+  --packages-select ros_esc_interfaces ros_esc \
+  turtlebot3_rotating_sensor
+
+python3 -m pytest -q -rs \
+  src/ros_esc/test/test_simulation_disturbances.py \
+  src/ros_esc/test/test_phase08_validation.py \
+  src/ros_esc/test/test_bag_analysis.py \
+  src/ros_esc/test/test_bag_analysis_integration.py \
+  src/ros_esc/test/test_scenario_schema.py \
+  src/ros_esc/test/test_scenario_runner.py \
+  src/ros_esc/test/test_experiment_recording.py \
+  src/ros_esc/test/test_recording_integration.py \
+  src/ros_esc/test/test_state_machine.py \
+  src/ros_esc/test/test_supervisor_integration.py \
+  src/ros_esc/test/test_observability_contract.py \
+  src/ros_esc/test/test_legacy_behavior.py \
+  src/ros_esc/test/test_robust_gaussian_algorithm.py \
+  src/ros_esc/test/test_escape_recenter.py
+```
+
+Final results:
+
+```text
+3 packages finished
+188 passed, 2 skipped in 9.49s
+```
+
+The skipped tests remain the explicit
+`RUN_GESC_PHASE06_GAZEBO_E2E=1` and
+`DSIM_RUN_GAZEBO_RECORDING_TEST=1` recording gates. An earlier retained-suite
+attempt produced `187 passed, 2 skipped, 1 failed`: the synthetic ROS peer
+stopped publishing just as its callback executor was delayed by the larger
+suite. Extending only the test input-publication interval corrected that
+scheduling race. Three consecutive focused integration runs then each
+reported `5 passed`.
+
+The representative v1 replay fixture is a compact value excerpt from
+`20260725T085905912016Z_simulation_phase08_holdout-holdout_tuple_low_high-robust_gaussian_v1-622b56111b_923463df`.
+It is regression input only and is never referenced by the v2 manifest or
+counted as v2 evidence.
+
+Scenario dry-runs:
+
+```bash
+ros2 run ros_esc run_scenario \
+  src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml \
+  --operator phase08_v2 --dry-run \
+  --summary-output /tmp/phase08_v2_activation_dry.yaml
+
+ros2 run ros_esc run_scenario \
+  src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v2_training.yaml \
+  --operator phase08_v2 --dry-run \
+  --summary-output /tmp/phase08_v2_training_dry.yaml
+
+ros2 run ros_esc run_scenario \
+  src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v2_holdout.yaml \
+  --operator phase08_v2 --dry-run \
+  --summary-output /tmp/phase08_v2_holdout_dry.yaml
+
+ros2 run ros_esc run_scenario \
+  src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v2_validation.yaml \
+  --operator phase08_v2 --dry-run \
+  --summary-output /tmp/phase08_v2_validation_dry.yaml
+
+ros2 run ros_esc run_scenario \
+  src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v2_reproducibility.yaml \
+  --operator phase08_v2 --dry-run \
+  --summary-output /tmp/phase08_v2_reproducibility_dry.yaml
+```
+
+Resolved/unsupported counts were `10/0`, `10/0`, `20/0`, `50/0`, and
+`10/0`. The validator expands the ten training cases over exactly three
+candidates, producing the declared 30 tuning executions and 120 total runs.
+The unique holdout/validation IDs are disjoint, the family allocation is
+`7/3/2/2/2/4` plus `18/6/6/6/6/8`, and all ten repeat definitions match their
+predeclared references exactly.
+
+Static validation:
+
+```bash
+python3 -m compileall -q \
+  ros2_ws/src/ros_esc/ros_esc/scenario_runner \
+  ros2_ws/src/ros_esc/ros_esc/supervisor_node \
+  ros2_ws/src/ros_esc/test
+
+python3 -m flake8 --select=E9,F63,F7,F82 <touched Python files>
+python3 -m flake8 --select=E,W,F --ignore=E501,W503 \
+  <touched Python files>
+git diff --check
+```
+
+All listed static checks passed. No Phase 08 v2 Gazebo batch, bag recording,
+parameter freeze, behavioral acceptance gate, physical command, or tag was
+executed in this implementation milestone.

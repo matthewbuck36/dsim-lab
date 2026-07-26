@@ -136,6 +136,8 @@
     <arg name="startup_timeout_sec" default="5.0"/>
     <arg name="convergence_hold_sec" default="2.0"/>
     <arg name="goal_score_threshold" default="0.95"/>
+    <arg name="goal_score_rotation_period_sec" default="3.0"/>
+    <arg name="goal_score_required_rotations" default="2"/>
     <arg name="goal_hold_sec" default="3.0"/>
     <arg name="undesired_score_hold_sec" default="3.0"/>
     <arg name="verification_max_sec" default="10.0"/>
@@ -776,6 +778,8 @@
             -p startup_timeout_sec:=$(var startup_timeout_sec)
             -p convergence_hold_sec:=$(var convergence_hold_sec)
             -p goal_score_threshold:=$(var goal_score_threshold)
+            -p goal_score_rotation_period_sec:=$(var goal_score_rotation_period_sec)
+            -p goal_score_required_rotations:=$(var goal_score_required_rotations)
             -p goal_hold_sec:=$(var goal_hold_sec)
             -p undesired_score_hold_sec:=$(var undesired_score_hold_sec)
             -p verification_max_sec:=$(var verification_max_sec)

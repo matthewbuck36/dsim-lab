@@ -1,0 +1,156 @@
+schema_version: 2
+suite_id: phase08_v2_reproducibility
+description: Ten predeclared repeats matching unique cases without inflating acceptance.
+mode: simulation
+execution:
+  max_parallel_runs: 1
+  gazebo_gui: false
+  preflight_timeout_sec: 150.0
+  run_timeout_sec: 180.0
+  wall_timeout_sec: 480.0
+  shutdown_grace_sec: 30.0
+  stop_on_run_failure: false
+  stop_on_cleanup_failure: true
+metadata:
+  experiment_version: phase08-v2-reproducibility
+  operator_notes: Same freeze, scenario dimensions, start, seed, and environment as references.
+level_map: {"1": 450.0, "2": 800.0, "3": 1200.0, "4": 1800.0, "5": 2500.0}
+defaults:
+  bounds_m: [-2.0, 2.0, -2.0, 2.0]
+  room_center_m: [0.0, 0.0]
+  validation_world: true
+  simulation_contacts_enabled: true
+  disturbances: {sensor_noise: {model: none, bound: 0.0}, sensor_delay_sec: 0.0, pose_delay_sec: 0.0}
+cases:
+  - &goal_case
+    case_id: repeat_ordered_01
+    family: two_source
+    description: Repeat of h_ordered_01.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8401]
+    starts: [{id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["1"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["1"], evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success: &goal_success
+      all_of: [recording_complete, cleanup_complete, controller_goal, ground_truth_goal, required_state_sequence, required_events, collision_expectation]
+      controller:
+        expected_terminal_state: GOAL_HOLD
+        required_state_sequence: [SEARCH, VERIFY_EXTREMUM, GOAL_HOLD]
+        required_events: [CONVERGENCE_CONFIRMED, GOAL_REACHED]
+        forbidden_events: [FAILSAFE]
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      collision_expected: false
+
+  - <<: *goal_case
+    case_id: repeat_ordered_02
+    description: Repeat of v_ordered_08.
+    seeds: [8508]
+    starts: [{id: center_west, x_m: 0.0, y_m: 0.0, yaw_rad: 3.141592653589793}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["3"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["5"], evaluation_role: goal}
+
+  - <<: *goal_case
+    case_id: repeat_multi_01
+    family: multi_source
+    description: Repeat of h_multi_01.
+    seeds: [8411]
+    starts: [{id: center_north, x_m: 0.0, y_m: 0.0, yaw_rad: 1.5707963267948966}]
+    sources:
+      - {id: local_a, x_m: -1.1, y_m: -0.7, relative_lumen_input: 500.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.1, y_m: 0.9, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.4, y_m: 1.25, relative_lumen_input: 2000.0, evaluation_role: goal}
+
+  - <<: *goal_case
+    case_id: repeat_multi_02
+    family: close_minimum
+    description: Repeat of v_multi_04.
+    seeds: [8524]
+    starts: [{id: south_north, x_m: 0.2, y_m: -1.3, yaw_rad: 1.5707963267948966}]
+    sources:
+      - {id: local_a, x_m: -0.3, y_m: -0.1, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.25, y_m: 0.05, relative_lumen_input: 850.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.3, y_m: 1.3, relative_lumen_input: 2200.0, evaluation_role: goal}
+
+  - <<: *goal_case
+    case_id: repeat_wall_01
+    family: boundary
+    description: Repeat of h_wall_01.
+    seeds: [8421]
+    starts: [{id: west_wall_east, x_m: -1.45, y_m: 0.0, yaw_rad: 0.0}]
+    sources: [{id: goal, x_m: 0.7, y_m: 0.0, relative_lumen_input: 1800.0, evaluation_role: goal}]
+
+  - <<: *goal_case
+    case_id: repeat_noise_01
+    family: noise_delay
+    description: Repeat of v_noise_04.
+    seeds: [8544]
+    starts: [{id: center_south, x_m: 0.0, y_m: 0.0, yaw_rad: -1.5707963267948966}]
+    sources: [{id: goal, x_m: 0.3, y_m: -1.1, relative_lumen_input: 1700.0, evaluation_role: goal}]
+    disturbances: {pose_delay_sec: 0.10}
+
+  - <<: *goal_case
+    case_id: repeat_saturation_01
+    family: starts_saturation
+    description: Repeat of v_saturation_03.
+    seeds: [8553]
+    starts: [{id: far_nw, x_m: -1.4, y_m: 1.4, yaw_rad: -0.7853981633974483}]
+    sources: [{id: goal, x_m: 1.25, y_m: -1.25, relative_lumen_input: 2500.0, evaluation_role: goal}]
+    success:
+      <<: *goal_success
+      all_of: [recording_complete, cleanup_complete, controller_goal, ground_truth_goal, required_state_sequence, required_events, minimum_saturation_samples, collision_expectation]
+      minimum_saturation_samples: 1
+
+  - <<: *goal_case
+    case_id: repeat_lifecycle_01
+    family: escape
+    description: Repeat of h_lifecycle_01.
+    seeds: [8451]
+    starts: [{id: local_center, x_m: -0.8, y_m: 0.0, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -0.8, y_m: 0.0, relative_lumen_input: 700.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.3, y_m: 0.8, relative_lumen_input: 1800.0, evaluation_role: goal}
+    success: &escape_success
+      <<: *goal_success
+      controller:
+        expected_terminal_state: GOAL_HOLD
+        required_state_sequence: [DESIGN_OR_MERGE_FILL, ESCAPE_REPULSE, GOAL_HOLD]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED, GOAL_REACHED]
+        forbidden_events: [FAILSAFE]
+
+  - <<: *goal_case
+    case_id: repeat_lifecycle_02
+    family: escape
+    description: Repeat of v_lifecycle_04.
+    seeds: [8564]
+    starts: [{id: local_north, x_m: -0.6, y_m: 0.3, yaw_rad: -0.2}]
+    sources:
+      - {id: local, x_m: -0.6, y_m: 0.3, relative_lumen_input: 850.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.35, y_m: -0.9, relative_lumen_input: 2000.0, evaluation_role: goal}
+    success:
+      <<: *goal_success
+      controller:
+        expected_terminal_state: GOAL_HOLD
+        required_state_sequence: [ESCAPE_REPULSE, DESIGN_OR_MERGE_FILL, ESCAPE_ASSIST, GOAL_HOLD]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED, ESCAPE_STALLED, GOAL_REACHED]
+        forbidden_events: [FAILSAFE]
+
+  - <<: *goal_case
+    case_id: repeat_lifecycle_03
+    family: recenter_resume
+    description: Repeat of v_lifecycle_08.
+    seeds: [8568]
+    starts: [{id: local_east, x_m: 1.0, y_m: -0.3, yaw_rad: 3.141592653589793}]
+    sources:
+      - {id: local, x_m: 1.0, y_m: -0.3, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: -1.4, y_m: 1.0, relative_lumen_input: 2000.0, evaluation_role: goal}
+    success:
+      <<: *goal_success
+      controller:
+        expected_terminal_state: GOAL_HOLD
+        required_state_sequence: [ESCAPE_REPULSE, RECENTER, SEARCH, GOAL_HOLD]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED, RECENTER_COMPLETE, GOAL_REACHED]
+        forbidden_events: [FAILSAFE]

@@ -81,6 +81,8 @@ LAUNCH_OVERRIDES = {
     'gaussian_fill_support_sigma',
     'gaussian_fill_width_escalation_factor',
     'goal_hold_sec',
+    'goal_score_required_rotations',
+    'goal_score_rotation_period_sec',
     'goal_score_threshold',
     'minimum_radial_progress_m',
     'recenter_angular_gain',

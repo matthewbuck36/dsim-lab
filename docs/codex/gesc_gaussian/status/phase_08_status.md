@@ -1,6 +1,6 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-25T16:58:42-07:00`
+Last verified: `2026-07-25T17:32:42-07:00`
 Status: `IN_PROGRESS`
 
 ## Objective
@@ -43,21 +43,32 @@ counting historical v1 evidence.
   Its 50 GiB root, representative hashes, 81-run training result, exposed
   12-run holdout failure, and 203/519 partial full pass were inventoried
   read-only. The separate v2 evidence root was absent.
+- Historical closeout commit:
+  `5a26638e655e136e154dc16fa13a0ee2b3c39726`
+  (`phase 08: close historical v1 evidence`).
+- The detector-owned `EVENT_CONVERGENCE_CONFIRMED` activation path and
+  rotation-aware source-score verification are implemented in the existing
+  detector/supervisor owners. The continuous convergence status remains
+  diagnostic.
+- The v2 orchestrator, five scenario suites, sealed manifest, three-candidate
+  selection, clean-freeze enforcement, 20-run holdout early gate, 70-run
+  unique gates, Wilson intervals, ten-repeat comparison, and v1 execution
+  retirement are implemented in the existing `validate_robustness` owner.
 
 ## Current milestone
 
-- Milestone: activation and rotation-aware goal-verification contract repair.
-- Implementation complete: `no`
-- Next acceptance criterion: focused unit, integration, and representative
-  v1-bag replay regressions prove corrected detector-to-supervisor activation
-  and rotation-aware goal dwell before v2 orchestration or any new batch.
+- Milestone: Phase 08a staged-v2 implementation and pre-runtime regression.
+- Implementation complete: `yes`, pending checkpoint and bounded Phase 08a
+  commit.
+- Next acceptance criterion: commit Phase 08a, then run the retained
+  functional/build gates and recorded robust/legacy simulation smokes before
+  executing the ten-run activation stage.
 
 ## Current problem or blocker
 
-- No Level A blocker is present. The installed `validate_robustness` command
-  and Phase 08 scenarios still implement the retired v1 workflow.
-- The activation repair, v2 scenario manifests, stages, and gates have not yet
-  been implemented or run.
+- No Level A blocker is present.
+- No Phase 08 v2 Gazebo batch or bag recording has run. Runtime activation
+  behavior remains unproven until the prescribed ten-run gate.
 
 ## Files currently relevant
 
@@ -82,6 +93,16 @@ counting historical v1 evidence.
 - D-08-04: retain the existing runner, recorder, analyzer, and
   `validate_robustness` owner. Do not create parallel orchestration or
   validation implementations.
+- D-08-05: detector confirmation is the activation owner. A candidate status
+  sample alone cannot leave `SEARCH`; confirmed events carry the canonical
+  eight-value fill snapshot, with same-timestamp fallback only for historical
+  v1 replay.
+- D-08-06: goal verification uses the minimum of per-rotation maxima across
+  two complete 3-second rotations. Missing first-score evidence waits within
+  the existing timeout; an observed invalid score still fails safe.
+- D-08-07: the 20 holdout identities are sealed before tuning. The manifest
+  excludes historical v1 run paths/hashes and later stages require exact
+  scenario hashes plus a clean, unchanged freeze commit/tree.
 
 ## Validation checkpoints
 
@@ -114,8 +135,30 @@ counting historical v1 evidence.
 - Storage preflight: v1 uses about 50 GiB and the filesystem has 329 GiB free.
 - Dependency recheck: `gazebo_msgs/msg/ContactsState` resolves and
   `/opt/ros/humble/lib/libgazebo_ros_bumper.so` exists.
-- No Phase 08 v2 build, pytest, Gazebo run, bag recording, freeze, acceptance
-  gate, or tag has been executed.
+- Selected-package build:
+  `3 packages finished` using
+  `/tmp/dsim_phase08_v2_m2_harness_build`.
+- Focused activation/orchestration regression:
+  `91 passed, 1 skipped`; the skip is the explicit opt-in recorded Gazebo E2E.
+- Retained functional suite after the final test-harness scheduling correction:
+  `188 passed, 2 skipped in 9.49s`. Both skips are explicit environment-gated
+  Gazebo recording tests.
+- Synthetic supervisor integration repeated three times:
+  `5 passed` on each pass.
+- V2 scenario dry-runs:
+  activation `10/0 unsupported`, training `10/0`, holdout `20/0`,
+  validation `50/0`, reproducibility `10/0`. Training expands over three
+  candidates in the validator for 30 executions; total declared arithmetic is
+  120.
+- All ten repeat definitions match their referenced unique scenario
+  projection exactly for profile, start, sources, bounds, room, disturbances,
+  validation, frozen profile, algorithm, success predicates, and seed.
+- Python compile, JSON/YAML/schema parsing, fatal flake8, focused E/W/F
+  flake8, and `git diff --check`: passed.
+- Phase 08 checkpoint refreshed after the Phase 08a implementation evidence:
+  passed.
+- No Phase 08 v2 Gazebo run, bag recording, freeze, empirical acceptance gate,
+  physical command, or tag has been executed.
 
 ## Attempts not to repeat
 
@@ -123,20 +166,21 @@ counting historical v1 evidence.
 - Do not reuse exposed v1 holdouts as v2 holdouts.
 - Do not accept the historical C8 tie-break as a v2 selection result.
 - Do not run planned v2 commands until their interface and scenario files are
-  implemented and tested.
+  implemented and tested. This condition is now satisfied for dry-run use;
+  runtime still begins only after the Phase 08a commit and recorded smokes.
 - Do not infer behavioral success from recording completeness or cleanup.
 - Do not rerun the v1 JSON/YAML/SQLite integrity sweep; its exact 548/2242/320
   results and representative hashes are retained in the closeout.
 
 ## Remaining work
 
-1. Inspect the live detector, supervisor, goal-verification, analyzer, and
-   representative v1 bag contracts.
-2. Implement and test the activation and goal-verification corrections.
-3. Implement the v2 staged scenarios and extend the existing validator.
-4. Build, run focused regressions/dry-runs, and execute only the ten-run
-   activation stage.
-5. Continue only if the predeclared activation gate passes.
+1. Commit the verified Phase 08a implementation as
+   `phase 08a: add staged robustness validation v2`.
+2. Run the repository-standard package test baseline and the explicit recorded
+   robust/legacy smokes; preserve exact artifacts and outcomes.
+3. Create the separate v2 evidence root and execute only the ten-run activation
+   stage.
+4. Continue to the 30-run sweep only if all activation gates pass.
 
 ## Stop conditions
 

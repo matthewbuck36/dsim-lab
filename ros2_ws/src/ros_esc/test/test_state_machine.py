@@ -6,6 +6,7 @@ import pytest
 
 from ros_esc.supervisor_node.state_machine import (
     STATE_WEIGHTS,
+    RotationScoreWindow,
     State,
     StateMachineConfig,
     SupervisorStateMachine,
@@ -82,6 +83,56 @@ def test_convergence_requires_continuous_dwell_and_exact_boundary():
     assert transition.current == State.VERIFY_EXTREMUM
 
 
+def test_detector_confirmation_activates_without_candidate_dwell():
+    machine = SupervisorStateMachine()
+
+    assert machine.step(0.0, TransitionInputs(convergence=False)) is None
+    transition = machine.step(
+        0.1,
+        TransitionInputs(convergence_confirmed=True),
+    )
+
+    assert transition.current == State.VERIFY_EXTREMUM
+    assert transition.reason == "detector convergence confirmation received"
+
+
+def test_rotation_score_window_requires_complete_repeated_rotations():
+    window = RotationScoreWindow(rotation_period_sec=3.0, required_rotations=2)
+
+    window.update(0.0, 0.10)
+    window.update(1.0, 1.00)
+    window.update(3.0, 0.10)
+    assert window.ready is False
+    assert window.score is None
+
+    window.update(4.0, 0.97)
+    window.update(6.0, 0.10)
+    assert window.ready is True
+    assert window.score == pytest.approx(0.97)
+
+
+def test_rotation_score_window_discards_evidence_across_sample_gap():
+    window = RotationScoreWindow(rotation_period_sec=3.0, required_rotations=2)
+    window.update(0.0, 1.0)
+    window.update(3.0, 0.1)
+    window.update(9.1, 1.0)
+
+    assert window.ready is False
+    assert window.score is None
+
+
+@pytest.mark.parametrize(
+    ("rotation_period_sec", "required_rotations"),
+    [(0.0, 2), (math.nan, 2), (3.0, 0)],
+)
+def test_rotation_score_window_rejects_invalid_configuration(
+    rotation_period_sec,
+    required_rotations,
+):
+    with pytest.raises(ValueError):
+        RotationScoreWindow(rotation_period_sec, required_rotations)
+
+
 def test_high_score_goal_dwell_and_latch():
     machine = SupervisorStateMachine()
     enter_verify(machine)
@@ -92,6 +143,44 @@ def test_high_score_goal_dwell_and_latch():
     )
     assert transition.current == State.GOAL_HOLD
     assert machine.step(100.0, TransitionInputs()) is None
+
+
+def test_incomplete_rotation_evidence_waits_then_times_out():
+    machine = SupervisorStateMachine(config=config(verification_max_sec=4.0))
+    enter_verify(machine)
+
+    assert machine.step(
+        2.1,
+        TransitionInputs(
+            source_score_valid=True,
+            source_score_ready=False,
+        ),
+    ) is None
+    transition = machine.step(
+        6.0,
+        TransitionInputs(
+            source_score_valid=True,
+            source_score_ready=False,
+        ),
+    )
+
+    assert transition.current == State.FAILSAFE
+    assert transition.reason == "verification timeout"
+
+
+def test_confirmation_before_first_score_waits_without_false_failsafe():
+    machine = SupervisorStateMachine()
+    machine.step(0.0, TransitionInputs(convergence_confirmed=True))
+
+    assert machine.step(
+        0.1,
+        TransitionInputs(
+            source_score_observed=False,
+            source_score_valid=False,
+            source_score_ready=False,
+        ),
+    ) is None
+    assert machine.state == State.VERIFY_EXTREMUM
 
 
 def test_threshold_alternation_resets_opposite_dwell_then_times_out():

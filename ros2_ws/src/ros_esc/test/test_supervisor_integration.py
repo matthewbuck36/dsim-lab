@@ -69,6 +69,25 @@ def _convergence():
     return msg
 
 
+def _confirmed_convergence():
+    msg = AlgorithmEvent()
+    msg.event_type = AlgorithmEvent.EVENT_CONVERGENCE_CONFIRMED
+    msg.source_timestamp = 42.0
+    msg.source_timestamp_valid = True
+    msg.value_names = [
+        "metric",
+        "r_mean_m2",
+        "decay",
+        "fill_center_x_m",
+        "fill_center_y_m",
+        "mean_old_x_m",
+        "mean_old_y_m",
+        "count_remaining",
+    ]
+    msg.values = [-0.1, 0.0, 0.0, 0.2, 0.0, 0.3, 0.0, 0.0]
+    return msg
+
+
 def _fill(source_timestamp, fill_id=1, revision=1, exit_radius=0.3):
     msg = GaussianFill()
     msg.source_timestamp = float(source_timestamp)
@@ -99,6 +118,8 @@ class SupervisorHarness:
             Parameter("supervisor_publish_rate_hz", value=200.0),
             Parameter("startup_timeout_sec", value=0.5),
             Parameter("convergence_hold_sec", value=0.03),
+            Parameter("goal_score_rotation_period_sec", value=0.01),
+            Parameter("goal_score_required_rotations", value=1),
             Parameter("goal_hold_sec", value=0.03),
             Parameter("undesired_score_hold_sec", value=0.03),
             Parameter("verification_max_sec", value=0.5),
@@ -157,6 +178,11 @@ class SupervisorHarness:
             "/gesc_gaussian/convergence_status",
             10,
         )
+        self.event_pub = self.peer.create_publisher(
+            AlgorithmEvent,
+            "/gesc_gaussian/algorithm_events",
+            10,
+        )
         self.fill_pub = self.peer.create_publisher(
             GaussianFill, "/gesc_gaussian/gaussian_fills", 10
         )
@@ -165,6 +191,24 @@ class SupervisorHarness:
         )
         self.thread = threading.Thread(target=self.executor.spin, daemon=True)
         self.thread.start()
+        matched = _wait_for(
+            lambda: (
+                self.pose_pub.get_subscription_count() >= 1
+                and self.source_pub.get_subscription_count() >= 1
+                and self.convergence_pub.get_subscription_count() >= 1
+                and self.event_pub.get_subscription_count() >= 1
+                and self.fill_pub.get_subscription_count() >= 1
+                and self.stop_pub.get_subscription_count() >= 1
+                and self.supervisor.state_publisher.get_subscription_count()
+                >= 1
+                and self.supervisor.fill_request_publisher.get_subscription_count()
+                >= 1
+                and self.supervisor.command_publisher.get_subscription_count()
+                >= 1
+            )
+        )
+        if not matched:
+            raise RuntimeError("synthetic supervisor ROS graph did not match")
 
     def publish_inputs(self, pose, convergence=None, duration=0.08):
         deadline = time.monotonic() + duration
@@ -174,6 +218,7 @@ class SupervisorHarness:
             self.source_pub.publish(source)
             if convergence is not None:
                 self.convergence_pub.publish(convergence)
+                self.event_pub.publish(_confirmed_convergence())
             time.sleep(0.005)
 
     def close(self):
@@ -190,7 +235,7 @@ def test_pure_repulsion_exits_without_redesign_and_recenter_completes():
     harness = SupervisorHarness(name="phase04_pure_escape_peer")
     try:
         convergence = _convergence()
-        harness.publish_inputs(_pose(0.2), convergence, duration=0.12)
+        harness.publish_inputs(_pose(0.2), convergence, duration=0.25)
         assert _wait_for(lambda: len(harness.requests) == 1)
         assert harness.requests[0].header == "ROBUST_FILL_CREATE"
         harness.fill_pub.publish(_fill(harness.requests[0].timestamp))
@@ -249,6 +294,29 @@ def test_pure_repulsion_exits_without_redesign_and_recenter_completes():
         rclpy.shutdown()
 
 
+def test_convergence_candidate_alone_does_not_activate_supervisor():
+    rclpy.init()
+    harness = SupervisorHarness(name="phase08_candidate_only_peer")
+    try:
+        convergence = _convergence()
+        deadline = time.monotonic() + 0.12
+        source = _source()
+        while time.monotonic() < deadline:
+            harness.pose_pub.publish(_pose(0.2))
+            harness.source_pub.publish(source)
+            harness.convergence_pub.publish(convergence)
+            time.sleep(0.005)
+
+        assert harness.requests == []
+        assert all(
+            state.state == AlgorithmState.STATE_SEARCH
+            for state in harness.states
+        )
+    finally:
+        harness.close()
+        rclpy.shutdown()
+
+
 def test_stall_requests_one_targeted_redesign_then_activates_assist():
     rclpy.init()
     harness = SupervisorHarness(
@@ -257,7 +325,7 @@ def test_stall_requests_one_targeted_redesign_then_activates_assist():
     )
     try:
         convergence = _convergence()
-        harness.publish_inputs(_pose(0.2), convergence, duration=0.12)
+        harness.publish_inputs(_pose(0.2), convergence, duration=0.25)
         assert _wait_for(lambda: len(harness.requests) == 1)
         harness.fill_pub.publish(
             _fill(harness.requests[0].timestamp, exit_radius=0.5)

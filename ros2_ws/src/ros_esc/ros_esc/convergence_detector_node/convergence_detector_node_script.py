@@ -450,6 +450,8 @@ class ConvergenceDetector(Node):
                         "decay",
                         "fill_center_x_m",
                         "fill_center_y_m",
+                        "mean_old_x_m",
+                        "mean_old_y_m",
                         "count_remaining",
                     ],
                     values=[
@@ -458,6 +460,8 @@ class ConvergenceDetector(Node):
                         decay_term,
                         float(mean_recent[0]),
                         float(mean_recent[1]),
+                        float(mean_old[0]),
+                        float(mean_old[1]),
                         float(self.count_remaining),
                     ],
                 )

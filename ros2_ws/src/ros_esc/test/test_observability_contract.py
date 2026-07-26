@@ -170,6 +170,17 @@ def test_escape_state_contract_and_robust_request_header_semantics():
     assert robust_fill_redesign_target("ROBUST_FILL_REDESIGN:bad") is None
 
 
+def test_rotation_aware_goal_defaults_are_explicit_in_central_launch():
+    root = ET.parse(LAUNCH_FILE).getroot()
+    defaults = {
+        element.attrib["name"]: element.attrib.get("default")
+        for element in root.findall("arg")
+    }
+
+    assert defaults["goal_score_rotation_period_sec"] == "3.0"
+    assert defaults["goal_score_required_rotations"] == "2"
+
+
 def test_robust_fill_lifecycle_and_all_designed_fields_are_explicit():
     fill = GaussianFill()
     fill.fill_id = 4

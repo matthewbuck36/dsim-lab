@@ -63,6 +63,21 @@ The two cost owners are mutually exclusive in `gazebo.launch.xml`. Multiple
 event publishers are intentional because each existing node retains ownership
 of the event it detects.
 
+For `robust_gaussian_v1`, the detector's typed
+`EVENT_CONVERGENCE_CONFIRMED` event is the sole activation input that moves
+the supervisor from `SEARCH` to `VERIFY_EXTREMUM`. The continuous
+`/gesc_gaussian/convergence_status` stream remains diagnostic and cannot
+activate the supervisor by itself. Confirmed events contain the same canonical
+eight values as `CONVERGED_FILL_READY`; the supervisor can also reconstruct
+that snapshot from the matching historical six-value typed event plus its
+same-timestamp status sample for v1 replay only.
+
+Goal verification uses the minimum of the maximum source score observed in
+each of `goal_score_required_rotations` complete
+`goal_score_rotation_period_sec` windows. Incomplete rotation evidence waits
+within the existing bounded verification timeout. An observed invalid score
+still fails safe.
+
 ## `CostBreakdown`
 
 ### Source metadata
@@ -379,6 +394,8 @@ The central launch adds these arguments:
 | `startup_timeout_sec` | `5.0` |
 | `convergence_hold_sec` | `2.0` |
 | `goal_score_threshold` | `0.95` |
+| `goal_score_rotation_period_sec` | `3.0` |
+| `goal_score_required_rotations` | `2` |
 | `goal_hold_sec` | `3.0` |
 | `undesired_score_hold_sec` | `3.0` |
 | `verification_max_sec` | `10.0` |
@@ -579,13 +596,14 @@ ros2 run ros_esc validate_robustness <subcommand>
   --evidence-root PATH
 ```
 
-The currently installed interface is v1: `sweep`, `freeze`, `holdout`,
-`full-pass`, and `report`, with `--pass-index 1|2|3` for `full-pass`. Its fixed
-arithmetic is 9 candidates x 9 training runs = 81, 12 holdouts, and 519 runs
-per full pass. That interface and its outputs are retained only for historical
-v1 evidence. Do not execute or resume it for a new acceptance claim.
+The historical v1 interface remains readable through `sweep`, `freeze`,
+`holdout`, `full-pass`, and `report`, with `--pass-index 1|2|3` for
+`full-pass`. Its fixed arithmetic was 9 candidates x 9 training runs = 81, 12
+holdouts, and 519 runs per full pass. The command recognizes an existing v1
+workflow state only to retain reporting compatibility. Do not execute or
+resume it for a new acceptance claim.
 
-The approved v2 interface is planned, not yet installed: `activation`,
+The installed v2 interface is `activation`,
 `sweep`, `freeze`, `holdout`, `validation`, `reproducibility`, and `report`.
 It uses workflow schema version 2 and a separate evidence root. Its arithmetic
 is 10 activation + 30 tuning + 20 new hidden holdout + 50 additional unique
@@ -593,9 +611,12 @@ validation + 10 targeted repeats = 120 declared runs. Holdout plus additional
 validation form the 70-run unique acceptance denominator; repeats remain
 separate.
 
-The v2 command must refuse mixed v1/v2 evidence and out-of-order execution.
+The v2 command refuses mixed v1/v2 evidence and out-of-order execution.
 Holdout, validation, and reproducibility require a clean committed freeze and
-must compare the exact commit/tree, frozen profile, and input hashes.
+compare the exact commit/tree, frozen profile, and input hashes. Before
+activation it seals scenario hashes and the declared case identities,
+including the selection-blind holdout, without importing any historical v1
+run path or hash.
 
 Only these launch overrides are candidates for the Phase 08 profile file:
 
@@ -608,8 +629,9 @@ Only these launch overrides are candidates for the Phase 08 profile file:
 | `minimum_radial_progress_m` | minimum progress within the stall window |
 
 The generated historical `phase08_frozen_parameters.yaml` is v1-only.
-The planned `phase08_v2_frozen_parameters.yaml` is applied only through the
-v2 validation harness. Neither changes a direct-launch or legacy default.
+`phase08_v2_frozen_parameters.yaml` is generated only after v2 selection and
+is applied only through the v2 validation harness. Neither changes a
+direct-launch or legacy default.
 
 ## Phase 07 offline analysis interface
 

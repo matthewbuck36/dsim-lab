@@ -1,0 +1,45 @@
+{
+  "provenance": {
+    "historical_evidence_root": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08",
+    "run_id": "20260725T085905912016Z_simulation_phase08_holdout-holdout_tuple_low_high-robust_gaussian_v1-622b56111b_923463df",
+    "purpose": "Minimal values copied from one read-only Phase 08 v1 bag for deterministic replay regression"
+  },
+  "convergence_status": {
+    "timestamp": 175.197119362,
+    "data": [
+      -0.0007023330215241153,
+      0.09068855815351785,
+      0.10860910882495806,
+      1.0053494139016714,
+      0.656205904944933,
+      1.0514704937245765,
+      0.3586132233321503,
+      0.0
+    ]
+  },
+  "historical_confirmation": {
+    "value_names": [
+      "metric",
+      "r_mean_m2",
+      "decay",
+      "fill_center_x_m",
+      "fill_center_y_m",
+      "count_remaining"
+    ],
+    "values": [
+      -0.0007023330215241153,
+      0.09068855815351785,
+      0.10860910882495806,
+      1.0053494139016714,
+      0.656205904944933,
+      0.0
+    ]
+  },
+  "source_score_samples": [
+    [165.0, 0.10],
+    [166.534450783, 1.0],
+    [168.0, 0.10],
+    [169.489533746, 0.9754099305767657],
+    [171.0, 0.10]
+  ]
+}

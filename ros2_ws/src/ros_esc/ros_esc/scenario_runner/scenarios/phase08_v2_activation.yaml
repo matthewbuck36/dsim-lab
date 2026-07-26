@@ -1,0 +1,189 @@
+schema_version: 2
+suite_id: phase08_v2_activation
+description: Ten pre-tuning proofs of confirmed activation and rotation-aware verification.
+mode: simulation
+execution:
+  max_parallel_runs: 1
+  gazebo_gui: false
+  preflight_timeout_sec: 150.0
+  run_timeout_sec: 180.0
+  wall_timeout_sec: 480.0
+  shutdown_grace_sec: 30.0
+  stop_on_run_failure: false
+  stop_on_cleanup_failure: true
+metadata:
+  experiment_version: phase08-v2-activation
+  operator_notes: Pre-tuning activation gate; no physical hardware.
+level_map: {"1": 450.0, "2": 800.0, "3": 1200.0, "4": 1800.0, "5": 2500.0}
+defaults:
+  bounds_m: [-2.0, 2.0, -2.0, 2.0]
+  room_center_m: [0.0, 0.0]
+  validation_world: true
+  simulation_contacts_enabled: true
+  disturbances: {sensor_noise: {model: none, bound: 0.0}, sensor_delay_sec: 0.0, pose_delay_sec: 0.0}
+cases:
+  - &activation_goal
+    case_id: activation_goal_low
+    family: two_source
+    description: Confirmed detector event reaches rotation-aware goal verification at low level.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8201]
+    starts: [{id: west_east, x_m: -0.8, y_m: 0.0, yaw_rad: 0.0}]
+    sources: [{id: goal, x_m: 0.9, y_m: 0.0, relative_lumen_input: 450.0, evaluation_role: goal}]
+    algorithm:
+      ablations: {}
+      launch_overrides: &activation_parameters
+        gaussian_fill_covariance_scale: 2.5
+        gaussian_fill_amplitude_depth_scale: 1.5
+        gaussian_fill_exit_sigma: 2.5
+        stall_window_sec: 3.0
+        minimum_radial_progress_m: 0.05
+    success: &activation_goal_success
+      all_of: [recording_complete, cleanup_complete, controller_goal, ground_truth_goal, required_state_sequence, required_events, collision_expectation]
+      controller:
+        expected_terminal_state: GOAL_HOLD
+        required_state_sequence: [SEARCH, VERIFY_EXTREMUM, GOAL_HOLD]
+        required_events: [CONVERGENCE_CONFIRMED, GOAL_REACHED]
+        forbidden_events: [FAILSAFE]
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      collision_expected: false
+
+  - <<: *activation_goal
+    case_id: activation_goal_medium
+    description: Confirmed detector event reaches rotation-aware goal verification at medium level.
+    seeds: [8202]
+    starts: [{id: south_north, x_m: 0.0, y_m: -0.8, yaw_rad: 1.5707963267948966}]
+    sources: [{id: goal, x_m: 0.0, y_m: 0.9, relative_lumen_input: 1200.0, evaluation_role: goal}]
+
+  - <<: *activation_goal
+    case_id: activation_goal_high
+    description: Confirmed detector event reaches rotation-aware goal verification at high level.
+    seeds: [8203]
+    starts: [{id: east_west, x_m: 0.8, y_m: 0.0, yaw_rad: 3.141592653589793}]
+    sources: [{id: goal, x_m: -0.9, y_m: 0.0, relative_lumen_input: 2500.0, evaluation_role: goal}]
+
+  - <<: *activation_goal
+    case_id: activation_fill_create
+    family: escape
+    description: Confirmed non-goal extremum creates a typed Gaussian fill.
+    seeds: [8204]
+    starts: [{id: local_center, x_m: -0.8, y_m: 0.0, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -0.8, y_m: 0.0, relative_lumen_input: 700.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.3, y_m: 0.8, relative_lumen_input: 1800.0, evaluation_role: goal}
+    success: &fill_create_success
+      all_of: [recording_complete, cleanup_complete, required_state_sequence, required_events, collision_expectation]
+      controller:
+        expected_terminal_state: null
+        required_state_sequence: [SEARCH, VERIFY_EXTREMUM, DESIGN_OR_MERGE_FILL]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED]
+        forbidden_events: [FAILSAFE]
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      collision_expected: false
+
+  - <<: *activation_goal
+    case_id: activation_pure_escape
+    family: escape
+    description: Fill creation proceeds through pure repulsive escape.
+    seeds: [8205]
+    starts: [{id: local_center, x_m: -0.8, y_m: 0.0, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -0.8, y_m: 0.0, relative_lumen_input: 700.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.3, y_m: 0.8, relative_lumen_input: 1800.0, evaluation_role: goal}
+    algorithm:
+      ablations: {affine_assist_enabled: false, recenter_enabled: false}
+      launch_overrides: *activation_parameters
+    success: &pure_escape_success
+      all_of: [recording_complete, cleanup_complete, required_state_sequence, required_events, collision_expectation]
+      controller:
+        expected_terminal_state: null
+        required_state_sequence: [DESIGN_OR_MERGE_FILL, ESCAPE_REPULSE]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED]
+        forbidden_events: [FAILSAFE]
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      collision_expected: false
+
+  - <<: *activation_goal
+    case_id: activation_stalled_assist
+    family: escape
+    description: A detected stall requests one redesign and enters assisted escape.
+    seeds: [8206]
+    starts: [{id: local_center, x_m: -0.7, y_m: -0.2, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -0.7, y_m: -0.2, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.4, y_m: 0.8, relative_lumen_input: 1900.0, evaluation_role: goal}
+    success:
+      all_of: [recording_complete, cleanup_complete, required_state_sequence, required_events, collision_expectation]
+      controller:
+        expected_terminal_state: null
+        required_state_sequence: [ESCAPE_REPULSE, DESIGN_OR_MERGE_FILL, ESCAPE_ASSIST]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED, ESCAPE_STALLED]
+        forbidden_events: [FAILSAFE]
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      collision_expected: false
+
+  - <<: *activation_goal
+    case_id: activation_fill_merge
+    family: fill_merge
+    description: Close minima exercise typed fill merge lifecycle.
+    seeds: [8207]
+    starts: [{id: southwest_northeast, x_m: -1.4, y_m: -1.0, yaw_rad: 0.5}]
+    sources:
+      - {id: local_a, x_m: -0.40, y_m: 0.0, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.15, y_m: 0.10, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.5, y_m: 1.3, relative_lumen_input: 2100.0, evaluation_role: goal}
+    algorithm:
+      ablations: {}
+      launch_overrides:
+        <<: *activation_parameters
+        gaussian_fill_merge_bandwidth_m: 0.75
+        gaussian_fill_merge_radius_scale: 2.5
+    success:
+      all_of: [recording_complete, cleanup_complete, required_state_sequence, required_events, collision_expectation]
+      controller:
+        expected_terminal_state: null
+        required_state_sequence: [DESIGN_OR_MERGE_FILL, ESCAPE_REPULSE, DESIGN_OR_MERGE_FILL]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED, FILL_MERGED]
+        forbidden_events: [FAILSAFE]
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      collision_expected: false
+
+  - <<: *activation_goal
+    case_id: activation_recenter_resume
+    family: recenter_resume
+    description: Escape completes recenter and resumes search.
+    seeds: [8208]
+    starts: [{id: local_west, x_m: -1.1, y_m: 0.2, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -1.1, y_m: 0.2, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.45, y_m: 1.0, relative_lumen_input: 1900.0, evaluation_role: goal}
+    success:
+      all_of: [recording_complete, cleanup_complete, required_state_sequence, required_events, collision_expectation]
+      controller:
+        expected_terminal_state: null
+        required_state_sequence: [ESCAPE_REPULSE, RECENTER, SEARCH]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED, RECENTER_COMPLETE]
+        forbidden_events: [FAILSAFE]
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      collision_expected: false
+
+  - <<: *activation_goal
+    case_id: activation_boundary_negative
+    family: boundary
+    description: Near-wall goal activation retains valid negative contact evidence.
+    seeds: [8209]
+    starts: [{id: west_wall_east, x_m: -1.45, y_m: 0.0, yaw_rad: 0.0}]
+    sources: [{id: goal, x_m: -0.6, y_m: 0.0, relative_lumen_input: 1200.0, evaluation_role: goal}]
+
+  - <<: *activation_goal
+    case_id: activation_noise_delay
+    family: noise_delay
+    description: Confirmed activation remains reachable with seeded noise and bounded delays.
+    seeds: [8210]
+    starts: [{id: center_northeast, x_m: 0.0, y_m: 0.0, yaw_rad: 0.7853981633974483}]
+    sources: [{id: goal, x_m: 1.0, y_m: 1.0, relative_lumen_input: 1800.0, evaluation_role: goal}]
+    disturbances:
+      sensor_noise: {model: gaussian, bound: 0.0, std_dev: 0.01}
+      sensor_delay_sec: 0.05
+      pose_delay_sec: 0.05

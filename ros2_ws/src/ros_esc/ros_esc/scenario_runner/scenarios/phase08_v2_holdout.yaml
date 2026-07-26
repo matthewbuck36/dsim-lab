@@ -1,0 +1,268 @@
+schema_version: 2
+suite_id: phase08_v2_holdout
+description: Twenty selection-blind unique holdout cases sealed before tuning.
+mode: simulation
+execution:
+  max_parallel_runs: 1
+  gazebo_gui: false
+  preflight_timeout_sec: 150.0
+  run_timeout_sec: 180.0
+  wall_timeout_sec: 480.0
+  shutdown_grace_sec: 30.0
+  stop_on_run_failure: false
+  stop_on_cleanup_failure: true
+metadata:
+  experiment_version: phase08-v2-holdout
+  operator_notes: Execute once after the clean freeze commit; no retuning.
+level_map: {"1": 450.0, "2": 800.0, "3": 1200.0, "4": 1800.0, "5": 2500.0}
+defaults:
+  bounds_m: [-2.0, 2.0, -2.0, 2.0]
+  room_center_m: [0.0, 0.0]
+  validation_world: true
+  simulation_contacts_enabled: true
+  disturbances: {sensor_noise: {model: none, bound: 0.0}, sensor_delay_sec: 0.0, pose_delay_sec: 0.0}
+cases:
+  - &goal_case
+    case_id: h_ordered_01
+    family: two_source
+    description: Hidden ordered level pair 1-1.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8401]
+    starts: [{id: center_east, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["1"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["1"], evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {}}
+    success: &goal_success
+      all_of: [recording_complete, cleanup_complete, controller_goal, ground_truth_goal, required_state_sequence, required_events, collision_expectation]
+      controller:
+        expected_terminal_state: GOAL_HOLD
+        required_state_sequence: [SEARCH, VERIFY_EXTREMUM, GOAL_HOLD]
+        required_events: [CONVERGENCE_CONFIRMED, GOAL_REACHED]
+        forbidden_events: [FAILSAFE]
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      collision_expected: false
+
+  - <<: *goal_case
+    case_id: h_ordered_02
+    description: Hidden ordered level pair 1-2.
+    seeds: [8402]
+    starts: [{id: southwest_north, x_m: -1.1, y_m: -1.0, yaw_rad: 1.5707963267948966}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["1"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["2"], evaluation_role: goal}
+
+  - <<: *goal_case
+    case_id: h_ordered_03
+    description: Hidden ordered level pair 1-3.
+    seeds: [8403]
+    starts: [{id: northeast_west, x_m: 1.1, y_m: 1.0, yaw_rad: 3.141592653589793}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["1"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["3"], evaluation_role: goal}
+
+  - <<: *goal_case
+    case_id: h_ordered_04
+    description: Hidden ordered level pair 1-4.
+    seeds: [8404]
+    starts: [{id: northwest_south, x_m: -1.0, y_m: 1.0, yaw_rad: -1.5707963267948966}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["1"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["4"], evaluation_role: goal}
+
+  - <<: *goal_case
+    case_id: h_ordered_05
+    description: Hidden ordered level pair 1-5.
+    seeds: [8405]
+    starts: [{id: southeast_northwest, x_m: 1.0, y_m: -1.0, yaw_rad: 2.356194490192345}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["1"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["5"], evaluation_role: goal}
+
+  - <<: *goal_case
+    case_id: h_ordered_06
+    description: Hidden ordered level pair 2-1.
+    seeds: [8406]
+    starts: [{id: south_north, x_m: 0.0, y_m: -1.2, yaw_rad: 1.5707963267948966}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["2"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["1"], evaluation_role: goal}
+
+  - <<: *goal_case
+    case_id: h_ordered_07
+    description: Hidden ordered level pair 2-2.
+    seeds: [8407]
+    starts: [{id: north_south, x_m: 0.0, y_m: 1.2, yaw_rad: -1.5707963267948966}]
+    sources:
+      - {id: source_a, x_m: -1.0, y_m: 0.0, levels: ["2"], evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.0, y_m: 0.0, levels: ["2"], evaluation_role: goal}
+
+  - <<: *goal_case
+    case_id: h_multi_01
+    family: multi_source
+    description: Hidden three-source geometry.
+    seeds: [8411]
+    starts: [{id: center_north, x_m: 0.0, y_m: 0.0, yaw_rad: 1.5707963267948966}]
+    sources:
+      - {id: local_a, x_m: -1.1, y_m: -0.7, relative_lumen_input: 500.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.1, y_m: 0.9, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.4, y_m: 1.25, relative_lumen_input: 2000.0, evaluation_role: goal}
+
+  - <<: *goal_case
+    case_id: h_multi_02
+    family: close_minimum
+    description: Hidden close-minimum geometry.
+    seeds: [8412]
+    starts: [{id: southwest_northeast, x_m: -1.3, y_m: -1.0, yaw_rad: 0.6}]
+    sources:
+      - {id: local_a, x_m: -0.4, y_m: 0.0, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.15, y_m: 0.1, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.45, y_m: 1.25, relative_lumen_input: 2100.0, evaluation_role: goal}
+
+  - <<: *goal_case
+    case_id: h_multi_03
+    family: separation_overlap
+    description: Hidden overlapping-basin geometry.
+    seeds: [8413]
+    starts: [{id: west_east, x_m: -1.4, y_m: 0.5, yaw_rad: 0.0}]
+    sources:
+      - {id: local_a, x_m: -0.5, y_m: 0.4, relative_lumen_input: 850.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.1, y_m: 0.45, relative_lumen_input: 900.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.4, y_m: -0.8, relative_lumen_input: 2200.0, evaluation_role: goal}
+
+  - <<: *goal_case
+    case_id: h_wall_01
+    family: boundary
+    description: Hidden west-wall start with negative collision expectation.
+    seeds: [8421]
+    starts: [{id: west_wall_east, x_m: -1.45, y_m: 0.0, yaw_rad: 0.0}]
+    sources: [{id: goal, x_m: 0.7, y_m: 0.0, relative_lumen_input: 1800.0, evaluation_role: goal}]
+
+  - <<: *goal_case
+    case_id: h_wall_02
+    family: boundary
+    description: Hidden northeast-corner start with negative collision expectation.
+    seeds: [8422]
+    starts: [{id: northeast_southwest, x_m: 1.35, y_m: 1.35, yaw_rad: -2.356194490192345}]
+    sources: [{id: goal, x_m: 0.0, y_m: 0.0, relative_lumen_input: 1800.0, evaluation_role: goal}]
+
+  - <<: *goal_case
+    case_id: h_noise_01
+    family: noise_delay
+    description: Hidden seeded Gaussian-noise case.
+    seeds: [8431]
+    starts: [{id: center_northeast, x_m: 0.0, y_m: 0.0, yaw_rad: 0.7853981633974483}]
+    sources: [{id: goal, x_m: 1.0, y_m: 1.0, relative_lumen_input: 1800.0, evaluation_role: goal}]
+    disturbances: {sensor_noise: {model: gaussian, bound: 0.0, std_dev: 0.015}}
+
+  - <<: *goal_case
+    case_id: h_noise_02
+    family: noise_delay
+    description: Hidden combined sensor-and-pose delay case.
+    seeds: [8432]
+    starts: [{id: center_northwest, x_m: 0.0, y_m: 0.0, yaw_rad: 2.356194490192345}]
+    sources: [{id: goal, x_m: -1.0, y_m: 1.0, relative_lumen_input: 1800.0, evaluation_role: goal}]
+    disturbances: {sensor_delay_sec: 0.10, pose_delay_sec: 0.10}
+
+  - <<: *goal_case
+    case_id: h_saturation_01
+    family: starts_saturation
+    description: Hidden high-intensity saturation recovery case.
+    seeds: [8441]
+    starts: [{id: far_southwest, x_m: -1.4, y_m: -1.4, yaw_rad: 0.7853981633974483}]
+    sources: [{id: goal, x_m: 1.25, y_m: 1.25, relative_lumen_input: 2500.0, evaluation_role: goal}]
+    success:
+      <<: *goal_success
+      all_of: [recording_complete, cleanup_complete, controller_goal, ground_truth_goal, required_state_sequence, required_events, minimum_saturation_samples, collision_expectation]
+      minimum_saturation_samples: 1
+
+  - <<: *goal_case
+    case_id: h_saturation_02
+    family: starts_saturation
+    description: Hidden bounded safe-timeout case.
+    seeds: [8442]
+    starts: [{id: corner_outward, x_m: 1.45, y_m: -1.45, yaw_rad: -0.7853981633974483}]
+    sources: [{id: goal, x_m: -1.4, y_m: 1.4, relative_lumen_input: 450.0, evaluation_role: goal}]
+    algorithm: {ablations: {}, launch_overrides: {verification_max_sec: 8.0, escape_max_sec: 20.0}}
+    success:
+      all_of: [recording_complete, cleanup_complete, required_state_sequence, required_events, collision_expectation]
+      controller:
+        expected_terminal_state: FAILSAFE
+        required_state_sequence: [SEARCH, VERIFY_EXTREMUM, FAILSAFE]
+        required_events: [CONVERGENCE_CONFIRMED, FAILSAFE]
+        forbidden_events: []
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      collision_expected: false
+
+  - <<: *goal_case
+    case_id: h_lifecycle_01
+    family: escape
+    description: Hidden pure-escape lifecycle case.
+    seeds: [8451]
+    starts: [{id: local_center, x_m: -0.8, y_m: 0.0, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -0.8, y_m: 0.0, relative_lumen_input: 700.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.3, y_m: 0.8, relative_lumen_input: 1800.0, evaluation_role: goal}
+    success: &lifecycle_success
+      all_of: [recording_complete, cleanup_complete, controller_goal, ground_truth_goal, required_state_sequence, required_events, collision_expectation]
+      controller:
+        expected_terminal_state: GOAL_HOLD
+        required_state_sequence: [DESIGN_OR_MERGE_FILL, ESCAPE_REPULSE, GOAL_HOLD]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED, GOAL_REACHED]
+        forbidden_events: [FAILSAFE]
+      ground_truth: {goal_source_ids: [goal], final_position_tolerance_m: 0.35}
+      collision_expected: false
+
+  - <<: *goal_case
+    case_id: h_lifecycle_02
+    family: escape
+    description: Hidden assisted-escape lifecycle case.
+    seeds: [8452]
+    starts: [{id: local_center, x_m: -0.7, y_m: -0.2, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -0.7, y_m: -0.2, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.4, y_m: 0.8, relative_lumen_input: 1900.0, evaluation_role: goal}
+    success:
+      <<: *lifecycle_success
+      controller:
+        expected_terminal_state: GOAL_HOLD
+        required_state_sequence: [ESCAPE_REPULSE, DESIGN_OR_MERGE_FILL, ESCAPE_ASSIST, GOAL_HOLD]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED, ESCAPE_STALLED, GOAL_REACHED]
+        forbidden_events: [FAILSAFE]
+
+  - <<: *goal_case
+    case_id: h_lifecycle_03
+    family: fill_merge
+    description: Hidden fill-merge lifecycle case.
+    seeds: [8453]
+    starts: [{id: southwest_northeast, x_m: -1.4, y_m: -1.0, yaw_rad: 0.5}]
+    sources:
+      - {id: local_a, x_m: -0.4, y_m: 0.0, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.15, y_m: 0.1, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.5, y_m: 1.3, relative_lumen_input: 2100.0, evaluation_role: goal}
+    algorithm: {ablations: {}, launch_overrides: {gaussian_fill_merge_bandwidth_m: 0.75, gaussian_fill_merge_radius_scale: 2.5}}
+    success:
+      <<: *lifecycle_success
+      controller:
+        expected_terminal_state: GOAL_HOLD
+        required_state_sequence: [DESIGN_OR_MERGE_FILL, ESCAPE_REPULSE, DESIGN_OR_MERGE_FILL, GOAL_HOLD]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED, FILL_MERGED, GOAL_REACHED]
+        forbidden_events: [FAILSAFE]
+
+  - <<: *goal_case
+    case_id: h_lifecycle_04
+    family: recenter_resume
+    description: Hidden recenter-and-resume lifecycle case.
+    seeds: [8454]
+    starts: [{id: local_west, x_m: -1.1, y_m: 0.2, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -1.1, y_m: 0.2, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.45, y_m: 1.0, relative_lumen_input: 1900.0, evaluation_role: goal}
+    success:
+      <<: *lifecycle_success
+      controller:
+        expected_terminal_state: GOAL_HOLD
+        required_state_sequence: [ESCAPE_REPULSE, RECENTER, SEARCH, GOAL_HOLD]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED, RECENTER_COMPLETE, GOAL_REACHED]
+        forbidden_events: [FAILSAFE]
