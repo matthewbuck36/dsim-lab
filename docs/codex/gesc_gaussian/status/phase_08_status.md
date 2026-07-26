@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-25T16:48:05-07:00`
-Status: `NOT_STARTED`
+Last verified: `2026-07-25T16:58:42-07:00`
+Status: `IN_PROGRESS`
 
 ## Objective
 
@@ -13,11 +13,11 @@ counting historical v1 evidence.
 ## Verified repository state
 
 - Branch: `feature/gesc-gaussian-robustness-v1`
-- HEAD: verify again at implementation start; this status does not freeze the
-  current uncommitted documentation work.
-- Working tree: the staged-plan and context-retention changes were prepared as
-  one bounded documentation/tooling commit. Verify the clean state and current
-  HEAD again at Phase 08 implementation start.
+- HEAD at v2 implementation start:
+  `787350e38522856f6463e645714dcc512ad2a5e5`
+  (`phase 08: stage validation v2 and harden context recovery`).
+- Working tree at v2 implementation start: clean and matched
+  `origin/feature/gesc-gaussian-robustness-v1`.
 - Plan: `docs/codex/gesc_gaussian/plans/phase_08_plan.md`
 - Last checkpoint:
   `docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt`
@@ -35,30 +35,38 @@ counting historical v1 evidence.
   milestone checkpointing, bounded-log guidance, and context-bundle support are
   implemented for future phase work.
 - Phase 08 Plan and Implement context validators passed after the amendment.
+- V2 implementation preflight reran from clean HEAD `787350e`:
+  `init_phase_status.sh 08` preserved this nonempty file and
+  `validate_phase_context.sh 08 implement` passed.
+- Historical v1 is durably closed in
+  `docs/codex/gesc_gaussian/validation/phase_08_v1_failure_closeout.md`.
+  Its 50 GiB root, representative hashes, 81-run training result, exposed
+  12-run holdout failure, and 203/519 partial full pass were inventoried
+  read-only. The separate v2 evidence root was absent.
 
 ## Current milestone
 
-- Milestone: durable v1 failure closeout and v2 implementation preflight.
+- Milestone: activation and rotation-aware goal-verification contract repair.
 - Implementation complete: `no`
-- Next acceptance criterion: preserve and inventory v1 evidence, then add
-  focused regressions that prove the corrected detector-to-supervisor
-  activation and rotation-aware goal dwell before any new batch.
+- Next acceptance criterion: focused unit, integration, and representative
+  v1-bag replay regressions prove corrected detector-to-supervisor activation
+  and rotation-aware goal dwell before v2 orchestration or any new batch.
 
 ## Current problem or blocker
 
-- The installed `validate_robustness` command and Phase 08 scenarios still
-  implement the retired v1 workflow.
-- The v2 activation repair, scenario manifests, stages, and gates have not been
-  implemented or run.
+- No Level A blocker is present. The installed `validate_robustness` command
+  and Phase 08 scenarios still implement the retired v1 workflow.
+- The activation repair, v2 scenario manifests, stages, and gates have not yet
+  been implemented or run.
 
 ## Files currently relevant
 
 - `docs/codex/gesc_gaussian/plans/phase_08_plan.md`
+- `docs/codex/gesc_gaussian/validation/phase_08_v1_failure_closeout.md`
 - `ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py`
-- the existing convergence-detector and supervisor owners identified during
-  implementation preflight
-- the existing rotation-aware goal-verification owner identified during
-  implementation preflight
+- `ros2_ws/src/ros_esc/ros_esc/convergence_detector_node/convergence_detector_node_script.py`
+- `ros2_ws/src/ros_esc/ros_esc/supervisor_node/state_machine.py`
+- `ros2_ws/src/ros_esc/ros_esc/supervisor_node/supervisor_node_script.py`
 - `ros2_ws/src/ros_esc/test/test_phase08_validation.py`
 
 ## Decisions and rationale
@@ -98,6 +106,14 @@ counting historical v1 evidence.
   snapshot.
 - `git diff --check`: passed after the staged-plan and context-retention
   additions.
+- V2 start Git audit: clean branch at `787350e`, no simulation-ready tag, and
+  no active Phase 08/Gazebo/recording process.
+- V1 closeout representative SHA-256 inventory: passed; source scenario hashes
+  match the frozen v1 snapshot. Current v1 inventory contains 320 sqlite3 bags
+  and 320 completeness reports.
+- Storage preflight: v1 uses about 50 GiB and the filesystem has 329 GiB free.
+- Dependency recheck: `gazebo_msgs/msg/ContactsState` resolves and
+  `/opt/ros/humble/lib/libgazebo_ros_bumper.so` exists.
 - No Phase 08 v2 build, pytest, Gazebo run, bag recording, freeze, acceptance
   gate, or tag has been executed.
 
@@ -109,16 +125,18 @@ counting historical v1 evidence.
 - Do not run planned v2 commands until their interface and scenario files are
   implemented and tested.
 - Do not infer behavioral success from recording completeness or cleanup.
+- Do not rerun the v1 JSON/YAML/SQLite integrity sweep; its exact 548/2242/320
+  results and representative hashes are retained in the closeout.
 
 ## Remaining work
 
-1. Start a fresh Phase 08 Implement chat from the clean committed checkout.
-2. Reread `AGENTS.md`, the Phase 08 plan, this status, and the current Git state.
-3. Rerun Phase 08 implementation preflight.
-4. Write `phase_08_v1_failure_closeout.md` from immutable v1 evidence.
-5. Implement and test the activation and goal-verification corrections.
-6. Implement the v2 staged scenarios and extend the existing validator.
-7. Run only the next eligible stage and update this file after every milestone.
+1. Inspect the live detector, supervisor, goal-verification, analyzer, and
+   representative v1 bag contracts.
+2. Implement and test the activation and goal-verification corrections.
+3. Implement the v2 staged scenarios and extend the existing validator.
+4. Build, run focused regressions/dry-runs, and execute only the ten-run
+   activation stage.
+5. Continue only if the predeclared activation gate passes.
 
 ## Stop conditions
 

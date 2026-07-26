@@ -1,133 +1,45 @@
 # Phase 08 checkpoint
 
-Generated: 2026-07-25T23:48:23+00:00
+Generated: 2026-07-26T00:00:06+00:00
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: eb13bd2748b14c742063a9b7d762137779aa414ccdc4f8416a9578ff444cef8e
+Status sha256: 8e2c7337aca4b93716836dc6fce055e86e4b602e1cf93a28f47485abfda75146
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: 2afde98200987a4cb21da1d6e6ca7c7f5d7c2853a7079101003c42eded349766
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 8]
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/00_MASTER_IMPLEMENTATION_PLAN.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/07_CODEX_WORKFLOW_AND_CONTEXT_RETENTION.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/MANIFEST.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/README.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/00_repo_audit_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/01_observability_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/02_state_machine_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/03_gaussian_fill_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/04_escape_recenter_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/05_rosbag_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/06_scenario_runner_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/07_analysis_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/08_validation_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/08_validation_PLAN.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/10_documentation_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/README.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/templates/codex_phase_handoff.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/templates/codex_phase_plan.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/checkpoint_phase.sh
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/make_codex_context_bundle.sh
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh
- M docs/codex/gesc_gaussian/implementation_sequence.md
- M docs/codex/gesc_gaussian/knowledge_bridge_phase_00_05.md
- M docs/codex/gesc_gaussian/plans/phase_08_plan.md
- M docs/codex/gesc_gaussian/recording_runs.md
- M docs/codex/gesc_gaussian/test_commands.md
- M docs/codex/gesc_gaussian/topic_dictionary.md
-?? AGENTS.md
-?? DSIM_GESC_Gaussian_Codex_Implementation_Package/templates/codex_phase_status.md
-?? DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/init_phase_status.sh
-?? docs/codex/gesc_gaussian/checkpoints/
-?? docs/codex/gesc_gaussian/status/
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1
+ M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
+ M docs/codex/gesc_gaussian/status/phase_08_status.md
+?? docs/codex/gesc_gaussian/validation/phase_08_v1_failure_closeout.md
 
 ## Recent commits
+787350e phase 08: stage validation v2 and harden context recovery
 386221e phase 08b: freeze robust Gaussian simulation parameters
 d073f2b phase 08a: index analysis timestamp streams
 712c6e2 phase 08a: harden recorder preflight and coordinated shutdown
 9ecc63e phase 08a: restore reliable serial parameter snapshots
-ef17666 phase 08a: bound parallel parameter snapshot load
 
 ## Diff check
 unstaged and staged: pass
 
 ## Unstaged diff stat
- .../00_MASTER_IMPLEMENTATION_PLAN.md               |  24 +-
- .../06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md         | 104 ++++-
- .../07_CODEX_WORKFLOW_AND_CONTEXT_RETENTION.md     | 143 ++++++-
- .../MANIFEST.md                                    |   4 +-
- .../README.md                                      |  23 +-
- .../START_HERE.md                                  |  44 ++-
- .../prompts/00_repo_audit_IMPLEMENT.md             |  10 +-
- .../prompts/01_observability_IMPLEMENT.md          |  10 +-
- .../prompts/02_state_machine_IMPLEMENT.md          |  10 +-
- .../prompts/03_gaussian_fill_IMPLEMENT.md          |  10 +-
- .../prompts/04_escape_recenter_IMPLEMENT.md        |  10 +-
- .../prompts/05_rosbag_IMPLEMENT.md                 |  10 +-
- .../prompts/06_scenario_runner_IMPLEMENT.md        |  10 +-
- .../prompts/07_analysis_IMPLEMENT.md               |  10 +-
- .../prompts/08_validation_IMPLEMENT.md             |  46 ++-
- .../prompts/08_validation_PLAN.md                  |  22 +-
- .../prompts/09_physical_IMPLEMENT.md               |  10 +-
- .../prompts/10_documentation_IMPLEMENT.md          |  10 +-
- .../prompts/README.md                              |  14 +-
- .../templates/codex_phase_handoff.md               |   2 +
- .../templates/codex_phase_plan.md                  |   6 +
- .../tools/checkpoint_phase.sh                      |  60 ++-
- .../tools/make_codex_context_bundle.sh             |  22 ++
- .../tools/validate_phase_context.sh                |  45 ++-
- .../codex/gesc_gaussian/implementation_sequence.md |  23 +-
- .../gesc_gaussian/knowledge_bridge_phase_00_05.md  |  42 +-
- docs/codex/gesc_gaussian/plans/phase_08_plan.md    | 422 +++++++++++++++------
- docs/codex/gesc_gaussian/recording_runs.md         |  53 ++-
- docs/codex/gesc_gaussian/test_commands.md          |  83 ++++
- docs/codex/gesc_gaussian/topic_dictionary.md       |  31 +-
- 30 files changed, 1047 insertions(+), 266 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 251 +--------------------
+ docs/codex/gesc_gaussian/status/phase_08_status.md |  70 +++---
+ 2 files changed, 51 insertions(+), 270 deletions(-)
 
 ## Staged diff stat
 
 ## Unstaged changed files
-DSIM_GESC_Gaussian_Codex_Implementation_Package/00_MASTER_IMPLEMENTATION_PLAN.md
-DSIM_GESC_Gaussian_Codex_Implementation_Package/06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md
-DSIM_GESC_Gaussian_Codex_Implementation_Package/07_CODEX_WORKFLOW_AND_CONTEXT_RETENTION.md
-DSIM_GESC_Gaussian_Codex_Implementation_Package/MANIFEST.md
-DSIM_GESC_Gaussian_Codex_Implementation_Package/README.md
-DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md
-DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/00_repo_audit_IMPLEMENT.md
-DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/01_observability_IMPLEMENT.md
-DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/02_state_machine_IMPLEMENT.md
-DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/03_gaussian_fill_IMPLEMENT.md
-DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/04_escape_recenter_IMPLEMENT.md
-DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/05_rosbag_IMPLEMENT.md
-DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/06_scenario_runner_IMPLEMENT.md
-DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/07_analysis_IMPLEMENT.md
-DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/08_validation_IMPLEMENT.md
-DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/08_validation_PLAN.md
-DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_IMPLEMENT.md
-DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/10_documentation_IMPLEMENT.md
-DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/README.md
-DSIM_GESC_Gaussian_Codex_Implementation_Package/templates/codex_phase_handoff.md
-DSIM_GESC_Gaussian_Codex_Implementation_Package/templates/codex_phase_plan.md
-DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/checkpoint_phase.sh
-DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/make_codex_context_bundle.sh
-DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh
-docs/codex/gesc_gaussian/implementation_sequence.md
-docs/codex/gesc_gaussian/knowledge_bridge_phase_00_05.md
-docs/codex/gesc_gaussian/plans/phase_08_plan.md
-docs/codex/gesc_gaussian/recording_runs.md
-docs/codex/gesc_gaussian/test_commands.md
-docs/codex/gesc_gaussian/topic_dictionary.md
+docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
+docs/codex/gesc_gaussian/status/phase_08_status.md
 
 ## Staged changed files
 
 ## Live status snapshot
 # Phase 08 Live Status
 
-Last verified: `2026-07-25T16:48:05-07:00`
-Status: `NOT_STARTED`
+Last verified: `2026-07-25T16:58:42-07:00`
+Status: `IN_PROGRESS`
 
 ## Objective
 
@@ -139,11 +51,11 @@ counting historical v1 evidence.
 ## Verified repository state
 
 - Branch: `feature/gesc-gaussian-robustness-v1`
-- HEAD: verify again at implementation start; this status does not freeze the
-  current uncommitted documentation work.
-- Working tree: the staged-plan and context-retention changes were prepared as
-  one bounded documentation/tooling commit. Verify the clean state and current
-  HEAD again at Phase 08 implementation start.
+- HEAD at v2 implementation start:
+  `787350e38522856f6463e645714dcc512ad2a5e5`
+  (`phase 08: stage validation v2 and harden context recovery`).
+- Working tree at v2 implementation start: clean and matched
+  `origin/feature/gesc-gaussian-robustness-v1`.
 - Plan: `docs/codex/gesc_gaussian/plans/phase_08_plan.md`
 - Last checkpoint:
   `docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt`
@@ -161,30 +73,38 @@ counting historical v1 evidence.
   milestone checkpointing, bounded-log guidance, and context-bundle support are
   implemented for future phase work.
 - Phase 08 Plan and Implement context validators passed after the amendment.
+- V2 implementation preflight reran from clean HEAD `787350e`:
+  `init_phase_status.sh 08` preserved this nonempty file and
+  `validate_phase_context.sh 08 implement` passed.
+- Historical v1 is durably closed in
+  `docs/codex/gesc_gaussian/validation/phase_08_v1_failure_closeout.md`.
+  Its 50 GiB root, representative hashes, 81-run training result, exposed
+  12-run holdout failure, and 203/519 partial full pass were inventoried
+  read-only. The separate v2 evidence root was absent.
 
 ## Current milestone
 
-- Milestone: durable v1 failure closeout and v2 implementation preflight.
+- Milestone: activation and rotation-aware goal-verification contract repair.
 - Implementation complete: `no`
-- Next acceptance criterion: preserve and inventory v1 evidence, then add
-  focused regressions that prove the corrected detector-to-supervisor
-  activation and rotation-aware goal dwell before any new batch.
+- Next acceptance criterion: focused unit, integration, and representative
+  v1-bag replay regressions prove corrected detector-to-supervisor activation
+  and rotation-aware goal dwell before v2 orchestration or any new batch.
 
 ## Current problem or blocker
 
-- The installed `validate_robustness` command and Phase 08 scenarios still
-  implement the retired v1 workflow.
-- The v2 activation repair, scenario manifests, stages, and gates have not been
-  implemented or run.
+- No Level A blocker is present. The installed `validate_robustness` command
+  and Phase 08 scenarios still implement the retired v1 workflow.
+- The activation repair, v2 scenario manifests, stages, and gates have not yet
+  been implemented or run.
 
 ## Files currently relevant
 
 - `docs/codex/gesc_gaussian/plans/phase_08_plan.md`
+- `docs/codex/gesc_gaussian/validation/phase_08_v1_failure_closeout.md`
 - `ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py`
-- the existing convergence-detector and supervisor owners identified during
-  implementation preflight
-- the existing rotation-aware goal-verification owner identified during
-  implementation preflight
+- `ros2_ws/src/ros_esc/ros_esc/convergence_detector_node/convergence_detector_node_script.py`
+- `ros2_ws/src/ros_esc/ros_esc/supervisor_node/state_machine.py`
+- `ros2_ws/src/ros_esc/ros_esc/supervisor_node/supervisor_node_script.py`
 - `ros2_ws/src/ros_esc/test/test_phase08_validation.py`
 
 ## Decisions and rationale
@@ -224,6 +144,14 @@ counting historical v1 evidence.
   snapshot.
 - `git diff --check`: passed after the staged-plan and context-retention
   additions.
+- V2 start Git audit: clean branch at `787350e`, no simulation-ready tag, and
+  no active Phase 08/Gazebo/recording process.
+- V1 closeout representative SHA-256 inventory: passed; source scenario hashes
+  match the frozen v1 snapshot. Current v1 inventory contains 320 sqlite3 bags
+  and 320 completeness reports.
+- Storage preflight: v1 uses about 50 GiB and the filesystem has 329 GiB free.
+- Dependency recheck: `gazebo_msgs/msg/ContactsState` resolves and
+  `/opt/ros/humble/lib/libgazebo_ros_bumper.so` exists.
 - No Phase 08 v2 build, pytest, Gazebo run, bag recording, freeze, acceptance
   gate, or tag has been executed.
 
@@ -235,16 +163,18 @@ counting historical v1 evidence.
 - Do not run planned v2 commands until their interface and scenario files are
   implemented and tested.
 - Do not infer behavioral success from recording completeness or cleanup.
+- Do not rerun the v1 JSON/YAML/SQLite integrity sweep; its exact 548/2242/320
+  results and representative hashes are retained in the closeout.
 
 ## Remaining work
 
-1. Start a fresh Phase 08 Implement chat from the clean committed checkout.
-2. Reread `AGENTS.md`, the Phase 08 plan, this status, and the current Git state.
-3. Rerun Phase 08 implementation preflight.
-4. Write `phase_08_v1_failure_closeout.md` from immutable v1 evidence.
-5. Implement and test the activation and goal-verification corrections.
-6. Implement the v2 staged scenarios and extend the existing validator.
-7. Run only the next eligible stage and update this file after every milestone.
+1. Inspect the live detector, supervisor, goal-verification, analyzer, and
+   representative v1 bag contracts.
+2. Implement and test the activation and goal-verification corrections.
+3. Implement the v2 staged scenarios and extend the existing validator.
+4. Build, run focused regressions/dry-runs, and execute only the ten-run
+   activation stage.
+5. Continue only if the predeclared activation gate passes.
 
 ## Stop conditions
 
