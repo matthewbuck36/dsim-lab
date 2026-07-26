@@ -160,6 +160,9 @@ Diagnostic activation establishes:
 - reachability of each intended lifecycle branch across targeted,
   scenario-specific cases;
 - analytical or recorded reachability of every goal-score expectation;
+- timing-sufficient post-entry rotation and dwell budgets for every goal or
+  undesired-minimum classification case, with insufficient timing permitted
+  only in a declared safe-timeout probe;
 - bounded fill-design and startup latency;
 - separation of controller goal classification from simulation ground truth.
 

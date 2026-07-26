@@ -45,7 +45,7 @@ class StateMachineConfig:
     goal_score_threshold: float = 0.95
     goal_hold_sec: float = 3.0
     undesired_score_hold_sec: float = 3.0
-    verification_max_sec: float = 10.0
+    verification_max_sec: float = 12.0
     fill_design_timeout_sec: float = 5.0
     escape_max_sec: float = 20.0
     recenter_after_escape: bool = True
@@ -161,6 +161,11 @@ class RotationScoreWindow:
         """Return whether the configured number of rotations is complete."""
 
         return len(self.completed_maxima) == self.required_rotations
+
+    @property
+    def evidence_duration_sec(self) -> float:
+        """Return the minimum duration of complete rotation evidence."""
+        return self.rotation_period_sec * self.required_rotations
 
     @property
     def score(self) -> Optional[float]:

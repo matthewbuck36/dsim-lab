@@ -161,6 +161,9 @@ multi-producer events, and readiness remaining false.
   undesired-minimum classification/fill cases.
 - Retain at least one calibrated goal case known to sustain the goal threshold.
 - Make every expected and forbidden state/event scenario-specific.
+- Require timing-sufficient rotation/hold configuration for GOAL and
+  undesired-minimum classification cases; allow a timing-insufficient
+  configuration only for a case explicitly declared to expect safe timeout.
 - Keep controller success and simulation ground truth as separate metrics.
 
 Exit: schema/dry-run checks pass and every activation expectation has a

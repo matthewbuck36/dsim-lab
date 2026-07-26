@@ -20,7 +20,7 @@ def config(**overrides):
         "goal_score_threshold": 0.95,
         "goal_hold_sec": 3.0,
         "undesired_score_hold_sec": 3.0,
-        "verification_max_sec": 10.0,
+        "verification_max_sec": 12.0,
         "fill_design_timeout_sec": 5.0,
         "escape_max_sec": 20.0,
         "recenter_after_escape": True,
@@ -99,6 +99,7 @@ def test_detector_confirmation_activates_without_candidate_dwell():
 def test_rotation_score_window_requires_complete_repeated_rotations():
     window = RotationScoreWindow(rotation_period_sec=3.0, required_rotations=2)
 
+    assert window.evidence_duration_sec == 6.0
     window.update(0.0, 0.10)
     window.update(1.0, 1.00)
     window.update(3.0, 0.10)

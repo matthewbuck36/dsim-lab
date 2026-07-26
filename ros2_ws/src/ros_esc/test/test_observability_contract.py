@@ -179,6 +179,21 @@ def test_rotation_aware_goal_defaults_are_explicit_in_central_launch():
 
     assert defaults["goal_score_rotation_period_sec"] == "3.0"
     assert defaults["goal_score_required_rotations"] == "2"
+    assert defaults['verification_max_sec'] == '12.0'
+    evidence_duration = (
+        float(defaults['goal_score_rotation_period_sec'])
+        * int(defaults['goal_score_required_rotations'])
+    )
+    dwell_duration = max(
+        float(defaults['goal_hold_sec']),
+        float(defaults['undesired_score_hold_sec']),
+    )
+    timing_margin = (
+        float(defaults['verification_max_sec'])
+        - evidence_duration
+        - dwell_duration
+    )
+    assert timing_margin == 3.0
 
 
 def test_robust_fill_lifecycle_and_all_designed_fields_are_explicit():

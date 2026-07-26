@@ -10,10 +10,11 @@ supervisor:
   goal_score_threshold: 0.95
   goal_score_rotation_period_sec: 3.0
   goal_score_required_rotations: 2
-  # Rotation evidence begins fresh on entry to VERIFY_EXTREMUM.
+  # Rotation evidence begins fresh on entry to VERIFY_EXTREMUM. The 12 s
+  # timeout leaves 3 s beyond two 3 s rotations plus the 3 s score dwell.
   goal_hold_sec: 3.0
   undesired_score_hold_sec: 3.0
-  verification_max_sec: 10.0
+  verification_max_sec: 12.0
   escape_exit_hold_sec: 1.0
   stall_window_sec: 3.0
   minimum_radial_progress_m: 0.05

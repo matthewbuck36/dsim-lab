@@ -1,38 +1,56 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-26T02:22:38+00:00
-Base HEAD: 88634d6ef07fe9c8bfbf23a455f70b39c2357dc7
+Generated: 2026-07-26T02:33:32+00:00
+Base HEAD: e2bdc83eb4844fa9fa1a153153a1834112f1c2e5
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: a9dc1a63655d02e321eaf1a6f4644b29ef62f47565bd6126a94684ee652d00c0
+Status sha256: c981c6f5cc5cb41fc7fd360da898ece17a90af85db0f2400b8346ff9e1e6a7af
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: 3f6e8b18ece6f9ca0c4e0c90e1999727182d9d59e127eb8cf9141ef079e70655
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_1_plan.md
-Active subphase plan sha256: 144126babee42d4dfa4da707911b02fc496f1d2aa0e68a4023e61f013cc402df
-Unstaged diff sha256: c147596a155ea738170a5a1057b79c68dfdfebcd5463c0db784c3c3f15bf16d0
+Active subphase plan sha256: 8f03172c4b093cd22f79857686766526fdd0d49b3c4d2c2735747116ff02f4d0
+Unstaged diff sha256: 0d923925861fcabf8d48e6bdddfba488debeabaf3de8481960973ad0389918f4
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 4]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 5]
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/00_MASTER_IMPLEMENTATION_PLAN.md
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/01_RESEARCH_DECISIONS_AND_ASSUMPTIONS.md
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/04_STATE_MACHINE_SPEC.md
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/templates/robust_gaussian_defaults.yaml
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
+ M docs/codex/gesc_gaussian/plans/phase_08_1_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
- M ros2_ws/src/ros_esc/ros_esc/gaussian_fill_node/basin_estimator.py
- M ros2_ws/src/ros_esc/ros_esc/gaussian_fill_node/gaussian_fill_script.py
- M ros2_ws/src/ros_esc/test/test_legacy_behavior.py
- M ros2_ws/src/ros_esc/test/test_robust_gaussian_algorithm.py
+ M docs/codex/gesc_gaussian/topic_dictionary.md
+ M ros2_ws/src/ros_esc/ros_esc/supervisor_node/state_machine.py
+ M ros2_ws/src/ros_esc/ros_esc/supervisor_node/supervisor_node_script.py
+ M ros2_ws/src/ros_esc/test/test_observability_contract.py
+ M ros2_ws/src/ros_esc/test/test_state_machine.py
+ M ros2_ws/src/ros_esc/test/test_supervisor_integration.py
+ M ros2_ws/src/turtlebot3_rotating_sensor/launch/gazebo.launch.xml
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 119 ++-------------------
- docs/codex/gesc_gaussian/status/phase_08_status.md |  62 +++++++++--
- .../ros_esc/gaussian_fill_node/basin_estimator.py  |  49 ++++++---
- .../gaussian_fill_node/gaussian_fill_script.py     |  60 ++++++++++-
- ros2_ws/src/ros_esc/test/test_legacy_behavior.py   |  28 +++++
- .../ros_esc/test/test_robust_gaussian_algorithm.py | 100 +++++++++++++++++
- 6 files changed, 283 insertions(+), 135 deletions(-)
+ .../00_MASTER_IMPLEMENTATION_PLAN.md               |  4 +-
+ .../01_RESEARCH_DECISIONS_AND_ASSUMPTIONS.md       | 10 +++-
+ .../04_STATE_MACHINE_SPEC.md                       | 27 ++++++++--
+ .../06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md         |  3 ++
+ .../templates/robust_gaussian_defaults.yaml        |  5 +-
+ .../checkpoints/phase_08_checkpoint.txt            | 55 +++++++------------
+ docs/codex/gesc_gaussian/plans/phase_08_1_plan.md  |  3 ++
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 53 ++++++++++++++++---
+ docs/codex/gesc_gaussian/topic_dictionary.md       | 13 +++--
+ .../ros_esc/supervisor_node/state_machine.py       |  7 ++-
+ .../supervisor_node/supervisor_node_script.py      | 37 ++++++++++++-
+ .../ros_esc/test/test_observability_contract.py    | 15 ++++++
+ ros2_ws/src/ros_esc/test/test_state_machine.py     |  3 +-
+ .../ros_esc/test/test_supervisor_integration.py    | 61 ++++++++++++++++++++--
+ .../launch/gazebo.launch.xml                       |  2 +-
+ 15 files changed, 233 insertions(+), 65 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
@@ -41,13 +59,14 @@ unstaged and staged: pass
   closed** at `2d796dd`.
 - Completed milestone: Phase 08.1 M1 durable diagnosis and workflow correction.
 - Completed milestone: Phase 08.1 M2 fill-latency correction.
-- Current milestone: Phase 08.1 M3 verification-boundary correction.
+- Completed milestone: Phase 08.1 M3 verification-boundary correction.
+- Current milestone: Phase 08.1 M4 readiness and evidence-semantics correction.
 - Current plan:
   `docs/codex/gesc_gaussian/plans/phase_08_1_plan.md`.
-- Next criterion: reset rotation evidence on entry to `VERIFY_EXTREMUM`,
-  accumulate valid scores only while verifying, prove SEARCH-era maxima cannot
-  satisfy goal classification, and validate the timeout against two fresh
-  rotations plus dwell and scheduling margin.
+- Next criterion: add a bounded simulation readiness barrier for responsive
+  controller-manager/data publishers, correct the controller startup-watchdog
+  race, and validate event timestamps at producer/stream granularity without
+  weakening source/request causality.
 
 
 This file describes the base HEAD and diff before the next commit; it is

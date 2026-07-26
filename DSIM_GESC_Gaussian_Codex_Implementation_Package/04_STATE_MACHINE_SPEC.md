@@ -51,22 +51,43 @@ convergence_hold_sec: 2.0
 
 - Continue sensor and pose acquisition.
 - Hold or use the repository's existing low-motion convergence behavior.
-- Evaluate calibrated source score.
+- Reset the rotation-score accumulator on entry; SEARCH-era approach samples
+  cannot contribute to classification.
+- Evaluate calibrated source score only from valid samples received while
+  `VERIFY_EXTREMUM` is active.
 - Do not create a fill immediately on one noisy sample.
 
 ### Goal criterion
 
 ```yaml
 goal_score_threshold: 0.95
+goal_score_rotation_period_sec: 3.0
+goal_score_required_rotations: 2
 goal_hold_sec: 3.0
+undesired_score_hold_sec: 3.0
+verification_max_sec: 12.0
 ```
+
+Use the minimum of the maximum score observed in each complete rotation. Start
+the goal or undesired dwell only after all required post-entry rotations are
+complete. The default timing budget is:
+
+```text
+12 s timeout - (2 x 3 s rotations) - 3 s longest dwell = 3 s margin
+```
+
+A shorter override may be used for an explicitly declared safe-timeout test,
+but the configuration must report that goal classification is not reachable
+within that timeout.
 
 ### Transitions
 
-- Valid source score above threshold for hold time:
+- Fresh rotation score at or above threshold for hold time:
   - `VERIFY_EXTREMUM -> GOAL_HOLD`
-- Otherwise, after verification window:
+- Fresh rotation score below threshold for the undesired hold time:
   - `VERIFY_EXTREMUM -> DESIGN_OR_MERGE_FILL`
+- Missing complete evidence through the bounded verification timeout:
+  - `VERIFY_EXTREMUM -> FAILSAFE`
 - Invalid sensor or pose:
   - `VERIFY_EXTREMUM -> FAILSAFE`
 

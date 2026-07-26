@@ -96,7 +96,9 @@ FAILSAFE
 ## Required core policy
 
 - `SEARCH`: raw cost on; existing fills on; affine off.
-- `VERIFY_EXTREMUM`: keep sensing; test calibrated goal criterion.
+- `VERIFY_EXTREMUM`: keep sensing; discard SEARCH-era score history, then test
+  the calibrated goal criterion using only complete fresh rotation windows and
+  the configured score dwell.
 - True source: transition to `GOAL_HOLD`.
 - Undesired minimum: design/merge a fill.
 - `ESCAPE_REPULSE`: raw-cost weight zero; fill repulsion on; affine off.

@@ -116,10 +116,18 @@ For current light experiments, the adopted rule is a **calibrated source score**
 - `source_score = 1` corresponds to the calibrated near-source condition.
 - A converged extremum is accepted as the goal only when:
   - `source_score >= goal_score_threshold`,
-  - for `goal_hold_sec`,
+  - the criterion is supported by the configured number of complete rotating
+    sensor windows collected after entry to `VERIFY_EXTREMUM`,
+  - for `goal_hold_sec` after those fresh windows are complete,
   - with valid sensor and pose data.
 
 Otherwise, it is treated as an undesired local minimum.
+
+The current default allows 12 seconds for two three-second rotations plus a
+three-second goal/undesired dwell, leaving three seconds of scheduling margin.
+A deliberately shorter timeout is permitted only for a declared safe-timeout
+scenario and is reported as timing-insufficient configuration, not as a
+reachable goal-classification setup.
 
 Ground-truth source position may be used for evaluation in simulation, but not by the controller.
 

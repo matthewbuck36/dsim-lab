@@ -1,6 +1,6 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-25T19:21:23-07:00`
+Last verified: `2026-07-25T19:32:36-07:00`
 Status: `IN PROGRESS — PHASE 08.1 DIAGNOSTIC RECOVERY`
 
 ## Objective
@@ -87,6 +87,15 @@ count toward a future acceptance attempt.
   every robust fill success/failure diagnostic path. At the retained
   4,000-pose/14,000-cost scale, synchronization completed in about 0.07 seconds
   rather than the observed 5.5–15.7 seconds.
+- Phase 08.1 M3 resets rotation evidence at the actual transition into
+  `VERIFY_EXTREMUM` and accepts valid score samples only while verification is
+  active. SEARCH-era maxima therefore cannot satisfy goal or undesired-minimum
+  classification.
+- M3 changes the live verification default from 10 to 12 seconds: two
+  three-second rotations plus the longest three-second dwell leave a
+  three-second operational margin. Configuration evidence now reports the
+  rotation duration, remaining margin, and timing-sufficiency flag. Shorter
+  timing remains available only for explicitly declared safe-timeout probes.
 
 ## Current milestone
 
@@ -94,13 +103,14 @@ count toward a future acceptance attempt.
   closed** at `2d796dd`.
 - Completed milestone: Phase 08.1 M1 durable diagnosis and workflow correction.
 - Completed milestone: Phase 08.1 M2 fill-latency correction.
-- Current milestone: Phase 08.1 M3 verification-boundary correction.
+- Completed milestone: Phase 08.1 M3 verification-boundary correction.
+- Current milestone: Phase 08.1 M4 readiness and evidence-semantics correction.
 - Current plan:
   `docs/codex/gesc_gaussian/plans/phase_08_1_plan.md`.
-- Next criterion: reset rotation evidence on entry to `VERIFY_EXTREMUM`,
-  accumulate valid scores only while verifying, prove SEARCH-era maxima cannot
-  satisfy goal classification, and validate the timeout against two fresh
-  rotations plus dwell and scheduling margin.
+- Next criterion: add a bounded simulation readiness barrier for responsive
+  controller-manager/data publishers, correct the controller startup-watchdog
+  race, and validate event timestamps at producer/stream granularity without
+  weakening source/request causality.
 
 ## Current problem or blocker
 
@@ -115,8 +125,8 @@ count toward a future acceptance attempt.
   calibrated `source_score >= 0.95` rule. Only the high calibrated case was
   reachable as `GOAL_HOLD`; ground-truth proximity did not make the others
   controller goals.
-- Rotation evidence was accumulated during `SEARCH`, so the high goal pass did
-  not prove two fresh post-verification rotations.
+- M3 corrected the SEARCH-to-verification evidence leak; the historical high
+  goal remains v2 evidence and is not retroactively reclassified.
 - The stalled-assist attempt was infrastructure-invalid during Gazebo/controller
   startup, and recenter/resume failed from a pre-behavior watchdog/pose startup
   race.
@@ -140,6 +150,9 @@ count toward a future acceptance attempt.
 - `ros2_ws/src/ros_esc/ros_esc/gaussian_fill_node/basin_estimator.py`
 - `ros2_ws/src/ros_esc/ros_esc/gaussian_fill_node/gaussian_fill_script.py`
 - `ros2_ws/src/ros_esc/test/test_phase08_validation.py`
+- `ros2_ws/src/ros_esc/test/test_state_machine.py`
+- `ros2_ws/src/ros_esc/test/test_supervisor_integration.py`
+- `ros2_ws/src/ros_esc/test/test_observability_contract.py`
 - `ros2_ws/src/ros_esc/test/test_robust_gaussian_algorithm.py`
 - `ros2_ws/src/ros_esc/test/test_legacy_behavior.py`
 
@@ -171,6 +184,11 @@ count toward a future acceptance attempt.
   five-second design timeout unchanged; measured computation, not a relaxed
   timeout, resolves the observed M2 defect. Defer formal multi-producer
   timestamp semantics and any needed concurrent clock servicing to M4.
+- D-08-09: goal evidence begins at the transition into verification, not at
+  approach. Use a 12-second default to provide three seconds beyond the
+  required rotation-plus-dwell duration. Report rather than globally reject a
+  shorter timing configuration because an explicit expected-FAILSAFE timeout
+  probe is valid; require timing sufficiency in future GOAL/DESIGN contracts.
 
 ## Validation checkpoints
 
@@ -297,6 +315,25 @@ count toward a future acceptance attempt.
 - Phase 08.1 M2 material-boundary checkpoint:
   `checkpoint_phase.sh 08` passed and refreshed the compact precommit snapshot
   at `docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt`.
+- The first broad M3 regression found a scheduling-sensitive new test:
+  `1 failed, 88 passed in 10.52s`. The fresh-window behavior itself passed in
+  isolation (`1 passed in 0.61s`); the test was corrected to use a one-second
+  verification budget and a longer fresh-source publication interval rather
+  than depending on a narrow DDS scheduling window.
+- Final M3 state-machine, supervisor, observability, Phase 08 validator, and
+  legacy regression: `89 passed in 6.88s`.
+- The six-test synthetic supervisor integration suite passed on two additional
+  isolated runs: `6 passed in 2.07s` and `6 passed in 2.10s`. Including the
+  final broad run, the post-entry boundary integration passed three times.
+- M3 central launch XML parsing, illustrative-default YAML parsing, Python
+  compile, normal Phase 08 Implement context validation, and
+  `git diff --check`: passed.
+- Same-configuration flake8 HEAD/current counts for the five changed Python
+  owners are `49/49`, `243/243`, `28/28`, `50/49`, and `246/246`: no new
+  finding and one inherited test-style finding removed.
+- Phase 08.1 M3 material-boundary checkpoint:
+  `checkpoint_phase.sh 08` passed and refreshed
+  `docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt`.
 
 ## Attempts not to repeat
 

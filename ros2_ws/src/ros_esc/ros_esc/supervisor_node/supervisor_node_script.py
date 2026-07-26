@@ -187,6 +187,23 @@ class SupervisorNode(Node):
             self._positive_float("goal_score_rotation_period_sec"),
             self._positive_int("goal_score_required_rotations"),
         )
+        self.goal_score_verification_margin_sec = (
+            self.machine.config.verification_max_sec
+            - self.goal_score_window.evidence_duration_sec
+            - max(
+                self.machine.config.goal_hold_sec,
+                self.machine.config.undesired_score_hold_sec,
+            )
+        )
+        self.goal_score_verification_timing_sufficient = (
+            self.goal_score_verification_margin_sec > 0.0
+        )
+        if not self.goal_score_verification_timing_sufficient:
+            self.get_logger().warning(
+                'verification_max_sec leaves no scheduling margin after '
+                'complete rotation evidence and score dwell; use only for an '
+                'intentional safe-timeout scenario'
+            )
         self.fill_avoidance_margin_m = self._nonnegative_float(
             "fill_avoidance_margin_m"
         )
@@ -279,7 +296,7 @@ class SupervisorNode(Node):
             "goal_score_required_rotations": 2,
             "goal_hold_sec": 3.0,
             "undesired_score_hold_sec": 3.0,
-            "verification_max_sec": 10.0,
+            "verification_max_sec": 12.0,
             "fill_design_timeout_sec": 5.0,
             "escape_max_sec": 20.0,
             "escape_exit_hold_sec": 1.0,
@@ -412,7 +429,10 @@ class SupervisorNode(Node):
             and np.all(np.isfinite(scores))
         )
         receipt_sec = self._now_sec()
-        if self.latest_source_score_valid:
+        if (
+            self.machine.state == State.VERIFY_EXTREMUM
+            and self.latest_source_score_valid
+        ):
             self.goal_score_window.update(receipt_sec, float(np.max(scores)))
         else:
             self.goal_score_window.reset()
@@ -664,6 +684,9 @@ class SupervisorNode(Node):
         )
 
     def _handle_transition(self, transition, now_sec):
+        if transition.current == State.VERIFY_EXTREMUM:
+            self.goal_score_window.reset()
+            self.latest_source_score = None
         if "escape stalled" in transition.reason:
             self._publish_stall_event(now_sec, transition.previous)
         self._publish_transition(transition, now_sec)
@@ -1012,6 +1035,9 @@ class SupervisorNode(Node):
             "wall_margin_m",
             "goal_score_rotation_period_sec",
             "goal_score_required_rotations",
+            'goal_score_evidence_duration_sec',
+            'goal_score_verification_margin_sec',
+            'goal_score_verification_timing_sufficient',
             "escape_exit_hold_sec",
             "stall_window_sec",
             "minimum_radial_progress_m",
@@ -1038,6 +1064,13 @@ class SupervisorNode(Node):
             self._float("wall_margin_m"),
             self.goal_score_window.rotation_period_sec,
             float(self.goal_score_window.required_rotations),
+            self.goal_score_window.evidence_duration_sec,
+            self.goal_score_verification_margin_sec,
+            (
+                1.0
+                if self.goal_score_verification_timing_sufficient
+                else 0.0
+            ),
             self.escape_progress_config.escape_exit_hold_sec,
             self.escape_progress_config.stall_window_sec,
             self.escape_progress_config.minimum_radial_progress_m,

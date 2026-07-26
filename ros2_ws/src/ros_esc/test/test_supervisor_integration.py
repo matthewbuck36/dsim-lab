@@ -210,9 +210,11 @@ class SupervisorHarness:
         if not matched:
             raise RuntimeError("synthetic supervisor ROS graph did not match")
 
-    def publish_inputs(self, pose, convergence=None, duration=0.08):
+    def publish_inputs(
+        self, pose, convergence=None, duration=0.08, score=0.2
+    ):
         deadline = time.monotonic() + duration
-        source = _source()
+        source = _source(score)
         while time.monotonic() < deadline:
             self.pose_pub.publish(pose)
             self.source_pub.publish(source)
@@ -272,10 +274,24 @@ def test_pure_repulsion_exits_without_redesign_and_recenter_completes():
             )
         )
         assert harness.supervisor.active_fill_records
-        assert any(
-            event.event_type == AlgorithmEvent.EVENT_CONFIGURATION
-            and "room_bounds_x_min_m" in event.value_names
+        configuration = next(
+            event
             for event in harness.events
+            if event.event_type == AlgorithmEvent.EVENT_CONFIGURATION
+        )
+        diagnostics = dict(
+            zip(configuration.value_names, configuration.values)
+        )
+        assert 'room_bounds_x_min_m' in diagnostics
+        assert diagnostics['goal_score_evidence_duration_sec'] == 0.01
+        assert math.isclose(
+            diagnostics['goal_score_verification_margin_sec'],
+            0.46,
+            rel_tol=0.0,
+            abs_tol=1e-12,
+        )
+        assert (
+            diagnostics['goal_score_verification_timing_sufficient'] == 1.0
         )
 
         harness.publish_inputs(_pose(0.1), duration=0.08)
@@ -311,6 +327,41 @@ def test_convergence_candidate_alone_does_not_activate_supervisor():
         assert all(
             state.state == AlgorithmState.STATE_SEARCH
             for state in harness.states
+        )
+    finally:
+        harness.close()
+        rclpy.shutdown()
+
+
+def test_search_score_cannot_satisfy_fresh_verification_rotations():
+    rclpy.init()
+    harness = SupervisorHarness(
+        overrides=[Parameter('verification_max_sec', value=1.0)],
+        name='phase08_fresh_rotation_peer',
+    )
+    try:
+        harness.publish_inputs(_pose(0.2), duration=0.08, score=1.0)
+        assert harness.supervisor.machine.state == AlgorithmState.STATE_SEARCH
+        assert harness.supervisor.goal_score_window.ready is False
+
+        harness.event_pub.publish(_confirmed_convergence())
+        assert _wait_for(
+            lambda: harness.supervisor.machine.state
+            == AlgorithmState.STATE_VERIFY_EXTREMUM
+        )
+        time.sleep(0.08)
+        assert harness.supervisor.machine.state == (
+            AlgorithmState.STATE_VERIFY_EXTREMUM
+        )
+        assert not any(
+            state.state == AlgorithmState.STATE_GOAL_HOLD
+            for state in harness.states
+        )
+
+        harness.publish_inputs(_pose(0.2), duration=0.20, score=1.0)
+        assert _wait_for(
+            lambda: harness.supervisor.machine.state
+            == AlgorithmState.STATE_GOAL_HOLD
         )
     finally:
         harness.close()

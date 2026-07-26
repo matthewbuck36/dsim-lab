@@ -73,9 +73,14 @@ same-timestamp status sample for v1 replay only.
 
 Goal verification uses the minimum of the maximum source score observed in
 each of `goal_score_required_rotations` complete
-`goal_score_rotation_period_sec` windows. Incomplete rotation evidence waits
-within the existing bounded verification timeout. An observed invalid score
-still fails safe.
+`goal_score_rotation_period_sec` windows. The accumulator is reset on entry to
+`VERIFY_EXTREMUM` and receives valid samples only while that state is active,
+so SEARCH-era approach maxima cannot satisfy classification. Incomplete
+rotation evidence waits within the bounded verification timeout. The current
+12-second default leaves three seconds of margin beyond two three-second
+rotations and the longest three-second score dwell. The configuration event
+reports the evidence duration, remaining timing margin, and whether the timing
+is sufficient. An observed invalid score still fails safe.
 
 ## `CostBreakdown`
 
@@ -397,7 +402,7 @@ The central launch adds these arguments:
 | `goal_score_required_rotations` | `2` |
 | `goal_hold_sec` | `3.0` |
 | `undesired_score_hold_sec` | `3.0` |
-| `verification_max_sec` | `10.0` |
+| `verification_max_sec` | `12.0` |
 | `fill_design_timeout_sec` | `5.0` |
 | `escape_max_sec` | `20.0` |
 | `escape_exit_hold_sec` | `1.0` |
