@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-26T00:48:09-07:00`
-Status: `IN PROGRESS — PHASE 08.2 RECENTER RECOVERY; M4 PROBE NOT DISPATCHED`
+Last verified: `2026-07-26T00:49:29-07:00`
+Status: `IN PROGRESS — PHASE 08.2 RECENTER RECOVERY; M4 PROBE SEALED / NOT DISPATCHED`
 
 ## Objective
 
@@ -28,6 +28,9 @@ remains immutable and cannot count toward a future acceptance attempt.
 - Phase 08.2 starting boundary: clean commit `db8bd66`
   (`phase 08.1: close mixed diagnostic recovery`), branch ahead of origin by
   ten commits.
+- Phase 08.2 M3 probe-candidate implementation:
+  `204d1a1c9efad3d7d3b9f81315437fa8f671bdae`
+  (`phase 08.2: validate recenter probe candidate`).
 - Clean M6 evidence commit:
   `c959ce1` (`phase 08.1: retain minimal runtime probes`).
 - M7 documentation/checkpoint base: clean `c959ce1`; the bounded closeout
@@ -279,6 +282,36 @@ remains immutable and cannot count toward a future acceptance attempt.
 - No replacement or third probe was run. Both predeclared M6 questions were
   answered, and another unchanged or timeout-only run would repeat diagnosed
   evidence rather than resolve a distinct question.
+
+### Phase 08.2 M4 pre-execution declaration
+
+- Candidate implementation commit:
+  `204d1a1c9efad3d7d3b9f81315437fa8f671bdae`.
+- Suite:
+  `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_2_recenter.yaml`,
+  SHA-256
+  `1b116ef7984d8a679f69da919576125a1ad066da3d55098466da9afac2bae017`.
+- Evidence root:
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_2_recenter`.
+- Exactly one serial, finite, GUI-enabled development run is authorized:
+  `recenter_retained_fill_create`, seed `8304`.
+- Required full path:
+  `SEARCH -> VERIFY_EXTREMUM -> DESIGN_OR_MERGE_FILL -> ESCAPE_REPULSE ->
+  RECENTER -> SEARCH`; required events:
+  `CONVERGENCE_CONFIRMED`, `FILL_CREATED`, `ESCAPE_STARTED`,
+  `RECENTER_STARTED`, and `RECENTER_COMPLETE`.
+- `FAILSAFE`, `TIMEOUT`, fill rejection/design failure, collision,
+  incomplete recording, missing cleanup, and missing final zero remain
+  forbidden. Infrastructure completeness and behavioral success remain
+  separate.
+- The retained bag will be analyzed exactly once. The attempt is preserved
+  regardless of outcome. One identical replacement is permitted only if this
+  attempt is objectively pre-readiness infrastructure-invalid and that
+  classification is recorded before redispatch. A valid behavioral failure is
+  never replaced.
+- No additional probe, formal v3 stage, tuning, freeze, holdout, acceptance
+  denominator, readiness tag, Phase 09 action, or physical command is
+  authorized.
 
 ## Current problem or blocker
 
