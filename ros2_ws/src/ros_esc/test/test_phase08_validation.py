@@ -5,7 +5,6 @@ import json
 from pathlib import Path
 
 import pytest
-import yaml
 
 import ros_esc.scenario_runner.phase08_validation as phase08_validation
 from ros_esc.scenario_runner.phase08_validation import (
@@ -24,10 +23,10 @@ from ros_esc.scenario_runner.phase08_validation import (
     select_candidate,
     suite_counts,
     TRAINING_PATH,
+    v2_allocation_bucket,
     V2_CANDIDATES,
     V2_EXPECTED_ALLOCATION,
     V2_EXPECTED_COUNTS,
-    v2_allocation_bucket,
     v2_suite_counts,
     validate_suite_counts,
     wilson_interval,
@@ -43,6 +42,7 @@ from ros_esc.supervisor_node.supervisor_node_script import (
     convergence_snapshot_from_confirmation,
 )
 from ros_esc_interfaces.msg import AlgorithmEvent, StampedFloat64MultiArray
+import yaml
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
@@ -217,6 +217,72 @@ def test_v2_stage_order_rejects_missing_or_failed_prior_state(tmp_path):
     )
     with pytest.raises(RuntimeError, match='activation failed'):
         _v2_require_pass(tmp_path, 'activation')
+
+
+def test_v2_report_closes_early_failure_without_later_stage_evidence(
+    tmp_path,
+    monkeypatch,
+):
+    """Report a failed activation without fabricating downstream metrics."""
+    validation_root = tmp_path / 'durable_validation'
+    monkeypatch.setattr(
+        phase08_validation,
+        'VALIDATION_ROOT',
+        validation_root,
+    )
+    evidence_root = tmp_path / 'phase08_v2'
+    phase08_validation._ensure_v2_workflow(evidence_root)
+    activation = {
+        'schema_version': 2,
+        'stage': 'activation',
+        'passed': False,
+        'run_count': 10,
+        'integrity_pass_count': 1,
+        'functional_tests': {'passed': True},
+        'reasons': ['activation coverage was incomplete'],
+    }
+    failure = {
+        'schema_version': 2,
+        'stage': 'activation',
+        'passed': False,
+        'level_c': True,
+        'later_stages_forbidden': True,
+        'simulation_ready_tag_permitted': False,
+    }
+    phase08_validation.atomic_json(
+        phase08_validation._v2_state(evidence_root, 'activation'),
+        activation,
+    )
+    phase08_validation.atomic_json(
+        phase08_validation._v2_state(evidence_root, 'failure'),
+        failure,
+    )
+
+    result = phase08_validation.run_v2_report(evidence_root)
+
+    assert result['simulation_ready'] is False
+    assert result['stopped_stage'] == 'activation'
+    assert result['executed_run_count'] == 10
+    assert result['unique_run_count'] == 0
+    assert result['confidence_intervals']['status'] == 'not_applicable'
+    assert result['gates'][0]['status'] == 'evaluated'
+    assert result['gates'][1]['passed'] is False
+    assert all(
+        gate['status'] == 'not_run' for gate in result['gates'][2:]
+    )
+    assert (
+        validation_root / 'phase_08_v2_gate_results.json'
+    ).exists()
+    report = (
+        validation_root / 'phase_08_v2_validation_report.md'
+    ).read_text(encoding='utf-8')
+    assert 'FAIL (EARLY STOP)' in report
+    assert 'Not applicable: the 70-run acceptance denominator' in report
+    assert main([
+        'report',
+        '--operator', 'test',
+        '--evidence-root', str(evidence_root),
+    ]) == 1
 
 
 def test_historical_v1_execution_commands_are_retired(tmp_path):

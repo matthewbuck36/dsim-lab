@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-25T17:32:42-07:00`
-Status: `IN_PROGRESS`
+Last verified: `2026-07-25T18:33:32-07:00`
+Status: `FAILED — LEVEL C`
 
 ## Objective
 
@@ -54,26 +54,45 @@ counting historical v1 evidence.
   selection, clean-freeze enforcement, 20-run holdout early gate, 70-run
   unique gates, Wilson intervals, ten-repeat comparison, and v1 execution
   retirement are implemented in the existing `validate_robustness` owner.
+- Phase 08a implementation commit:
+  `8aab27c` (`phase 08a: add staged robustness validation v2`).
+- The mandatory v2 activation stage executed all ten declared cases exactly
+  once under the separate `phase08_v2` evidence root. It retained all runs,
+  passed cleanup 10/10, produced seven typed fills and one observed escape
+  attempt, but only 1/10 met the complete integrity and lifecycle contract.
+- Gate 2 therefore failed and the plan's early-stop rule closed Phase 08 before
+  tuning. Partial and failure reports mark Gates 3–14 `NOT RUN`; no v2 profile
+  was selected or frozen.
 
 ## Current milestone
 
-- Milestone: Phase 08a staged-v2 implementation and pre-runtime regression.
-- Implementation complete: `yes`, pending checkpoint and bounded Phase 08a
-  commit.
-- Next acceptance criterion: commit Phase 08a, then run the retained
-  functional/build gates and recorded robust/legacy simulation smokes before
-  executing the ten-run activation stage.
+- Milestone: ten-run Phase 08 v2 activation gate — **FAILED and closed**.
+- Implementation complete: `yes` at `8aab27c`.
+- Empirical acceptance: `no`; Gate 2 observed `1/10`, required `10/10`.
+- Next acceptance criterion: none remains inside Phase 08. Further empirical
+  work requires a new bounded Phase 08.1 plan.
 
 ## Current problem or blocker
 
 - No Level A blocker is present.
-- No Phase 08 v2 Gazebo batch or bag recording has run. Runtime activation
-  behavior remains unproven until the prescribed ten-run gate.
+- The missed activation criterion is a Level C terminal result, not an
+  implementation permission to retune or weaken the gate.
+- Six cases failed completeness because a late stale-source `FILL_CREATED`
+  followed timeout/failsafe and regressed typed ROS time by more than 0.150
+  seconds. One stalled-assist case separately failed the required publisher
+  parameter snapshot. Two complete cases missed their designated lifecycle.
+- The retained bags are sufficient for the next diagnosis; do not rerun the
+  activation stage merely to recover context.
 
 ## Files currently relevant
 
 - `docs/codex/gesc_gaussian/plans/phase_08_plan.md`
 - `docs/codex/gesc_gaussian/validation/phase_08_v1_failure_closeout.md`
+- `docs/codex/gesc_gaussian/validation/phase_08_v2_run_manifest.json`
+- `docs/codex/gesc_gaussian/validation/phase_08_v2_gate_results.json`
+- `docs/codex/gesc_gaussian/validation/phase_08_v2_validation_report.md`
+- `docs/codex/gesc_gaussian/validation/phase_08_v2_failure_report.md`
+- `docs/codex/gesc_gaussian/handoffs/phase_08_handoff.md`
 - `ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py`
 - `ros2_ws/src/ros_esc/ros_esc/convergence_detector_node/convergence_detector_node_script.py`
 - `ros2_ws/src/ros_esc/ros_esc/supervisor_node/state_machine.py`
@@ -157,8 +176,46 @@ counting historical v1 evidence.
   flake8, and `git diff --check`: passed.
 - Phase 08 checkpoint refreshed after the Phase 08a implementation evidence:
   passed.
-- No Phase 08 v2 Gazebo run, bag recording, freeze, empirical acceptance gate,
-  physical command, or tag has been executed.
+- Repository-standard package result:
+  `1040 tests, 0 errors, 836 failures, 3 skipped`. The failures remain
+  inherited flake8, pep257, and `ros_esc_interfaces` lint-cmake debt; the
+  failure total is 36 lower than the documented Phase 07 baseline of 872.
+- Explicit recorded robust/legacy smoke:
+  `1 passed in 34.69s`. Both runs passed completeness, classification, and
+  cleanup with no surviving graph/process contamination. Retained paths:
+  `/tmp/pytest-of-mattb/pytest-10/test_recorded_short_headless_e0`.
+  The five-second robust smoke observed `SEARCH` only and did not claim
+  behavioral activation; legacy remained not-applicable for controller goal.
+- Bounded v2 activation command:
+  `timeout 7200s ros2 run ros_esc validate_robustness activation --operator
+  phase08_v2 --evidence-root
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v2`; exit 1 after retaining
+  exactly ten runs. The workflow manifest SHA-256 is
+  `66c17005f67dd056e41673a0754e838f5ee22a0280b0f5d649043ad3c461cd71`.
+- Activation result: integrity/lifecycle `1/10`, recording complete `3/10`,
+  analysis complete `3/10`, classification `1/10`, cleanup `10/10`,
+  controller plus ground-truth success `1/10`, valid no-collision evidence
+  `9/10`, typed fills `7`, escape attempts `1`.
+- The activation-owned functional run passed:
+  `189 passed, 2 skipped in 10.44s`.
+- Read-only evidence verification: ten completeness documents, ten sqlite3
+  bags, and `PRAGMA quick_check=ok` for 10/10. The v2 root uses 1.8 GiB and no
+  Phase 08/Gazebo/recording/rosbag process remains.
+- Closure report command:
+  `ros2 run ros_esc validate_robustness report ...`; expected exit 1,
+  Gate 1 PASS, Gate 2 FAIL (`1/10`), Gates 3–14 `NOT RUN`, Wilson intervals
+  not applicable, and `simulation_ready=false`.
+- Closure retained functional suite after adding partial-report coverage:
+  `190 passed, 2 skipped in 11.70s`; focused report file:
+  `14 passed in 3.98s`.
+- `ament_flake8` and `ament_pep257` on the changed validator/test files:
+  passed with no problems. Python compile, fatal/focused flake8, and
+  `git diff --check`: passed.
+- Representative historical v1 hashes still match the read-only closeout.
+  No v1 artifact was resumed, overwritten, referenced by the v2 manifest, or
+  counted.
+- No tuning, parameter selection, freeze, holdout, 70-run validation,
+  reproducibility, physical command, or tag was executed.
 
 ## Attempts not to repeat
 
@@ -171,16 +228,20 @@ counting historical v1 evidence.
 - Do not infer behavioral success from recording completeness or cleanup.
 - Do not rerun the v1 JSON/YAML/SQLite integrity sweep; its exact 548/2242/320
   results and representative hashes are retained in the closeout.
+- Do not rerun or relabel the ten v2 activation runs, start tuning after their
+  failed gate, or compute Wilson intervals without the 70-run denominator.
+- Do not treat the one passing high-level goal or one real escape/recenter
+  sequence as whole-gate acceptance.
 
 ## Remaining work
 
-1. Commit the verified Phase 08a implementation as
-   `phase 08a: add staged robustness validation v2`.
-2. Run the repository-standard package test baseline and the explicit recorded
-   robust/legacy smokes; preserve exact artifacts and outcomes.
-3. Create the separate v2 evidence root and execute only the ten-run activation
-   stage.
-4. Continue to the 30-run sweep only if all activation gates pass.
+No remaining work is authorized inside Phase 08. The smallest justified next
+phase is a separately planned Phase 08.1 diagnosis of:
+
+1. late stale-source typed-event timestamp ordering;
+2. fill-design timeout/failsafe behavior after confirmed low/medium minima;
+3. stalled-assist publisher-parameter snapshot reliability; and
+4. the boundary of the rotation score window before verification.
 
 ## Stop conditions
 
@@ -190,9 +251,11 @@ counting historical v1 evidence.
 - Stop after holdout if fewer than 18/20 runs succeed end to end or any required
   evidence/collision/lifecycle gate is invalid.
 - Never create the simulation-ready tag unless every amended gate passes.
+- Gate 2 failed, so all later Phase 08 stages and the tag are forbidden.
 
 ## Compaction recovery
 
-Before further changes, reread the Phase 08 plan and this file, inspect Git
-status and the current diff, identify the next incomplete acceptance criterion,
-and continue only from that verified state.
+Phase 08 is terminally closed. A future chat must reread the plan, this status,
+the Phase 08 handoff, and the retained failure reports; inspect Git and the
+v2 evidence state; and begin only from an approved Phase 08.1 plan. It must not
+resume the v2 stage order from this failed state.

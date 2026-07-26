@@ -1,0 +1,128 @@
+{
+  "confidence_intervals": {
+    "reason": "the 70-run acceptance denominator was not executed after the activation early-stop gate failed",
+    "status": "not_applicable"
+  },
+  "executed_run_count": 10,
+  "frozen_snapshot": null,
+  "gates": [
+    {
+      "gate": "1_functional",
+      "passed": true,
+      "reason": null,
+      "status": "evaluated",
+      "threshold": "all retained functional tests pass",
+      "value": true
+    },
+    {
+      "gate": "2_activation",
+      "passed": false,
+      "reason": "one or more activation runs missed integrity or lifecycle coverage",
+      "status": "evaluated",
+      "threshold": "all ten activation proofs",
+      "value": "1/10"
+    },
+    {
+      "gate": "3_holdout",
+      "passed": false,
+      "reason": "not run after the activation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "at least 18/20 with complete valid evidence",
+      "value": "not_run"
+    },
+    {
+      "gate": "4_completeness",
+      "passed": false,
+      "reason": "not run after the activation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "70/70 complete unique runs",
+      "value": "not_run"
+    },
+    {
+      "gate": "5_collision",
+      "passed": false,
+      "reason": "not run after the activation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "zero collisions with valid evidence",
+      "value": "not_run"
+    },
+    {
+      "gate": "6_local_escape",
+      "passed": false,
+      "reason": "not run after the activation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "all declared local-minimum escapes succeed",
+      "value": "not_run"
+    },
+    {
+      "gate": "7_end_to_end",
+      "passed": false,
+      "reason": "not run after the activation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "at least 63/70 end-to-end successes",
+      "value": "not_run"
+    },
+    {
+      "gate": "8_family_minimum",
+      "passed": false,
+      "reason": "not run after the activation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "every family success rate is at least 0.80",
+      "value": "not_run"
+    },
+    {
+      "gate": "9_median_escape_time",
+      "passed": false,
+      "reason": "not run after the activation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "median escape time is at most 20 s",
+      "value": "not_run"
+    },
+    {
+      "gate": "10_p95_escape_time",
+      "passed": false,
+      "reason": "not run after the activation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "p95 escape time is at most 35 s",
+      "value": "not_run"
+    },
+    {
+      "gate": "11_median_orbit_count",
+      "passed": false,
+      "reason": "not run after the activation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "median orbit count is at most 2",
+      "value": "not_run"
+    },
+    {
+      "gate": "12_normal_termination",
+      "passed": false,
+      "reason": "not run after the activation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "no unexplained timeout or failsafe",
+      "value": "not_run"
+    },
+    {
+      "gate": "13_revisit_rate",
+      "passed": false,
+      "reason": "not run after the activation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "revisit rate is at most 0.10",
+      "value": "not_run"
+    },
+    {
+      "gate": "14_reproducibility",
+      "passed": false,
+      "reason": "not run after the activation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "all ten categorical and numeric comparisons",
+      "value": "not_run"
+    }
+  ],
+  "outcome": "failed_early",
+  "schema_version": 2,
+  "simulation_ready": false,
+  "stopped_stage": "activation",
+  "unique_run_count": 0,
+  "workflow_manifest_sha256": "66c17005f67dd056e41673a0754e838f5ee22a0280b0f5d649043ad3c461cd71"
+}

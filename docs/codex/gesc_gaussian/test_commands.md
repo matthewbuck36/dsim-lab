@@ -1533,3 +1533,163 @@ git diff --check
 All listed static checks passed. No Phase 08 v2 Gazebo batch, bag recording,
 parameter freeze, behavioral acceptance gate, physical command, or tag was
 executed in this implementation milestone.
+
+### Post-commit package baseline and recorded smoke
+
+After commit `8aab27c`, the repository-standard package command reported:
+
+```text
+1040 tests, 0 errors, 836 failures, 3 skipped
+```
+
+The 836 failures remain the inherited package-wide flake8, pep257, and
+`ros_esc_interfaces` lint-cmake debt. This is 36 fewer failures than the
+documented Phase 07 baseline (`1037 / 0 / 872 / 3`), so the global failure
+count did not worsen.
+
+The explicit opt-in two-profile smoke then ran:
+
+```bash
+RUN_GESC_PHASE06_GAZEBO_E2E=1 python3 -m pytest -q -s \
+  ros2_ws/src/ros_esc/test/test_scenario_runner.py::\
+test_recorded_short_headless_end_to_end
+```
+
+Result: `1 passed in 34.69s`. Both five-second runs passed recording
+completeness, scenario classification, and cleanup:
+
+```text
+/tmp/pytest-of-mattb/pytest-10/test_recorded_short_headless_e0/runs/2026-07-26/20260726T003612653021Z_simulation_phase06_smoke-recorded_profile_smoke-robust_gaussian_v1-f562307ac8_92c0aa8e
+/tmp/pytest-of-mattb/pytest-10/test_recorded_short_headless_e0/runs/2026-07-26/20260726T003629195830Z_simulation_phase06_smoke-recorded_profile_smoke-legacy-5d2c1438c0_13388f47
+```
+
+The robust smoke observed `SEARCH` only; its controller and ground-truth goals
+were both false. Legacy controller goal remained `not_applicable` and its
+ground-truth goal was false. This short smoke is infrastructure/compatibility
+evidence only, not one of the ten activation proofs.
+
+### Phase 08 v2 activation gate and Level C closeout
+
+The separate v2 evidence root did not exist before runtime. The mandatory
+activation stage ran once with an outer bound:
+
+```bash
+timeout 7200s ros2 run ros_esc validate_robustness activation \
+  --operator phase08_v2 \
+  --evidence-root \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v2
+```
+
+Result: expected workflow failure exit 1 after all ten declared runs were
+retained:
+
+```text
+run count:                         10/10
+full integrity/lifecycle pass:      1/10
+recording complete:                 3/10
+analysis complete:                  3/10
+classification pass:                1/10
+cleanup pass:                       10/10
+controller plus ground-truth:       1/10
+valid no-collision evidence:         9/10
+typed fills:                            7
+observed escape attempts:               1
+functional regression: 189 passed, 2 skipped in 10.44s
+```
+
+The workflow manifest SHA-256 is
+`66c17005f67dd056e41673a0754e838f5ee22a0280b0f5d649043ad3c461cd71`.
+The retained state files are:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v2/workflow_state/v2_activation.json
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v2/workflow_state/v2_failure.json
+```
+
+Six cases failed completeness with
+`typed ROS timestamps regressed by more than 0.150 s`. A late stale-source
+`FILL_CREATED` followed a later timeout/failsafe event. The stalled-assist case
+had a separate required publisher-parameter snapshot failure. The high-level
+goal case was the sole complete lifecycle pass. The noise/delay case observed
+one real escape/recenter sequence but did not satisfy its declared goal
+lifecycle.
+
+All ten completeness documents and sqlite3 bags are retained under the 1.8 GiB
+root. The `sqlite3` CLI is not installed on this host, so that first diagnostic
+returned command-not-found and was not counted. A read-only standard-library
+fallback opened every bag with `mode=ro` and ran `PRAGMA quick_check`:
+
+```text
+sqlite_quick_check=10/10
+completeness_documents=10
+```
+
+No Phase 08, Gazebo, recording, scenario-runner, or rosbag process remained.
+Representative v1 hashes matched the immutable v1 closeout after the v2 stage.
+
+The plan requires partial reporting from a retained early-stop state. The
+existing report path was extended without rerunning simulation and covered by
+a focused regression. Report generation then ran:
+
+```bash
+ros2 run ros_esc validate_robustness report \
+  --operator phase08_v2 \
+  --evidence-root \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v2
+```
+
+Result: expected exit 1. Gate 1 passed; Gate 2 failed at `1/10`; Gates 3–14 are
+`NOT RUN`; the 70-run denominator and Wilson intervals are explicitly not
+applicable; `simulation_ready=false`.
+
+Closure regression:
+
+```bash
+source install/setup.bash
+timeout 300s python3 -m pytest -q -rs \
+  src/ros_esc/test/test_simulation_disturbances.py \
+  src/ros_esc/test/test_phase08_validation.py \
+  src/ros_esc/test/test_bag_analysis.py \
+  src/ros_esc/test/test_bag_analysis_integration.py \
+  src/ros_esc/test/test_scenario_schema.py \
+  src/ros_esc/test/test_scenario_runner.py \
+  src/ros_esc/test/test_experiment_recording.py \
+  src/ros_esc/test/test_recording_integration.py \
+  src/ros_esc/test/test_state_machine.py \
+  src/ros_esc/test/test_supervisor_integration.py \
+  src/ros_esc/test/test_observability_contract.py \
+  src/ros_esc/test/test_legacy_behavior.py \
+  src/ros_esc/test/test_robust_gaussian_algorithm.py \
+  src/ros_esc/test/test_escape_recenter.py
+```
+
+Result:
+
+```text
+190 passed, 2 skipped in 11.70s
+```
+
+Exact skips:
+
+- `test_scenario_runner.py:306`: explicit
+  `RUN_GESC_PHASE06_GAZEBO_E2E=1` gate; the test was run separately and
+  passed during pre-activation smoke.
+- `test_recording_integration.py:56`: explicit
+  `DSIM_RUN_GAZEBO_RECORDING_TEST=1` visible-Gazebo gate.
+
+The focused report file returned `14 passed in 3.98s`. Python compilation,
+fatal and focused flake8, `ament_flake8`, `ament_pep257`, and
+`git diff --check` passed on the changed validator and test.
+
+Three setup/style invocations were not counted as test evidence: one pytest
+call before sourcing the workspace could not import `ros_esc`; one used the
+wrong relative test path and collected nothing; and
+`python3 -m ament_flake8` reported that the package has no `__main__`.
+The sourced pytest commands and the `ament_flake8`/`ament_pep257` executables
+above are the corrected successful invocations.
+
+The repository-standard package result remains the pre-activation
+`1040 tests, 0 errors, 836 inherited failures, 3 skipped`; it was not rerun
+after the two-file reporting-only correction. No tuning, parameter selection,
+freeze, holdout, 70-run validation, reproducibility, physical test, or
+simulation-ready tag was run after the activation early-stop.

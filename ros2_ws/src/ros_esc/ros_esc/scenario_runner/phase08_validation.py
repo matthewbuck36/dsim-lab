@@ -1861,9 +1861,255 @@ def run_v2_reproducibility(operator, evidence_root):
     return result
 
 
+def _not_run_gate(identifier, threshold, stopped_stage):
+    return {
+        **_gate(
+            identifier,
+            False,
+            'not_run',
+            threshold,
+            f'not run after the {stopped_stage} early-stop gate failed',
+        ),
+        'status': 'not_run',
+    }
+
+
+def _run_v2_partial_report(root, workflow, failure):
+    """Write a non-acceptance report without inventing unexecuted evidence."""
+    activation = _load_json(_v2_state(root, 'activation'))
+    holdout_path = _v2_state(root, 'holdout')
+    validation_path = _v2_state(root, 'validation')
+    reproducibility_path = _v2_state(root, 'reproducibility')
+    holdout = _load_json(holdout_path) if holdout_path.exists() else None
+    validation = (
+        _load_json(validation_path) if validation_path.exists() else None
+    )
+    reproducibility = (
+        _load_json(reproducibility_path)
+        if reproducibility_path.exists()
+        else None
+    )
+    gates = [
+        {
+            **_gate(
+                '1_functional',
+                activation['functional_tests']['passed'],
+                activation['functional_tests']['passed'],
+                'all retained functional tests pass',
+            ),
+            'status': 'evaluated',
+        },
+        {
+            **_gate(
+                '2_activation',
+                activation['passed'],
+                f'{activation["integrity_pass_count"]}/10',
+                'all ten activation proofs',
+                '; '.join(activation.get('reasons', [])) or None,
+            ),
+            'status': 'evaluated',
+        },
+    ]
+    if holdout is None:
+        gates.append(_not_run_gate(
+            '3_holdout',
+            'at least 18/20 with complete valid evidence',
+            failure['stage'],
+        ))
+    else:
+        gates.append({
+            **_gate(
+                '3_holdout',
+                holdout['passed'],
+                f'{holdout["end_to_end_success_count"]}/20',
+                'at least 18/20 with complete valid evidence',
+                '; '.join(holdout.get('reasons', [])) or None,
+            ),
+            'status': 'evaluated',
+        })
+    unique_gate_map = (
+        ('2_completeness', '4_completeness'),
+        ('3_collision', '5_collision'),
+        ('4_local_escape', '6_local_escape'),
+        ('5_end_to_end', '7_end_to_end'),
+        ('6_family_minimum', '8_family_minimum'),
+        ('7_median_escape_time', '9_median_escape_time'),
+        ('8_p95_escape_time', '10_p95_escape_time'),
+        ('9_median_orbit_count', '11_median_orbit_count'),
+        ('10_normal_termination', '12_normal_termination'),
+        ('11_revisit_rate', '13_revisit_rate'),
+    )
+    deferred_unique = (
+        ('4_completeness', '70/70 complete unique runs'),
+        ('5_collision', 'zero collisions with valid evidence'),
+        ('6_local_escape', 'all declared local-minimum escapes succeed'),
+        ('7_end_to_end', 'at least 63/70 end-to-end successes'),
+        ('8_family_minimum', 'every family success rate is at least 0.80'),
+        ('9_median_escape_time', 'median escape time is at most 20 s'),
+        ('10_p95_escape_time', 'p95 escape time is at most 35 s'),
+        ('11_median_orbit_count', 'median orbit count is at most 2'),
+        ('12_normal_termination', 'no unexplained timeout or failsafe'),
+        ('13_revisit_rate', 'revisit rate is at most 0.10'),
+    )
+    if validation is None:
+        gates.extend(
+            _not_run_gate(identifier, threshold, failure['stage'])
+            for identifier, threshold in deferred_unique
+        )
+    else:
+        by_identifier = {
+            gate['gate']: gate
+            for gate in validation['unique_gate_evaluation']['gates']
+        }
+        gates.extend({
+            **by_identifier[source],
+            'gate': target,
+            'status': 'evaluated',
+        } for source, target in unique_gate_map)
+    if reproducibility is None:
+        gates.append(_not_run_gate(
+            '14_reproducibility',
+            'all ten categorical and numeric comparisons',
+            failure['stage'],
+        ))
+    else:
+        evaluation = reproducibility['evaluation']
+        gates.append({
+            **_gate(
+                '14_reproducibility',
+                evaluation['passed'],
+                f"{sum(item['passed'] for item in evaluation['results'])}/10",
+                'all ten categorical and numeric comparisons',
+                '; '.join(reproducibility.get('reasons', [])) or None,
+            ),
+            'status': 'evaluated',
+        })
+    sweep_progress_path = _v2_state(root, 'sweep_progress')
+    sweep_progress = (
+        _load_json(sweep_progress_path)
+        if sweep_progress_path.exists()
+        else {'candidates': []}
+    )
+    executed_run_count = activation['run_count'] + sum(
+        item['metrics']['run_count']
+        for item in sweep_progress.get('candidates', [])
+    )
+    if holdout is not None:
+        executed_run_count += holdout['run_count']
+    if validation is not None:
+        executed_run_count += validation['run_count']
+    if reproducibility is not None:
+        executed_run_count += reproducibility['evaluation']['repeat_count']
+    confidence_intervals = (
+        validation['confidence_intervals']
+        if validation is not None
+        else {
+            'status': 'not_applicable',
+            'reason': (
+                'the 70-run acceptance denominator was not executed after '
+                f'the {failure["stage"]} early-stop gate failed'
+            ),
+        }
+    )
+    frozen_snapshot = None
+    for state in (validation, holdout):
+        if state is not None:
+            frozen_snapshot = state.get('frozen_snapshot')
+            if frozen_snapshot is not None:
+                break
+    results = {
+        'schema_version': 2,
+        'simulation_ready': False,
+        'outcome': 'failed_early',
+        'stopped_stage': failure['stage'],
+        'workflow_manifest_sha256': workflow['manifest_sha256'],
+        'frozen_snapshot': frozen_snapshot,
+        'executed_run_count': executed_run_count,
+        'unique_run_count': (
+            validation['unique_run_count'] if validation is not None else 0
+        ),
+        'confidence_intervals': confidence_intervals,
+        'gates': gates,
+    }
+    VALIDATION_ROOT.mkdir(parents=True, exist_ok=True)
+    atomic_json(VALIDATION_ROOT / 'phase_08_v2_gate_results.json', results)
+    lines = [
+        '# Phase 08 v2 Simulation Validation Report',
+        '',
+        'Outcome: **FAIL (EARLY STOP)**.',
+        '',
+        f'Stopped after `{failure["stage"]}`. No later empirical stage was '
+        'authorized.',
+        '',
+        f'Executed declared runs: `{executed_run_count}`.',
+        '',
+        '## Gates',
+        '',
+    ]
+    if frozen_snapshot is None:
+        lines[8:8] = [
+            'No v2 parameter profile was selected or frozen.',
+            '',
+        ]
+    else:
+        lines[8:8] = [
+            'A frozen v2 profile existed before the failed stage; its snapshot '
+            'is retained in the gate JSON.',
+            '',
+        ]
+    for gate in gates:
+        if gate['status'] == 'not_run':
+            lines.append(
+                f'- `{gate["gate"]}`: NOT RUN; threshold '
+                f'`{gate["threshold"]}`.'
+            )
+        else:
+            lines.append(
+                f'- `{gate["gate"]}`: '
+                f'{"PASS" if gate["passed"] else "FAIL"}; '
+                f'value `{gate["value"]}`; threshold `{gate["threshold"]}`.'
+            )
+    lines.extend(['', '## 95% Wilson score intervals', ''])
+    if validation is None:
+        lines.append(
+            'Not applicable: the 70-run acceptance denominator was not '
+            'executed.'
+        )
+    else:
+        intervals = validation['confidence_intervals']
+        lines.append(
+            f'- Overall: {intervals["overall"]["rate"]:.4f} '
+            f'[{intervals["overall"]["lower"]:.4f}, '
+            f'{intervals["overall"]["upper"]:.4f}].'
+        )
+        for family, interval in intervals['by_family'].items():
+            lines.append(
+                f'- `{family}`: {interval["rate"]:.4f} '
+                f'[{interval["lower"]:.4f}, {interval["upper"]:.4f}].'
+            )
+    lines.extend([
+        '',
+        f'Retained evidence root: `{root}`.',
+        '',
+        'No physical hardware was run.',
+        '',
+    ])
+    (
+        VALIDATION_ROOT / 'phase_08_v2_validation_report.md'
+    ).write_text('\n'.join(lines), encoding='utf-8')
+    return results
+
+
 def run_v2_report(evidence_root):
     """Write final v2 gate JSON and Markdown from retained stage evidence."""
     root, workflow = _ensure_v2_workflow(evidence_root)
+    failure_path = _v2_state(root, 'failure')
+    if failure_path.exists():
+        return _run_v2_partial_report(
+            root,
+            workflow,
+            _load_json(failure_path),
+        )
     activation = _v2_require_pass(root, 'activation')
     holdout = _v2_require_pass(root, 'holdout')
     validation = _v2_require_pass(root, 'validation')
@@ -2077,6 +2323,8 @@ def main(argv=None):
         return 2
     print(json.dumps(result, sort_keys=True, allow_nan=False))
     if result.get('passed') is False:
+        return 1
+    if result.get('simulation_ready') is False:
         return 1
     if result.get('level_c_no_eligible_candidate'):
         return 1

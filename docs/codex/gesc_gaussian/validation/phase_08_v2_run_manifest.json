@@ -1,0 +1,4041 @@
+{
+  "manifest": {
+    "candidate_sha256": "e87ba94e30aa1a31cb51b15f69d5f22993a0896c2433c003b2d69f74eb26ac07",
+    "candidates": [
+      {
+        "candidate_id": "V2-C0",
+        "launch_overrides": {
+          "gaussian_fill_amplitude_depth_scale": 1.5,
+          "gaussian_fill_covariance_scale": 2.5,
+          "gaussian_fill_exit_sigma": 2.5,
+          "minimum_radial_progress_m": 0.05,
+          "stall_window_sec": 3.0
+        }
+      },
+      {
+        "candidate_id": "V2-C1",
+        "launch_overrides": {
+          "gaussian_fill_amplitude_depth_scale": 1.2,
+          "gaussian_fill_covariance_scale": 2.0,
+          "gaussian_fill_exit_sigma": 2.25,
+          "minimum_radial_progress_m": 0.03,
+          "stall_window_sec": 4.0
+        }
+      },
+      {
+        "candidate_id": "V2-C2",
+        "launch_overrides": {
+          "gaussian_fill_amplitude_depth_scale": 1.8,
+          "gaussian_fill_covariance_scale": 3.0,
+          "gaussian_fill_exit_sigma": 2.75,
+          "minimum_radial_progress_m": 0.08,
+          "stall_window_sec": 2.0
+        }
+      }
+    ],
+    "counts": {
+      "activation": 10,
+      "holdout": 20,
+      "reproducibility": 10,
+      "total": 120,
+      "training_per_candidate": 10,
+      "training_total": 30,
+      "unique": 70,
+      "validation": 50
+    },
+    "evidence_root": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v2",
+    "historical_v1_evidence_excluded": true,
+    "schema_version": 2,
+    "stage_order": [
+      "activation",
+      "sweep",
+      "freeze_commit",
+      "holdout",
+      "validation",
+      "reproducibility",
+      "report"
+    ],
+    "stages": {
+      "activation": {
+        "runs": [
+          {
+            "case_id": "activation_goal_low",
+            "case_key": "ab47b3264bcfa5da8880354c998b6152b9990be4f05e22b9da5d47ebdddd2f3e",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8201,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 450.0,
+                "x_m": 0.9,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "west_east",
+              "x_m": -0.8,
+              "y_m": 0.0,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "activation_goal_medium",
+            "case_key": "966c661dc8282b140efaf8b87ee2215b6dc7696798647a03b09d61b31cfa9603",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8202,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1200.0,
+                "x_m": 0.0,
+                "y_m": 0.9
+              }
+            ],
+            "start": {
+              "id": "south_north",
+              "x_m": 0.0,
+              "y_m": -0.8,
+              "yaw_rad": 1.5707963267948966
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "activation_goal_high",
+            "case_key": "3877fb6052d7a0efd94070d6a7b6771b9726eea4fef900c4c317f6ad144cc040",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8203,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2500.0,
+                "x_m": -0.9,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "east_west",
+              "x_m": 0.8,
+              "y_m": 0.0,
+              "yaw_rad": 3.141592653589793
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "activation_fill_create",
+            "case_key": "5f1597bda8d261e7845568f1f2246d27fc275d4426d2b2131ad6551461fce608",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "escape",
+            "seed": 8204,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local",
+                "relative_lumen_input": 700.0,
+                "x_m": -0.8,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1800.0,
+                "x_m": 1.3,
+                "y_m": 0.8
+              }
+            ],
+            "start": {
+              "id": "local_center",
+              "x_m": -0.8,
+              "y_m": 0.0,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "activation_pure_escape",
+            "case_key": "b16f10d2ba9b8cfa62571bd5ace28014ee6fed979c4d8b91b49b238e17d5c587",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "escape",
+            "seed": 8205,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local",
+                "relative_lumen_input": 700.0,
+                "x_m": -0.8,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1800.0,
+                "x_m": 1.3,
+                "y_m": 0.8
+              }
+            ],
+            "start": {
+              "id": "local_center",
+              "x_m": -0.8,
+              "y_m": 0.0,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "activation_stalled_assist",
+            "case_key": "70bc3ab8801d66939eef679bc0934480358fa5b8c5947aebd04fbb735aaa13fd",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "escape",
+            "seed": 8206,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local",
+                "relative_lumen_input": 800.0,
+                "x_m": -0.7,
+                "y_m": -0.2
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1900.0,
+                "x_m": 1.4,
+                "y_m": 0.8
+              }
+            ],
+            "start": {
+              "id": "local_center",
+              "x_m": -0.7,
+              "y_m": -0.2,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "activation_fill_merge",
+            "case_key": "d5039ba75fcf0db9e36921b686f607406cbfcfc25a6dc924a3ce3424c84f9886",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "fill_merge",
+            "seed": 8207,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_a",
+                "relative_lumen_input": 750.0,
+                "x_m": -0.4,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_b",
+                "relative_lumen_input": 800.0,
+                "x_m": 0.15,
+                "y_m": 0.1
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2100.0,
+                "x_m": 1.5,
+                "y_m": 1.3
+              }
+            ],
+            "start": {
+              "id": "southwest_northeast",
+              "x_m": -1.4,
+              "y_m": -1.0,
+              "yaw_rad": 0.5
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "activation_recenter_resume",
+            "case_key": "86c8af432cfe9570267bc10911472c2561b1415907939bbf9d7c134009e41e08",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "recenter_resume",
+            "seed": 8208,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local",
+                "relative_lumen_input": 750.0,
+                "x_m": -1.1,
+                "y_m": 0.2
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1900.0,
+                "x_m": 1.45,
+                "y_m": 1.0
+              }
+            ],
+            "start": {
+              "id": "local_west",
+              "x_m": -1.1,
+              "y_m": 0.2,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "activation_boundary_negative",
+            "case_key": "2d9d00a07b06fc59151054b7b1936eacdbfab7146c459ea6f9c6d106d2c69e93",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "boundary",
+            "seed": 8209,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1200.0,
+                "x_m": -0.6,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "west_wall_east",
+              "x_m": -1.45,
+              "y_m": 0.0,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "activation_noise_delay",
+            "case_key": "c91832a5506809efe3f1f181e0e422dd67e0f64219bd5c03497e86bf98249066",
+            "disturbances": {
+              "pose_delay_sec": 0.05,
+              "sensor_delay_sec": 0.05,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "gaussian",
+                "std_dev": 0.01
+              }
+            },
+            "family": "noise_delay",
+            "seed": 8210,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1800.0,
+                "x_m": 1.0,
+                "y_m": 1.0
+              }
+            ],
+            "start": {
+              "id": "center_northeast",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": 0.7853981633974483
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          }
+        ],
+        "scenario_path": "ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml",
+        "scenario_sha256": "a5e91d2132b3dacccedc24aba13bdacd9ef5ba4ec7c8ae7b69ced6eadaf47d72"
+      },
+      "holdout": {
+        "runs": [
+          {
+            "case_id": "h_ordered_01",
+            "case_key": "294aea66f29cd00192c500951d8a97c7c1af9890226848c069f8504714c27de1",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8401,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "1",
+                "relative_lumen_input": 450.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "1",
+                "relative_lumen_input": 450.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "center_east",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "h_ordered_02",
+            "case_key": "fadfef86a612fd1c50166392634c255a6a8bd2ac0c6586b2ddb5d736eb38bab6",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8402,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "1",
+                "relative_lumen_input": 450.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "2",
+                "relative_lumen_input": 800.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "southwest_north",
+              "x_m": -1.1,
+              "y_m": -1.0,
+              "yaw_rad": 1.5707963267948966
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "h_ordered_03",
+            "case_key": "44ed03625df2109c3e8033edf1ad03c81ccbb2788abac68d986c759da6050067",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8403,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "1",
+                "relative_lumen_input": 450.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "3",
+                "relative_lumen_input": 1200.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "northeast_west",
+              "x_m": 1.1,
+              "y_m": 1.0,
+              "yaw_rad": 3.141592653589793
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "h_ordered_04",
+            "case_key": "298f3c3a70401d87239fc4a45486b3175e4285543e2f5eba9a2d9d46a5c18485",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8404,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "1",
+                "relative_lumen_input": 450.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "4",
+                "relative_lumen_input": 1800.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "northwest_south",
+              "x_m": -1.0,
+              "y_m": 1.0,
+              "yaw_rad": -1.5707963267948966
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "h_ordered_05",
+            "case_key": "a2134b2395c8eaadc0e5f2103151a9b8b5b5de3d5d86f6d8c4530f6b36d6209b",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8405,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "1",
+                "relative_lumen_input": 450.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "5",
+                "relative_lumen_input": 2500.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "southeast_northwest",
+              "x_m": 1.0,
+              "y_m": -1.0,
+              "yaw_rad": 2.356194490192345
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "h_ordered_06",
+            "case_key": "9c600800020ce93ef19a456fac97386db6cb6c50d6078b86dfbf336de1188ef0",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8406,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "2",
+                "relative_lumen_input": 800.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "1",
+                "relative_lumen_input": 450.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "south_north",
+              "x_m": 0.0,
+              "y_m": -1.2,
+              "yaw_rad": 1.5707963267948966
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "h_ordered_07",
+            "case_key": "8fd3d2694cf52b927f0cfb3489a98adc506fc0ac351e02c23b4e9b509fd3e197",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8407,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "2",
+                "relative_lumen_input": 800.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "2",
+                "relative_lumen_input": 800.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "north_south",
+              "x_m": 0.0,
+              "y_m": 1.2,
+              "yaw_rad": -1.5707963267948966
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "h_multi_01",
+            "case_key": "f1196b9db7080e0761e5e988fe9069a17843cda850041182bf47df33dd8a3100",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "multi_source",
+            "seed": 8411,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_a",
+                "relative_lumen_input": 500.0,
+                "x_m": -1.1,
+                "y_m": -0.7
+              },
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_b",
+                "relative_lumen_input": 750.0,
+                "x_m": 0.1,
+                "y_m": 0.9
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2000.0,
+                "x_m": 1.4,
+                "y_m": 1.25
+              }
+            ],
+            "start": {
+              "id": "center_north",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": 1.5707963267948966
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "h_multi_02",
+            "case_key": "08dfb6206c4f8c13d8ab1ed91e5c8977ac699b5f088e40258ee65f9d9bbea67c",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "close_minimum",
+            "seed": 8412,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_a",
+                "relative_lumen_input": 750.0,
+                "x_m": -0.4,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_b",
+                "relative_lumen_input": 800.0,
+                "x_m": 0.15,
+                "y_m": 0.1
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2100.0,
+                "x_m": 1.45,
+                "y_m": 1.25
+              }
+            ],
+            "start": {
+              "id": "southwest_northeast",
+              "x_m": -1.3,
+              "y_m": -1.0,
+              "yaw_rad": 0.6
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "h_multi_03",
+            "case_key": "6788e569c8d7c6821809415c4fd8b076e9f14035aa112ec3dbfe8546ece87ab9",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "separation_overlap",
+            "seed": 8413,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_a",
+                "relative_lumen_input": 850.0,
+                "x_m": -0.5,
+                "y_m": 0.4
+              },
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_b",
+                "relative_lumen_input": 900.0,
+                "x_m": 0.1,
+                "y_m": 0.45
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2200.0,
+                "x_m": 1.4,
+                "y_m": -0.8
+              }
+            ],
+            "start": {
+              "id": "west_east",
+              "x_m": -1.4,
+              "y_m": 0.5,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "h_wall_01",
+            "case_key": "85192fc018b74beef1d0ad1af94d9b8b9302d19b30333efad066389e4a35af36",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "boundary",
+            "seed": 8421,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1800.0,
+                "x_m": 0.7,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "west_wall_east",
+              "x_m": -1.45,
+              "y_m": 0.0,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "h_wall_02",
+            "case_key": "97ee12535ee7b7d41c60e924456d1ab4b168018dffc376c9ab039a0883e39302",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "boundary",
+            "seed": 8422,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1800.0,
+                "x_m": 0.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "northeast_southwest",
+              "x_m": 1.35,
+              "y_m": 1.35,
+              "yaw_rad": -2.356194490192345
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "h_noise_01",
+            "case_key": "f82b25926cb384f5fe78cacc641ba4ff50f12c8376c9ef6fb127cb1ff04f7b20",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "gaussian",
+                "std_dev": 0.015
+              }
+            },
+            "family": "noise_delay",
+            "seed": 8431,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1800.0,
+                "x_m": 1.0,
+                "y_m": 1.0
+              }
+            ],
+            "start": {
+              "id": "center_northeast",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": 0.7853981633974483
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "h_noise_02",
+            "case_key": "0a4125d3b61507d2b3a765f70c12826c29db65b918abbee90a01dfa9ba461970",
+            "disturbances": {
+              "pose_delay_sec": 0.1,
+              "sensor_delay_sec": 0.1,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "noise_delay",
+            "seed": 8432,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1800.0,
+                "x_m": -1.0,
+                "y_m": 1.0
+              }
+            ],
+            "start": {
+              "id": "center_northwest",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": 2.356194490192345
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "h_saturation_01",
+            "case_key": "fcf79e82cf6805ee635252fbff91849506b6c36b10fd519fd2674a1680e2830c",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "starts_saturation",
+            "seed": 8441,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2500.0,
+                "x_m": 1.25,
+                "y_m": 1.25
+              }
+            ],
+            "start": {
+              "id": "far_southwest",
+              "x_m": -1.4,
+              "y_m": -1.4,
+              "yaw_rad": 0.7853981633974483
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "h_saturation_02",
+            "case_key": "1e7d556e8f45317e97f08ee2288a79c1eb0ead3dae6ea566de19a828414fe059",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "starts_saturation",
+            "seed": 8442,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 450.0,
+                "x_m": -1.4,
+                "y_m": 1.4
+              }
+            ],
+            "start": {
+              "id": "corner_outward",
+              "x_m": 1.45,
+              "y_m": -1.45,
+              "yaw_rad": -0.7853981633974483
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "h_lifecycle_01",
+            "case_key": "bfed5cdf4eb1c5946010f6e30222dc9e5ad6c913d4d3ba6487d05bf43d59a07a",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "escape",
+            "seed": 8451,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local",
+                "relative_lumen_input": 700.0,
+                "x_m": -0.8,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1800.0,
+                "x_m": 1.3,
+                "y_m": 0.8
+              }
+            ],
+            "start": {
+              "id": "local_center",
+              "x_m": -0.8,
+              "y_m": 0.0,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "h_lifecycle_02",
+            "case_key": "ee8b6afe35ee5e1664518b33a80e60e01652eea43447c9dcf5a38dafd0667a43",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "escape",
+            "seed": 8452,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local",
+                "relative_lumen_input": 800.0,
+                "x_m": -0.7,
+                "y_m": -0.2
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1900.0,
+                "x_m": 1.4,
+                "y_m": 0.8
+              }
+            ],
+            "start": {
+              "id": "local_center",
+              "x_m": -0.7,
+              "y_m": -0.2,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "h_lifecycle_03",
+            "case_key": "a7a5c708cf2128d49760471365370cc783cb53ed65167461b5cebacf3ed4bd34",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "fill_merge",
+            "seed": 8453,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_a",
+                "relative_lumen_input": 750.0,
+                "x_m": -0.4,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_b",
+                "relative_lumen_input": 800.0,
+                "x_m": 0.15,
+                "y_m": 0.1
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2100.0,
+                "x_m": 1.5,
+                "y_m": 1.3
+              }
+            ],
+            "start": {
+              "id": "southwest_northeast",
+              "x_m": -1.4,
+              "y_m": -1.0,
+              "yaw_rad": 0.5
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "h_lifecycle_04",
+            "case_key": "8f93fa1731c8659abc4ffbe9e9e089a5730045561bcd44954b7eb66ff6189e83",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "recenter_resume",
+            "seed": 8454,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local",
+                "relative_lumen_input": 750.0,
+                "x_m": -1.1,
+                "y_m": 0.2
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1900.0,
+                "x_m": 1.45,
+                "y_m": 1.0
+              }
+            ],
+            "start": {
+              "id": "local_west",
+              "x_m": -1.1,
+              "y_m": 0.2,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          }
+        ],
+        "scenario_path": "ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v2_holdout.yaml",
+        "scenario_sha256": "6adb79d62830d2d0f65c3e27cdfc49d7dd2cd95fe4328b4337f08fefa19ab46b"
+      },
+      "reproducibility": {
+        "runs": [
+          {
+            "case_id": "repeat_ordered_01",
+            "case_key": "189547c0742080cfc625e2ff581c70114da47d763480e46818aaf7d33ea72551",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8401,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "1",
+                "relative_lumen_input": 450.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "1",
+                "relative_lumen_input": 450.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "center_east",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "repeat_ordered_02",
+            "case_key": "4bb7105f38903cb322be6cbc461f646853322913ff54bfa70096a59ae16aba45",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8508,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "3",
+                "relative_lumen_input": 1200.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "5",
+                "relative_lumen_input": 2500.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "center_west",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": 3.141592653589793
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "repeat_multi_01",
+            "case_key": "3e3d476b48b934e7c2140d5d73227e585b04cb9770d37219758c35b018256c31",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "multi_source",
+            "seed": 8411,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_a",
+                "relative_lumen_input": 500.0,
+                "x_m": -1.1,
+                "y_m": -0.7
+              },
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_b",
+                "relative_lumen_input": 750.0,
+                "x_m": 0.1,
+                "y_m": 0.9
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2000.0,
+                "x_m": 1.4,
+                "y_m": 1.25
+              }
+            ],
+            "start": {
+              "id": "center_north",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": 1.5707963267948966
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "repeat_multi_02",
+            "case_key": "3641e293740960bfaa765f090259ce38e70030acc344f50b373a396f9ceb847e",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "close_minimum",
+            "seed": 8524,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_a",
+                "relative_lumen_input": 800.0,
+                "x_m": -0.3,
+                "y_m": -0.1
+              },
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_b",
+                "relative_lumen_input": 850.0,
+                "x_m": 0.25,
+                "y_m": 0.05
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2200.0,
+                "x_m": 1.3,
+                "y_m": 1.3
+              }
+            ],
+            "start": {
+              "id": "south_north",
+              "x_m": 0.2,
+              "y_m": -1.3,
+              "yaw_rad": 1.5707963267948966
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "repeat_wall_01",
+            "case_key": "708f0e58c8a417ef7ac48300f2e95b322adf7c0c0383c360588330dcbea48190",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "boundary",
+            "seed": 8421,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1800.0,
+                "x_m": 0.7,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "west_wall_east",
+              "x_m": -1.45,
+              "y_m": 0.0,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "repeat_noise_01",
+            "case_key": "11d8e1e5c69bab8c3815c54c16ec746de350d51f83f8ce7332b3a2d76c383aa0",
+            "disturbances": {
+              "pose_delay_sec": 0.1,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "noise_delay",
+            "seed": 8544,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1700.0,
+                "x_m": 0.3,
+                "y_m": -1.1
+              }
+            ],
+            "start": {
+              "id": "center_south",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": -1.5707963267948966
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "repeat_saturation_01",
+            "case_key": "99a1266360c93e3b96c704d612bba8e28522a467c3f88b29959f97219ee276eb",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "starts_saturation",
+            "seed": 8553,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2500.0,
+                "x_m": 1.25,
+                "y_m": -1.25
+              }
+            ],
+            "start": {
+              "id": "far_nw",
+              "x_m": -1.4,
+              "y_m": 1.4,
+              "yaw_rad": -0.7853981633974483
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "repeat_lifecycle_01",
+            "case_key": "fe584525695b26c5dd19b05caa8f960018b1a4b03183a53e8ead7ff7e6560583",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "escape",
+            "seed": 8451,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local",
+                "relative_lumen_input": 700.0,
+                "x_m": -0.8,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1800.0,
+                "x_m": 1.3,
+                "y_m": 0.8
+              }
+            ],
+            "start": {
+              "id": "local_center",
+              "x_m": -0.8,
+              "y_m": 0.0,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "repeat_lifecycle_02",
+            "case_key": "97aa9c03eaa05979d0d234d7f479e458e030c7e70dcd88216529090fb2a7557d",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "escape",
+            "seed": 8564,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local",
+                "relative_lumen_input": 850.0,
+                "x_m": -0.6,
+                "y_m": 0.3
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2000.0,
+                "x_m": 1.35,
+                "y_m": -0.9
+              }
+            ],
+            "start": {
+              "id": "local_north",
+              "x_m": -0.6,
+              "y_m": 0.3,
+              "yaw_rad": -0.2
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "repeat_lifecycle_03",
+            "case_key": "ec4ebdc9cf4121f0e46b5cf5b48d82e2d7ef8487b098f530226a2c35b330d747",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "recenter_resume",
+            "seed": 8568,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local",
+                "relative_lumen_input": 800.0,
+                "x_m": 1.0,
+                "y_m": -0.3
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2000.0,
+                "x_m": -1.4,
+                "y_m": 1.0
+              }
+            ],
+            "start": {
+              "id": "local_east",
+              "x_m": 1.0,
+              "y_m": -0.3,
+              "yaw_rad": 3.141592653589793
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          }
+        ],
+        "scenario_path": "ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v2_reproducibility.yaml",
+        "scenario_sha256": "3e7b12d0d48afa0f6eb8972ab2271454c592e248d8eb17cda445923de0f06309"
+      },
+      "training": {
+        "runs": [
+          {
+            "case_id": "training_two_source_01",
+            "case_key": "a65a466c02edf0ada9f130c444767cdb9ccd7025a4b152bbb54765bb7d79781a",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8301,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local",
+                "relative_lumen_input": 800.0,
+                "x_m": -0.75,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1800.0,
+                "x_m": 1.25,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "center_east",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "training_two_source_02",
+            "case_key": "6713b73b2a5436cc19f0227045cf768fe36ff9a3d5f74e776ebb1e2e59f64268",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8302,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local",
+                "relative_lumen_input": 800.0,
+                "x_m": -0.75,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1800.0,
+                "x_m": 1.25,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "southwest_north",
+              "x_m": -1.2,
+              "y_m": -1.2,
+              "yaw_rad": 1.5707963267948966
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "training_two_source_03",
+            "case_key": "4f02a270a1d33d6924247cd8eeec006eb965026c763023fc3e6ee923fb24dbeb",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8303,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local",
+                "relative_lumen_input": 800.0,
+                "x_m": -0.75,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1800.0,
+                "x_m": 1.25,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "northeast_west",
+              "x_m": 1.2,
+              "y_m": 1.2,
+              "yaw_rad": 3.141592653589793
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "training_pure_escape",
+            "case_key": "5e0a3c89b1398e1eb4206158d3a16bfea5dada54e35fdb66177cf14fcb31cd78",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "escape",
+            "seed": 8304,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local",
+                "relative_lumen_input": 700.0,
+                "x_m": -0.8,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1800.0,
+                "x_m": 1.3,
+                "y_m": 0.8
+              }
+            ],
+            "start": {
+              "id": "local_center",
+              "x_m": -0.8,
+              "y_m": 0.0,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "training_stalled_assist",
+            "case_key": "57f6d7022712dd9addb6e2bf3c1d32fd8815d26f73dea7b41cbddd6d8a823e79",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "escape",
+            "seed": 8305,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local",
+                "relative_lumen_input": 800.0,
+                "x_m": -0.7,
+                "y_m": -0.2
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1900.0,
+                "x_m": 1.4,
+                "y_m": 0.8
+              }
+            ],
+            "start": {
+              "id": "local_center",
+              "x_m": -0.7,
+              "y_m": -0.2,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "training_fill_merge",
+            "case_key": "69db9d7dc0fb259b10949577a904a9383690f627463e70df535e0a3c3aba5f17",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "fill_merge",
+            "seed": 8306,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_a",
+                "relative_lumen_input": 750.0,
+                "x_m": -0.4,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_b",
+                "relative_lumen_input": 800.0,
+                "x_m": 0.15,
+                "y_m": 0.1
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2100.0,
+                "x_m": 1.5,
+                "y_m": 1.3
+              }
+            ],
+            "start": {
+              "id": "southwest_northeast",
+              "x_m": -1.4,
+              "y_m": -1.0,
+              "yaw_rad": 0.5
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "training_recenter_resume",
+            "case_key": "ffc59cb0d1d8da11106ca3f1b176e2e5d6c87d680ae9037b797a46a0e3de5df3",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "recenter_resume",
+            "seed": 8307,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local",
+                "relative_lumen_input": 750.0,
+                "x_m": -1.1,
+                "y_m": 0.2
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1900.0,
+                "x_m": 1.45,
+                "y_m": 1.0
+              }
+            ],
+            "start": {
+              "id": "local_west",
+              "x_m": -1.1,
+              "y_m": 0.2,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "training_three_source",
+            "case_key": "4b351394b792a241fc87275ef0138dfa801805f4b4fc27883ff13f2d6aa3ade2",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "multi_source",
+            "seed": 8308,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_1",
+                "relative_lumen_input": 500.0,
+                "x_m": -1.1,
+                "y_m": -0.7
+              },
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_2",
+                "relative_lumen_input": 750.0,
+                "x_m": 0.1,
+                "y_m": 0.9
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2000.0,
+                "x_m": 1.4,
+                "y_m": 1.25
+              }
+            ],
+            "start": {
+              "id": "center_north",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": 1.5707963267948966
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "training_seeded_noise",
+            "case_key": "d4bc7f0a0e73d8ba48faae7c9fc53cdbdaa97cab74b51716ba1f86233d8a1d63",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "gaussian",
+                "std_dev": 0.01
+              }
+            },
+            "family": "noise_delay",
+            "seed": 8309,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1500.0,
+                "x_m": 1.25,
+                "y_m": 0.75
+              }
+            ],
+            "start": {
+              "id": "center_east",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "training_delay",
+            "case_key": "0070b38fbf74a8aa48fe92e9fb81663d0be60f2095aa209abaa215fed41cfebf",
+            "disturbances": {
+              "pose_delay_sec": 0.1,
+              "sensor_delay_sec": 0.1,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "noise_delay",
+            "seed": 8310,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1800.0,
+                "x_m": 1.0,
+                "y_m": 1.0
+              }
+            ],
+            "start": {
+              "id": "center_northeast",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": 0.7853981633974483
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          }
+        ],
+        "scenario_path": "ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v2_training.yaml",
+        "scenario_sha256": "313c27f9488a8b2d78730bc5ac3ef3d891c3979c1d5b1ad59155722536c56a1a"
+      },
+      "validation": {
+        "runs": [
+          {
+            "case_id": "v_ordered_01",
+            "case_key": "99155c656f8b8410c2ad320da679a95571f01935ec3d489275e0397b12ad03e4",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8501,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "2",
+                "relative_lumen_input": 800.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "3",
+                "relative_lumen_input": 1200.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "center_east",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_ordered_02",
+            "case_key": "7ac9900ed6e6f0652bf04f0c46286518d0d9d3659156492f99444a27eb6b5cef",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8502,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "2",
+                "relative_lumen_input": 800.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "4",
+                "relative_lumen_input": 1800.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "southwest_north",
+              "x_m": -1.1,
+              "y_m": -1.0,
+              "yaw_rad": 1.5707963267948966
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_ordered_03",
+            "case_key": "bb47bfe07148cab9a73b17196936f971dbc2cf7481db1ea9de88416a6a0ef902",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8503,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "2",
+                "relative_lumen_input": 800.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "5",
+                "relative_lumen_input": 2500.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "northeast_west",
+              "x_m": 1.1,
+              "y_m": 1.0,
+              "yaw_rad": 3.141592653589793
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_ordered_04",
+            "case_key": "7bb2cc9c73cc1abbcc053b5d89909522c8bd382aa1fcdf92dc31a99d486ebeee",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8504,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "3",
+                "relative_lumen_input": 1200.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "1",
+                "relative_lumen_input": 450.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "northwest_south",
+              "x_m": -1.0,
+              "y_m": 1.0,
+              "yaw_rad": -1.5707963267948966
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_ordered_05",
+            "case_key": "24e5015b4233d542d906496b55569f886d28cf4051d03b046253f49fb6777328",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8505,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "3",
+                "relative_lumen_input": 1200.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "2",
+                "relative_lumen_input": 800.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "southeast_northwest",
+              "x_m": 1.0,
+              "y_m": -1.0,
+              "yaw_rad": 2.356194490192345
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_ordered_06",
+            "case_key": "0847ef3ae8bb88c306fbfe7f8073730c17542250d250a2a5b617706035741c2a",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8506,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "3",
+                "relative_lumen_input": 1200.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "3",
+                "relative_lumen_input": 1200.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "south_north",
+              "x_m": 0.0,
+              "y_m": -1.2,
+              "yaw_rad": 1.5707963267948966
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_ordered_07",
+            "case_key": "f5b8d6a5f9c66b0b55650cda7f76e426c8d810c64b7fa67fb499468c0b4f9167",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8507,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "3",
+                "relative_lumen_input": 1200.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "4",
+                "relative_lumen_input": 1800.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "north_south",
+              "x_m": 0.0,
+              "y_m": 1.2,
+              "yaw_rad": -1.5707963267948966
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_ordered_08",
+            "case_key": "d0bfde47ae147ac27f7a50e417b052179e00084c0e6b94ba156e57b243dbaffa",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8508,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "3",
+                "relative_lumen_input": 1200.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "5",
+                "relative_lumen_input": 2500.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "center_west",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": 3.141592653589793
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_ordered_09",
+            "case_key": "521001b1de89a136a1146803af198f62d9476180f29f1b70098200a491eb7456",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8509,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "4",
+                "relative_lumen_input": 1800.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "1",
+                "relative_lumen_input": 450.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "west_east",
+              "x_m": -1.1,
+              "y_m": 0.4,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_ordered_10",
+            "case_key": "48c087f2c07ba0456614c05d0e2657110e94a79462d3a1b3cd94d712d95db400",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8510,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "4",
+                "relative_lumen_input": 1800.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "2",
+                "relative_lumen_input": 800.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "east_west",
+              "x_m": 1.1,
+              "y_m": -0.4,
+              "yaw_rad": 3.141592653589793
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_ordered_11",
+            "case_key": "3bb7281503d2b7cdf3d00fbcafcab7c01eed8deba8134ef5881988beab2ef534",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8511,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "4",
+                "relative_lumen_input": 1800.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "3",
+                "relative_lumen_input": 1200.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "center_northeast",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": 0.7853981633974483
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_ordered_12",
+            "case_key": "9f04d93d1cebf5807475bc0b8604eb4edec89f8da846a035a2bcd472a3113da2",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8512,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "4",
+                "relative_lumen_input": 1800.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "4",
+                "relative_lumen_input": 1800.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "center_northwest",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": 2.356194490192345
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_ordered_13",
+            "case_key": "0a244fa0591d514f0fa57caecab76066e24e02894e3dc9c50ff131607f4a147f",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8513,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "4",
+                "relative_lumen_input": 1800.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "5",
+                "relative_lumen_input": 2500.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "center_southwest",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": -2.356194490192345
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_ordered_14",
+            "case_key": "e3d998695afb15be9880684388b5e5b8b0bc9538c746ba3db01374edb18c888a",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8514,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "5",
+                "relative_lumen_input": 2500.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "1",
+                "relative_lumen_input": 450.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "center_southeast",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": -0.7853981633974483
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_ordered_15",
+            "case_key": "e74bc20bed261e30b16c51741cfb85ff39704a924d503dce5fd0d335d0770eae",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8515,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "5",
+                "relative_lumen_input": 2500.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "2",
+                "relative_lumen_input": 800.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "south_east",
+              "x_m": -0.4,
+              "y_m": -1.1,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_ordered_16",
+            "case_key": "54ab96293f7d3d12280a730aaced4ed28421507ab07efb161cde2a25d1fe6416",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8516,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "5",
+                "relative_lumen_input": 2500.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "3",
+                "relative_lumen_input": 1200.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "north_west",
+              "x_m": 0.4,
+              "y_m": 1.1,
+              "yaw_rad": 3.141592653589793
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_ordered_17",
+            "case_key": "c65cb9c06628c0b707697b1ac6aef27fce1b408cbd373de33234defc5fa09845",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8517,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "5",
+                "relative_lumen_input": 2500.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "4",
+                "relative_lumen_input": 1800.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "diagonal_ne",
+              "x_m": -0.8,
+              "y_m": -0.8,
+              "yaw_rad": 0.7853981633974483
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_ordered_18",
+            "case_key": "a20fa5f8352c487372aedb2057de72916a30e61b429f9ecddd1cd5899a70a6ab",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "two_source",
+            "seed": 8518,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "source_a",
+                "level": "5",
+                "relative_lumen_input": 2500.0,
+                "x_m": -1.0,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "level": "5",
+                "relative_lumen_input": 2500.0,
+                "x_m": 1.0,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "diagonal_sw",
+              "x_m": 0.8,
+              "y_m": 0.8,
+              "yaw_rad": -2.356194490192345
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_multi_01",
+            "case_key": "6254dc529e0804930bc7bc7b5ae33bee9a3a38c69c8891a4ba9a59811d9d3c14",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "multi_source",
+            "seed": 8521,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_a",
+                "relative_lumen_input": 500.0,
+                "x_m": -1.1,
+                "y_m": -0.7
+              },
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_b",
+                "relative_lumen_input": 750.0,
+                "x_m": 0.1,
+                "y_m": 0.9
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2000.0,
+                "x_m": 1.4,
+                "y_m": 1.25
+              }
+            ],
+            "start": {
+              "id": "center_north",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": 1.5707963267948966
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_multi_02",
+            "case_key": "6805602bf6d394d1f3e0a0fffb5b403791646ec952cbd765d5bf3c40f73b9db4",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "multi_source",
+            "seed": 8522,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_a",
+                "relative_lumen_input": 600.0,
+                "x_m": -1.0,
+                "y_m": 0.5
+              },
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_b",
+                "relative_lumen_input": 750.0,
+                "x_m": 0.0,
+                "y_m": -0.8
+              },
+              {
+                "evaluation_role": "context",
+                "id": "context",
+                "relative_lumen_input": 900.0,
+                "x_m": 0.7,
+                "y_m": 0.5
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2100.0,
+                "x_m": 1.35,
+                "y_m": 1.25
+              }
+            ],
+            "start": {
+              "id": "southwest_ne",
+              "x_m": -1.1,
+              "y_m": -1.1,
+              "yaw_rad": 0.7853981633974483
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_multi_03",
+            "case_key": "eac708b040329de67b2baf9d465bdb89933ba7466098b6fcbbf8f65f48715604",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "close_minimum",
+            "seed": 8523,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_a",
+                "relative_lumen_input": 700.0,
+                "x_m": -0.45,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_b",
+                "relative_lumen_input": 800.0,
+                "x_m": 0.05,
+                "y_m": 0.1
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2000.0,
+                "x_m": 1.4,
+                "y_m": 1.0
+              }
+            ],
+            "start": {
+              "id": "west_east",
+              "x_m": -1.3,
+              "y_m": -0.6,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_multi_04",
+            "case_key": "880ca39d1735c952009721cb0e45b1abfb1005c169e1959284a72fd9383cb98c",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "close_minimum",
+            "seed": 8524,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_a",
+                "relative_lumen_input": 800.0,
+                "x_m": -0.3,
+                "y_m": -0.1
+              },
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_b",
+                "relative_lumen_input": 850.0,
+                "x_m": 0.25,
+                "y_m": 0.05
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2200.0,
+                "x_m": 1.3,
+                "y_m": 1.3
+              }
+            ],
+            "start": {
+              "id": "south_north",
+              "x_m": 0.2,
+              "y_m": -1.3,
+              "yaw_rad": 1.5707963267948966
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_multi_05",
+            "case_key": "8e883a80b985a05730fec46ddcc0bcf0fb6735a6c3f994c54cce5fe245390e34",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "separation_overlap",
+            "seed": 8525,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_a",
+                "relative_lumen_input": 850.0,
+                "x_m": -0.5,
+                "y_m": 0.4
+              },
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_b",
+                "relative_lumen_input": 900.0,
+                "x_m": 0.1,
+                "y_m": 0.45
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2200.0,
+                "x_m": 1.4,
+                "y_m": -0.8
+              }
+            ],
+            "start": {
+              "id": "north_south",
+              "x_m": -0.2,
+              "y_m": 1.3,
+              "yaw_rad": -1.5707963267948966
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_multi_06",
+            "case_key": "980ce6f6cb1c5be29d5a582ce56f1d78491f8d9bea336ca612cd2a97f7e9cbce",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "separation_overlap",
+            "seed": 8526,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_a",
+                "relative_lumen_input": 900.0,
+                "x_m": -0.2,
+                "y_m": -0.3
+              },
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_b",
+                "relative_lumen_input": 950.0,
+                "x_m": 0.35,
+                "y_m": -0.2
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2300.0,
+                "x_m": -1.3,
+                "y_m": 1.2
+              }
+            ],
+            "start": {
+              "id": "east_west",
+              "x_m": 1.3,
+              "y_m": 0.5,
+              "yaw_rad": 3.141592653589793
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_wall_01",
+            "case_key": "86b5bf7d451344ff0cdf4e23d77d5893d96b11c6d60c78e3bc74819d65e55761",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "boundary",
+            "seed": 8531,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1800.0,
+                "x_m": 0.7,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "west_wall_east",
+              "x_m": -1.45,
+              "y_m": 0.0,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_wall_02",
+            "case_key": "7bb955af5b4875aa08818be1ac778102014cea98d1e2269f4d7b5d0943be3f29",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "boundary",
+            "seed": 8532,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1800.0,
+                "x_m": -0.7,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "east_wall_west",
+              "x_m": 1.45,
+              "y_m": 0.0,
+              "yaw_rad": 3.141592653589793
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_wall_03",
+            "case_key": "0a084f0fdba0a8afc395f1ecfd9069e7b6e9f38f7aef14f0bdd19b3fd3efbe27",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "boundary",
+            "seed": 8533,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1800.0,
+                "x_m": 0.0,
+                "y_m": -0.7
+              }
+            ],
+            "start": {
+              "id": "north_wall_south",
+              "x_m": 0.0,
+              "y_m": 1.45,
+              "yaw_rad": -1.5707963267948966
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_wall_04",
+            "case_key": "c98548ecb90911150bb63755f9976abd7ac5d38d9f4dfad88bc10341358d4afc",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "boundary",
+            "seed": 8534,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1800.0,
+                "x_m": 0.0,
+                "y_m": 0.7
+              }
+            ],
+            "start": {
+              "id": "south_wall_north",
+              "x_m": 0.0,
+              "y_m": -1.45,
+              "yaw_rad": 1.5707963267948966
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_wall_05",
+            "case_key": "db4e957c93f4a491d307619657fb76afce592f0f0dee68fccb7577bb81a87c0f",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "boundary",
+            "seed": 8535,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1900.0,
+                "x_m": 0.5,
+                "y_m": -0.5
+              }
+            ],
+            "start": {
+              "id": "northwest_se",
+              "x_m": -1.35,
+              "y_m": 1.35,
+              "yaw_rad": -0.7853981633974483
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_wall_06",
+            "case_key": "4d7a2b6b46163ebf055e1afb2bdd5073ef85f5425388377cab7dd320da32c928",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "boundary",
+            "seed": 8536,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1900.0,
+                "x_m": -0.5,
+                "y_m": 0.5
+              }
+            ],
+            "start": {
+              "id": "southeast_nw",
+              "x_m": 1.35,
+              "y_m": -1.35,
+              "yaw_rad": 2.356194490192345
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_noise_01",
+            "case_key": "a4dc9fb80defcce121681908965a3ce7603a3ea2c61f09198a36dbd1af717aba",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.01,
+                "model": "uniform"
+              }
+            },
+            "family": "noise_delay",
+            "seed": 8541,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1700.0,
+                "x_m": 1.1,
+                "y_m": 0.3
+              }
+            ],
+            "start": {
+              "id": "center_east",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_noise_02",
+            "case_key": "4e551031e0965960cd3ee5a37b01048ce9f89136c885e041f99aceb66353d1d6",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "gaussian",
+                "std_dev": 0.015
+              }
+            },
+            "family": "noise_delay",
+            "seed": 8542,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1700.0,
+                "x_m": 0.3,
+                "y_m": 1.1
+              }
+            ],
+            "start": {
+              "id": "center_north",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": 1.5707963267948966
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_noise_03",
+            "case_key": "5f9942e4c12d2b3464acb5973953313c58b9283c5c052b62008880f39c7f1971",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.1,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "noise_delay",
+            "seed": 8543,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1700.0,
+                "x_m": -1.1,
+                "y_m": 0.3
+              }
+            ],
+            "start": {
+              "id": "center_west",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": 3.141592653589793
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_noise_04",
+            "case_key": "df2491d3603a55e9c21b10c8c176a70e7a7267242597abc9302fc7b52f634a4b",
+            "disturbances": {
+              "pose_delay_sec": 0.1,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "noise_delay",
+            "seed": 8544,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1700.0,
+                "x_m": 0.3,
+                "y_m": -1.1
+              }
+            ],
+            "start": {
+              "id": "center_south",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": -1.5707963267948966
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_noise_05",
+            "case_key": "6517dffc6332050ec22c911620e5263bfb6e4a59a62931b96e440e7353541c98",
+            "disturbances": {
+              "pose_delay_sec": 0.05,
+              "sensor_delay_sec": 0.05,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "noise_delay",
+            "seed": 8545,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1800.0,
+                "x_m": 1.0,
+                "y_m": 1.0
+              }
+            ],
+            "start": {
+              "id": "center_ne",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": 0.7853981633974483
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_noise_06",
+            "case_key": "119ef8b987736a004ece92830bfe5b33fea21f4b687a47296f60e0c54264c6df",
+            "disturbances": {
+              "pose_delay_sec": 0.05,
+              "sensor_delay_sec": 0.05,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "gaussian",
+                "std_dev": 0.01
+              }
+            },
+            "family": "noise_delay",
+            "seed": 8546,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1800.0,
+                "x_m": -1.0,
+                "y_m": 1.0
+              }
+            ],
+            "start": {
+              "id": "center_nw",
+              "x_m": 0.0,
+              "y_m": 0.0,
+              "yaw_rad": 2.356194490192345
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_saturation_01",
+            "case_key": "ae266804e7b64f593a2b8b1a6f77dd336f662dedbce5a19ccf0c85ce13ba3d05",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "starts_saturation",
+            "seed": 8551,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2500.0,
+                "x_m": 1.25,
+                "y_m": 1.25
+              }
+            ],
+            "start": {
+              "id": "far_sw",
+              "x_m": -1.4,
+              "y_m": -1.4,
+              "yaw_rad": 0.7853981633974483
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_saturation_02",
+            "case_key": "7b463ec0436a26544e53a12a5af594d391b404a7ac92b4fd752ba240a36fbc58",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "starts_saturation",
+            "seed": 8552,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2500.0,
+                "x_m": -1.25,
+                "y_m": -1.25
+              }
+            ],
+            "start": {
+              "id": "far_ne",
+              "x_m": 1.4,
+              "y_m": 1.4,
+              "yaw_rad": -2.356194490192345
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_saturation_03",
+            "case_key": "353bcdb36de0280b8f7eec5e21c2eb06e75cbd429bce4f8ffc9ae22563212324",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "starts_saturation",
+            "seed": 8553,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2500.0,
+                "x_m": 1.25,
+                "y_m": -1.25
+              }
+            ],
+            "start": {
+              "id": "far_nw",
+              "x_m": -1.4,
+              "y_m": 1.4,
+              "yaw_rad": -0.7853981633974483
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_saturation_04",
+            "case_key": "3deaaf175c5c9e0eb7a58e44fd4c64a6e7bfb46fcb6eb3ed5511abb82b45d150",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "starts_saturation",
+            "seed": 8554,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2500.0,
+                "x_m": -1.25,
+                "y_m": 1.25
+              }
+            ],
+            "start": {
+              "id": "far_se",
+              "x_m": 1.4,
+              "y_m": -1.4,
+              "yaw_rad": 2.356194490192345
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_saturation_05",
+            "case_key": "4cdb7c19244298868d3f9b46daccb048e01f9ea8cca9fbbc46113aa754f6e2ba",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "starts_saturation",
+            "seed": 8555,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 450.0,
+                "x_m": 1.3,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "far_west",
+              "x_m": -1.45,
+              "y_m": 0.0,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_saturation_06",
+            "case_key": "c0c89281a427215fba2c45a7556c084afbcfd22e9239742302c5c9ee4b345edc",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "starts_saturation",
+            "seed": 8556,
+            "sources": [
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 800.0,
+                "x_m": -1.3,
+                "y_m": 0.0
+              }
+            ],
+            "start": {
+              "id": "far_east",
+              "x_m": 1.45,
+              "y_m": 0.0,
+              "yaw_rad": 3.141592653589793
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_lifecycle_01",
+            "case_key": "98df58d5a6ed1661ba081f8ceaf526a5935ba955a5f0cd0fae9b1b049bfc76e0",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "escape",
+            "seed": 8561,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local",
+                "relative_lumen_input": 700.0,
+                "x_m": -0.8,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1800.0,
+                "x_m": 1.3,
+                "y_m": 0.8
+              }
+            ],
+            "start": {
+              "id": "local_center",
+              "x_m": -0.8,
+              "y_m": 0.0,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_lifecycle_02",
+            "case_key": "bf5564de8191d7e611484615d1221388f048fd8c21241e3102480753479a8606",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "escape",
+            "seed": 8562,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local",
+                "relative_lumen_input": 750.0,
+                "x_m": -0.7,
+                "y_m": -0.4
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1900.0,
+                "x_m": 1.35,
+                "y_m": 0.9
+              }
+            ],
+            "start": {
+              "id": "local_south",
+              "x_m": -0.7,
+              "y_m": -0.4,
+              "yaw_rad": 0.3
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_lifecycle_03",
+            "case_key": "e07841fbc0dc9fb313e04b230ae68a8217d4872f418f48f506aba0557a73e159",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "escape",
+            "seed": 8563,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local",
+                "relative_lumen_input": 800.0,
+                "x_m": -0.7,
+                "y_m": -0.2
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1900.0,
+                "x_m": 1.4,
+                "y_m": 0.8
+              }
+            ],
+            "start": {
+              "id": "local_center",
+              "x_m": -0.7,
+              "y_m": -0.2,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_lifecycle_04",
+            "case_key": "8bc4e5ebf380edd8ebf73c3bec49ff93f5b474babb25f1bf90cc76f3ea07e72a",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "escape",
+            "seed": 8564,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local",
+                "relative_lumen_input": 850.0,
+                "x_m": -0.6,
+                "y_m": 0.3
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2000.0,
+                "x_m": 1.35,
+                "y_m": -0.9
+              }
+            ],
+            "start": {
+              "id": "local_north",
+              "x_m": -0.6,
+              "y_m": 0.3,
+              "yaw_rad": -0.2
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_lifecycle_05",
+            "case_key": "e5e781505f5c66f088728cab8882d3e7625289352bb2b3a5a13b576d91685263",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "fill_merge",
+            "seed": 8565,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_a",
+                "relative_lumen_input": 750.0,
+                "x_m": -0.4,
+                "y_m": 0.0
+              },
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_b",
+                "relative_lumen_input": 800.0,
+                "x_m": 0.15,
+                "y_m": 0.1
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2100.0,
+                "x_m": 1.5,
+                "y_m": 1.3
+              }
+            ],
+            "start": {
+              "id": "southwest_ne",
+              "x_m": -1.4,
+              "y_m": -1.0,
+              "yaw_rad": 0.5
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_lifecycle_06",
+            "case_key": "e90a19c258501eef59246b2429754385de94abcf1eb89bdb36b695c34b707b93",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "fill_merge",
+            "seed": 8566,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_a",
+                "relative_lumen_input": 800.0,
+                "x_m": -0.3,
+                "y_m": 0.15
+              },
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local_b",
+                "relative_lumen_input": 850.0,
+                "x_m": 0.2,
+                "y_m": -0.05
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2200.0,
+                "x_m": 1.4,
+                "y_m": -1.2
+              }
+            ],
+            "start": {
+              "id": "northwest_se",
+              "x_m": -1.3,
+              "y_m": 1.1,
+              "yaw_rad": -0.5
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_lifecycle_07",
+            "case_key": "dd8132ad5c73e4dd79f300badb00afdb7e4ba9187a6a4d2f37e523a013b8f289",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "recenter_resume",
+            "seed": 8567,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local",
+                "relative_lumen_input": 750.0,
+                "x_m": -1.1,
+                "y_m": 0.2
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 1900.0,
+                "x_m": 1.45,
+                "y_m": 1.0
+              }
+            ],
+            "start": {
+              "id": "local_west",
+              "x_m": -1.1,
+              "y_m": 0.2,
+              "yaw_rad": 0.0
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          },
+          {
+            "case_id": "v_lifecycle_08",
+            "case_key": "e8e861908dc5c099ea37da1f8dcfaeb2136724134295d81847d08be3fadb0996",
+            "disturbances": {
+              "pose_delay_sec": 0.0,
+              "sensor_delay_sec": 0.0,
+              "sensor_noise": {
+                "bound": 0.0,
+                "model": "none"
+              }
+            },
+            "family": "recenter_resume",
+            "seed": 8568,
+            "sources": [
+              {
+                "evaluation_role": "local_minimum",
+                "id": "local",
+                "relative_lumen_input": 800.0,
+                "x_m": 1.0,
+                "y_m": -0.3
+              },
+              {
+                "evaluation_role": "goal",
+                "id": "goal",
+                "relative_lumen_input": 2000.0,
+                "x_m": -1.4,
+                "y_m": 1.0
+              }
+            ],
+            "start": {
+              "id": "local_east",
+              "x_m": 1.0,
+              "y_m": -0.3,
+              "yaw_rad": 3.141592653589793
+            },
+            "validation": {
+              "contacts_enabled": true,
+              "world": true
+            }
+          }
+        ],
+        "scenario_path": "ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v2_validation.yaml",
+        "scenario_sha256": "ce2a9929e7e0a22744020a4135a338c8007ff5e64a7ae210c64b9d0df3252c91"
+      }
+    },
+    "workflow": "phase08_staged_validation_v2"
+  },
+  "manifest_sha256": "66c17005f67dd056e41673a0754e838f5ee22a0280b0f5d649043ad3c461cd71",
+  "schema_version": 2
+}
