@@ -27,6 +27,14 @@ permanent development budget. A future v3 contract must separate:
   before formal freeze;
 - reproducibility repeats reported separately from unique-case success.
 
+It must also derive multi-source ground truth from the realized aggregate
+field, or restrict each goal geometry to a justified dominant target. The
+historical v2 convention of labeling `source_b` as the goal does not prove
+that source is the global optimum, and an end-to-end `GOAL_HOLD` predicate is
+valid only when the realized target can sustain the calibrated controller
+threshold. Sub-threshold global optima belong in separately declared
+classification/escape diagnostics.
+
 No v3 holdout, fixed-profile acceptance run, simulation-ready tag, or physical
 motion is authorized by this amendment. A machine-readable v3 acceptance
 contract and fresh evidence root must be reviewed and sealed before those

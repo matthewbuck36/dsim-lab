@@ -35,6 +35,11 @@ SMOKE = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase06_smoke.yaml'
 )
+DIAGNOSTIC_ACTIVATION = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_1_diagnostic_activation.yaml'
+)
 
 
 def _resolved(profile='robust_gaussian_v1'):
@@ -196,6 +201,68 @@ def test_controller_and_ground_truth_are_separate_classification_inputs():
     assert result['predicate_results']['controller_goal'] is False
 
 
+def test_activation_path_is_contiguous_at_first_verification():
+    """Reject a later goal cycle when the first verification chose a fill."""
+    observed = [
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'DESIGN_OR_MERGE_FILL',
+        'ESCAPE_REPULSE',
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'GOAL_HOLD',
+    ]
+
+    assert runner._first_verification_path(
+        [
+            'SEARCH',
+            'VERIFY_EXTREMUM',
+            'DESIGN_OR_MERGE_FILL',
+            'ESCAPE_REPULSE',
+        ],
+        observed,
+    )
+    assert not runner._first_verification_path(
+        ['SEARCH', 'VERIFY_EXTREMUM', 'GOAL_HOLD'],
+        observed,
+    )
+
+
+def test_schema_v3_predicates_bind_terminal_path_and_forbidden_states():
+    """Make every newly declared controller expectation affect the result."""
+    resolved = expand_suite(load_suite(DIAGNOSTIC_ACTIVATION))[0][2]
+    outcomes = {
+        'controller_goal': 'passed',
+        'simulation_ground_truth': 'passed',
+        'expected_terminal_state_passed': True,
+        'required_state_path_passed': True,
+        'required_events_passed': True,
+        'forbidden_states_absent': False,
+        'forbidden_events_absent': True,
+        'collision_expectation_passed': True,
+        'readiness_interval_available': True,
+    }
+    result = classify_result(
+        resolved,
+        {'passed': True},
+        {'passed': True},
+        outcomes,
+        {'timed_out': False, 'return_code': 1},
+        metadata={
+            'recording': {
+                'readiness_ever_true': True,
+                'infrastructure_status': 'completed',
+            },
+        },
+        run_directory_available=True,
+    )
+
+    assert result['passed'] is False
+    assert result['predicate_results']['expected_terminal_state'] is True
+    assert result['predicate_results']['required_state_path'] is True
+    assert result['predicate_results']['no_forbidden_states'] is False
+
+
 def test_bag_without_true_readiness_marks_behavior_unavailable(
     monkeypatch,
     tmp_path,
@@ -231,9 +298,224 @@ def test_bag_without_true_readiness_marks_behavior_unavailable(
     assert outcomes['readiness_interval_available'] is False
     assert outcomes['controller_goal'] == 'unavailable'
     assert outcomes['simulation_ground_truth'] == 'unavailable'
+    assert outcomes['required_state_path_passed'] is None
     assert outcomes['required_state_sequence_passed'] is None
+    assert outcomes['required_event_sequence_passed'] is None
+    assert outcomes['forbidden_states_absent'] is None
     assert outcomes['forbidden_events_absent'] is None
     assert outcomes['collision_observed'] is None
+
+
+def test_bag_outcomes_evaluate_schema_v3_path_event_and_forbidden_evidence(
+    monkeypatch,
+    tmp_path,
+):
+    """Extract every new binding predicate from the retained bag interval."""
+
+    def state(name, value):
+        return SimpleNamespace(
+            state_name=name,
+            state=value,
+            state_valid=True,
+        )
+
+    class FakeReader:
+        def __init__(self):
+            self.records = [
+                (
+                    '/gesc_gaussian/recording_ready',
+                    SimpleNamespace(data=True),
+                    1,
+                ),
+                (
+                    '/gesc_gaussian/algorithm_state',
+                    state('SEARCH', 1),
+                    2,
+                ),
+                (
+                    '/gesc_gaussian/algorithm_events',
+                    SimpleNamespace(event_type=11),
+                    3,
+                ),
+                (
+                    '/gesc_gaussian/algorithm_state',
+                    state('VERIFY_EXTREMUM', 2),
+                    4,
+                ),
+                (
+                    '/gesc_gaussian/algorithm_state',
+                    state('DESIGN_OR_MERGE_FILL', 3),
+                    5,
+                ),
+                (
+                    '/gesc_gaussian/algorithm_events',
+                    SimpleNamespace(event_type=60),
+                    6,
+                ),
+                (
+                    '/gesc_gaussian/recording_ready',
+                    SimpleNamespace(data=False),
+                    7,
+                ),
+            ]
+
+        def open(self, *_args):  # noqa: A003 - matches rosbag reader API.
+            return None
+
+        def has_next(self):
+            return bool(self.records)
+
+        def read_next(self):
+            return self.records.pop(0)
+
+    monkeypatch.setattr(runner.rosbag2_py, 'SequentialReader', FakeReader)
+    monkeypatch.setattr(
+        runner,
+        'deserialize_message',
+        lambda serialized, _message_type: serialized,
+    )
+    resolved = expand_suite(load_suite(DIAGNOSTIC_ACTIVATION))[0][0]
+
+    outcomes = runner._bag_outcomes(tmp_path, resolved)
+
+    assert outcomes['required_state_path_passed'] is True
+    assert outcomes['required_events_passed'] is True
+    assert outcomes['forbidden_states_absent'] is True
+    assert outcomes['forbidden_events_absent'] is False
+
+
+def test_bag_outcomes_reject_state_name_enum_mismatch(
+    monkeypatch,
+    tmp_path,
+):
+    """Do not let free-form text conceal a typed forbidden FAILSAFE."""
+
+    class FakeReader:
+        def __init__(self):
+            self.records = [
+                (
+                    '/gesc_gaussian/recording_ready',
+                    SimpleNamespace(data=True),
+                    1,
+                ),
+                (
+                    '/gesc_gaussian/algorithm_state',
+                    SimpleNamespace(
+                        state_name='SEARCH',
+                        state=8,
+                        state_valid=True,
+                    ),
+                    2,
+                ),
+                (
+                    '/gesc_gaussian/recording_ready',
+                    SimpleNamespace(data=False),
+                    3,
+                ),
+            ]
+
+        def open(self, *_args):  # noqa: A003 - matches rosbag reader API.
+            return None
+
+        def has_next(self):
+            return bool(self.records)
+
+        def read_next(self):
+            return self.records.pop(0)
+
+    monkeypatch.setattr(runner.rosbag2_py, 'SequentialReader', FakeReader)
+    monkeypatch.setattr(
+        runner,
+        'deserialize_message',
+        lambda serialized, _message_type: serialized,
+    )
+    resolved = expand_suite(load_suite(DIAGNOSTIC_ACTIVATION))[0][0]
+
+    outcomes = runner._bag_outcomes(tmp_path, resolved)
+
+    assert outcomes['observed_state_sequence'] == ['FAILSAFE']
+    assert outcomes['forbidden_states_absent'] is False
+    assert 'name/enum mismatch' in outcomes['outcome_error']
+
+
+def test_cross_producer_required_events_ignore_rosbag_receipt_order(
+    monkeypatch,
+    tmp_path,
+):
+    """Use membership when DDS writers do not share an ordering guarantee."""
+
+    class FakeReader:
+        def __init__(self):
+            states = [
+                ('SEARCH', 1),
+                ('VERIFY_EXTREMUM', 2),
+                ('DESIGN_OR_MERGE_FILL', 3),
+                ('ESCAPE_REPULSE', 4),
+            ]
+            self.records = [(
+                '/gesc_gaussian/recording_ready',
+                SimpleNamespace(data=True),
+                1,
+            )]
+            self.records.extend(
+                (
+                    '/gesc_gaussian/algorithm_state',
+                    SimpleNamespace(
+                        state_name=name,
+                        state=value,
+                        state_valid=True,
+                    ),
+                    stamp,
+                )
+                for stamp, (name, value) in enumerate(states, start=2)
+            )
+            self.records.extend([
+                (
+                    '/gesc_gaussian/algorithm_events',
+                    SimpleNamespace(event_type=40),
+                    6,
+                ),
+                (
+                    '/gesc_gaussian/algorithm_events',
+                    SimpleNamespace(event_type=20),
+                    7,
+                ),
+                (
+                    '/gesc_gaussian/algorithm_events',
+                    SimpleNamespace(event_type=11),
+                    8,
+                ),
+                (
+                    '/gesc_gaussian/recording_ready',
+                    SimpleNamespace(data=False),
+                    9,
+                ),
+            ])
+
+        def open(self, *_args):  # noqa: A003 - matches rosbag reader API.
+            return None
+
+        def has_next(self):
+            return bool(self.records)
+
+        def read_next(self):
+            return self.records.pop(0)
+
+    monkeypatch.setattr(runner.rosbag2_py, 'SequentialReader', FakeReader)
+    monkeypatch.setattr(
+        runner,
+        'deserialize_message',
+        lambda serialized, _message_type: serialized,
+    )
+    resolved = expand_suite(load_suite(DIAGNOSTIC_ACTIVATION))[0][3]
+
+    outcomes = runner._bag_outcomes(tmp_path, resolved)
+
+    assert outcomes['required_state_path_passed'] is True
+    assert outcomes['observed_events'] == [
+        'ESCAPE_STARTED', 'FILL_CREATED', 'CONVERGENCE_CONFIRMED',
+    ]
+    assert outcomes['required_events_passed'] is True
 
 
 @pytest.mark.parametrize(
@@ -694,6 +976,34 @@ def test_dry_run_writes_explicit_summary_and_preserves_unsupported(tmp_path):
     assert yaml.safe_load(output.read_text(encoding='utf-8'))[
         'unsupported_count'
     ] == 1
+
+
+def test_phase08_1_dry_run_exposes_bound_activation_contracts(tmp_path):
+    """Make every corrected path and timing argument inspectable pre-launch."""
+    output = tmp_path / 'phase08_1_dry_run.yaml'
+    summary = execute_suite(
+        DIAGNOSTIC_ACTIVATION,
+        'codex-test',
+        summary_output=output,
+        dry_run=True,
+    )
+
+    assert summary['scenario_schema_version'] == 3
+    assert summary['resolved_run_count'] == 10
+    assert len(summary['runs']) == 10
+    assert all(
+        run['activation_contract']['contract_id'] == run['case_id']
+        for run in summary['runs']
+    )
+    assert all(
+        run['activation_contract']['verification_timing'][
+            'selected_margin_sec'
+        ] == pytest.approx(3.0)
+        for run in summary['runs']
+    )
+    assert yaml.safe_load(output.read_text(encoding='utf-8'))[
+        'resolved_run_count'
+    ] == 10
 
 
 @pytest.mark.skipif(

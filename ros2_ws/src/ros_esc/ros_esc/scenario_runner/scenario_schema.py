@@ -11,8 +11,8 @@ import re
 import yaml
 
 
-SCHEMA_VERSION = 2
-SUPPORTED_SCHEMA_VERSIONS = {1, 2}
+SCHEMA_VERSION = 3
+SUPPORTED_SCHEMA_VERSIONS = {1, 2, 3}
 PROFILES = {'legacy', 'robust_gaussian_v1'}
 STATUSES = {'executable_unverified', 'unsupported'}
 FAMILIES = {
@@ -41,8 +41,12 @@ SUCCESS_PREDICATES = {
     'cleanup_complete',
     'controller_goal',
     'ground_truth_goal',
+    'expected_terminal_state',
     'required_state_sequence',
+    'required_state_path',
     'required_events',
+    'required_event_sequence',
+    'no_forbidden_states',
     'no_forbidden_events',
     'minimum_saturation_samples',
     'collision_expectation',
@@ -134,11 +138,74 @@ SUCCESS_KEYS = {
 }
 FROZEN_PROFILE_KEYS = {'profile_id', 'launch_overrides', 'sha256'}
 CONTROLLER_KEYS = {
+    'contract_id', 'expected_verification_outcome',
+    'reachability_argument',
     'expected_terminal_state', 'required_state_sequence', 'required_events',
-    'forbidden_events',
+    'forbidden_events', 'required_state_path', 'required_event_sequence',
+    'forbidden_states',
 }
 GROUND_TRUTH_KEYS = {'goal_source_ids', 'final_position_tolerance_m'}
 SAFE_ID = re.compile('^[A-Za-z0-9][A-Za-z0-9._-]*$')
+VERIFICATION_OUTCOMES = {
+    'goal',
+    'below_target_extremum',
+    'safe_timeout',
+}
+CONTRACT_TIMING_OVERRIDES = {
+    'goal_score_threshold',
+    'goal_score_rotation_period_sec',
+    'goal_score_required_rotations',
+    'goal_hold_sec',
+    'undesired_score_hold_sec',
+    'verification_max_sec',
+}
+ALGORITHM_STATES = {
+    'SEARCH',
+    'VERIFY_EXTREMUM',
+    'DESIGN_OR_MERGE_FILL',
+    'ESCAPE_REPULSE',
+    'ESCAPE_ASSIST',
+    'RECENTER',
+    'GOAL_HOLD',
+    'FAILSAFE',
+}
+ALGORITHM_EVENTS = {
+    'CONFIGURATION',
+    'CAPABILITY_UNAVAILABLE',
+    'STATE_TRANSITION',
+    'CONVERGENCE_CANDIDATE',
+    'CONVERGENCE_CONFIRMED',
+    'FILL_CREATED',
+    'FILL_REJECTED',
+    'FILL_MERGED',
+    'FILL_SUPERSEDED',
+    'FILL_DESIGN_ESCALATED',
+    'FILL_DESIGN_FAILED',
+    'FILL_LOW_CONFIDENCE',
+    'GOAL_REACHED',
+    'ESCAPE_STARTED',
+    'ESCAPE_STALLED',
+    'RECENTER_STARTED',
+    'RECENTER_COMPLETE',
+    'TIMEOUT',
+    'FAILSAFE',
+}
+ALGORITHM_TRANSITIONS = {
+    'SEARCH': {'VERIFY_EXTREMUM', 'FAILSAFE'},
+    'VERIFY_EXTREMUM': {
+        'DESIGN_OR_MERGE_FILL', 'GOAL_HOLD', 'FAILSAFE',
+    },
+    'DESIGN_OR_MERGE_FILL': {
+        'ESCAPE_REPULSE', 'ESCAPE_ASSIST', 'FAILSAFE',
+    },
+    'ESCAPE_REPULSE': {
+        'DESIGN_OR_MERGE_FILL', 'RECENTER', 'SEARCH', 'FAILSAFE',
+    },
+    'ESCAPE_ASSIST': {'RECENTER', 'SEARCH', 'FAILSAFE'},
+    'RECENTER': {'SEARCH', 'FAILSAFE'},
+    'GOAL_HOLD': set(),
+    'FAILSAFE': set(),
+}
 
 EXECUTION_DEFAULTS = {
     'max_parallel_runs': 1,
@@ -198,6 +265,120 @@ def _boolean(value, location):
     if not isinstance(value, bool):
         raise ValueError(f'{location} must be true or false')
     return value
+
+
+def _contract_names(value, allowed, prefix, location, unique=True):
+    """Normalize one strict schema-v3 state or event name list."""
+    if not isinstance(value, list):
+        raise ValueError(f'{location} must be a list')
+    normalized = []
+    for index, item in enumerate(value):
+        if not isinstance(item, str) or not item.strip():
+            raise ValueError(f'{location}[{index}] must be a non-empty string')
+        name = item.strip().removeprefix(prefix)
+        if name not in allowed:
+            raise ValueError(f'{location}[{index}] is unknown: {item}')
+        normalized.append(name)
+    if unique and len(normalized) != len(set(normalized)):
+        raise ValueError(f'{location} must not contain duplicates')
+    return normalized
+
+
+def _validate_state_path(path, location):
+    """Require a direct, first-verification-anchorable supervisor path."""
+    if 'VERIFY_EXTREMUM' not in path:
+        raise ValueError(f'{location} must include VERIFY_EXTREMUM')
+    for previous, current in zip(path, path[1:]):
+        if current not in ALGORITHM_TRANSITIONS[previous]:
+            raise ValueError(
+                f'{location} has unreachable transition '
+                f'{previous} -> {current}'
+            )
+
+
+def _verification_timing(overrides, outcome, location):
+    """Validate and expose the timing budget for a schema-v3 contract."""
+    missing = sorted(CONTRACT_TIMING_OVERRIDES - set(overrides))
+    if missing:
+        raise ValueError(
+            f'{location} requires explicit launch overrides: '
+            + ', '.join(missing)
+        )
+    threshold = _number(
+        overrides['goal_score_threshold'],
+        f'{location}.goal_score_threshold',
+        minimum=0.0,
+    )
+    if threshold > 1.0:
+        raise ValueError(f'{location}.goal_score_threshold must not exceed 1')
+    period = _number(
+        overrides['goal_score_rotation_period_sec'],
+        f'{location}.goal_score_rotation_period_sec',
+        positive=True,
+    )
+    rotations = overrides['goal_score_required_rotations']
+    if (
+        isinstance(rotations, bool)
+        or not isinstance(rotations, int)
+        or rotations <= 0
+    ):
+        raise ValueError(
+            f'{location}.goal_score_required_rotations '
+            'must be a positive integer'
+        )
+    goal_dwell = _number(
+        overrides['goal_hold_sec'],
+        f'{location}.goal_hold_sec',
+        positive=True,
+    )
+    below_target_dwell = _number(
+        overrides['undesired_score_hold_sec'],
+        f'{location}.undesired_score_hold_sec',
+        positive=True,
+    )
+    timeout = _number(
+        overrides['verification_max_sec'],
+        f'{location}.verification_max_sec',
+        positive=True,
+    )
+    rotation_duration = period * rotations
+    goal_required = rotation_duration + goal_dwell
+    below_target_required = rotation_duration + below_target_dwell
+    goal_margin = timeout - goal_required
+    below_target_margin = timeout - below_target_required
+    selected_margin = {
+        'goal': goal_margin,
+        'below_target_extremum': below_target_margin,
+        'safe_timeout': max(goal_margin, below_target_margin),
+    }[outcome]
+    if outcome != 'safe_timeout' and selected_margin <= 0.0:
+        raise ValueError(
+            f'{location} has no positive verification timing margin '
+            f'for {outcome}'
+        )
+    if (
+        outcome == 'safe_timeout'
+        and selected_margin >= 0.0
+    ):
+        raise ValueError(
+            f'{location} safe_timeout must intentionally use an '
+            'insufficient timing budget for both classification branches'
+        )
+    return {
+        'goal_score_threshold': threshold,
+        'rotation_period_sec': period,
+        'required_rotations': rotations,
+        'rotation_duration_sec': rotation_duration,
+        'goal_dwell_sec': goal_dwell,
+        'below_target_dwell_sec': below_target_dwell,
+        'verification_timeout_sec': timeout,
+        'goal_required_sec': goal_required,
+        'below_target_required_sec': below_target_required,
+        'goal_margin_sec': goal_margin,
+        'below_target_margin_sec': below_target_margin,
+        'selected_margin_sec': selected_margin,
+        'timing_sufficient': selected_margin > 0.0,
+    }
 
 
 def _merge_disturbances(defaults, override, location):
@@ -300,6 +481,44 @@ def load_suite(path):
         )
     ):
         raise ValueError('schema version 2 is required for validation fields')
+    schema_v3_controller_keys = {
+        'contract_id',
+        'expected_verification_outcome',
+        'reachability_argument',
+        'required_state_path',
+        'required_event_sequence',
+        'forbidden_states',
+    }
+    schema_v3_predicates = {
+        'expected_terminal_state',
+        'required_state_path',
+        'required_event_sequence',
+        'no_forbidden_states',
+    }
+    uses_schema_v3_fields = False
+    raw_cases = document.get('cases', [])
+    if isinstance(raw_cases, list):
+        for case in raw_cases:
+            if not isinstance(case, dict):
+                continue
+            raw_success = case.get('success', {})
+            if not isinstance(raw_success, dict):
+                continue
+            raw_controller = raw_success.get('controller', {})
+            raw_all_of = raw_success.get('all_of', [])
+            uses_schema_v3_fields = (
+                isinstance(raw_controller, dict)
+                and bool(schema_v3_controller_keys & set(raw_controller))
+            ) or (
+                isinstance(raw_all_of, list)
+                and bool(schema_v3_predicates & set(raw_all_of))
+            )
+            if uses_schema_v3_fields:
+                break
+    if schema_version < 3 and uses_schema_v3_fields:
+        raise ValueError(
+            'schema version 3 is required for activation-contract fields'
+        )
     suite_id = _identifier(document.get('suite_id'), 'suite_id')
     if document.get('mode') != 'simulation':
         raise ValueError('mode must be simulation')
@@ -425,6 +644,15 @@ def load_suite(path):
         ):
             raise ValueError(
                 f'{location}.profiles has duplicates or unknown values'
+            )
+        if (
+            schema_version >= 3
+            and status == 'executable_unverified'
+            and profiles != ['robust_gaussian_v1']
+        ):
+            raise ValueError(
+                f'{location}.profiles for an executable schema-v3 '
+                'activation contract must equal [robust_gaussian_v1]'
             )
 
         seeds = case.get('seeds')
@@ -607,8 +835,223 @@ def load_suite(path):
             raise ValueError(
                 f'{location}.success.all_of has unknown predicates'
             )
+        if schema_version >= 3 and len(all_of) != len(set(all_of)):
+            raise ValueError(
+                f'{location}.success.all_of must not contain duplicates'
+            )
         controller = success.get('controller', {})
         _unknown(controller, CONTROLLER_KEYS, f'{location}.success.controller')
+        normalized_controller = {
+            'expected_terminal_state': controller.get(
+                'expected_terminal_state'
+            ),
+            'required_state_sequence': list(
+                controller.get('required_state_sequence', [])
+            ),
+            'required_events': list(
+                controller.get('required_events', [])
+            ),
+            'forbidden_events': list(
+                controller.get('forbidden_events', [])
+            ),
+        }
+        if schema_version >= 3:
+            controller_location = f'{location}.success.controller'
+            contract_id = _identifier(
+                controller.get('contract_id'),
+                f'{controller_location}.contract_id',
+            )
+            if contract_id != case_id:
+                raise ValueError(
+                    f'{controller_location}.contract_id must equal case_id'
+                )
+            outcome = str(
+                controller.get('expected_verification_outcome', '')
+            )
+            if outcome not in VERIFICATION_OUTCOMES:
+                raise ValueError(
+                    f'{controller_location}.expected_verification_outcome '
+                    'is unsupported'
+                )
+            reachability_argument = controller.get('reachability_argument')
+            if (
+                not isinstance(reachability_argument, str)
+                or not reachability_argument.strip()
+            ):
+                raise ValueError(
+                    f'{controller_location}.reachability_argument '
+                    'must be non-empty'
+                )
+            expected_terminal = controller.get('expected_terminal_state')
+            if expected_terminal is not None:
+                expected_terminal = _contract_names(
+                    [expected_terminal],
+                    ALGORITHM_STATES,
+                    'STATE_',
+                    f'{controller_location}.expected_terminal_state',
+                )[0]
+            required_states = _contract_names(
+                controller.get('required_state_sequence', []),
+                ALGORITHM_STATES,
+                'STATE_',
+                f'{controller_location}.required_state_sequence',
+                unique=False,
+            )
+            required_path = _contract_names(
+                controller.get('required_state_path', []),
+                ALGORITHM_STATES,
+                'STATE_',
+                f'{controller_location}.required_state_path',
+                unique=False,
+            )
+            if not required_path:
+                raise ValueError(
+                    f'{controller_location}.required_state_path '
+                    'must be non-empty'
+                )
+            _validate_state_path(
+                required_path,
+                f'{controller_location}.required_state_path',
+            )
+            forbidden_states = _contract_names(
+                controller.get('forbidden_states', []),
+                ALGORITHM_STATES,
+                'STATE_',
+                f'{controller_location}.forbidden_states',
+            )
+            required_events = _contract_names(
+                controller.get('required_events', []),
+                ALGORITHM_EVENTS,
+                'EVENT_',
+                f'{controller_location}.required_events',
+            )
+            required_event_sequence = _contract_names(
+                controller.get('required_event_sequence', []),
+                ALGORITHM_EVENTS,
+                'EVENT_',
+                f'{controller_location}.required_event_sequence',
+                unique=False,
+            )
+            if not required_events and not required_event_sequence:
+                raise ValueError(
+                    f'{controller_location} must require events by '
+                    'membership or same-producer sequence'
+                )
+            forbidden_events = _contract_names(
+                controller.get('forbidden_events', []),
+                ALGORITHM_EVENTS,
+                'EVENT_',
+                f'{controller_location}.forbidden_events',
+            )
+            required_state_set = set(required_states) | set(required_path)
+            state_overlap = sorted(
+                required_state_set & set(forbidden_states)
+            )
+            if state_overlap:
+                raise ValueError(
+                    f'{controller_location} requires and forbids states: '
+                    + ', '.join(state_overlap)
+                )
+            required_event_set = (
+                set(required_events) | set(required_event_sequence)
+            )
+            event_overlap = sorted(
+                required_event_set & set(forbidden_events)
+            )
+            if event_overlap:
+                raise ValueError(
+                    f'{controller_location} requires and forbids events: '
+                    + ', '.join(event_overlap)
+                )
+            if expected_terminal in forbidden_states:
+                raise ValueError(
+                    f'{controller_location}.expected_terminal_state '
+                    'is forbidden'
+                )
+            verify_index = required_path.index('VERIFY_EXTREMUM')
+            next_state = (
+                required_path[verify_index + 1]
+                if verify_index + 1 < len(required_path)
+                else None
+            )
+            required_next = {
+                'goal': 'GOAL_HOLD',
+                'below_target_extremum': 'DESIGN_OR_MERGE_FILL',
+                'safe_timeout': 'FAILSAFE',
+            }[outcome]
+            if next_state != required_next:
+                raise ValueError(
+                    f'{controller_location}.required_state_path must '
+                    f'classify first verification as {required_next}'
+                )
+            if outcome == 'goal':
+                if expected_terminal != 'GOAL_HOLD':
+                    raise ValueError(
+                        f'{controller_location} goal contract must expect '
+                        'terminal GOAL_HOLD'
+                    )
+                if 'GOAL_REACHED' not in required_event_set:
+                    raise ValueError(
+                        f'{controller_location} goal contract must require '
+                        'GOAL_REACHED'
+                    )
+                if 'controller_goal' not in all_of:
+                    raise ValueError(
+                        f'{location}.success.all_of must bind controller_goal'
+                    )
+            if outcome == 'safe_timeout':
+                if expected_terminal != 'FAILSAFE':
+                    raise ValueError(
+                        f'{controller_location} safe_timeout must expect '
+                        'terminal FAILSAFE'
+                    )
+                if (
+                    'TIMEOUT' not in required_event_sequence
+                    or 'FAILSAFE' not in required_event_sequence
+                    or required_event_sequence.index('TIMEOUT')
+                    >= required_event_sequence.index('FAILSAFE')
+                ):
+                    raise ValueError(
+                        f'{controller_location} safe_timeout must require '
+                        'ordered TIMEOUT then FAILSAFE events'
+                    )
+            timing = _verification_timing(
+                overrides,
+                outcome,
+                f'{location}.algorithm.launch_overrides',
+            )
+            declared_predicates = {'required_state_path'}
+            if required_states:
+                declared_predicates.add('required_state_sequence')
+            if required_events:
+                declared_predicates.add('required_events')
+            if required_event_sequence:
+                declared_predicates.add('required_event_sequence')
+            if forbidden_states:
+                declared_predicates.add('no_forbidden_states')
+            if forbidden_events:
+                declared_predicates.add('no_forbidden_events')
+            if expected_terminal is not None:
+                declared_predicates.add('expected_terminal_state')
+            missing_predicates = sorted(declared_predicates - set(all_of))
+            if missing_predicates:
+                raise ValueError(
+                    f'{location}.success.all_of does not bind declared '
+                    'controller evidence: ' + ', '.join(missing_predicates)
+                )
+            normalized_controller = {
+                'contract_id': contract_id,
+                'expected_verification_outcome': outcome,
+                'reachability_argument': reachability_argument.strip(),
+                'verification_timing': timing,
+                'expected_terminal_state': expected_terminal,
+                'required_state_sequence': required_states,
+                'required_state_path': required_path,
+                'required_events': required_events,
+                'required_event_sequence': required_event_sequence,
+                'forbidden_states': forbidden_states,
+                'forbidden_events': forbidden_events,
+            }
         ground_truth = success.get('ground_truth', {})
         _unknown(
             ground_truth, GROUND_TRUTH_KEYS,
@@ -647,20 +1090,7 @@ def load_suite(path):
                 )
         normalized_success = {
             'all_of': list(all_of),
-            'controller': {
-                'expected_terminal_state': controller.get(
-                    'expected_terminal_state'
-                ),
-                'required_state_sequence': list(
-                    controller.get('required_state_sequence', [])
-                ),
-                'required_events': list(
-                    controller.get('required_events', [])
-                ),
-                'forbidden_events': list(
-                    controller.get('forbidden_events', [])
-                ),
-            },
+            'controller': normalized_controller,
             'ground_truth': {
                 'goal_source_ids': list(goal_ids),
                 'final_position_tolerance_m': tolerance,
@@ -669,6 +1099,45 @@ def load_suite(path):
         }
         if schema_version >= 2:
             normalized_success['collision_expected'] = collision_expected
+        if schema_version >= 3:
+            if collision_expected is not None:
+                declared_predicates.add('collision_expectation')
+            if minimum_saturation > 0:
+                declared_predicates.add('minimum_saturation_samples')
+            backed_predicates = set(declared_predicates)
+            if goal_ids:
+                backed_predicates.add('ground_truth_goal')
+            if outcome == 'goal':
+                backed_predicates.add('controller_goal')
+            predicates_requiring_backing = {
+                'controller_goal',
+                'ground_truth_goal',
+                'expected_terminal_state',
+                'required_state_sequence',
+                'required_events',
+                'required_event_sequence',
+                'no_forbidden_states',
+                'no_forbidden_events',
+                'minimum_saturation_samples',
+                'collision_expectation',
+            }
+            unbacked_predicates = sorted(
+                (set(all_of) & predicates_requiring_backing)
+                - backed_predicates
+            )
+            if unbacked_predicates:
+                raise ValueError(
+                    f'{location}.success.all_of selects undeclared or '
+                    'vacuous evidence: ' + ', '.join(unbacked_predicates)
+                )
+            missing_predicates = sorted(
+                declared_predicates - set(all_of)
+            )
+            if missing_predicates:
+                raise ValueError(
+                    f'{location}.success.all_of does not bind declared '
+                    'evidence: ' + ', '.join(missing_predicates)
+                )
         support_reason = _disturbance_support(disturbances, schema_version)
         if support_reason and status == 'executable_unverified':
             status = 'unsupported'

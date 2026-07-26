@@ -166,6 +166,14 @@ Diagnostic activation establishes:
 - bounded fill-design and startup latency;
 - separation of controller goal classification from simulation ground truth.
 
+The behavior contract must be case-specific and binding. A contiguous path
+anchored at the first post-readiness verification entry prevents a later cycle
+from hiding an incorrect initial classification. Declared terminal,
+forbidden-state, and forbidden-event expectations must be selected as
+predicates; decorative expectations do not constitute evidence. A legitimate
+later goal after local escape must not be forbidden merely because the first
+verification was a below-target classification.
+
 It is not an end-to-end acceptance denominator and may be iterated under a
 versioned, bounded development plan. Advanced behavior such as assisted escape,
 merge, and recenter may be developed/tuned after their branch is reachable;
@@ -176,6 +184,14 @@ fixed commit/config/scenario hashes, unique denominator, family allocations,
 holdout subset, repeat subset, thresholds, minimum metric denominators,
 infrastructure-invalid attempt policy, and exact pass/fail/N/A semantics.
 Embed its hash in the run manifest, gate JSON, and report.
+
+For multi-source cases, derive ground truth from the realized aggregate field
+or constrain the geometry to a justified dominant target. A manually assigned
+source role is not sufficient because source contributions combine and the
+field optimum can lie between sources. Require end-to-end `GOAL_HOLD` only for
+a target that can sustain the calibrated controller threshold. Report
+sub-threshold global optima as classification/escape diagnostics rather than
+counting them as failed calibrated-goal trials.
 
 Objectively pre-readiness infrastructure-invalid attempts may receive at most
 the predeclared bounded replacement for that experiment. Retain and link every

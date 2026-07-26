@@ -1882,3 +1882,126 @@ XML, topic-manifest YAML, fatal flake8, and `git diff --check` passed.
 
 No Gazebo process, physical command, tuning, holdout, acceptance run,
 simulation-ready tag, or historical-v1/v2 evidence rewrite occurred in M4.
+
+## Phase 08.1 M5 scenario-contract correction
+
+Focused schema and runner regression:
+
+```bash
+timeout 60s bash -lc '
+  source /opt/ros/humble/setup.bash &&
+  source /tmp/dsim_phase08_1_m4_install/setup.bash &&
+  export ROS_DOMAIN_ID=65 &&
+  export ROS_LOG_DIR=/tmp/dsim_phase08_1_m5_focused_ros_logs &&
+  export PYTHONPATH=/home/mattb/dsim-lab/ros2_ws/src/ros_esc:$PYTHONPATH &&
+  python3 -m pytest -q \
+    ros2_ws/src/ros_esc/test/test_scenario_schema.py \
+    ros2_ws/src/ros_esc/test/test_scenario_runner.py'
+```
+
+Final result: `64 passed, 1 skipped in 1.98s`. The skip is the explicit
+`RUN_GESC_PHASE06_GAZEBO_E2E=1` recorded headless-Gazebo test; it was not
+enabled.
+
+Full non-linter package regression:
+
+```bash
+timeout 120s bash -lc '
+  source /opt/ros/humble/setup.bash &&
+  source /tmp/dsim_phase08_1_m4_install/setup.bash &&
+  export ROS_DOMAIN_ID=66 &&
+  export ROS_LOG_DIR=/tmp/dsim_phase08_1_m5_full_ros_logs &&
+  export MPLCONFIGDIR=/tmp/dsim_phase08_1_m5_full_mpl &&
+  export PYTHONPATH=/home/mattb/dsim-lab/ros2_ws/src/ros_esc:$PYTHONPATH &&
+  python3 -m pytest -q ros2_ws/src/ros_esc/test -m "not linter"'
+```
+
+Final result: `278 passed, 2 skipped, 3 deselected in 15.38s`. The skips are
+the explicit `DSIM_RUN_GAZEBO_RECORDING_TEST=1` visible-Gazebo recording test
+and the recorded headless-Gazebo test above. The three deselections are the
+repository linter markers. Neither Gazebo nor physical hardware ran.
+
+An earlier identical full sweep without a writable `ROS_LOG_DIR` ended
+`20 failed, 258 passed, 2 skipped, 3 deselected in 13.79s`: the first rclpy
+initialization could not open `/home/mattb/.ros/log/...` in the sandbox, then
+left the process-global context initialized for the remaining ROS tests. This
+was an environment-invalid test attempt. The fresh-process bounded rerun above
+isolated logs under `/tmp` and passed.
+
+Python and focused style checks:
+
+```bash
+python3 -m py_compile \
+  ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py \
+  ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py \
+  ros2_ws/src/ros_esc/test/test_scenario_runner.py \
+  ros2_ws/src/ros_esc/test/test_scenario_schema.py \
+  ros2_ws/src/ros_esc/test/test_legacy_behavior.py \
+  ros2_ws/src/ros_esc/setup.py
+
+ament_flake8 \
+  ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py \
+  ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py \
+  ros2_ws/src/ros_esc/test/test_scenario_runner.py \
+  ros2_ws/src/ros_esc/test/test_scenario_schema.py
+
+ament_pep257 \
+  ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py \
+  ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py \
+  ros2_ws/src/ros_esc/test/test_scenario_runner.py \
+  ros2_ws/src/ros_esc/test/test_scenario_schema.py
+```
+
+Compilation passed; both focused linters reported no problems. The changed
+legacy-test and setup owners retain inherited same-configuration flake8 debt
+at `190/190` and `23/23`; M5 adds none.
+
+Final isolated build and installed dry-run:
+
+```bash
+timeout 120s bash -lc '
+  source /opt/ros/humble/setup.bash &&
+  source /tmp/dsim_phase08_1_m4_install/setup.bash &&
+  cd /home/mattb/dsim-lab/ros2_ws &&
+  colcon --log-base /tmp/dsim_phase08_1_m5_colcon_logs_final3 build \
+    --build-base /tmp/dsim_phase08_1_m5_build_final3 \
+    --install-base /tmp/dsim_phase08_1_m5_install_final3 \
+    --packages-select ros_esc'
+
+timeout 60s bash -lc '
+  source /opt/ros/humble/setup.bash &&
+  source /tmp/dsim_phase08_1_m4_install/setup.bash &&
+  source /tmp/dsim_phase08_1_m5_install_final3/setup.bash &&
+  ros2 run ros_esc run_scenario \
+    /tmp/dsim_phase08_1_m5_install_final3/ros_esc/share/ros_esc/scenario_runner/scenarios/phase08_1_diagnostic_activation.yaml \
+    --operator phase08_1_m5 \
+    --runs-root /tmp/dsim_phase08_1_m5_dry_runs \
+    --summary-output /tmp/phase08_1_m5_installed_dry_run_final.yaml \
+    --dry-run'
+```
+
+The isolated build completed one package in `1.32s`, using
+`ros_esc_interfaces` from the final M4 isolated underlay. The installed
+dry-run resolved 10 runs, 0 unsupported cases, 10 bound activation contracts,
+and a `3.0 s` selected verification margin for every case. Retained summary:
+`/tmp/phase08_1_m5_installed_dry_run_final.yaml`; verbose stdout:
+`/tmp/phase08_1_m5_installed_dry_run_final.stdout`.
+
+The new suite SHA-256 is
+`1e030602ecee99c2d1f563a0ae19e65b1c8e6608662e178eb52b8766edc5a9a7`.
+The reachability record SHA-256 is
+`e787e226d3de4ef19e93867fcb148164d8c306dd7e0264d0354c519793ec3590`.
+The historical v2 activation YAML remains
+`a5e91d2132b3dacccedc24aba13bdacd9ef5ba4ec7c8ae7b69ced6eadaf47d72`,
+and its normalized ten case keys are asserted unchanged.
+
+Normal and strict-history Phase 08 Implement context validation both returned
+`Phase 08 implement context is complete`; required-doc validation returned
+`All Phase 00 audit documents exist`. Both activation YAML files parsed and
+`git diff --check` passed.
+
+`checkpoint_phase.sh 08` passed and refreshed the compact Phase 08
+material-boundary snapshot.
+
+No Gazebo process, physical command, formal acceptance run, tuning, holdout,
+simulation-ready tag, or historical-v1/v2 evidence rewrite occurred in M5.

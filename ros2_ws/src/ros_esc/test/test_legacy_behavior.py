@@ -1,5 +1,6 @@
 """Focused numerical-equivalence tests for opt-in Phase 01 diagnostics."""
 
+import math
 from pathlib import Path
 import sys
 import threading
@@ -41,6 +42,8 @@ from ros_esc_interfaces.msg import (
 from rosgraph_msgs.msg import Clock
 from std_msgs.msg import Bool
 
+import yaml
+
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
 FILTER_CONFIG = (
@@ -53,6 +56,11 @@ CONTROLLER_CONFIG = (
     / "ros2_ws/src/ros_esc/ros_esc/controller_node/controller_config_files"
     / "turtlebot_vehicle/gradient_methods"
     / "gesc_controller_full_rotation_voltage.json"
+)
+DIAGNOSTIC_ACTIVATION = (
+    REPOSITORY_ROOT
+    / 'ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/'
+    'phase08_1_diagnostic_activation.yaml'
 )
 
 
@@ -608,6 +616,91 @@ def test_multi_light_score_does_not_depend_on_light_positions():
     )
     cost = first._convert_resistance_to_voltage(1000.0)
     assert first.source_score(cost) == second.source_score(cost)
+
+
+@pytest.mark.parametrize(
+    ('relative_input', 'expected_score'),
+    [
+        (450.0, 0.7785034367102063),
+        (800.0, 0.945004139473373),
+        (1200.0, 1.0),
+        (2500.0, 1.0),
+    ],
+)
+def test_one_source_best_case_score_bounds_activation_contract(
+    relative_input,
+    expected_score,
+):
+    """Lock the live model bound used by Phase 08.1 classification cases."""
+    model = Multi_Light_Source_Cost({
+        'mode': 'Voltage',
+        'reference_intensity_lumens': 1000.0,
+        'light_sources': [{
+            'x': 0.0,
+            'y': 0.0,
+            'intensity_lumens': relative_input,
+        }],
+    })
+    best_case_cost = model.cost_output(0.0, np.eye(4))
+
+    assert model.source_score(best_case_cost) == pytest.approx(expected_score)
+
+
+def test_phase08_1_local_centers_remain_below_controller_target():
+    """Keep every intended first local classification numerically reachable."""
+    document = yaml.safe_load(
+        DIAGNOSTIC_ACTIVATION.read_text(encoding='utf-8')
+    )
+    case_ids = {
+        'activation_fill_create',
+        'activation_pure_escape',
+        'activation_stalled_assist',
+        'activation_fill_merge',
+        'activation_recenter_resume',
+    }
+    checked = {}
+    for case in document['cases']:
+        if case['case_id'] not in case_ids:
+            continue
+        model = Multi_Light_Source_Cost({
+            'mode': 'Voltage',
+            'reference_intensity_lumens': 1000.0,
+            'light_sources': [
+                {
+                    'x': source['x_m'],
+                    'y': source['y_m'],
+                    'intensity_lumens': source['relative_lumen_input'],
+                }
+                for source in case['sources']
+            ],
+        })
+        for source in case['sources']:
+            if source['evaluation_role'] != 'local_minimum':
+                continue
+            scores = []
+            for angle in np.linspace(0.0, 2.0 * math.pi, 721):
+                cosine = math.cos(angle)
+                sine = math.sin(angle)
+                transform = np.array([
+                    [cosine, -sine, 0.0, source['x_m']],
+                    [sine, cosine, 0.0, source['y_m']],
+                    [0.0, 0.0, 1.0, 0.0],
+                    [0.0, 0.0, 0.0, 1.0],
+                ])
+                scores.append(
+                    model.source_score(model.cost_output(0.0, transform))
+                )
+            checked[f"{case['case_id']}:{source['id']}"] = max(scores)
+
+    assert set(checked) == {
+        'activation_fill_create:local',
+        'activation_pure_escape:local',
+        'activation_stalled_assist:local',
+        'activation_fill_merge:local_a',
+        'activation_fill_merge:local_b',
+        'activation_recenter_resume:local',
+    }
+    assert max(checked.values()) < 0.95
 
 
 def test_unsupported_cost_model_reports_invalid_score():

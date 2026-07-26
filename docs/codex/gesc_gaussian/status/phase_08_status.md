@@ -1,6 +1,6 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-25T21:59:05-07:00`
+Last verified: `2026-07-25T22:54:22-07:00`
 Status: `IN PROGRESS — PHASE 08.1 DIAGNOSTIC RECOVERY`
 
 ## Objective
@@ -135,6 +135,36 @@ count toward a future acceptance attempt.
   exclusive callback group in both profiles and uses the production
   two-thread executor, allowing simulation time to advance during bounded fill
   design without concurrent mutation.
+- Phase 08.1 M5 adds a separate schema-v3 development suite at
+  `phase08_1_diagnostic_activation.yaml`; the sealed historical v2 activation
+  suite remains byte-identical at SHA-256
+  `a5e91d2132b3dacccedc24aba13bdacd9ef5ba4ec7c8ae7b69ced6eadaf47d72`
+  with all ten historical normalized case keys unchanged.
+- M5 replaces the impossible isolated 450/800-input controller-goal
+  expectations with explicit below-target classifications, retains the
+  calibrated 2500-input goal case, and keeps controller classification
+  separate from simulation ground-truth proximity.
+- M5 binds each activation contract to its case identity, a contiguous path
+  anchored at the first `VERIFY_EXTREMUM`, declared terminal and forbidden
+  evidence, and an explicit verification outcome. It uses unordered
+  membership for cross-producer event evidence and ordering only for
+  same-producer lifecycles such as `FILL_SUPERSEDED -> FILL_MERGED` and
+  `TIMEOUT -> FAILSAFE`.
+- M5 treats the typed numeric state enum as canonical retained evidence,
+  rejects contradictory state names, and prevents a later successful cycle
+  from concealing an incorrect first verification branch or forbidden
+  `FAILSAFE`.
+- Every normal M5 case has two three-second verification rotations, a
+  three-second goal or below-target dwell, and a 12-second timeout: a positive
+  three-second classification margin. Timing-insufficient contracts are
+  reserved for an explicit safe-timeout outcome.
+- The M5 reachability record documents analytical source-score bounds,
+  synthetic/retained lifecycle support, and the limits of that evidence.
+  Pointwise local-center scores do not prove closed-loop convergence; the
+  calibrated goal and fill route remain fresh M6 runtime questions.
+- Future v3 ground truth must use the realized aggregate field or justified
+  dominant-target geometry. A manually assigned multi-source `goal` role is
+  not accepted as proof of the actual global optimum.
 
 ## Current milestone
 
@@ -146,13 +176,34 @@ count toward a future acceptance attempt.
 - Completed milestone: Phase 08.1 M4 readiness and evidence-semantics
   correction. The first implementation's review gaps were corrected; its
   earlier evidence is superseded by the final source-state gates below.
-- Current milestone: Phase 08.1 M5 scenario-contract correction.
-- Pending milestones: Phase 08.1 M6 minimal simulation probes and M7 handoff.
+- Completed milestone: Phase 08.1 M5 scenario-contract correction.
+- Current milestone: Phase 08.1 M6 minimal simulation probes.
+- Pending milestone: Phase 08.1 M7 handoff.
 - Current plan:
   `docs/codex/gesc_gaussian/plans/phase_08_1_plan.md`.
-- Next criterion: prove every M5 activation contract is schema-valid,
-  scenario-specific, timing-sufficient, and behaviorally reachable without
-  running Gazebo; then run focused dry-run and schema regressions.
+- Next criterion: execute the predeclared calibrated goal probe under the
+  fresh Phase 08.1 development root, analyze it once, and verify cleanup and
+  final zero. Execute the predeclared fill-create probe next only after the
+  first probe closes cleanly and because it answers the distinct local-minimum
+  route question.
+
+### M6 pre-execution declaration
+
+- Evidence root:
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_1_m6`.
+- Suite:
+  `phase08_1_diagnostic_activation.yaml`, source SHA-256
+  `1e030602ecee99c2d1f563a0ae19e65b1c8e6608662e178eb52b8766edc5a9a7`.
+- Probe 1: `activation_goal_high`, one serial headless finite run. Question:
+  does post-M3 verification observe two fresh rotations and enter
+  `GOAL_HOLD` without readiness, timestamp, collision, cleanup, or final-zero
+  regression?
+- Conditional probe 2: `activation_fill_create`, one serial headless finite
+  run after Probe 1 cleanup. Distinct question: does the corrected
+  below-target branch create a typed fill and start escape without blocked
+  design, stale emission, collision, cleanup, or final-zero regression?
+- Each retained attempt will be analyzed once. No replacement, third probe,
+  matrix, tuning, holdout, tag, GUI, or physical command is predeclared.
 
 ## Current problem or blocker
 
@@ -178,6 +229,9 @@ count toward a future acceptance attempt.
   race.
 - The retained bags are sufficient for code and contract diagnosis. Do not
   rerun the historical activation stage.
+- M5 analytical and synthetic evidence establishes scenario-contract
+  plausibility, not closed-loop behavioral success. M6 is the first fresh
+  runtime evidence for the corrected goal and fill-create contracts.
 
 ## Files currently relevant
 
@@ -190,6 +244,8 @@ count toward a future acceptance attempt.
 - `docs/codex/gesc_gaussian/validation/phase_08_v2_failure_report.md`
 - `docs/codex/gesc_gaussian/handoffs/phase_08_handoff.md`
 - `ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py`
+- `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py`
+- `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_1_diagnostic_activation.yaml`
 - `ros2_ws/src/ros_esc/ros_esc/convergence_detector_node/convergence_detector_node_script.py`
 - `ros2_ws/src/ros_esc/ros_esc/supervisor_node/state_machine.py`
 - `ros2_ws/src/ros_esc/ros_esc/supervisor_node/supervisor_node_script.py`
@@ -208,6 +264,8 @@ count toward a future acceptance attempt.
 - `ros2_ws/src/ros_esc/test/test_observability_contract.py`
 - `ros2_ws/src/ros_esc/test/test_robust_gaussian_algorithm.py`
 - `ros2_ws/src/ros_esc/test/test_legacy_behavior.py`
+- `ros2_ws/src/ros_esc/test/test_scenario_schema.py`
+- `docs/codex/gesc_gaussian/validation/phase_08_1_activation_contract.md`
 
 ## Decisions and rationale
 
@@ -266,6 +324,21 @@ count toward a future acceptance attempt.
   to `null` only while recording an explicit failed check; unavailable or
   overflowed terminal geometry is an extraction failure, never a controller
   success/failure inference.
+- D-08-15: create a separate schema-v3 diagnostic activation suite and leave
+  the historical v2 YAML immutable. Schema v3 is development-contract
+  machinery, not retroactive v2 evidence.
+- D-08-16: distinguish `goal`, `below_target_extremum`, and `safe_timeout`
+  controller outcomes. Only the calibrated goal contract binds controller
+  goal; ground-truth proximity remains an independent metric.
+- D-08-17: anchor state evidence at the first contiguous verification path,
+  use the typed numeric enum as canonical, bind forbidden/terminal predicates,
+  and require event order only within one producer. Cross-producer lifecycle
+  evidence uses membership because rosbag receipt order is not causal order.
+- D-08-18: future multi-source acceptance ground truth must derive from the
+  realized aggregate field or justified dominant-target geometry.
+- D-08-19: M6 starts with exactly the calibrated high goal and conditional
+  fill-create cases under a fresh development-only root. They answer distinct
+  post-M3 and post-M2/M4 questions; no full suite is authorized.
 
 ## Validation checkpoints
 
@@ -460,6 +533,37 @@ count toward a future acceptance attempt.
   and `git diff --check` passed.
 - Phase 08.1 M4 material-boundary checkpoint passed and refreshed
   `docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt`.
+- M5 schema/runner focused regression:
+  `64 passed, 1 skipped in 1.98s`; the skip is the explicit recorded
+  headless-Gazebo opt-in.
+- M5 full non-linter package sweep with writable ROS/Matplotlib paths:
+  `278 passed, 2 skipped, 3 deselected in 15.38s`. The skips are the explicit
+  visible-Gazebo recording and recorded headless-Gazebo opt-ins; the three
+  deselected tests are repository linter markers. Neither Gazebo nor hardware
+  ran. A preceding identical sweep without `ROS_LOG_DIR` was
+  environment-invalid (`20 failed, 258 passed, 2 skipped, 3 deselected`)
+  because rclpy could not write `/home/mattb/.ros`; its isolated rerun above
+  passed.
+- M5 Python compilation, `ament_flake8`, and `ament_pep257` passed with no
+  problems across `run_scenario.py`, `scenario_schema.py`, and their two
+  focused test files. The changed legacy test and setup owner retain inherited
+  same-configuration debt at `190/190` and `23/23`; M5 adds none.
+- M5 final isolated `ros_esc` build succeeded against the M4
+  `ros_esc_interfaces` under
+  `/tmp/dsim_phase08_1_m5_{build,install}_final3`. The installed schema-v3
+  dry-run resolved 10 cases, 0 unsupported cases, 10 bound contracts, and a
+  positive `3.0 s` selected verification margin in every case. Summary:
+  `/tmp/phase08_1_m5_installed_dry_run_final.yaml`.
+- M5 suite SHA-256:
+  `1e030602ecee99c2d1f563a0ae19e65b1c8e6608662e178eb52b8766edc5a9a7`;
+  reachability-record SHA-256:
+  `e787e226d3de4ef19e93867fcb148164d8c306dd7e0264d0354c519793ec3590`.
+  The historical v2 activation SHA and ten normalized keys remain unchanged.
+- M5 normal and strict-history Phase 08 Implement context validation passed;
+  required-doc validation, both activation YAML parses, and
+  `git diff --check` passed.
+- Phase 08.1 M5 material-boundary checkpoint passed and refreshed
+  `docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt`.
 
 ## Attempts not to repeat
 
@@ -479,11 +583,10 @@ count toward a future acceptance attempt.
 
 ## Remaining work
 
-Phase 08.1 M1–M4 are complete. Follow `phase_08_1_plan.md` for:
+Phase 08.1 M1–M5 are complete. Follow `phase_08_1_plan.md` for:
 
-1. M5 reachable, scenario-specific activation contracts;
-2. M6 minimal versioned simulation probes;
-3. M7 Phase 08.1 handoff and a separately reviewed v3 recommendation.
+1. M6 minimal versioned simulation probes;
+2. M7 Phase 08.1 handoff and a separately reviewed v3 recommendation.
 
 No v3 tuning, holdout, acceptance denominator, tag, or physical motion is
 authorized in this plan.
@@ -504,7 +607,7 @@ authorized in this plan.
 
 ## Compaction recovery
 
-Phase 08 v2 is terminally closed; Phase 08.1 is active. Reread `AGENTS.md`,
+Phase 08 v2 is terminally closed; Phase 08.1 M6 is active. Reread `AGENTS.md`,
 `phase_08_plan.md`, `phase_08_1_plan.md`, and this status; inspect Git status
 and the relevant diff; identify the next incomplete Phase 08.1 milestone; and
 continue from retained evidence. Never resume or relabel v1/v2, and never rerun

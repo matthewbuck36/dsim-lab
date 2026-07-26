@@ -179,14 +179,22 @@ remaining false.
 
 ### M5 — Scenario-contract correction
 
-- Replace impossible low/medium `GOAL_HOLD` proofs with explicit
-  undesired-minimum classification/fill cases.
+- Replace the invalid low/medium `GOAL_HOLD` proofs with explicit
+  controller-classified below-target-extremum/fill cases. The isolated
+  450/800-input bounds are analytical; do not describe the historical
+  1200-input failure as mathematically impossible.
 - Retain at least one calibrated goal case known to sustain the goal threshold.
 - Make every expected and forbidden state/event scenario-specific.
+- Bind declared terminal/forbidden evidence to classification and use a
+  contiguous first-verification activation path, so a later successful cycle
+  cannot conceal the wrong initial branch.
 - Require timing-sufficient rotation/hold configuration for GOAL and
-  undesired-minimum classification cases; allow a timing-insufficient
+  below-target classification cases; allow a timing-insufficient
   configuration only for a case explicitly declared to expect safe timeout.
 - Keep controller success and simulation ground truth as separate metrics.
+- Preserve a legitimate later `GOAL_HOLD` in multi-source escape cases; do not
+  turn a globally forbidden goal state into a counterproductive lifecycle
+  gate.
 
 Exit: schema/dry-run checks pass and every activation expectation has a
 documented reachability argument.
@@ -231,6 +239,12 @@ Before a new formal attempt:
 - include the contract hash in the manifest, gate JSON, and report;
 - use `outcome: not_run` and `passed: null` for gates never evaluated;
 - preserve v1/v2/v2.1 development roots and exclude them by hash/path.
+- derive multi-source ground truth from the realized aggregate field, or
+  restrict geometry to a justified dominant target. A manually assigned source
+  role alone does not establish the global optimum.
+- require `GOAL_HOLD` only when the realized target can sustain the calibrated
+  controller threshold; treat sub-threshold global optima as separately
+  declared classification/escape diagnostics.
 
 The historical v2 values conflict between its plan and generated gate
 artifacts. That contradiction is documented as historical errata and is not

@@ -272,6 +272,15 @@ unreachable scenario expectations, then use minimal development-only runtime
 probes. A future v3 tuning/acceptance design requires a separate sealed contract
 and evidence root.
 
+Phase 08.1 diagnostic scenarios use schema-v3 binding contracts: a contiguous
+activation path anchored at the first `VERIFY_EXTREMUM`, required event
+membership, selected terminal/forbidden predicates, and explicit
+rotation/dwell timing. Cross-producer event receipt order is not treated as a
+causal clock. The isolated 450/800-input cases prove below-target classification,
+while the 2500-input case proves the calibrated goal branch. Multi-source
+ground truth for a future v3 must come from the realized aggregate field or a
+justified dominant-target geometry, not a source-role label alone.
+
 The Phase 08.1 readiness correction remains inside the existing controller,
 recorder, completeness validator, and scenario runner. Simulation uses two
 fresh data/controller-manager barriers around bounded parameter capture and an

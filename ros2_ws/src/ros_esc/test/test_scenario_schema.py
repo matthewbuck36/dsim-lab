@@ -1,6 +1,7 @@
 """Focused tests for strict Phase 06 scenario parsing and expansion."""
 
 from copy import deepcopy
+import hashlib
 from pathlib import Path
 
 import pytest
@@ -22,6 +23,15 @@ SMOKE = (
 CATALOG = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase06_catalog.yaml'
+)
+DIAGNOSTIC_ACTIVATION = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_1_diagnostic_activation.yaml'
+)
+HISTORICAL_V2_ACTIVATION = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml'
 )
 
 
@@ -95,18 +105,78 @@ def _load(tmp_path, document):
     return load_suite(path)
 
 
+def _v3_document():
+    document = _document()
+    document['schema_version'] = 3
+    document['defaults'].update({
+        'validation_world': True,
+        'simulation_contacts_enabled': True,
+    })
+    document['cases'][0]['algorithm']['launch_overrides'] = {
+        'goal_score_threshold': 0.95,
+        'goal_score_rotation_period_sec': 3.0,
+        'goal_score_required_rotations': 2,
+        'goal_hold_sec': 3.0,
+        'undesired_score_hold_sec': 3.0,
+        'verification_max_sec': 12.0,
+    }
+    document['cases'][0]['success'] = {
+        'all_of': [
+            'recording_complete',
+            'cleanup_complete',
+            'controller_goal',
+            'expected_terminal_state',
+            'required_state_path',
+            'required_events',
+            'no_forbidden_states',
+            'no_forbidden_events',
+            'collision_expectation',
+        ],
+        'controller': {
+            'contract_id': 'case_a',
+            'expected_verification_outcome': 'goal',
+            'reachability_argument': 'A calibrated source sustains the target.',
+            'expected_terminal_state': 'GOAL_HOLD',
+            'required_state_path': [
+                'SEARCH', 'VERIFY_EXTREMUM', 'GOAL_HOLD',
+            ],
+            'required_events': [
+                'CONVERGENCE_CONFIRMED', 'GOAL_REACHED',
+            ],
+            'forbidden_states': ['FAILSAFE'],
+            'forbidden_events': ['TIMEOUT', 'FAILSAFE'],
+        },
+        'ground_truth': {
+            'goal_source_ids': ['goal'],
+            'final_position_tolerance_m': 0.35,
+        },
+        'collision_expected': False,
+    }
+    return document
+
+
 def test_checked_in_suites_validate_and_catalog_marks_gaps():
     """Validate checked-in suites and their declared unsupported gaps."""
     smoke = load_suite(SMOKE)
     catalog = load_suite(CATALOG)
+    diagnostic = load_suite(DIAGNOSTIC_ACTIVATION)
     smoke_runs, smoke_unsupported = expand_suite(smoke)
     catalog_runs, catalog_unsupported = expand_suite(catalog)
+    diagnostic_runs, diagnostic_unsupported = expand_suite(diagnostic)
 
     assert [run['profile'] for run in smoke_runs] == [
         'robust_gaussian_v1', 'legacy'
     ]
     assert smoke_unsupported == []
     assert len(catalog_runs) >= 20
+    assert len(diagnostic_runs) == 10
+    assert diagnostic_unsupported == []
+    assert all(
+        run['success']['controller']['verification_timing'][
+            'selected_margin_sec'
+        ] == pytest.approx(3.0)
+        for run in diagnostic_runs
+    )
     assert {item['case_id'] for item in catalog_unsupported} >= {
         'ordered_levels_1_to_5',
         'sensor_pose_delay',
@@ -121,7 +191,7 @@ def test_checked_in_suites_validate_and_catalog_marks_gaps():
 @pytest.mark.parametrize(
     ('mutation', 'match'),
     [
-        (lambda doc: doc.update({'schema_version': 3}), 'schema_version'),
+        (lambda doc: doc.update({'schema_version': 4}), 'schema_version'),
         (
             lambda doc: doc.update({'mode': 'physical'}),
             'mode must be simulation',
@@ -133,6 +203,10 @@ def test_checked_in_suites_validate_and_catalog_marks_gaps():
         (
             lambda doc: doc['cases'][0].update({'mystery': True}),
             'unknown keys',
+        ),
+        (
+            lambda doc: doc['cases'][0].update({'success': []}),
+            'must be a mapping',
         ),
         (
             lambda doc: doc['cases'][0].update({'profiles': ['unknown']}),
@@ -282,3 +356,249 @@ def test_case_filter_rejects_unknown_names(tmp_path):
     suite = _load(tmp_path, _document())
     with pytest.raises(ValueError, match='unknown --case-id'):
         expand_suite(suite, case_ids=['missing'])
+
+
+def test_schema_v3_binds_reachable_activation_contract(tmp_path):
+    """Expose a strict path and positive verification margin."""
+    suite = _load(tmp_path, _v3_document())
+    run = expand_suite(suite)[0][0]
+    controller = run['success']['controller']
+
+    assert controller['contract_id'] == run['case_id']
+    assert controller['required_state_path'] == [
+        'SEARCH', 'VERIFY_EXTREMUM', 'GOAL_HOLD',
+    ]
+    assert controller['verification_timing'] == {
+        'goal_score_threshold': 0.95,
+        'rotation_period_sec': 3.0,
+        'required_rotations': 2,
+        'rotation_duration_sec': 6.0,
+        'goal_dwell_sec': 3.0,
+        'below_target_dwell_sec': 3.0,
+        'verification_timeout_sec': 12.0,
+        'goal_required_sec': 9.0,
+        'below_target_required_sec': 9.0,
+        'goal_margin_sec': 3.0,
+        'below_target_margin_sec': 3.0,
+        'selected_margin_sec': 3.0,
+        'timing_sufficient': True,
+    }
+
+
+@pytest.mark.parametrize(
+    ('mutation', 'match'),
+    [
+        (
+            lambda doc: doc['cases'][0]['success']['controller'].update(
+                {'contract_id': 'shared_anchor'}
+            ),
+            'must equal case_id',
+        ),
+        (
+            lambda doc: doc['cases'][0]['success']['controller'].update(
+                {
+                    'required_state_path': [
+                        'SEARCH', 'GOAL_HOLD',
+                    ]
+                }
+            ),
+            'must include VERIFY_EXTREMUM',
+        ),
+        (
+            lambda doc: doc['cases'][0]['success']['controller'][
+                'forbidden_states'
+            ].append('GOAL_HOLD'),
+            'requires and forbids states',
+        ),
+        (
+            lambda doc: doc['cases'][0]['success']['all_of'].remove(
+                'no_forbidden_events'
+            ),
+            'does not bind declared controller evidence',
+        ),
+        (
+            lambda doc: doc['cases'][0]['algorithm'][
+                'launch_overrides'
+            ].update({'verification_max_sec': 9.0}),
+            'no positive verification timing margin',
+        ),
+        (
+            lambda doc: doc['cases'][0]['algorithm'][
+                'launch_overrides'
+            ].update({'goal_hold_sec': 0.0}),
+            'must be positive',
+        ),
+        (
+            lambda doc: doc['cases'][0].update({'profiles': ['legacy']}),
+            'must equal \\[robust_gaussian_v1\\]',
+        ),
+    ],
+)
+def test_schema_v3_rejects_decorative_or_unreachable_contracts(
+    tmp_path, mutation, match
+):
+    """Reject inherited, porous, contradictory, or untimed contracts."""
+    document = _v3_document()
+    mutation(document)
+    with pytest.raises(ValueError, match=match):
+        _load(tmp_path, document)
+
+
+def test_schema_v3_allows_only_explicit_timing_insufficient_safe_timeout(
+    tmp_path,
+):
+    """Reserve inadequate verification timing for a bound timeout proof."""
+    document = _v3_document()
+    case = document['cases'][0]
+    case['algorithm']['launch_overrides']['verification_max_sec'] = 8.0
+    success = case['success']
+    success['all_of'].remove('controller_goal')
+    success['all_of'].append('required_event_sequence')
+    controller = success['controller']
+    controller.update({
+        'expected_verification_outcome': 'safe_timeout',
+        'expected_terminal_state': 'FAILSAFE',
+        'required_state_path': [
+            'SEARCH', 'VERIFY_EXTREMUM', 'FAILSAFE',
+        ],
+        'required_event_sequence': [
+            'TIMEOUT', 'FAILSAFE',
+        ],
+        'required_events': ['CONVERGENCE_CONFIRMED'],
+        'forbidden_states': ['GOAL_HOLD'],
+        'forbidden_events': ['GOAL_REACHED'],
+    })
+
+    suite = _load(tmp_path, document)
+    timing = suite['cases'][0]['success']['controller'][
+        'verification_timing'
+    ]
+    assert timing['selected_margin_sec'] == pytest.approx(-1.0)
+    assert timing['timing_sufficient'] is False
+
+
+def _remove_controller_list(document, field, predicate):
+    document['cases'][0]['success']['controller'][field] = []
+    all_of = document['cases'][0]['success']['all_of']
+    if predicate not in all_of:
+        all_of.append(predicate)
+
+
+@pytest.mark.parametrize(
+    ('mutation', 'match'),
+    [
+        (
+            lambda doc: doc['cases'][0]['success']['controller'].update(
+                {'expected_terminal_state': None}
+            ),
+            'must expect terminal GOAL_HOLD',
+        ),
+        (
+            lambda doc: _remove_controller_list(
+                doc, 'required_state_sequence', 'required_state_sequence'
+            ),
+            'undeclared or vacuous evidence',
+        ),
+        (
+            lambda doc: _remove_controller_list(
+                doc, 'required_events', 'required_events'
+            ),
+            'must require events',
+        ),
+        (
+            lambda doc: doc['cases'][0]['success']['all_of'].append(
+                'required_event_sequence'
+            ),
+            'undeclared or vacuous evidence',
+        ),
+        (
+            lambda doc: doc['cases'][0]['success']['controller'].update(
+                {'forbidden_states': []}
+            ),
+            'undeclared or vacuous evidence',
+        ),
+        (
+            lambda doc: doc['cases'][0]['success']['controller'].update(
+                {'forbidden_events': []}
+            ),
+            'undeclared or vacuous evidence',
+        ),
+        (
+            lambda doc: doc['cases'][0]['success'].update(
+                {'collision_expected': None}
+            ),
+            'undeclared or vacuous evidence',
+        ),
+        (
+            lambda doc: doc['cases'][0]['success'].update(
+                {
+                    'minimum_saturation_samples': 0,
+                    'all_of': (
+                        doc['cases'][0]['success']['all_of']
+                        + ['minimum_saturation_samples']
+                    ),
+                }
+            ),
+            'undeclared or vacuous evidence',
+        ),
+    ],
+)
+def test_schema_v3_rejects_selected_vacuous_predicates(
+    tmp_path,
+    mutation,
+    match,
+):
+    """Do not let an empty declaration satisfy a selected success fact."""
+    document = _v3_document()
+    mutation(document)
+    with pytest.raises(ValueError, match=match):
+        _load(tmp_path, document)
+
+
+def test_schema_v3_safe_timeout_requires_ordered_timeout_then_failsafe(
+    tmp_path,
+):
+    """Reject an unordered or reversed timeout lifecycle declaration."""
+    document = _v3_document()
+    case = document['cases'][0]
+    case['algorithm']['launch_overrides']['verification_max_sec'] = 8.0
+    success = case['success']
+    success['all_of'].remove('controller_goal')
+    success['all_of'].append('required_event_sequence')
+    success['controller'].update({
+        'expected_verification_outcome': 'safe_timeout',
+        'expected_terminal_state': 'FAILSAFE',
+        'required_state_path': [
+            'SEARCH', 'VERIFY_EXTREMUM', 'FAILSAFE',
+        ],
+        'required_event_sequence': [
+            'FAILSAFE', 'TIMEOUT',
+        ],
+        'required_events': ['CONVERGENCE_CONFIRMED'],
+        'forbidden_states': ['GOAL_HOLD'],
+        'forbidden_events': ['GOAL_REACHED'],
+    })
+
+    with pytest.raises(ValueError, match='ordered TIMEOUT then FAILSAFE'):
+        _load(tmp_path, document)
+
+
+def test_historical_v2_activation_hash_and_case_keys_are_unchanged():
+    """Keep sealed v2 YAML and normalized identities immutable under v3."""
+    assert hashlib.sha256(HISTORICAL_V2_ACTIVATION.read_bytes()).hexdigest() == (
+        'a5e91d2132b3dacccedc24aba13bdacd9ef5ba4ec7c8ae7b69ced6eadaf47d72'
+    )
+    runs, unsupported = expand_suite(load_suite(HISTORICAL_V2_ACTIVATION))
+    assert unsupported == []
+    assert [run['case_key'] for run in runs] == [
+        'ab47b3264bcfa5da8880354c998b6152b9990be4f05e22b9da5d47ebdddd2f3e',
+        '966c661dc8282b140efaf8b87ee2215b6dc7696798647a03b09d61b31cfa9603',
+        '3877fb6052d7a0efd94070d6a7b6771b9726eea4fef900c4c317f6ad144cc040',
+        '5f1597bda8d261e7845568f1f2246d27fc275d4426d2b2131ad6551461fce608',
+        'b16f10d2ba9b8cfa62571bd5ace28014ee6fed979c4d8b91b49b238e17d5c587',
+        '70bc3ab8801d66939eef679bc0934480358fa5b8c5947aebd04fbb735aaa13fd',
+        'd5039ba75fcf0db9e36921b686f607406cbfcfc25a6dc924a3ce3424c84f9886',
+        '86c8af432cfe9570267bc10911472c2561b1415907939bbf9d7c134009e41e08',
+        '2d9d00a07b06fc59151054b7b1936eacdbfab7146c459ea6f9c6d106d2c69e93',
+        'c91832a5506809efe3f1f181e0e422dd67e0f64219bd5c03497e86bf98249066',
+    ]

@@ -1,0 +1,410 @@
+schema_version: 3
+suite_id: phase08_1_diagnostic_activation
+description: Versioned development contracts for corrected Phase 08.1 activation paths.
+mode: simulation
+execution:
+  max_parallel_runs: 1
+  gazebo_gui: false
+  preflight_timeout_sec: 150.0
+  run_timeout_sec: 180.0
+  wall_timeout_sec: 480.0
+  shutdown_grace_sec: 30.0
+  stop_on_run_failure: false
+  stop_on_cleanup_failure: true
+metadata:
+  experiment_version: phase08.1-diagnostic-activation
+  operator_notes: Development evidence only; historical v1/v2 and physical hardware are excluded.
+level_map: {"1": 450.0, "2": 800.0, "3": 1200.0, "4": 1800.0, "5": 2500.0}
+defaults:
+  bounds_m: [-2.0, 2.0, -2.0, 2.0]
+  room_center_m: [0.0, 0.0]
+  validation_world: true
+  simulation_contacts_enabled: true
+  disturbances:
+    sensor_noise: {model: none, bound: 0.0}
+    sensor_delay_sec: 0.0
+    pose_delay_sec: 0.0
+cases:
+  - case_id: activation_below_target_low
+    family: smoke
+    description: Classify an isolated 450-input global source below the calibrated controller target.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8301]
+    starts: [{id: west_east, x_m: -0.8, y_m: 0.0, yaw_rad: 0.0}]
+    sources:
+      - {id: global_source, x_m: 0.9, y_m: 0.0, relative_lumen_input: 450.0, evaluation_role: goal}
+    algorithm:
+      ablations: {}
+      launch_overrides: &diagnostic_parameters
+        gaussian_fill_covariance_scale: 2.5
+        gaussian_fill_amplitude_depth_scale: 1.5
+        gaussian_fill_exit_sigma: 2.5
+        stall_window_sec: 3.0
+        minimum_radial_progress_m: 0.05
+        goal_score_threshold: 0.95
+        goal_score_rotation_period_sec: 3.0
+        goal_score_required_rotations: 2
+        goal_hold_sec: 3.0
+        undesired_score_hold_sec: 3.0
+        verification_max_sec: 12.0
+    success:
+      all_of:
+        - recording_complete
+        - cleanup_complete
+        - required_state_path
+        - required_events
+        - no_forbidden_states
+        - no_forbidden_events
+        - collision_expectation
+      controller:
+        contract_id: activation_below_target_low
+        expected_verification_outcome: below_target_extremum
+        reachability_argument: The live one-source model bounds the 450-input score at 0.778503, below 0.95.
+        expected_terminal_state: null
+        required_state_path: [SEARCH, VERIFY_EXTREMUM, DESIGN_OR_MERGE_FILL]
+        required_events: [CONVERGENCE_CONFIRMED]
+        forbidden_states: [GOAL_HOLD, FAILSAFE]
+        forbidden_events: [GOAL_REACHED, FILL_REJECTED, FILL_DESIGN_FAILED, TIMEOUT, FAILSAFE]
+      ground_truth:
+        goal_source_ids: [global_source]
+        final_position_tolerance_m: 0.35
+      collision_expected: false
+
+  - case_id: activation_below_target_medium_fill
+    family: escape
+    description: Classify and fill an isolated 800-input global source that remains below target.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8302]
+    starts: [{id: south_north, x_m: 0.0, y_m: -0.8, yaw_rad: 1.5707963267948966}]
+    sources:
+      - {id: global_source, x_m: 0.0, y_m: 0.9, relative_lumen_input: 800.0, evaluation_role: goal}
+    algorithm:
+      ablations: {}
+      launch_overrides: *diagnostic_parameters
+    success:
+      all_of:
+        - recording_complete
+        - cleanup_complete
+        - required_state_path
+        - required_events
+        - no_forbidden_states
+        - no_forbidden_events
+        - collision_expectation
+      controller:
+        contract_id: activation_below_target_medium_fill
+        expected_verification_outcome: below_target_extremum
+        reachability_argument: The live one-source model bounds the 800-input score at 0.945004, below 0.95.
+        expected_terminal_state: null
+        required_state_path: [SEARCH, VERIFY_EXTREMUM, DESIGN_OR_MERGE_FILL, ESCAPE_REPULSE]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED, ESCAPE_STARTED]
+        forbidden_states: [GOAL_HOLD, FAILSAFE]
+        forbidden_events: [GOAL_REACHED, FILL_REJECTED, FILL_DESIGN_FAILED, TIMEOUT, FAILSAFE]
+      ground_truth:
+        goal_source_ids: [global_source]
+        final_position_tolerance_m: 0.35
+      collision_expected: false
+
+  - case_id: activation_goal_high
+    family: smoke
+    description: Reach the calibrated target through two fresh verification rotations and dwell.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8303]
+    starts: [{id: east_west, x_m: 0.8, y_m: 0.0, yaw_rad: 3.141592653589793}]
+    sources:
+      - {id: global_source, x_m: -0.9, y_m: 0.0, relative_lumen_input: 2500.0, evaluation_role: goal}
+    algorithm:
+      ablations: {}
+      launch_overrides: *diagnostic_parameters
+    success:
+      all_of:
+        - recording_complete
+        - cleanup_complete
+        - controller_goal
+        - ground_truth_goal
+        - expected_terminal_state
+        - required_state_path
+        - required_events
+        - no_forbidden_states
+        - no_forbidden_events
+        - collision_expectation
+      controller:
+        contract_id: activation_goal_high
+        expected_verification_outcome: goal
+        reachability_argument: The retained v2 high geometry sustained score 1.0 and reached GOAL_HOLD; M6 must prove the fresh post-entry window.
+        expected_terminal_state: GOAL_HOLD
+        required_state_path: [SEARCH, VERIFY_EXTREMUM, GOAL_HOLD]
+        required_events: [CONVERGENCE_CONFIRMED, GOAL_REACHED]
+        forbidden_states: [DESIGN_OR_MERGE_FILL, ESCAPE_REPULSE, ESCAPE_ASSIST, RECENTER, FAILSAFE]
+        forbidden_events: [FILL_CREATED, FILL_MERGED, FILL_SUPERSEDED, FILL_REJECTED, FILL_DESIGN_FAILED, ESCAPE_STARTED, ESCAPE_STALLED, RECENTER_STARTED, RECENTER_COMPLETE, TIMEOUT, FAILSAFE]
+      ground_truth:
+        goal_source_ids: [global_source]
+        final_position_tolerance_m: 0.35
+      collision_expected: false
+
+  - case_id: activation_fill_create
+    family: escape
+    description: Create one typed fill at a below-target local extremum while retaining a later goal.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8304]
+    starts: [{id: local_center, x_m: -0.8, y_m: 0.0, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -0.8, y_m: 0.0, relative_lumen_input: 700.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.3, y_m: 0.8, relative_lumen_input: 1800.0, evaluation_role: goal}
+    algorithm:
+      ablations: {}
+      launch_overrides: *diagnostic_parameters
+    success:
+      all_of:
+        - recording_complete
+        - cleanup_complete
+        - required_state_path
+        - required_events
+        - no_forbidden_states
+        - no_forbidden_events
+        - collision_expectation
+      controller:
+        contract_id: activation_fill_create
+        expected_verification_outcome: below_target_extremum
+        reachability_argument: Retained v2 evidence reached DESIGN and emitted a late fill; M2 removed the measured synchronization delay.
+        expected_terminal_state: null
+        required_state_path: [SEARCH, VERIFY_EXTREMUM, DESIGN_OR_MERGE_FILL, ESCAPE_REPULSE]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED, ESCAPE_STARTED]
+        forbidden_states: [FAILSAFE]
+        forbidden_events: [FILL_REJECTED, FILL_DESIGN_FAILED, TIMEOUT, FAILSAFE]
+      ground_truth:
+        goal_source_ids: [goal]
+        final_position_tolerance_m: 0.35
+      collision_expected: false
+
+  - case_id: activation_pure_escape
+    family: escape
+    description: Complete a pure-repulsion escape and resume SEARCH without assist or recenter.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8305]
+    starts: [{id: local_center, x_m: -0.8, y_m: 0.0, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -0.8, y_m: 0.0, relative_lumen_input: 700.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.3, y_m: 0.8, relative_lumen_input: 1800.0, evaluation_role: goal}
+    algorithm:
+      ablations: {affine_assist_enabled: false, recenter_enabled: false}
+      launch_overrides: *diagnostic_parameters
+    success:
+      all_of:
+        - recording_complete
+        - cleanup_complete
+        - required_state_path
+        - required_events
+        - no_forbidden_states
+        - no_forbidden_events
+        - collision_expectation
+      controller:
+        contract_id: activation_pure_escape
+        expected_verification_outcome: below_target_extremum
+        reachability_argument: The initial classifier and fill path is retained evidence; the direct REPULSE-to-SEARCH transition is covered synthetically and remains a runtime hypothesis.
+        expected_terminal_state: null
+        required_state_path: [SEARCH, VERIFY_EXTREMUM, DESIGN_OR_MERGE_FILL, ESCAPE_REPULSE, SEARCH]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED, ESCAPE_STARTED]
+        forbidden_states: [ESCAPE_ASSIST, RECENTER, FAILSAFE]
+        forbidden_events: [ESCAPE_STALLED, FILL_REJECTED, FILL_DESIGN_FAILED, RECENTER_STARTED, TIMEOUT, FAILSAFE]
+      ground_truth:
+        goal_source_ids: [goal]
+        final_position_tolerance_m: 0.35
+      collision_expected: false
+
+  - case_id: activation_stalled_assist
+    family: escape
+    description: Force one bounded progress stall, redesign, and assisted escape entry.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8306]
+    starts: [{id: local_center, x_m: -0.7, y_m: -0.2, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -0.7, y_m: -0.2, relative_lumen_input: 800.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.4, y_m: 0.8, relative_lumen_input: 1900.0, evaluation_role: goal}
+    algorithm:
+      ablations: {}
+      launch_overrides:
+        <<: *diagnostic_parameters
+        stall_window_sec: 1.0
+        minimum_radial_progress_m: 5.0
+    success:
+      all_of:
+        - recording_complete
+        - cleanup_complete
+        - required_state_path
+        - required_events
+        - no_forbidden_states
+        - no_forbidden_events
+        - collision_expectation
+      controller:
+        contract_id: activation_stalled_assist
+        expected_verification_outcome: below_target_extremum
+        reachability_argument: A 5 m progress requirement cannot be met in the bounded room; synthetic integration proves one stall-redesign transition into ASSIST.
+        expected_terminal_state: null
+        required_state_path: [SEARCH, VERIFY_EXTREMUM, DESIGN_OR_MERGE_FILL, ESCAPE_REPULSE, DESIGN_OR_MERGE_FILL, ESCAPE_ASSIST]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED, ESCAPE_STARTED, ESCAPE_STALLED]
+        forbidden_states: [FAILSAFE]
+        forbidden_events: [FILL_REJECTED, FILL_DESIGN_FAILED, TIMEOUT, FAILSAFE]
+      ground_truth:
+        goal_source_ids: [goal]
+        final_position_tolerance_m: 0.35
+      collision_expected: false
+
+  - case_id: activation_fill_merge
+    family: fill_merge
+    description: Force a nearby redesign and require the typed merge lifecycle.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8307]
+    starts: [{id: southwest_northeast, x_m: -1.4, y_m: -1.0, yaw_rad: 0.5}]
+    sources:
+      - {id: local_a, x_m: -0.40, y_m: 0.0, relative_lumen_input: 700.0, evaluation_role: local_minimum}
+      - {id: local_b, x_m: 0.15, y_m: 0.10, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.5, y_m: 1.3, relative_lumen_input: 2100.0, evaluation_role: goal}
+    algorithm:
+      ablations: {}
+      launch_overrides:
+        <<: *diagnostic_parameters
+        stall_window_sec: 1.0
+        minimum_radial_progress_m: 5.0
+        gaussian_fill_merge_bandwidth_m: 0.75
+        gaussian_fill_merge_radius_scale: 2.5
+    success:
+      all_of:
+        - recording_complete
+        - cleanup_complete
+        - required_state_path
+        - required_events
+        - required_event_sequence
+        - no_forbidden_states
+        - no_forbidden_events
+        - collision_expectation
+      controller:
+        contract_id: activation_fill_merge
+        expected_verification_outcome: below_target_extremum
+        reachability_argument: Both lowered local-source centers remain below target; forced nearby redesign and existing merge tests make FILL_MERGED the explicit runtime question.
+        expected_terminal_state: null
+        required_state_path: [SEARCH, VERIFY_EXTREMUM, DESIGN_OR_MERGE_FILL, ESCAPE_REPULSE, DESIGN_OR_MERGE_FILL, ESCAPE_ASSIST]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED, ESCAPE_STARTED, ESCAPE_STALLED]
+        required_event_sequence: [FILL_SUPERSEDED, FILL_MERGED]
+        forbidden_states: [FAILSAFE]
+        forbidden_events: [FILL_REJECTED, FILL_DESIGN_FAILED, TIMEOUT, FAILSAFE]
+      ground_truth:
+        goal_source_ids: [goal]
+        final_position_tolerance_m: 0.35
+      collision_expected: false
+
+  - case_id: activation_recenter_resume
+    family: recenter_resume
+    description: Complete escape, recenter to the room, and resume SEARCH.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8308]
+    starts: [{id: local_west, x_m: -1.1, y_m: 0.2, yaw_rad: 0.0}]
+    sources:
+      - {id: local, x_m: -1.1, y_m: 0.2, relative_lumen_input: 750.0, evaluation_role: local_minimum}
+      - {id: goal, x_m: 1.45, y_m: 1.0, relative_lumen_input: 1900.0, evaluation_role: goal}
+    algorithm:
+      ablations: {}
+      launch_overrides: *diagnostic_parameters
+    success:
+      all_of:
+        - recording_complete
+        - cleanup_complete
+        - required_state_path
+        - required_events
+        - no_forbidden_states
+        - no_forbidden_events
+        - collision_expectation
+      controller:
+        contract_id: activation_recenter_resume
+        expected_verification_outcome: below_target_extremum
+        reachability_argument: Retained disturbed v2 evidence observed REPULSE to RECENTER to SEARCH; M4 removed the dedicated case startup race.
+        expected_terminal_state: null
+        required_state_path: [SEARCH, VERIFY_EXTREMUM, DESIGN_OR_MERGE_FILL, ESCAPE_REPULSE, RECENTER, SEARCH]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED, ESCAPE_STARTED, RECENTER_STARTED, RECENTER_COMPLETE]
+        forbidden_states: [FAILSAFE]
+        forbidden_events: [FILL_REJECTED, FILL_DESIGN_FAILED, TIMEOUT, FAILSAFE]
+      ground_truth:
+        goal_source_ids: [goal]
+        final_position_tolerance_m: 0.35
+      collision_expected: false
+
+  - case_id: activation_boundary_below_target
+    family: boundary
+    description: Classify and escape an isolated below-target source near the west wall without contact.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8309]
+    starts: [{id: west_wall_east, x_m: -1.45, y_m: 0.0, yaw_rad: 0.0}]
+    sources:
+      - {id: global_source, x_m: -0.6, y_m: 0.0, relative_lumen_input: 800.0, evaluation_role: goal}
+    algorithm:
+      ablations: {}
+      launch_overrides: *diagnostic_parameters
+    success:
+      all_of:
+        - recording_complete
+        - cleanup_complete
+        - required_state_path
+        - required_events
+        - no_forbidden_states
+        - no_forbidden_events
+        - collision_expectation
+      controller:
+        contract_id: activation_boundary_below_target
+        expected_verification_outcome: below_target_extremum
+        reachability_argument: The isolated 800-input source is analytically below target; retained boundary evidence reached DESIGN without collision.
+        expected_terminal_state: null
+        required_state_path: [SEARCH, VERIFY_EXTREMUM, DESIGN_OR_MERGE_FILL, ESCAPE_REPULSE]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED, ESCAPE_STARTED]
+        forbidden_states: [GOAL_HOLD, FAILSAFE]
+        forbidden_events: [GOAL_REACHED, FILL_REJECTED, FILL_DESIGN_FAILED, TIMEOUT, FAILSAFE]
+      ground_truth:
+        goal_source_ids: [global_source]
+        final_position_tolerance_m: 0.35
+      collision_expected: false
+
+  - case_id: activation_noise_delay_recenter
+    family: noise_delay
+    description: Preserve the below-target escape and recenter path under bounded noise and delays.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [8310]
+    starts: [{id: center_northeast, x_m: 0.0, y_m: 0.0, yaw_rad: 0.7853981633974483}]
+    sources:
+      - {id: global_source, x_m: 1.0, y_m: 1.0, relative_lumen_input: 700.0, evaluation_role: goal}
+    disturbances:
+      sensor_noise: {model: uniform, bound: 0.001}
+      sensor_delay_sec: 0.05
+      pose_delay_sec: 0.05
+    algorithm:
+      ablations: {}
+      launch_overrides: *diagnostic_parameters
+    success:
+      all_of:
+        - recording_complete
+        - cleanup_complete
+        - required_state_path
+        - required_events
+        - no_forbidden_states
+        - no_forbidden_events
+        - collision_expectation
+      controller:
+        contract_id: activation_noise_delay_recenter
+        expected_verification_outcome: below_target_extremum
+        reachability_argument: The 700-input score has margin below 0.95 larger than the bounded 0.001-V disturbance; the retained delayed case proves the lifecycle route.
+        expected_terminal_state: null
+        required_state_path: [SEARCH, VERIFY_EXTREMUM, DESIGN_OR_MERGE_FILL, ESCAPE_REPULSE, RECENTER, SEARCH]
+        required_events: [CONVERGENCE_CONFIRMED, FILL_CREATED, ESCAPE_STARTED, RECENTER_STARTED, RECENTER_COMPLETE]
+        forbidden_states: [GOAL_HOLD, FAILSAFE]
+        forbidden_events: [GOAL_REACHED, FILL_REJECTED, FILL_DESIGN_FAILED, TIMEOUT, FAILSAFE]
+      ground_truth:
+        goal_source_ids: [global_source]
+        final_position_tolerance_m: 0.35
+      collision_expected: false

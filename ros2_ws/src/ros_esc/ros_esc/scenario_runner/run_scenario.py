@@ -509,6 +509,70 @@ def _subsequence(required, observed):
     )
 
 
+def _first_verification_path(required, observed):
+    """Match one contiguous path at the first observed verification entry."""
+    if not required:
+        return True
+    try:
+        required_verify = required.index('VERIFY_EXTREMUM')
+        observed_verify = observed.index('VERIFY_EXTREMUM')
+    except ValueError:
+        return False
+    start = observed_verify - required_verify
+    if start < 0:
+        return False
+    return observed[start:start + len(required)] == required
+
+
+def _canonical_state_sequence(messages):
+    """Use the typed enum and reject contradictory free-form state names."""
+    observed = []
+    error = None
+    for message in messages:
+        if not message.state_valid:
+            continue
+        try:
+            state_value = int(message.state)
+        except (TypeError, ValueError):
+            state_value = None
+        canonical = STATE_NAMES.get(state_value)
+        declared = str(message.state_name or '').strip().removeprefix(
+            'STATE_'
+        )
+        if canonical is None:
+            error = f'algorithm state contains unknown enum {message.state}'
+            continue
+        if canonical == 'UNAVAILABLE':
+            error = 'valid algorithm state reports STATE_UNAVAILABLE'
+        if declared and declared != canonical:
+            error = (
+                'algorithm state name/enum mismatch: '
+                f'{declared} != {canonical}'
+            )
+        if not observed or canonical != observed[-1]:
+            observed.append(canonical)
+    return observed, error
+
+
+def _canonical_event_sequence(messages):
+    """Resolve event enums and reject unknown typed event values."""
+    observed = []
+    error = None
+    for message in messages:
+        try:
+            event_value = int(message.event_type)
+        except (TypeError, ValueError):
+            event_value = None
+        canonical = EVENT_NAMES.get(event_value)
+        if canonical is None:
+            error = f'algorithm event contains unknown enum {message.event_type}'
+            continue
+        if canonical == 'UNSPECIFIED':
+            error = 'algorithm event reports EVENT_UNSPECIFIED'
+        observed.append(canonical)
+    return observed, error
+
+
 def _unavailable_outcomes(reason, readiness_interval_available=False):
     """Return tri-state behavioral outcomes for invalid infrastructure."""
     return {
@@ -520,8 +584,11 @@ def _unavailable_outcomes(reason, readiness_interval_available=False):
         'simulation_ground_truth': 'unavailable',
         'final_position': None,
         'final_goal_distances_m': {},
+        'required_state_path_passed': None,
         'required_state_sequence_passed': None,
+        'required_event_sequence_passed': None,
         'required_events_passed': None,
+        'forbidden_states_absent': None,
         'forbidden_events_absent': None,
         'expected_terminal_state_passed': None,
         'saturation_sample_count': None,
@@ -612,27 +679,13 @@ def _bag_outcomes(run_directory, resolved):
         )
     )
     collision_expected = resolved['success'].get('collision_expected')
-    sampled_states = [
-        (
-            message.state_name
-            or STATE_NAMES.get(message.state, str(message.state))
-        )
-        .removeprefix('STATE_')
-        for message in states if message.state_valid
-    ]
-    observed_states = []
-    for state in sampled_states:
-        if not observed_states or state != observed_states[-1]:
-            observed_states.append(state)
-    observed_events = [
-        EVENT_NAMES.get(message.event_type, str(message.event_type))
-        for message in events
-    ]
+    observed_states, state_error = _canonical_state_sequence(states)
+    observed_events, event_error = _canonical_event_sequence(events)
     saturation_samples = sum(
         1 for message in diagnostics if any(message.saturation_flags)
     )
     final_position = None
-    outcome_error = None
+    outcome_error = state_error or event_error
     if odometry:
         final_x = float(odometry[-1].pose.pose.position.x)
         final_y = float(odometry[-1].pose.pose.position.y)
@@ -642,7 +695,7 @@ def _bag_outcomes(run_directory, resolved):
                 'y_m': final_y,
             }
         else:
-            outcome_error = (
+            outcome_error = outcome_error or (
                 'terminal odometry contains a nonfinite position'
             )
     distances = {}
@@ -657,7 +710,7 @@ def _bag_outcomes(run_directory, resolved):
                 )
                 if not math.isfinite(distance):
                     distances = {}
-                    outcome_error = (
+                    outcome_error = outcome_error or (
                         'terminal goal distance is nonfinite'
                     )
                     break
@@ -686,7 +739,9 @@ def _bag_outcomes(run_directory, resolved):
             else 'failed'
         )
     controller_expectations = resolved['success']['controller']
-    expected_terminal = controller_expectations['expected_terminal_state']
+    expected_terminal = controller_expectations.get(
+        'expected_terminal_state'
+    )
     terminal_ok = (
         expected_terminal is None
         or bool(observed_states)
@@ -695,15 +750,29 @@ def _bag_outcomes(run_directory, resolved):
     )
     required_states = [
         str(name).removeprefix('STATE_')
-        for name in controller_expectations['required_state_sequence']
+        for name in controller_expectations.get('required_state_sequence', [])
+    ]
+    required_state_path = [
+        str(name).removeprefix('STATE_')
+        for name in controller_expectations.get('required_state_path', [])
     ]
     required_events = [
         str(name).removeprefix('EVENT_')
-        for name in controller_expectations['required_events']
+        for name in controller_expectations.get('required_events', [])
+    ]
+    required_event_sequence = [
+        str(name).removeprefix('EVENT_')
+        for name in controller_expectations.get(
+            'required_event_sequence', []
+        )
+    ]
+    forbidden_states = [
+        str(name).removeprefix('STATE_')
+        for name in controller_expectations.get('forbidden_states', [])
     ]
     forbidden_events = [
         str(name).removeprefix('EVENT_')
-        for name in controller_expectations['forbidden_events']
+        for name in controller_expectations.get('forbidden_events', [])
     ]
     return {
         'readiness_interval_available': first_true is not None,
@@ -716,11 +785,20 @@ def _bag_outcomes(run_directory, resolved):
         'simulation_ground_truth': ground_truth,
         'final_position': final_position,
         'final_goal_distances_m': distances,
+        'required_state_path_passed': _first_verification_path(
+            required_state_path, observed_states
+        ),
         'required_state_sequence_passed': _subsequence(
             required_states, observed_states
         ),
+        'required_event_sequence_passed': _subsequence(
+            required_event_sequence, observed_events
+        ),
         'required_events_passed': all(
             event in observed_events for event in required_events
+        ),
+        'forbidden_states_absent': all(
+            state not in observed_states for state in forbidden_states
         ),
         'forbidden_events_absent': all(
             event not in observed_events for event in forbidden_events
@@ -765,10 +843,22 @@ def classify_result(
         'ground_truth_goal': outcome_status(
             outcomes.get('simulation_ground_truth')
         ),
+        'expected_terminal_state': outcomes.get(
+            'expected_terminal_state_passed'
+        ),
         'required_state_sequence': outcomes.get(
             'required_state_sequence_passed'
         ),
+        'required_state_path': outcomes.get(
+            'required_state_path_passed'
+        ),
         'required_events': outcomes.get('required_events_passed'),
+        'required_event_sequence': outcomes.get(
+            'required_event_sequence_passed'
+        ),
+        'no_forbidden_states': outcomes.get(
+            'forbidden_states_absent'
+        ),
         'no_forbidden_events': outcomes.get(
             'forbidden_events_absent'
         ),
@@ -943,7 +1033,7 @@ def execute_suite(
                 resolved, run_id, metadata_path, root, execution, launch
             )
             if dry_run:
-                summary['runs'].append({
+                dry_run_record = {
                     'run_id': run_id,
                     'case_id': resolved['case_id'],
                     'case_key': resolved['case_key'],
@@ -952,7 +1042,12 @@ def execute_suite(
                     'launch_argv': launch,
                     'record_argv': record,
                     'metadata': metadata,
-                })
+                }
+                if resolved['schema_version'] >= 3:
+                    dry_run_record['activation_contract'] = (
+                        resolved['success']['controller']
+                    )
+                summary['runs'].append(dry_run_record)
                 continue
             process_result = run_record_process(
                 record,

@@ -204,6 +204,36 @@ holdout, 50 additional unique validation, and 10 repeats. Only activation ran.
 Phase 08.1 uses a fresh development-only root for minimal probes; any future
 formal attempt requires a new version and sealed contract.
 
+## Phase 08.1 diagnostic activation
+
+The schema-v3 suite is development-only and does not call the closed v2
+orchestrator. Inspect all ten resolved contracts without Gazebo:
+
+```bash
+ros2 run ros_esc run_scenario \
+  src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_1_diagnostic_activation.yaml \
+  --operator "$USER" \
+  --dry-run \
+  --summary-output /tmp/phase08_1_m5_dry_run.yaml
+```
+
+M6 runs only predeclared selected cases under a new root such as
+`~/Experiments/GESC-Gaussian/runs/phase08_1_m6`. Never point this command at
+the historical `phase08_v2` root. Every probe is finite and serial:
+
+```bash
+PHASE08_1_ROOT=~/Experiments/GESC-Gaussian/runs/phase08_1_m6
+
+ros2 run ros_esc run_scenario \
+  src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_1_diagnostic_activation.yaml \
+  --operator "$USER" \
+  --case-id activation_goal_high \
+  --runs-root "$PHASE08_1_ROOT"
+```
+
+Use the live Phase 08 status for the next predeclared case. Do not dispatch the
+whole ten-case suite merely because it is schema-valid.
+
 ## Stop a run
 
 For an indefinite run (`--duration-sec 0`), press Ctrl-C once in the
