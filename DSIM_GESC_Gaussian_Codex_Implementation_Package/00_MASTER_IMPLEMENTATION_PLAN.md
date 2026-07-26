@@ -250,18 +250,22 @@ Phase 08.1 completed only the bounded recovery sequence:
 5. A closeout handoff reporting one full calibrated-goal pass and one mixed
    fill/escape-prefix pass whose later recenter lifecycle failed at timeout.
 
-That result does not establish simulation readiness. The smallest currently
-justified successor is a separately reviewed recenter correction with
-deterministic closed-loop tests and, after they pass, an initial predeclared
-development probe. A successor Plan may choose another evidence-backed
-provisional recenter policy, but it must preserve the hard safety and evidence
-contracts.
+Phase 08.2 then completed the separately reviewed recenter correction. It
+preserved the assist policy and hard safety geometry, passed deterministic
+closed-loop and integration tests, and passed one predeclared full-path
+development probe through `RECENTER -> SEARCH` without timeout, failsafe,
+collision, recording, cleanup, or final-zero failure.
+
+Those results validate recenter recovery but do not establish simulation
+readiness. The smallest currently justified successor is a separately reviewed
+v3 acceptance Plan with a new sealed contract, development/tuning boundary,
+clean freeze, selection-blind holdout, unique validation denominator, and
+reproducibility evidence.
 
 The following are future-version steps, not Phase 08.1 completion criteria or
 authorization:
 
-1. Complete any remaining bounded, versioned policy development with every
-   attempt retained.
+1. Declare the bounded v3 development/tuning design and retain every attempt.
 2. Declare and hash one machine-readable acceptance contract before freeze.
 3. Freeze and commit one code/parameter/scenario set.
 4. Run a new selection-blind holdout and fixed unique validation denominator

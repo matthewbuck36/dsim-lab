@@ -122,26 +122,29 @@ docs/codex/gesc_gaussian/plans/phase_00_plan.md
 The Phase 00 Implement chat must read and verify that file before creating the
 audit documents.
 
-## Current checkpoint after Phase 08.1
+## Current checkpoint after Phase 08.2
 
 Phases 00-07.5 are implemented. Phase 08 v1 and v2 are closed failed historical
 evidence. Phase 08.1 completed its bounded diagnosis, implementation recovery,
-and two development-only runtime probes. Read:
+and two development-only runtime probes. Phase 08.2 corrected and validated
+recenter recovery in one separately versioned development probe. Read:
 
 ```text
 docs/codex/gesc_gaussian/plans/phase_08_1_plan.md
 docs/codex/gesc_gaussian/handoffs/phase_08_1_handoff.md
+docs/codex/gesc_gaussian/plans/phase_08_2_plan.md
+docs/codex/gesc_gaussian/handoffs/phase_08_2_handoff.md
 ```
 
-The calibrated-goal probe passed. The fill/escape activation prefix passed,
-but its full lifecycle failed when the clearance-first recenter policy orbited
-until timeout. Simulation readiness is therefore not established. The
-smallest currently justified successor is a bounded recenter Plan with
-deterministic closed-loop regression. A v3 design may be planned separately,
-but no v3 tuning, freeze, or acceptance execution may begin until the recenter
-question is closed by passing evidence or a separately reviewed policy change.
-Do not resume or relabel either historical evidence root, rerun the completed
-probes unchanged, launch physical motion, or proceed to Phase 09.
+The calibrated-goal probe passed; the Phase 08.1 fill/escape prefix passed but
+timed out during recenter. Phase 08.2 preserved that evidence, corrected the
+recenter-only policy, and passed the fresh full
+`SEARCH -> VERIFY_EXTREMUM -> DESIGN_OR_MERGE_FILL -> ESCAPE_REPULSE ->
+RECENTER -> SEARCH` contract. Simulation readiness is still not established:
+the next justified work is a separately reviewed v3 acceptance Plan. Do not
+resume or relabel historical evidence, rerun completed probes unchanged, start
+v3 tuning/freeze/acceptance without that Plan, launch physical motion, or
+proceed to Phase 09.
 
 ---
 

@@ -9,6 +9,8 @@ Read:
 - `docs/codex/gesc_gaussian/knowledge_bridge_phase_00_05.md`
 - `docs/codex/gesc_gaussian/status/phase_08_status.md`
 - `docs/codex/gesc_gaussian/handoffs/phase_08_1_handoff.md` when it exists
+- `docs/codex/gesc_gaussian/plans/phase_08_2_plan.md` and
+  `docs/codex/gesc_gaussian/handoffs/phase_08_2_handoff.md` when they exist
 - the Phase 05.5 bridge/handoff, Phase 07/07.5 handoffs, and older handoffs only when a current claim depends on them.
 
 Before editing, initialize or resume the live status, verify it against Git,
@@ -62,9 +64,10 @@ Tasks:
    readiness, evidence, and scenario-contract defects with focused tests and
    minimal development-only simulation probes.
 
-At the current repository checkpoint, Phase 08.1 ends with its M7 handoff.
-Tasks 5-12 below are requirements for a separately planned and approved future
-experiment version; this prompt does not authorize executing them directly.
+At the current repository checkpoint, Phase 08.2 ends with its recenter
+recovery handoff. Tasks 5-12 below are requirements for a separately planned
+and approved v3 experiment version; this prompt does not authorize executing
+them directly.
 
 5. For a future experiment version, prove diagnostic infrastructure and
    scenario-specific lifecycle reachability before formal freeze.
@@ -90,6 +93,8 @@ Write:
 - `docs/codex/gesc_gaussian/handoffs/phase_08_handoff.md`
 - `docs/codex/gesc_gaussian/handoffs/phase_08_1_handoff.md` for the bounded
   recovery closeout
+- `docs/codex/gesc_gaussian/handoffs/phase_08_2_handoff.md` for the bounded
+  recenter-recovery closeout
 - a validation report under `docs/codex/gesc_gaussian/validation/`
 
 Use a result-specific commit message. Do not claim validation or freeze when

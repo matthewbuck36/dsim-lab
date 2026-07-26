@@ -98,6 +98,7 @@ fi
 
 if (( PHASE_NUMBER >= 9 )); then
   required+=("$DOCS/handoffs/phase_08_1_handoff.md")
+  required+=("$DOCS/handoffs/phase_08_2_handoff.md")
 fi
 
 if [[ "$STAGE" == "implement" ]]; then

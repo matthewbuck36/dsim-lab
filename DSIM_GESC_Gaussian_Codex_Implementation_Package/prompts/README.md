@@ -41,8 +41,10 @@ Phase 00 must not be skipped. It converts generic logical names in this package 
 
 On the current branch, Phases 00-07.5 are implemented. Phase 08 v1 and v2 are
 closed failed historical evidence. Phase 08.1 completed its bounded recovery
-with a mixed diagnostic result; read
-`docs/codex/gesc_gaussian/handoffs/phase_08_1_handoff.md`. No successor is
-authorized merely by this prompt sequence. Create and review a bounded
-recenter-correction Plan before any new development probe, and do not rerun
-historical evidence, start v3 acceptance, or advance to physical work.
+with a mixed diagnostic result, and Phase 08.2 subsequently validated the
+bounded recenter correction; read
+`docs/codex/gesc_gaussian/handoffs/phase_08_1_handoff.md` and
+`docs/codex/gesc_gaussian/handoffs/phase_08_2_handoff.md`. No successor is
+authorized merely by this prompt sequence. Create and review a separate v3
+acceptance Plan before development/tuning, freeze, holdout, or validation, and
+do not rerun historical evidence or advance to physical work.

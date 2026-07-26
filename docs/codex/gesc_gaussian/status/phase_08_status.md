@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-26T00:49:29-07:00`
-Status: `IN PROGRESS — PHASE 08.2 RECENTER RECOVERY; M4 PROBE SEALED / NOT DISPATCHED`
+Last verified: `2026-07-26T01:05:13-07:00`
+Status: `COMPLETE — PHASE 08.2 RECENTER RECOVERY VALIDATED; NO V3 ACCEPTANCE`
 
 ## Objective
 
@@ -31,6 +31,8 @@ remains immutable and cannot count toward a future acceptance attempt.
 - Phase 08.2 M3 probe-candidate implementation:
   `204d1a1c9efad3d7d3b9f81315437fa8f671bdae`
   (`phase 08.2: validate recenter probe candidate`).
+- Phase 08.2 terminal handoff SHA-256:
+  `7f97d6bed7e8a28eccdd60298a52c1cdcd8b94cca70038d91f2b6007d3a05261`.
 - Clean M6 evidence commit:
   `c959ce1` (`phase 08.1: retain minimal runtime probes`).
 - M7 documentation/checkpoint base: clean `c959ce1`; the bounded closeout
@@ -198,12 +200,13 @@ remains immutable and cannot count toward a future acceptance attempt.
 - Completed milestone: Phase 08.2 M1 plan and preflight.
 - Completed milestone: Phase 08.2 M2 deterministic recenter correction.
 - Completed milestone: Phase 08.2 M3 source-state validation.
-- Current milestone: Phase 08.2 M4 one retained Gazebo probe and closeout.
+- Completed milestone: Phase 08.2 M4 retained Gazebo probe and closeout.
+- Current milestone: none; Phase 08.2 is closed.
 - Current plan:
   `docs/codex/gesc_gaussian/plans/phase_08_2_plan.md`.
-- Next criterion: commit the validated M3 source state, record the exact
-  candidate commit and pre-execution declaration, then execute the sealed
-  one-case GUI Gazebo probe exactly once.
+- Next criterion: create and review a separate v3 acceptance Plan. No v3
+  development/tuning, freeze, holdout, validation, reproducibility, tag,
+  Phase 09, or physical action is authorized by this closeout.
 - V3 acceptance, a readiness tag, Phase 09, and physical hardware remain
   unauthorized.
 
@@ -313,9 +316,48 @@ remains immutable and cannot count toward a future acceptance attempt.
   denominator, readiness tag, Phase 09 action, or physical command is
   authorized.
 
+### Phase 08.2 M4 retained result
+
+- The one authorized GUI-enabled seed-8304 probe ran exactly once from
+  candidate implementation `204d1a1` and suite SHA-256
+  `1b116ef7984d8a679f69da919576125a1ad066da3d55098466da9afac2bae017`.
+  The outer runner and `record_run` both returned `0` without timeout.
+- Retained run ID:
+  `20260726T075031828248Z_simulation_phase08_2_recenter-recenter_retained_fill_create-robust_gaussian_v1-6eb8111305_92a4911a`.
+- Evidence root:
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_2_recenter`;
+  summary:
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_2_recenter/recenter_retained_fill_create_summary.yaml`.
+- The full required path passed:
+  `SEARCH -> VERIFY_EXTREMUM -> DESIGN_OR_MERGE_FILL -> ESCAPE_REPULSE ->
+  RECENTER -> SEARCH`. Required convergence/fill/escape/recenter events were
+  present. Forbidden states/events and collision were absent.
+- Recording completeness passed with no failures or warnings. Cleanup left no
+  new node or session process. Final zero passed on all three command evidence
+  streams; final readiness was false; typed timestamps, event freshness and
+  causality, clean preauthorization, and strict finite JSON passed.
+- One typed fill was created. One escape completed in `7.532641327 s`.
+  Recenter completed in `8.610255022 s`; observed distance was first
+  `0.365533 m`, maximum `0.397381 m`, and final/minimum `0.238489 m`.
+  Terminal state was `SEARCH`.
+- The standard analyzer ran exactly once into the run-local `analysis/`
+  directory and returned `analysis_status=complete` with no recording or
+  analysis failures. It retained 22 files, 11 tables, eight plots, and
+  `23,243` synchronized anchors.
+- Simulation ground truth passed at final goal distance `0.277956 m`.
+  Controller goal success remained false because the declared development
+  contract required return to `SEARCH`, not a later goal-hold cycle. That
+  retained metric does not fail Phase 08.2 and cannot be treated as v3
+  acceptance.
+- Raw bag SHA-256:
+  `47e06cb865f6cb9b5976d2387d9ad479fa90b17bd1efc5ef46df15627c2f226c`.
+- No replacement, second probe, second analysis, v3 stage, tag, Phase 09
+  action, or physical command ran.
+
 ## Current problem or blocker
 
-- No Level A blocker is present.
+- No Level A blocker is present. The observed Phase 08.1 recenter engineering
+  blocker is closed by deterministic and fresh runtime evidence.
 - V2 remains a Level C failure and cannot be resumed, retuned, relabeled, or
   counted toward a new claim.
 - M2 removed the repeated full-history synchronization delay that blocked the
@@ -343,6 +385,9 @@ remains immutable and cannot count toward a future acceptance attempt.
   a Level C result for that retained probe and a bounded Level B engineering
   question for a future versioned diagnostic iteration, not a Level A
   conflict and not permission to weaken the global safety predicates.
+- Phase 08.2 is a passing bounded development phase, not robustness
+  acceptance. Phase 08 remains not simulation-ready until a separately
+  planned v3 passes its complete frozen acceptance design.
 
 ## Files currently relevant
 
@@ -356,6 +401,7 @@ remains immutable and cannot count toward a future acceptance attempt.
 - `docs/codex/gesc_gaussian/validation/phase_08_v2_failure_report.md`
 - `docs/codex/gesc_gaussian/handoffs/phase_08_handoff.md`
 - `docs/codex/gesc_gaussian/handoffs/phase_08_1_handoff.md`
+- `docs/codex/gesc_gaussian/handoffs/phase_08_2_handoff.md`
 - `ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py`
 - `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py`
 - `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_1_diagnostic_activation.yaml`
@@ -483,6 +529,11 @@ remains immutable and cannot count toward a future acceptance attempt.
   center-progress ranking, per-update reselection, and current-yaw command
   sweep guard using the existing `0.50 s` supervisor-command stale horizon.
   Passing this bounded phase authorizes only a separate v3 Plan.
+- D-08-25: checkpoint tooling selects the highest versioned saved subphase
+  Plan instead of hardcoding `_1`. Its 30-line milestone snapshot now consumes
+  the full source section while printing the intended bound, avoiding the
+  prior `head`/`pipefail` exit `141`. These changes remove mechanical
+  checkpoint stops without changing phase gates.
 
 ## Validation checkpoints
 
@@ -821,6 +872,33 @@ remains immutable and cannot count toward a future acceptance attempt.
   `suite` key after the dry run itself had succeeded. The corrected parser used
   canonical `suite_id`, `resolved_run_count`, and `unsupported_count` fields
   and passed; no scenario was redispatched.
+- M4 source/install/suite byte comparisons, clean Git check, absent fresh
+  evidence root, `DISPLAY=:0`, 327 GiB free-space check, and pre-run process
+  check passed before dispatch.
+- The bounded GUI scenario command returned `0` after about `223.5 s`.
+  `record_run` returned `0` without timeout; the classification, all seven
+  predicates, completeness, and cleanup passed.
+- The one-time analyzer returned
+  `{"analysis_status":"complete"}` after about `49 s`; completeness and
+  analysis-completeness contain no failures, and eight standard plots were
+  retained.
+- Read-only M4 closeout assertions confirmed the exact case key, full collapsed
+  state path, required events, no forbidden evidence, no collision, final
+  zero, final readiness false, zero recording/analysis failures, raw bag hash,
+  and no remaining supervisor/runner/recorder/analyzer/Gazebo process.
+- No replacement or additional runtime/analysis attempt ran.
+- Closeout local Markdown validation passed six changed-file targets. Normal
+  and strict-history Phase 08 Implement context, the updated Phase 09 Plan
+  boundary, required-document validation, validator shell syntax, historical
+  evidence immutability, no-readiness-tag, suite hash, process cleanup, and
+  `git diff --check` passed.
+- The terminal checkpoint initially exposed its historical hardcoded `_1`
+  subphase label. The bounded tooling correction selects the highest numbered
+  saved subphase Plan. Its first regeneration also exposed exit `141` from the
+  bounded `head` pipeline under `pipefail`; consuming the whole section while
+  printing 30 lines preserved the bound and removed the false failure. Shell
+  syntax passed and the final checkpoint returns `0` and identifies
+  `phase_08_2_plan.md`.
 
 ## Attempts not to repeat
 
@@ -844,19 +922,25 @@ remains immutable and cannot count toward a future acceptance attempt.
   chase a pass, or weaken fill/wall safety. Correct and test the progress
   policy in a separately versioned development iteration first; any future
   parameter change requires its own versioned evidence.
+- Do not repeat or reanalyze the passing Phase 08.2 seed-8304 probe. Its one
+  declared development question is answered and all evidence is retained.
+- Do not count the Phase 08.2 development case in a future v3 holdout,
+  validation denominator, or reproducibility claim.
 
 ## Remaining work
 
-- M4: commit and seal the clean probe candidate; run one new recenter
-  development probe, analyze it once, verify
-  cleanup/final zero, and close with a Phase 08.2 handoff.
+- No Phase 08.2 work remains.
+- The smallest justified successor is a separately reviewed v3 acceptance
+  Plan with a new evidence root, declared development/tuning design, clean
+  freeze, selection-blind holdout, unique validation denominator, and
+  reproducibility stage.
 - No v3 tuning, holdout, acceptance denominator, tag, Phase 09, or physical
   motion is authorized.
 
 ## Stop conditions
 
-- Phase 08.1 is closed and immutable; Phase 08.2 may not rewrite or count its
-  evidence.
+- Phase 08.1 and Phase 08.2 are closed and immutable. A future version may not
+  rewrite or count their development evidence.
 - Stop before Gazebo if the deterministic retained-geometry regression,
   focused regressions, build, launch instantiation, or dry run fails.
 - Stop runtime dispatch on cleanup/final-zero/collision/recording corruption.
@@ -873,9 +957,9 @@ remains immutable and cannot count toward a future acceptance attempt.
 
 ## Compaction recovery
 
-Phase 08 v2 and Phase 08.1 are terminally closed. Reread `AGENTS.md`,
-`phase_08_plan.md`, `phase_08_1_plan.md`, `phase_08_2_plan.md`, this status,
-and `phase_08_1_handoff.md`; inspect Git state and resume at the next
-incomplete Phase 08.2 criterion. Never resume or relabel v1/v2, rerun their
-matrices or completed M6 probes merely to recover context, or infer
-authorization for v3 or physical work.
+Phase 08 v2, Phase 08.1, and Phase 08.2 are terminally closed. Reread
+`AGENTS.md`, the Phase 08/08.1/08.2 Plans, this status, and the Phase 08.1 and
+08.2 handoffs; inspect Git state and create a separate Plan before any v3
+action. Never resume or relabel historical evidence, rerun completed probes or
+analysis merely to recover context, or infer authorization for v3, Phase 09,
+or physical work.

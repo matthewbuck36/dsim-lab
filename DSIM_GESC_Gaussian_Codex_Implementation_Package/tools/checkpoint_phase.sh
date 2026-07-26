@@ -17,7 +17,12 @@ ROOT="$(git rev-parse --show-toplevel)"
 DOCS="$ROOT/docs/codex/gesc_gaussian"
 STATUS="$DOCS/status/phase_${PHASE}_status.md"
 PLAN="$DOCS/plans/phase_${PHASE}_plan.md"
-SUBPHASE_PLAN="$DOCS/plans/phase_${PHASE}_1_plan.md"
+SUBPHASE_PLAN="$(
+  find "$DOCS/plans" -maxdepth 1 -type f \
+    -name "phase_${PHASE}_[0-9]*_plan.md" -print |
+    sort -V |
+    tail -n 1
+)"
 OUT="$DOCS/checkpoints/phase_${PHASE}_checkpoint.txt"
 
 if [[ ! -s "$STATUS" ]]; then
@@ -69,7 +74,9 @@ cd "$ROOT"
   git diff --cached --stat
   echo
   echo "## Current milestone snapshot"
-  sed -n '/^## Current milestone$/,/^## /p' "$STATUS" | sed '$d' | head -n 30
+  sed -n '/^## Current milestone$/,/^## /p' "$STATUS" |
+    sed '$d' |
+    awk 'NR <= 30 { print }'
   echo
   echo "This file describes the base HEAD and diff before the next commit; it is"
   echo "not a claim that the eventual commit contains itself or that tests passed."

@@ -2565,3 +2565,123 @@ Python compilation and `git diff --check` passed. Suite SHA-256:
 
 No Gazebo scenario, bag analysis, v3 stage, readiness tag, Phase 09 action, or
 physical hardware ran during M3.
+
+## Phase 08.2 M4 retained GUI Gazebo probe
+
+Pre-execution checks confirmed:
+
+- clean sealed HEAD `f084803`;
+- candidate implementation `204d1a1`;
+- source and isolated-install copies byte-identical;
+- suite SHA-256
+  `1b116ef7984d8a679f69da919576125a1ad066da3d55098466da9afac2bae017`;
+- fresh evidence root absent;
+- `DISPLAY=:0`;
+- 327 GiB free;
+- no supervisor, runner, recorder, or Gazebo process.
+
+Exactly one GUI-enabled seed-8304 probe ran:
+
+```bash
+source /opt/ros/humble/setup.bash
+source /tmp/phase08_2_m3_install/setup.bash
+export ROS_DOMAIN_ID=72
+export ROS_LOG_DIR=/tmp/phase08_2_m4_probe_ros_logs
+export MPLCONFIGDIR=/tmp/phase08_2_m4_probe_mpl
+export TURTLEBOT3_MODEL=burger
+timeout --signal=INT --kill-after=45s 600s \
+  ros2 run ros_esc run_scenario \
+    /tmp/phase08_2_m3_install/ros_esc/share/ros_esc/scenario_runner/scenarios/phase08_2_recenter.yaml \
+    --operator phase08_2_m4 \
+    --case-id recenter_retained_fill_create \
+    --runs-root \
+      /home/mattb/Experiments/GESC-Gaussian/runs/phase08_2_recenter \
+    --summary-output \
+      /home/mattb/Experiments/GESC-Gaussian/runs/phase08_2_recenter/recenter_retained_fill_create_summary.yaml \
+    --gui
+```
+
+The command returned `0` after about `223.5 s`. It retained run:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_2_recenter/2026-07-26/20260726T075031828248Z_simulation_phase08_2_recenter-recenter_retained_fill_create-robust_gaussian_v1-6eb8111305_92a4911a
+```
+
+`record_run` returned `0` without timeout, recording completed, and cleanup
+left no new node or session process. The schema-v3 classification passed every
+declared predicate. Observed path:
+
+```text
+SEARCH -> VERIFY_EXTREMUM -> DESIGN_OR_MERGE_FILL -> ESCAPE_REPULSE ->
+RECENTER -> SEARCH
+```
+
+All required events were present. `FAILSAFE`, `TIMEOUT`, fill failure, and
+collision evidence were absent.
+
+The standard analyzer ran exactly once:
+
+```bash
+source /opt/ros/humble/setup.bash
+source /tmp/phase08_2_m3_install/setup.bash
+export ROS_DOMAIN_ID=73
+export ROS_LOG_DIR=/tmp/phase08_2_m4_analysis_ros_logs
+export MPLCONFIGDIR=/tmp/phase08_2_m4_analysis_mpl
+timeout 300s ros2 run ros_esc analyze_run \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_2_recenter/2026-07-26/20260726T075031828248Z_simulation_phase08_2_recenter-recenter_retained_fill_create-robust_gaussian_v1-6eb8111305_92a4911a \
+  --output-dir \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_2_recenter/2026-07-26/20260726T075031828248Z_simulation_phase08_2_recenter-recenter_retained_fill_create-robust_gaussian_v1-6eb8111305_92a4911a/analysis
+```
+
+It returned `{"analysis_status":"complete"}` after about `49 s` and retained
+22 files: 11 tables, eight plots, two completeness/summary JSON files, and
+one summary CSV. Recording and analysis failures are empty.
+
+Retained metrics:
+
+```text
+fill count:                         1
+escape attempts/successes/failures: 1 / 1 / 0
+escape duration:                    7.532641327 s
+recenter duration:                  8.610255022 s
+recenter distance first/max/final:  0.365533 / 0.397381 / 0.238489 m
+terminal state:                     SEARCH
+collision:                          false
+final goal distance:                0.277956 m
+synchronized anchors:               23,243
+```
+
+Completeness passed with no failures or warnings, including final zero on the
+three command evidence streams, final readiness false, clean preauthorization,
+fresh/nonregressing typed timestamps, event causality, and strict finite JSON.
+The controller-goal metric is false because this development contract required
+return to `SEARCH`, not a later goal-hold cycle; simulation ground truth passed.
+
+Raw bag SHA-256:
+
+```text
+47e06cb865f6cb9b5976d2387d9ad479fa90b17bd1efc5ef46df15627c2f226c
+```
+
+Post-run and post-analysis process checks found no supervisor, runner,
+recorder, analyzer, or Gazebo process. No replacement, second probe, second
+analysis, v3 stage, readiness tag, Phase 09 action, or physical command ran.
+
+Final read-only assertions checked the exact case key, full state path,
+required and forbidden evidence, collision, final zero, readiness shutdown,
+recording/analysis failure lists, retained metrics, and raw bag hash. They
+passed without opening a second analyzer execution.
+
+Normal and strict-history Phase 08 Implement validation passed. The Phase 09
+Plan-context smoke passed with the new Phase 08.2 handoff requirement but did
+not begin Phase 09. Required-document validation, validator `bash -n`, six
+local Markdown targets, historical v1/v2/08.1 immutability, no readiness tag,
+suite hash, process cleanup, and `git diff --check` passed.
+
+The first terminal checkpoint revealed that `checkpoint_phase.sh` still
+hardcoded a `_1` subphase Plan. It was corrected to select the highest
+version-sorted saved subphase Plan. The next run exposed an inherited
+`head -n 30`/`pipefail` exit `141` on the long milestone section. Replacing
+that early-closing consumer with an `awk` print bound retains the 30-line
+snapshot while consuming the full input. `bash -n` passed, the checkpoint
+returned `0`, and it names `phase_08_2_plan.md` as active.

@@ -6,8 +6,9 @@
 > scenario runner. Phase 08 v2 stopped failed at activation and produced no
 > frozen profile or robustness acceptance. Phase 08.1 completed its bounded
 > recovery but retained a downstream recenter timeout. Phase 08.2 implements
-> the bounded deterministic correction; its fresh Gazebo proof remains
-> required, so simulation readiness remains unestablished.
+> and validates the bounded deterministic correction in one fresh full-path
+> Gazebo probe. This is recenter-recovery evidence, not v3 robustness
+> acceptance, so simulation readiness remains unestablished.
 
 This dictionary is the resolved Phase 05 interface contract for the current
 `dsim-lab` checkout. `algorithm_profile=legacy` remains the default and keeps
@@ -333,8 +334,9 @@ outward recovery starts inside a fill disk. The current-yaw commanded sweep
 over `supervisor_command_stale_sec` is independently checked: it cannot move
 inward while inside a fill, intersect or re-enter a fill after exit, or leave
 the wall-margin inset. An unsafe linear component becomes zero while the
-bounded angular command continues. The fresh Phase 08.2 Gazebo probe is still
-required to validate this source-state correction.
+bounded angular command continues. The fresh Phase 08.2 Gazebo probe validated
+the full fill/escape/recenter/search path with the unchanged safety geometry
+and timeout.
 
 In bounded mode the preferred direction is toward the configured room center;
 in unbounded assisted escape it is opposite the frozen recent approach, with

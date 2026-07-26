@@ -274,15 +274,19 @@ passed, but its full lifecycle failed when the shared clearance-first recenter
 selector orbited until timeout. See
 [the Phase 08.1 handoff](handoffs/phase_08_1_handoff.md).
 
-The smallest currently justified next work is a separately reviewed, bounded
-recenter correction. Keep the current hard wall/fill rejection rules and
-assistance behavior; test recenter-only target-progress guidance and
-nonholonomic inward-motion prevention in deterministic closed loop before an
-initial predeclared probe. A v3 design may be planned separately, but v3
-tuning, freeze, or acceptance execution remains blocked until the recenter
-question is closed by passing evidence or a separately reviewed policy change.
-Any future v3 acceptance design still requires a separate sealed contract and
-fresh evidence root.
+Phase 08.2 preserved that failed evidence, kept the current hard wall/fill
+rejection rules and assistance behavior, added recenter-only target-progress
+guidance plus nonholonomic command-sweep suppression, and validated the exact
+retained geometry deterministically. Its one fresh development probe passed
+the full fill/create/escape/recenter/search path without timeout, failsafe,
+collision, completeness, cleanup, or final-zero failure. See
+[the Phase 08.2 handoff](handoffs/phase_08_2_handoff.md).
+
+The smallest currently justified next work is a separately reviewed v3
+acceptance Plan. V3 development/tuning, freeze, selection-blind holdout,
+unique validation, and reproducibility must use a separate sealed contract and
+fresh evidence root. Phase 08.2 evidence validates recenter recovery but does
+not enter that denominator or establish simulation readiness.
 
 Phase 08.1 diagnostic scenarios use schema-v3 binding contracts: a contiguous
 activation path anchored at the first `VERIFY_EXTREMUM`, required event
