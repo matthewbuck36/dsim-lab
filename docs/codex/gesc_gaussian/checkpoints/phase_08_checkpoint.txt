@@ -1,58 +1,77 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-28T00:13:13+00:00
-Base HEAD: bc4b420d1a506825a63f4dd7c1db66f1ee70e1cb
+Generated: 2026-07-28T04:42:38+00:00
+Base HEAD: da44ec1df6cf1b5925c285869cbab7d0aa6ef377
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: deae53d4c958303fe610d0bd04de298ed264f6037cfe70341cb091d625b9c75d
+Status sha256: 4dbdb0efc2f5b7f3d0182a38701132daaa0973e68c068ee0dbfec4dfdae1f87f
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_3_plan.md
 Active subphase plan sha256: 2d669f84c79c863bcb61f28c92be0a4607223a4b40843774db34011fb53c20e0
-Unstaged diff sha256: 1b2ce2ae7900f8c0e288c6fa080d8cb3356f709606a72b0407946e358a91d60f
+Unstaged diff sha256: 837c369688131ec5e4f588230810fd30a34ddb81d84a1bc769f9c36da91679d7
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 15]
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/checkpoint_phase.sh
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/make_codex_context_bundle.sh
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 16]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
- M docs/codex/gesc_gaussian/implementation_sequence.md
+ M docs/codex/gesc_gaussian/recording_runs.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
  M docs/codex/gesc_gaussian/test_commands.md
-?? docs/codex/gesc_gaussian/plans/phase_08_3_plan.md
+ M docs/codex/gesc_gaussian/topic_dictionary.md
+ M ros2_ws/src/ros_esc/package.xml
+ M ros2_ws/src/ros_esc/ros_esc/plotting_scripts/gesc_gaussian_bag_analysis.py
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py
+ M ros2_ws/src/ros_esc/setup.py
+ M ros2_ws/src/ros_esc/test/test_bag_analysis.py
+ M ros2_ws/src/ros_esc/test/test_bag_analysis_integration.py
+ M ros2_ws/src/ros_esc/test/test_phase08_validation.py
+ M ros2_ws/src/ros_esc/test/test_scenario_runner.py
+ M ros2_ws/src/ros_esc/test/test_scenario_schema.py
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/aggregate_field_truth.py
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v3_activation.yaml
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v3_candidates.yaml
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v3_development.yaml
+?? ros2_ws/src/ros_esc/test/test_aggregate_field_truth.py
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../tools/checkpoint_phase.sh                      |  52 ++++++++-
- .../tools/make_codex_context_bundle.sh             |  99 ++++++++++++++++
- .../tools/validate_phase_context.sh                |  54 ++++++++-
- .../checkpoints/phase_08_checkpoint.txt            |  69 ++---------
- .../codex/gesc_gaussian/implementation_sequence.md |  17 ++-
- docs/codex/gesc_gaussian/status/phase_08_status.md | 127 ++++++++++++++++++++-
- docs/codex/gesc_gaussian/test_commands.md          |  55 +++++++++
- 7 files changed, 398 insertions(+), 75 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |   63 +-
+ docs/codex/gesc_gaussian/recording_runs.md         |   79 +
+ docs/codex/gesc_gaussian/status/phase_08_status.md |  107 +
+ docs/codex/gesc_gaussian/test_commands.md          |  151 +
+ docs/codex/gesc_gaussian/topic_dictionary.md       |   56 +-
+ ros2_ws/src/ros_esc/package.xml                    |    1 +
+ .../plotting_scripts/gesc_gaussian_bag_analysis.py |  527 +-
+ .../ros_esc/scenario_runner/phase08_validation.py  | 6341 +++++++++++++++++++-
+ .../ros_esc/scenario_runner/run_scenario.py        |  591 +-
+ .../ros_esc/scenario_runner/scenario_schema.py     |  589 +-
+ ros2_ws/src/ros_esc/setup.py                       |  111 +-
+ ros2_ws/src/ros_esc/test/test_bag_analysis.py      |  309 +
+ .../ros_esc/test/test_bag_analysis_integration.py  |   74 +
+ .../src/ros_esc/test/test_phase08_validation.py    | 2579 ++++++++
+ ros2_ws/src/ros_esc/test/test_scenario_runner.py   |  457 ++
+ ros2_ws/src/ros_esc/test/test_scenario_schema.py   |  206 +-
+ 16 files changed, 11882 insertions(+), 359 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
 - Completed milestone: **M0 — reopen context without rewriting history**.
-- Current milestone: **M1 — implement and test v3 evidence contracts**.
-- State: implementation in progress.
-- M0 result: latest-subphase Plan discovery selects
-  `phase_08_3_plan.md`; the status is reopened without deleting its closed
-  history; checkpoint and context-bundle tooling are freeze-state aware; and
-  Phase 09 requires the v3 handoff plus machine-readable
-  `simulation_ready=true`.
-- No schema-v4 implementation, Gazebo stage, tuning, acceptance-suite
-  generation, holdout reveal, validation, repeat, tag, Phase 09, or physical
-  action has started.
-- Next criterion: schema-v4/aggregate/envelope implementation and its focused
-  tests.
+- Completed milestone: **M1 — implement and test v3 evidence contracts**.
+- State: **WAITING BEFORE M2**.
+- Next criterion: obtain the exact user-approved 40-hex GPG recipient
+  fingerprint, then run M2 pre-activation source/build/dry-run qualification
+  and opaque acceptance-suite commitment.
+- M2 performs no Gazebo simulation. If M2 passes and is checkpointed, M3 runs
+  ten serial GUI-visible activation simulations. Only the later repeated
+  development, holdout, validation, and reproducibility batches are
+  headless.
 
 
 

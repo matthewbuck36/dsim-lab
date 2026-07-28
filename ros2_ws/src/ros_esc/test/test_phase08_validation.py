@@ -3,6 +3,9 @@
 from collections import Counter
 import json
 from pathlib import Path
+import shutil
+import subprocess
+from types import SimpleNamespace
 
 import pytest
 
@@ -102,6 +105,55 @@ def _record(case_id='robust_pure_escape', family='escape'):
         'analysis_error': None,
         'analysis': {'analysis_status': 'complete', 'metrics': metrics},
     }
+
+
+def _fake_v3_truth(sources, bounds, disturbances, solver_settings=None):
+    del bounds, disturbances, solver_settings
+    return {
+        'result_sha256': phase08_validation.canonical_sha256(sources),
+    }
+
+
+def _fake_v3_local_qualifications(
+    aggregate_record,
+    sources,
+    source_ids,
+    disturbances,
+):
+    result = json.loads(json.dumps(aggregate_record))
+    result.pop('result_sha256', None)
+    proof = {
+        'source_ids': list(source_ids),
+        'source_list_sha256': phase08_validation.canonical_sha256(sources),
+        'disturbances_sha256': phase08_validation.canonical_sha256(
+            disturbances
+        ),
+    }
+    proof['result_sha256'] = phase08_validation.canonical_sha256(proof)
+    result['local_branch_qualifications'] = proof
+    result['result_sha256'] = phase08_validation.canonical_sha256(result)
+    return result
+
+
+def _generate_fast_v3_population(monkeypatch):
+    monkeypatch.setattr(
+        phase08_validation,
+        'derive_aggregate_field_truth',
+        _fake_v3_truth,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        'validate_aggregate_field_truth',
+        lambda *args, **kwargs: None,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        'attach_local_branch_qualifications',
+        _fake_v3_local_qualifications,
+    )
+    return phase08_validation.generate_v3_acceptance_population(
+        bytes(range(32)),
+    )
 
 
 def test_candidate_grid_is_exact_and_hashed_deterministically():
@@ -438,3 +490,2530 @@ def test_v1_excerpt_replays_confirmed_activation_and_rotation_goal():
         ),
     )
     assert transition.current == State.GOAL_HOLD
+
+
+def test_v3_population_is_deterministic_and_has_exact_allocations(
+    monkeypatch,
+):
+    """Precommit exactly 70 unique cases and ten distinct references."""
+    first = _generate_fast_v3_population(monkeypatch)
+    second = phase08_validation.generate_v3_acceptance_population(
+        bytes(range(32)),
+    )
+
+    assert phase08_validation.canonical_json_bytes(first) == (
+        phase08_validation.canonical_json_bytes(second)
+    )
+    validation = phase08_validation.validate_v3_population(first)
+    assert validation['passed'] is True
+    assert validation['partition_counts'] == {
+        'holdout': 20,
+        'reproducibility': 10,
+        'validation': 50,
+    }
+    repeat_families = Counter(
+        case['acceptance_family']
+        for case in first['cases']
+        if case['acceptance_partition'] == 'reproducibility'
+    )
+    assert repeat_families == Counter({
+        family: allocation['reproducibility']
+        for family, allocation
+        in phase08_validation.V3_FAMILY_ALLOCATION.items()
+    })
+
+
+def test_v3_population_rejects_repeat_family_allocation_drift(monkeypatch):
+    """The sealed repeat allocation is part of the fixed contract."""
+    population = _generate_fast_v3_population(monkeypatch)
+    repeat = next(
+        case for case in population['cases']
+        if case['acceptance_partition'] == 'reproducibility'
+        and case['acceptance_family'] == 'ordered_two_source'
+    )
+    repeat['acceptance_family'] = 'lifecycle'
+
+    validation = phase08_validation.validate_v3_population(population)
+
+    assert validation['passed'] is False
+    assert any(
+        'reproducibility allocation drifted' in reason
+        for reason in validation['reasons']
+    )
+
+
+def test_v3_replacement_policy_is_pre_readiness_and_bounded():
+    """Never replace a behavioral failure or the same declared slot twice."""
+    evidence = {
+        'classification': 'infrastructure_invalid',
+        'readiness_ever_true': False,
+        'nonzero_command_observed': False,
+        'non_search_lifecycle_observed': False,
+        'active_fill_or_escape_observed': False,
+        'external_startup_cause': True,
+        'cleanup_passed': True,
+        'classification_recorded': True,
+    }
+    state = phase08_validation._v3_authorize_replacement(
+        'activation',
+        'activation.slot-1',
+        evidence,
+        {},
+    )
+    assert state['total'] == 1
+    assert state['by_stage'] == {'activation': 1}
+
+    with pytest.raises(RuntimeError, match='second replacement'):
+        phase08_validation._v3_authorize_replacement(
+            'activation',
+            'activation.slot-1',
+            evidence,
+            state,
+        )
+    behavioral = {**evidence, 'readiness_ever_true': True}
+    with pytest.raises(RuntimeError, match='not infrastructure-replaceable'):
+        phase08_validation._v3_authorize_replacement(
+            'holdout',
+            'holdout.slot-1',
+            behavioral,
+            {},
+        )
+
+
+def test_v3_candidate_selection_uses_declared_tie_break_order():
+    """Choose only eligible candidates and then the exact lexical winner."""
+    baseline = {
+        'eligible': True,
+        'end_to_end_success_count': 10,
+        'behavior_contract_pass_count': 10,
+        'local_escape_success_rate': 1.0,
+        'minimum_family_success_rate': 1.0,
+        'escape_time_p95_sec': 12.0,
+        'escape_time_median_sec': 10.0,
+        'median_orbit_count': 1.0,
+        'revisit_rate': 0.0,
+        'median_convergence_time_sec': 30.0,
+        'median_path_length_m': 4.0,
+    }
+    first = {**baseline, 'candidate_id': 'V3-C0'}
+    second = {
+        **baseline,
+        'candidate_id': 'V3-C1',
+        'escape_time_p95_sec': 11.0,
+    }
+    ineligible = {
+        **baseline,
+        'candidate_id': 'V3-C2',
+        'eligible': False,
+        'end_to_end_success_count': 99,
+    }
+
+    assert phase08_validation.select_v3_candidate(
+        [first, ineligible, second]
+    )['candidate_id'] == 'V3-C1'
+
+
+def _passing_v3_candidate_fixture():
+    records = []
+    expected_cases = []
+    for index in range(10):
+        record, expected = _v3_acceptance_record(
+            index,
+            'lifecycle',
+            index,
+        )
+        record['acceptance_partition'] = 'development'
+        record['analysis']['acceptance_partition'] = 'development'
+        expected['acceptance_partition'] = 'development'
+        record['success_contract'] = json.loads(json.dumps(
+            expected['success']
+        ))
+        records.append(record)
+        expected_cases.append(expected)
+    return records, expected_cases
+
+
+def test_v3_candidate_metrics_use_bound_analyzer_outcomes():
+    """Candidate scoring uses analyzer truth and exact declared identities."""
+    records, expected_cases = _passing_v3_candidate_fixture()
+    records[0]['analysis']['metrics']['controller_success'] = _metric(False)
+    records[0]['classification']['predicate_results'][
+        'controller_goal'
+    ] = False
+
+    metrics = phase08_validation._v3_candidate_metrics(
+        'V3-C0',
+        records,
+        expected_cases,
+    )
+
+    assert metrics['eligible'] is True
+    assert metrics['identity_binding_passed'] is True
+    assert metrics['end_to_end_success_count'] == 9
+    assert metrics['behavior_contract_pass_count'] == 10
+
+
+def test_v3_candidate_metrics_fail_closed_on_identity_or_metric_drift():
+    """Do not tune from a substituted slot or unavailable applicable metric."""
+    records, expected_cases = _passing_v3_candidate_fixture()
+    records[0]['case_key'] = 'f' * 64
+    records[1]['analysis']['metrics']['revisit_count'] = _metric(
+        None,
+        'unavailable',
+    )
+
+    metrics = phase08_validation._v3_candidate_metrics(
+        'V3-C0',
+        records,
+        expected_cases,
+    )
+
+    assert metrics['eligible'] is False
+    assert metrics['identity_binding_passed'] is False
+    assert any('declared slots' in reason for reason in metrics['reasons'])
+
+
+def test_v3_development_hard_stop_marks_later_candidates_not_run(
+    tmp_path,
+    monkeypatch,
+):
+    """A safety/evidence stop is global across the 30-run matrix."""
+    root = tmp_path / 'evidence'
+    qualification = phase08_validation._v3_write_state(
+        root,
+        'qualification',
+        {'passed': True, 'repository': {}},
+    )
+    phase08_validation._v3_write_state(
+        root,
+        'activation',
+        {
+            'passed': True,
+            'qualification_state_sha256': qualification['state_sha256'],
+        },
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_verify_repository_snapshot',
+        lambda *unused: None,
+    )
+    calls = []
+
+    def materialize(unused_source, unused_profile, destination):
+        destination = Path(destination)
+        phase08_validation.atomic_bytes(
+            destination,
+            phase08_validation.V3_DEVELOPMENT_PATH.read_bytes(),
+            mode=0o400,
+        )
+        return destination
+
+    def execute(
+        unused_suite,
+        unused_operator,
+        unused_root,
+        stage_root,
+        unused_stage,
+        *,
+        candidate_id,
+        runtime_snapshot,
+    ):
+        del runtime_snapshot
+        calls.append(candidate_id)
+        stage_root = Path(stage_root)
+        summary_path = stage_root / 'scenario_summary.yaml'
+        records_path = stage_root / 'records.json'
+        attempts_path = stage_root / 'attempt_records.json'
+        phase08_validation.atomic_yaml(
+            summary_path,
+            {'summary_path': str(summary_path), 'runs': []},
+        )
+        phase08_validation.atomic_json(records_path, [])
+        phase08_validation.atomic_json(attempts_path, [])
+        return (
+            {'summary_path': str(summary_path)},
+            [],
+            {
+                'progress_sha256': 'a' * 64,
+                'stopped_early_reason': 'collision evidence unavailable',
+                'not_run_slot_ids': ['all-ten'],
+            },
+        )
+
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_materialize_profile_suite',
+        materialize,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_execute_serial_slots',
+        execute,
+    )
+
+    state = phase08_validation.run_v3_development('test', root)
+
+    assert calls == ['V3-C0']
+    assert state['passed'] is False
+    assert state['selected_candidate'] is None
+    assert state['not_run_candidates'] == ['V3-C1', 'V3-C2']
+    assert any('hard stop' in reason for reason in state['reasons'])
+
+
+@pytest.mark.parametrize(
+    ('subcommand', 'function_name'),
+    [
+        ('v3-qualify', 'run_v3_qualify'),
+        ('v3-activation', 'run_v3_activation'),
+        ('v3-development', 'run_v3_development'),
+        ('v3-freeze', 'run_v3_freeze'),
+        ('v3-seal', 'run_v3_seal'),
+        ('v3-holdout', 'run_v3_holdout'),
+        ('v3-validation', 'run_v3_validation'),
+        ('v3-reproducibility', 'run_v3_reproducibility'),
+        ('v3-report', 'run_v3_report'),
+    ],
+)
+def test_v3_cli_routes_flat_subcommands(
+    tmp_path,
+    monkeypatch,
+    subcommand,
+    function_name,
+):
+    """Route every v3 command before legacy v1/v2 detection."""
+    observed = []
+
+    def fake(operator, evidence_root):
+        observed.append((operator, evidence_root))
+        return {'passed': True}
+
+    monkeypatch.setattr(phase08_validation, function_name, fake)
+
+    assert main([
+        subcommand,
+        '--operator', 'v3-test',
+        '--evidence-root', str(tmp_path),
+    ]) == 0
+    assert observed == [('v3-test', str(tmp_path))]
+
+
+def test_v3_prepare_cli_requires_and_routes_exact_recipient(
+    tmp_path,
+    monkeypatch,
+):
+    """Make the recipient fingerprint explicit at the only create stage."""
+    observed = []
+
+    def fake(operator, evidence_root, recipient):
+        observed.append((operator, evidence_root, recipient))
+        return {'passed': True}
+
+    monkeypatch.setattr(phase08_validation, 'run_v3_prepare', fake)
+    fingerprint = 'A1' * 20
+
+    assert main([
+        'v3-prepare',
+        '--operator', 'v3-test',
+        '--evidence-root', str(tmp_path),
+        '--holdout-recipient', fingerprint,
+    ]) == 0
+    assert observed == [('v3-test', str(tmp_path), fingerprint)]
+
+
+def test_v3_prepare_recovers_from_post_transaction_interruption(
+    tmp_path,
+    monkeypatch,
+):
+    """Resume safely without regenerating or exposing the plaintext suite."""
+    root = tmp_path / 'fresh-evidence'
+    ciphertext_path = tmp_path / 'suite.json.asc'
+    commitment_path = tmp_path / 'commitment.json'
+    fingerprint = 'A1' * 20
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_active_processes',
+        lambda: [],
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_repository_snapshot',
+        lambda **unused: {
+            'commit': 'a' * 40,
+            'tree': 'b' * 40,
+            'clean': True,
+            'input_hashes': {},
+            'runtime_inputs_sha256': phase08_validation.canonical_sha256({}),
+        },
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_verify_repository_snapshot',
+        lambda *args, **kwargs: None,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_assert_worktree_changes',
+        lambda *unused: None,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_required_free_bytes',
+        lambda *unused: 1,
+    )
+    monkeypatch.setattr(
+        phase08_validation.shutil,
+        'disk_usage',
+        lambda unused: SimpleNamespace(free=10_000),
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_historical_case_keys',
+        lambda: (set(), {}),
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        'generate_v3_acceptance_population',
+        lambda *args, **kwargs: {'cases': []},
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_encrypt',
+        lambda *args, **kwargs: (
+            b'-----BEGIN PGP MESSAGE-----\nopaque\n'
+        ),
+    )
+    real_atomic_bytes = phase08_validation.atomic_bytes
+    interrupted = {'armed': True}
+
+    def flaky_atomic_bytes(path, value, mode=None):
+        if Path(path) == ciphertext_path and interrupted['armed']:
+            interrupted['armed'] = False
+            raise RuntimeError('simulated interruption')
+        return real_atomic_bytes(path, value, mode=mode)
+
+    monkeypatch.setattr(
+        phase08_validation,
+        'atomic_bytes',
+        flaky_atomic_bytes,
+    )
+    with pytest.raises(RuntimeError, match='simulated interruption'):
+        phase08_validation.run_v3_prepare(
+            'test',
+            root,
+            fingerprint,
+            seed_bytes=b'x' * 32,
+            ciphertext_path=ciphertext_path,
+            commitment_path=commitment_path,
+        )
+    assert phase08_validation._v3_prepare_transaction_path(
+        root
+    ).is_file()
+    assert not ciphertext_path.exists()
+
+    state = phase08_validation.run_v3_prepare(
+        'test',
+        root,
+        fingerprint,
+        ciphertext_path=ciphertext_path,
+        commitment_path=commitment_path,
+    )
+
+    assert state['passed'] is True
+    assert ciphertext_path.is_file()
+    commitment = json.loads(commitment_path.read_text(encoding='utf-8'))
+    assert 'recipient_fingerprint' not in commitment
+    assert not any(root.rglob('*plaintext*'))
+
+
+def test_v3_prepare_rejects_a_preexisting_unowned_root(tmp_path):
+    """Never mix the fresh v3 evidence chain with existing contents."""
+    root = tmp_path / 'existing'
+    root.mkdir()
+
+    with pytest.raises(RuntimeError, match='absent fresh evidence root'):
+        phase08_validation.run_v3_prepare(
+            'test',
+            root,
+            'A1' * 20,
+            ciphertext_path=tmp_path / 'suite.asc',
+            commitment_path=tmp_path / 'commitment.json',
+        )
+
+
+def test_v3_prepare_failure_before_transaction_leaves_root_absent(
+    tmp_path,
+    monkeypatch,
+):
+    """Publish no evidence root until a recoverable transaction is ready."""
+    root = tmp_path / 'fresh-evidence'
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_active_processes',
+        lambda: [],
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_repository_snapshot',
+        lambda **unused: {
+            'commit': 'a' * 40,
+            'tree': 'b' * 40,
+            'clean': True,
+            'input_hashes': {},
+            'runtime_inputs_sha256': phase08_validation.canonical_sha256({}),
+        },
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_required_free_bytes',
+        lambda *unused: 1,
+    )
+    monkeypatch.setattr(
+        phase08_validation.shutil,
+        'disk_usage',
+        lambda unused: SimpleNamespace(free=10_000),
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_historical_case_keys',
+        lambda: (set(), {}),
+    )
+
+    def fail_generation(*unused, **unused_keywords):
+        del unused, unused_keywords
+        raise RuntimeError('simulated population failure')
+
+    monkeypatch.setattr(
+        phase08_validation,
+        'generate_v3_acceptance_population',
+        fail_generation,
+    )
+
+    with pytest.raises(RuntimeError, match='population failure'):
+        phase08_validation.run_v3_prepare(
+            'test',
+            root,
+            'A1' * 20,
+            seed_bytes=b'x' * 32,
+            ciphertext_path=tmp_path / 'suite.asc',
+            commitment_path=tmp_path / 'commitment.json',
+        )
+
+    assert not root.exists()
+    assert not list(tmp_path.glob('.fresh-evidence.prepare-*'))
+
+
+def test_v3_gpg_round_trip_uses_ephemeral_test_key(tmp_path):
+    """Encrypt and decrypt only in memory with a disposable local key."""
+    executable = shutil.which('gpg')
+    if executable is None:
+        pytest.skip('gpg is unavailable')
+    gpg_home = tmp_path / 'gnupg'
+    gpg_home.mkdir(mode=0o700)
+    identity = 'Phase08 V3 Test <phase08-v3-test@example.invalid>'
+    generated = subprocess.run(
+        [
+            executable,
+            '--batch',
+            '--homedir', str(gpg_home),
+            '--passphrase', '',
+            '--quick-generate-key',
+            identity,
+            'rsa2048',
+            'encrypt',
+            '0',
+        ],
+        capture_output=True,
+        timeout=30.0,
+        check=False,
+    )
+    assert generated.returncode == 0
+    listed = subprocess.run(
+        [
+            executable,
+            '--batch',
+            '--homedir', str(gpg_home),
+            '--with-colons',
+            '--fingerprint',
+            identity,
+        ],
+        capture_output=True,
+        text=True,
+        timeout=10.0,
+        check=True,
+    )
+    fingerprint = next(
+        line.split(':')[9]
+        for line in listed.stdout.splitlines()
+        if line.startswith('fpr:')
+    )
+    plaintext = b'phase08-v3-ephemeral-round-trip'
+
+    ciphertext = phase08_validation._v3_encrypt(
+        plaintext,
+        fingerprint,
+        gpg_home=gpg_home,
+        executable=executable,
+    )
+
+    assert plaintext not in ciphertext
+    assert ciphertext.startswith(b'-----BEGIN PGP MESSAGE-----')
+    assert phase08_validation._v3_decrypt(
+        ciphertext,
+        gpg_home=gpg_home,
+        executable=executable,
+    ) == plaintext
+
+
+def test_v3_state_hash_detects_mutation(tmp_path):
+    """Do not resume a stage from a mutated external state record."""
+    phase08_validation._v3_write_state(
+        tmp_path,
+        'qualification',
+        {'passed': True, 'operator': 'test'},
+    )
+    path = phase08_validation._v3_state_path(
+        tmp_path,
+        'qualification',
+    )
+    state = json.loads(path.read_text(encoding='utf-8'))
+    state['operator'] = 'mutated'
+    path.write_text(json.dumps(state), encoding='utf-8')
+
+    with pytest.raises(RuntimeError, match='state hash drifted'):
+        phase08_validation._v3_require_state(
+            tmp_path,
+            'qualification',
+        )
+
+
+def test_v3_process_scan_excludes_the_invocation_ancestry(monkeypatch):
+    """The outer timeout/ros2 wrappers are not orphan-process failures."""
+    process_table = '\n'.join([
+        '100 1 bash -lc timeout 1800s ros2 run ros_esc '
+        'validate_robustness v3-qualify',
+        '101 100 timeout 1800s ros2 run ros_esc '
+        'validate_robustness v3-qualify',
+        '102 101 python3 validate_robustness v3-qualify',
+        '200 1 gzserver --verbose',
+        '201 1 python3 unrelated_worker.py',
+    ])
+    monkeypatch.setattr(
+        phase08_validation.subprocess,
+        'run',
+        lambda *args, **kwargs: subprocess.CompletedProcess(
+            args[0],
+            0,
+            stdout=process_table,
+        ),
+    )
+    monkeypatch.setattr(phase08_validation.os, 'getpid', lambda: 102)
+
+    assert phase08_validation._v3_active_processes() == [{
+        'pid': 200,
+        'command': 'gzserver --verbose',
+    }]
+
+
+def test_v3_runtime_snapshot_rejects_committed_source_drift(monkeypatch):
+    """A later clean commit cannot silently replace qualified inputs."""
+    snapshot = {
+        'input_hashes': {'ros2_ws/src/ros_esc/package.xml': 'a' * 64},
+        'runtime_inputs_sha256': phase08_validation.canonical_sha256({
+            'ros2_ws/src/ros_esc/package.xml': 'a' * 64,
+        }),
+    }
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_repository_snapshot',
+        lambda **unused: {
+            'input_hashes': {
+                'ros2_ws/src/ros_esc/package.xml': 'b' * 64,
+            },
+        },
+    )
+
+    with pytest.raises(RuntimeError, match='differ'):
+        phase08_validation._v3_verify_repository_snapshot(snapshot)
+
+
+def test_v3_qualification_rejects_kill_after_instantiation(
+    tmp_path,
+    monkeypatch,
+):
+    """Timeout 124 passes only when SIGINT exits without the KILL fallback."""
+    def run(
+        identifier,
+        command,
+        cwd,
+        log_root,
+        timeout_sec,
+        expected_return_codes=(0,),
+        environment=None,
+    ):
+        del command, cwd, log_root, timeout_sec
+        del expected_return_codes, environment
+        output = ''
+        if identifier == 'supervisor_instantiation':
+            output = 'timeout: sending signal INT to command'
+        elif identifier == 'fill_instantiation':
+            output = (
+                'timeout: sending signal INT to command\n'
+                'timeout: sending signal KILL to command'
+            )
+        return {
+            'identifier': identifier,
+            'passed': True,
+            'output_tail': output,
+        }
+
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_run_qualification_command',
+        run,
+    )
+
+    commands, unused_install = (
+        phase08_validation._v3_qualification_commands(tmp_path)
+    )
+
+    assert commands[-1]['identifier'] == 'fill_instantiation'
+    assert commands[-1]['passed'] is False
+    assert commands[-1]['clean_sigint_shutdown'] is False
+
+
+def test_v3_qualification_builds_declared_dependency_closure(
+    tmp_path,
+    monkeypatch,
+):
+    """Do not mask missing package dependencies with an explicit build list."""
+    captured = {}
+
+    def run(
+        identifier,
+        command,
+        cwd,
+        log_root,
+        timeout_sec,
+        expected_return_codes=(0,),
+        environment=None,
+    ):
+        del cwd, log_root, timeout_sec, expected_return_codes, environment
+        captured[identifier] = command
+        return {
+            'identifier': identifier,
+            'passed': False,
+        }
+
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_run_qualification_command',
+        run,
+    )
+
+    commands, unused_install = (
+        phase08_validation._v3_qualification_commands(tmp_path)
+    )
+
+    assert len(commands) == 1
+    assert '--packages-up-to' in captured['isolated_build']
+    assert captured['isolated_build'][-2:] == [
+        '--packages-up-to',
+        'ros_esc',
+    ]
+    assert '--packages-select' not in captured['isolated_build']
+
+
+def test_v3_freeze_enforces_the_full_m5_requalification(
+    tmp_path,
+    monkeypatch,
+):
+    """The clean freeze cannot bypass repeated build/dry-run evidence."""
+    root = tmp_path / 'evidence'
+    selected = {
+        'candidate_id': 'V3-C0',
+        'eligible': True,
+        'end_to_end_success_count': 10,
+        'behavior_contract_pass_count': 10,
+        'local_escape_success_rate': 1.0,
+        'minimum_family_success_rate': 1.0,
+        'escape_time_p95_sec': 10.0,
+        'escape_time_median_sec': 9.0,
+        'median_orbit_count': 1.0,
+        'revisit_rate': 0.0,
+        'median_convergence_time_sec': 20.0,
+        'median_path_length_m': 2.0,
+    }
+    qualification = phase08_validation._v3_write_state(
+        root,
+        'qualification',
+        {'passed': True, 'repository': {}},
+    )
+    development = phase08_validation._v3_write_state(
+        root,
+        'development',
+        {
+            'passed': True,
+            'qualification_state_sha256': qualification['state_sha256'],
+            'selected_candidate': selected,
+            'candidates': [selected],
+        },
+    )
+    ciphertext_path = tmp_path / 'phase08_v3_suite.asc'
+    commitment_path = tmp_path / 'phase08_v3_commitment.json'
+    frozen_path = tmp_path / 'phase08_v3_frozen.yaml'
+    selection_path = tmp_path / 'phase08_v3_selection.json'
+    freeze_path = tmp_path / 'phase08_v3_freeze.json'
+    ciphertext = b'-----BEGIN PGP MESSAGE-----\nopaque\n'
+    phase08_validation.atomic_bytes(ciphertext_path, ciphertext)
+    historical = {'phase08_v3_activation.yaml': 'c' * 64}
+    commitment = {
+        'schema_version': 1,
+        'generator_version': 'test',
+        'scenario_schema_version': 4,
+        'counts': {
+            'unique': 70,
+            'holdout': 20,
+            'validation': 50,
+            'reproducibility': 10,
+        },
+        'family_counts': {},
+        'historical_exclusion_hashes': historical,
+        'plaintext_sha256': 'd' * 64,
+        'ciphertext_sha256': (
+            phase08_validation._sha256_bytes(ciphertext)
+        ),
+    }
+    commitment['commitment_sha256'] = (
+        phase08_validation.omission_sha256(
+            commitment,
+            'commitment_sha256',
+        )
+    )
+    phase08_validation.atomic_json(commitment_path, commitment)
+    phase08_validation._v3_write_state(
+        root,
+        'prepare',
+        {
+            'passed': True,
+            'commitment_sha256': commitment['commitment_sha256'],
+            'ciphertext_sha256': commitment['ciphertext_sha256'],
+        },
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        'V3_CIPHERTEXT_PATH',
+        ciphertext_path,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        'V3_COMMITMENT_PATH',
+        commitment_path,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        'V3_FROZEN_PATH',
+        frozen_path,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        'V3_SELECTION_PATH',
+        selection_path,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        'V3_FREEZE_PATH',
+        freeze_path,
+    )
+    snapshot_checks = []
+
+    def verify_snapshot(snapshot, *, require_clean=True):
+        del snapshot
+        snapshot_checks.append(require_clean)
+
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_verify_repository_snapshot',
+        verify_snapshot,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_assert_worktree_changes',
+        lambda *unused: None,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_active_processes',
+        lambda: [],
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_run_functional_tests',
+        lambda: {'passed': True, 'return_code': 0},
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_historical_case_keys',
+        lambda: (set(), historical),
+    )
+    snapshot = {
+        'commit': 'a' * 40,
+        'tree': 'b' * 40,
+        'clean': False,
+        'input_hashes': {},
+        'runtime_inputs_sha256': phase08_validation.canonical_sha256({}),
+    }
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_repository_snapshot',
+        lambda **unused: snapshot,
+    )
+    observed = []
+
+    def qualify(
+        evidence_root,
+        directory_name='qualification',
+        *,
+        require_frozen=False,
+    ):
+        observed.append((directory_name, require_frozen))
+        directory = Path(evidence_root) / directory_name
+        for name, count in (('activation', 10), ('development', 10)):
+            phase08_validation.atomic_yaml(
+                directory / f'{name}_dry_run.yaml',
+                {
+                    'resolved_run_count': count,
+                    'unsupported_count': 0,
+                    'scenario_schema_version': 4,
+                },
+            )
+        return ([{'passed': True}], directory / 'install')
+
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_qualification_commands',
+        qualify,
+    )
+    frozen = {
+        'schema_version': 1,
+        'profile_id': selected['candidate_id'],
+        'launch_overrides': dict(
+            phase08_validation.V3_CANDIDATES[0]['launch_overrides']
+        ),
+    }
+    frozen['sha256'] = phase08_validation.canonical_sha256(
+        frozen['launch_overrides']
+    )
+    selection = {
+        'schema_version': 1,
+        'selected_candidate': selected,
+        'candidate_results': [selected],
+        'selection_key': list(
+            phase08_validation._v3_selection_key(selected)
+        ),
+    }
+    phase08_validation.atomic_yaml(frozen_path, frozen)
+    phase08_validation.atomic_json(selection_path, selection)
+
+    state = phase08_validation.run_v3_freeze('test', root)
+
+    assert development['state_sha256'] == state[
+        'development_state_sha256'
+    ]
+    assert observed == [('freeze_qualification', True)]
+    assert state['passed'] is True
+    assert state['requalification']['functional_tests']['passed'] is True
+    assert freeze_path.is_file()
+    assert snapshot_checks == [False]
+
+
+def test_v3_seal_rerun_uses_immutable_state_fast_path(
+    tmp_path,
+    monkeypatch,
+):
+    """Never decrypt or overwrite sealed artifacts after state publication."""
+    freeze = phase08_validation._v3_write_state(
+        tmp_path,
+        'freeze',
+        {
+            'passed': True,
+            'operator': 'test',
+        },
+    )
+    contract_state = phase08_validation._v3_write_state(
+        tmp_path,
+        'contract',
+        {
+            'passed': True,
+            'operator': 'test',
+            'freeze_state_sha256': freeze['state_sha256'],
+            'contract_sha256': 'c' * 64,
+        },
+    )
+    contract = {
+        'contract_sha256': 'c' * 64,
+        'execution_repository': {
+            'commit': 'a' * 40,
+            'tree': 'b' * 40,
+        },
+    }
+    verified = []
+    published = []
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_assert_worktree_changes',
+        lambda *unused: None,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_verify_runtime_contract',
+        lambda root, observed_freeze, state, require_clean: (
+            verified.append(
+                (root, observed_freeze, state, require_clean)
+            )
+            or contract
+        ),
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_publish_sealed_durable_freeze',
+        lambda observed_freeze, observed_contract: published.append(
+            (observed_freeze, observed_contract)
+        ),
+    )
+
+    def forbidden_decrypt(*unused, **unused_keywords):
+        del unused, unused_keywords
+        raise AssertionError('seal rerun must not decrypt')
+
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_decrypt',
+        forbidden_decrypt,
+    )
+
+    result = phase08_validation.run_v3_seal('test', tmp_path)
+
+    assert result == contract_state
+    assert verified == [
+        (tmp_path, freeze, contract_state, False),
+    ]
+    assert published == [(freeze, contract)]
+
+
+def test_v3_freeze_rerun_recovers_missing_durable_projection(
+    tmp_path,
+    monkeypatch,
+):
+    """Recover a crash after external state but before tracked projection."""
+    freeze_path = tmp_path / 'phase08_v3_freeze.json'
+    monkeypatch.setattr(
+        phase08_validation,
+        'V3_FREEZE_PATH',
+        freeze_path,
+    )
+    state = phase08_validation._v3_write_state(
+        tmp_path,
+        'freeze',
+        {
+            'passed': True,
+            'operator': 'test',
+        },
+    )
+    expected = {
+        'schema_version': 1,
+        'experiment_version': 'phase08-v3',
+        'recovered': True,
+    }
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_durable_freeze_document',
+        lambda *unused, **unused_keywords: expected,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_assert_worktree_changes',
+        lambda *unused: None,
+    )
+    verified = []
+
+    def verify(observed, *, require_clean=True):
+        assert json.loads(freeze_path.read_text(encoding='utf-8')) == expected
+        verified.append((observed, require_clean))
+
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_verify_freeze_inputs',
+        verify,
+    )
+
+    result = phase08_validation.run_v3_freeze('test', tmp_path)
+
+    assert result == state
+    assert verified == [(state, False)]
+
+
+def test_v3_qualification_rejects_historical_hash_drift(
+    tmp_path,
+    monkeypatch,
+):
+    """Detect exclusion-input drift before any activation run."""
+    root = tmp_path / 'evidence'
+    ciphertext_path = tmp_path / 'phase08_v3_suite.asc'
+    commitment_path = tmp_path / 'phase08_v3_commitment.json'
+    ciphertext = b'-----BEGIN PGP MESSAGE-----\nopaque\n'
+    phase08_validation.atomic_bytes(ciphertext_path, ciphertext)
+    commitment = {
+        'schema_version': 1,
+        'generator_version': 'test',
+        'scenario_schema_version': 4,
+        'counts': {
+            'unique': 70,
+            'holdout': 20,
+            'validation': 50,
+            'reproducibility': 10,
+        },
+        'family_counts': {},
+        'historical_exclusion_hashes': {'before': 'a' * 64},
+        'plaintext_sha256': 'b' * 64,
+        'ciphertext_sha256': (
+            phase08_validation._sha256_bytes(ciphertext)
+        ),
+    }
+    commitment['commitment_sha256'] = (
+        phase08_validation.omission_sha256(
+            commitment,
+            'commitment_sha256',
+        )
+    )
+    phase08_validation.atomic_json(commitment_path, commitment)
+    phase08_validation._v3_write_state(
+        root,
+        'prepare',
+        {
+            'passed': True,
+            'ciphertext_sha256': commitment['ciphertext_sha256'],
+            'commitment_sha256': commitment['commitment_sha256'],
+            'repository': {},
+        },
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        'V3_CIPHERTEXT_PATH',
+        ciphertext_path,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        'V3_COMMITMENT_PATH',
+        commitment_path,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_assert_worktree_changes',
+        lambda *unused: None,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_verify_repository_snapshot',
+        lambda *unused, **kwargs: None,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_active_processes',
+        lambda: [],
+    )
+    monkeypatch.setattr(
+        phase08_validation.shutil,
+        'disk_usage',
+        lambda unused: SimpleNamespace(free=10 ** 15),
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_run_functional_tests',
+        lambda: {'passed': True, 'return_code': 0},
+    )
+
+    def history(include_v3_development=True):
+        if include_v3_development:
+            return set(), {'after': 'c' * 64}
+        return set(), {}
+
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_historical_case_keys',
+        history,
+    )
+
+    def qualify(evidence_root):
+        directory = Path(evidence_root) / 'qualification'
+        for name, count in (('activation', 10), ('development', 10)):
+            phase08_validation.atomic_yaml(
+                directory / f'{name}_dry_run.yaml',
+                {
+                    'resolved_run_count': count,
+                    'unsupported_count': 0,
+                    'scenario_schema_version': 4,
+                },
+            )
+        return ([{'passed': True}], directory / 'install')
+
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_qualification_commands',
+        qualify,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_repository_snapshot',
+        lambda **unused: {
+            'commit': 'a' * 40,
+            'tree': 'b' * 40,
+            'clean': False,
+            'input_hashes': {},
+            'runtime_inputs_sha256': phase08_validation.canonical_sha256({}),
+        },
+    )
+
+    state = phase08_validation.run_v3_qualify('test', root)
+
+    assert state['passed'] is False
+    assert any(
+        'historical exclusion hashes differ' in reason
+        for reason in state['reasons']
+    )
+
+
+def _v3_acceptance_record(index, family, family_index):
+    allocation = phase08_validation.V3_FAMILY_ALLOCATION[family]
+    escape = family_index < allocation['escape_attempt']
+    revisit = family_index < phase08_validation.V3_REVISIT_COUNTS[family]
+    assist = family == 'lifecycle' and family_index < 6
+    merge = family == 'lifecycle' and family_index < 4
+    success, applicability = phase08_validation._v3_case_success(
+        f'v3-test-{index:02d}',
+        escape,
+        revisit,
+        False,
+        merge=merge,
+        assist=assist,
+    )
+    partition = (
+        'holdout'
+        if family_index < allocation['holdout']
+        else 'validation'
+    )
+    case_key = f'{index + 1:064x}'
+    truth_hash = f'{index + 1000:064x}'
+    success['ground_truth']['aggregate_field'] = {
+        'result_sha256': truth_hash,
+    }
+    disturbances = {
+        'sensor_noise': {'model': 'none', 'bound': 0.0},
+        'sensor_delay_sec': 0.0,
+        'pose_delay_sec': 0.0,
+    }
+    metrics = {
+        'collision': _metric(False),
+        'controller_success': _metric(True),
+        'simulation_ground_truth_success': _metric(True),
+        'timeout': _metric(False),
+        'failsafe': _metric(False),
+        'escape_time': (
+            _metric(10.0) if escape
+            else _metric(None, 'not_applicable')
+        ),
+        'approximate_orbit_count': (
+            _metric([1.0]) if escape
+            else _metric(None, 'not_applicable')
+        ),
+        'revisit_count': _metric(0),
+        'convergence_time': _metric(20.0),
+        'path_length': _metric(2.0),
+        'final_aggregate_target_distance': _metric(0.1),
+        'fill_count': _metric(1 if escape else 0),
+        'merge_count': _metric(1 if merge else 0),
+        'observed_raw_cost_delay': _metric(None, 'not_applicable'),
+        'observed_source_cost_delay': _metric(None, 'not_applicable'),
+        'observed_pose_delay': _metric(None, 'not_applicable'),
+    }
+    attempts = []
+    if escape:
+        attempts.append({
+            'outcome': 'success',
+            'duration': _metric(10.0),
+            'orbit_count': _metric(1.0),
+            'assisted': assist,
+        })
+    outcomes = {
+        'controller_goal': 'passed',
+        'simulation_ground_truth': 'passed',
+        'expected_terminal_state_passed': True,
+        'required_state_path_passed': True,
+        'required_event_sequence_passed': True,
+        'required_events_passed': True,
+        'forbidden_states_absent': True,
+        'forbidden_events_absent': True,
+        'minimum_saturation_samples_passed': True,
+        'collision_expectation_passed': True,
+    }
+    record = {
+        'run_id': f'v3-test-{index:02d}-run',
+        'case_id': f'v3-test-{index:02d}',
+        'case_key': case_key,
+        'acceptance_family': family,
+        'acceptance_partition': partition,
+        'disturbances': disturbances,
+        'metric_applicability': applicability,
+        'recording_complete': True,
+        'cleanup': {'passed': True},
+        'record_process': {'timed_out': False},
+        'classification': {
+            'infrastructure_status': 'completed',
+            'passed': True,
+            'predicate_results': {
+                'controller_goal': True,
+                'ground_truth_goal': True,
+            },
+            'result_scopes': {
+                'full_lifecycle': {
+                    'passed': True,
+                    'anchor_observed': True,
+                    'required_predicates': list(
+                        success['result_scopes'][
+                            'full_lifecycle'
+                        ]['all_of']
+                    ),
+                    'predicate_results': {
+                        name: True for name in success[
+                            'result_scopes'
+                        ]['full_lifecycle']['all_of']
+                    },
+                },
+            },
+        },
+        'outcomes': {
+            **outcomes,
+            'observed_state_sequence': list(
+                success['controller']['required_state_path']
+            ),
+            'observed_events': list(
+                success['controller']['required_events']
+            ),
+        },
+        'analysis_error': None,
+        'resolved_scenario_sha256': f'{index + 2000:064x}',
+        'analysis_summary_sha256': f'{index + 3000:064x}',
+        'analysis_completeness': {
+            'status': 'complete',
+            'raw_bag_sha256': {
+                str(V1_REPLAY_FIXTURE): (
+                    phase08_validation.file_sha256(V1_REPLAY_FIXTURE)
+                ),
+            },
+        },
+        'analysis': {
+            'analysis_status': 'complete',
+            'acceptance_family': family,
+            'acceptance_partition': partition,
+            'metric_applicability': json.loads(json.dumps(applicability)),
+            'applicability_integrity': {'passed': True},
+            'aggregate_truth_result_sha256': truth_hash,
+            'escape_attempts': attempts,
+            'metrics': metrics,
+        },
+    }
+    contract_case = {
+        'case_id': record['case_id'],
+        'case_key': case_key,
+        'acceptance_family': family,
+        'acceptance_partition': partition,
+        'disturbances': json.loads(json.dumps(disturbances)),
+        'metric_applicability': json.loads(json.dumps(applicability)),
+        'success': success,
+    }
+    return record, contract_case
+
+
+def _passing_v3_unique_fixture():
+    records = []
+    resolved_cases = []
+    index = 0
+    for family, allocation in (
+        phase08_validation.V3_FAMILY_ALLOCATION.items()
+    ):
+        for family_index in range(allocation['unique']):
+            record, contract_case = _v3_acceptance_record(
+                index,
+                family,
+                family_index,
+            )
+            records.append(record)
+            resolved_cases.append(contract_case)
+            index += 1
+    contract = {
+        'schema_version': 1,
+        'experiment_version': 'phase08-v3',
+        'resolved_cases': resolved_cases,
+        'unique_case_keys': sorted(
+            record['case_key'] for record in records
+        ),
+        'partition_case_keys': {
+            partition: sorted(
+                record['case_key']
+                for record in records
+                if record['acceptance_partition'] == partition
+            )
+            for partition in ('holdout', 'validation')
+        },
+        'family_allocation': json.loads(json.dumps(
+            phase08_validation.V3_FAMILY_ALLOCATION
+        )),
+    }
+    contract['contract_sha256'] = phase08_validation.omission_sha256(
+        contract,
+        'contract_sha256',
+    )
+    return records, contract
+
+
+def _v3_gate_map(evaluation):
+    return {gate['gate']: gate for gate in evaluation['gates']}
+
+
+def test_v3_unique_gates_accept_complete_bound_fixture():
+    """Keep every conjunctive v3 gate reachable by valid evidence."""
+    records, contract = _passing_v3_unique_fixture()
+
+    evaluation = phase08_validation.evaluate_v3_unique_gates(
+        records,
+        contract,
+    )
+
+    assert evaluation['passed'] is True
+    assert all(gate['passed'] for gate in evaluation['gates'])
+
+
+@pytest.mark.parametrize(
+    'mutation',
+    ['duplicate_case_key', 'unsealed_case_key', 'family_drift'],
+)
+def test_v3_unique_gates_enforce_exact_sealed_population(mutation):
+    """Bind the exact 70-case identity and family allocation to the seal."""
+    records, contract = _passing_v3_unique_fixture()
+    if mutation == 'duplicate_case_key':
+        records[-1]['case_key'] = records[0]['case_key']
+    elif mutation == 'unsealed_case_key':
+        records[-1]['case_key'] = 'f' * 64
+    else:
+        records[-1]['acceptance_family'] = 'ordered_two_source'
+
+    evaluation = phase08_validation.evaluate_v3_unique_gates(
+        records,
+        contract,
+    )
+
+    assert evaluation['passed'] is False
+
+
+@pytest.mark.parametrize(
+    ('attempt_field', 'gate_name'),
+    [
+        ('duration', 'escape_duration'),
+        ('orbit_count', 'orbit_count'),
+    ],
+)
+def test_v3_unique_gates_reject_unavailable_success_evidence(
+    attempt_field,
+    gate_name,
+):
+    """An applicable successful attempt cannot lose scalar evidence."""
+    records, contract = _passing_v3_unique_fixture()
+    designated = next(
+        record for record in records
+        if record['metric_applicability']['escape_attempt']
+    )
+    designated['analysis']['escape_attempts'][0][attempt_field] = (
+        _metric(None, 'unavailable')
+    )
+
+    evaluation = phase08_validation.evaluate_v3_unique_gates(
+        records,
+        contract,
+    )
+    gates = _v3_gate_map(evaluation)
+
+    assert evaluation['passed'] is False
+    assert gates[gate_name]['passed'] is False
+    assert gates['metric_applicability']['passed'] is False
+
+
+def _write_passing_v3_report_fixture(root, monkeypatch):
+    outputs = root / 'outputs'
+    outputs.mkdir()
+    for name, filename in {
+        'V3_CONTRACT_PATH': 'contract.json',
+        'V3_GATE_RESULTS_PATH': 'gates.json',
+        'V3_MANIFEST_PATH': 'manifest.json',
+        'V3_REPORT_PATH': 'report.md',
+        'V3_FAILURE_PATH': 'failure.md',
+    }.items():
+        monkeypatch.setattr(
+            phase08_validation,
+            name,
+            outputs / filename,
+        )
+    contract_document = {
+        'schema_version': 1,
+        'experiment_version': 'phase08-v3',
+    }
+    contract_document['contract_sha256'] = (
+        phase08_validation.omission_sha256(
+            contract_document,
+            'contract_sha256',
+        )
+    )
+    phase08_validation.atomic_json(
+        phase08_validation.V3_CONTRACT_PATH,
+        contract_document,
+    )
+    prepare = phase08_validation._v3_write_state(
+        root,
+        'prepare',
+        {'passed': True},
+    )
+    qualification = phase08_validation._v3_write_state(
+        root,
+        'qualification',
+        {
+            'passed': True,
+            'prepare_state_sha256': prepare['state_sha256'],
+        },
+    )
+    activation = phase08_validation._v3_write_state(
+        root,
+        'activation',
+        {
+            'passed': True,
+            'qualification_state_sha256': (
+                qualification['state_sha256']
+            ),
+            'contract_pass_count': 10,
+        },
+    )
+    development = phase08_validation._v3_write_state(
+        root,
+        'development',
+        {
+            'passed': True,
+            'activation_state_sha256': activation['state_sha256'],
+            'selected_candidate': {'candidate_id': 'V3-C0'},
+        },
+    )
+    freeze = phase08_validation._v3_write_state(
+        root,
+        'freeze',
+        {
+            'passed': True,
+            'development_state_sha256': development['state_sha256'],
+        },
+    )
+    contract = phase08_validation._v3_write_state(
+        root,
+        'contract',
+        {
+            'passed': True,
+            'freeze_state_sha256': freeze['state_sha256'],
+            'contract_sha256': contract_document['contract_sha256'],
+        },
+    )
+    holdout = phase08_validation._v3_write_state(
+        root,
+        'holdout',
+        {
+            'passed': True,
+            'contract_state_sha256': contract['state_sha256'],
+            'end_to_end_success_count': 20,
+        },
+    )
+    unique_gates = [
+        phase08_validation._v3_gate(
+            identifier,
+            True,
+            'synthetic-pass',
+            'synthetic-pass',
+        )
+        for identifier in (
+            'completeness_analysis_integrity',
+            'behavior_contracts',
+            'end_to_end',
+            'family_floors',
+            'local_escape',
+            'escape_duration',
+            'orbit_count',
+            'revisit',
+            'metric_applicability',
+        )
+    ]
+    validation = phase08_validation._v3_write_state(
+        root,
+        'validation',
+        {
+            'passed': True,
+            'holdout_state_sha256': holdout['state_sha256'],
+            'contract_state_sha256': contract['state_sha256'],
+            'unique_gate_evaluation': {
+                'passed': True,
+                'gates': unique_gates,
+                'confidence_intervals': {},
+            },
+        },
+    )
+    phase08_validation._v3_write_state(
+        root,
+        'reproducibility',
+        {
+            'passed': True,
+            'validation_state_sha256': validation['state_sha256'],
+            'contract_state_sha256': contract['state_sha256'],
+            'evaluation': {'passed': True, 'repeat_count': 10},
+        },
+    )
+
+
+@pytest.mark.parametrize(
+    'missing',
+    [
+        'qualification',
+        'freeze',
+        'contract',
+        'contract_document',
+        'holdout',
+        'validation',
+        'reproducibility',
+    ],
+)
+def test_v3_report_fails_closed_when_required_state_is_missing(
+    tmp_path,
+    monkeypatch,
+    missing,
+):
+    """A partial state chain can never produce simulation readiness."""
+    _write_passing_v3_report_fixture(tmp_path, monkeypatch)
+    if missing == 'contract_document':
+        phase08_validation.V3_CONTRACT_PATH.unlink()
+    else:
+        phase08_validation._v3_state_path(tmp_path, missing).unlink()
+
+    result = phase08_validation.run_v3_report('test', tmp_path)
+
+    assert result['simulation_ready'] is False
+    assert result['outcome'] == 'failed'
+
+
+def test_v3_terminal_report_rerun_never_overwrites_drift(
+    tmp_path,
+    monkeypatch,
+):
+    """A terminal rerun verifies immutable outputs before returning."""
+    _write_passing_v3_report_fixture(tmp_path, monkeypatch)
+    phase08_validation._v3_state_path(
+        tmp_path,
+        'qualification',
+    ).unlink()
+    phase08_validation.run_v3_report('test', tmp_path)
+    contract = json.loads(
+        phase08_validation.V3_CONTRACT_PATH.read_text(encoding='utf-8')
+    )
+    failure_text = phase08_validation.V3_FAILURE_PATH.read_text(
+        encoding='utf-8'
+    )
+    assert (
+        f'Contract: `{contract["contract_sha256"]}`.'
+        in failure_text
+    )
+    gate_results = json.loads(
+        phase08_validation.V3_GATE_RESULTS_PATH.read_text(
+            encoding='utf-8'
+        )
+    )
+    gate_results['outcome'] = 'tampered'
+    phase08_validation.atomic_json(
+        phase08_validation.V3_GATE_RESULTS_PATH,
+        gate_results,
+    )
+
+    with pytest.raises(RuntimeError, match='terminal artifact drifted'):
+        phase08_validation.run_v3_report('test', tmp_path)
+
+
+def test_v3_passing_terminal_rejects_late_failure_report(
+    tmp_path,
+    monkeypatch,
+):
+    """A passing immutable terminal state requires failure-report absence."""
+    outputs = tmp_path / 'outputs'
+    outputs.mkdir()
+    for name, filename in {
+        'V3_GATE_RESULTS_PATH': 'gates.json',
+        'V3_MANIFEST_PATH': 'manifest.json',
+        'V3_REPORT_PATH': 'report.md',
+        'V3_FAILURE_PATH': 'failure.md',
+    }.items():
+        monkeypatch.setattr(
+            phase08_validation,
+            name,
+            outputs / filename,
+        )
+    phase08_validation.atomic_json(
+        phase08_validation.V3_GATE_RESULTS_PATH,
+        {'simulation_ready': True},
+    )
+    phase08_validation.atomic_json(
+        phase08_validation.V3_MANIFEST_PATH,
+        {'simulation_ready': True},
+    )
+    phase08_validation.atomic_bytes(
+        phase08_validation.V3_REPORT_PATH,
+        b'passing report\n',
+    )
+    phase08_validation._v3_write_state(
+        tmp_path,
+        'terminal',
+        {
+            'passed': True,
+            'operator': 'test',
+            'gate_results_sha256': phase08_validation.file_sha256(
+                phase08_validation.V3_GATE_RESULTS_PATH
+            ),
+            'manifest_sha256': phase08_validation.file_sha256(
+                phase08_validation.V3_MANIFEST_PATH
+            ),
+            'report_sha256': phase08_validation.file_sha256(
+                phase08_validation.V3_REPORT_PATH
+            ),
+            'failure_report_sha256': None,
+        },
+    )
+    phase08_validation.atomic_bytes(
+        phase08_validation.V3_FAILURE_PATH,
+        b'contradictory failure\n',
+    )
+
+    with pytest.raises(RuntimeError, match='contradictory failure report'):
+        phase08_validation.run_v3_report('test', tmp_path)
+
+
+def _v3_repro_record(index, *, repeat=False, direct_goal=False):
+    case_key = f'{index + 1000:064x}'
+    metrics = {
+        'controller_success': _metric(True),
+        'simulation_ground_truth_success': _metric(True),
+        'timeout': _metric(False),
+        'failsafe': _metric(False),
+        'collision': _metric(False),
+        'escape_time': (
+            _metric(None, 'not_applicable')
+            if direct_goal else _metric(10.0)
+        ),
+        'approximate_orbit_count': (
+            _metric(None, 'not_applicable')
+            if direct_goal else _metric([1.0])
+        ),
+        'convergence_time': _metric(20.0),
+        'path_length': _metric(2.0),
+        'final_aggregate_target_distance': _metric(0.1),
+    }
+    record = {
+        'run_id': f'repro-{index}-{"repeat" if repeat else "reference"}',
+        'case_id': f'repro-{index}-{"repeat" if repeat else "reference"}',
+        'case_key': (
+            f'{index + 2000:064x}' if repeat else case_key
+        ),
+        'recording_complete': True,
+        'cleanup': {'passed': True},
+        'record_process': {'timed_out': False},
+        'classification': {
+            'infrastructure_status': 'completed',
+            'passed': True,
+            'result_scopes': {
+                'full_lifecycle': {'passed': True},
+            },
+        },
+        'outcomes': {
+            'controller_goal': 'passed',
+            'simulation_ground_truth': 'passed',
+            'expected_terminal_state_passed': True,
+            'required_state_path_passed': True,
+            'required_event_sequence_passed': True,
+            'required_events_passed': True,
+            'forbidden_states_absent': True,
+            'forbidden_events_absent': True,
+            'collision_expectation_passed': True,
+        },
+        'analysis_error': None,
+        'analysis': {
+            'analysis_status': 'complete',
+            'escape_attempts': [],
+            'metrics': metrics,
+        },
+    }
+    if repeat:
+        record['repeat_reference'] = {'case_key': case_key}
+    return record
+
+
+def _v3_repro_fixture(*, direct_goal=False):
+    references = [
+        _v3_repro_record(index, direct_goal=direct_goal)
+        for index in range(10)
+    ]
+    repeats = [
+        _v3_repro_record(
+            index,
+            repeat=True,
+            direct_goal=direct_goal,
+        )
+        for index in range(10)
+    ]
+    return repeats, references
+
+
+def test_v3_reproducibility_accepts_paired_direct_goal_na():
+    """Predeclared direct-goal escape and orbit N/A values agree."""
+    repeats, references = _v3_repro_fixture(direct_goal=True)
+
+    evaluation = phase08_validation.evaluate_v3_reproducibility(
+        repeats,
+        references,
+    )
+
+    assert evaluation['passed'] is True
+    assert all(item['passed'] for item in evaluation['results'])
+
+
+@pytest.mark.parametrize(
+    'metric_name',
+    [
+        'controller_success',
+        'simulation_ground_truth_success',
+        'timeout',
+        'failsafe',
+        'collision',
+    ],
+)
+def test_v3_reproducibility_rejects_unavailable_categorical(metric_name):
+    """Equal unavailable categorical values are not reproducible evidence."""
+    repeats, references = _v3_repro_fixture()
+    for record in (references[0], repeats[0]):
+        record['analysis']['metrics'][metric_name] = _metric(
+            None,
+            'unavailable',
+        )
+
+    evaluation = phase08_validation.evaluate_v3_reproducibility(
+        repeats,
+        references,
+    )
+
+    assert evaluation['passed'] is False
+    assert evaluation['results'][0]['passed'] is False
+
+
+@pytest.mark.parametrize(
+    'defect',
+    ['missing_required_events', 'integrity_failure'],
+)
+def test_v3_reproducibility_rejects_missing_evidence(defect):
+    """Required coverage and repeat integrity must be positively valid."""
+    repeats, references = _v3_repro_fixture()
+    if defect == 'missing_required_events':
+        for record in (references[0], repeats[0]):
+            record['outcomes'].pop('required_events_passed')
+    else:
+        repeats[0]['cleanup']['passed'] = False
+
+    evaluation = phase08_validation.evaluate_v3_reproducibility(
+        repeats,
+        references,
+    )
+
+    assert evaluation['passed'] is False
+    assert evaluation['results'][0]['passed'] is False
+
+
+def _v3_serial_suite(tmp_path, case_ids, partition='activation'):
+    document = yaml.safe_load(
+        phase08_validation.V3_ACTIVATION_PATH.read_text(encoding='utf-8')
+    )
+    template = document['cases'][0]
+    cases = []
+    for index, case_id in enumerate(case_ids):
+        case = json.loads(json.dumps(template))
+        case['case_id'] = case_id
+        case['success']['controller']['contract_id'] = case_id
+        case['acceptance_partition'] = partition
+        if partition == 'reproducibility':
+            case['repeat_reference'] = {
+                'partition': 'holdout',
+                'case_key': f'{index + 5000:064x}',
+            }
+        cases.append(case)
+    document['suite_id'] = f'v3_serial_{partition}_test'
+    document['execution']['gazebo_gui'] = False
+    document['cases'] = cases
+    path = tmp_path / f'{document["suite_id"]}.yaml'
+    path.write_text(yaml.safe_dump(document), encoding='utf-8')
+    return path
+
+
+def _v3_serial_record(
+    case_id,
+    *,
+    status='passed',
+    cleanup=True,
+    collision=False,
+    run_directory=None,
+):
+    infrastructure = (
+        'infrastructure_invalid'
+        if status == 'infrastructure_invalid'
+        else 'completed'
+    )
+    return {
+        'run_id': f'{case_id}-run',
+        'run_directory': (
+            str(run_directory) if run_directory is not None else None
+        ),
+        'case_id': case_id,
+        'recording_complete': infrastructure == 'completed',
+        'cleanup': {'passed': cleanup},
+        'record_process': {'timed_out': False},
+        'classification': {
+            'status': status,
+            'passed': status == 'passed',
+            'infrastructure_status': infrastructure,
+        },
+        'analysis_error': None,
+        'analysis': {
+            'analysis_status': 'complete',
+            'metrics': {
+                'collision': _metric(collision),
+                'controller_success': _metric(status == 'passed'),
+                'simulation_ground_truth_success': _metric(
+                    status == 'passed'
+                ),
+            },
+        },
+    }
+
+
+def _install_v3_serial_mocks(monkeypatch, record_factory):
+    calls = []
+    attempts = Counter()
+    monkeypatch.setattr(
+        phase08_validation,
+        '_git',
+        lambda *unused: '',
+    )
+
+    def fake_execute(
+        suite_path,
+        operator,
+        *,
+        case_ids,
+        runs_root,
+        summary_output,
+    ):
+        del suite_path, operator, runs_root
+        assert len(case_ids) == 1
+        case_id = case_ids[0]
+        attempts[case_id] += 1
+        calls.append(list(case_ids))
+        summary = {
+            'schema_version': 1,
+            'test_attempt': attempts[case_id],
+            'runs': [{'case_id': case_id}],
+        }
+        phase08_validation.atomic_yaml(summary_output, summary)
+        return summary
+
+    def fake_analyze(summary):
+        case_id = summary['runs'][0]['case_id']
+        return [
+            record_factory(case_id, summary['test_attempt'])
+        ]
+
+    monkeypatch.setattr(
+        phase08_validation,
+        'execute_suite',
+        fake_execute,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_analyze_scenario_summary',
+        fake_analyze,
+    )
+    return calls
+
+
+def test_v3_serial_activation_dispatches_one_case_and_keeps_valid_miss(
+    tmp_path,
+    monkeypatch,
+):
+    """A behavioral miss is final evidence, not a serial-stage stop."""
+    case_ids = ['serial-a', 'serial-b', 'serial-c']
+    suite = _v3_serial_suite(tmp_path, case_ids)
+
+    def record_factory(case_id, attempt):
+        del attempt
+        return _v3_serial_record(
+            case_id,
+            status='failed' if case_id == case_ids[0] else 'passed',
+        )
+
+    calls = _install_v3_serial_mocks(monkeypatch, record_factory)
+    unused_summary, records, progress = (
+        phase08_validation._v3_execute_serial_slots(
+            suite,
+            'test',
+            tmp_path / 'evidence',
+            tmp_path / 'evidence/activation',
+            'activation',
+        )
+    )
+
+    assert calls == [[case_id] for case_id in case_ids]
+    assert [record['classification']['status'] for record in records] == [
+        'failed',
+        'passed',
+        'passed',
+    ]
+    assert progress['stopped_early_reason'] is None
+    assert progress['not_run_slot_ids'] == []
+
+
+def test_v3_serial_rechecks_the_qualified_runtime_snapshot(
+    tmp_path,
+    monkeypatch,
+):
+    """Bind dispatch and each attempt to the exact qualified input map."""
+    suite = _v3_serial_suite(tmp_path, ['snapshot-bound'])
+    _install_v3_serial_mocks(
+        monkeypatch,
+        lambda case_id, attempt: _v3_serial_record(case_id),
+    )
+    verified = []
+    snapshot = {'runtime_inputs_sha256': 'qualified'}
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_verify_repository_snapshot',
+        lambda value: verified.append(value),
+    )
+
+    phase08_validation._v3_execute_serial_slots(
+        suite,
+        'test',
+        tmp_path / 'evidence',
+        tmp_path / 'evidence/activation',
+        'activation',
+        runtime_snapshot=snapshot,
+    )
+
+    assert verified == [snapshot, snapshot]
+
+
+def test_v3_serial_rehashes_suite_before_every_dispatch(
+    tmp_path,
+    monkeypatch,
+):
+    """Stop before a later slot if the resolved suite changes in place."""
+    suite = _v3_serial_suite(tmp_path, ['first', 'second'])
+    calls = _install_v3_serial_mocks(
+        monkeypatch,
+        lambda case_id, attempt: _v3_serial_record(case_id),
+    )
+    original_execute = phase08_validation.execute_suite
+
+    def execute_and_drift(*args, **kwargs):
+        result = original_execute(*args, **kwargs)
+        if len(calls) == 1:
+            suite.write_text(
+                suite.read_text(encoding='utf-8') + '\n# drift\n',
+                encoding='utf-8',
+            )
+        return result
+
+    monkeypatch.setattr(
+        phase08_validation,
+        'execute_suite',
+        execute_and_drift,
+    )
+
+    with pytest.raises(RuntimeError, match='suite drifted before dispatch'):
+        phase08_validation._v3_execute_serial_slots(
+            suite,
+            'test',
+            tmp_path / 'evidence',
+            tmp_path / 'evidence/activation',
+            'activation',
+        )
+
+    assert calls == [['first']]
+
+
+def test_v3_serial_artifact_audit_detects_attempt_aggregate_drift(
+    tmp_path,
+    monkeypatch,
+):
+    """Terminal readiness rehashes progress and every retained attempt."""
+    suite = _v3_serial_suite(tmp_path, ['artifact-bound'])
+    _install_v3_serial_mocks(
+        monkeypatch,
+        lambda case_id, attempt: _v3_serial_record(case_id),
+    )
+    stage_root = tmp_path / 'evidence/activation'
+    unused_summary, unused_records, progress = (
+        phase08_validation._v3_execute_serial_slots(
+            suite,
+            'test',
+            tmp_path / 'evidence',
+            stage_root,
+            'activation',
+        )
+    )
+    state = {
+        'records_path': str(stage_root / 'records.json'),
+        'progress_sha256': progress['progress_sha256'],
+        'attempt_records_sha256': phase08_validation.file_sha256(
+            stage_root / 'attempt_records.json'
+        ),
+    }
+    assert phase08_validation._v3_serial_artifact_errors(
+        'activation',
+        state,
+    ) == []
+    original_suite = suite.read_bytes()
+    suite.write_bytes(original_suite + b'\n# drift\n')
+
+    assert any(
+        'serial suite hash drifted' in reason
+        for reason in phase08_validation._v3_serial_artifact_errors(
+            'activation',
+            state,
+        )
+    )
+    suite.write_bytes(original_suite)
+
+    phase08_validation.atomic_json(
+        stage_root / 'attempt_records.json',
+        [],
+    )
+
+    assert any(
+        'attempt-record aggregate drifted' in reason
+        for reason in phase08_validation._v3_serial_artifact_errors(
+            'activation',
+            state,
+        )
+    )
+
+
+def test_v3_serial_links_one_pre_readiness_replacement(
+    tmp_path,
+    monkeypatch,
+):
+    """One qualified invalid attempt receives one linked replacement."""
+    suite = _v3_serial_suite(tmp_path, ['replace-me'])
+
+    def record_factory(case_id, attempt):
+        if attempt > 1:
+            return _v3_serial_record(case_id)
+        run_directory = tmp_path / 'invalid-attempt'
+        phase08_validation.atomic_yaml(
+            run_directory / 'metadata.yaml',
+            {
+                'recording': {
+                    'failure_stage': 'graph_preflight',
+                    'infrastructure_status': 'infrastructure_invalid',
+                    'readiness_ever_true': False,
+                    'pre_ready_nonzero_topics': {},
+                    'pre_ready_lifecycle_violations': [],
+                },
+            },
+        )
+        phase08_validation.atomic_json(
+            run_directory / 'completeness.json',
+            {
+                'checks': {
+                    'no_motion_before_readiness': {'passed': True},
+                    'clean_lifecycle_before_readiness': {'passed': True},
+                },
+            },
+        )
+        return _v3_serial_record(
+            case_id,
+            status='infrastructure_invalid',
+            run_directory=run_directory,
+        )
+
+    calls = _install_v3_serial_mocks(monkeypatch, record_factory)
+    unused_summary, records, progress = (
+        phase08_validation._v3_execute_serial_slots(
+            suite,
+            'test',
+            tmp_path / 'evidence',
+            tmp_path / 'evidence/activation',
+            'activation',
+        )
+    )
+    replacement = phase08_validation._v3_load_replacement_state(
+        tmp_path / 'evidence'
+    )
+
+    assert calls == [['replace-me'], ['replace-me']]
+    assert len(records) == 1
+    assert len(progress['attempts']) == 2
+    assert replacement['total'] == 1
+    assert replacement['slots'] == ['activation.replace-me']
+    assert replacement['attempt_links'][0][
+        'replacement_attempt_index'
+    ] == 2
+
+
+def test_v3_serial_resumes_persisted_replacement_after_crash(
+    tmp_path,
+    monkeypatch,
+):
+    """A crash after authorization cannot consume a second replacement."""
+    suite = _v3_serial_suite(tmp_path, ['replace-me'])
+    evidence_root = tmp_path / 'evidence'
+    stage_root = evidence_root / 'activation'
+    attempt_root = (
+        stage_root
+        / 'attempts/001_replace-me/attempt_01'
+    )
+    run_directory = tmp_path / 'invalid-attempt'
+    phase08_validation.atomic_yaml(
+        run_directory / 'metadata.yaml',
+        {
+            'recording': {
+                'failure_stage': 'graph_preflight',
+                'infrastructure_status': 'infrastructure_invalid',
+                'readiness_ever_true': False,
+                'pre_ready_nonzero_topics': {},
+                'pre_ready_lifecycle_violations': [],
+            },
+        },
+    )
+    phase08_validation.atomic_json(
+        run_directory / 'completeness.json',
+        {
+            'checks': {
+                'no_motion_before_readiness': {'passed': True},
+                'clean_lifecycle_before_readiness': {'passed': True},
+            },
+        },
+    )
+    invalid = _v3_serial_record(
+        'replace-me',
+        status='infrastructure_invalid',
+        run_directory=run_directory,
+    )
+    summary_path = attempt_root / 'scenario_summary.yaml'
+    record_path = attempt_root / 'record.json'
+    phase08_validation.atomic_yaml(
+        summary_path,
+        {
+            'schema_version': 1,
+            'test_attempt': 1,
+            'runs': [{'case_id': 'replace-me'}],
+        },
+    )
+    phase08_validation.atomic_json(record_path, invalid)
+    evidence = phase08_validation._v3_replacement_evidence(invalid)
+    phase08_validation._v3_authorize_or_resume_replacement(
+        evidence_root,
+        'activation',
+        'activation.replace-me',
+        evidence,
+        {},
+        record_path,
+        2,
+    )
+    calls = _install_v3_serial_mocks(
+        monkeypatch,
+        lambda case_id, attempt: _v3_serial_record(case_id),
+    )
+
+    unused_summary, records, progress = (
+        phase08_validation._v3_execute_serial_slots(
+            suite,
+            'test',
+            evidence_root,
+            stage_root,
+            'activation',
+        )
+    )
+
+    assert calls == [['replace-me']]
+    assert len(records) == 1
+    assert len(progress['attempts']) == 2
+    assert phase08_validation._v3_load_replacement_state(
+        evidence_root
+    )['total'] == 1
+    states = {
+        'activation': {
+            'replacement_state_sha256': (
+                phase08_validation.file_sha256(
+                    phase08_validation._v3_replacement_state_path(
+                        evidence_root
+                    )
+                )
+            ),
+        },
+    }
+    assert phase08_validation._v3_replacement_artifact_errors(
+        evidence_root,
+        states,
+    ) == []
+
+    metadata_path = run_directory / 'metadata.yaml'
+    metadata = yaml.safe_load(metadata_path.read_text(encoding='utf-8'))
+    metadata['recording']['readiness_ever_true'] = True
+    phase08_validation.atomic_yaml(metadata_path, metadata)
+
+    assert any(
+        'eligible invalid evidence' in reason
+        for reason in phase08_validation._v3_replacement_artifact_errors(
+            evidence_root,
+            states,
+        )
+    )
+
+
+@pytest.mark.parametrize(
+    ('defect', 'reason'),
+    [
+        ('cleanup', 'cleanup contamination'),
+        ('collision', 'non-ground collision'),
+        ('analysis', 'analysis is not complete'),
+    ],
+)
+def test_v3_serial_hard_stop_prevents_remaining_dispatch(
+    tmp_path,
+    monkeypatch,
+    defect,
+    reason,
+):
+    """Cleanup and collision failures stop all later declared slots."""
+    case_ids = ['hard-stop', 'not-run-a', 'not-run-b']
+    suite = _v3_serial_suite(tmp_path, case_ids)
+
+    def record_factory(case_id, attempt):
+        del attempt
+        record = _v3_serial_record(
+            case_id,
+            cleanup=defect != 'cleanup',
+            collision=defect == 'collision',
+        )
+        if defect == 'analysis':
+            record['analysis']['analysis_status'] = 'incomplete'
+        return record
+
+    calls = _install_v3_serial_mocks(monkeypatch, record_factory)
+    unused_summary, unused_records, progress = (
+        phase08_validation._v3_execute_serial_slots(
+            suite,
+            'test',
+            tmp_path / 'evidence',
+            tmp_path / 'evidence/activation',
+            'activation',
+        )
+    )
+
+    assert calls == [['hard-stop']]
+    assert reason in progress['stopped_early_reason']
+    assert progress['not_run_slot_ids'] == case_ids[1:]
+
+
+def _v3_holdout_decider_fixture(monkeypatch, tmp_path):
+    family_order = [
+        family
+        for family, allocation in (
+            phase08_validation.V3_FAMILY_ALLOCATION.items()
+        )
+        for unused in range(allocation['holdout'])
+    ]
+    cases = [
+        {
+            'case_id': f'holdout-{index:02d}',
+            'acceptance_partition': 'holdout',
+            'acceptance_family': family,
+        }
+        for index, family in enumerate(family_order)
+    ]
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_case_evaluation',
+        lambda *unused: {
+            'integrity': {'passed': True},
+            'binding_reasons': [],
+            'reasons': [],
+            'lifecycle_passed': True,
+        },
+    )
+    decider = phase08_validation._v3_partition_stop_decider(
+        'holdout',
+        {},
+        {'resolved_cases': cases},
+        tmp_path,
+    )
+    records = [
+        {
+            'case_id': case['case_id'],
+            'acceptance_family': case['acceptance_family'],
+            'analysis': {
+                'metrics': {
+                    'controller_success': _metric(False),
+                    'simulation_ground_truth_success': _metric(True),
+                },
+            },
+        }
+        for case in cases
+    ]
+    return cases, records, decider
+
+
+@pytest.mark.parametrize(
+    ('completed', 'expected'),
+    [
+        (3, '18/20 floor is mathematically unreachable'),
+        (2, 'ordered_two_source floor is mathematically unreachable'),
+    ],
+)
+def test_v3_holdout_optimistic_stop_bounds_are_enforced(
+    tmp_path,
+    monkeypatch,
+    completed,
+    expected,
+):
+    """Stop once the fixed overall or family floor cannot be recovered."""
+    cases, records, decider = _v3_holdout_decider_fixture(
+        monkeypatch,
+        tmp_path,
+    )
+
+    reason = decider(
+        records[:completed],
+        [case['case_id'] for case in cases[completed:]],
+    )
+
+    assert expected in reason
+
+
+def test_v3_serial_reproducibility_stops_on_first_mismatch(
+    tmp_path,
+    monkeypatch,
+):
+    """The first reproducibility mismatch leaves all later pairs not run."""
+    case_ids = ['repeat-a', 'repeat-b', 'repeat-c']
+    suite = _v3_serial_suite(
+        tmp_path,
+        case_ids,
+        partition='reproducibility',
+    )
+    records_path = tmp_path / 'unique-records.json'
+    phase08_validation.atomic_json(records_path, [])
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_require_state',
+        lambda *unused: {'records_path': str(records_path)},
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_case_evaluation',
+        lambda *unused: {
+            'integrity': {'passed': True},
+            'binding_reasons': [],
+            'reasons': [],
+            'lifecycle_passed': True,
+        },
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        'evaluate_v3_reproducibility',
+        lambda *unused: {'results': [{'passed': False}]},
+    )
+    calls = _install_v3_serial_mocks(
+        monkeypatch,
+        lambda case_id, attempt: _v3_serial_record(case_id),
+    )
+    contract = {
+        'resolved_cases': [
+            {
+                'case_id': case_id,
+                'acceptance_partition': 'reproducibility',
+            }
+            for case_id in case_ids
+        ],
+    }
+    decider = phase08_validation._v3_partition_stop_decider(
+        'reproducibility',
+        {},
+        contract,
+        tmp_path / 'evidence',
+    )
+
+    unused_summary, unused_records, progress = (
+        phase08_validation._v3_execute_serial_slots(
+            suite,
+            'test',
+            tmp_path / 'evidence',
+            tmp_path / 'evidence/reproducibility',
+            'reproducibility',
+            stop_decider=decider,
+        )
+    )
+
+    assert calls == [['repeat-a']]
+    assert 'first mismatch' in progress['stopped_early_reason']
+    assert progress['not_run_slot_ids'] == case_ids[1:]
+
+
+def test_v3_serial_progress_hash_rejects_mutation(
+    tmp_path,
+    monkeypatch,
+):
+    """Retain not-run slots and reject a mutated resume document."""
+    case_ids = ['complete', 'not-run']
+    suite = _v3_serial_suite(tmp_path, case_ids)
+    calls = _install_v3_serial_mocks(
+        monkeypatch,
+        lambda case_id, attempt: _v3_serial_record(case_id),
+    )
+    stage_root = tmp_path / 'evidence/activation'
+    unused_summary, unused_records, progress = (
+        phase08_validation._v3_execute_serial_slots(
+            suite,
+            'test',
+            tmp_path / 'evidence',
+            stage_root,
+            'activation',
+            stop_decider=lambda records, remaining: 'test stop',
+        )
+    )
+    assert calls == [['complete']]
+    assert progress['not_run_slot_ids'] == ['not-run']
+
+    progress_path = phase08_validation._v3_progress_path(stage_root)
+    mutated = json.loads(progress_path.read_text(encoding='utf-8'))
+    mutated['not_run_slot_ids'] = []
+    progress_path.write_text(json.dumps(mutated), encoding='utf-8')
+
+    with pytest.raises(RuntimeError, match='progress hash drifted'):
+        phase08_validation._v3_execute_serial_slots(
+            suite,
+            'test',
+            tmp_path / 'evidence',
+            stage_root,
+            'activation',
+        )

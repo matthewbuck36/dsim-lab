@@ -234,6 +234,85 @@ ros2 run ros_esc run_scenario \
 Use the live Phase 08 status for the next predeclared case. Do not dispatch the
 whole ten-case suite merely because it is schema-valid.
 
+## Phase 08.3 v3 workflow and retained attempts
+
+Phase 08.3 uses a new root and flat workflow commands. It must never reuse the
+historical v1, v2, Phase 08.1, or Phase 08.2 roots:
+
+```bash
+PHASE08_V3_ROOT=~/Experiments/GESC-Gaussian/runs/phase08_v3
+
+ros2 run ros_esc validate_robustness v3-prepare \
+  --operator phase08_v3 \
+  --evidence-root "$PHASE08_V3_ROOT" \
+  --holdout-recipient USER_APPROVED_GPG_FINGERPRINT
+
+ros2 run ros_esc validate_robustness v3-qualify \
+  --operator phase08_v3 \
+  --evidence-root "$PHASE08_V3_ROOT"
+```
+
+These are command shapes, not a statement that either command or any v3
+simulation ran. Follow the active Plan and live Phase 08 status. Later flat
+subcommands are `v3-activation`, `v3-development`, `v3-freeze`, `v3-seal`,
+`v3-holdout`, `v3-validation`, `v3-reproducibility`, and `v3-report`; every
+one requires the same operator and evidence root, and each refuses an
+out-of-order stage.
+
+`v3-prepare` owns creation of the root: it must be absent on first entry. A
+private mode-`0600` prepare transaction retains only the ciphertext,
+non-identifying commitment, approved recipient fingerprint, and input hashes.
+It contains no plaintext cases or seed and makes publication resumable after
+an interruption. Do not create the root manually or delete one side of that
+transaction.
+
+Fresh activation is a serial, GUI-visible diagnostic gate. Development,
+holdout, additional validation, and reproducibility are serial headless
+batches. Their schema/workflow settings own presentation; do not use `--gui`
+to turn a batch into an interactive run. A `--dry-run` performs resolution and
+qualification only and starts no ROS, Gazebo, rosbag, or hardware.
+
+Every resolved schema-v4 case carries an immutable aggregate-truth record and
+canonical result hash. Escape-designated cases also carry an immutable local
+below-threshold proof. Freeze and acceptance records bind the implementation,
+profile, scenario population, cost model, sensor geometry, suite, and
+contract hashes. The acceptance contract hash is SHA-256 of canonical JSON
+with the top-level `contract_sha256` field omitted; the inserted value must
+match everywhere it is referenced. Never edit a sealed record in place.
+A corrected contract or case is a new version before runtime, not a rewritten
+attempt.
+
+Every dispatched attempt keeps its original run directory, raw-bag hash,
+scenario result, completeness result, analysis, and classification. A valid
+behavioral miss is never replaced. An `infrastructure_invalid` attempt is
+replaceable only when retained coordinator and bag evidence proves readiness
+was never true, no nonzero command or robust lifecycle advance occurred, the
+cause was external startup infrastructure, and cleanup permits a clean start.
+The replacement uses the identical case, seed, profile, frozen hashes, and
+contract; both attempts remain linked and no slot receives more than one
+replacement.
+
+Progress, attempt aggregates, replacement links, and all referenced
+summary/record/error files are hashed. The terminal report rehashes them and
+is itself create-once: a rerun verifies existing gate, manifest, report, and
+failure-report bytes instead of overwriting drift. Qualification also freezes
+the exact runtime-input map used by activation/development; M5 repeats the
+isolated build and dry runs before the final implementation/profile freeze.
+
+| Stage | Maximum replacement attempts |
+|---|---:|
+| Activation | 1 |
+| Development | 3, at most one per candidate |
+| Holdout | 1 |
+| Additional validation | 2 |
+| Reproducibility | 1 |
+| **V3 total** | **8** |
+
+Exceeding a stage or total cap, or a second invalid attempt for one slot, fails
+the infrastructure gate. A later stage prohibited by an earlier gate is
+recorded as `outcome: "not_run"` with `passed: null`; it is not a failed or
+zero-valued run.
+
 ## Stop a run
 
 For an indefinite run (`--duration-sec 0`), press Ctrl-C once in the

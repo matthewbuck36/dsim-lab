@@ -1086,3 +1086,110 @@ the current external `workflow_state/v3_<stage>.json`, the latest Phase 08
 checkpoint, and Git status/diff/log. Recover empirical work from retained
 manifests, completeness files, analyses, gate results, and hashes. Never rerun
 a matrix, analyzer, or large-bag hash merely to recover context.
+
+## Phase 08.3 M1 completion
+
+M1 is complete at the precommit material boundary. It implements the
+schema-v4, aggregate-ground-truth, analysis, runner, encrypted-suite,
+replacement, serial-stage, freeze/seal, terminal-report, packaging, test, and
+operator-documentation contracts in the existing owners. It adds no
+controller, recorder, validator, analyzer, node, message, service, action,
+topic, launch owner, physical fork, or algorithm behavior change.
+
+### Bounded Level B corrections
+
+- The Plan's `70/70` behavior gate is implemented as positive lifecycle,
+  safety, completeness, cleanup, and applicability evidence. Endpoint goal
+  outcomes remain independently scored by the nonredundant `63/70`
+  end-to-end gate and family floors. This preserves the declared objective
+  instead of making the `63/70` gate unreachable by definition.
+- Aggregate truth reads the installed TurtleBot sensor URDF.
+  `ros_esc/package.xml` now declares
+  `turtlebot3_rotating_sensor` as its runtime owner, and the isolated
+  qualification build uses `--packages-up-to ros_esc` so a missing dependency
+  cannot be hidden by an explicit three-package list.
+- New escape-attempt, timestamped-fill revisit, and aggregate-goal analyzer
+  semantics are gated to schema 4. Schema 1–3 retain their prior attempt
+  boundaries, current-active-fill revisit calculation, exact provenance, and
+  manual-goal reason/status text.
+- Prepare publishes the fresh evidence root only after a mode-`0600`
+  recoverable transaction is ready. Freeze and seal use deterministic
+  create-or-verify recovery across every tested interruption window.
+- Serial execution rehashes the resolved suite before every dispatch and the
+  terminal audit. Replacement authorization binds and later re-derives the
+  invalid record, metadata, and completeness proof. Passing terminal evidence
+  rejects a later contradictory failure report, and every sealed failure
+  report carries the contract hash.
+
+These corrections are local evidence, compatibility, packaging, and recovery
+fixes. They do not weaken a gate or change cost sign/units, canonical topics,
+controller ownership, selectable legacy behavior, or simulation/physical
+algorithm parity.
+
+### M1 validation evidence
+
+- Final source-first functional gate:
+  `381 passed, 2 skipped in 57.55 s` from 383 collected tests. The skips were
+  exactly the opt-in headless Phase 06 Gazebo integration and visible Gazebo
+  recording smoke; neither ran.
+- Focused v3 workflow regression after the final recovery correction:
+  `80 passed in 14.84 s`.
+- All modified and new Python files passed `ament_flake8`,
+  `ament_pep257`, and Python compilation. `git diff --check` passed.
+- A final clean non-symlink dependency-closure build at
+  `/tmp/phase08_v3_m1_final_install.Q71CfM` built
+  `ros_esc_interfaces`, `turtlebot3_rotating_sensor`, and `ros_esc`.
+  Installed `validate_robustness --help`, package resources, sensor-URDF
+  resolution, and activation/development dry runs passed from `/tmp`.
+  Both dry runs resolved exactly ten schema-v4 cases with zero unsupported
+  entries.
+- All 13 retained schema-v1–v3 suites were deep-equal to their pre-M1
+  expansion: 684 resolved runs and seven unsupported records. A
+  representative legacy SQLite analysis summary was exactly equal as a whole
+  document.
+- Static v3 hashes:
+  activation
+  `8fa385c50f19adf1f362dba286ed3e5c527a175b89692b38632d77471b450031`;
+  development
+  `1c5ef231b5839386f8db67d7b83e25a6ca11dc2935bc1a7c6584a8645a57f433`;
+  candidates
+  `c17459dfceaeb16e0d4dfea70469ed0a200c3edd34255e99030dd38eb5a43f7e`.
+- Normal and strict-history Phase 08 Implement validation and required
+  document validation passed.
+- The fresh v3 evidence root and proposed simulation-ready tag remain absent.
+  No Gazebo, rosbag, v3 runtime, acceptance generation, tuning, holdout
+  reveal, validation, repeat, Phase 09, or physical command ran in M1. No
+  related runtime process remains.
+
+## Current milestone
+
+- Completed milestone: **M0 — reopen context without rewriting history**.
+- Completed milestone: **M1 — implement and test v3 evidence contracts**.
+- State: **WAITING BEFORE M2**.
+- Next criterion: obtain the exact user-approved 40-hex GPG recipient
+  fingerprint, then run M2 pre-activation source/build/dry-run qualification
+  and opaque acceptance-suite commitment.
+- M2 performs no Gazebo simulation. If M2 passes and is checkpointed, M3 runs
+  ten serial GUI-visible activation simulations. Only the later repeated
+  development, holdout, validation, and reproducibility batches are
+  headless.
+
+## Remaining work
+
+- Include this status and the precommit checkpoint in the independently
+  validated, authorized M1 commit boundary.
+- Obtain the exact approved GPG recipient fingerprint; never infer or
+  substitute it.
+- Execute M2–M9 in declared order while every prior gate remains open.
+
+## Stop conditions
+
+- Preserve all historical and M1 stop conditions above.
+- Do not create the v3 evidence root or acceptance ciphertext before the exact
+  recipient fingerprint is supplied and verified.
+- Stop before Gazebo if M2 source, dependency-closure build, installed
+  runtime, schema, dry-run, encryption, historical-exclusion, process, disk,
+  or cleanup qualification fails.
+- Never reinterpret a valid behavioral miss, replace an attempt without the
+  bound raw proof, weaken a frozen threshold, reveal holdout identities early,
+  or create the readiness tag before all sealed gates pass.

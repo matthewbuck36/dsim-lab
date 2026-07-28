@@ -48,6 +48,94 @@ def _resolved(profile='robust_gaussian_v1'):
     return next(run for run in runs if run['profile'] == profile)
 
 
+def _v4_branch_resolved():
+    resolved = _resolved()
+    resolved['schema_version'] = 4
+    resolved['acceptance_family'] = 'lifecycle'
+    resolved['acceptance_partition'] = 'activation'
+    resolved['repeat_reference'] = None
+    resolved['metric_applicability'] = {
+        'escape_attempt': True,
+        'escape_duration': True,
+        'orbit_count': True,
+        'revisit': False,
+        'delay': False,
+        'saturation': False,
+    }
+    resolved['validation'] = {
+        'world': True,
+        'contacts_enabled': True,
+    }
+    resolved['success'] = {
+        'all_of': [
+            'recording_complete',
+            'cleanup_complete',
+            'ground_truth_goal',
+            'required_state_path',
+            'required_events',
+            'no_forbidden_states',
+            'no_forbidden_events',
+            'collision_expectation',
+        ],
+        'controller': {
+            'expected_terminal_state': None,
+            'required_state_sequence': [],
+            'required_state_path': [
+                'VERIFY_EXTREMUM',
+                'DESIGN_OR_MERGE_FILL',
+                'ESCAPE_REPULSE',
+            ],
+            'required_events': [
+                'FILL_CREATED',
+                'ESCAPE_STARTED',
+            ],
+            'required_event_sequence': [],
+            'forbidden_states': ['FAILSAFE'],
+            'forbidden_events': ['TIMEOUT', 'FAILSAFE'],
+        },
+        'ground_truth': {
+            'method': 'aggregate_field',
+            'final_position_tolerance_m': 0.35,
+            'wall_margin_m': 0.35,
+            'minimum_source_score': 0.95,
+            'aggregate_field': {
+                'targets': [{
+                    'target_id': 'aggregate_001',
+                    'x_m': 1.5,
+                    'y_m': 1.0,
+                }],
+            },
+        },
+        'minimum_saturation_samples': 0,
+        'collision_expected': False,
+        'result_scopes': {
+            'activation_window': {
+                'anchor_state': 'VERIFY_EXTREMUM',
+                'boundary_state': 'ESCAPE_REPULSE',
+                'graceful_stop': True,
+                'all_of': [
+                    'required_state_path',
+                    'required_events',
+                ],
+            },
+            'full_lifecycle': {
+                'anchor_state': 'SEARCH',
+                'boundary_state': None,
+                'graceful_stop': False,
+                'all_of': [
+                    'recording_complete',
+                    'cleanup_complete',
+                    'ground_truth_goal',
+                    'no_forbidden_states',
+                    'no_forbidden_events',
+                    'collision_expectation',
+                ],
+            },
+        },
+    }
+    return resolved
+
+
 def test_launch_and_record_argv_compose_existing_owners_without_shell():
     """Compose only the existing launch and recorder through direct argv."""
     resolved = _resolved()
@@ -102,6 +190,30 @@ def test_metadata_and_launch_share_inputs(tmp_path):
     assert loaded['environment']['bounds_m']['x_min'] == -2.0
     assert 'algorithm_profile:=legacy' in launch
     assert 'light_1_intensity_lumens:=1000.0' in launch
+
+
+def test_v4_metadata_and_launch_bind_acceptance_and_contact_evidence():
+    """Carry sealed dimensions and enable zero-collision contact probing."""
+    resolved = _v4_branch_resolved()
+
+    metadata = build_metadata(
+        resolved,
+        'codex-test',
+        'phase08-v3-test',
+        'unit test',
+    )
+    launch = build_launch_command(resolved)
+
+    scenario = metadata['scenario_runner']
+    assert scenario['acceptance_family'] == 'lifecycle'
+    assert scenario['acceptance_partition'] == 'activation'
+    assert scenario['metric_applicability']['escape_attempt'] is True
+    assert (
+        scenario['success']['ground_truth']['method']
+        == 'aggregate_field'
+    )
+    assert 'simulation_contacts_enabled:=True' in launch
+    assert 'simulation_contact_probe_enabled:=True' in launch
 
 
 def test_unique_run_ids_are_safe_even_for_identical_case_and_time():
@@ -518,6 +630,246 @@ def test_cross_producer_required_events_ignore_rosbag_receipt_order(
     assert outcomes['required_events_passed'] is True
 
 
+def test_v4_bag_outcomes_use_aggregate_target_and_named_scope(
+    monkeypatch,
+    tmp_path,
+):
+    """Classify scoped branch evidence and aggregate terminal position."""
+
+    def state(name, value):
+        return SimpleNamespace(
+            state_name=name,
+            state=value,
+            state_valid=True,
+        )
+
+    class FakeReader:
+        def __init__(self):
+            odometry = SimpleNamespace(
+                pose=SimpleNamespace(
+                    pose=SimpleNamespace(
+                        position=SimpleNamespace(x=1.5, y=1.0),
+                    ),
+                ),
+            )
+            self.records = [
+                (
+                    '/gesc_gaussian/recording_ready',
+                    SimpleNamespace(data=True),
+                    1,
+                ),
+                (
+                    '/gesc_gaussian/algorithm_state',
+                    state('SEARCH', runner.AlgorithmState.STATE_SEARCH),
+                    2,
+                ),
+                (
+                    '/gesc_gaussian/algorithm_state',
+                    state(
+                        'VERIFY_EXTREMUM',
+                        runner.AlgorithmState.STATE_VERIFY_EXTREMUM,
+                    ),
+                    3,
+                ),
+                (
+                    '/gesc_gaussian/algorithm_state',
+                    state(
+                        'DESIGN_OR_MERGE_FILL',
+                        runner.AlgorithmState.STATE_DESIGN_OR_MERGE_FILL,
+                    ),
+                    4,
+                ),
+                (
+                    '/gesc_gaussian/algorithm_events',
+                    SimpleNamespace(
+                        event_type=runner.AlgorithmEvent.EVENT_FILL_CREATED
+                    ),
+                    5,
+                ),
+                (
+                    '/gesc_gaussian/algorithm_state',
+                    state(
+                        'ESCAPE_REPULSE',
+                        runner.AlgorithmState.STATE_ESCAPE_REPULSE,
+                    ),
+                    6,
+                ),
+                (
+                    '/gesc_gaussian/algorithm_events',
+                    SimpleNamespace(
+                        event_type=runner.AlgorithmEvent.EVENT_ESCAPE_STARTED
+                    ),
+                    7,
+                ),
+                ('/odom', odometry, 8),
+                (
+                    '/gesc_gaussian/simulation/contacts',
+                    SimpleNamespace(states=[]),
+                    9,
+                ),
+                (
+                    '/gesc_gaussian/recording_ready',
+                    SimpleNamespace(data=False),
+                    10,
+                ),
+            ]
+
+        def open(self, *_args):  # noqa: A003 - matches rosbag reader API.
+            return None
+
+        def has_next(self):
+            return bool(self.records)
+
+        def read_next(self):
+            return self.records.pop(0)
+
+    monkeypatch.setattr(runner.rosbag2_py, 'SequentialReader', FakeReader)
+    monkeypatch.setattr(
+        runner,
+        'deserialize_message',
+        lambda serialized, _message_type: serialized,
+    )
+    resolved = _v4_branch_resolved()
+
+    outcomes = runner._bag_outcomes(tmp_path, resolved)
+    classification = classify_result(
+        resolved,
+        {'passed': True},
+        {'passed': True},
+        outcomes,
+        {
+            'timed_out': False,
+            'return_code': 0,
+            'graceful_boundary_stop': True,
+        },
+        metadata={
+            'recording': {
+                'readiness_ever_true': True,
+                'infrastructure_status': 'completed',
+            },
+        },
+        run_directory_available=True,
+    )
+
+    assert outcomes['simulation_ground_truth'] == 'passed'
+    assert outcomes['final_goal_distances_m'] == {
+        'aggregate_001': 0.0,
+    }
+    activation = outcomes['result_scopes']['activation_window']
+    assert activation['boundary_observed'] is True
+    assert activation['predicate_results']['required_state_path'] is True
+    assert activation['predicate_results']['required_events'] is True
+    assert classification['result_scopes'][
+        'activation_window'
+    ]['passed'] is True
+    assert classification['passed'] is True
+
+
+def test_v4_named_scope_requires_its_declared_anchor():
+    """Reject an apparently safe empty full-lifecycle slice."""
+    resolved = _v4_branch_resolved()
+    outcomes = {
+        'controller_goal': 'unavailable',
+        'simulation_ground_truth': 'passed',
+        'expected_terminal_state_passed': True,
+        'required_state_sequence_passed': True,
+        'required_state_path_passed': True,
+        'required_event_sequence_passed': True,
+        'required_events_passed': True,
+        'forbidden_states_absent': True,
+        'forbidden_events_absent': True,
+        'minimum_saturation_samples_passed': True,
+        'collision_expectation_passed': True,
+        'result_scopes': {
+            'activation_window': {
+                'anchor_observed': True,
+                'boundary_observed': True,
+                'predicate_results': {
+                    'required_state_path': True,
+                    'required_events': True,
+                },
+            },
+            'full_lifecycle': {
+                'anchor_observed': False,
+                'boundary_observed': True,
+                'predicate_results': {
+                    'no_forbidden_states': True,
+                    'no_forbidden_events': True,
+                },
+            },
+        },
+    }
+
+    classification = classify_result(
+        resolved,
+        {'passed': True},
+        {'passed': True},
+        outcomes,
+        {'timed_out': False, 'return_code': 0},
+        metadata={'recording': {'readiness_ever_true': True}},
+        run_directory_available=True,
+    )
+
+    assert classification['result_scopes']['full_lifecycle'][
+        'anchor_observed'
+    ] is False
+    assert classification['passed'] is False
+
+
+def test_v4_activation_scope_cannot_hide_later_full_lifecycle_failsafe():
+    """Keep global safety false after a passing branch-only window."""
+    resolved = _v4_branch_resolved()
+    outcomes = {
+        'controller_goal': 'unavailable',
+        'simulation_ground_truth': 'passed',
+        'expected_terminal_state_passed': True,
+        'required_state_sequence_passed': True,
+        'required_state_path_passed': True,
+        'required_event_sequence_passed': True,
+        'required_events_passed': True,
+        'forbidden_states_absent': False,
+        'forbidden_events_absent': False,
+        'minimum_saturation_samples_passed': True,
+        'collision_expectation_passed': True,
+        'result_scopes': {
+            'activation_window': {
+                'anchor_observed': True,
+                'boundary_observed': True,
+                'predicate_results': {
+                    'required_state_path': True,
+                    'required_events': True,
+                },
+            },
+            'full_lifecycle': {
+                'anchor_observed': True,
+                'boundary_observed': True,
+                'predicate_results': {
+                    'no_forbidden_states': False,
+                    'no_forbidden_events': False,
+                },
+            },
+        },
+    }
+
+    classification = classify_result(
+        resolved,
+        {'passed': True},
+        {'passed': True},
+        outcomes,
+        {'timed_out': False, 'return_code': 0},
+        metadata={'recording': {'readiness_ever_true': True}},
+        run_directory_available=True,
+    )
+
+    assert classification['result_scopes']['activation_window'][
+        'passed'
+    ] is True
+    assert classification['result_scopes']['full_lifecycle'][
+        'passed'
+    ] is False
+    assert classification['passed'] is False
+
+
 @pytest.mark.parametrize(
     ('terminal_x', 'source_x', 'error_text'),
     [
@@ -787,6 +1139,111 @@ def test_cleanup_compares_only_new_graph_and_exact_session(monkeypatch):
     assert evidence['passed'] is False
     assert evidence['remaining_new_nodes'] == ['/new_node']
     assert evidence['remaining_session_processes'][0]['session_id'] == 1234
+
+
+def test_live_boundary_stop_waits_for_state_and_required_event(monkeypatch):
+    """Request SIGINT only after the declared branch evidence is observable."""
+    callbacks = {}
+    dispatched = []
+    signals = []
+
+    class FakeNode:
+        def create_subscription(
+            self,
+            unused_type,
+            topic,
+            callback,
+            unused_depth,
+        ):
+            callbacks[topic] = callback
+            return object()
+
+        def destroy_node(self):
+            return None
+
+    class FakeProcess:
+        def __init__(self, command, stdout, **unused_kwargs):
+            self.command = command
+            self.stdout = stdout
+            self.pid = 4321
+            self.returncode = None
+            stdout.write('boundary test\n')
+
+        def poll(self):
+            return self.returncode
+
+        def wait(self, timeout=None):
+            del timeout
+            self.returncode = 0
+            return 0
+
+    sequence = [
+        (
+            '/gesc_gaussian/algorithm_state',
+            SimpleNamespace(
+                state_name='VERIFY_EXTREMUM',
+                state=runner.AlgorithmState.STATE_VERIFY_EXTREMUM,
+                state_valid=True,
+            ),
+        ),
+        (
+            '/gesc_gaussian/algorithm_state',
+            SimpleNamespace(
+                state_name='ESCAPE_REPULSE',
+                state=runner.AlgorithmState.STATE_ESCAPE_REPULSE,
+                state_valid=True,
+            ),
+        ),
+        (
+            '/gesc_gaussian/algorithm_events',
+            SimpleNamespace(
+                event_type=runner.AlgorithmEvent.EVENT_ESCAPE_STARTED
+            ),
+        ),
+    ]
+
+    def spin_once(unused_node, timeout_sec):
+        del timeout_sec
+        topic, message = sequence.pop(0)
+        dispatched.append(topic)
+        callbacks[topic](message)
+
+    monkeypatch.setattr(runner.rclpy.context, 'Context', lambda: object())
+    monkeypatch.setattr(runner.rclpy, 'init', lambda context: None)
+    monkeypatch.setattr(runner.rclpy, 'shutdown', lambda context: None)
+    monkeypatch.setattr(
+        runner.rclpy,
+        'create_node',
+        lambda *args, **kwargs: FakeNode(),
+    )
+    monkeypatch.setattr(runner.rclpy, 'spin_once', spin_once)
+    monkeypatch.setattr(runner.subprocess, 'Popen', FakeProcess)
+    monkeypatch.setattr(
+        runner.os,
+        'killpg',
+        lambda pid, signum: signals.append((pid, signum)),
+    )
+
+    result = runner.run_record_process(
+        ['record'],
+        5.0,
+        1.0,
+        anchor_state='VERIFY_EXTREMUM',
+        boundary_state='ESCAPE_REPULSE',
+        boundary_required_events=['ESCAPE_STARTED'],
+    )
+
+    assert dispatched == [
+        '/gesc_gaussian/algorithm_state',
+        '/gesc_gaussian/algorithm_state',
+        '/gesc_gaussian/algorithm_events',
+    ]
+    assert signals == [(4321, runner.signal.SIGINT)]
+    assert result['graceful_boundary_stop'] is True
+    assert result['boundary_required_events_observed'] == [
+        'ESCAPE_STARTED'
+    ]
+    assert result['stdout'] == 'boundary test\n'
 
 
 def test_failed_run_is_retained_and_cleanup_failure_stops_suite(

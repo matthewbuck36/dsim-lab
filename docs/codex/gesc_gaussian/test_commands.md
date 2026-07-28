@@ -56,6 +56,7 @@ turtlebot3_rotating_sensor      ros2_ws/src/turtlebot3_rotating_sensor      (ros
 ```bash
 source /opt/ros/humble/setup.bash
 source ros2_ws/install/setup.bash
+export PYTHONPATH="$PWD/ros2_ws/src/ros_esc:$PYTHONPATH"
 ros2 pkg executables ros_esc | sort
 ros2 interface list | rg '^    ros_esc_interfaces/msg/'
 ```
@@ -2740,3 +2741,153 @@ Results:
 - checkpoint: pass; active Plan is `phase_08_3_plan.md` and the latest
   append-only status milestone is captured;
 - unstaged and untracked-Plan whitespace/diff checks: pass.
+
+## Phase 08.3 M1 schema-v4 and v3 CLI reference
+
+This is a command reference for implementation and qualification. It is not
+evidence that a Phase 08.3 Gazebo case, tuning batch, holdout, validation case,
+or repeat ran. Runtime authorization and the next permitted command come from
+the active Plan and live Phase 08 status.
+
+Schema-v4 aggregate truth, local-branch proofs, applicability, per-attempt
+analysis, runner, and v3 workflow changes use the bounded focused gate:
+
+```bash
+cd /home/mattb/dsim-lab
+source /opt/ros/humble/setup.bash
+source ros2_ws/install/setup.bash
+
+timeout 300s python3 -m pytest -q -rs \
+  ros2_ws/src/ros_esc/test/test_aggregate_field_truth.py \
+  ros2_ws/src/ros_esc/test/test_phase08_validation.py \
+  ros2_ws/src/ros_esc/test/test_bag_analysis.py \
+  ros2_ws/src/ros_esc/test/test_bag_analysis_integration.py \
+  ros2_ws/src/ros_esc/test/test_scenario_schema.py \
+  ros2_ws/src/ros_esc/test/test_scenario_runner.py
+```
+
+The source-first `PYTHONPATH` is intentional for an M1 source gate. Installed
+entry-point and resource behavior is checked separately with a fresh
+non-symlink isolated build; do not let an older `build/` or `install/` copy
+masquerade as the current source.
+
+The isolated qualification build resolves the dependency closure declared by
+`ros_esc/package.xml`:
+
+```bash
+timeout 600s colcon build \
+  --build-base /tmp/phase08_v3_isolated/build \
+  --install-base /tmp/phase08_v3_isolated/install \
+  --packages-up-to ros_esc
+```
+
+`ros_esc` declares `turtlebot3_rotating_sensor` as a runtime dependency
+because aggregate truth reads that package's installed sensor URDF. Do not
+replace the dependency-closure check with an explicit package list that could
+mask a missing manifest dependency.
+
+Static scenario qualification must precede any runtime stage:
+
+```bash
+timeout 120s ros2 run ros_esc run_scenario \
+  ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v3_activation.yaml \
+  --operator phase08_v3 \
+  --dry-run \
+  --summary-output /tmp/phase08_v3_activation_dry.yaml
+
+timeout 120s ros2 run ros_esc run_scenario \
+  ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v3_development.yaml \
+  --operator phase08_v3 \
+  --dry-run \
+  --summary-output /tmp/phase08_v3_development_dry.yaml
+```
+
+The activation contract is serial and GUI-visible:
+`max_parallel_runs=1`, `gazebo_gui=true`. Development and every repeated
+acceptance batch are serial and headless: `max_parallel_runs=1`,
+`gazebo_gui=false`. A dry run starts neither presentation. Do not add a CLI GUI
+override to a v3 batch or dispatch a stage outside the workflow owner.
+
+Phase 08.3 extends the existing executable with flat subcommands:
+
+```text
+v3-prepare
+v3-qualify
+v3-activation
+v3-development
+v3-freeze
+v3-seal
+v3-holdout
+v3-validation
+v3-reproducibility
+v3-report
+```
+
+Every subcommand requires `--operator` and `--evidence-root`;
+`v3-prepare` also requires a user-approved `--holdout-recipient`. The
+qualification form is:
+
+```bash
+PHASE08_V3_ROOT=~/Experiments/GESC-Gaussian/runs/phase08_v3
+
+timeout 1800s ros2 run ros_esc validate_robustness v3-qualify \
+  --operator phase08_v3 \
+  --evidence-root "$PHASE08_V3_ROOT"
+```
+
+`v3-qualify` is not a substitute for `v3-prepare`, stage-order checks, the
+encrypted-suite commitment, or the live-status gate. Successful help, dry-run,
+or qualification output does not authorize activation and is not behavioral
+acceptance evidence.
+
+`v3-prepare` requires the evidence root to be absent. It writes one
+mode-`0600` encrypted prepare transaction under that fresh root before
+publishing the tracked ciphertext and non-identifying commitment, so a crash
+can resume without regenerating or writing plaintext. `v3-qualify` binds its
+functional, isolated-build, installed-resource, instantiation, and dry-run
+results to the exact runtime-input hash map. Activation and development rehash
+that map before dispatch and before each attempt. M5 repeats the complete
+build/dry-run qualification after generating the frozen profile; a clean
+commit is required before `v3-seal`.
+
+### M1 retained result
+
+The final source-first functional gate collected 383 tests and passed:
+`381 passed, 2 skipped in 57.55 s`. The skips were exactly the explicit
+opt-in headless Phase 06 Gazebo integration and visible Gazebo recording
+smoke. Neither was enabled, so this M1 gate launched no Gazebo simulation.
+The focused v3 workflow suite passed `80` tests. `ament_flake8`,
+`ament_pep257`, Python compilation, and `git diff --check` passed for every
+modified or new Python file.
+
+A final fresh non-symlink dependency-closure build was retained at
+`/tmp/phase08_v3_m1_final_install.Q71CfM`: three packages built, the installed
+`validate_robustness --help` entry point passed from `/tmp`, the installed
+sensor URDF resolved from the declared `turtlebot3_rotating_sensor` runtime
+dependency, and installed activation/development dry runs each resolved
+`10` schema-v4 cases with zero unsupported entries. The static input hashes
+were:
+
+```text
+activation
+  8fa385c50f19adf1f362dba286ed3e5c527a175b89692b38632d77471b450031
+development
+  1c5ef231b5839386f8db67d7b83e25a6ca11dc2935bc1a7c6584a8645a57f433
+candidates
+  c17459dfceaeb16e0d4dfea70469ed0a200c3edd34255e99030dd38eb5a43f7e
+```
+
+The compatibility audit compared all 13 schema-v1–v3 suites against the
+pre-M1 implementation: 684 resolved runs and seven unsupported records were
+deep-equal. A representative legacy SQLite analysis summary was also exactly
+equal as a whole document. Schema-v4 attempt, revisit, and aggregate-goal
+semantics are version-gated, so reanalysis does not reclassify historical
+v1–v3 evidence.
+
+M1 additionally regression-tests create-or-verify and interruption recovery
+for prepare, freeze, and seal; suite rehashing before every serial dispatch
+and at terminal audit; raw replacement-proof revalidation; and contradictory
+terminal-report rejection. These are evidence-safety corrections only. No
+acceptance population, ciphertext, fresh v3 evidence root, runtime attempt,
+tuning result, freeze, seal, tag, Phase 09 action, or physical command was
+created.

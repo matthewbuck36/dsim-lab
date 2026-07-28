@@ -1,11 +1,13 @@
 """Focused tests for strict Phase 06 scenario parsing and expansion."""
 
 from copy import deepcopy
+from functools import lru_cache
 import hashlib
 from pathlib import Path
 
 import pytest
 
+from ros_esc.scenario_runner import aggregate_field_truth
 from ros_esc.scenario_runner.scenario_schema import (
     deterministic_case_key,
     expand_suite,
@@ -139,7 +141,9 @@ def _v3_document():
         'controller': {
             'contract_id': 'case_a',
             'expected_verification_outcome': 'goal',
-            'reachability_argument': 'A calibrated source sustains the target.',
+            'reachability_argument': (
+                'A calibrated source sustains the target.'
+            ),
             'expected_terminal_state': 'GOAL_HOLD',
             'required_state_path': [
                 'SEARCH', 'VERIFY_EXTREMUM', 'GOAL_HOLD',
@@ -157,6 +161,63 @@ def _v3_document():
         'collision_expected': False,
     }
     return document
+
+
+def _v4_document():
+    document = _v3_document()
+    document['schema_version'] = 4
+    case = document['cases'][0]
+    case.update({
+        'acceptance_family': 'lifecycle',
+        'acceptance_partition': 'validation',
+        'metric_applicability': {
+            'escape_attempt': False,
+            'escape_duration': False,
+            'orbit_count': False,
+            'revisit': False,
+            'delay': False,
+            'saturation': False,
+        },
+    })
+    case['sources'][0].update({
+        'x_m': 0.0,
+        'y_m': 0.0,
+        'relative_lumen_input': 2500.0,
+    })
+    record = deepcopy(_v4_production_truth())
+    success = case['success']
+    success['all_of'].append('ground_truth_goal')
+    success['ground_truth'] = {
+        'method': 'aggregate_field',
+        'final_position_tolerance_m': 0.35,
+        'wall_margin_m': 0.35,
+        'minimum_source_score': 0.95,
+        'aggregate_field': record,
+    }
+    success['result_scopes'] = {
+        'full_lifecycle': {
+            'anchor_state': 'SEARCH',
+            'boundary_state': None,
+            'graceful_stop': False,
+            'all_of': list(success['all_of']),
+        },
+    }
+    return document
+
+
+@lru_cache(maxsize=1)
+def _v4_production_truth():
+    return aggregate_field_truth.derive_aggregate_field_truth(
+        [{
+            'id': 'goal',
+            'x_m': 0.0,
+            'y_m': 0.0,
+            'relative_lumen_input': 2500.0,
+            'evaluation_role': 'goal',
+        }],
+        [-2.0, 2.0, -2.0, 2.0],
+        {'sensor_noise': {'model': 'none'}},
+    )
 
 
 def test_checked_in_suites_validate_and_catalog_marks_gaps():
@@ -179,7 +240,10 @@ def test_checked_in_suites_validate_and_catalog_marks_gaps():
     assert diagnostic_unsupported == []
     assert len(recenter_runs) == 1
     assert recenter_unsupported == []
-    assert recenter_runs[0]['success']['controller']['required_state_path'] == [
+    recenter_path = recenter_runs[0]['success']['controller'][
+        'required_state_path'
+    ]
+    assert recenter_path == [
         'SEARCH',
         'VERIFY_EXTREMUM',
         'DESIGN_OR_MERGE_FILL',
@@ -207,7 +271,7 @@ def test_checked_in_suites_validate_and_catalog_marks_gaps():
 @pytest.mark.parametrize(
     ('mutation', 'match'),
     [
-        (lambda doc: doc.update({'schema_version': 4}), 'schema_version'),
+        (lambda doc: doc.update({'schema_version': 5}), 'schema_version'),
         (
             lambda doc: doc.update({'mode': 'physical'}),
             'mode must be simulation',
@@ -599,9 +663,143 @@ def test_schema_v3_safe_timeout_requires_ordered_timeout_then_failsafe(
         _load(tmp_path, document)
 
 
+def test_schema_v4_resolves_aggregate_truth_and_named_scope(tmp_path):
+    """Bind aggregate targets and every formal predicate to full lifecycle."""
+    document = _v4_document()
+    suite = _load(tmp_path, document)
+    runs, unsupported = expand_suite(suite)
+    run = runs[0]
+
+    assert unsupported == []
+    assert run['acceptance_family'] == 'lifecycle'
+    assert run['acceptance_partition'] == 'validation'
+    assert run['repeat_reference'] is None
+    assert run['success']['result_scopes'] == {
+        'full_lifecycle': {
+            'anchor_state': 'SEARCH',
+            'boundary_state': None,
+            'graceful_stop': False,
+            'all_of': document['cases'][0]['success']['all_of'],
+        },
+    }
+    assert (
+        run['success']['ground_truth']['aggregate_field']['result_sha256']
+        == document['cases'][0]['success']['ground_truth'][
+            'aggregate_field'
+        ]['result_sha256']
+    )
+    assert deterministic_case_key(run) == run['case_key']
+
+
+def test_schema_v4_allows_development_only_graceful_activation_scope(
+    tmp_path,
+):
+    """Permit a declared branch boundary while retaining global shutdown."""
+    document = _v4_document()
+    case = document['cases'][0]
+    case['acceptance_partition'] = 'activation'
+    scoped = case['success']['result_scopes']
+    activation_predicates = [
+        'required_state_path',
+        'required_events',
+    ]
+    scoped['activation_window'] = {
+        'anchor_state': 'VERIFY_EXTREMUM',
+        'boundary_state': 'GOAL_HOLD',
+        'graceful_stop': True,
+        'all_of': activation_predicates,
+    }
+    scoped['full_lifecycle']['all_of'] = [
+        predicate
+        for predicate in scoped['full_lifecycle']['all_of']
+        if predicate not in activation_predicates
+    ]
+
+    run = expand_suite(_load(tmp_path, document))[0][0]
+
+    assert run['success']['result_scopes'][
+        'activation_window'
+    ]['graceful_stop'] is True
+
+
+@pytest.mark.parametrize(
+    ('mutation', 'match'),
+    [
+        (
+            lambda doc: doc['cases'][0]['success']['ground_truth'].update(
+                {'goal_source_ids': ['goal']}
+            ),
+            'unknown keys',
+        ),
+        (
+            lambda doc: doc['cases'][0]['success']['result_scopes'].update({
+                'activation_window': {
+                    'anchor_state': 'VERIFY_EXTREMUM',
+                    'boundary_state': 'GOAL_HOLD',
+                    'graceful_stop': False,
+                    'all_of': ['required_state_path'],
+                },
+            }),
+            'assign each predicate',
+        ),
+        (
+            lambda doc: doc['cases'][0]['metric_applicability'].update(
+                {'escape_duration': True}
+            ),
+            'require escape_attempt',
+        ),
+        (
+            lambda doc: doc['cases'][0].update({
+                'repeat_reference': {
+                    'partition': 'validation',
+                    'case_key': 'a' * 64,
+                },
+            }),
+            'only valid for reproducibility',
+        ),
+        (
+            lambda doc: doc['cases'][0]['success']['ground_truth'].update(
+                {'minimum_source_score': 0.94}
+            ),
+            'must retain tolerances',
+        ),
+    ],
+)
+def test_schema_v4_rejects_porosity_or_contract_drift(
+    tmp_path,
+    mutation,
+    match,
+):
+    """Reject manual goals, overlapping scopes, and applicability drift."""
+    document = _v4_document()
+    mutation(document)
+    with pytest.raises(ValueError, match=match):
+        _load(tmp_path, document)
+
+
+def test_schema_v4_requires_repeat_reference_only_for_reproducibility(
+    tmp_path,
+):
+    """Bind every reproducibility case to one sealed unique-case key."""
+    document = _v4_document()
+    case = document['cases'][0]
+    case['acceptance_partition'] = 'reproducibility'
+    case['repeat_reference'] = {
+        'partition': 'validation',
+        'case_key': 'a' * 64,
+    }
+
+    run = expand_suite(_load(tmp_path, document))[0][0]
+
+    assert run['repeat_reference']['case_key'] == 'a' * 64
+
+
 def test_historical_v2_activation_hash_and_case_keys_are_unchanged():
     """Keep sealed v2 YAML and normalized identities immutable under v3."""
-    assert hashlib.sha256(HISTORICAL_V2_ACTIVATION.read_bytes()).hexdigest() == (
+    historical_sha = hashlib.sha256(
+        HISTORICAL_V2_ACTIVATION.read_bytes()
+    ).hexdigest()
+    assert historical_sha == (
         'a5e91d2132b3dacccedc24aba13bdacd9ef5ba4ec7c8ae7b69ced6eadaf47d72'
     )
     runs, unsupported = expand_suite(load_suite(HISTORICAL_V2_ACTIVATION))

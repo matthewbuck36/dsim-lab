@@ -653,12 +653,23 @@ def _collapsed_states(records):
     return sequence
 
 
-def _escape_attempts(state_records, event_records, odometry_records, end_ns):
+def _escape_attempts(
+    state_records,
+    event_records,
+    odometry_records,
+    end_ns,
+    schema_version=1,
+):
     sequence = _collapsed_states(state_records)
     escape_states = {
         AlgorithmState.STATE_ESCAPE_REPULSE,
         AlgorithmState.STATE_ESCAPE_ASSIST,
     }
+    active_attempt_states = set(escape_states)
+    if schema_version >= 4:
+        active_attempt_states.add(
+            AlgorithmState.STATE_DESIGN_OR_MERGE_FILL
+        )
     attempts = []
     index = 0
     while index < len(sequence):
@@ -670,7 +681,7 @@ def _escape_attempts(state_records, event_records, odometry_records, end_ns):
         cursor = index + 1
         while (
             cursor < len(sequence)
-            and sequence[cursor]['state'] in escape_states
+            and sequence[cursor]['state'] in active_attempt_states
         ):
             cursor += 1
         next_item = sequence[cursor] if cursor < len(sequence) else None
@@ -860,7 +871,7 @@ def _active_fills(fill_records):
     ]
 
 
-def _revisit_count(odometry, fills, attempts):
+def _legacy_revisit_count(odometry, fills, attempts):
     successful = [
         attempt for attempt in attempts
         if attempt['outcome'] == 'success'
@@ -935,6 +946,127 @@ def _revisit_count(odometry, fills, attempts):
     )
 
 
+def _v4_revisit_count(odometry, fills, attempts):
+    successful = [
+        attempt for attempt in attempts
+        if attempt['outcome'] == 'success'
+    ]
+    if not successful:
+        return unavailable(
+            'no successful escape occurred',
+            unit='crossings',
+            provenance='state and typed fill lifecycle',
+            status='not_applicable',
+        )
+    after = successful[0]['end_bag_timestamp_ns']
+    ordered_fills = sorted(
+        fills, key=lambda record: record.bag_timestamp_ns
+    )
+    ordered_odometry = sorted(
+        odometry, key=lambda record: record.bag_timestamp_ns
+    )
+    active_by_cluster = {}
+    geometry_cache = {}
+    previous_inside = {}
+    fill_index = 0
+    count = 0
+    active_observed = False
+    for record in ordered_odometry:
+        if after is not None and record.bag_timestamp_ns < after:
+            continue
+        while (
+            fill_index < len(ordered_fills)
+            and ordered_fills[fill_index].bag_timestamp_ns
+            <= record.bag_timestamp_ns
+        ):
+            message = ordered_fills[fill_index].message
+            identity = (
+                int(message.cluster_id),
+                int(message.revision),
+                int(message.fill_id),
+            )
+            current = active_by_cluster.get(identity[0])
+            if message.active and not message.superseded:
+                active_by_cluster[identity[0]] = (
+                    identity,
+                    message,
+                )
+            elif current is not None and current[0] == identity:
+                active_by_cluster.pop(identity[0], None)
+            fill_index += 1
+        crossed_at_sample = False
+        for identity, message in active_by_cluster.values():
+            active_observed = True
+            geometry = geometry_cache.get(identity)
+            if geometry is None:
+                if (
+                    not message.covariance_valid
+                    or not message.exit_radius_valid
+                ):
+                    return unavailable(
+                        'active fill lacks covariance or exit-radius validity',
+                        unit='crossings',
+                        provenance='/gesc_gaussian/gaussian_fills',
+                        status='invalid',
+                    )
+                covariance = np.array([
+                    [message.covariance_xx, message.covariance_xy],
+                    [message.covariance_xy, message.covariance_yy],
+                ])
+                try:
+                    inverse = np.linalg.inv(covariance)
+                except np.linalg.LinAlgError:
+                    return unavailable(
+                        'active fill covariance is singular',
+                        unit='crossings',
+                        provenance='/gesc_gaussian/gaussian_fills',
+                        status='invalid',
+                    )
+                if message.sigma_major <= 0.0:
+                    return unavailable(
+                        'active fill sigma_major is not positive',
+                        unit='crossings',
+                        provenance='/gesc_gaussian/gaussian_fills',
+                        status='invalid',
+                    )
+                geometry = (
+                    inverse,
+                    float(message.exit_radius)
+                    / float(message.sigma_major),
+                )
+                geometry_cache[identity] = geometry
+            inverse, scale = geometry
+            position = record.message.pose.pose.position
+            delta = np.array([
+                float(position.x) - float(message.center_x),
+                float(position.y) - float(message.center_y),
+            ])
+            inside = float(delta.T @ inverse @ delta) <= scale * scale
+            if previous_inside.get(identity) is False and inside:
+                crossed_at_sample = True
+            previous_inside[identity] = inside
+        if crossed_at_sample:
+            count += 1
+    if not active_observed:
+        return unavailable(
+            'successful escape has no valid active typed fill',
+            unit='crossings',
+            provenance='/gesc_gaussian/gaussian_fills',
+            status='invalid',
+        )
+    return metric(
+        count,
+        unit='outside-to-inside crossings',
+        provenance='odometry against timestamped active fill exit ellipses',
+    )
+
+
+def _revisit_count(odometry, fills, attempts, schema_version=1):
+    if schema_version >= 4:
+        return _v4_revisit_count(odometry, fills, attempts)
+    return _legacy_revisit_count(odometry, fills, attempts)
+
+
 def _event_names():
     return {
         int(value): name
@@ -968,31 +1100,79 @@ def _ground_truth_metric(run_directory, odometry):
         )
     scenario = load_yaml(scenario_path)
     ground_truth = scenario.get('success', {}).get('ground_truth', {})
-    goal_ids = ground_truth.get('goal_source_ids', [])
+    if scenario.get('schema_version', 1) < 4:
+        goal_ids = ground_truth.get('goal_source_ids', [])
+        tolerance = ground_truth.get('final_position_tolerance_m')
+        if not goal_ids or not _finite(tolerance) or not odometry:
+            return unavailable(
+                (
+                    'ground-truth goal IDs, tolerance, or final pose '
+                    'are unavailable'
+                ),
+                provenance='resolved_scenario.yaml and /odom',
+                status='unavailable',
+            )
+        source_by_id = {
+            str(source.get('id')): source
+            for source in scenario.get('sources', [])
+        }
+        final = odometry[-1].message.pose.pose.position
+        distances = {}
+        for goal_id in goal_ids:
+            source = source_by_id.get(str(goal_id))
+            if source is None:
+                continue
+            distances[str(goal_id)] = math.hypot(
+                float(final.x) - float(source['x_m']),
+                float(final.y) - float(source['y_m']),
+            )
+        if not distances:
+            return unavailable(
+                'resolved goal source IDs do not map to source geometry',
+                provenance='resolved_scenario.yaml',
+                status='invalid',
+            )
+        nearest = min(distances.values())
+        return metric(
+            nearest <= float(tolerance),
+            unit='boolean',
+            reason=f'nearest goal distance={nearest:.6f} m',
+            provenance=(
+                'final odometry and Phase 06 ground-truth contract'
+            ),
+        )
+
     tolerance = ground_truth.get('final_position_tolerance_m')
-    if not goal_ids or not _finite(tolerance) or not odometry:
+    if not _finite(tolerance) or not odometry:
         return unavailable(
-            'ground-truth goal IDs, tolerance, or final pose are unavailable',
+            'ground-truth tolerance or final pose is unavailable',
             provenance='resolved_scenario.yaml and /odom',
             status='unavailable',
         )
-    source_by_id = {
-        str(source.get('id')): source
-        for source in scenario.get('sources', [])
+    targets = ground_truth.get('aggregate_field', {}).get('targets', [])
+    target_by_id = {
+        str(target.get('target_id')): target
+        for target in targets
+        if isinstance(target, dict)
     }
     final = odometry[-1].message.pose.pose.position
     distances = {}
-    for goal_id in goal_ids:
-        source = source_by_id.get(str(goal_id))
-        if source is None:
+    for target_id, target in target_by_id.items():
+        values = (
+            final.x,
+            final.y,
+            target.get('x_m'),
+            target.get('y_m'),
+        )
+        if not all(_finite(value) for value in values):
             continue
-        distances[str(goal_id)] = math.hypot(
-            float(final.x) - float(source['x_m']),
-            float(final.y) - float(source['y_m']),
+        distances[target_id] = math.hypot(
+            float(final.x) - float(target['x_m']),
+            float(final.y) - float(target['y_m']),
         )
     if not distances:
         return unavailable(
-            'resolved goal source IDs do not map to source geometry',
+            'aggregate-field targets are missing from resolved_scenario.yaml',
             provenance='resolved_scenario.yaml',
             status='invalid',
         )
@@ -1000,8 +1180,53 @@ def _ground_truth_metric(run_directory, odometry):
     return metric(
         nearest <= float(tolerance),
         unit='boolean',
-        reason=f'nearest goal distance={nearest:.6f} m',
-        provenance='final odometry and Phase 06 ground-truth contract',
+        reason=f'nearest aggregate/goal distance={nearest:.6f} m',
+        provenance='final odometry and schema-v4 aggregate-field contract',
+    )
+
+
+def _aggregate_target_distance_metric(run_directory, odometry):
+    """Return numeric terminal aggregate distance for schema-v4 gates."""
+    scenario = _resolved_scenario(run_directory)
+    if scenario.get('schema_version', 1) < 4:
+        return None
+    targets = scenario.get('success', {}).get(
+        'ground_truth', {}
+    ).get('aggregate_field', {}).get('targets', [])
+    if not odometry or not targets:
+        return unavailable(
+            'final pose or aggregate targets are unavailable',
+            unit='m',
+            provenance='resolved_scenario.yaml and /odom',
+        )
+    final = odometry[-1].message.pose.pose.position
+    distances = [
+        math.hypot(
+            float(final.x) - float(target['x_m']),
+            float(final.y) - float(target['y_m']),
+        )
+        for target in targets
+        if all(
+            _finite(value)
+            for value in (
+                final.x,
+                final.y,
+                target.get('x_m'),
+                target.get('y_m'),
+            )
+        )
+    ]
+    if not distances:
+        return unavailable(
+            'aggregate distance inputs are nonfinite',
+            unit='m',
+            provenance='resolved_scenario.yaml and /odom',
+            status='invalid',
+        )
+    return metric(
+        min(distances),
+        unit='m',
+        provenance='final odometry to nearest aggregate-field target',
     )
 
 
@@ -1156,6 +1381,7 @@ def _compute_metrics(
     control,
     state_intervals_metric,
     attempts,
+    schema_version=1,
 ):
     names = _event_names()
     event_counts = Counter(
@@ -1309,7 +1535,9 @@ def _compute_metrics(
             metric(
                 orbit_counts,
                 unit='orbits by escape attempt',
-                provenance='absolute unwrapped odometry angle about frozen center',
+                provenance=(
+                    'absolute unwrapped odometry angle about frozen center'
+                ),
             )
             if orbit_counts else unavailable(
                 'no escape attempt has sufficient pose and frozen geometry',
@@ -1335,7 +1563,12 @@ def _compute_metrics(
                 ),
             )
         ),
-        'revisit_count': _revisit_count(odometry, fill_records, attempts),
+        'revisit_count': _revisit_count(
+            odometry,
+            fill_records,
+            attempts,
+            schema_version=schema_version,
+        ),
         'fill_count': metric(
             len(created_clusters),
             unit='created clusters',
@@ -1426,6 +1659,205 @@ def _compute_metrics(
             provenance='/gesc_gaussian/algorithm_events',
         ),
     }
+
+
+def _v4_attempt_metrics(attempts, applicability):
+    """Expose one explicit duration and orbit status per observed attempt."""
+    rows = []
+    for attempt in attempts:
+        if applicability['escape_duration']:
+            duration = (
+                metric(
+                    float(attempt['duration_sec']),
+                    unit='s',
+                    provenance='state-derived escape attempt',
+                )
+                if _finite(attempt['duration_sec'])
+                else unavailable(
+                    'applicable escape attempt has no finite duration',
+                    unit='s',
+                    provenance='state-derived escape attempt',
+                )
+            )
+        else:
+            duration = unavailable(
+                'escape duration declared not applicable before execution',
+                unit='s',
+                provenance='schema-v4 metric applicability',
+                status='not_applicable',
+            )
+        if applicability['orbit_count']:
+            orbit = (
+                metric(
+                    float(attempt['approximate_orbit_count']),
+                    unit='orbits',
+                    provenance='odometry around frozen escape center',
+                )
+                if _finite(attempt['approximate_orbit_count'])
+                else unavailable(
+                    'applicable escape attempt has no finite orbit value',
+                    unit='orbits',
+                    provenance='odometry and frozen escape geometry',
+                )
+            )
+        else:
+            orbit = unavailable(
+                'orbit count declared not applicable before execution',
+                unit='orbits',
+                provenance='schema-v4 metric applicability',
+                status='not_applicable',
+            )
+        rows.append({
+            'attempt_index': attempt['attempt_index'],
+            'outcome': attempt['outcome'],
+            'stalled': attempt['stalled'],
+            'assisted': attempt['assisted'],
+            'timeout': attempt['timeout'],
+            'failsafe': attempt['failsafe'],
+            'duration': duration,
+            'orbit_count': orbit,
+        })
+    return rows
+
+
+def _apply_v4_metric_applicability(
+    metrics,
+    applicability,
+    disturbances,
+):
+    """Apply predeclared N/A or missing-applicable semantics to v4 metrics."""
+    metric_groups = {
+        'escape_attempt': (
+            'escape_attempt_count',
+            'escape_success_count',
+            'escape_failure_count',
+            'radial_progress',
+        ),
+        'escape_duration': ('escape_time',),
+        'orbit_count': ('approximate_orbit_count',),
+        'revisit': ('revisit_count',),
+        'saturation': (
+            'saturation_time',
+            'saturation_fraction',
+            'saturation_axis_counts',
+            'maximum_limit_excess',
+        ),
+    }
+    for applicability_name, metric_names in metric_groups.items():
+        applies = applicability[applicability_name]
+        for metric_name in metric_names:
+            current = metrics[metric_name]
+            if not applies:
+                metrics[metric_name] = unavailable(
+                    f'{applicability_name} declared not applicable '
+                    'before execution',
+                    unit=current.get('unit'),
+                    provenance='schema-v4 metric applicability',
+                    status='not_applicable',
+                )
+            elif current['status'] == 'not_applicable':
+                metrics[metric_name] = unavailable(
+                    f'{applicability_name} was applicable but evidence '
+                    'was unavailable',
+                    unit=current.get('unit'),
+                    provenance=current.get('provenance'),
+                )
+    delay_metrics = {
+        'observed_raw_cost_delay': (
+            float(disturbances.get('sensor_delay_sec', 0.0)) > 0.0
+        ),
+        'observed_source_cost_delay': (
+            float(disturbances.get('sensor_delay_sec', 0.0)) > 0.0
+        ),
+        'observed_pose_delay': (
+            float(disturbances.get('pose_delay_sec', 0.0)) > 0.0
+        ),
+    }
+    for metric_name, stream_applies in delay_metrics.items():
+        current = metrics[metric_name]
+        if not applicability['delay'] or not stream_applies:
+            metrics[metric_name] = unavailable(
+                'delay stream declared not applicable before execution',
+                unit=current.get('unit'),
+                provenance='schema-v4 disturbances and applicability',
+                status='not_applicable',
+            )
+        elif current['status'] == 'not_applicable':
+            metrics[metric_name] = unavailable(
+                'configured delay stream evidence was unavailable',
+                unit=current.get('unit'),
+                provenance=current.get('provenance'),
+            )
+    return metrics
+
+
+def _v4_applicability_integrity(
+    metrics,
+    attempts,
+    applicability,
+    disturbances,
+):
+    """Require every applicable v4 metric and every successful attempt row."""
+    reasons = []
+    if applicability['escape_attempt'] and not attempts:
+        reasons.append('designated escape case has no observed attempt')
+    if not applicability['escape_attempt'] and attempts:
+        reasons.append('escape occurred in a case declared not applicable')
+    for attempt in attempts:
+        if attempt.get('outcome') != 'success':
+            continue
+        for applicability_name, metric_name in (
+            ('escape_duration', 'duration'),
+            ('orbit_count', 'orbit_count'),
+        ):
+            expected = (
+                'valid'
+                if applicability[applicability_name]
+                else 'not_applicable'
+            )
+            if attempt[metric_name].get('status') != expected:
+                reasons.append(
+                    f'successful attempt {attempt["attempt_index"]} '
+                    f'{metric_name} status is not {expected}'
+                )
+    metric_groups = {
+        'escape_attempt': (
+            'escape_attempt_count',
+            'escape_success_count',
+            'escape_failure_count',
+            'radial_progress',
+        ),
+        'escape_duration': ('escape_time',),
+        'orbit_count': ('approximate_orbit_count',),
+        'revisit': ('revisit_count',),
+        'saturation': (
+            'saturation_time',
+            'saturation_fraction',
+            'saturation_axis_counts',
+            'maximum_limit_excess',
+        ),
+    }
+    for name, metric_names in metric_groups.items():
+        expected = 'valid' if applicability[name] else 'not_applicable'
+        for metric_name in metric_names:
+            if metrics[metric_name].get('status') != expected:
+                reasons.append(
+                    f'{metric_name} status is not {expected}'
+                )
+    sensor_delay = float(
+        disturbances.get('sensor_delay_sec', 0.0)
+    )
+    pose_delay = float(disturbances.get('pose_delay_sec', 0.0))
+    delay_expectations = {
+        'observed_raw_cost_delay': sensor_delay > 0.0,
+        'observed_source_cost_delay': sensor_delay > 0.0,
+        'observed_pose_delay': pose_delay > 0.0,
+    }
+    for metric_name, applies in delay_expectations.items():
+        expected = 'valid' if applies else 'not_applicable'
+        if metrics[metric_name].get('status') != expected:
+            reasons.append(f'{metric_name} status is not {expected}')
+    return {'passed': not reasons, 'reasons': reasons}
 
 
 def _alignment_summary(rows, prefixes):
@@ -1832,11 +2264,14 @@ def analyze_run(
             bag_data.readiness_end_ns,
             supervisor_rate,
         )
+        scenario = _resolved_scenario(run_directory)
+        schema_version = scenario.get('schema_version', 1)
         attempts = _escape_attempts(
             readiness_states,
             readiness_events,
             readiness_odometry,
             bag_data.readiness_end_ns,
+            schema_version=schema_version,
         )
         table_rows = {
             'synchronized_samples.csv': synchronized,
@@ -1864,7 +2299,54 @@ def analyze_run(
             readiness_control,
             durations_metric,
             attempts,
+            schema_version=schema_version,
         )
+        v4_summary = {}
+        v4_integrity = {'passed': True, 'reasons': []}
+        if scenario.get('schema_version', 1) >= 4:
+            applicability = scenario.get('metric_applicability')
+            if not isinstance(applicability, dict):
+                raise ValueError(
+                    'schema-v4 resolved scenario lacks metric_applicability'
+                )
+            disturbances = scenario.get('disturbances', {})
+            metrics = _apply_v4_metric_applicability(
+                metrics,
+                applicability,
+                disturbances,
+            )
+            attempt_metrics = _v4_attempt_metrics(
+                attempts,
+                applicability,
+            )
+            v4_integrity = _v4_applicability_integrity(
+                metrics,
+                attempt_metrics,
+                applicability,
+                disturbances,
+            )
+            aggregate_distance = _aggregate_target_distance_metric(
+                run_directory,
+                readiness_odometry,
+            )
+            metrics['final_aggregate_target_distance'] = (
+                aggregate_distance
+            )
+            v4_summary = {
+                'acceptance_family': scenario.get('acceptance_family'),
+                'acceptance_partition': scenario.get(
+                    'acceptance_partition'
+                ),
+                'repeat_reference': scenario.get('repeat_reference'),
+                'metric_applicability': applicability,
+                'escape_attempts': attempt_metrics,
+                'applicability_integrity': v4_integrity,
+                'aggregate_truth_result_sha256': scenario.get(
+                    'success', {}
+                ).get('ground_truth', {}).get(
+                    'aggregate_field', {}
+                ).get('result_sha256'),
+            }
         critical = {
             'readiness': bag_data.readiness_start_ns is not None,
             'cost': bool(cost_records),
@@ -1878,6 +2360,8 @@ def analyze_run(
         elif any(
             item['status'] == 'invalid' for item in metrics.values()
         ):
+            analysis_status = 'partial'
+        elif not v4_integrity['passed']:
             analysis_status = 'partial'
         else:
             analysis_status = 'complete'
@@ -1896,6 +2380,7 @@ def analyze_run(
             },
             'metrics': metrics,
         }
+        summary.update(v4_summary)
         (temporary / 'summary_metrics.json').write_text(
             json.dumps(summary, indent=2, sort_keys=True, allow_nan=False)
             + '\n',

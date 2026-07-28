@@ -8,11 +8,13 @@ import math
 from pathlib import Path
 import re
 
+from ros_esc.scenario_runner import aggregate_field_truth
+
 import yaml
 
 
-SCHEMA_VERSION = 3
-SUPPORTED_SCHEMA_VERSIONS = {1, 2, 3}
+SCHEMA_VERSION = 4
+SUPPORTED_SCHEMA_VERSIONS = {1, 2, 3, 4}
 PROFILES = {'legacy', 'robust_gaussian_v1'}
 STATUSES = {'executable_unverified', 'unsupported'}
 FAMILIES = {
@@ -28,6 +30,36 @@ FAMILIES = {
     'escape',
     'fill_merge',
     'recenter_resume',
+}
+ACCEPTANCE_FAMILIES = {
+    'ordered_two_source',
+    'multi_close_overlap',
+    'wall_corner',
+    'noise_delay',
+    'constraint_recovery',
+    'lifecycle',
+}
+ACCEPTANCE_PARTITIONS = {
+    'activation',
+    'development',
+    'holdout',
+    'validation',
+    'reproducibility',
+}
+RESULT_SCOPE_NAMES = {'activation_window', 'full_lifecycle'}
+ACTIVATION_SCOPE_PREDICATES = {
+    'required_state_sequence',
+    'required_state_path',
+    'required_events',
+    'required_event_sequence',
+}
+METRIC_APPLICABILITY_KEYS = {
+    'escape_attempt',
+    'escape_duration',
+    'orbit_count',
+    'revisit',
+    'delay',
+    'saturation',
 }
 EVALUATION_ROLES = {'goal', 'local_minimum', 'obstacle', 'context'}
 NOISE_MODELS = {'none', 'uniform', 'gaussian'}
@@ -125,6 +157,8 @@ CASE_KEYS = {
     'profiles', 'seeds', 'starts', 'sources', 'bounds_m', 'room_center_m',
     'disturbances', 'algorithm', 'success',
     'validation_world', 'simulation_contacts_enabled',
+    'acceptance_family', 'acceptance_partition', 'repeat_reference',
+    'metric_applicability',
 }
 START_KEYS = {'id', 'x_m', 'y_m', 'yaw_rad'}
 SOURCE_KEYS = {
@@ -134,7 +168,7 @@ SOURCE_KEYS = {
 ALGORITHM_KEYS = {'ablations', 'launch_overrides'}
 SUCCESS_KEYS = {
     'all_of', 'controller', 'ground_truth', 'minimum_saturation_samples',
-    'collision_expected',
+    'collision_expected', 'result_scopes',
 }
 FROZEN_PROFILE_KEYS = {'profile_id', 'launch_overrides', 'sha256'}
 CONTROLLER_KEYS = {
@@ -145,6 +179,17 @@ CONTROLLER_KEYS = {
     'forbidden_states',
 }
 GROUND_TRUTH_KEYS = {'goal_source_ids', 'final_position_tolerance_m'}
+AGGREGATE_GROUND_TRUTH_KEYS = {
+    'method',
+    'final_position_tolerance_m',
+    'wall_margin_m',
+    'minimum_source_score',
+    'aggregate_field',
+}
+RESULT_SCOPE_KEYS = {
+    'anchor_state', 'boundary_state', 'graceful_stop', 'all_of',
+}
+REPEAT_REFERENCE_KEYS = {'partition', 'case_key'}
 SAFE_ID = re.compile('^[A-Za-z0-9][A-Za-z0-9._-]*$')
 VERIFICATION_OUTCOMES = {
     'goal',
@@ -294,6 +339,138 @@ def _validate_state_path(path, location):
                 f'{location} has unreachable transition '
                 f'{previous} -> {current}'
             )
+
+
+def _normalize_metric_applicability(value, location):
+    _unknown(value, METRIC_APPLICABILITY_KEYS, location)
+    missing = sorted(METRIC_APPLICABILITY_KEYS - set(value))
+    if missing:
+        raise ValueError(
+            f'{location} is missing: ' + ', '.join(missing)
+        )
+    return {
+        name: _boolean(value[name], f'{location}.{name}')
+        for name in sorted(METRIC_APPLICABILITY_KEYS)
+    }
+
+
+def _normalize_repeat_reference(value, partition, location):
+    if partition != 'reproducibility':
+        if value is not None:
+            raise ValueError(
+                f'{location} is only valid for reproducibility cases'
+            )
+        return None
+    _unknown(value, REPEAT_REFERENCE_KEYS, location)
+    reference_partition = str(value.get('partition', ''))
+    if reference_partition not in {'holdout', 'validation'}:
+        raise ValueError(
+            f'{location}.partition must be holdout or validation'
+        )
+    case_key = str(value.get('case_key', ''))
+    if not re.fullmatch('[0-9a-f]{64}', case_key):
+        raise ValueError(
+            f'{location}.case_key must be lowercase SHA-256'
+        )
+    return {
+        'partition': reference_partition,
+        'case_key': case_key,
+    }
+
+
+def _normalize_result_scopes(value, all_of, partition, location):
+    _unknown(value, RESULT_SCOPE_NAMES, location)
+    if 'full_lifecycle' not in value:
+        raise ValueError(f'{location}.full_lifecycle is required')
+    normalized = {}
+    assigned_predicates = []
+    for name in ('activation_window', 'full_lifecycle'):
+        if name not in value:
+            continue
+        scope = value[name]
+        scope_location = f'{location}.{name}'
+        _unknown(scope, RESULT_SCOPE_KEYS, scope_location)
+        expected_anchor = (
+            'VERIFY_EXTREMUM'
+            if name == 'activation_window'
+            else 'SEARCH'
+        )
+        anchor = _contract_names(
+            [scope.get('anchor_state')],
+            ALGORITHM_STATES,
+            'STATE_',
+            f'{scope_location}.anchor_state',
+        )[0]
+        if anchor != expected_anchor:
+            raise ValueError(
+                f'{scope_location}.anchor_state must equal {expected_anchor}'
+            )
+        boundary_value = scope.get('boundary_state')
+        boundary = None
+        if boundary_value is not None:
+            boundary = _contract_names(
+                [boundary_value],
+                ALGORITHM_STATES,
+                'STATE_',
+                f'{scope_location}.boundary_state',
+            )[0]
+        graceful_stop = _boolean(
+            scope.get('graceful_stop', False),
+            f'{scope_location}.graceful_stop',
+        )
+        predicates = scope.get('all_of')
+        if not isinstance(predicates, list) or not predicates:
+            raise ValueError(f'{scope_location}.all_of must be non-empty')
+        if (
+            len(predicates) != len(set(predicates))
+            or not set(predicates) <= SUCCESS_PREDICATES
+        ):
+            raise ValueError(
+                f'{scope_location}.all_of has duplicates or unknown '
+                'predicates'
+            )
+        if name == 'activation_window':
+            if boundary is None:
+                raise ValueError(
+                    f'{scope_location}.boundary_state is required'
+                )
+            if graceful_stop and partition not in {
+                'activation', 'development',
+            }:
+                raise ValueError(
+                    f'{scope_location}.graceful_stop is development-only'
+                )
+            if not set(predicates) <= ACTIVATION_SCOPE_PREDICATES:
+                raise ValueError(
+                    f'{scope_location} may contain only branch-local '
+                    'state and event predicates'
+                )
+        elif boundary is not None or graceful_stop:
+            raise ValueError(
+                f'{scope_location} must run through orderly shutdown'
+            )
+        normalized[name] = {
+            'anchor_state': anchor,
+            'boundary_state': boundary,
+            'graceful_stop': graceful_stop,
+            'all_of': list(predicates),
+        }
+        assigned_predicates.extend(predicates)
+    if len(assigned_predicates) != len(set(assigned_predicates)):
+        raise ValueError(
+            f'{location} must assign each predicate to exactly one scope'
+        )
+    if set(assigned_predicates) != set(all_of):
+        raise ValueError(
+            f'{location} predicate union must equal success.all_of'
+        )
+    if partition in {'holdout', 'validation', 'reproducibility'} and (
+        set(normalized) != {'full_lifecycle'}
+    ):
+        raise ValueError(
+            f'{location} acceptance cases must use full_lifecycle only'
+        )
+    return normalized
 
 
 def _verification_timing(overrides, outcome, location):
@@ -462,7 +639,9 @@ def load_suite(path):
     if schema_version not in SUPPORTED_SCHEMA_VERSIONS:
         raise ValueError(
             'schema_version must equal one of '
-            + ', '.join(str(item) for item in sorted(SUPPORTED_SCHEMA_VERSIONS))
+            + ', '.join(
+                str(item) for item in sorted(SUPPORTED_SCHEMA_VERSIONS)
+            )
         )
     if schema_version == 1 and (
         'frozen_profile' in document
@@ -518,6 +697,41 @@ def load_suite(path):
     if schema_version < 3 and uses_schema_v3_fields:
         raise ValueError(
             'schema version 3 is required for activation-contract fields'
+        )
+    schema_v4_case_keys = {
+        'acceptance_family',
+        'acceptance_partition',
+        'repeat_reference',
+        'metric_applicability',
+    }
+    uses_schema_v4_fields = False
+    if isinstance(raw_cases, list):
+        for case in raw_cases:
+            if not isinstance(case, dict):
+                continue
+            raw_success = case.get('success', {})
+            raw_ground_truth = (
+                raw_success.get('ground_truth', {})
+                if isinstance(raw_success, dict)
+                else {}
+            )
+            uses_schema_v4_fields = bool(
+                schema_v4_case_keys & set(case)
+            ) or (
+                isinstance(raw_success, dict)
+                and 'result_scopes' in raw_success
+            ) or (
+                isinstance(raw_ground_truth, dict)
+                and bool(
+                    set(raw_ground_truth)
+                    & (AGGREGATE_GROUND_TRUTH_KEYS - GROUND_TRUTH_KEYS)
+                )
+            )
+            if uses_schema_v4_fields:
+                break
+    if schema_version < 4 and uses_schema_v4_fields:
+        raise ValueError(
+            'schema version 4 is required for v3 acceptance fields'
         )
     suite_id = _identifier(document.get('suite_id'), 'suite_id')
     if document.get('mode') != 'simulation':
@@ -633,6 +847,32 @@ def load_suite(path):
             raise ValueError(
                 f'{location}.unsupported_reason is required for '
                 'unsupported cases'
+            )
+        acceptance_family = None
+        acceptance_partition = None
+        repeat_reference = None
+        metric_applicability = None
+        if schema_version >= 4:
+            acceptance_family = str(case.get('acceptance_family', ''))
+            if acceptance_family not in ACCEPTANCE_FAMILIES:
+                raise ValueError(
+                    f'{location}.acceptance_family is unsupported'
+                )
+            acceptance_partition = str(
+                case.get('acceptance_partition', '')
+            )
+            if acceptance_partition not in ACCEPTANCE_PARTITIONS:
+                raise ValueError(
+                    f'{location}.acceptance_partition is unsupported'
+                )
+            repeat_reference = _normalize_repeat_reference(
+                case.get('repeat_reference'),
+                acceptance_partition,
+                f'{location}.repeat_reference',
+            )
+            metric_applicability = _normalize_metric_applicability(
+                case.get('metric_applicability'),
+                f'{location}.metric_applicability',
             )
 
         profiles = case.get('profiles')
@@ -838,6 +1078,14 @@ def load_suite(path):
         if schema_version >= 3 and len(all_of) != len(set(all_of)):
             raise ValueError(
                 f'{location}.success.all_of must not contain duplicates'
+            )
+        result_scopes = None
+        if schema_version >= 4:
+            result_scopes = _normalize_result_scopes(
+                success.get('result_scopes'),
+                all_of,
+                acceptance_partition,
+                f'{location}.success.result_scopes',
             )
         controller = success.get('controller', {})
         _unknown(controller, CONTROLLER_KEYS, f'{location}.success.controller')
@@ -1052,21 +1300,113 @@ def load_suite(path):
                 'forbidden_states': forbidden_states,
                 'forbidden_events': forbidden_events,
             }
+            if (
+                schema_version >= 4
+                and acceptance_partition in {
+                    'holdout', 'validation', 'reproducibility',
+                }
+            ):
+                if (
+                    expected_terminal != 'GOAL_HOLD'
+                    or not required_path
+                    or required_path[0] != 'SEARCH'
+                    or required_path[-1] != 'GOAL_HOLD'
+                    or 'GOAL_REACHED' not in required_event_set
+                    or 'controller_goal' not in all_of
+                ):
+                    raise ValueError(
+                        f'{controller_location} formal acceptance must '
+                        'bind full-lifecycle GOAL_HOLD success'
+                    )
+                if not validation_world or not contacts_enabled:
+                    raise ValueError(
+                        f'{location} formal acceptance requires the '
+                        'validation world and contacts'
+                    )
         ground_truth = success.get('ground_truth', {})
-        _unknown(
-            ground_truth, GROUND_TRUTH_KEYS,
-            f'{location}.success.ground_truth',
-        )
-        goal_ids = ground_truth.get('goal_source_ids', [])
-        if not isinstance(goal_ids, list) or not set(goal_ids) <= source_ids:
-            raise ValueError(
-                f'{location}.success.ground_truth.goal_source_ids are invalid'
+        ground_truth_location = f'{location}.success.ground_truth'
+        goal_ids = []
+        if schema_version >= 4:
+            _unknown(
+                ground_truth,
+                AGGREGATE_GROUND_TRUTH_KEYS,
+                ground_truth_location,
             )
-        tolerance = _number(
-            ground_truth.get('final_position_tolerance_m', 0.35),
-            f'{location}.success.ground_truth.final_position_tolerance_m',
-            positive=True,
-        )
+            if ground_truth.get('method') != 'aggregate_field':
+                raise ValueError(
+                    f'{ground_truth_location}.method must equal '
+                    'aggregate_field'
+                )
+            tolerance = _number(
+                ground_truth.get('final_position_tolerance_m'),
+                f'{ground_truth_location}.final_position_tolerance_m',
+                positive=True,
+            )
+            wall_margin = _number(
+                ground_truth.get('wall_margin_m'),
+                f'{ground_truth_location}.wall_margin_m',
+                positive=True,
+            )
+            minimum_source_score = _number(
+                ground_truth.get('minimum_source_score'),
+                f'{ground_truth_location}.minimum_source_score',
+                minimum=0.0,
+            )
+            if minimum_source_score > 1.0:
+                raise ValueError(
+                    f'{ground_truth_location}.minimum_source_score '
+                    'must not exceed 1'
+                )
+            if (
+                tolerance != 0.35
+                or wall_margin != 0.35
+                or minimum_source_score != 0.95
+            ):
+                raise ValueError(
+                    f'{ground_truth_location} must retain tolerances '
+                    '0.35 m, 0.35 m, and 0.95'
+                )
+            aggregate_field = ground_truth.get('aggregate_field')
+            if (
+                aggregate_field is not None
+                and not isinstance(aggregate_field, dict)
+            ):
+                raise ValueError(
+                    f'{ground_truth_location}.aggregate_field must be '
+                    'a mapping or null'
+                )
+            normalized_ground_truth = {
+                'method': 'aggregate_field',
+                'final_position_tolerance_m': tolerance,
+                'wall_margin_m': wall_margin,
+                'minimum_source_score': minimum_source_score,
+                'aggregate_field': deepcopy(aggregate_field),
+            }
+            has_ground_truth = True
+        else:
+            _unknown(
+                ground_truth,
+                GROUND_TRUTH_KEYS,
+                ground_truth_location,
+            )
+            goal_ids = ground_truth.get('goal_source_ids', [])
+            if (
+                not isinstance(goal_ids, list)
+                or not set(goal_ids) <= source_ids
+            ):
+                raise ValueError(
+                    f'{ground_truth_location}.goal_source_ids are invalid'
+                )
+            tolerance = _number(
+                ground_truth.get('final_position_tolerance_m', 0.35),
+                f'{ground_truth_location}.final_position_tolerance_m',
+                positive=True,
+            )
+            normalized_ground_truth = {
+                'goal_source_ids': list(goal_ids),
+                'final_position_tolerance_m': tolerance,
+            }
+            has_ground_truth = bool(goal_ids)
         minimum_saturation = success.get('minimum_saturation_samples', 0)
         if (
             isinstance(minimum_saturation, bool)
@@ -1077,6 +1417,33 @@ def load_suite(path):
                 f'{location}.success.minimum_saturation_samples '
                 'must be a nonnegative integer'
             )
+        if schema_version >= 4:
+            if (
+                metric_applicability['escape_duration']
+                or metric_applicability['orbit_count']
+                or metric_applicability['revisit']
+            ) and not metric_applicability['escape_attempt']:
+                raise ValueError(
+                    f'{location}.metric_applicability attempt-derived '
+                    'metrics require escape_attempt'
+                )
+            has_delay = (
+                disturbances['sensor_delay_sec'] > 0.0
+                or disturbances['pose_delay_sec'] > 0.0
+            )
+            if metric_applicability['delay'] != has_delay:
+                raise ValueError(
+                    f'{location}.metric_applicability.delay must match '
+                    'the declared sensor or pose delay'
+                )
+            if (
+                metric_applicability['saturation']
+                != (minimum_saturation > 0)
+            ):
+                raise ValueError(
+                    f'{location}.metric_applicability.saturation must '
+                    'match minimum_saturation_samples'
+                )
         collision_expected = success.get('collision_expected')
         if collision_expected is not None:
             collision_expected = _boolean(
@@ -1088,13 +1455,71 @@ def load_suite(path):
                     f'{location}.success.collision_expected requires '
                     'simulation contacts'
                 )
+        formal_acceptance = (
+            schema_version >= 4
+            and acceptance_partition in {
+                'holdout', 'validation', 'reproducibility',
+            }
+        )
+        if formal_acceptance:
+            required_core = {
+                'recording_complete',
+                'cleanup_complete',
+                'controller_goal',
+                'ground_truth_goal',
+                'expected_terminal_state',
+                'required_state_path',
+                'required_events',
+                'no_forbidden_states',
+                'no_forbidden_events',
+                'collision_expectation',
+            }
+            missing_core = sorted(required_core - set(all_of))
+            if missing_core:
+                raise ValueError(
+                    f'{location}.success formal acceptance omits: '
+                    + ', '.join(missing_core)
+                )
+            if collision_expected is not False:
+                raise ValueError(
+                    f'{location}.success formal acceptance requires '
+                    'collision_expected=false'
+                )
+            if (
+                'FAILSAFE' not in forbidden_states
+                or not {'TIMEOUT', 'FAILSAFE'} <= set(forbidden_events)
+            ):
+                raise ValueError(
+                    f'{controller_location} formal acceptance must '
+                    'forbid FAILSAFE and TIMEOUT'
+                )
+            has_escape_path = bool(
+                {'ESCAPE_REPULSE', 'ESCAPE_ASSIST'} & set(required_path)
+            )
+            has_escape_event = 'ESCAPE_STARTED' in required_event_set
+            if has_escape_path != has_escape_event:
+                raise ValueError(
+                    f'{controller_location} escape path/event binding '
+                    'is inconsistent'
+                )
+            if metric_applicability['escape_attempt'] != has_escape_path:
+                raise ValueError(
+                    f'{location}.metric_applicability.escape_attempt '
+                    'must match the required escape path'
+                )
+            for name in ('escape_duration', 'orbit_count'):
+                if (
+                    metric_applicability[name]
+                    != metric_applicability['escape_attempt']
+                ):
+                    raise ValueError(
+                        f'{location}.metric_applicability.{name} must '
+                        'match escape_attempt'
+                    )
         normalized_success = {
             'all_of': list(all_of),
             'controller': normalized_controller,
-            'ground_truth': {
-                'goal_source_ids': list(goal_ids),
-                'final_position_tolerance_m': tolerance,
-            },
+            'ground_truth': normalized_ground_truth,
             'minimum_saturation_samples': minimum_saturation,
         }
         if schema_version >= 2:
@@ -1105,9 +1530,25 @@ def load_suite(path):
             if minimum_saturation > 0:
                 declared_predicates.add('minimum_saturation_samples')
             backed_predicates = set(declared_predicates)
-            if goal_ids:
+            if has_ground_truth:
                 backed_predicates.add('ground_truth_goal')
-            if outcome == 'goal':
+            if (
+                outcome == 'goal'
+                or (
+                    schema_version >= 4
+                    and normalized_controller[
+                        'expected_terminal_state'
+                    ] == 'GOAL_HOLD'
+                    and 'GOAL_REACHED' in (
+                        set(normalized_controller['required_events'])
+                        | set(
+                            normalized_controller[
+                                'required_event_sequence'
+                            ]
+                        )
+                    )
+                )
+            ):
                 backed_predicates.add('controller_goal')
             predicates_requiring_backing = {
                 'controller_goal',
@@ -1138,11 +1579,13 @@ def load_suite(path):
                     f'{location}.success.all_of does not bind declared '
                     'evidence: ' + ', '.join(missing_predicates)
                 )
+        if schema_version >= 4:
+            normalized_success['result_scopes'] = result_scopes
         support_reason = _disturbance_support(disturbances, schema_version)
         if support_reason and status == 'executable_unverified':
             status = 'unsupported'
             unsupported_reason = support_reason
-        normalized_cases.append({
+        normalized_case = {
             'case_id': case_id,
             'family': family,
             'description': str(case.get('description', '')),
@@ -1165,7 +1608,15 @@ def load_suite(path):
                 'launch_overrides': dict(overrides),
             },
             'success': normalized_success,
-        })
+        }
+        if schema_version >= 4:
+            normalized_case.update({
+                'acceptance_family': acceptance_family,
+                'acceptance_partition': acceptance_partition,
+                'repeat_reference': repeat_reference,
+                'metric_applicability': metric_applicability,
+            })
+        normalized_cases.append(normalized_case)
 
     return {
         'source_path': str(source_path),
@@ -1204,6 +1655,13 @@ def deterministic_case_key(resolved):
     ]
     if resolved.get('schema_version', 1) >= 2:
         fields.extend(('validation', 'frozen_profile'))
+    if resolved.get('schema_version', 1) >= 4:
+        fields.extend((
+            'acceptance_family',
+            'acceptance_partition',
+            'repeat_reference',
+            'metric_applicability',
+        ))
     identity = {
         name: resolved[name]
         for name in fields
@@ -1252,7 +1710,71 @@ def expand_suite(suite, case_ids=None):
                         else:
                             level_tuple.append(None)
                         sources.append(resolved_source)
+                    resolved_success_template = deepcopy(case['success'])
+                    if suite['schema_version'] >= 4:
+                        ground_truth = resolved_success_template[
+                            'ground_truth'
+                        ]
+                        aggregate_record = ground_truth['aggregate_field']
+                        truth_arguments = {
+                            'sources': sources,
+                            'bounds_m': case['bounds_m'],
+                            'disturbances': case['disturbances'],
+                            'wall_margin_m': ground_truth['wall_margin_m'],
+                            'minimum_source_score': ground_truth[
+                                'minimum_source_score'
+                            ],
+                        }
+                        if aggregate_record is None:
+                            aggregate_record = (
+                                aggregate_field_truth
+                                .derive_aggregate_field_truth(
+                                    **truth_arguments
+                                )
+                            )
+                            if case['metric_applicability'][
+                                'escape_attempt'
+                            ]:
+                                local_ids = [
+                                    source['id']
+                                    for source in sources
+                                    if source['evaluation_role']
+                                    == 'local_minimum'
+                                ]
+                                aggregate_record = (
+                                    aggregate_field_truth
+                                    .attach_local_branch_qualifications(
+                                        aggregate_record,
+                                        sources,
+                                        local_ids,
+                                        case['disturbances'],
+                                    )
+                                )
+                        else:
+                            if (
+                                case['metric_applicability'][
+                                    'escape_attempt'
+                                ]
+                                and not aggregate_record.get(
+                                    'local_branch_qualifications'
+                                )
+                            ):
+                                raise ValueError(
+                                    f'{case["case_id"]} designated escape '
+                                    'lacks local branch qualification'
+                                )
+                            aggregate_record = (
+                                aggregate_field_truth
+                                .validate_aggregate_field_truth(
+                                    aggregate_record,
+                                    **truth_arguments,
+                                )
+                            )
+                        ground_truth['aggregate_field'] = aggregate_record
                     for seed in case['seeds']:
+                        resolved_success = deepcopy(
+                            resolved_success_template
+                        )
                         resolved = {
                             'schema_version': suite['schema_version'],
                             'suite_id': suite['suite_id'],
@@ -1271,9 +1793,24 @@ def expand_suite(suite, case_ids=None):
                                 case['frozen_profile']
                             ),
                             'algorithm': deepcopy(case['algorithm']),
-                            'success': deepcopy(case['success']),
+                            'success': resolved_success,
                             'seed': seed,
                         }
+                        if suite['schema_version'] >= 4:
+                            resolved.update({
+                                'acceptance_family': case[
+                                    'acceptance_family'
+                                ],
+                                'acceptance_partition': case[
+                                    'acceptance_partition'
+                                ],
+                                'repeat_reference': deepcopy(
+                                    case['repeat_reference']
+                                ),
+                                'metric_applicability': deepcopy(
+                                    case['metric_applicability']
+                                ),
+                            })
                         resolved['case_key'] = deterministic_case_key(resolved)
                         runs.append(resolved)
     return runs, unsupported

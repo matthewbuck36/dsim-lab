@@ -1,14 +1,18 @@
 # GESC Gaussian Topic and Message Dictionary
 
-> Phases 01-07.5 and the Phase 08 v2 harness are implemented. Phase 04 passed its amended focused and visible
-> Gazebo/SIGINT gates, Phase 05 produced a complete retained sqlite3 run, and
+> Phases 01-07.5, the Phase 08 v2 harness, and the Phase 08.3 M1 offline
+> evidence contracts are implemented. Phase 04 passed its amended focused and
+> visible Gazebo/SIGINT gates, Phase 05 produced a complete retained sqlite3
+> run, and
 > Phase 06 composes the same launch/recording owners in a deterministic serial
 > scenario runner. Phase 08 v2 stopped failed at activation and produced no
 > frozen profile or robustness acceptance. Phase 08.1 completed its bounded
 > recovery but retained a downstream recenter timeout. Phase 08.2 implements
 > and validates the bounded deterministic correction in one fresh full-path
-> Gazebo probe. This is recenter-recovery evidence, not v3 robustness
-> acceptance, so simulation readiness remains unestablished.
+> Gazebo probe. Phase 08.3 M1 adds schema-v4, aggregate truth, runner,
+> analyzer, encryption, and workflow contracts, but no v3 workflow or Gazebo
+> stage has run. This is not v3 robustness acceptance, so simulation readiness
+> remains unestablished.
 
 This dictionary is the resolved Phase 05 interface contract for the current
 `dsim-lab` checkout. `algorithm_profile=legacy` remains the default and keeps
@@ -714,6 +718,50 @@ The generated historical `phase08_frozen_parameters.yaml` is v1-only.
 `phase08_v2_frozen_parameters.yaml` is generated only after v2 selection and
 is applied only through the v2 validation harness. Neither changes a
 direct-launch or legacy default.
+
+### Phase 08.3 schema-v4 offline evidence
+
+Phase 08.3 adds no ROS topic, message, node, launch owner, or controller
+interface. Schema version 4 extends only resolved scenario and offline
+evidence. Schema versions 1–3 retain their existing identities, manually named
+goal compatibility, and classification.
+
+Each schema-v4 case binds a noise-free aggregate-field truth record derived
+through the existing `Multi_Light_Source_Cost` owner. The record contains the
+resolved sources, inset robot-center/yaw domain, global-equivalent targets,
+raw costs and source scores, solver settings, model/source hashes, checked
+sensor-transform and URDF geometry hashes, and a canonical result hash. Cases
+that declare an escape branch also bind a local-coordinate below-threshold
+proof. Source `evaluation_role` remains descriptive and cannot select the
+acceptance target.
+
+Schema v4 predeclares every metric with `metric_applicability`:
+
+| Key | Offline evidence |
+|---|---|
+| `escape_attempt` | observed attempt count, outcomes, and radial progress |
+| `escape_duration` | one duration status/value per observed attempt |
+| `orbit_count` | one orbit status/value per observed attempt |
+| `revisit` | post-fill revisit count |
+| `delay` | configured delayed-stream measurements |
+| `saturation` | saturation duration, fraction, axes, and limit excess |
+
+Attempt rows remain exported in `escape_attempts.csv`; schema-v4
+`summary_metrics.json` additionally retains `metric_applicability`, one
+`escape_attempts` entry per observed attempt, and
+`applicability_integrity`. A successful applicable attempt requires a finite
+duration and orbit value. Missing applicable evidence is `unavailable` and
+fails integrity; a predeclared irrelevant metric is `not_applicable`, never
+numeric zero.
+
+Delay applicability is per stream. A positive sensor delay requires valid
+observed raw-cost and source-cost delay; a positive pose delay requires valid
+observed pose delay. A stream with no declared delay remains
+`not_applicable`, even when another stream in the same case is delayed.
+Schema-v4 activation cases may separate branch evidence in
+`activation_window` from always-on safety, completeness, cleanup, final-zero,
+and shutdown evidence in `full_lifecycle`. Formal acceptance uses the full
+lifecycle.
 
 ## Phase 07 offline analysis interface
 

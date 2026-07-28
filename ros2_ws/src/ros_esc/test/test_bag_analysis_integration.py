@@ -453,6 +453,80 @@ def test_generated_sqlite_bag_produces_complete_evidence(
     assert synchronized[0]['source_timestamp_sec'] == '1.1'
 
 
+def test_schema_v4_summary_exposes_applicability_and_attempt_scalars(
+    tmp_path,
+    monkeypatch,
+):
+    """Publish aggregate distance and per-attempt v4 acceptance evidence."""
+    run_directory = _create_run(tmp_path)
+    _write_document(
+        run_directory / 'resolved_scenario.yaml',
+        {
+            'schema_version': 4,
+            'acceptance_family': 'lifecycle',
+            'acceptance_partition': 'validation',
+            'repeat_reference': None,
+            'metric_applicability': {
+                'escape_attempt': True,
+                'escape_duration': True,
+                'orbit_count': True,
+                'revisit': True,
+                'delay': False,
+                'saturation': True,
+            },
+            'validation': {
+                'world': False,
+                'contacts_enabled': False,
+            },
+            'disturbances': {
+                'sensor_delay_sec': 0.0,
+                'pose_delay_sec': 0.0,
+            },
+            'success': {
+                'ground_truth': {
+                    'method': 'aggregate_field',
+                    'final_position_tolerance_m': 0.35,
+                    'aggregate_field': {
+                        'result_sha256': 'b' * 64,
+                        'targets': [{
+                            'target_id': 'aggregate_001',
+                            'x_m': 0.3,
+                            'y_m': 0.0,
+                        }],
+                    },
+                },
+            },
+        },
+    )
+    monkeypatch.setattr(
+        'ros_esc.plotting_scripts.gesc_gaussian_bag_analysis.'
+        'validate_run_directory',
+        lambda *_args, **_kwargs: {
+            'passed': True, 'failures': [], 'warnings': [],
+        },
+    )
+    output = tmp_path / 'v4_analysis'
+
+    result = analyze_run(run_directory, output_directory=output)
+
+    assert result['analysis_status'] == 'complete'
+    assert result['acceptance_family'] == 'lifecycle'
+    assert result['metric_applicability']['delay'] is False
+    assert result['metrics']['observed_pose_delay']['status'] == (
+        'not_applicable'
+    )
+    assert result['metrics'][
+        'final_aggregate_target_distance'
+    ]['value'] == 0.0
+    assert len(result['escape_attempts']) == 1
+    assert result['escape_attempts'][0]['duration']['status'] == 'valid'
+    assert result['escape_attempts'][0]['orbit_count']['status'] == 'valid'
+    stored = json.loads(
+        (output / 'summary_metrics.json').read_text(encoding='utf-8')
+    )
+    assert stored['escape_attempts'] == result['escape_attempts']
+
+
 def test_failed_recording_is_analyzed_as_partial(tmp_path, monkeypatch):
     """A readable failed recording must remain first-class partial evidence."""
     run_directory = _create_run(tmp_path)

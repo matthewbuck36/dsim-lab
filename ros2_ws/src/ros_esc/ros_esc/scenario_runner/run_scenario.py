@@ -18,6 +18,7 @@ import time
 import uuid
 
 from gazebo_msgs.msg import ContactsState
+
 from nav_msgs.msg import Odometry
 
 import rclpy
@@ -143,6 +144,11 @@ def build_launch_command(resolved, cost_path=None, gui=False):
     disturbance_enabled = sensor_delayed or pose_delayed
     contact_probe_enabled = (
         resolved['success'].get('collision_expected') is True
+        or (
+            resolved.get('schema_version', 1) >= 4
+            and resolved['validation']['contacts_enabled']
+            and resolved['success'].get('collision_expected') is not None
+        )
     )
     arguments = {
         'gazebo_gui': gui,
@@ -232,6 +238,31 @@ def build_launch_command(resolved, cost_path=None, gui=False):
 
 def build_metadata(resolved, operator, experiment_version, operator_notes):
     """Generate recording metadata from the same resolved launch object."""
+    scenario_runner = {
+        'schema_version': resolved['schema_version'],
+        'suite_id': resolved['suite_id'],
+        'case_id': resolved['case_id'],
+        'case_key': resolved['case_key'],
+        'family': resolved['family'],
+        'profile': resolved['profile'],
+        'seed': resolved['seed'],
+        'start': resolved['start'],
+        'sources': resolved['sources'],
+        'bounds_m': resolved['bounds_m'],
+        'room_center_m': resolved['room_center_m'],
+        'disturbances': resolved['disturbances'],
+        'validation': resolved['validation'],
+        'frozen_profile': resolved['frozen_profile'],
+        'algorithm': resolved['algorithm'],
+        'success': resolved['success'],
+    }
+    if resolved.get('schema_version', 1) >= 4:
+        scenario_runner.update({
+            'acceptance_family': resolved['acceptance_family'],
+            'acceptance_partition': resolved['acceptance_partition'],
+            'repeat_reference': resolved['repeat_reference'],
+            'metric_applicability': resolved['metric_applicability'],
+        })
     return {
         'schema_version': 1,
         'experiment_version': experiment_version,
@@ -292,24 +323,7 @@ def build_metadata(resolved, operator, experiment_version, operator_notes):
         ],
         'human_intervention': False,
         'operator_notes': operator_notes,
-        'scenario_runner': {
-            'schema_version': resolved['schema_version'],
-            'suite_id': resolved['suite_id'],
-            'case_id': resolved['case_id'],
-            'case_key': resolved['case_key'],
-            'family': resolved['family'],
-            'profile': resolved['profile'],
-            'seed': resolved['seed'],
-            'start': resolved['start'],
-            'sources': resolved['sources'],
-            'bounds_m': resolved['bounds_m'],
-            'room_center_m': resolved['room_center_m'],
-            'disturbances': resolved['disturbances'],
-            'validation': resolved['validation'],
-            'frozen_profile': resolved['frozen_profile'],
-            'algorithm': resolved['algorithm'],
-            'success': resolved['success'],
-        },
+        'scenario_runner': scenario_runner,
     }
 
 
@@ -460,8 +474,148 @@ def ensure_ros_daemon():
     )
 
 
-def run_record_process(command, wall_timeout_sec, shutdown_grace_sec):
+def _wait_for_scoped_shutdown(process, shutdown_grace_sec):
+    """Escalate only one child session after its requested SIGINT."""
+    try:
+        process.wait(timeout=shutdown_grace_sec)
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        try:
+            process.wait(timeout=5.0)
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            process.wait()
+
+
+def _run_record_to_boundary(
+    command,
+    wall_timeout_sec,
+    shutdown_grace_sec,
+    anchor_state,
+    boundary_state,
+    boundary_required_events,
+):
+    """Observe a development branch boundary and request orderly shutdown."""
+    context = rclpy.context.Context()
+    rclpy.init(context=context)
+    node = rclpy.create_node(
+        f'phase08_v3_boundary_{uuid.uuid4().hex[:8]}',
+        context=context,
+    )
+    observed = {
+        'anchor': False,
+        'boundary_state': False,
+        'events': set(),
+    }
+
+    def state_callback(message):
+        names, unused_error = _canonical_state_sequence([message])
+        del unused_error
+        if not names:
+            return
+        if names[0] == anchor_state:
+            observed['anchor'] = True
+        if observed['anchor'] and names[0] == boundary_state:
+            observed['boundary_state'] = True
+
+    def event_callback(message):
+        names, unused_error = _canonical_event_sequence([message])
+        del unused_error
+        if observed['anchor'] and names:
+            observed['events'].add(names[0])
+
+    node.create_subscription(
+        AlgorithmState,
+        '/gesc_gaussian/algorithm_state',
+        state_callback,
+        10,
+    )
+    node.create_subscription(
+        AlgorithmEvent,
+        '/gesc_gaussian/algorithm_events',
+        event_callback,
+        10,
+    )
+    timed_out = False
+    boundary_stop = False
+    process = None
+    try:
+        with tempfile.TemporaryFile(mode='w+t', encoding='utf-8') as output:
+            process = subprocess.Popen(
+                command,
+                stdout=output,
+                stderr=subprocess.STDOUT,
+                text=True,
+                start_new_session=True,
+            )
+            deadline = time.monotonic() + wall_timeout_sec
+            while process.poll() is None:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0.0:
+                    timed_out = True
+                    break
+                rclpy.spin_once(
+                    node,
+                    timeout_sec=min(0.1, remaining),
+                )
+                if (
+                    observed['boundary_state']
+                    and set(boundary_required_events) <= observed['events']
+                ):
+                    boundary_stop = True
+                    break
+            if boundary_stop or timed_out:
+                try:
+                    os.killpg(process.pid, signal.SIGINT)
+                except ProcessLookupError:
+                    pass
+                _wait_for_scoped_shutdown(process, shutdown_grace_sec)
+            output.flush()
+            output.seek(0)
+            stdout = output.read()
+    finally:
+        node.destroy_node()
+        rclpy.shutdown(context=context)
+    return {
+        'return_code': process.returncode,
+        'timed_out': timed_out,
+        'stdout': stdout,
+        'session_id': process.pid,
+        'graceful_boundary_stop': boundary_stop,
+        'boundary_anchor_state': anchor_state,
+        'boundary_state': boundary_state,
+        'boundary_observed': observed['boundary_state'],
+        'boundary_required_events': list(boundary_required_events),
+        'boundary_required_events_observed': sorted(
+            observed['events'] & set(boundary_required_events)
+        ),
+    }
+
+
+def run_record_process(
+    command,
+    wall_timeout_sec,
+    shutdown_grace_sec,
+    anchor_state=None,
+    boundary_state=None,
+    boundary_required_events=None,
+):
     """Run record_run with a wall timeout and scoped session escalation."""
+    if boundary_state is not None:
+        return _run_record_to_boundary(
+            command,
+            wall_timeout_sec,
+            shutdown_grace_sec,
+            anchor_state,
+            boundary_state,
+            list(boundary_required_events or []),
+        )
     process = subprocess.Popen(
         command,
         stdout=subprocess.PIPE,
@@ -498,6 +652,12 @@ def run_record_process(command, wall_timeout_sec, shutdown_grace_sec):
         'timed_out': timed_out,
         'stdout': output,
         'session_id': process.pid,
+        'graceful_boundary_stop': False,
+        'boundary_anchor_state': None,
+        'boundary_state': None,
+        'boundary_observed': False,
+        'boundary_required_events': [],
+        'boundary_required_events_observed': [],
     }
 
 
@@ -565,12 +725,154 @@ def _canonical_event_sequence(messages):
             event_value = None
         canonical = EVENT_NAMES.get(event_value)
         if canonical is None:
-            error = f'algorithm event contains unknown enum {message.event_type}'
+            error = (
+                'algorithm event contains unknown enum '
+                f'{message.event_type}'
+            )
             continue
         if canonical == 'UNSPECIFIED':
             error = 'algorithm event reports EVENT_UNSPECIFIED'
         observed.append(canonical)
     return observed, error
+
+
+def _canonical_state_records(records):
+    """Retain canonical state transition stamps for named result scopes."""
+    observed = []
+    error = None
+    for stamp, message in records:
+        names, message_error = _canonical_state_sequence([message])
+        error = message_error or error
+        if names and (not observed or names[0] != observed[-1][1]):
+            observed.append((stamp, names[0]))
+    return observed, error
+
+
+def _canonical_event_records(records):
+    """Retain canonical event stamps for named result scopes."""
+    observed = []
+    error = None
+    for stamp, message in records:
+        names, message_error = _canonical_event_sequence([message])
+        error = message_error or error
+        if names:
+            observed.append((stamp, names[0]))
+    return observed, error
+
+
+def _controller_evidence(expectations, observed_states, observed_events):
+    """Evaluate one controller contract over one declared result scope."""
+    expected_terminal = expectations.get('expected_terminal_state')
+    required_states = [
+        str(name).removeprefix('STATE_')
+        for name in expectations.get('required_state_sequence', [])
+    ]
+    required_state_path = [
+        str(name).removeprefix('STATE_')
+        for name in expectations.get('required_state_path', [])
+    ]
+    required_events = [
+        str(name).removeprefix('EVENT_')
+        for name in expectations.get('required_events', [])
+    ]
+    required_event_sequence = [
+        str(name).removeprefix('EVENT_')
+        for name in expectations.get('required_event_sequence', [])
+    ]
+    forbidden_states = [
+        str(name).removeprefix('STATE_')
+        for name in expectations.get('forbidden_states', [])
+    ]
+    forbidden_events = [
+        str(name).removeprefix('EVENT_')
+        for name in expectations.get('forbidden_events', [])
+    ]
+    return {
+        'required_state_path': _first_verification_path(
+            required_state_path,
+            observed_states,
+        ),
+        'required_state_sequence': _subsequence(
+            required_states,
+            observed_states,
+        ),
+        'required_event_sequence': _subsequence(
+            required_event_sequence,
+            observed_events,
+        ),
+        'required_events': all(
+            event in observed_events for event in required_events
+        ),
+        'no_forbidden_states': all(
+            state not in observed_states for state in forbidden_states
+        ),
+        'no_forbidden_events': all(
+            event not in observed_events for event in forbidden_events
+        ),
+        'expected_terminal_state': (
+            expected_terminal is None
+            or bool(observed_states)
+            and observed_states[-1]
+            == str(expected_terminal).removeprefix('STATE_')
+        ),
+    }
+
+
+def _scope_observations(scope, state_records, event_records):
+    """Slice one bag interval at a declared anchor and branch boundary."""
+    anchor_index = next(
+        (
+            index
+            for index, record in enumerate(state_records)
+            if record[1] == scope['anchor_state']
+        ),
+        None,
+    )
+    if anchor_index is None:
+        return {
+            'anchor_observed': False,
+            'boundary_observed': False,
+            'observed_state_sequence': [],
+            'observed_events': [],
+        }
+    anchor_stamp = state_records[anchor_index][0]
+    boundary = scope['boundary_state']
+    boundary_index = None
+    if boundary is not None:
+        boundary_index = next(
+            (
+                index
+                for index in range(anchor_index, len(state_records))
+                if state_records[index][1] == boundary
+            ),
+            None,
+        )
+    stop_index = (
+        boundary_index + 1
+        if boundary_index is not None
+        else len(state_records)
+    )
+    event_stop_stamp = None
+    if (
+        boundary_index is not None
+        and boundary_index + 1 < len(state_records)
+    ):
+        event_stop_stamp = state_records[boundary_index + 1][0]
+    return {
+        'anchor_observed': True,
+        'boundary_observed': (
+            boundary is None or boundary_index is not None
+        ),
+        'observed_state_sequence': [
+            name for unused_stamp, name
+            in state_records[anchor_index:stop_index]
+        ],
+        'observed_events': [
+            name for stamp, name in event_records
+            if stamp >= anchor_stamp
+            and (event_stop_stamp is None or stamp < event_stop_stamp)
+        ],
+    }
 
 
 def _unavailable_outcomes(reason, readiness_interval_available=False):
@@ -596,8 +898,34 @@ def _unavailable_outcomes(reason, readiness_interval_available=False):
         'collision_evidence_available': False,
         'collision_observed': None,
         'collision_expectation_passed': None,
+        'result_scopes': {},
         'outcome_error': reason,
     }
+
+
+def _ground_truth_targets(resolved):
+    """Return manual legacy goals or schema-v4 aggregate targets."""
+    ground_truth = resolved['success']['ground_truth']
+    if resolved.get('schema_version', 1) >= 4:
+        aggregate = ground_truth.get('aggregate_field', {})
+        return [
+            {
+                'id': target['target_id'],
+                'x_m': target['x_m'],
+                'y_m': target['y_m'],
+            }
+            for target in aggregate.get('targets', [])
+        ]
+    goal_ids = set(ground_truth['goal_source_ids'])
+    return [
+        {
+            'id': source['id'],
+            'x_m': source['x_m'],
+            'y_m': source['y_m'],
+        }
+        for source in resolved['sources']
+        if source['id'] in goal_ids
+    ]
 
 
 def _bag_outcomes(run_directory, resolved):
@@ -650,12 +978,12 @@ def _bag_outcomes(run_directory, resolved):
             and (first_false is None or stamp <= first_false)
         )
 
-    states = [
-        message for stamp, message
+    state_messages = [
+        (stamp, message) for stamp, message
         in records['/gesc_gaussian/algorithm_state'] if inside(stamp)
     ]
-    events = [
-        message for stamp, message
+    event_messages = [
+        (stamp, message) for stamp, message
         in records['/gesc_gaussian/algorithm_events'] if inside(stamp)
     ]
     diagnostics = [
@@ -679,8 +1007,10 @@ def _bag_outcomes(run_directory, resolved):
         )
     )
     collision_expected = resolved['success'].get('collision_expected')
-    observed_states, state_error = _canonical_state_sequence(states)
-    observed_events, event_error = _canonical_event_sequence(events)
+    state_records, state_error = _canonical_state_records(state_messages)
+    event_records, event_error = _canonical_event_records(event_messages)
+    observed_states = [name for unused_stamp, name in state_records]
+    observed_events = [name for unused_stamp, name in event_records]
     saturation_samples = sum(
         1 for message in diagnostics if any(message.saturation_flags)
     )
@@ -700,21 +1030,18 @@ def _bag_outcomes(run_directory, resolved):
             )
     distances = {}
     if final_position:
-        for source in resolved['sources']:
-            if source['id'] in resolved['success']['ground_truth'][
-                'goal_source_ids'
-            ]:
-                distance = math.hypot(
-                    final_position['x_m'] - source['x_m'],
-                    final_position['y_m'] - source['y_m'],
+        for target in _ground_truth_targets(resolved):
+            distance = math.hypot(
+                final_position['x_m'] - target['x_m'],
+                final_position['y_m'] - target['y_m'],
+            )
+            if not math.isfinite(distance):
+                distances = {}
+                outcome_error = outcome_error or (
+                    'terminal goal distance is nonfinite'
                 )
-                if not math.isfinite(distance):
-                    distances = {}
-                    outcome_error = outcome_error or (
-                        'terminal goal distance is nonfinite'
-                    )
-                    break
-                distances[source['id']] = distance
+                break
+            distances[target['id']] = distance
     controller_goal = 'not_applicable'
     if resolved['profile'] == 'robust_gaussian_v1':
         controller_goal = (
@@ -725,11 +1052,11 @@ def _bag_outcomes(run_directory, resolved):
             )
             else 'failed'
         )
-    goal_ids = resolved['success']['ground_truth']['goal_source_ids']
+    ground_truth_targets = _ground_truth_targets(resolved)
     ground_truth = 'not_applicable'
     if outcome_error is not None:
         ground_truth = 'unavailable'
-    elif goal_ids:
+    elif ground_truth_targets:
         tolerance = resolved['success']['ground_truth'][
             'final_position_tolerance_m'
         ]
@@ -739,41 +1066,26 @@ def _bag_outcomes(run_directory, resolved):
             else 'failed'
         )
     controller_expectations = resolved['success']['controller']
-    expected_terminal = controller_expectations.get(
-        'expected_terminal_state'
+    controller_evidence = _controller_evidence(
+        controller_expectations,
+        observed_states,
+        observed_events,
     )
-    terminal_ok = (
-        expected_terminal is None
-        or bool(observed_states)
-        and observed_states[-1]
-        == str(expected_terminal).removeprefix('STATE_')
-    )
-    required_states = [
-        str(name).removeprefix('STATE_')
-        for name in controller_expectations.get('required_state_sequence', [])
-    ]
-    required_state_path = [
-        str(name).removeprefix('STATE_')
-        for name in controller_expectations.get('required_state_path', [])
-    ]
-    required_events = [
-        str(name).removeprefix('EVENT_')
-        for name in controller_expectations.get('required_events', [])
-    ]
-    required_event_sequence = [
-        str(name).removeprefix('EVENT_')
-        for name in controller_expectations.get(
-            'required_event_sequence', []
+    scope_results = {}
+    for scope_name, scope in resolved['success'].get(
+        'result_scopes', {}
+    ).items():
+        observations = _scope_observations(
+            scope,
+            state_records,
+            event_records,
         )
-    ]
-    forbidden_states = [
-        str(name).removeprefix('STATE_')
-        for name in controller_expectations.get('forbidden_states', [])
-    ]
-    forbidden_events = [
-        str(name).removeprefix('EVENT_')
-        for name in controller_expectations.get('forbidden_events', [])
-    ]
+        observations['predicate_results'] = _controller_evidence(
+            controller_expectations,
+            observations['observed_state_sequence'],
+            observations['observed_events'],
+        )
+        scope_results[scope_name] = observations
     return {
         'readiness_interval_available': first_true is not None,
         'observed_state_sequence': observed_states,
@@ -785,25 +1097,25 @@ def _bag_outcomes(run_directory, resolved):
         'simulation_ground_truth': ground_truth,
         'final_position': final_position,
         'final_goal_distances_m': distances,
-        'required_state_path_passed': _first_verification_path(
-            required_state_path, observed_states
-        ),
-        'required_state_sequence_passed': _subsequence(
-            required_states, observed_states
-        ),
-        'required_event_sequence_passed': _subsequence(
-            required_event_sequence, observed_events
-        ),
-        'required_events_passed': all(
-            event in observed_events for event in required_events
-        ),
-        'forbidden_states_absent': all(
-            state not in observed_states for state in forbidden_states
-        ),
-        'forbidden_events_absent': all(
-            event not in observed_events for event in forbidden_events
-        ),
-        'expected_terminal_state_passed': terminal_ok,
+        'required_state_path_passed': controller_evidence[
+            'required_state_path'
+        ],
+        'required_state_sequence_passed': controller_evidence[
+            'required_state_sequence'
+        ],
+        'required_event_sequence_passed': controller_evidence[
+            'required_event_sequence'
+        ],
+        'required_events_passed': controller_evidence['required_events'],
+        'forbidden_states_absent': controller_evidence[
+            'no_forbidden_states'
+        ],
+        'forbidden_events_absent': controller_evidence[
+            'no_forbidden_events'
+        ],
+        'expected_terminal_state_passed': controller_evidence[
+            'expected_terminal_state'
+        ],
         'saturation_sample_count': saturation_samples,
         'minimum_saturation_samples_passed': (
             saturation_samples
@@ -816,6 +1128,7 @@ def _bag_outcomes(run_directory, resolved):
             or bool(contacts)
             and collision_observed is collision_expected
         ),
+        'result_scopes': scope_results,
         'outcome_error': outcome_error,
     }
 
@@ -869,8 +1182,50 @@ def classify_result(
             'collision_expectation_passed'
         ),
     }
+    scope_classifications = {}
+    if resolved.get('schema_version', 1) >= 4:
+        outcome_scopes = outcomes.get('result_scopes', {})
+        for scope_name, scope in resolved['success'][
+            'result_scopes'
+        ].items():
+            observed_scope = outcome_scopes.get(scope_name, {})
+            controller_results = observed_scope.get(
+                'predicate_results', {}
+            )
+            predicate_results = {}
+            for predicate in scope['all_of']:
+                result = facts[predicate]
+                if predicate in controller_results:
+                    result = controller_results[predicate]
+                predicate_results[predicate] = result
+            scope_passed = all(
+                result is True for result in predicate_results.values()
+            )
+            if observed_scope.get('anchor_observed') is not True:
+                scope_passed = False
+            if (
+                scope['boundary_state'] is not None
+                and observed_scope.get('boundary_observed') is not True
+            ):
+                scope_passed = False
+            scope_classifications[scope_name] = {
+                'passed': scope_passed,
+                'anchor_state': scope['anchor_state'],
+                'anchor_observed': observed_scope.get(
+                    'anchor_observed'
+                ),
+                'boundary_state': scope['boundary_state'],
+                'boundary_observed': observed_scope.get(
+                    'boundary_observed'
+                ),
+                'graceful_stop': scope['graceful_stop'],
+                'required_predicates': list(scope['all_of']),
+                'predicate_results': predicate_results,
+            }
     all_of = resolved['success']['all_of']
-    passed = all(facts[name] is True for name in all_of)
+    passed = all(facts[name] is True for name in all_of) and all(
+        scope['passed'] for scope in scope_classifications.values()
+    )
     if run_directory_available is None:
         run_directory_available = bool(completeness)
     recording = (
@@ -898,6 +1253,15 @@ def classify_result(
         infrastructure_status = 'run_directory_missing'
     elif process_result['return_code'] not in (0, 1):
         infrastructure_status = 'runner_or_recorder_failure'
+    elif (
+        _graceful_boundary_scope(resolved) is not None
+        and process_result.get('graceful_boundary_stop') is not True
+    ):
+        infrastructure_status = 'boundary_stop_failed'
+        infrastructure_reason = (
+            'declared graceful activation boundary was not observed '
+            'by the live runner'
+        )
     elif (
         outcomes.get('readiness_interval_available') is False
         or metadata_no_readiness
@@ -954,6 +1318,7 @@ def classify_result(
         'failure_stage': failure_stage,
         'required_predicates': all_of,
         'predicate_results': {name: facts[name] for name in all_of},
+        'result_scopes': scope_classifications,
     }
 
 
@@ -971,6 +1336,18 @@ def _write_run_artifacts(
             noise_config, Path(run_directory) / 'resolved_cost_function.json'
         )
     atomic_yaml(Path(run_directory) / 'scenario_result.yaml', result)
+
+
+def _graceful_boundary_scope(resolved):
+    """Return the sole development-only graceful scope, when declared."""
+    scopes = resolved['success'].get('result_scopes', {})
+    matches = [
+        scope for scope in scopes.values()
+        if scope.get('graceful_stop')
+    ]
+    if len(matches) > 1:
+        raise ValueError('only one graceful result scope may be declared')
+    return matches[0] if matches else None
 
 
 def execute_suite(
@@ -1049,10 +1426,34 @@ def execute_suite(
                     )
                 summary['runs'].append(dry_run_record)
                 continue
+            graceful_scope = _graceful_boundary_scope(resolved)
+            boundary_arguments = {}
+            if graceful_scope is not None:
+                controller = resolved['success']['controller']
+                required_events = []
+                if 'required_events' in graceful_scope['all_of']:
+                    required_events.extend(
+                        controller['required_events']
+                    )
+                if (
+                    'required_event_sequence'
+                    in graceful_scope['all_of']
+                ):
+                    required_events.extend(
+                        controller['required_event_sequence']
+                    )
+                boundary_arguments = {
+                    'anchor_state': graceful_scope['anchor_state'],
+                    'boundary_state': graceful_scope['boundary_state'],
+                    'boundary_required_events': sorted(
+                        set(required_events)
+                    ),
+                }
             process_result = run_record_process(
                 record,
                 execution['wall_timeout_sec'],
                 execution['shutdown_grace_sec'],
+                **boundary_arguments,
             )
             cleanup = cleanup_evidence(
                 baseline_nodes, process_result['session_id']
