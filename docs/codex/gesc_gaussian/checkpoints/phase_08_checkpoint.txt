@@ -1,66 +1,52 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-28T18:04:09+00:00
-Base HEAD: de254b576aeb970ea420f74712945b01f6a26405
+Generated: 2026-07-28T18:11:47+00:00
+Base HEAD: 7689f2f55e47a2ecfe38445a936c59d7d3b1be32
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: d513984005a9154cfcbd849dbb3d5dec7411fbfb76c9657209901907712bc4cf
+Status sha256: afe10edea81f72c3103a740d3a170f929c5b5443a3474757dbac3d6be6a6bf69
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_4_plan.md
 Active subphase plan sha256: 63369edbbfa2c8fb987822f5f05d0dea7487443f27e4963e5b61e24ccc644f69
-Unstaged diff sha256: bf2d90d50b5554860c3e05e5c06d3134a14ffb89b7ddb4d8876b9ed560119d81
+Unstaged diff sha256: 5c5f513bc85d54e1e77d59b375ea27c53ba2e1341460e2e8a36d85acb17fe0d6
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 30]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 31]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py
- M ros2_ws/src/ros_esc/test/test_phase08_validation.py
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 47 ++------------
- docs/codex/gesc_gaussian/status/phase_08_status.md | 27 ++++++++
- .../ros_esc/scenario_runner/phase08_validation.py  |  2 +-
- .../src/ros_esc/test/test_phase08_validation.py    | 73 ++++++++++++++++++++++
- 4 files changed, 106 insertions(+), 43 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 52 ++------------
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 84 ++++++++++++++++++++++
+ 2 files changed, 89 insertions(+), 47 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**M3 — prepare and qualify V4.**
+**M4 — execute ten fresh GUI Gazebo activation cases.**
 
 ### Next criterion
 
-Commit the exact M2 inputs, require clean Git, transactionally create
-`/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4`, then pass the
-zero-prior-execution recheck, full functional suite, isolated build, installed
-resource/launch/dry-run checks, recorder SIGINT smoke, disk forecast, and
-empty process-set gates. Only that passing state may start the ten real GUI
-Gazebo activation simulations.
+At clean Git, immediately rehash the passing prepare/qualification states,
+repository snapshot, V4 inputs, and dry-run invocation contract; require an
+empty process set; then execute the ten V4 activation cases serially with the
+Gazebo GUI visible. Retain and analyze each attempt exactly once. Continue to
+headless development only if all ten integrity and lifecycle contracts pass.
 
-### M3 stop conditions
+### M4 stop conditions
 
-- No Gazebo dispatch if prepare or qualification is incomplete or failed.
-- Do not alter an input captured by the V4 repository snapshot.
-- Do not reuse any V3 evidence record as V4 evidence.
+- Stop immediately on collision, evidence corruption, cleanup failure,
+  ownership/hash drift, orphan process, or replacement-policy breach.
+- Finish all ten ordinary valid behavior misses, but do not enter development
+  unless activation is `10/10`.
+- Do not count any V3 record or failed smoke harness as a V4 activation slot.
 
-### M3 transactional-prepare preflight correction
-
-The first `v4-prepare` invocation at
-`2026-07-28T11:08:00-07:00` stopped before publishing the fresh root because
-the new transaction path passed unsupported keyword `mode` to the existing
-`atomic_json` helper. The staging directory was removed and
-`phase08_v4` remained absent.
-
-This bounded workflow-only correction now writes the JSON through the
-existing helper and applies mode `0600` to the completed file. A new focused
-test proves the root contains both a valid `v4_prepare.json` state and a
 
 This file describes the base HEAD and diff before the next commit; it is
 not a claim that the eventual commit contains itself or that tests passed.

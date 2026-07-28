@@ -2701,3 +2701,87 @@ test_phase08_validation.py
 
 No evidence root, Gazebo process, simulation slot, hardware action, or
 scientific result was created by the failed invocation.
+
+## Phase 08.4 M3 prepare and qualification completion
+
+Verified at `2026-07-28T11:17:00-07:00` from clean implementation commit
+`7689f2f55e47a2ecfe38445a936c59d7d3b1be32`.
+
+The fresh V4 evidence root is:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4
+```
+
+Transactional preparation passed with:
+
+- all `80` formal case identities valid;
+- zero overlap with the three inspected historical V3 attempt records;
+- unchanged formal suite SHA-256
+  `d733ef9dffb372d2c60b57f83c2b96e1062a0a62818587de59a0166df4efe88e`;
+- `349045542912` free bytes versus `91268055040` required;
+- no active ROS/Gazebo process before preparation;
+- clean repository commit/tree and complete runtime-input hash map.
+
+Qualification passed with no reasons:
+
+- retained functional gate: `490 passed, 2 skipped in 86.02 s`;
+- isolated three-package build: passed;
+- installed truth and V4 resources: passed;
+- installed entry point and launch arguments: passed;
+- private-context boundary observer smoke: passed;
+- bounded supervisor and Gaussian-fill node instantiation: passed with clean
+  SIGINT shutdown;
+- activation dry run: schema 4, `10` resolved, `0` unsupported, all ten
+  direct and recorder launch contracts valid;
+- development dry run: schema 4, `10` resolved, `0` unsupported;
+- process sets before and after qualification: empty;
+- installed real-ROS, no-Gazebo recorder-coordinator SIGINT smoke: passed,
+  with no invalid-context exception.
+
+The first standalone M3 recorder-smoke harness used a noncanonical simulation
+target and had a quoting defect. `record_run` rejected it before rclpy
+initialization, so no run directory or simulation evidence was created. The
+corrected installed process-level smoke is retained as
+`qualification/recorder_sigint_smoke_v2.json`; the failed harness log remains
+retained separately and is not counted as qualification evidence.
+
+Evidence hashes:
+
+```text
+workflow_state/v4_prepare.json
+  5d9eb740126ca2eb81889c86c46eb7576b411901114fd96c46fb5ad32233c5d2
+workflow_state/v4_qualification.json
+  52c4247e20acb02e6edf3633f7cf585b288080ef9e61f5afd36e9ca2acc91ce9
+prepare/prepare_transaction.json
+  fa8913755fa15dbd04473b24133147385e8fcee85dd1e5b530994749fa3fcf4a
+qualification/activation_dry_run.yaml
+  d7bada78cdebd7d24f45c6c72b87e0a6fc189b160e5a21c7da4131cfff46758c
+qualification/development_dry_run.yaml
+  840fc9f7a4549b9e05073aedf658cb86f459fc523d78406d89c72c386644f1ce
+qualification/logs/recorder_sigint_smoke_v2.log
+  f14c5529f9fd9d18609ee77a335f2948a19c007a3df0b7bd20d834fb8b48419e
+```
+
+No Gazebo simulation, physical hardware, formal slot, readiness tag, or
+Phase 09 action occurred in M3.
+
+## Current milestone
+
+**M4 — execute ten fresh GUI Gazebo activation cases.**
+
+### Next criterion
+
+At clean Git, immediately rehash the passing prepare/qualification states,
+repository snapshot, V4 inputs, and dry-run invocation contract; require an
+empty process set; then execute the ten V4 activation cases serially with the
+Gazebo GUI visible. Retain and analyze each attempt exactly once. Continue to
+headless development only if all ten integrity and lifecycle contracts pass.
+
+### M4 stop conditions
+
+- Stop immediately on collision, evidence corruption, cleanup failure,
+  ownership/hash drift, orphan process, or replacement-policy breach.
+- Finish all ten ordinary valid behavior misses, but do not enter development
+  unless activation is `10/10`.
+- Do not count any V3 record or failed smoke harness as a V4 activation slot.
