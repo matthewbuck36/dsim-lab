@@ -2785,3 +2785,219 @@ headless development only if all ten integrity and lifecycle contracts pass.
 - Finish all ten ordinary valid behavior misses, but do not enter development
   unless activation is `10/10`.
 - Do not count any V3 record or failed smoke harness as a V4 activation slot.
+
+## Phase 08.4 original activation stop and Level B diagnosis
+
+The first V4 activation invocation ran from clean commit `90b8c74` against
+the qualified root:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4
+```
+
+It dispatched two real serial simulations with the Gazebo GUI visible.
+
+- `v4a_goal_aggregate_robust` passed all recording, cleanup, controller,
+  aggregate-ground-truth, lifecycle, event, collision, and terminal-state
+  predicates.
+- `v4a_below_target_fill` reached the declared
+  `SEARCH -> VERIFY_EXTREMUM -> DESIGN_OR_MERGE_FILL -> ESCAPE_REPULSE`
+  behavior with its required events and clean scenario-runner cleanup, but
+  the recorder process was externally terminated with return code `-15`
+  before it could replace the initial `run did not finalize` completeness
+  record.
+- Eight activation cases were not run.
+
+The workflow stopped exactly as required and reports:
+
+```text
+passed = false
+run_count = 2
+integrity_pass_count = 1
+contract_pass_count = 1
+stopped_early_reason =
+  activation.v4a_below_target_fill:
+  infrastructure status runner_or_recorder_failure
+```
+
+Retained evidence SHA-256 values:
+
+```text
+workflow_state/v4_activation.json
+  e2690d7610ac1dc16eba643323cc5c6e569e3e7932f905febb79ddb82fcc43c9
+activation/progress.json
+  abbedda6ec56c257bb24992d1f103afd2f30a91c8f58620e672e7a9c6b61b903
+case 1 record.json
+  ee4a88d5983b5a6778dc0da11a90156f396e3168a08062252ad658c3fa449576
+case 2 record.json
+  fa16fb8fc8a81e2e3f83d5faca83462240fe7220c5b80c33b27a5934016e4605
+case 2 scenario_summary.yaml
+  f09544fcd8ff964e0c8af2f8098df2d0d7ab648f1dff24db40c6226c172594b8
+```
+
+Timing evidence isolates the failure:
+
+- boundary SIGINT and orderly recorder shutdown started at
+  `2026-07-28T18:22:27Z`;
+- Gazebo and rosbag reported stopped by `18:22:34Z`;
+- the outer runner's `30 s` cancellation budget expired while the recorder
+  was still validating the bag and escalated it to SIGTERM;
+- the preceding full-lifecycle case required about `39 s` for that same
+  offline validation phase after shutdown.
+
+Read-only re-evaluation of the retained case-2 bag also proved that the named
+activation scope excluded the causal `CONVERGENCE_CONFIRMED` event immediately
+before `VERIFY_EXTREMUM` and applied the untrimmed path beginning in `SEARCH`.
+With the generic scope correction, the retained observations satisfy both
+required state-path and event predicates. This diagnostic does not repair,
+relabel, or count the incomplete run.
+
+The original root is now immutable `FAILED / INFRASTRUCTURE STOP` and is not
+resumed. It is not a scientific behavior failure and no formal case has run.
+
+## Phase 08.4.1 bounded correction
+
+Authority and execution rules are recorded in
+`plans/phase_08_4_1_plan.md`.
+
+The existing scenario-runner owner now:
+
+- grants graceful branch-boundary runs a separate bounded `120 s` recorder
+  finalization allowance after the `30 s` child-cleanup allowance;
+- retains immediate escalation for wall timeouts and exceptions;
+- immediately cleans nested-session survivors after the recorder leader exits;
+- observes the causal event preceding a named activation anchor;
+- evaluates events from the transition into that anchor and clips state
+  requirements to the anchor.
+
+Focused verification passes:
+
+```text
+test_scenario_runner.py
+  41 passed, 1 skipped in 1.91 s
+
+test_scenario_runner.py + test_phase08_validation.py
++ test_experiment_recording.py
+  279 passed, 1 skipped in 46.56 s
+```
+
+A read-only evaluation of the retained 253 MiB case-2 bag now reports:
+
+```text
+anchor_observed = true
+boundary_observed = true
+required_state_path = true
+required_events = true
+```
+
+No historical file or external evidence was modified. No formal slot,
+development case, physical action, tag, or Phase 09 action occurred.
+
+## Current milestone
+
+**M4.1 — precommit and qualify a fresh corrected V4 activation identity.**
+
+### Next criterion
+
+Create and commit `phase08_v4r2_activation.yaml` with all ten unchanged
+activation responsibilities/geometries, new `v4r2a_` identities, and seeds
+`10601..10610`; extend the existing V4 spec selector without duplicating its
+engine; validate source/build/installed boundary-finalization behavior at
+clean Git; then transactionally prepare
+`/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4r2`.
+
+### M4.1 stop conditions
+
+- Do not resume, overwrite, relabel, or count either original V4 attempt.
+- Do not change the formal 70+10 population bytes or any acceptance gate.
+- Do not start corrected Gazebo activation before clean precommit
+  qualification passes.
+- Do not enter headless development unless the fresh corrected activation is
+  `10/10`.
+
+## Phase 08.4.1 precommit correction and fresh-input completion
+
+The bounded runner and scope corrections, amendment Plan, and fresh corrected
+activation input are implemented without changing algorithm behavior.
+
+`phase08_v4r2_activation.yaml` retains every original V4 activation geometry,
+source layout, launch override, ground-truth record, lifecycle responsibility,
+and predicate. It changes only:
+
+- suite/contract identity from `v4a_` to `v4r2a_`;
+- seeds from `10301..10310` to `10601..10610`;
+- metadata that identifies the corrected fresh activation gate.
+
+All ten corrected case keys are unique and disjoint from both the original V4
+activation cases and the V3 activation/development inputs. The V4 selector
+uses the corrected activation input while retaining the existing development,
+candidate, workflow, recorder, analyzer, and formal-population owners.
+
+The population-adoption proof is revision 2. It now:
+
+- inspects the two immutable original V4 activation records in addition to the
+  three historical V3 records;
+- proves all five are disjoint from the formal 80-case population;
+- adds the corrected activation suite to the historical-exclusion hash set;
+- retains the exact formal suite bytes and all original acceptance counts.
+
+The first mechanical generation of the corrected YAML used an overbroad seed
+substring replacement. Static aggregate-truth validation detected altered
+digits inside a precomputed truth record before commit, root creation, or
+Gazebo execution. The file was regenerated from the untouched original with
+seed replacements restricted to complete YAML seed lines. The corrected
+static tests then passed.
+
+Current SHA-256 values:
+
+```text
+run_scenario.py
+  10b86fc3a4a95b5fcd9b539fe19f8b1ef185e55673f5023b5dedb9ec9942cc17
+phase08_validation.py
+  e02305339d7de7705661d196f485058da6f578bfe538badd7fc3b42530efc120
+test_scenario_runner.py
+  f5667651e6423a4fe191f7285acc3ec9bf06b249d7899c1ff5661a71fff452c3
+test_phase08_validation.py
+  2514b1a2768ccbe6c53ef71d0b8c1304cf781a2e2ecf817ad292d200f32ffd2e
+phase08_v4r2_activation.yaml
+  c0727f48ec39517af1714cac1912c3c216f12d0b9f66e6c383baee7f30d817e1
+phase_08_v4_population_adoption.json
+  da91b8c791e157e4b4a88e77d4b8b363ac947e40155d9c8645ae1a7a246c91fc
+phase_08_4_1_plan.md
+  226ea1a48b507a4aeb7aa847b7b43b0852ce0abc7c7647df888954ec95361802
+```
+
+Verification:
+
+- focused runner/workflow/recorder gate:
+  `279 passed, 1 skipped in 50.44 s`;
+- corrected static input and formal-adoption tests:
+  `2 passed, 177 deselected in 29.30 s`;
+- fatal `flake8`, `py_compile`, and `git diff --check`: passed;
+- normal and strict-history Phase 08 implementation context: passed and
+  selected `phase_08_4_1_plan.md`.
+
+The context validator and checkpoint helper now sort nested numeric subphase
+names correctly, so `phase_08_4_1_plan.md` supersedes its parent
+`phase_08_4_plan.md` without renaming either durable artifact.
+
+No corrected evidence root, Gazebo process, formal run, physical action,
+readiness tag, or Phase 09 action exists.
+
+## Current milestone
+
+**M4.2 — commit, prepare, and qualify corrected V4.**
+
+### Next criterion
+
+Checkpoint and commit this independently verified correction, require clean
+Git, transactionally create
+`/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4r2`, and pass the
+complete functional/build/installed/dry-run/process-level qualification
+before starting corrected GUI activation.
+
+### M4.2 stop conditions
+
+- No corrected evidence-root creation from a dirty or uncommitted tree.
+- No Gazebo dispatch unless corrected prepare and qualification both pass.
+- Preserve the original V4 root and all five inspected historical records.

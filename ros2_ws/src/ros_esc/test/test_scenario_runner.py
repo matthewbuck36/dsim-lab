@@ -1308,6 +1308,7 @@ def test_live_boundary_stop_waits_for_state_and_required_event(monkeypatch):
     dispatched = []
     executor_events = []
     signals = []
+    wait_timeouts = []
     private_context = object()
 
     class FakeNode:
@@ -1338,11 +1339,19 @@ def test_live_boundary_stop_waits_for_state_and_required_event(monkeypatch):
             return self.returncode
 
         def wait(self, timeout=None):
-            del timeout
+            wait_timeouts.append(timeout)
             self.returncode = 0
             return 0
 
     sequence = [
+        (
+            '/gesc_gaussian/algorithm_events',
+            SimpleNamespace(
+                event_type=(
+                    runner.AlgorithmEvent.EVENT_CONVERGENCE_CONFIRMED
+                )
+            ),
+        ),
         (
             '/gesc_gaussian/algorithm_state',
             SimpleNamespace(
@@ -1412,21 +1421,80 @@ def test_live_boundary_stop_waits_for_state_and_required_event(monkeypatch):
         1.0,
         anchor_state='VERIFY_EXTREMUM',
         boundary_state='ESCAPE_REPULSE',
-        boundary_required_events=['ESCAPE_STARTED'],
+        boundary_required_events=[
+            'CONVERGENCE_CONFIRMED',
+            'ESCAPE_STARTED',
+        ],
     )
 
     assert dispatched == [
+        '/gesc_gaussian/algorithm_events',
         '/gesc_gaussian/algorithm_state',
         '/gesc_gaussian/algorithm_state',
         '/gesc_gaussian/algorithm_events',
     ]
     assert signals == [(4321, runner.signal.SIGINT)]
+    assert wait_timeouts == [
+        1.0 + runner.BOUNDARY_RECORD_FINALIZATION_GRACE_SEC
+    ]
     assert result['graceful_boundary_stop'] is True
     assert result['boundary_required_events_observed'] == [
+        'CONVERGENCE_CONFIRMED',
         'ESCAPE_STARTED'
     ]
     assert result['stdout'] == 'boundary test\n'
     assert executor_events == ['created', 'added', 'removed', 'shutdown']
+
+
+def test_scope_includes_causal_event_and_clips_pre_anchor_state():
+    """Evaluate a VERIFY scope from the causal SEARCH transition."""
+    scope = {
+        'anchor_state': 'VERIFY_EXTREMUM',
+        'boundary_state': 'ESCAPE_REPULSE',
+    }
+    state_records = [
+        (1, 'SEARCH'),
+        (3, 'VERIFY_EXTREMUM'),
+        (5, 'DESIGN_OR_MERGE_FILL'),
+        (7, 'ESCAPE_REPULSE'),
+    ]
+    event_records = [
+        (2, 'CONVERGENCE_CONFIRMED'),
+        (4, 'FILL_CREATED'),
+        (6, 'ESCAPE_STARTED'),
+    ]
+    expectations = {
+        'required_state_path': [
+            'SEARCH',
+            'VERIFY_EXTREMUM',
+            'DESIGN_OR_MERGE_FILL',
+            'ESCAPE_REPULSE',
+        ],
+        'required_events': [
+            'CONVERGENCE_CONFIRMED',
+            'FILL_CREATED',
+            'ESCAPE_STARTED',
+        ],
+    }
+
+    observations = runner._scope_observations(
+        scope,
+        state_records,
+        event_records,
+    )
+    evidence = runner._controller_evidence(
+        runner._scope_controller_expectations(scope, expectations),
+        observations['observed_state_sequence'],
+        observations['observed_events'],
+    )
+
+    assert observations['observed_events'] == [
+        'CONVERGENCE_CONFIRMED',
+        'FILL_CREATED',
+        'ESCAPE_STARTED',
+    ]
+    assert evidence['required_state_path'] is True
+    assert evidence['required_events'] is True
 
 
 def test_boundary_stop_cleans_nested_session_after_outer_exit(monkeypatch):

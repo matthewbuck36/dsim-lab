@@ -51,9 +51,11 @@ PHASE08_V3_GATE_RESULTS="$DOCS/validation/phase_08_v3_gate_results.json"
 latest_subphase_plan() {
   local phase="$1"
   find "$DOCS/plans" -maxdepth 1 -type f \
-    -name "phase_${phase}_[0-9]*_plan.md" -print |
-    sort -V |
-    tail -n 1
+    -name "phase_${phase}_[0-9]*_plan.md" \
+    -printf '%f\t%p\n' |
+    sort -t_ -k3,3n -k4,4n -k5,5n |
+    tail -n 1 |
+    cut -f2-
 }
 
 required=(

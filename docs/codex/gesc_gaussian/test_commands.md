@@ -3147,3 +3147,46 @@ line-length, docstring, and ordering findings, and `pydocstyle` reports 17
 existing recorder findings. The new helpers have docstrings and the changed
 runtime path has no fatal lint finding; the inherited baseline remains
 separate from functional acceptance.
+
+## Phase 08.4.1 corrected V4 restart
+
+The original `phase08_v4` root stopped after two GUI cases and is immutable.
+The corrected predeclared root is:
+
+```bash
+PHASE08_V4_ROOT=/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4r2
+```
+
+Use the same V4 commands above with this root only after the correction commit
+is clean and installed. The V4 selector now resolves
+`phase08_v4r2_activation.yaml`: ten GUI cases with IDs `v4r2a_*` and seeds
+`10601..10610`. Development and all later stages remain headless.
+
+Focused precommit regression:
+
+```bash
+source /opt/ros/humble/setup.bash
+source ros2_ws/install/setup.bash
+export MPLCONFIGDIR=/tmp/dsim_v4r2_mpl
+export ROS_HOME=/tmp/dsim_v4r2_ros_home
+export ROS_LOG_DIR=/tmp/dsim_v4r2_ros_logs
+export PYTHONPATH=/home/mattb/dsim-lab/ros2_ws/src/ros_esc:${PYTHONPATH}
+python3 -m pytest -q \
+  ros2_ws/src/ros_esc/test/test_scenario_runner.py \
+  ros2_ws/src/ros_esc/test/test_phase08_validation.py \
+  ros2_ws/src/ros_esc/test/test_experiment_recording.py
+```
+
+Expected retained result: `279 passed, 1 skipped`. The skip remains the
+explicit Gazebo opt-in.
+
+The graceful boundary path now uses:
+
+```text
+child cleanup allowance: 30 s
+recorder finalization allowance: 120 s
+wall-timeout finalization extension: none
+```
+
+The formal suite SHA-256 and every acceptance threshold remain unchanged. No
+GPG or encryption key is used.

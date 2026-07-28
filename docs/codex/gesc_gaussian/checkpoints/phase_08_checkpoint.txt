@@ -1,51 +1,67 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-28T18:11:47+00:00
-Base HEAD: 7689f2f55e47a2ecfe38445a936c59d7d3b1be32
+Generated: 2026-07-28T18:50:32+00:00
+Base HEAD: 90b8c744628eec528cb946c2faaaa822b264f7f3
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: afe10edea81f72c3103a740d3a170f929c5b5443a3474757dbac3d6be6a6bf69
+Status sha256: 820e59762c6e3a4ce43db0945c6b762604de3b2d3edcbe1be33aa9391026d941
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
-Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_4_plan.md
-Active subphase plan sha256: 63369edbbfa2c8fb987822f5f05d0dea7487443f27e4963e5b61e24ccc644f69
-Unstaged diff sha256: 5c5f513bc85d54e1e77d59b375ea27c53ba2e1341460e2e8a36d85acb17fe0d6
+Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_4_1_plan.md
+Active subphase plan sha256: 226ea1a48b507a4aeb7aa847b7b43b0852ce0abc7c7647df888954ec95361802
+Unstaged diff sha256: ed950dfe1c63a808b87d215978d44d1c244d2ff149c02886d9c3bdd3fcc99d7d
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 31]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 32]
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/checkpoint_phase.sh
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
+ M docs/codex/gesc_gaussian/test_commands.md
+ M docs/codex/gesc_gaussian/validation/phase_08_v4_population_adoption.json
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py
+ M ros2_ws/src/ros_esc/test/test_phase08_validation.py
+ M ros2_ws/src/ros_esc/test/test_scenario_runner.py
+?? docs/codex/gesc_gaussian/plans/phase_08_4_1_plan.md
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v4r2_activation.yaml
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 52 ++------------
- docs/codex/gesc_gaussian/status/phase_08_status.md | 84 ++++++++++++++++++++++
- 2 files changed, 89 insertions(+), 47 deletions(-)
+ .../tools/checkpoint_phase.sh                      |   8 +-
+ .../tools/validate_phase_context.sh                |   8 +-
+ .../checkpoints/phase_08_checkpoint.txt            |  52 ++---
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 216 +++++++++++++++++++++
+ docs/codex/gesc_gaussian/test_commands.md          |  43 ++++
+ .../phase_08_v4_population_adoption.json           |  17 +-
+ .../ros_esc/scenario_runner/phase08_validation.py  |   2 +-
+ .../ros_esc/scenario_runner/run_scenario.py        |  47 ++++-
+ .../src/ros_esc/test/test_phase08_validation.py    |  31 ++-
+ ros2_ws/src/ros_esc/test/test_scenario_runner.py   |  72 ++++++-
+ 10 files changed, 441 insertions(+), 55 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**M4 — execute ten fresh GUI Gazebo activation cases.**
+**M4.2 — commit, prepare, and qualify corrected V4.**
 
 ### Next criterion
 
-At clean Git, immediately rehash the passing prepare/qualification states,
-repository snapshot, V4 inputs, and dry-run invocation contract; require an
-empty process set; then execute the ten V4 activation cases serially with the
-Gazebo GUI visible. Retain and analyze each attempt exactly once. Continue to
-headless development only if all ten integrity and lifecycle contracts pass.
+Checkpoint and commit this independently verified correction, require clean
+Git, transactionally create
+`/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4r2`, and pass the
+complete functional/build/installed/dry-run/process-level qualification
+before starting corrected GUI activation.
 
-### M4 stop conditions
+### M4.2 stop conditions
 
-- Stop immediately on collision, evidence corruption, cleanup failure,
-  ownership/hash drift, orphan process, or replacement-policy breach.
-- Finish all ten ordinary valid behavior misses, but do not enter development
-  unless activation is `10/10`.
-- Do not count any V3 record or failed smoke harness as a V4 activation slot.
+- No corrected evidence-root creation from a dirty or uncommitted tree.
+- No Gazebo dispatch unless corrected prepare and qualification both pass.
+- Preserve the original V4 root and all five inspected historical records.
 
 
 This file describes the base HEAD and diff before the next commit; it is

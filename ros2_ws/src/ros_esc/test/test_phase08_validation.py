@@ -841,7 +841,7 @@ def test_v4_cli_routes_through_bounded_shared_workflow(
             'v4-test',
             str(tmp_path),
             'phase08-v4',
-            'phase08_v4_activation.yaml',
+            'phase08_v4r2_activation.yaml',
         )]
     finally:
         phase08_validation._activate_v3_spec()
@@ -861,6 +861,12 @@ def test_v4_static_inputs_are_fresh_and_exact():
     v4_development, development_unsupported = expand_suite(
         development_suite
     )
+    original_v4_activation, original_v4_unsupported = expand_suite(
+        load_suite(
+            phase08_validation.SCENARIO_ROOT
+            / 'phase08_v4_activation.yaml'
+        )
+    )
     v3_activation, unused = expand_suite(
         load_suite(phase08_validation._V3_SPEC_PATHS['activation'])
     )
@@ -869,12 +875,13 @@ def test_v4_static_inputs_are_fresh_and_exact():
     )
     assert not activation_unsupported
     assert not development_unsupported
+    assert not original_v4_unsupported
     assert not unused
     assert not unused_development
     assert len(v4_activation) == 10
     assert len(v4_development) == 10
     assert [run['seed'] for run in v4_activation] == list(
-        range(10301, 10311)
+        range(10601, 10611)
     )
     assert [run['seed'] for run in v4_development] == list(
         range(10401, 10411)
@@ -891,6 +898,24 @@ def test_v4_static_inputs_are_fresh_and_exact():
     }
     assert len(v4_keys) == 20
     assert not v4_keys & v3_keys
+    assert not {
+        run['case_key'] for run in v4_activation
+    } & {
+        run['case_key'] for run in original_v4_activation
+    }
+    for corrected, original in zip(
+        v4_activation,
+        original_v4_activation,
+    ):
+        assert corrected['start'] == original['start']
+        assert corrected['sources'] == original['sources']
+        assert corrected['success'] == {
+            **original['success'],
+            'controller': {
+                **original['success']['controller'],
+                'contract_id': corrected['case_id'],
+            },
+        }
     for v4_run, v3_run in zip(v4_development, v3_development):
         assert (
             v4_run['start']['x_m'],
@@ -900,7 +925,7 @@ def test_v4_static_inputs_are_fresh_and_exact():
             v3_run['start']['x_m'],
         ))
     first = v4_activation[0]
-    assert first['case_id'] == 'v4a_goal_aggregate_robust'
+    assert first['case_id'] == 'v4r2a_goal_aggregate_robust'
     assert first['metric_applicability']['escape_attempt'] is True
     assert first['success']['controller']['required_state_path'] == [
         'SEARCH',

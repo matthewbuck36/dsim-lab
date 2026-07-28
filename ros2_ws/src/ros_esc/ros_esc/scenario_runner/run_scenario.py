@@ -101,6 +101,11 @@ EVENT_NAMES = {
 }
 RUN_ID_SAFE = re.compile('[^A-Za-z0-9._-]+')
 CANCEL_ESCALATION_SEC = 5.0
+# A graceful branch-boundary stop still has to close the bag, finalize Phase 05
+# metadata, and run the offline completeness validator.  A full 240-second bag
+# can require materially longer than the process-tree shutdown allowance, so
+# keep those two bounded budgets separate.
+BOUNDARY_RECORD_FINALIZATION_GRACE_SEC = 120.0
 
 
 def _utc_now():
@@ -611,7 +616,9 @@ def _wait_for_cancelled_tree(
             leader_reaped = False
     while True:
         live = _live_snapshot_processes(snapshot)
-        if leader_reaped and not live:
+        if leader_reaped:
+            # Let the caller escalate any nested-session survivors
+            # immediately once their owning recorder has exited.
             return True, live, output
         remaining = deadline - time.monotonic()
         if remaining <= 0.0:
@@ -724,7 +731,10 @@ def _run_record_to_boundary(
     def event_callback(message):
         names, unused_error = _canonical_event_sequence([message])
         del unused_error
-        if observed['anchor'] and names:
+        if names:
+            # The event that causes SEARCH -> VERIFY_EXTREMUM is published
+            # immediately before the state transition.  Retain it so a
+            # branch contract can require the complete causal boundary.
             observed['events'].add(names[0])
 
     timed_out = False
@@ -773,9 +783,14 @@ def _run_record_to_boundary(
                     boundary_stop = True
                     break
             if boundary_stop or timed_out:
+                cancellation_grace_sec = shutdown_grace_sec
+                if boundary_stop:
+                    cancellation_grace_sec += (
+                        BOUNDARY_RECORD_FINALIZATION_GRACE_SEC
+                    )
                 _cancel_scoped_process(
                     process,
-                    shutdown_grace_sec,
+                    cancellation_grace_sec,
                     drain_output=False,
                 )
             output.flush()
@@ -1070,6 +1085,11 @@ def _scope_observations(scope, state_records, event_records):
             'observed_events': [],
         }
     anchor_stamp = state_records[anchor_index][0]
+    event_anchor_stamp = (
+        state_records[anchor_index - 1][0]
+        if anchor_index > 0
+        else anchor_stamp
+    )
     boundary = scope['boundary_state']
     boundary_index = None
     if boundary is not None:
@@ -1103,10 +1123,24 @@ def _scope_observations(scope, state_records, event_records):
         ],
         'observed_events': [
             name for stamp, name in event_records
-            if stamp >= anchor_stamp
+            if stamp >= event_anchor_stamp
             and (event_stop_stamp is None or stamp < event_stop_stamp)
         ],
     }
+
+
+def _scope_controller_expectations(scope, expectations):
+    """Clip state contracts that begin before a named scope anchor."""
+    scoped = dict(expectations)
+    anchor = scope['anchor_state']
+    for field in ('required_state_path', 'required_state_sequence'):
+        values = list(scoped.get(field, []))
+        normalized = [
+            str(name).removeprefix('STATE_') for name in values
+        ]
+        if anchor in normalized:
+            scoped[field] = values[normalized.index(anchor):]
+    return scoped
 
 
 def _unavailable_outcomes(reason, readiness_interval_available=False):
@@ -1315,7 +1349,10 @@ def _bag_outcomes(run_directory, resolved):
             event_records,
         )
         observations['predicate_results'] = _controller_evidence(
-            controller_expectations,
+            _scope_controller_expectations(
+                scope,
+                controller_expectations,
+            ),
             observations['observed_state_sequence'],
             observations['observed_events'],
         )

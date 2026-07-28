@@ -146,7 +146,7 @@ V3_REPORT_PATH = (
 V3_FAILURE_PATH = (
     VALIDATION_ROOT / 'phase_08_v3_failure_report.md'
 )
-V4_ACTIVATION_PATH = SCENARIO_ROOT / 'phase08_v4_activation.yaml'
+V4_ACTIVATION_PATH = SCENARIO_ROOT / 'phase08_v4r2_activation.yaml'
 V4_DEVELOPMENT_PATH = SCENARIO_ROOT / 'phase08_v4_development.yaml'
 V4_CANDIDATES_PATH = SCENARIO_ROOT / 'phase08_v4_candidates.yaml'
 V4_FROZEN_PATH = SCENARIO_ROOT / 'phase08_v4_frozen_parameters.yaml'

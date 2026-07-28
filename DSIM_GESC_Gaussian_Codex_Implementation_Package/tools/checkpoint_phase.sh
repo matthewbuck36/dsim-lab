@@ -19,9 +19,11 @@ STATUS="$DOCS/status/phase_${PHASE}_status.md"
 PLAN="$DOCS/plans/phase_${PHASE}_plan.md"
 SUBPHASE_PLAN="$(
   find "$DOCS/plans" -maxdepth 1 -type f \
-    -name "phase_${PHASE}_[0-9]*_plan.md" -print |
-    sort -V |
-    tail -n 1
+    -name "phase_${PHASE}_[0-9]*_plan.md" \
+    -printf '%f\t%p\n' |
+    sort -t_ -k3,3n -k4,4n -k5,5n |
+    tail -n 1 |
+    cut -f2-
 )"
 FREEZE_STATE="$(
   find "$DOCS/validation" -maxdepth 1 -type f \

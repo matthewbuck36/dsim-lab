@@ -18,7 +18,7 @@
         "reproducibility": null,
         "validation": null
       },
-      "inspected_record_count": 3,
+      "inspected_record_count": 5,
       "inspected_records": [
         {
           "case_id": "v3a_goal_aggregate_direct",
@@ -34,6 +34,16 @@
           "case_id": "v3a_below_target_fill",
           "path": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3d/activation/attempts/002_v3a_below_target_fill/attempt_01/record.json",
           "sha256": "a8ddcdf5363e7dd05085a674336afe7db3c5143fc95bcc76f95a130971bb6f91"
+        },
+        {
+          "case_id": "v4a_goal_aggregate_robust",
+          "path": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4/activation/attempts/001_v4a_goal_aggregate_robust/attempt_01/record.json",
+          "sha256": "ee4a88d5983b5a6778dc0da11a90156f396e3168a08062252ad658c3fa449576"
+        },
+        {
+          "case_id": "v4a_below_target_fill",
+          "path": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4/activation/attempts/002_v4a_below_target_fill/attempt_01/record.json",
+          "sha256": "fa16fb8fc8a81e2e3f83d5faca83462240fe7220c5b80c33b27a5934016e4605"
         }
       ],
       "passed": true,
@@ -43,7 +53,7 @@
       "v3_run_manifest_sha256": "81a721f5cbb815f85db11c946f0f7099969e09a05e845356a4baf6f9f1d319b3"
     }
   },
-  "commitment_sha256": "8612cf766bf0fe668c2094a0fe21fc12a0ae5f5a411174a2b09147e475ee86bf",
+  "commitment_sha256": "f7bb8d0430b5cfcab4870d3130e8ec0b71679753da718fdeb9afd6c9581b6725",
   "counts": {
     "holdout": 20,
     "reproducibility": 10,
@@ -58,7 +68,7 @@
     "ordered_two_source": 25,
     "wall_corner": 8
   },
-  "generator_version": "phase08-v4-population-adoption-1",
+  "generator_version": "phase08-v4-population-adoption-2",
   "historical_exclusion_hashes": {
     "phase08_1_diagnostic_activation.yaml": "1e030602ecee99c2d1f563a0ae19e65b1c8e6608662e178eb52b8766edc5a9a7",
     "phase08_2_recenter.yaml": "1b116ef7984d8a679f69da919576125a1ad066da3d55098466da9afac2bae017",
@@ -74,6 +84,7 @@
     "phase08_v3_development.yaml": "1c5ef231b5839386f8db67d7b83e25a6ca11dc2935bc1a7c6584a8645a57f433",
     "phase08_v4_activation.yaml": "7751a2aa97a0cc53ddc5d18576ea0c0729828687022da81758a9c1a4d974617b",
     "phase08_v4_development.yaml": "c37fb227fb2b75937f473a33ad01ea79e2366ae971f6e6a1c9dfa2d4502d5bbd",
+    "phase08_v4r2_activation.yaml": "c0727f48ec39517af1714cac1912c3c216f12d0b9f66e6c383baee7f30d817e1",
     "phase08_validation_support.yaml": "cb1a7611d2160740c00a3ed5d0e26c8d7ba0964666ffa96575a5047b71e6d13e"
   },
   "population_visibility": "researcher_visible_before_activation",
