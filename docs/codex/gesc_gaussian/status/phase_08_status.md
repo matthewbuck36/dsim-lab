@@ -3572,3 +3572,78 @@ Commit and checkpoint the prelaunch-only correction, prepare and qualify the
 fresh V5B root against that commit, and run visible activation. Do not change
 or regenerate any V5 scenario input. Headless development remains forbidden
 unless visible activation is a strict `10/10` lifecycle pass.
+
+## Phase 08.5 M3 V5B infrastructure stop
+
+V5B preparation and qualification passed against:
+
+```text
+e6a21aa9bd167cff4596c719ccb0f83ccb094294
+suite sha256
+  b91d99405a29dc04688a8b6bac66f3344b09a564832077930ed62329587c4515
+qualification
+  495 passed, 2 skipped in 94.86 s
+```
+
+The first activation slot reached the recorder invocation, but the shell had
+only the stale workspace install active. `ros2 run ros_esc record_run` resolved
+to `/home/mattb/dsim-lab/ros2_ws/install/ros_esc` and failed before creating a
+run directory:
+
+```text
+StopIteration
+[ros2run]: Process exited with failure 1
+```
+
+Cleanup passed, no Gazebo process remained, the workflow stopped immediately,
+and the other nine slots were not dispatched. The immutable V5B activation
+state is:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v5b/
+  workflow_state/v5_activation.json
+  activation/progress.json
+  activation/records.json
+  activation/scenario_summary.yaml
+
+passed                false
+run_count             1
+integrity_pass_count  0
+contract_pass_count   0
+infrastructure        run_directory_missing
+```
+
+This is not a Gazebo behavioral result: the recorder failed before launching
+its target command, the run directory is absent, and all behavior predicates
+are unavailable. The V5B root remains failed and preserved.
+
+The already qualified isolated install was then checked directly:
+
+```text
+source .../phase08_v5b/qualification/isolated_build/install/setup.bash
+ros2 pkg prefix ros_esc
+  .../phase08_v5b/qualification/isolated_build/install/ros_esc
+ros2 pkg executables ros_esc
+  ros_esc record_run
+  ros_esc validate_robustness
+ros2 run ros_esc record_run --help
+  passed
+```
+
+The bounded execution correction is therefore environmental: source the
+root's qualified isolated install after the normal workspace overlay before
+calling `v5-activation`. It changes no repository byte, input, parameter,
+contract, or analysis rule.
+
+## Current milestone
+
+**M3 — run V5C from its own qualified isolated install, then execute the same
+ten-case visible Gazebo activation gate.**
+
+### Next criterion
+
+Preserve V5B, prepare and qualify the fresh
+`/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v5c` root with the unchanged
+V5 inputs, source that exact qualification install, and invoke visible
+activation. Headless development remains forbidden unless activation is a
+strict `10/10` lifecycle pass.
