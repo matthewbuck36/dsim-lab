@@ -825,6 +825,439 @@ def test_v3_prepare_cli_routes_without_encryption_key(
         ])
 
 
+def test_v3_adopt_precommit_cli_routes_superseded_root(
+    tmp_path,
+    monkeypatch,
+):
+    """Route the fresh corrected lineage with its immutable predecessor."""
+    observed = []
+
+    def fake(operator, evidence_root, superseded_evidence_root):
+        observed.append((
+            operator,
+            evidence_root,
+            superseded_evidence_root,
+        ))
+        return {'passed': True}
+
+    monkeypatch.setattr(
+        phase08_validation,
+        'run_v3_adopt_precommit',
+        fake,
+    )
+    fresh = tmp_path / 'v3b'
+    superseded = tmp_path / 'v3a'
+
+    assert main([
+        'v3-adopt-precommit',
+        '--operator', 'v3-test',
+        '--evidence-root', str(fresh),
+        '--superseded-evidence-root', str(superseded),
+    ]) == 0
+    assert observed == [(
+        'v3-test',
+        str(fresh),
+        str(superseded),
+    )]
+
+
+def test_v3_adopt_precommit_preserves_old_root_and_exact_population(
+    tmp_path,
+    monkeypatch,
+):
+    """Create a fresh lineage without rewriting V3A or the precommit."""
+    superseded = tmp_path / 'v3a'
+    superseded.mkdir()
+    marker = superseded / 'immutable.bin'
+    marker.write_bytes(b'original-v3a-evidence')
+    original_marker = marker.read_bytes()
+    fresh = tmp_path / 'v3b'
+    suite_path = tmp_path / 'suite.json'
+    commitment_path = tmp_path / 'commitment.json'
+    suite_bytes = phase08_validation.canonical_json_bytes({
+        'schema_version': 4,
+        'cases': [],
+    })
+    suite_path.write_bytes(suite_bytes)
+    commitment = {
+        'schema_version': 1,
+        'suite_sha256': phase08_validation.file_sha256(suite_path),
+        'population_visibility': 'researcher_visible_before_activation',
+        'selection_blind': False,
+        'counts': {'unique': 70, 'reproducibility': 10},
+        'family_counts': {},
+    }
+    commitment['commitment_sha256'] = (
+        phase08_validation.omission_sha256(
+            commitment,
+            'commitment_sha256',
+        )
+    )
+    phase08_validation.atomic_json(commitment_path, commitment)
+    repository = {
+        'commit': 'a' * 40,
+        'tree': 'b' * 40,
+        'clean': True,
+        'input_hashes': {},
+        'runtime_inputs_sha256': phase08_validation.canonical_sha256({}),
+    }
+    proof = {
+        'kind': 'contact_probe_instrumentation_contamination',
+        'superseded_evidence_root': str(superseded.resolve()),
+        'superseded_suite_sha256': (
+            phase08_validation.file_sha256(suite_path)
+        ),
+        'superseded_commitment_sha256': commitment[
+            'commitment_sha256'
+        ],
+        'policy': {
+            'fresh_evidence_root': str(fresh.resolve()),
+        },
+    }
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_require_precommit_in_head',
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_active_processes',
+        lambda: [],
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_repository_snapshot',
+        lambda **unused: repository,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_required_free_bytes',
+        lambda *unused: 1,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_harness_recovery_proof',
+        lambda *unused, **kwargs: proof,
+    )
+
+    first = phase08_validation.run_v3_adopt_precommit(
+        'test',
+        fresh,
+        superseded,
+        suite_path=suite_path,
+        commitment_path=commitment_path,
+        correction_path=tmp_path / 'audit.json',
+    )
+    second = phase08_validation.run_v3_adopt_precommit(
+        'test',
+        fresh,
+        superseded,
+        suite_path=suite_path,
+        commitment_path=commitment_path,
+        correction_path=tmp_path / 'audit.json',
+    )
+
+    assert first == second
+    assert first['passed'] is True
+    assert first['suite_sha256'] == phase08_validation.file_sha256(
+        suite_path
+    )
+    assert first['commitment_sha256'] == commitment[
+        'commitment_sha256'
+    ]
+    assert first['lineage_id'] == 'phase08-v3b'
+    assert first['recovery'] == proof
+    assert marker.read_bytes() == original_marker
+    transaction = phase08_validation._v3_load_prepare_transaction(
+        phase08_validation._v3_prepare_transaction_path(fresh)
+    )
+    assert transaction['recovery'] == proof
+    assert transaction['evidence_root'] == str(fresh.resolve())
+    assert transaction['suite_base64'] == (
+        phase08_validation.base64.b64encode(suite_bytes).decode('ascii')
+    )
+
+    with pytest.raises(RuntimeError, match='invocation drifted'):
+        phase08_validation.run_v3_adopt_precommit(
+            'different-operator',
+            fresh,
+            superseded,
+            suite_path=suite_path,
+            commitment_path=commitment_path,
+            correction_path=tmp_path / 'audit.json',
+        )
+
+    relocated = tmp_path / 'relocated-v3b'
+    fresh.rename(relocated)
+    with pytest.raises(RuntimeError, match='invocation drifted'):
+        phase08_validation.run_v3_adopt_precommit(
+            'test',
+            relocated,
+            superseded,
+            suite_path=suite_path,
+            commitment_path=commitment_path,
+            correction_path=tmp_path / 'audit.json',
+        )
+
+    drifted_suite = phase08_validation.canonical_json_bytes({
+        'schema_version': 4,
+        'cases': [{'case_id': 'post-v3a-change'}],
+    })
+    suite_path.write_bytes(drifted_suite)
+    commitment['suite_sha256'] = phase08_validation.file_sha256(
+        suite_path
+    )
+    commitment['commitment_sha256'] = (
+        phase08_validation.omission_sha256(
+            commitment,
+            'commitment_sha256',
+        )
+    )
+    phase08_validation.atomic_json(commitment_path, commitment)
+    drifted_root = tmp_path / 'drifted-v3b'
+    proof['policy']['fresh_evidence_root'] = str(
+        drifted_root.resolve()
+    )
+    with pytest.raises(RuntimeError, match='cleartext commitment'):
+        phase08_validation.run_v3_adopt_precommit(
+            'test',
+            drifted_root,
+            superseded,
+            suite_path=suite_path,
+            commitment_path=commitment_path,
+            correction_path=tmp_path / 'audit.json',
+        )
+
+
+def test_v3_adopt_precommit_rejects_the_superseded_root(
+    tmp_path,
+):
+    """Never append corrected evidence to the closed V3A namespace."""
+    superseded = tmp_path / 'v3a'
+
+    with pytest.raises(RuntimeError, match='must not reuse'):
+        phase08_validation.run_v3_adopt_precommit(
+            'test',
+            superseded,
+            superseded,
+            suite_path=tmp_path / 'suite.json',
+            commitment_path=tmp_path / 'commitment.json',
+        )
+
+
+def test_v3_harness_recovery_rejects_audited_precommit_drift(
+    tmp_path,
+    monkeypatch,
+):
+    """Bind the corrected lineage to V3A's exact committed population."""
+    superseded = tmp_path / 'v3a'
+    correction_path = tmp_path / 'audit.json'
+    prepare = {
+        'state_sha256': 'p' * 64,
+        'suite_sha256': 'a' * 64,
+        'commitment_sha256': 'b' * 64,
+    }
+    qualification = {
+        'state_sha256': 'q' * 64,
+        'prepare_state_sha256': prepare['state_sha256'],
+    }
+    activation = {
+        'passed': False,
+        'state_sha256': 'z' * 64,
+        'qualification_state_sha256': qualification['state_sha256'],
+        'run_count': 1,
+        'integrity_pass_count': 0,
+        'contract_pass_count': 0,
+        'not_run_slot_ids': [f'not-run-{index}' for index in range(9)],
+        'stopped_early_reason': 'non-ground collision',
+    }
+    states = {
+        'prepare': prepare,
+        'qualification': qualification,
+        'activation': activation,
+    }
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_require_state',
+        lambda unused_root, stage, **unused: states[stage],
+    )
+    correction = {
+        'schema_version': 1,
+        'superseded_evidence_root': str(superseded.resolve()),
+        'precommit': {
+            'suite_sha256': 'c' * 64,
+            'commitment_sha256': 'd' * 64,
+        },
+        'correction': {
+            'probe_policy': 'collision_expected_true_only',
+            'analysis_collision_filter_changed': False,
+            'formal_collision_gate_changed': False,
+            'fresh_activation_required': True,
+            'reuse_precommitted_population_byte_identically': True,
+        },
+        'contact_audit': {
+            'non_ground_contact_state_count': 105,
+            'positive_control_contact_state_count': 105,
+            'other_non_ground_contact_state_count': 0,
+        },
+    }
+    correction['correction_sha256'] = (
+        phase08_validation.omission_sha256(
+            correction,
+            'correction_sha256',
+        )
+    )
+    phase08_validation.atomic_json(correction_path, correction)
+
+    with pytest.raises(RuntimeError, match='precommit differs'):
+        phase08_validation._v3_harness_recovery_proof(
+            superseded,
+            correction_path=correction_path,
+        )
+
+
+def test_v3_activation_contact_launch_contract_requires_passive_probe():
+    """Require every installed direct and recorder launch to omit the probe."""
+    required = [
+        'gazebo_gui:=True',
+        'simulation_contacts_enabled:=True',
+        'simulation_contact_probe_enabled:=False',
+    ]
+    summary = {
+        'runs': [
+            {
+                'case_id': f'activation-{index}',
+                'launch_argv': list(required),
+                'record_argv': list(required),
+            }
+            for index in range(10)
+        ],
+    }
+
+    passed = (
+        phase08_validation._v3_activation_contact_launch_contract(
+            summary
+        )
+    )
+    assert passed['passed'] is True
+    assert passed['direct_pass_count'] == 10
+    assert passed['recorder_pass_count'] == 10
+
+    summary['runs'][3]['record_argv'] = [
+        'gazebo_gui:=True',
+        'simulation_contacts_enabled:=True',
+        'simulation_contact_probe_enabled:=True',
+    ]
+    failed = (
+        phase08_validation._v3_activation_contact_launch_contract(
+            summary
+        )
+    )
+    assert failed['passed'] is False
+    assert failed['recorder_pass_count'] == 9
+
+
+def test_v3_qualification_requires_adopted_recovery(tmp_path):
+    """Do not qualify a post-V3A root outside the corrected lineage."""
+    phase08_validation._v3_write_state(
+        tmp_path,
+        'prepare',
+        {
+            'passed': True,
+            'operator': 'test',
+            'repository': {},
+        },
+    )
+
+    with pytest.raises(RuntimeError, match='v3-adopt-precommit recovery'):
+        phase08_validation.run_v3_qualify('test', tmp_path)
+
+
+def test_v3_activation_revalidates_corrected_recovery(
+    tmp_path,
+    monkeypatch,
+):
+    """Reject V3A evidence drift before corrected Gazebo dispatch."""
+    recovery = {
+        'kind': 'contact_probe_instrumentation_contamination',
+        'superseded_evidence_root': '/tmp/v3a',
+        'correction_audit_path': '/tmp/audit.json',
+    }
+    prepare = {
+        'state_sha256': 'p' * 64,
+        'lineage_id': 'phase08-v3b',
+        'recovery': recovery,
+    }
+    required = [
+        'gazebo_gui:=True',
+        'simulation_contacts_enabled:=True',
+        'simulation_contact_probe_enabled:=False',
+    ]
+    dry_run_path = tmp_path / 'activation_dry_run.yaml'
+    dry_run_summary = {
+        'runs': [
+            {
+                'case_id': f'activation-{index}',
+                'launch_argv': list(required),
+                'record_argv': list(required),
+            }
+            for index in range(10)
+        ],
+    }
+    phase08_validation.atomic_yaml(dry_run_path, dry_run_summary)
+    contact_contract = (
+        phase08_validation._v3_activation_contact_launch_contract(
+            dry_run_summary
+        )
+    )
+    qualification = {
+        'prepare_state_sha256': prepare['state_sha256'],
+        'lineage_id': 'phase08-v3b',
+        'recovery_validation': {
+            'passed': True,
+            'recovery_sha256': phase08_validation.canonical_sha256(
+                recovery
+            ),
+        },
+        'activation_contact_launch_contract': contact_contract,
+        'installed_dry_runs': {
+            'activation': {
+                'path': str(dry_run_path),
+                'sha256': phase08_validation.file_sha256(
+                    dry_run_path
+                ),
+            },
+        },
+    }
+    observed = dict(recovery)
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_harness_recovery_proof',
+        lambda *unused, **unused_keywords: observed,
+    )
+
+    phase08_validation._v3_verify_corrected_recovery_before_activation(
+        prepare,
+        qualification,
+    )
+    dry_run_path.write_text('runs: []\n', encoding='utf-8')
+    with pytest.raises(RuntimeError, match='dry-run artifact drifted'):
+        phase08_validation._v3_verify_corrected_recovery_before_activation(
+            prepare,
+            qualification,
+        )
+    phase08_validation.atomic_yaml(dry_run_path, dry_run_summary)
+    qualification['installed_dry_runs']['activation']['sha256'] = (
+        phase08_validation.file_sha256(dry_run_path)
+    )
+    observed['run_id'] = 'drifted'
+    with pytest.raises(RuntimeError, match='proof drifted'):
+        phase08_validation._v3_verify_corrected_recovery_before_activation(
+            prepare,
+            qualification,
+        )
+
+
 def test_v3_prepare_recovers_from_post_transaction_interruption(
     tmp_path,
     monkeypatch,
@@ -1596,11 +2029,19 @@ def test_v3_qualification_rejects_historical_hash_drift(
         )
     )
     phase08_validation.atomic_json(commitment_path, commitment)
+    recovery = {
+        'kind': 'contact_probe_instrumentation_contamination',
+        'superseded_evidence_root': str(tmp_path / 'v3a'),
+        'correction_audit_path': str(tmp_path / 'audit.json'),
+    }
     phase08_validation._v3_write_state(
         root,
         'prepare',
         {
             'passed': True,
+            'operator': 'test',
+            'lineage_id': 'phase08-v3b',
+            'recovery': recovery,
             'suite_sha256': commitment['suite_sha256'],
             'commitment_sha256': commitment['commitment_sha256'],
             'repository': {},
@@ -1625,6 +2066,11 @@ def test_v3_qualification_rejects_historical_hash_drift(
         phase08_validation,
         '_v3_verify_repository_snapshot',
         lambda *unused, **kwargs: None,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_harness_recovery_proof',
+        lambda *unused, **unused_keywords: recovery,
     )
     monkeypatch.setattr(
         phase08_validation,

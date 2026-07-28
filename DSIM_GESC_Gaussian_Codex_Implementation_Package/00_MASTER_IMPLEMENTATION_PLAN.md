@@ -263,6 +263,11 @@ predeclared holdout, unique validation denominator, and reproducibility
 evidence. Its user-authorized Amendment A1 makes the acceptance population
 researcher-visible before activation and explicitly removes any
 selection-blindness claim while preserving every numeric and behavioral gate.
+Its append-only M3A amendment preserves the failed, contact-probe-contaminated
+V3A activation root and permits a bounded runner correction plus a fresh V3B
+root. V3B must adopt the exact committed population, rerun qualification, and
+rerun all ten GUI-visible activation cases; V3A contributes no acceptance
+evidence.
 
 The following are future-version steps, not Phase 08.1 completion criteria or
 authorization:

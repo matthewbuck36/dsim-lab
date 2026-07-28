@@ -40,6 +40,10 @@ DIAGNOSTIC_ACTIVATION = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_1_diagnostic_activation.yaml'
 )
+V3_ACTIVATION = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/phase08_v3_activation.yaml'
+)
 
 
 def _resolved(profile='robust_gaussian_v1'):
@@ -192,8 +196,8 @@ def test_metadata_and_launch_share_inputs(tmp_path):
     assert 'light_1_intensity_lumens:=1000.0' in launch
 
 
-def test_v4_metadata_and_launch_bind_acceptance_and_contact_evidence():
-    """Carry sealed dimensions and enable zero-collision contact probing."""
+def test_v4_metadata_and_launch_bind_passive_contact_evidence():
+    """Carry sealed dimensions without contaminating a no-collision case."""
     resolved = _v4_branch_resolved()
 
     metadata = build_metadata(
@@ -213,7 +217,7 @@ def test_v4_metadata_and_launch_bind_acceptance_and_contact_evidence():
         == 'aggregate_field'
     )
     assert 'simulation_contacts_enabled:=True' in launch
-    assert 'simulation_contact_probe_enabled:=True' in launch
+    assert 'simulation_contact_probe_enabled:=False' in launch
 
 
 def test_unique_run_ids_are_safe_even_for_identical_case_and_time():
@@ -1461,6 +1465,31 @@ def test_phase08_1_dry_run_exposes_bound_activation_contracts(tmp_path):
     assert yaml.safe_load(output.read_text(encoding='utf-8'))[
         'resolved_run_count'
     ] == 10
+
+
+def test_v3_formal_cli_requires_qualified_workflow(
+    monkeypatch,
+):
+    """Allow v3 dry inspection but reject direct empirical dispatch."""
+    calls = []
+
+    def fake_execute(*args, **kwargs):
+        calls.append((args, kwargs))
+        return {'runs': []}
+
+    monkeypatch.setattr(runner, 'execute_suite', fake_execute)
+
+    assert runner.main([
+        str(V3_ACTIVATION),
+        '--operator', 'test',
+    ]) == 2
+    assert calls == []
+    assert runner.main([
+        str(V3_ACTIVATION),
+        '--operator', 'test',
+        '--dry-run',
+    ]) == 0
+    assert len(calls) == 1
 
 
 @pytest.mark.skipif(

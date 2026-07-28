@@ -32,7 +32,7 @@ from .aggregate_field_truth import (
     derive_aggregate_field_truth,
     validate_aggregate_field_truth,
 )
-from .run_scenario import execute_suite
+from .run_scenario import build_launch_command, execute_suite
 from .scenario_schema import (
     ACCEPTANCE_FAMILIES,
     deterministic_case_key,
@@ -144,6 +144,9 @@ V3_REPORT_PATH = (
 )
 V3_FAILURE_PATH = (
     VALIDATION_ROOT / 'phase_08_v3_failure_report.md'
+)
+V3_CONTACT_CORRECTION_PATH = (
+    VALIDATION_ROOT / 'phase_08_v3a_contact_probe_contamination.json'
 )
 DIAGNOSTIC_CASES = {
     'diagnostic_recorded_smoke',
@@ -4377,6 +4380,12 @@ def _v3_require_state(evidence_root, stage, require_pass=True):
     return state
 
 
+def _v3_require_operator(state, operator, stage):
+    """Keep one declared operator across a v3 workflow lineage."""
+    if state.get('operator') != operator:
+        raise RuntimeError(f'v3 {stage} operator drifted')
+
+
 def _v3_historical_case_keys(include_v3_development=True):
     keys = set()
     hashes = {}
@@ -4470,9 +4479,12 @@ def _v3_publish_prepare_transaction(
             atomic_bytes(path, payload, mode=mode)
         else:
             raise RuntimeError(f'v3 prepare output is missing: {path}')
-    return _v3_write_state(root, 'prepare', {
+    state = {
         'passed': True,
         'operator': operator,
+        'lineage_id': transaction.get(
+            'experiment_version', 'phase08-v3'
+        ),
         'suite_path': str(suite_path.resolve()),
         'suite_sha256': commitment['suite_sha256'],
         'commitment_path': str(commitment_path.resolve()),
@@ -4488,7 +4500,435 @@ def _v3_publish_prepare_transaction(
             _v3_prepare_transaction_path(root).resolve()
         ),
         'transaction_sha256': transaction['transaction_sha256'],
-    })
+    }
+    if transaction.get('recovery') is not None:
+        state['recovery'] = transaction['recovery']
+    return _v3_write_state(root, 'prepare', state)
+
+
+def _v3_harness_recovery_proof(
+    superseded_evidence_root,
+    correction_path=V3_CONTACT_CORRECTION_PATH,
+):
+    """Verify the immutable V3A contamination evidence and correction."""
+    superseded_root = Path(
+        superseded_evidence_root
+    ).expanduser().resolve()
+    correction_path = Path(correction_path).resolve()
+    correction = _load_json(correction_path)
+    correction_sha256 = require_omission_sha256(
+        correction,
+        'correction_sha256',
+        'v3 contact-probe contamination audit',
+    )
+    if (
+        Path(correction.get('superseded_evidence_root', '')).resolve()
+        != superseded_root
+    ):
+        raise RuntimeError(
+            'v3 contamination audit names a different superseded root'
+        )
+    policy = correction.get('correction', {})
+    if (
+        policy.get('probe_policy') != 'collision_expected_true_only'
+        or policy.get('analysis_collision_filter_changed') is not False
+        or policy.get('formal_collision_gate_changed') is not False
+        or policy.get('fresh_activation_required') is not True
+        or policy.get(
+            'reuse_precommitted_population_byte_identically'
+        ) is not True
+    ):
+        raise RuntimeError('v3 contamination correction policy drifted')
+    contact_audit = correction.get('contact_audit', {})
+    if (
+        contact_audit.get('non_ground_contact_state_count') != 105
+        or contact_audit.get(
+            'positive_control_contact_state_count'
+        ) != 105
+        or contact_audit.get('other_non_ground_contact_state_count') != 0
+    ):
+        raise RuntimeError('v3 contamination contact audit drifted')
+
+    prepare = _v3_require_state(superseded_root, 'prepare')
+    qualification = _v3_require_state(
+        superseded_root, 'qualification'
+    )
+    activation = _v3_require_state(
+        superseded_root,
+        'activation',
+        require_pass=False,
+    )
+    if (
+        activation.get('passed') is not False
+        or qualification.get('prepare_state_sha256')
+        != prepare['state_sha256']
+        or activation.get('qualification_state_sha256')
+        != qualification['state_sha256']
+        or activation.get('run_count') != 1
+        or activation.get('integrity_pass_count') != 0
+        or activation.get('contract_pass_count') != 0
+        or len(activation.get('not_run_slot_ids', [])) != 9
+        or 'non-ground collision' not in str(
+            activation.get('stopped_early_reason')
+        )
+    ):
+        raise RuntimeError(
+            'superseded v3 activation is not the audited failed state'
+        )
+    precommit = correction.get('precommit', {})
+    if (
+        precommit.get('suite_sha256') != prepare.get('suite_sha256')
+        or precommit.get('commitment_sha256')
+        != prepare.get('commitment_sha256')
+    ):
+        raise RuntimeError(
+            'superseded v3 precommit differs from contamination audit'
+        )
+
+    progress_path = superseded_root / 'activation/progress.json'
+    records_path = superseded_root / 'activation/records.json'
+    activation_path = _v3_state_path(superseded_root, 'activation')
+    progress = _v3_load_progress(superseded_root / 'activation')
+    records = _load_json(records_path)
+    if (
+        progress is None
+        or progress.get('progress_sha256')
+        != activation.get('progress_sha256')
+        or len(records) != 1
+        or activation.get('records_sha256') != file_sha256(records_path)
+    ):
+        raise RuntimeError(
+            'superseded v3 activation aggregates differ from state'
+        )
+    record = records[0]
+    case_id = 'v3a_goal_aggregate_direct'
+    record_path_text = progress.get('final_record_paths', {}).get(
+        case_id
+    )
+    if not record_path_text:
+        raise RuntimeError(
+            'superseded v3 activation lacks its audited attempt record'
+        )
+    record_path = Path(record_path_text)
+    retained_record = _load_json(record_path)
+    if retained_record != record:
+        raise RuntimeError(
+            'superseded v3 final record differs from its aggregate'
+        )
+    if (
+        record.get('case_id') != case_id
+        or record.get('run_id') != correction.get('run_id')
+        or record.get('classification', {}).get('status') != 'failed'
+        or record.get('classification', {}).get(
+            'infrastructure_status'
+        ) != 'completed'
+        or record.get('analysis', {}).get('metrics', {}).get(
+            'collision', {}
+        ).get('value') is not True
+        or record.get('success_contract', {}).get(
+            'collision_expected'
+        ) is not False
+    ):
+        raise RuntimeError(
+            'superseded v3 attempt is not the audited contamination run'
+        )
+
+    run_directory = Path(record['run_directory'])
+    metadata_path = run_directory / 'metadata.yaml'
+    resolved_path = run_directory / 'resolved_scenario.yaml'
+    result_path = run_directory / 'scenario_result.yaml'
+    metadata = yaml.safe_load(
+        metadata_path.read_text(encoding='utf-8')
+    )
+    resolved = yaml.safe_load(
+        resolved_path.read_text(encoding='utf-8')
+    )
+    if (
+        'simulation_contact_probe_enabled:=True'
+        not in metadata.get('target_argv', [])
+        or metadata.get('recording', {}).get(
+            'readiness_ever_true'
+        ) is not True
+        or resolved.get('success', {}).get(
+            'collision_expected'
+        ) is not False
+    ):
+        raise RuntimeError(
+            'superseded v3 launch does not prove probe contamination'
+        )
+    corrected_command = build_launch_command(resolved, gui=True)
+    if (
+        'simulation_contacts_enabled:=True' not in corrected_command
+        or 'simulation_contact_probe_enabled:=False'
+        not in corrected_command
+        or 'simulation_contact_probe_enabled:=True'
+        in corrected_command
+    ):
+        raise RuntimeError(
+            'corrected launch does not preserve passive contact evidence'
+        )
+
+    raw_hashes = (
+        record.get('analysis_completeness', {})
+        .get('raw_bag_sha256', {})
+    )
+    if len(raw_hashes) != 1:
+        raise RuntimeError(
+            'superseded v3 attempt has ambiguous raw-bag evidence'
+        )
+    raw_bag_path_text, retained_raw_hash = next(iter(raw_hashes.items()))
+    raw_bag_path = Path(raw_bag_path_text)
+    artifact_paths = {
+        'activation_state_file_sha256': activation_path,
+        'activation_progress_file_sha256': progress_path,
+        'activation_records_file_sha256': records_path,
+        'attempt_record_file_sha256': record_path,
+        'raw_bag_file_sha256': raw_bag_path,
+        'resolved_scenario_file_sha256': resolved_path,
+        'metadata_file_sha256': metadata_path,
+        'scenario_result_file_sha256': result_path,
+    }
+    expected_hashes = correction.get('original_artifacts', {})
+    for field, path in artifact_paths.items():
+        if (
+            not path.is_file()
+            or expected_hashes.get(field) != file_sha256(path)
+        ):
+            raise RuntimeError(
+                f'superseded v3 contamination artifact drifted: {field}'
+            )
+    if (
+        retained_raw_hash
+        != expected_hashes.get('raw_bag_file_sha256')
+        or activation.get('state_sha256')
+        != expected_hashes.get('activation_state_sha256')
+    ):
+        raise RuntimeError(
+            'superseded v3 retained hashes differ from contamination audit'
+        )
+    return {
+        'kind': 'contact_probe_instrumentation_contamination',
+        'superseded_evidence_root': str(superseded_root),
+        'superseded_prepare_state_sha256': prepare['state_sha256'],
+        'superseded_qualification_state_sha256': (
+            qualification['state_sha256']
+        ),
+        'superseded_activation_state_sha256': activation['state_sha256'],
+        'superseded_suite_sha256': prepare['suite_sha256'],
+        'superseded_commitment_sha256': prepare['commitment_sha256'],
+        'correction_audit_path': str(correction_path),
+        'correction_audit_sha256': correction_sha256,
+        'run_id': record['run_id'],
+        'original_artifacts': dict(expected_hashes),
+        'contact_audit': dict(contact_audit),
+        'policy': dict(policy),
+    }
+
+
+def _v3_adoption_matches_invocation(
+    transaction,
+    operator,
+    evidence_root,
+    superseded_evidence_root,
+):
+    recovery = transaction.get('recovery', {})
+    expected_fresh_root = Path(evidence_root).expanduser().resolve()
+    expected_root = Path(
+        superseded_evidence_root
+    ).expanduser().resolve()
+    if (
+        transaction.get('operator') != operator
+        or Path(transaction.get('evidence_root', '')).resolve()
+        != expected_fresh_root
+        or recovery.get('kind')
+        != 'contact_probe_instrumentation_contamination'
+        or Path(
+            recovery.get('superseded_evidence_root', '')
+        ).resolve() != expected_root
+        or Path(
+            recovery.get('policy', {}).get('fresh_evidence_root', '')
+        ).resolve() != expected_fresh_root
+    ):
+        raise RuntimeError('v3 precommit adoption invocation drifted')
+
+
+def run_v3_adopt_precommit(
+    operator,
+    evidence_root,
+    superseded_evidence_root,
+    *,
+    suite_path=V3_PRECOMMITTED_SUITE_PATH,
+    commitment_path=V3_COMMITMENT_PATH,
+    correction_path=V3_CONTACT_CORRECTION_PATH,
+):
+    """Adopt the exact v3 precommit into a fresh corrected lineage."""
+    root = Path(evidence_root).expanduser().resolve()
+    superseded_root = Path(
+        superseded_evidence_root
+    ).expanduser().resolve()
+    suite_path = Path(suite_path)
+    commitment_path = Path(commitment_path)
+    state_path = _v3_state_path(root, 'prepare')
+    transaction_path = _v3_prepare_transaction_path(root)
+    if state_path.is_file():
+        transaction = _v3_load_prepare_transaction(transaction_path)
+        _v3_adoption_matches_invocation(
+            transaction,
+            operator,
+            root,
+            superseded_root,
+        )
+        _v3_verify_repository_snapshot(transaction['repository'])
+        return _v3_publish_prepare_transaction(
+            root,
+            transaction,
+            operator=operator,
+            suite_path=suite_path,
+            commitment_path=commitment_path,
+            restore_outputs=False,
+        )
+    if transaction_path.is_file():
+        transaction = _v3_load_prepare_transaction(transaction_path)
+        _v3_adoption_matches_invocation(
+            transaction,
+            operator,
+            root,
+            superseded_root,
+        )
+        _v3_verify_repository_snapshot(transaction['repository'])
+        return _v3_publish_prepare_transaction(
+            root,
+            transaction,
+            operator=operator,
+            suite_path=suite_path,
+            commitment_path=commitment_path,
+            restore_outputs=False,
+        )
+    if root.exists():
+        raise RuntimeError(
+            'v3 precommit adoption requires an absent fresh evidence root'
+        )
+    if root == superseded_root:
+        raise RuntimeError(
+            'v3 corrected lineage must not reuse the superseded root'
+        )
+    if not suite_path.is_file() or not commitment_path.is_file():
+        raise RuntimeError(
+            'v3 precommit adoption requires the committed suite and '
+            'commitment'
+        )
+    _v3_require_precommit_in_head()
+    processes_before = _v3_active_processes()
+    if processes_before:
+        raise RuntimeError(
+            'v3 precommit adoption process set is not clean'
+        )
+    repository = _v3_repository_snapshot(
+        require_clean=True,
+        extra_paths=(suite_path, commitment_path),
+    )
+    recovery = _v3_harness_recovery_proof(
+        superseded_root,
+        correction_path=correction_path,
+    )
+    declared_fresh_root = Path(
+        recovery['policy'].get('fresh_evidence_root', '')
+    ).resolve()
+    if declared_fresh_root != root:
+        raise RuntimeError(
+            'v3 contamination audit names a different fresh root'
+        )
+    suite_bytes = suite_path.read_bytes()
+    population = json.loads(suite_bytes.decode('utf-8'))
+    if canonical_json_bytes(population) != suite_bytes:
+        raise RuntimeError(
+            'v3 adopted acceptance suite is not canonical JSON'
+        )
+    commitment = _load_json(commitment_path)
+    commitment_sha256 = require_omission_sha256(
+        commitment,
+        'commitment_sha256',
+        'acceptance commitment',
+    )
+    if (
+        _sha256_bytes(suite_bytes) != commitment.get('suite_sha256')
+        or _sha256_bytes(suite_bytes)
+        != recovery.get('superseded_suite_sha256')
+        or commitment_sha256
+        != recovery.get('superseded_commitment_sha256')
+        or commitment.get('selection_blind') is not False
+        or commitment.get('population_visibility')
+        != 'researcher_visible_before_activation'
+    ):
+        raise RuntimeError(
+            'v3 adopted suite differs from its cleartext commitment'
+        )
+    disk = shutil.disk_usage(root.parent)
+    required_free_bytes = _v3_required_free_bytes(
+        root,
+        V3_EXPECTED_COUNTS['declared_total'],
+    )
+    if disk.free < required_free_bytes:
+        raise RuntimeError('v3 precommit adoption disk forecast failed')
+    transaction = {
+        'schema_version': 1,
+        'experiment_version': 'phase08-v3b',
+        'operator': operator,
+        'evidence_root': str(root),
+        'suite_path': str(suite_path.resolve()),
+        'commitment_path': str(commitment_path.resolve()),
+        'suite_base64': base64.b64encode(suite_bytes).decode('ascii'),
+        'commitment': commitment,
+        'commitment_sha256': commitment_sha256,
+        'repository': repository,
+        'disk_forecast': {
+            'free_bytes': disk.free,
+            'required_free_bytes': required_free_bytes,
+            'remaining_declared_slots': (
+                V3_EXPECTED_COUNTS['declared_total']
+            ),
+        },
+        'processes_before': processes_before,
+        'recovery': recovery,
+    }
+    transaction['transaction_sha256'] = omission_sha256(
+        transaction,
+        'transaction_sha256',
+    )
+    transaction_bytes = (
+        json.dumps(
+            transaction,
+            indent=2,
+            sort_keys=True,
+            allow_nan=False,
+        ) + '\n'
+    ).encode('utf-8')
+    staging_root = Path(tempfile.mkdtemp(
+        prefix=f'.{root.name}.adopt-',
+        dir=root.parent,
+    ))
+    try:
+        staging_root.chmod(0o700)
+        staging_state_root = _state_root(staging_root)
+        staging_state_root.mkdir(parents=True, mode=0o700)
+        staging_state_root.chmod(0o700)
+        atomic_bytes(
+            _v3_prepare_transaction_path(staging_root),
+            transaction_bytes,
+            mode=0o600,
+        )
+        os.replace(staging_root, root)
+    finally:
+        if staging_root.exists():
+            shutil.rmtree(staging_root)
+    return _v3_publish_prepare_transaction(
+        root,
+        transaction,
+        operator=operator,
+        suite_path=suite_path,
+        commitment_path=commitment_path,
+        restore_outputs=False,
+    )
 
 
 def run_v3_prepare(
@@ -4919,12 +5359,89 @@ def _v3_qualification_commands(
     return commands, install_root
 
 
+def _v3_activation_contact_launch_contract(summary):
+    """Verify installed activation commands use passive contact evidence."""
+    runs = summary.get('runs')
+    reasons = []
+    direct_pass_count = 0
+    recorder_pass_count = 0
+    if not isinstance(runs, list) or len(runs) != V3_EXPECTED_COUNTS[
+        'activation'
+    ]:
+        reasons.append('activation dry run does not contain ten runs')
+        runs = []
+    required = {
+        'gazebo_gui:=True',
+        'simulation_contacts_enabled:=True',
+        'simulation_contact_probe_enabled:=False',
+    }
+    forbidden = {'simulation_contact_probe_enabled:=True'}
+    for run in runs:
+        case_id = run.get('case_id', '<unknown>')
+        for field, counter_name in (
+            ('launch_argv', 'direct'),
+            ('record_argv', 'recorder'),
+        ):
+            argv = run.get(field)
+            if not isinstance(argv, list):
+                reasons.append(f'{case_id} {field} is unavailable')
+                continue
+            missing = sorted(required - set(argv))
+            present_forbidden = sorted(forbidden & set(argv))
+            if missing or present_forbidden:
+                reasons.append(
+                    f'{case_id} {field} contact launch contract failed'
+                )
+                continue
+            if counter_name == 'direct':
+                direct_pass_count += 1
+            else:
+                recorder_pass_count += 1
+    return {
+        'passed': not reasons,
+        'direct_pass_count': direct_pass_count,
+        'recorder_pass_count': recorder_pass_count,
+        'expected_count': V3_EXPECTED_COUNTS['activation'],
+        'reasons': reasons,
+    }
+
+
 def run_v3_qualify(operator, evidence_root):
     """Run the pre-activation source, schema, and retained functional gate."""
     root = Path(evidence_root).expanduser().resolve()
     prepare = _v3_require_state(root, 'prepare')
+    _v3_require_operator(prepare, operator, 'prepare')
     commitment = _load_json(V3_COMMITMENT_PATH)
     reasons = []
+    recovery = prepare.get('recovery')
+    if recovery is None:
+        raise RuntimeError(
+            'v3 corrected qualification requires '
+            'v3-adopt-precommit recovery'
+        )
+    recovery_validation = {
+        'required': True,
+        'passed': False,
+        'recovery_sha256': canonical_sha256(recovery),
+        'reasons': [],
+    }
+    if prepare.get('lineage_id') != 'phase08-v3b':
+        recovery_validation['reasons'].append(
+            'corrected prepare lineage is not phase08-v3b'
+        )
+    try:
+        observed_recovery = _v3_harness_recovery_proof(
+            recovery['superseded_evidence_root'],
+            correction_path=recovery['correction_audit_path'],
+        )
+        if observed_recovery != recovery:
+            recovery_validation['reasons'].append(
+                'corrected prepare recovery proof drifted'
+            )
+    except (KeyError, OSError, RuntimeError) as exc:
+        recovery_validation['reasons'].append(str(exc))
+    recovery_validation['passed'] = not recovery_validation['reasons']
+    reasons.extend(recovery_validation['reasons'])
     try:
         _v3_assert_worktree_changes({
             V3_PRECOMMITTED_SUITE_PATH,
@@ -5029,6 +5546,13 @@ def run_v3_qualify(operator, evidence_root):
     if not all(item['passed'] for item in qualification_commands):
         reasons.append('one or more isolated build/installed dry checks failed')
     dry_run_results = {}
+    activation_contact_contract = {
+        'passed': False,
+        'direct_pass_count': 0,
+        'recorder_pass_count': 0,
+        'expected_count': V3_EXPECTED_COUNTS['activation'],
+        'reasons': ['activation installed dry-run summary is missing'],
+    }
     for name, expected in (
         ('activation', V3_EXPECTED_COUNTS['activation']),
         ('development', V3_EXPECTED_COUNTS['development_per_candidate']),
@@ -5050,6 +5574,14 @@ def run_v3_qualify(operator, evidence_root):
             or summary.get('scenario_schema_version') != 4
         ):
             reasons.append(f'{name} installed dry-run contract failed')
+        if name == 'activation':
+            activation_contact_contract = (
+                _v3_activation_contact_launch_contract(summary)
+            )
+            if not activation_contact_contract['passed']:
+                reasons.append(
+                    'activation installed contact launch contract failed'
+                )
     after_processes = _v3_active_processes()
     if after_processes:
         reasons.append('post-qualification ROS/Gazebo process set is not clean')
@@ -5070,7 +5602,12 @@ def run_v3_qualify(operator, evidence_root):
     return _v3_write_state(root, 'qualification', {
         'passed': not reasons,
         'operator': operator,
+        'lineage_id': prepare.get('lineage_id', 'phase08-v3'),
         'prepare_state_sha256': prepare['state_sha256'],
+        'recovery_validation': recovery_validation,
+        'activation_contact_launch_contract': (
+            activation_contact_contract
+        ),
         'activation_count': len(activation_runs),
         'development_count': len(development_runs),
         'candidate_count': len(V3_CANDIDATES),
@@ -5176,10 +5713,88 @@ def _v3_activation_profile():
     }
 
 
+def _v3_verify_corrected_recovery_before_activation(
+    prepare,
+    qualification,
+):
+    """Revalidate a corrected lineage immediately before dispatch."""
+    if (
+        qualification.get('prepare_state_sha256')
+        != prepare.get('state_sha256')
+    ):
+        raise RuntimeError('v3 qualification is not bound to prepare')
+    recovery = prepare.get('recovery')
+    if recovery is None:
+        raise RuntimeError(
+            'v3 corrected activation requires adopted recovery'
+        )
+    if (
+        prepare.get('lineage_id') != 'phase08-v3b'
+        or qualification.get('lineage_id') != 'phase08-v3b'
+    ):
+        raise RuntimeError('v3 corrected activation lineage drifted')
+    recovery_validation = qualification.get('recovery_validation', {})
+    if (
+        recovery_validation.get('passed') is not True
+        or recovery_validation.get('recovery_sha256')
+        != canonical_sha256(recovery)
+    ):
+        raise RuntimeError(
+            'v3 qualification lacks the corrected recovery proof'
+        )
+    contact_contract = qualification.get(
+        'activation_contact_launch_contract', {}
+    )
+    if (
+        contact_contract.get('passed') is not True
+        or contact_contract.get('direct_pass_count')
+        != V3_EXPECTED_COUNTS['activation']
+        or contact_contract.get('recorder_pass_count')
+        != V3_EXPECTED_COUNTS['activation']
+    ):
+        raise RuntimeError(
+            'v3 qualification lacks installed passive-contact proof'
+        )
+    installed_dry_run = qualification.get(
+        'installed_dry_runs', {}
+    ).get('activation', {})
+    dry_run_path = Path(installed_dry_run.get('path', ''))
+    if (
+        not dry_run_path.is_file()
+        or installed_dry_run.get('sha256') != file_sha256(dry_run_path)
+    ):
+        raise RuntimeError(
+            'v3 installed activation dry-run artifact drifted'
+        )
+    dry_run_summary = yaml.safe_load(
+        dry_run_path.read_text(encoding='utf-8')
+    )
+    if (
+        _v3_activation_contact_launch_contract(dry_run_summary)
+        != contact_contract
+    ):
+        raise RuntimeError(
+            'v3 installed activation contact proof drifted'
+        )
+    observed = _v3_harness_recovery_proof(
+        recovery['superseded_evidence_root'],
+        correction_path=recovery['correction_audit_path'],
+    )
+    if observed != recovery:
+        raise RuntimeError('v3 corrected recovery proof drifted')
+
+
 def run_v3_activation(operator, evidence_root):
     """Execute all ten fresh visible activation contracts."""
     root = Path(evidence_root).expanduser().resolve()
+    prepare = _v3_require_state(root, 'prepare')
     qualification = _v3_require_state(root, 'qualification')
+    _v3_require_operator(prepare, operator, 'prepare')
+    _v3_require_operator(qualification, operator, 'qualification')
+    _v3_verify_corrected_recovery_before_activation(
+        prepare,
+        qualification,
+    )
     _v3_require_precommit_in_head()
     _v3_verify_repository_snapshot(qualification['repository'])
     stage_root = root / 'activation'
@@ -8254,6 +8869,10 @@ def _parser():
     prepare = subparsers.add_parser('v3-prepare')
     prepare.add_argument('--operator', required=True)
     prepare.add_argument('--evidence-root', required=True)
+    adopt = subparsers.add_parser('v3-adopt-precommit')
+    adopt.add_argument('--operator', required=True)
+    adopt.add_argument('--evidence-root', required=True)
+    adopt.add_argument('--superseded-evidence-root', required=True)
     return parser
 
 
@@ -8265,6 +8884,12 @@ def main(argv=None):
             result = run_v3_prepare(
                 arguments.operator,
                 arguments.evidence_root,
+            )
+        elif arguments.subcommand == 'v3-adopt-precommit':
+            result = run_v3_adopt_precommit(
+                arguments.operator,
+                arguments.evidence_root,
+                arguments.superseded_evidence_root,
             )
         elif arguments.subcommand == 'v3-qualify':
             result = run_v3_qualify(

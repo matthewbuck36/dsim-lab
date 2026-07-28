@@ -144,11 +144,6 @@ def build_launch_command(resolved, cost_path=None, gui=False):
     disturbance_enabled = sensor_delayed or pose_delayed
     contact_probe_enabled = (
         resolved['success'].get('collision_expected') is True
-        or (
-            resolved.get('schema_version', 1) >= 4
-            and resolved['validation']['contacts_enabled']
-            and resolved['success'].get('collision_expected') is not None
-        )
     )
     arguments = {
         'gazebo_gui': gui,
@@ -1571,10 +1566,29 @@ def _parser():
     return parser
 
 
+def _reject_direct_v3_formal_execution(scenario_path, dry_run):
+    """Route formal v3 execution through its qualified workflow owner."""
+    if dry_run:
+        return
+    suite = load_suite(scenario_path)
+    if suite.get('suite_id') in {
+        'phase08_v3_activation',
+        'phase08_v3_development',
+    }:
+        raise RuntimeError(
+            'formal Phase 08 v3 suites require the '
+            'validate_robustness workflow'
+        )
+
+
 def main(args=None):
     """Console entry point."""
     arguments = _parser().parse_args(args)
     try:
+        _reject_direct_v3_formal_execution(
+            arguments.scenario_yaml,
+            arguments.dry_run,
+        )
         summary = execute_suite(
             arguments.scenario_yaml,
             arguments.operator,

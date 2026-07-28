@@ -1391,3 +1391,181 @@ declared simulation slots.
   final-zero, cleanup, evidence-integrity, replacement, and early-stop rules.
 - A valid activation behavioral miss is retained and reported; it is never
   tuned away or replaced as infrastructure-invalid.
+
+## Phase 08.3 M3 V3A retained result
+
+The first actual V3 Gazebo stage started from clean committed HEAD
+`d69407bfafdd3e79b96b82b5f02bd0a49c715369`. It used the declared
+GUI-visible activation suite with `gazebo_gui=true`; this was not a dry run or
+headless substitute.
+
+Exactly one case executed:
+
+- case `v3a_goal_aggregate_direct`, seed `9301`;
+- run ID
+  `20260728T053833113025Z_simulation_phase08_v3_activation-v3a_goal_aggregate_direct-robust_gaussian_v1-acd554565b_92ee18ce`;
+- retained under
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3/activation/attempts/001_v3a_goal_aggregate_direct/attempt_01`;
+- raw bag SHA-256
+  `bf07bcd3458e42b497d33fc302c2e018a68a1ce6636ab75b09af5ec26d405ae8`.
+
+Recording, bag readability, completeness, final zero, and process/node cleanup
+passed. No ROS or Gazebo process remained. The standard analyzer ran once.
+The post-activation functional gate passed `382` tests with `2` opt-in Gazebo
+tests skipped.
+
+The workflow correctly hard-stopped on `non-ground collision` and retained:
+
+- activation state
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3/workflow_state/v3_activation.json`;
+  internal state SHA-256
+  `5fa0b4e91746bfadca363a7cdb8438d46488f4009c0bd31ae33f81d8a2457cc2`;
+  file SHA-256
+  `f54c61c8589e46df7655d8e2513218ff7fd29994b1c3d964bdf61378ca0dc8bb`;
+- one retained record, `0/1` integrity passes, and `0/1` contract passes;
+- all remaining nine activation IDs as `not_run`;
+- no M4 development, freeze, holdout, validation, reproducibility, tag,
+  Phase 09, physical, or hardware action.
+
+### Contact-control diagnosis
+
+The reported collision was literal but instrumentation-induced. The launch
+command incorrectly set `simulation_contact_probe_enabled:=True` even though
+the case declared `collision_expected=false`. The validation node spawned its
+static `0.20 x 0.20 x 0.40 m` positive-control obstacle at the robot after
+readiness.
+
+Read-only bag inspection found `48,298` contact messages, `47,814` during
+readiness, and `105` non-ground contact states. All `105` involved
+`phase08_contact_positive_control`; none involved another non-ground pair.
+They began about `0.154 s` after readiness and ended about `0.388 s` after
+readiness, with a maximum retained wrench magnitude of about `5314.15`.
+
+The analyzer correctly reported collision. The physical impulse contaminates
+the trajectory, so neither the collision nor the later
+`DESIGN_OR_MERGE_FILL -> ESCAPE_REPULSE -> RECENTER -> FAILSAFE` path is
+reclassified as independent algorithm behavior. The attempt is not eligible
+for pre-readiness replacement and will not be rerun in the same root.
+
+Durable records:
+
+- `validation/phase_08_v3a_failure_report.md`;
+- `validation/phase_08_v3a_contact_probe_contamination.json`, omission
+  SHA-256
+  `4f8af99b1b937ea79fa8ceaad459b37d63a29978e6f2fa2360cfcf6abe317add`.
+
+## Current milestone
+
+- Closed lineage: **M3 V3A — FAILED / INSTRUMENTATION-CONTAMINATED / NOT
+  SIMULATION-READY**.
+- Current milestone: **M3A — bounded contact-control correction and fresh
+  lineage qualification support**.
+- Amended Plan: the append-only `M3A amendment` in
+  `docs/codex/gesc_gaussian/plans/phase_08_3_plan.md`.
+- Corrected launch policy: spawn the real probe only when
+  `collision_expected=true`; keep contact sensors and the unchanged
+  zero-non-ground-contact gate for expected-false formal runs.
+- Fresh corrected evidence root:
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3b`; it must remain
+  absent until the correction is tested, checkpointed, and committed.
+- The exact V3 acceptance suite and commitment are reused byte-identically.
+  No population, case, seed, candidate, threshold, denominator, family floor,
+  early-stop, or replacement change is authorized.
+- Next criterion: implement/test/checkpoint/commit M3A, adopt the exact
+  precommit into V3B, rerun qualification, then execute all ten GUI-visible
+  activation cases from the beginning.
+
+## Stop conditions
+
+- Never overwrite, resume, relabel, combine, or count the V3A root.
+- Never filter the positive-control collision out and claim the contaminated
+  run was collision-free.
+- V3B must reject any suite/commitment drift and must bind a fresh corrected
+  runtime-input snapshot before Gazebo.
+- Preserve every original collision, completeness, cleanup, final-zero,
+  timestamp, causality, behavior, and early-stop gate.
+- M4 remains prohibited unless V3B activation passes `10/10`.
+
+## Phase 08.3 M3A correction validation
+
+The bounded contact-control correction and fresh-lineage adoption workflow
+have passed their pre-redispatch validation. No V3B root or additional Gazebo
+run was created during these checks.
+
+Implemented boundary:
+
+- `run_scenario.py` now enables the physical contact probe if and only if the
+  resolved case declares `collision_expected=true`;
+- passive contact sensors remain enabled for all ten expected-false
+  activation cases;
+- `v3-adopt-precommit` verifies the immutable V3A failure artifacts and
+  correction audit, requires an absent fresh root and clean committed source,
+  requires the same operator across recovery, and compares the current suite
+  and commitment against V3A's exact recorded hashes before adopting their
+  bytes without regeneration;
+- the recovery transaction binds the declared V3B root and rejects relocation
+  or source drift on resume;
+- V3B qualification revalidates the retained V3A proof and automatically
+  checks the installed direct and recorder launch arguments for all ten cases;
+  activation rehashes the retained installed dry-run artifact and revalidates
+  that recovery chain immediately before dispatch;
+- the public `run_scenario` CLI permits dry inspection but rejects direct
+  empirical execution of the formal v3 activation/development suites; formal
+  dispatch must use the qualified `validate_robustness` workflow;
+- the collision analyzer, missing-contact invalidity rule, zero-non-ground
+  gate, activation cases, seeds, profile, thresholds, denominators, and
+  hard-stop rules are unchanged.
+
+Validation evidence:
+
+- focused runner/disturbance/v3 workflow gate:
+  `129 passed, 1 skipped in 15.80 s`;
+- full source-first functional gate:
+  `390 passed, 2 skipped in 59.30 s`;
+- the two full-gate skips remain exactly the explicit Phase 06 recorded
+  headless Gazebo integration and visible Gazebo recording smoke opt-ins;
+- all five changed Python/test files passed `ament_flake8`,
+  `ament_pep257`, and Python compilation;
+- the installed dependency-closure workspace build completed all three
+  packages:
+  `ros_esc_interfaces`, `turtlebot3_rotating_sensor`, and `ros_esc`;
+- installed `validate_robustness --help` exposes
+  `v3-adopt-precommit`;
+- the production V3A recovery proof passed and resolved the exact suite
+  SHA-256
+  `d733ef9dffb372d2c60b57f83c2b96e1062a0a62818587de59a0166df4efe88e`
+  and commitment SHA-256
+  `cf981d60e235a3b4fd63ae5a61ccddae87e94ea76a3fb2d4ccaad78bcaa29437`;
+- focused recovery tests reject a jointly changed suite/commitment, a changed
+  operator, a relocated interrupted root, an audited-precommit mismatch,
+  missing adopted recovery, installed probe-on launch arguments, a changed
+  installed dry-run artifact, and retained V3A proof drift before activation;
+- an installed non-dry direct `run_scenario phase08_v3_activation.yaml`
+  invocation returned the required guard exit `2` without launching Gazebo;
+- the installed activation dry run resolved exactly ten schema-v4 cases with
+  zero unsupported cases. Across both the direct launch and recorder target
+  arguments it contained `20` passive-contact enables, `20` GUI enables,
+  `20` probe disables, and zero probe enables. Dry-run SHA-256:
+  `52a3ebc30bac2e415c394db6d8e7a938e99cb7424974f9f01d5f034e8edcc19c`;
+- normal and strict-history Phase 08 Implement context validation, required
+  document validation, and `git diff --check` passed;
+- V3A activation state, progress, and records file SHA-256 values remain
+  `f54c61c8589e46df7655d8e2513218ff7fd29994b1c3d964bdf61378ca0dc8bb`,
+  `b82109f94c1416eb237bd80bafd29342db7d48e91f1ecb8474e351f535763530`,
+  and
+  `fb604d812eff92940d4c27ac0054c361f00a1ad2b3b07ef7e5f4977de92448a3`;
+- the correction-audit omission SHA-256 is
+  `4f8af99b1b937ea79fa8ceaad459b37d63a29978e6f2fa2360cfcf6abe317add`.
+
+## Current milestone
+
+- Closed lineage: **M3 V3A — FAILED / INSTRUMENTATION-CONTAMINATED / NOT
+  SIMULATION-READY**.
+- Completed implementation/test boundary: **M3A — bounded contact-control
+  correction and fresh-lineage qualification support**.
+- State: **READY TO CHECKPOINT AND COMMIT M3A**.
+- Fresh V3B root:
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3b`; confirmed absent.
+- Next criterion: checkpoint and commit this correction, create V3B with
+  `v3-adopt-precommit`, rerun the complete qualification there, and then
+  execute all ten GUI-visible activation cases from the beginning.

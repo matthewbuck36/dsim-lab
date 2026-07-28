@@ -102,6 +102,14 @@ def test_validation_launch_routes_only_delayed_algorithm_consumers():
     assert any(item.startswith('gazebo_world:=') for item in command)
     assert 'simulation_contacts_enabled:=True' in command
 
+    negative = next(
+        run for run in runs if run['case_id'] == 'contact_negative'
+    )
+    negative_command = build_launch_command(negative)
+    assert 'simulation_contacts_enabled:=True' in negative_command
+    assert 'simulation_validation_support_enabled:=False' in negative_command
+    assert 'simulation_contact_probe_enabled:=False' in negative_command
+
     positive = next(
         run for run in runs if run['case_id'] == 'contact_positive'
     )
@@ -191,6 +199,13 @@ def test_collision_metric_distinguishes_empty_and_wall_contact(tmp_path):
     state.collision1_name = 'turtlebot3::base_link::base_body_collision'
     state.collision2_name = 'validation_wall_east::wall::collision'
     wall.states = [state]
+    ground = ContactsState()
+    ground_state = ContactState()
+    ground_state.collision1_name = (
+        'turtlebot3::base_link::base_body_collision'
+    )
+    ground_state.collision2_name = 'ground_plane::link::collision'
+    ground.states = [ground_state]
     data = BagData(
         run_directory=tmp_path,
         topic_types={},
@@ -198,14 +213,22 @@ def test_collision_metric_distinguishes_empty_and_wall_contact(tmp_path):
             'simulation_contacts': {'topic': '/contacts'},
         },
         records_by_topic={
-            '/contacts': [_record('/contacts', 1, empty)],
+            '/contacts': [],
         },
         readiness_start_ns=0,
-        readiness_end_ns=2,
+        readiness_end_ns=4,
     )
 
+    assert _contact_metric(data)['status'] == 'invalid'
+    data.records_by_topic['/contacts'].append(
+        _record('/contacts', 1, empty)
+    )
     assert _contact_metric(data)['value'] is False
     data.records_by_topic['/contacts'].append(
-        _record('/contacts', 2, wall)
+        _record('/contacts', 2, ground)
+    )
+    assert _contact_metric(data)['value'] is False
+    data.records_by_topic['/contacts'].append(
+        _record('/contacts', 3, wall)
     )
     assert _contact_metric(data)['value'] is True

@@ -2907,3 +2907,78 @@ The amendment does not change any case allocation, threshold, denominator,
 behavioral gate, safety gate, replacement cap, or execution stage. M1 remains
 the historical encrypted-workflow implementation result; M1A is the separate
 tested and checkpointed successor boundary.
+
+## Phase 08.3 M3A contact-control correction
+
+The first V3A GUI activation run hard-stopped correctly after the runner
+spawned the physical contact positive control in a
+`collision_expected=false` case. Preserve
+`/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3` unchanged. The focused
+source gate for the bounded correction is:
+
+```bash
+cd /home/mattb/dsim-lab
+source /opt/ros/humble/setup.bash
+source ros2_ws/install/setup.bash
+
+timeout 300s /usr/bin/python3 -m pytest -q -rs \
+  ros2_ws/src/ros_esc/test/test_scenario_runner.py \
+  ros2_ws/src/ros_esc/test/test_simulation_disturbances.py \
+  ros2_ws/src/ros_esc/test/test_phase08_validation.py
+
+ament_flake8 \
+  ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py \
+  ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py \
+  ros2_ws/src/ros_esc/test/test_phase08_validation.py \
+  ros2_ws/src/ros_esc/test/test_scenario_runner.py \
+  ros2_ws/src/ros_esc/test/test_simulation_disturbances.py
+
+ament_pep257 \
+  ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py \
+  ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py \
+  ros2_ws/src/ros_esc/test/test_phase08_validation.py \
+  ros2_ws/src/ros_esc/test/test_scenario_runner.py \
+  ros2_ws/src/ros_esc/test/test_simulation_disturbances.py
+```
+
+The launch regressions must prove all three properties:
+
+```text
+formal collision_expected=false: contacts true, probe false
+support collision_expected=false: contacts true, probe false
+support collision_expected=true:  contacts true, probe true
+```
+
+After a clean M3A commit, the fresh recovery/qualification/activation command
+sequence is:
+
+```bash
+PHASE08_V3A_ROOT=~/Experiments/GESC-Gaussian/runs/phase08_v3
+PHASE08_V3B_ROOT=~/Experiments/GESC-Gaussian/runs/phase08_v3b
+
+test ! -e "$PHASE08_V3B_ROOT"
+
+timeout 1800s ros2 run ros_esc validate_robustness v3-adopt-precommit \
+  --operator phase08_v3 \
+  --evidence-root "$PHASE08_V3B_ROOT" \
+  --superseded-evidence-root "$PHASE08_V3A_ROOT"
+
+timeout 1800s ros2 run ros_esc validate_robustness v3-qualify \
+  --operator phase08_v3 \
+  --evidence-root "$PHASE08_V3B_ROOT"
+
+timeout 10800s ros2 run ros_esc validate_robustness v3-activation \
+  --operator phase08_v3 \
+  --evidence-root "$PHASE08_V3B_ROOT"
+```
+
+The adoption step must leave every V3A artifact byte-identical, reuse the
+exact suite and commitment hashes recorded by V3A, and bind the fresh root,
+operator, and corrected repository snapshot. Relocated or source-drifted
+recovery must fail. V3B qualification must revalidate the V3A proof and all
+ten installed probe-off activation commands before Gazebo dispatch; activation
+must rehash the retained dry-run summary and revalidate that chain immediately
+before starting. Direct non-dry `run_scenario` calls for formal v3 suites must
+fail in favor of this workflow entry point. The activation stage remains
+serial and GUI-visible and reruns all ten cases; the old V3A run does not enter
+its result.

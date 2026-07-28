@@ -288,7 +288,14 @@ authority, including its user-authorized Amendment A1. Its 10 activation, 30
 bounded-development, 20 predeclared researcher-visible holdout, 50 additional
 unique validation, and 10 reproducibility slots use
 the fresh root
-`/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3`.
+`/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3`. Its first activation
+run is now retained as the closed, instrumentation-contaminated V3A lineage:
+the schema-v4 runner spawned its physical contact positive control in an
+expected-false case. The append-only M3A Plan amendment permits only the
+bounded probe-dispatch correction and a fresh V3B root at
+`/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3b`. V3B reuses the exact
+committed population bytes, reruns qualification against the corrected source,
+and reruns all ten GUI-visible activation cases from the beginning.
 The 70 unique acceptance cases and ten repeat references are generated,
 canonically hashed, checkpointed, and committed in cleartext before
 activation, then evaluated through one hashed machine-readable contract. This

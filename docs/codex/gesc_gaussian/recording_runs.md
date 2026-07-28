@@ -313,6 +313,46 @@ the infrastructure gate. A later stage prohibited by an earlier gate is
 recorded as `outcome: "not_run"` with `passed: null`; it is not a failed or
 zero-valued run.
 
+### V3A contact-control closeout and V3B restart
+
+The original `/phase08_v3` activation root is closed and immutable after its
+first expected-false case was struck by the validation contact-positive-control
+probe. Do not resume that root or run only its nine undispatched cases.
+
+After the M3A correction is tested, checkpointed, and committed, V3B adopts
+the exact existing suite and commitment into a fresh lineage:
+
+```bash
+PHASE08_V3A_ROOT=~/Experiments/GESC-Gaussian/runs/phase08_v3
+PHASE08_V3B_ROOT=~/Experiments/GESC-Gaussian/runs/phase08_v3b
+
+timeout 1800s ros2 run ros_esc validate_robustness v3-adopt-precommit \
+  --operator phase08_v3 \
+  --evidence-root "$PHASE08_V3B_ROOT" \
+  --superseded-evidence-root "$PHASE08_V3A_ROOT"
+
+timeout 1800s ros2 run ros_esc validate_robustness v3-qualify \
+  --operator phase08_v3 \
+  --evidence-root "$PHASE08_V3B_ROOT"
+
+timeout 10800s ros2 run ros_esc validate_robustness v3-activation \
+  --operator phase08_v3 \
+  --evidence-root "$PHASE08_V3B_ROOT"
+```
+
+`v3-adopt-precommit` requires the V3B root to be absent, verifies the retained
+V3A contamination hashes, compares the suite and commitment to V3A's recorded
+precommit hashes, binds the fresh V3B root, operator, and corrected source
+snapshot, and reuses the exact tracked population bytes without regeneration.
+Resumed adoption rejects root, operator, or source drift. Qualification
+revalidates that lineage and the installed probe-off launch arguments before
+activation; activation rehashes the retained dry run and checks them again
+before dispatch. Direct non-dry `run_scenario` calls for the formal v3
+activation/development suites are rejected; use the workflow commands above.
+Activation reruns all ten cases GUI-visible from the beginning. Contact
+sensors remain enabled in every formal case, but the physical probe is enabled
+only for an explicit `collision_expected=true` positive control.
+
 ## Stop a run
 
 For an indefinite run (`--duration-sec 0`), press Ctrl-C once in the

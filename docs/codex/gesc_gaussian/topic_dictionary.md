@@ -670,8 +670,12 @@ contact states mean a collision.
 The validation robot monitors the exact collision names produced by Gazebo's
 fixed-joint lumping. The four-wall validation world bounds the declared
 `[-2, 2] x [-2, 2] m` simulation envelope. A positive-control probe spawns a
-static collision object only after recording readiness, proving that the
-contact path detects physical Gazebo contacts rather than synthetic messages.
+static collision object only after recording readiness and only for an
+explicit `collision_expected=true` support case, proving that the contact path
+detects physical Gazebo contacts rather than synthetic messages. Formal
+`collision_expected=false` cases keep the contact sensors active but never
+spawn that object; valid empty or ground-only messages are negative evidence,
+and any real non-ground contact remains a collision.
 
 ## Phase 08 offline validation interface
 

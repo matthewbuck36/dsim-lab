@@ -1756,3 +1756,154 @@ No physical hardware, Phase 09 work, v3 Gazebo stage, tuning, acceptance run,
 reproducibility run, readiness tag, or source implementation is authorized or
 performed by saving this Plan. The next action after review is a separately
 authorized v3 Implement continuation beginning at M0.
+
+## M3A amendment — contact-control contamination and fresh V3B lineage
+
+This append-only amendment was added after the first M3 activation dispatch.
+It supersedes only the evidence root and qualification lineage needed to
+correct the observed validation-harness defect. It does not rewrite the
+original M3 result or change the research objective, algorithm, activation
+cases, scenario population, candidates, thresholds, denominators, family
+floors, stage order, early stops, replacements, collision gate, or tag gate.
+
+The user instructed Codex to continue the robustness implementation after
+removing the unrelated encryption requirement. That authority includes this
+documented bounded runner correction and a fresh corrected activation
+lineage; it does not authorize physical hardware, Phase 09, a weakened gate,
+or a readiness claim without all declared passes.
+
+### Observed contradiction
+
+The first GUI-visible run,
+`v3a_goal_aggregate_direct` seed `9301`, executed once from clean committed
+HEAD `d69407b`. The workflow retained the run and stopped with
+`non-ground collision`, leaving the other nine activation IDs `not_run`.
+Recording, final zero, and cleanup passed.
+
+Read-only bag inspection found `105` non-ground contact states. Every state
+involved the reserved
+`phase08_contact_positive_control::probe::collision`; there was no other
+non-ground pair. The first probe contact occurred approximately `0.154 s`
+after readiness and the last approximately `0.388 s` after readiness. The
+probe applied a real physical impulse, so the trajectory is contaminated and
+cannot be reclassified as collision-free or treated as independent behavior
+evidence.
+
+The root cause is local and exact: schema-v4 launch construction enabled the
+static physical positive-control probe whenever `collision_expected` was
+non-null, including every formal `collision_expected=false` case. The
+analyzer correctly classified the resulting contact and remains unchanged.
+
+Durable evidence:
+
+- failure report:
+  `validation/phase_08_v3a_failure_report.md`;
+- machine-readable audit:
+  `validation/phase_08_v3a_contact_probe_contamination.json`;
+- superseded immutable root:
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3`;
+- activation state SHA-256:
+  `5fa0b4e91746bfadca363a7cdb8438d46488f4009c0bd31ae33f81d8a2457cc2`;
+- raw bag SHA-256:
+  `bf07bcd3458e42b497d33fc302c2e018a68a1ce6636ab75b09af5ec26d405ae8`.
+
+### V3A disposition
+
+V3A is closed failed and is not simulation-ready. Its state, progress,
+records, run, bag, analysis, and nine `not_run` IDs are immutable. It is not
+eligible for the pre-readiness replacement policy because readiness became
+true and lifecycle activity occurred. The old root is never resumed,
+overwritten, combined with V3B, or counted.
+
+### Bounded correction
+
+The launch rule becomes:
+
+```text
+contact probe enabled iff collision_expected is true
+```
+
+Contact sensors remain enabled for every formal case. Expected-false runs
+must still provide readiness contact messages and must contain zero real
+non-ground contacts. Missing contact evidence remains invalid; any wall,
+robot, or other non-ground contact remains a hard stop. The explicit
+schema-v2 `contact_positive` support case continues to spawn the real static
+probe. Retained Phase 07.5 runtime evidence already proves a valid positive
+contact and valid no-probe negative contact.
+
+Filtering the reserved probe out of analysis is prohibited because that would
+hide a physical perturbation. No analyzer, completeness, collision-integrity,
+or hard-stop threshold changes.
+
+### Fresh V3B recovery contract
+
+Corrected execution uses the absent fresh root:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3b
+```
+
+The new `v3-adopt-precommit` workflow action must:
+
+1. require a clean committed corrected checkout and empty ROS/Gazebo process
+   set;
+2. verify the V3A activation state, records, attempt, metadata, scenario, and
+   raw-bag hashes against the machine-readable contamination audit;
+3. leave every V3A byte unchanged;
+4. adopt the exact tracked
+   `phase08_v3_acceptance_suite.json` and
+   `phase_08_v3_suite_commitment.json` bytes without regeneration;
+5. bind the V3A evidence hashes, correction-audit hash, current repository
+   snapshot, fixed suite hash, fixed commitment hash, disk forecast, and
+   operator into a recoverable fresh prepare transaction and prepare state;
+6. reject any existing unowned V3B root, recovered-root or operator drift,
+   suite/commitment drift from V3A, old-source snapshot, or corrected launch
+   that still enables the probe for `collision_expected=false`.
+
+V3B then reruns the complete M2 qualification against the corrected source.
+Qualification must revalidate the V3A recovery proof and all ten installed
+probe-off activation launch commands. Activation rehashes that retained dry
+run and revalidates the recovery chain immediately before dispatch. Direct
+non-dry `run_scenario` execution of the formal v3 activation/development
+suites is prohibited; dry inspection remains permitted. Only a passing V3B
+qualification may start activation. V3B reruns all ten
+activation cases from the beginning with `gazebo_gui=true`; it does not run
+only the nine previously undispatched cases. The exact original IDs, seeds,
+geometries, profile, and contracts remain fixed.
+
+If a V3B case has an ordinary valid behavioral miss, finish all ten as
+originally declared and close before development. If it has a real
+non-ground collision, evidence failure, cleanup contamination, hash drift, or
+other original hard stop, stop immediately. M4 remains prohibited unless V3B
+passes `10/10` activation contracts and every integrity check.
+
+### Amended milestone sequence
+
+#### M3A — retain V3A and validate the bounded correction
+
+- preserve and hash V3A evidence;
+- add the failure report and contamination audit;
+- implement probe dispatch only for explicit positive controls;
+- add negative-control, positive-control, V3A-preservation, fresh-root,
+  exact-precommit-adoption, and new-snapshot tests;
+- run focused/full functional, lint, syntax, context, document, and installed
+  dry-run qualification;
+- checkpoint and commit before empirical redispatch.
+
+Exit: V3A is durably closed; corrected source and recovery workflow pass; the
+worktree is clean at an independently reviewable commit.
+
+#### M3B — adopt, qualify, and execute fresh activation
+
+- create V3B through `v3-adopt-precommit`;
+- run `v3-qualify` in V3B and checkpoint its exact state;
+- execute all ten serial GUI-visible activation cases;
+- retain and analyze each attempt once;
+- apply only the unchanged pre-readiness infrastructure replacement policy.
+
+Exit: `10/10` V3B contracts and all integrity checks pass, or Phase 08.3
+closes failed before development.
+
+This amendment is the required Plan review for the post-precommit
+runner/evidence-lineage correction. It does not authorize an algorithm or
+scenario-population change.
