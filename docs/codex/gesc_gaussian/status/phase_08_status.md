@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-26T01:05:13-07:00`
-Status: `COMPLETE — PHASE 08.2 RECENTER RECOVERY VALIDATED; NO V3 ACCEPTANCE`
+Last verified: `2026-07-27T17:09:19-07:00`
+Status: `IN PROGRESS — PHASE 08.3 V3 ACCEPTANCE`
 
 ## Objective
 
@@ -963,3 +963,126 @@ Phase 08 v2, Phase 08.1, and Phase 08.2 are terminally closed. Reread
 action. Never resume or relabel historical evidence, rerun completed probes or
 analysis merely to recover context, or infer authorization for v3, Phase 09,
 or physical work.
+
+## Phase 08.3 implementation continuation
+
+The user authorized execution of the saved Phase 08.3 Plan on 2026-07-27.
+This continuation is append-only with respect to the closed v1, v2, Phase
+08.1, and Phase 08.2 history above. Their evidence, conclusions, case
+identities, and hashes remain immutable and excluded from every v3
+denominator.
+
+Authority:
+
+- active Plan:
+  `docs/codex/gesc_gaussian/plans/phase_08_3_plan.md`;
+- active Plan SHA-256:
+  `2d669f84c79c863bcb61f28c92be0a4607223a4b40843774db34011fb53c20e0`;
+- implementation starting HEAD:
+  `bc4b420d` (`phase 08.2: retain passing recenter recovery`);
+- branch:
+  `feature/gesc-gaussian-robustness-v1`, initially 15 commits ahead of
+  origin;
+- fresh evidence root:
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3`;
+- terminal Phase 08.2 handoff SHA-256:
+  `7f97d6bed7e8a28eccdd60298a52c1cdcd8b94cca70038d91f2b6007d3a05261`;
+- Phase 08.2 scenario SHA-256:
+  `1b116ef7984d8a679f69da919576125a1ad066da3d55098466da9afac2bae017`;
+- historical v2 activation SHA-256:
+  `a5e91d2132b3dacccedc24aba13bdacd9ef5ba4ec7c8ae7b69ced6eadaf47d72`.
+
+The implementation authorization covers the Plan's declared milestone commit
+boundaries. It does not authorize pushes, physical hardware, Phase 09, an
+early holdout reveal, contract weakening, or a readiness tag before every v3
+gate passes. The exact user-controlled GPG recipient fingerprint remains
+required before M2 can prepare the encrypted acceptance population.
+
+## Current milestone
+
+- Completed milestone: **M0 — reopen context without rewriting history**.
+- Current milestone: **M1 — implement and test v3 evidence contracts**.
+- State: implementation in progress.
+- M0 result: latest-subphase Plan discovery selects
+  `phase_08_3_plan.md`; the status is reopened without deleting its closed
+  history; checkpoint and context-bundle tooling are freeze-state aware; and
+  Phase 09 requires the v3 handoff plus machine-readable
+  `simulation_ready=true`.
+- No schema-v4 implementation, Gazebo stage, tuning, acceptance-suite
+  generation, holdout reveal, validation, repeat, tag, Phase 09, or physical
+  action has started.
+- Next criterion: schema-v4/aggregate/envelope implementation and its focused
+  tests.
+
+## Validation checkpoints
+
+- Initial normal Phase 08 Implement context validation: passed, but the
+  pre-M0 validator still selected the hardcoded Phase 08.2 Plan.
+- Initial strict-history Phase 08 Implement context validation: passed with
+  the same known pre-M0 limitation.
+- Historical Phase 08.1/08.2 handoff and v2/08.1/08.2 scenario hashes matched
+  their recorded values.
+- The v3 evidence root and proposed simulation-ready tag were absent.
+- The older status referenced
+  `tools/validate_required_documents.sh`, which does not exist. The historical
+  command owner is `tools/validate_required_docs.sh`; this stale path is not a
+  runtime or source failure.
+- M0 `bash -n` passed for the context validator, checkpoint, and context
+  bundle.
+- `init_phase_status.sh 08` preserved this nonempty status.
+- M0 normal and strict-history Phase 08 Implement validation both selected
+  `docs/codex/gesc_gaussian/plans/phase_08_3_plan.md` and passed.
+- `validate_required_docs.sh` passed.
+- Phase 09 Plan-context validation returned the expected exit `1` because
+  `phase_08_3_handoff.md` and `phase_08_v3_gate_results.json` do not yet
+  exist. No placeholder was created.
+- The bounded context bundle at
+  `/tmp/dsim_phase08_v3_m0_context_bundle.txt` identifies the v3 Plan, latest
+  M0 milestone, absent freeze/contract, and terminal boundary.
+- `checkpoint_phase.sh 08` selected the v3 Plan and latest status milestone.
+- `git diff --check` and the untracked Plan whitespace check passed.
+- No pytest, build, ROS, Gazebo, bag analysis, acceptance-suite generation,
+  tag, Phase 09, or physical command ran in M0.
+
+## Attempts not to repeat
+
+- Preserve every attempt-not-to-repeat entry above.
+- Do not allow a generic Phase 08 Implement pass to conceal selection of an
+  older subphase Plan.
+- Do not overwrite the closed status history with a new template.
+- Do not create a placeholder v3 handoff or gate result merely to make Phase
+  09 validation pass.
+- Do not create, reveal, or log plaintext acceptance-suite identities before
+  the clean freeze.
+- Do not infer the user's GPG recipient fingerprint.
+
+## Remaining work
+
+- Complete and checkpoint M0.
+- Implement and test M1 schema-v4, aggregate-ground-truth, encrypted-suite,
+  v3 workflow, analyzer, scenario, packaging, and documentation contracts.
+- Obtain the exact approved GPG recipient fingerprint before M2 suite
+  preparation.
+- Execute M2–M9 only in declared order and only while every prior gate passes.
+
+## Stop conditions
+
+- All Level A/B/C conditions in the active Plan apply.
+- Stop for any cost-sign/unit, controller ownership, canonical topic,
+  selectable-legacy, simulation/physical parity, safety, or overlapping-user
+  change conflict.
+- Stop before Gazebo if M1/M2 source, deterministic aggregate, build,
+  installed-runtime, schema, dry-run, encryption, historical-exclusion, or
+  cleanup qualification fails.
+- A valid activation, development eligibility, holdout, validation, or
+  reproducibility gate miss closes v3 honestly without weakening the
+  contract or starting v4 automatically.
+
+## Compaction recovery
+
+Read `AGENTS.md`, `phase_08_3_plan.md`, this status's last
+`## Current milestone` section, `phase_08_3_freeze_state.json` when present,
+the current external `workflow_state/v3_<stage>.json`, the latest Phase 08
+checkpoint, and Git status/diff/log. Recover empirical work from retained
+manifests, completeness files, analyses, gate results, and hashes. Never rerun
+a matrix, analyzer, or large-bag hash merely to recover context.

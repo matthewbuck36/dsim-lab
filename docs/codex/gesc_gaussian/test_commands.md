@@ -2685,3 +2685,58 @@ version-sorted saved subphase Plan. The next run exposed an inherited
 that early-closing consumer with an `awk` print bound retains the 30-line
 snapshot while consuming the full input. `bash -n` passed, the checkpoint
 returned `0`, and it names `phase_08_2_plan.md` as active.
+
+## Phase 08.3 M0 context reopening (2026-07-27)
+
+The user authorized execution of the reviewed
+`docs/codex/gesc_gaussian/plans/phase_08_3_plan.md`, SHA-256
+`2d669f84c79c863bcb61f28c92be0a4607223a4b40843774db34011fb53c20e0`.
+M0 changed context/status/navigation tooling only. It did not run pytest,
+build, ROS, Gazebo, bag analysis, suite generation, tuning, holdout,
+validation, reproducibility, tagging, Phase 09, or physical hardware.
+
+Commands:
+
+```bash
+bash -n \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/checkpoint_phase.sh \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/make_codex_context_bundle.sh
+
+timeout 120s \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/init_phase_status.sh 08
+timeout 120s \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh \
+  08 implement
+timeout 120s \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh \
+  08 implement --strict-history
+timeout 120s \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_required_docs.sh
+
+timeout 120s \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh \
+  09 plan
+
+timeout 120s \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/make_codex_context_bundle.sh \
+  /home/mattb/dsim-lab /tmp/dsim_phase08_v3_m0_context_bundle.txt
+timeout 120s \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/checkpoint_phase.sh 08
+git diff --check
+```
+
+Results:
+
+- shell syntax: pass;
+- status initializer: existing nonempty status preserved;
+- Phase 08 normal and strict Implement validation: pass, both identify
+  `phase_08_3_plan.md` as the active latest subphase Plan;
+- required Phase 00 documents: pass;
+- Phase 09 Plan context: expected exit `1`, blocked on the absent v3 handoff
+  and machine-readable v3 gate results;
+- context bundle: pass; active Plan, latest milestone, absent freeze/contract,
+  and terminal boundary present;
+- checkpoint: pass; active Plan is `phase_08_3_plan.md` and the latest
+  append-only status milestone is captured;
+- unstaged and untracked-Plan whitespace/diff checks: pass.

@@ -45,6 +45,16 @@ fi
 
 PACKAGE="$ROOT/DSIM_GESC_Gaussian_Codex_Implementation_Package"
 DOCS="$ROOT/docs/codex/gesc_gaussian"
+ACTIVE_SUBPHASE_PLAN=""
+PHASE08_V3_GATE_RESULTS="$DOCS/validation/phase_08_v3_gate_results.json"
+
+latest_subphase_plan() {
+  local phase="$1"
+  find "$DOCS/plans" -maxdepth 1 -type f \
+    -name "phase_${phase}_[0-9]*_plan.md" -print |
+    sort -V |
+    tail -n 1
+}
 
 required=(
   "$ROOT/AGENTS.md"
@@ -57,6 +67,7 @@ required=(
   "$PACKAGE/tools/checkpoint_phase.sh"
 )
 historical=()
+missing=0
 
 if (( PHASE_NUMBER > 0 )); then
   required+=(
@@ -90,15 +101,21 @@ if [[ "$STRICT_HISTORY" == true ]]; then
 fi
 
 if (( PHASE_NUMBER == 8 )) && [[ "$STAGE" == "implement" ]]; then
-  required+=(
-    "$DOCS/handoffs/phase_07_5_handoff.md"
-    "$DOCS/plans/phase_08_2_plan.md"
-  )
+  ACTIVE_SUBPHASE_PLAN="$(latest_subphase_plan "$PHASE")"
+  required+=("$DOCS/handoffs/phase_07_5_handoff.md")
+  if [[ -n "$ACTIVE_SUBPHASE_PLAN" ]]; then
+    required+=("$ACTIVE_SUBPHASE_PLAN")
+  else
+    echo "Missing active Phase 08 subphase Plan." >&2
+    missing=1
+  fi
 fi
 
 if (( PHASE_NUMBER >= 9 )); then
   required+=("$DOCS/handoffs/phase_08_1_handoff.md")
   required+=("$DOCS/handoffs/phase_08_2_handoff.md")
+  required+=("$DOCS/handoffs/phase_08_3_handoff.md")
+  required+=("$PHASE08_V3_GATE_RESULTS")
 fi
 
 if [[ "$STAGE" == "implement" ]]; then
@@ -108,7 +125,6 @@ if [[ "$STAGE" == "implement" ]]; then
   )
 fi
 
-missing=0
 for path in "${required[@]}"; do
   if [[ ! -s "$path" ]]; then
     echo "Missing or empty: $path" >&2
@@ -119,6 +135,31 @@ done
 if (( missing != 0 )); then
   echo "Phase $PHASE $STAGE context validation failed." >&2
   exit 1
+fi
+
+if (( PHASE_NUMBER >= 9 )); then
+  if ! python3 - "$PHASE08_V3_GATE_RESULTS" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+try:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+    print(f"Invalid Phase 08.3 gate results: {exc}", file=sys.stderr)
+    raise SystemExit(1)
+if payload.get("simulation_ready") is not True:
+    print(
+        "Phase 08.3 gate results do not declare simulation_ready=true.",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
+PY
+  then
+    echo "Phase $PHASE $STAGE context validation failed." >&2
+    exit 1
+  fi
 fi
 
 if [[ "$STRICT_HISTORY" == false ]]; then
@@ -166,4 +207,7 @@ if [[ "$STAGE" == "implement" ]]; then
   fi
 fi
 
+if [[ -n "$ACTIVE_SUBPHASE_PLAN" ]]; then
+  echo "Active subphase plan: ${ACTIVE_SUBPHASE_PLAN#"$ROOT/"}"
+fi
 echo "Phase $PHASE $STAGE context is complete."

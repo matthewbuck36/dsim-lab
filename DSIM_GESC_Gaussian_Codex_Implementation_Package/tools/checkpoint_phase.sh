@@ -23,6 +23,7 @@ SUBPHASE_PLAN="$(
     sort -V |
     tail -n 1
 )"
+FREEZE_STATE="$DOCS/validation/phase_${PHASE}_v3_freeze_state.json"
 OUT="$DOCS/checkpoints/phase_${PHASE}_checkpoint.txt"
 
 if [[ ! -s "$STATUS" ]]; then
@@ -51,6 +52,31 @@ cd "$ROOT"
     echo "Active subphase plan: ${SUBPHASE_PLAN#"$ROOT/"}"
     echo "Active subphase plan sha256: $(sha256sum "$SUBPHASE_PLAN" | awk '{print $1}')"
   fi
+  if [[ -s "$FREEZE_STATE" ]]; then
+    echo "Freeze state: ${FREEZE_STATE#"$ROOT/"}"
+    echo "Freeze state sha256: $(sha256sum "$FREEZE_STATE" | awk '{print $1}')"
+    python3 - "$FREEZE_STATE" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+payload = json.loads(path.read_text(encoding="utf-8"))
+for key in (
+    "experiment_version",
+    "freeze_status",
+    "current_stage",
+    "freeze_commit",
+    "freeze_tree_sha256",
+    "frozen_parameters_sha256",
+    "acceptance_suite_ciphertext_sha256",
+    "contract_sha256",
+    "runtime_inputs_sha256",
+):
+    if key in payload:
+        print(f"Freeze {key}: {payload[key]}")
+PY
+  fi
   echo "Unstaged diff sha256: $(git diff | sha256sum | awk '{print $1}')"
   echo "Staged diff sha256: $(git diff --cached | sha256sum | awk '{print $1}')"
   echo
@@ -74,9 +100,29 @@ cd "$ROOT"
   git diff --cached --stat
   echo
   echo "## Current milestone snapshot"
-  sed -n '/^## Current milestone$/,/^## /p' "$STATUS" |
-    sed '$d' |
-    awk 'NR <= 30 { print }'
+  awk '
+    /^## Current milestone$/ {
+      block = $0 ORS
+      capture = 1
+      next
+    }
+    /^## / && capture {
+      latest = block
+      capture = 0
+    }
+    capture {
+      block = block $0 ORS
+    }
+    END {
+      if (capture) {
+        latest = block
+      }
+      count = split(latest, lines, ORS)
+      for (i = 1; i <= count && i <= 30; i++) {
+        print lines[i]
+      }
+    }
+  ' "$STATUS"
   echo
   echo "This file describes the base HEAD and diff before the next commit; it is"
   echo "not a claim that the eventual commit contains itself or that tests passed."

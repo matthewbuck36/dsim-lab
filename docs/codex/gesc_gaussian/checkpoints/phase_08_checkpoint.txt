@@ -1,81 +1,60 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-26T08:05:35+00:00
-Base HEAD: f084803e336e8094bf5b7bea6cf795fbba67344c
+Generated: 2026-07-28T00:13:13+00:00
+Base HEAD: bc4b420d1a506825a63f4dd7c1db66f1ee70e1cb
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 2ec7af29796b599bce8a49a27e28e2ec706cc79e2b889414ab40ab45565cc075
+Status sha256: deae53d4c958303fe610d0bd04de298ed264f6037cfe70341cb091d625b9c75d
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
-Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_2_plan.md
-Active subphase plan sha256: e8eac2725298116335c3f35f886e8b00057313108b836112f2d15f9728e6da14
-Unstaged diff sha256: 73b37fee7ffb61c6ce14ca6b99dcde68650e00e748c214beb0cdf4e7bf300f1d
+Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_3_plan.md
+Active subphase plan sha256: 2d669f84c79c863bcb61f28c92be0a4607223a4b40843774db34011fb53c20e0
+Unstaged diff sha256: 1b2ce2ae7900f8c0e288c6fa080d8cb3356f709606a72b0407946e358a91d60f
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 14]
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/00_MASTER_IMPLEMENTATION_PLAN.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/08_validation_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/README.md
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 15]
  M DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/checkpoint_phase.sh
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/make_codex_context_bundle.sh
  M DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/implementation_sequence.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
  M docs/codex/gesc_gaussian/test_commands.md
- M docs/codex/gesc_gaussian/topic_dictionary.md
-?? docs/codex/gesc_gaussian/handoffs/phase_08_2_handoff.md
+?? docs/codex/gesc_gaussian/plans/phase_08_3_plan.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../00_MASTER_IMPLEMENTATION_PLAN.md               |  20 ++--
- .../START_HERE.md                                  |  25 +++--
- .../prompts/08_validation_IMPLEMENT.md             |  11 +-
- .../prompts/README.md                              |  12 ++-
- .../tools/checkpoint_phase.sh                      |  11 +-
- .../tools/validate_phase_context.sh                |   1 +
- .../checkpoints/phase_08_checkpoint.txt            |  62 +++--------
- .../codex/gesc_gaussian/implementation_sequence.md |  22 ++--
- docs/codex/gesc_gaussian/status/phase_08_status.md | 120 +++++++++++++++++----
- docs/codex/gesc_gaussian/test_commands.md          | 120 +++++++++++++++++++++
- docs/codex/gesc_gaussian/topic_dictionary.md       |  10 +-
- 11 files changed, 309 insertions(+), 105 deletions(-)
+ .../tools/checkpoint_phase.sh                      |  52 ++++++++-
+ .../tools/make_codex_context_bundle.sh             |  99 ++++++++++++++++
+ .../tools/validate_phase_context.sh                |  54 ++++++++-
+ .../checkpoints/phase_08_checkpoint.txt            |  69 ++---------
+ .../codex/gesc_gaussian/implementation_sequence.md |  17 ++-
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 127 ++++++++++++++++++++-
+ docs/codex/gesc_gaussian/test_commands.md          |  55 +++++++++
+ 7 files changed, 398 insertions(+), 75 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-- Historical milestone: ten-run Phase 08 v2 activation gate — **FAILED and
-  closed** at `2d796dd`.
-- Completed milestone: Phase 08.1 M1 durable diagnosis and workflow correction.
-- Completed milestone: Phase 08.1 M2 fill-latency correction.
-- Completed milestone: Phase 08.1 M3 verification-boundary correction.
-- Completed milestone: Phase 08.1 M4 readiness and evidence-semantics
-  correction. The first implementation's review gaps were corrected; its
-  earlier evidence is superseded by the final source-state gates below.
-- Completed milestone: Phase 08.1 M5 scenario-contract correction.
-- Completed milestone: Phase 08.1 M6 minimal simulation probes, with one full
-  contract pass and one retained mixed-result/full-contract failure.
-- Completed milestone: Phase 08.1 M7 handoff and next-step recommendation.
-- Completed milestone: Phase 08.2 M1 plan and preflight.
-- Completed milestone: Phase 08.2 M2 deterministic recenter correction.
-- Completed milestone: Phase 08.2 M3 source-state validation.
-- Completed milestone: Phase 08.2 M4 retained Gazebo probe and closeout.
-- Current milestone: none; Phase 08.2 is closed.
-- Current plan:
-  `docs/codex/gesc_gaussian/plans/phase_08_2_plan.md`.
-- Next criterion: create and review a separate v3 acceptance Plan. No v3
-  development/tuning, freeze, holdout, validation, reproducibility, tag,
-  Phase 09, or physical action is authorized by this closeout.
-- V3 acceptance, a readiness tag, Phase 09, and physical hardware remain
-  unauthorized.
+- Completed milestone: **M0 — reopen context without rewriting history**.
+- Current milestone: **M1 — implement and test v3 evidence contracts**.
+- State: implementation in progress.
+- M0 result: latest-subphase Plan discovery selects
+  `phase_08_3_plan.md`; the status is reopened without deleting its closed
+  history; checkpoint and context-bundle tooling are freeze-state aware; and
+  Phase 09 requires the v3 handoff plus machine-readable
+  `simulation_ready=true`.
+- No schema-v4 implementation, Gazebo stage, tuning, acceptance-suite
+  generation, holdout reveal, validation, repeat, tag, Phase 09, or physical
+  action has started.
+- Next criterion: schema-v4/aggregate/envelope implementation and its focused
+  tests.
 
-### M6 pre-execution declaration
 
-- Evidence root:
 
 This file describes the base HEAD and diff before the next commit; it is
 not a claim that the eventual commit contains itself or that tests passed.

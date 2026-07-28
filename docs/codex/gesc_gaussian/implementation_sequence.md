@@ -282,11 +282,18 @@ the full fill/create/escape/recenter/search path without timeout, failsafe,
 collision, completeness, cleanup, or final-zero failure. See
 [the Phase 08.2 handoff](handoffs/phase_08_2_handoff.md).
 
-The smallest currently justified next work is a separately reviewed v3
-acceptance Plan. V3 development/tuning, freeze, selection-blind holdout,
-unique validation, and reproducibility must use a separate sealed contract and
-fresh evidence root. Phase 08.2 evidence validates recenter recovery but does
-not enter that denominator or establish simulation readiness.
+The reviewed
+[Phase 08.3 Plan](plans/phase_08_3_plan.md) is now the active implementation
+authority. Its 10 activation, 30 bounded-development, 20 selection-blind
+holdout, 50 additional unique validation, and 10 reproducibility slots use
+the fresh root
+`/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3`.
+The 70 unique acceptance cases are precommitted before activation, revealed
+only after the clean freeze, and evaluated through one hashed machine-readable
+contract. Phase 08.2 evidence validates recenter recovery but does not enter
+that denominator or establish simulation readiness. Phase 09 remains blocked
+until the v3 handoff and machine-readable gate results both establish
+`simulation_ready=true`.
 
 Phase 08.1 diagnostic scenarios use schema-v3 binding contracts: a contiguous
 activation path anchored at the first `VERIFY_EXTREMUM`, required event
