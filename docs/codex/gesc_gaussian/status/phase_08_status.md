@@ -3166,3 +3166,95 @@ pass before starting the 30 headless development runs.
 - Any integrity, collision, cleanup, hash, ownership, or orphan-process
   failure stops dispatch immediately.
 - Do not enter headless development unless corrected activation is `10/10`.
+
+## Phase 08.4 terminal closeout
+
+**V4 CLOSED / FAIL / NOT SIMULATION-READY.**
+
+The corrected visible-Gazebo activation executed one case and stopped before
+the remaining nine:
+
+```text
+case
+  v4r2a_goal_aggregate_robust
+seed
+  10601
+observed path
+  SEARCH -> VERIFY_EXTREMUM -> GOAL_HOLD
+predeclared required path
+  SEARCH -> VERIFY_EXTREMUM -> DESIGN_OR_MERGE_FILL -> ESCAPE_REPULSE
+  -> RECENTER -> SEARCH -> VERIFY_EXTREMUM -> GOAL_HOLD
+```
+
+The run safely reached the aggregate optimum:
+
+- controller goal and simulation ground truth passed;
+- nearest aggregate target distance was `0.096979 m`;
+- recording, cleanup, collision, final-zero, readiness, and retained
+  functional checks passed;
+- there were zero fills and zero escape attempts.
+
+Direct convergence is a successful navigation outcome, but it does not prove
+the activation slot's declared full recovery lifecycle. `required_state_path`
+and `required_events` therefore failed, and the predeclared escape-attempt,
+escape-duration, and orbit metrics were unavailable. Analysis correctly
+remained partial for that lifecycle responsibility. This is a valid
+activation-contract miss, so V4 cannot enter headless development.
+
+Corrected-root terminal counts:
+
+```text
+Gazebo runs
+  1/120
+activation
+  1 executed, 9 not_run
+development
+  0 executed, 30 not_run
+holdout
+  0 executed, 20 not_run
+validation
+  0 executed, 50 not_run
+reproducibility
+  0 executed, 10 not_run
+formal unique/repeat denominator entered
+  0/70 and 0/10
+```
+
+No replacement was eligible or run. The two original V4 attempts and the
+zero-Gazebo `phase08_v4r2` packaging failure remain historical failed evidence
+and are not counted.
+
+Retained corrected activation SHA-256 values:
+
+```text
+workflow_state/v4_activation.json
+  ae49b5fc50a1afb189866a07298de2b2f18db872817864ca0012dd66d612273d
+activation/records.json
+  e3f993c89f694104eb5714fd9e2134063cc1ffccbf1299403f199c9feda0985f
+attempt record.json
+  563d53a1c312d7ab62dd3fcf2fc4c00ef0d9b8322e2a6fcde82e89cd3d8bea99
+attempt scenario_summary.yaml
+  6af341a4c68a8e16ecd6375ce7c0040f2596e05574c62f80958ff4b7c06cf777
+raw bag
+  dbbe74dd961932391a6b5a40e5f6b481a4fbc7568593728695a3ccfd2b966a80
+```
+
+The required gate JSON, manifest, validation report, failure report, and V4
+handoff were generated. A terminal-report erratum records two generic
+V3-label/legacy-prepare diagnostics without changing the correct `FAIL`,
+`0/10` activation, or `not_run` later-gate disposition.
+
+## Current milestone
+
+**None — Phase 08.4 V4 is terminally closed.**
+
+### Next criterion
+
+Do not begin V5 automatically. A separately reviewed V5 Plan is required
+before any fresh evidence. It should predeclare deterministic branch-forcing
+activation responsibilities, or explicitly separate acceptable direct-goal
+success from cases that must exercise recovery, without changing the unused
+formal population or weakening formal behavior gates.
+
+V4 headless development, freeze, holdout, validation, reproducibility,
+readiness tag, Phase 09, and physical hardware remain unauthorized.

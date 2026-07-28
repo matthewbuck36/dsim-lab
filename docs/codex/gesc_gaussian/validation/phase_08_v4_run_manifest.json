@@ -1,0 +1,19 @@
+{
+  "contract_sha256": null,
+  "evidence_root": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4r2b",
+  "experiment_version": "phase08-v4",
+  "gate_results_sha256": "e083acc4cb852e418a8d855a9189286bbb09b8081c25aa3fdd2a4eda15b7261a",
+  "operator": "phase08_v4",
+  "schema_version": 1,
+  "stage_state_hashes": {
+    "activation": "6d11fe4fa8013b83d663e40db3fbe2f4791b9c5af5d6ad1d6b6010196b1ecd3d",
+    "contract": null,
+    "development": null,
+    "freeze": null,
+    "holdout": null,
+    "prepare": "0663ac27b7b4882dda4474600ff6e98d4170391f1197c40e943fd747f3225c5e",
+    "qualification": "8921133fd8aca49d83f9dcc51c02be441362dea2adcfcbc1927848fdbb8947ed",
+    "reproducibility": null,
+    "validation": null
+  }
+}

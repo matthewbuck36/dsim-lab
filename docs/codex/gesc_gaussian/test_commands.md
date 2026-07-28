@@ -3191,3 +3191,67 @@ wall-timeout finalization extension: none
 
 The formal suite SHA-256 and every acceptance threshold remain unchanged. No
 GPG or encryption key is used.
+
+## Phase 08.4.1 corrected qualification and terminal activation
+
+The fresh corrected root was prepared and qualified at clean runtime-input
+commit `54559da`:
+
+```bash
+timeout --signal=TERM --kill-after=30s 1800s \
+  ros2 run ros_esc validate_robustness v4-prepare \
+    --operator phase08_v4 \
+    --evidence-root \
+      /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4r2b
+
+timeout --signal=TERM --kill-after=30s 1800s \
+  ros2 run ros_esc validate_robustness v4-qualify \
+    --operator phase08_v4 \
+    --evidence-root \
+      /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4r2b
+```
+
+Both returned `0`. Qualification retained `491 passed, 2 skipped`, an
+isolated three-package build, installed truth and V4 resources, installed
+entrypoint, process-level boundary smoke, launch arguments, bounded
+supervisor/fill instantiation, two installed dry runs, exact formal-population
+adoption, disk forecast, and empty before/after process sets.
+
+The actual corrected visible-Gazebo activation command was:
+
+```bash
+export MPLCONFIGDIR=/tmp/dsim_v4r2b_activation_mpl
+export ROS_LOG_DIR=/tmp/dsim_v4r2b_activation_ros_logs
+export ROS_HOME=/tmp/dsim_v4r2b_activation_ros_home
+timeout --signal=TERM --kill-after=180s 10800s \
+  ros2 run ros_esc validate_robustness v4-activation \
+    --operator phase08_v4 \
+    --evidence-root \
+      /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4r2b
+```
+
+It returned `1` after one new GUI Gazebo execution. Recording, cleanup,
+controller goal, aggregate-field ground truth, collision, and terminal
+`GOAL_HOLD` evidence passed. The observed path was direct
+`SEARCH -> VERIFY_EXTREMUM -> GOAL_HOLD`, with zero fills and zero escape
+attempts. It therefore missed the slot's predeclared full
+fill/escape/recenter lifecycle; the remaining nine activation slots and all
+later stages are `not_run`. The retained post-activation functional gate
+reported `491 passed, 2 skipped in 90.28 s`.
+
+Terminal reporting used:
+
+```bash
+export MPLCONFIGDIR=/tmp/dsim_v4r2b_report_mpl
+export ROS_LOG_DIR=/tmp/dsim_v4r2b_report_ros_logs
+export ROS_HOME=/tmp/dsim_v4r2b_report_ros_home
+timeout --signal=TERM --kill-after=30s 1800s \
+  ros2 run ros_esc validate_robustness v4-report \
+    --operator phase08_v4 \
+    --evidence-root \
+      /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4r2b
+```
+
+It returned `1`, matching the terminal failed outcome, and wrote the V4 gate
+JSON, run manifest, validation report, failure report, and external terminal
+state. Do not rerun any command against this root.

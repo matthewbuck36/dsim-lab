@@ -1,48 +1,54 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-28T19:05:26+00:00
-Base HEAD: 54559da7455ff32afa4a9466a9437ff4b7b85552
+Generated: 2026-07-28T19:18:57+00:00
+Base HEAD: 58e963e6aff67e23228d37080dbb6704ef384a8c
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 0c7aa00c5a8fbd8f8487f5691b00eaef2c70e20f16216160b355bbfdb366c5eb
+Status sha256: 681c50cd5d27018d63ad0eff72dfca7bd5d79f00804fced85c7c737f2f4cb761
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_4_1_plan.md
 Active subphase plan sha256: 2a6d945f7453962469338ea0b0ec710df099691264fa1cb8e54927352875d0ba
-Unstaged diff sha256: f443f1994150b19f03c56ad8f679bc0692d30e03853145575ef2ff9cb472bbb9
+Unstaged diff sha256: 9c00a8aec4fa5a72dab17a747e4d6e81fcac4b78eea514466c27013d94901c75
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 34]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 35]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
+ M docs/codex/gesc_gaussian/test_commands.md
+?? docs/codex/gesc_gaussian/handoffs/phase_08_4_handoff.md
+?? docs/codex/gesc_gaussian/validation/phase_08_v4_failure_report.md
+?? docs/codex/gesc_gaussian/validation/phase_08_v4_gate_results.json
+?? docs/codex/gesc_gaussian/validation/phase_08_v4_run_manifest.json
+?? docs/codex/gesc_gaussian/validation/phase_08_v4_terminal_report_erratum.md
+?? docs/codex/gesc_gaussian/validation/phase_08_v4_validation_report.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 49 ++------------
- docs/codex/gesc_gaussian/status/phase_08_status.md | 78 ++++++++++++++++++++++
- 2 files changed, 83 insertions(+), 44 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 42 +++-------
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 92 ++++++++++++++++++++++
+ docs/codex/gesc_gaussian/test_commands.md          | 64 +++++++++++++++
+ 3 files changed, 168 insertions(+), 30 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**M4.3 — execute the ten-case corrected visible-Gazebo activation gate.**
+**None — Phase 08.4 V4 is terminally closed.**
 
 ### Next criterion
 
-Run all ten `v4r2a_*` cases serially with visible Gazebo and bounded
-durations. Preserve every attempt and require a complete `10/10` activation
-pass before starting the 30 headless development runs.
+Do not begin V5 automatically. A separately reviewed V5 Plan is required
+before any fresh evidence. It should predeclare deterministic branch-forcing
+activation responsibilities, or explicitly separate acceptable direct-goal
+success from cases that must exercise recovery, without changing the unused
+formal population or weakening formal behavior gates.
 
-### M4.3 stop conditions
-
-- A valid behavioral predicate failure closes V4.1 before development.
-- Any integrity, collision, cleanup, hash, ownership, or orphan-process
-  failure stops dispatch immediately.
-- Do not enter headless development unless corrected activation is `10/10`.
+V4 headless development, freeze, holdout, validation, reproducibility,
+readiness tag, Phase 09, and physical hardware remain unauthorized.
 
 
 This file describes the base HEAD and diff before the next commit; it is
