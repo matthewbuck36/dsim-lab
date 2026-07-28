@@ -1,0 +1,39 @@
+{
+  "commitment_sha256": "cf981d60e235a3b4fd63ae5a61ccddae87e94ea76a3fb2d4ccaad78bcaa29437",
+  "counts": {
+    "holdout": 20,
+    "reproducibility": 10,
+    "unique": 70,
+    "validation": 50
+  },
+  "family_counts": {
+    "constraint_recovery": 8,
+    "lifecycle": 12,
+    "multi_close_overlap": 9,
+    "noise_delay": 8,
+    "ordered_two_source": 25,
+    "wall_corner": 8
+  },
+  "generator_version": "phase08-v3-generator-1",
+  "historical_exclusion_hashes": {
+    "phase08_1_diagnostic_activation.yaml": "1e030602ecee99c2d1f563a0ae19e65b1c8e6608662e178eb52b8766edc5a9a7",
+    "phase08_2_recenter.yaml": "1b116ef7984d8a679f69da919576125a1ad066da3d55098466da9afac2bae017",
+    "phase08_full_matrix.yaml": "2786ba6aa58ab1e2eeb49b995b1c4abd68c71c1fe3f1eea13b6a993c5ef000e0",
+    "phase08_holdout.yaml": "f6d9a627f0157ad62f12279f8bde40fef815b0ebdaa487398f0d3641c5172b83",
+    "phase08_training.yaml": "9ac9c47e3bc76097d97396da3bd2868cf5986f0c25de42e36c13847019014fce",
+    "phase08_v2_activation.yaml": "a5e91d2132b3dacccedc24aba13bdacd9ef5ba4ec7c8ae7b69ced6eadaf47d72",
+    "phase08_v2_holdout.yaml": "6adb79d62830d2d0f65c3e27cdfc49d7dd2cd95fe4328b4337f08fefa19ab46b",
+    "phase08_v2_reproducibility.yaml": "3e7b12d0d48afa0f6eb8972ab2271454c592e248d8eb17cda445923de0f06309",
+    "phase08_v2_training.yaml": "313c27f9488a8b2d78730bc5ac3ef3d891c3979c1d5b1ad59155722536c56a1a",
+    "phase08_v2_validation.yaml": "ce2a9929e7e0a22744020a4135a338c8007ff5e64a7ae210c64b9d0df3252c91",
+    "phase08_v3_activation.yaml": "8fa385c50f19adf1f362dba286ed3e5c527a175b89692b38632d77471b450031",
+    "phase08_v3_development.yaml": "1c5ef231b5839386f8db67d7b83e25a6ca11dc2935bc1a7c6584a8645a57f433",
+    "phase08_validation_support.yaml": "cb1a7611d2160740c00a3ed5d0e26c8d7ba0964666ffa96575a5047b71e6d13e"
+  },
+  "population_visibility": "researcher_visible_before_activation",
+  "precommit_mechanism": "canonical_json_sha256",
+  "scenario_schema_version": 4,
+  "schema_version": 1,
+  "selection_blind": false,
+  "suite_sha256": "d733ef9dffb372d2c60b57f83c2b96e1062a0a62818587de59a0166df4efe88e"
+}

@@ -1,52 +1,32 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-28T05:06:36+00:00
-Base HEAD: 84d5ce087028fe1a30f295502594d9df6ced4543
+Generated: 2026-07-28T05:37:27+00:00
+Base HEAD: 9837b7fe31f41bf192e237b4d94bd683ec5df362
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: c9e171f657e55b01c9a5d7aa89954308829ec12767000b78c21aac4440c82606
+Status sha256: 78453f2e5a160e9359982fbf7371a0ab504a9e216df7136ec4fb7afd521bb88a
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_3_plan.md
 Active subphase plan sha256: 4dfcb2d99f3347d40862ea530e71566783352cbef77bd24a73f0fa310c74a63a
-Unstaged diff sha256: 3270873eaf446b745a84117284fcab845921a3356d7b08912fd334c37d2df24b
+Unstaged diff sha256: 7673e56b932419301709b07ef8388eb90999f8720cb34097227ad8d2ff9e050d
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 17]
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/00_MASTER_IMPLEMENTATION_PLAN.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/08_validation_PLAN.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/checkpoint_phase.sh
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/make_codex_context_bundle.sh
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 18]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
- M docs/codex/gesc_gaussian/implementation_sequence.md
- M docs/codex/gesc_gaussian/plans/phase_08_3_plan.md
- M docs/codex/gesc_gaussian/recording_runs.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
- M docs/codex/gesc_gaussian/test_commands.md
- M docs/codex/gesc_gaussian/topic_dictionary.md
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py
- M ros2_ws/src/ros_esc/test/test_phase08_validation.py
+?? docs/codex/gesc_gaussian/validation/phase_08_v3_suite_commitment.json
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v3_acceptance_suite.json
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../00_MASTER_IMPLEMENTATION_PLAN.md               |  14 +-
- .../prompts/08_validation_PLAN.md                  |   6 +
- .../tools/checkpoint_phase.sh                      |   2 +-
- .../tools/make_codex_context_bundle.sh             |   2 +-
- .../checkpoints/phase_08_checkpoint.txt            |  68 +----
- .../codex/gesc_gaussian/implementation_sequence.md |  18 +-
- docs/codex/gesc_gaussian/plans/phase_08_3_plan.md  | 218 +++++++++------
- docs/codex/gesc_gaussian/recording_runs.md         |  14 +-
- docs/codex/gesc_gaussian/status/phase_08_status.md |  93 +++++++
- docs/codex/gesc_gaussian/test_commands.md          |  36 ++-
- docs/codex/gesc_gaussian/topic_dictionary.md       |   8 +-
- .../ros_esc/scenario_runner/phase08_validation.py  | 307 +++++++++------------
- .../src/ros_esc/test/test_phase08_validation.py    | 240 ++++++++--------
- 13 files changed, 561 insertions(+), 465 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  57 ++---------
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 105 +++++++++++++++++++++
+ 2 files changed, 112 insertions(+), 50 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
@@ -55,13 +35,15 @@ unstaged and staged: pass
 - Completed milestone: **M1 — implement and test v3 evidence contracts**.
 - Completed milestone: **M1A — adopt the user-authorized cleartext
   precommit**.
-- State: **READY TO CHECKPOINT AND COMMIT M1A**.
-- Next criterion: create the bounded M1A checkpoint/commit, then run M2
-  `v3-prepare` and `v3-qualify`.
-- M2 performs no Gazebo simulation. If M2 passes and its generated suite and
-  commitment are checkpointed and committed, M3 runs ten serial GUI-visible
-  Gazebo activation simulations. Development, holdout, validation, and
-  reproducibility remain serial headless batches.
+- Completed milestone: **M2 — pre-activation qualification and cleartext
+  suite commitment**.
+- State: **READY TO CHECKPOINT AND COMMIT M2**.
+- Next criterion: checkpoint and commit the exact suite/commitment/status,
+  then run all ten M3 activation contracts.
+- M3 is the first actual v3 Gazebo stage. It is serial and GUI-visible with
+  `gazebo_gui=true`; no headless override is permitted. Only after all ten
+  activation contracts and integrity checks pass may M4 run the 30 serial
+  headless development simulations.
 
 
 

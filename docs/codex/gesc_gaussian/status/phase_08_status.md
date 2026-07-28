@@ -1286,3 +1286,108 @@ Authority and implementation:
 - Never alter or regenerate the suite after its M2 commitment, weaken a gate,
   reinterpret a valid behavioral miss, replace an attempt without bound raw
   proof, or create the readiness tag before all sealed gates pass.
+
+## Phase 08.3 M2 completion
+
+M2 is complete at the precommit material boundary. It generated the one fixed
+researcher-visible acceptance population and passed the full pre-activation
+source, population, dependency-closure build, installed-runtime,
+instantiation, schema, dry-run, historical-exclusion, process-cleanliness, and
+disk gates. M2 launched no Gazebo simulation and consumed none of the 120
+declared simulation slots.
+
+### Fixed population and commitment
+
+- Evidence root:
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3`.
+- Canonical cleartext suite:
+  `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v3_acceptance_suite.json`;
+  file SHA-256
+  `d733ef9dffb372d2c60b57f83c2b96e1062a0a62818587de59a0166df4efe88e`;
+  size `927581` bytes.
+- Commitment:
+  `docs/codex/gesc_gaussian/validation/phase_08_v3_suite_commitment.json`;
+  file SHA-256
+  `f142f9044b19c51113bb1363e5114f9a831d095648fe647fe15c5c04088e45a2`;
+  canonical commitment SHA-256
+  `cf981d60e235a3b4fd63ae5a61ccddae87e94ea76a3fb2d4ccaad78bcaa29437`.
+- Prepare state:
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3/workflow_state/v3_prepare.json`;
+  state SHA-256
+  `298b58e95550e8be9e93ce6defb3633f963dbacf89feac5ab8987e3860c0f9bb`.
+- Recoverable mode-`0600` prepare transaction:
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3/prepare/prepare_transaction.json`;
+  transaction SHA-256
+  `d19a4ced1c961fd851587436c92ba23577e3c98cc68863db2d0fed4f083f6990`.
+- The fixed allocation is exactly `20` holdout, `50` additional validation,
+  `70` unique, and `10` reproducibility references. Family unique counts are
+  `25` ordered-two-source, `9` multi/close/overlap, `8` wall/corner, `8`
+  noise/delay, `8` constraint-recovery, and `12` lifecycle.
+- Full population validation passed with zero reasons, `80` distinct total
+  case keys including repeats, and case-key-set SHA-256
+  `8ee311818af1c6b62bfdd355ac75621301430a2a4d5ad079da54a654fa56a7aa`.
+- The suite and commitment explicitly record
+  `selection_blind=false`,
+  `population_visibility=researcher_visible_before_activation`, and
+  `precommit_mechanism=canonical_json_sha256`.
+
+### Qualification evidence
+
+- Qualification state:
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3/workflow_state/v3_qualification.json`;
+  state SHA-256
+  `9d3491e6d232cc5223f88750ff5d7313d529e132462e6faa8d452b78ce635060`.
+- Qualified runtime-input-map SHA-256:
+  `f48268944e7ee1176bdbf8bb93482b0a16bedf283cd0575de7fa330daf55872e`.
+- Functional gate:
+  `382 passed, 2 skipped in 55.61 s`. The skips were exactly the opt-in
+  headless Phase 06 Gazebo integration and visible Gazebo recording smoke;
+  neither ran.
+- The isolated non-symlink dependency-closure build under
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3/qualification/isolated_build`
+  built `ros_esc_interfaces`, `turtlebot3_rotating_sensor`, and `ros_esc`;
+  log SHA-256
+  `1420ca954d8cca20902d97f0c9b46b02992ee2af5df36f51e6af585349def209`.
+- Installed aggregate-truth resources, v3 scenario resources, and
+  `validate_robustness --help` passed.
+- Launch-argument inspection passed. The bounded supervisor and fill
+  instantiations returned expected timeout-wrapper exit `124` after clean
+  SIGINT, with no forced kill or surviving process.
+- Installed activation dry run:
+  exactly `10` schema-v4 cases, zero unsupported, summary SHA-256
+  `66fc6e9a48ad3a86c4ed0d1e83ae3fcfae967bb01fbcf0d7a9c9c1a2473f21c0`.
+- Installed development dry run:
+  exactly `10` schema-v4 cases, zero unsupported, summary SHA-256
+  `91c21c6b13813579bfbd7d17f7b1a392ef8000762cfd51006e69fbc0deeaedfe`.
+- Historical-exclusion hashes matched all thirteen declared Phase 08,
+  v2/08.1/08.2, activation, development, and support inputs. Normal and
+  strict-history Implement context checks passed.
+- Process sets were empty before and after qualification. Disk forecast passed
+  with `350194487296` bytes free against `91268055040` required.
+
+## Current milestone
+
+- Completed milestone: **M0 — reopen context without rewriting history**.
+- Completed milestone: **M1 — implement and test v3 evidence contracts**.
+- Completed milestone: **M1A — adopt the user-authorized cleartext
+  precommit**.
+- Completed milestone: **M2 — pre-activation qualification and cleartext
+  suite commitment**.
+- State: **READY TO CHECKPOINT AND COMMIT M2**.
+- Next criterion: checkpoint and commit the exact suite/commitment/status,
+  then run all ten M3 activation contracts.
+- M3 is the first actual v3 Gazebo stage. It is serial and GUI-visible with
+  `gazebo_gui=true`; no headless override is permitted. Only after all ten
+  activation contracts and integrity checks pass may M4 run the 30 serial
+  headless development simulations.
+
+## Stop conditions
+
+- The suite, commitment, prepare state, qualification state, and runtime-input
+  hashes above are immutable. Any drift stops dispatch.
+- M3 requires the suite and commitment to be exact tracked `HEAD` blobs and
+  the worktree to be clean.
+- Preserve all unchanged safety, ownership, collision, recording,
+  final-zero, cleanup, evidence-integrity, replacement, and early-stop rules.
+- A valid activation behavioral miss is retained and reported; it is never
+  tuned away or replaced as infrastructure-invalid.
