@@ -1,44 +1,47 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-28T22:05:42+00:00
-Base HEAD: e6a21aa9bd167cff4596c719ccb0f83ccb094294
+Generated: 2026-07-28T23:09:18+00:00
+Base HEAD: 034338d1dd87e306bb390c44027791f449f8d7f8
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 6b2b013b08292ed6998286b597f69162bf93f1ff96f32efa25dd318b909bb975
+Status sha256: 8a39f9635c6e856390830a8d4f48cd540cab8d265f4d98109dff5fe2435d61d3
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_5_plan.md
 Active subphase plan sha256: b20fef2176dbabaaff0e3439a9c93355c8a65274ebb34e6236626b2fd852bd61
-Unstaged diff sha256: 8f091bb4945435ce6ac49d2af5e66fd0825052300166ba842bb45827f788fd45
+Unstaged diff sha256: 3268232fbb71378597600d2fb790574ce4b445d4777c2475a3204416f9fd25ca
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 41]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 42]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
+?? docs/codex/gesc_gaussian/handoffs/phase_08_5_handoff.md
+?? docs/codex/gesc_gaussian/validation/phase_08_v5_failure_report.md
+?? docs/codex/gesc_gaussian/validation/phase_08_v5_gate_results.json
+?? docs/codex/gesc_gaussian/validation/phase_08_v5_run_manifest.json
+?? docs/codex/gesc_gaussian/validation/phase_08_v5_validation_report.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 34 ++--------
- docs/codex/gesc_gaussian/status/phase_08_status.md | 75 ++++++++++++++++++++++
- 2 files changed, 80 insertions(+), 29 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  36 ++-----
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 108 +++++++++++++++++++--
+ 2 files changed, 110 insertions(+), 34 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**M3 — run V5C from its own qualified isolated install, then execute the same
-ten-case visible Gazebo activation gate.**
+**M10 — terminal closeout complete.**
 
 ### Next criterion
 
-Preserve V5B, prepare and qualify the fresh
-`/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v5c` root with the unchanged
-V5 inputs, source that exact qualification install, and invoke visible
-activation. Headless development remains forbidden unless activation is a
-strict `10/10` lifecycle pass.
+Do not resume or modify V5. Any successor requires a separately reviewed Plan
+that forces the local basin against the observed GESC trajectory/envelope,
+retains the two-/three-light cap and exact recovery responsibility, and fixes
+first-contract-miss activation dispatch before Gazebo.
 
 
 This file describes the base HEAD and diff before the next commit; it is

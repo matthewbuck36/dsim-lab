@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "experiment_version": "phase08-v5",
+  "outcome": "failed_activation",
+  "simulation_ready": false,
+  "operator": "mattb",
+  "repository_commit": "034338d1dd87e306bb390c44027791f449f8d7f8",
+  "evidence_roots": {
+    "prelaunch_only": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v5",
+    "recorder_infrastructure_failure": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v5b",
+    "pass_eligible_behavioral_run": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v5c"
+  },
+  "population": {
+    "suite_sha256": "b91d99405a29dc04688a8b6bac66f3344b09a564832077930ed62329587c4515",
+    "commitment_sha256": "3c9ea5c6679ba2547a643fe3dc394a308cd25fee7f4ffdedd19476a3259670cd",
+    "light_count_contract": "exactly two or three lights per case",
+    "direct_convergence_controls": 0
+  },
+  "pass_eligible_state_hashes": {
+    "prepare_internal_state_sha256": "9676fce252278358ecf617806819e9aa0a455a14f108ddea7dbfdb1507b819b8",
+    "prepare_file_sha256": "2cad5a7d794d71368f7e5efd9d3b8abdd6900991390a4cc1cc517997c5b6f055",
+    "qualification_internal_state_sha256": "12a4027aec600cb527743d06a1e5d6204b7065014e4961ba02b30bb3a2530cd8",
+    "qualification_file_sha256": "b36d724bee58f64948b8217651cec3a92f317f6f97a68b18879e3e4d93e9b028",
+    "activation_internal_state_sha256": "86f888bd986efc197d1cb33ae0afc375a499571343176b97ed5ebbfd4aa79ff4",
+    "activation_file_sha256": "de32653fc22239b723dc6d11807f4bdd47464b97c995a58df2533300bf3ab0bc",
+    "activation_records_sha256": "035eb1507f591585f686a0e899b029eb7721c6430e17259c30131db6ea800114",
+    "activation_scenario_summary_sha256": "61e1eea723cf739b9f1c9f6841de4a5ff92806e08850c1e9fcd7af3ea15712b8"
+  },
+  "terminal_report_hashes": {
+    "gate_results_sha256": "93fc28695e10fa3288ec9d7374b743a5c401e31f2593f474d92883ef365cdde9"
+  },
+  "execution": {
+    "declared_total": 120,
+    "gazebo_executed": 8,
+    "not_run": 112,
+    "visible_activation": {
+      "executed": 8,
+      "not_run": 2,
+      "recording_complete": 8,
+      "cleanup_complete": 8,
+      "contract_pass": 0
+    },
+    "headless_development": {
+      "executed": 0,
+      "not_run": 30
+    },
+    "headless_holdout": {
+      "executed": 0,
+      "not_run": 20
+    },
+    "headless_validation": {
+      "executed": 0,
+      "not_run": 50
+    },
+    "headless_reproducibility": {
+      "executed": 0,
+      "not_run": 10
+    }
+  },
+  "not_run_activation_case_ids": [
+    "v5a_obstructing_three_light_lateral_09_15009",
+    "v5a_obstructing_three_light_sequential_10_15010"
+  ],
+  "terminal_reason": "The visible activation produced zero route-blocker encounters in eight completed Gazebo runs. The mandatory activation gate failed, so no headless stage was authorized."
+}

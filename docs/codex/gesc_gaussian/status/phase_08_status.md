@@ -1,16 +1,19 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-28T02:48:20-07:00`
-Status: `CLOSED — PHASE 08.3 FAILED / NOT SIMULATION-READY`
+Last verified: `2026-07-28T16:08:02-07:00`
+Status: `CLOSED — PHASE 08.5 / V5 FAILED / NOT SIMULATION-READY`
 
 ## Objective
 
-Execute the fresh Phase 08.3 v3 robustness-acceptance design without changing
-controller ownership, cost sign or units, canonical topics, selectable legacy
-behavior, or simulation/physical algorithm parity. Preserve every failed
-version, stop at the first declared hard gate, and claim simulation readiness
-only if the full activation, development/freeze, holdout, unique-validation,
-and reproducibility chain passes.
+Test only cases in which a weaker local aggregate-field minimum is directly
+between the robot and stronger global minimum, using exactly two or three
+lights. Require the Gaussian-fill, escape, recenter, resumed-search, and
+global-goal lifecycle at that local basin; direct convergence is not a V5
+success. Preserve controller ownership, cost sign and units, canonical
+topics, selectable legacy behavior, and simulation/physical algorithm parity.
+Claim simulation readiness only if the full visible activation, headless
+development/freeze, holdout, unique-validation, and reproducibility chain
+passes.
 
 ## Verified repository state
 
@@ -3647,3 +3650,92 @@ Preserve V5B, prepare and qualify the fresh
 V5 inputs, source that exact qualification install, and invoke visible
 activation. Headless development remains forbidden unless activation is a
 strict `10/10` lifecycle pass.
+
+## Phase 08.5 terminal V5C activation
+
+V5C preparation and qualification passed from the root's own isolated install
+at tested commit:
+
+```text
+034338d1dd87e306bb390c44027791f449f8d7f8
+suite sha256
+  b91d99405a29dc04688a8b6bac66f3344b09a564832077930ed62329587c4515
+commitment sha256
+  3c9ea5c6679ba2547a643fe3dc394a308cd25fee7f4ffdedd19476a3259670cd
+qualification
+  495 passed, 2 skipped in 92.10 s
+```
+
+The pass-eligible visible-Gazebo activation executed eight cases at:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v5c
+```
+
+All eight recordings and cleanups completed. All eight failed the mandatory
+runtime blocker predicate. First Gaussian fills were `1.2624-1.5782 m` from
+the committed route-blocking basin, versus the required maximum of `0.35 m`.
+The actual GESC trajectory curved around the statically proven straight-route
+basin and first converged elsewhere.
+
+Four runs reached `GOAL_HOLD` and exercised the exact intended state path:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> RECENTER
+-> SEARCH
+-> VERIFY_EXTREMUM
+-> GOAL_HOLD
+```
+
+This proves the mechanism can execute in Gazebo, but not that it escaped the
+intended obstructing local minimum. The other terminal states were two
+`SEARCH`, one `VERIFY_EXTREMUM`, and one `FAILSAFE`.
+
+Case `v5a_obstructing_two_light_offset_08_15008` retained a complete recording,
+clean shutdown, full lifecycle, and passed controller/global outcomes, but its
+analysis was partial because `state_durations` was invalid. That integrity
+condition stopped cases 9 and 10.
+
+The Plan required the first behavior-contract failure to stop activation.
+The workflow did not enforce that rule on case 1 and continued until case 8's
+integrity hard stop. This policy defect is retained honestly. It does not make
+any outcome eligible or alter the `0/8` blocker result.
+
+Terminal counts:
+
+```text
+visible activation       8 executed, 2 not_run
+headless development     0 executed, 30 not_run
+headless holdout         0 executed, 20 not_run
+headless validation      0 executed, 50 not_run
+headless reproducibility 0 executed, 10 not_run
+total                    8 executed, 112 not_run
+formal unique            0/70
+formal repeats           0/10
+```
+
+V5 is closed failed and not simulation-ready. No headless stage, readiness tag,
+Phase 09 action, or physical hardware run is authorized.
+
+Terminal records:
+
+- `docs/codex/gesc_gaussian/validation/phase_08_v5_gate_results.json`
+- `docs/codex/gesc_gaussian/validation/phase_08_v5_run_manifest.json`
+- `docs/codex/gesc_gaussian/validation/phase_08_v5_validation_report.md`
+- `docs/codex/gesc_gaussian/validation/phase_08_v5_failure_report.md`
+- `docs/codex/gesc_gaussian/handoffs/phase_08_5_handoff.md`
+
+## Current milestone
+
+**M10 — terminal closeout complete.**
+
+### Next criterion
+
+Do not resume or modify V5. Any successor requires a separately reviewed Plan
+that forces the local basin against the observed GESC trajectory/envelope,
+retains the two-/three-light cap and exact recovery responsibility, and fixes
+first-contract-miss activation dispatch before Gazebo.

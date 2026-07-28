@@ -1,0 +1,122 @@
+{
+  "experiment_version": "phase08-v5",
+  "schema_version": 1,
+  "simulation_ready": false,
+  "outcome": "failed_activation",
+  "gates": [
+    {
+      "gate": "precommitted_population",
+      "status": "passed",
+      "passed": true,
+      "threshold": "100 fresh cases, every case exactly two or three lights with a statically proven obstructing local basin",
+      "value": {
+        "activation": 10,
+        "development": 10,
+        "formal_unique": 70,
+        "repeats": 10,
+        "suite_sha256": "b91d99405a29dc04688a8b6bac66f3344b09a564832077930ed62329587c4515",
+        "commitment_sha256": "3c9ea5c6679ba2547a643fe3dc394a308cd25fee7f4ffdedd19476a3259670cd"
+      }
+    },
+    {
+      "gate": "qualification",
+      "status": "passed",
+      "passed": true,
+      "threshold": "complete source, build, installed-resource, entrypoint, dry-run, process, and disk qualification",
+      "value": "495 passed, 2 skipped in 92.10 s"
+    },
+    {
+      "gate": "visible_gazebo_activation",
+      "status": "failed",
+      "passed": false,
+      "threshold": "10/10 recording, cleanup, blocker encounter, Gaussian fill, escape, recenter, resumed search, and global goal",
+      "value": {
+        "executed": 8,
+        "not_run": 2,
+        "recording_complete": 8,
+        "cleanup_complete": 8,
+        "analysis_complete": 7,
+        "analysis_partial": 1,
+        "integrity_pass": 6,
+        "behavior_contract_pass": 0,
+        "route_blocker_encounter_pass": 0,
+        "first_fill_distance_to_blocker_m": {
+          "minimum": 1.262393713044466,
+          "maximum": 1.5781862365309958
+        },
+        "terminal_states": {
+          "GOAL_HOLD": 4,
+          "SEARCH": 2,
+          "VERIFY_EXTREMUM": 1,
+          "FAILSAFE": 1
+        }
+      },
+      "reason": "All eight executed cases created their first fill 1.26-1.58 m from the predeclared route-blocking local basin; zero cases proved the required local-basin encounter. Case 8 additionally had partial state-duration analysis and triggered the terminal hard stop."
+    },
+    {
+      "gate": "headless_development",
+      "status": "not_run",
+      "passed": false,
+      "threshold": "30/30 candidate runs after a 10/10 activation pass",
+      "value": "not_run",
+      "reason": "Visible activation failed."
+    },
+    {
+      "gate": "freeze_and_seal",
+      "status": "not_run",
+      "passed": false,
+      "threshold": "one eligible development winner and clean committed freeze",
+      "value": "not_run",
+      "reason": "Development was not authorized."
+    },
+    {
+      "gate": "headless_holdout",
+      "status": "not_run",
+      "passed": false,
+      "threshold": "20/20",
+      "value": "not_run",
+      "reason": "Activation failed before formal execution."
+    },
+    {
+      "gate": "headless_validation",
+      "status": "not_run",
+      "passed": false,
+      "threshold": "50/50",
+      "value": "not_run",
+      "reason": "Activation failed before formal execution."
+    },
+    {
+      "gate": "headless_reproducibility",
+      "status": "not_run",
+      "passed": false,
+      "threshold": "10/10 categorical and numeric comparisons",
+      "value": "not_run",
+      "reason": "Activation failed before formal execution."
+    }
+  ],
+  "terminal_counts": {
+    "declared_total": 120,
+    "gazebo_executed": 8,
+    "not_run": 112,
+    "activation": {
+      "executed": 8,
+      "not_run": 2
+    },
+    "development": {
+      "executed": 0,
+      "not_run": 30
+    },
+    "holdout": {
+      "executed": 0,
+      "not_run": 20
+    },
+    "validation": {
+      "executed": 0,
+      "not_run": 50
+    },
+    "reproducibility": {
+      "executed": 0,
+      "not_run": 10
+    }
+  }
+}
