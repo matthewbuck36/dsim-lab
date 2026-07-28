@@ -146,6 +146,32 @@ V3_REPORT_PATH = (
 V3_FAILURE_PATH = (
     VALIDATION_ROOT / 'phase_08_v3_failure_report.md'
 )
+V4_ACTIVATION_PATH = SCENARIO_ROOT / 'phase08_v4_activation.yaml'
+V4_DEVELOPMENT_PATH = SCENARIO_ROOT / 'phase08_v4_development.yaml'
+V4_CANDIDATES_PATH = SCENARIO_ROOT / 'phase08_v4_candidates.yaml'
+V4_FROZEN_PATH = SCENARIO_ROOT / 'phase08_v4_frozen_parameters.yaml'
+V4_ADOPTION_PATH = (
+    VALIDATION_ROOT / 'phase_08_v4_population_adoption.json'
+)
+V4_SELECTION_PATH = (
+    VALIDATION_ROOT / 'phase_08_v4_parameter_selection.json'
+)
+V4_FREEZE_PATH = VALIDATION_ROOT / 'phase_08_v4_freeze_state.json'
+V4_CONTRACT_PATH = (
+    VALIDATION_ROOT / 'phase_08_v4_acceptance_contract.json'
+)
+V4_GATE_RESULTS_PATH = (
+    VALIDATION_ROOT / 'phase_08_v4_gate_results.json'
+)
+V4_MANIFEST_PATH = (
+    VALIDATION_ROOT / 'phase_08_v4_run_manifest.json'
+)
+V4_REPORT_PATH = (
+    VALIDATION_ROOT / 'phase_08_v4_validation_report.md'
+)
+V4_FAILURE_PATH = (
+    VALIDATION_ROOT / 'phase_08_v4_failure_report.md'
+)
 V3_CONTACT_CORRECTION_PATH = (
     VALIDATION_ROOT / 'phase_08_v3a_contact_probe_contamination.json'
 )
@@ -180,6 +206,11 @@ EMPIRICAL_SUBCOMMANDS = {
     'v3-holdout',
     'v3-validation',
     'v3-reproducibility',
+    'v4-activation',
+    'v4-development',
+    'v4-holdout',
+    'v4-validation',
+    'v4-reproducibility',
 }
 DIAGNOSTIC_CASES = {
     'diagnostic_recorded_smoke',
@@ -423,6 +454,119 @@ V3_CANDIDATES = (
         },
     },
 )
+V4_CANDIDATES = tuple({
+    **candidate,
+    'candidate_id': candidate['candidate_id'].replace('V3-', 'V4-', 1),
+    'launch_overrides': dict(candidate['launch_overrides']),
+} for candidate in V3_CANDIDATES)
+
+_V3_SPEC_PATHS = {
+    'activation': V3_ACTIVATION_PATH,
+    'development': V3_DEVELOPMENT_PATH,
+    'candidates': V3_CANDIDATES_PATH,
+    'frozen': V3_FROZEN_PATH,
+    'commitment': V3_COMMITMENT_PATH,
+    'selection': V3_SELECTION_PATH,
+    'freeze': V3_FREEZE_PATH,
+    'contract': V3_CONTRACT_PATH,
+    'gates': V3_GATE_RESULTS_PATH,
+    'manifest': V3_MANIFEST_PATH,
+    'report': V3_REPORT_PATH,
+    'failure': V3_FAILURE_PATH,
+}
+_V3_SPEC_CANDIDATES = V3_CANDIDATES
+WORKFLOW_EXPERIMENT_VERSION = 'phase08-v3'
+WORKFLOW_STATE_PREFIX = 'v3'
+WORKFLOW_FILE_STEM = 'phase08_v3'
+WORKFLOW_DOCUMENT_STEM = 'phase_08_v3'
+WORKFLOW_PROPOSED_TAG = 'gesc-gaussian-simulation-ready-v3'
+WORKFLOW_USES_POPULATION_ADOPTION = False
+
+
+def _activate_v3_spec():
+    """Restore the original V3 identity for repeated in-process calls."""
+    global V3_ACTIVATION_PATH
+    global V3_DEVELOPMENT_PATH
+    global V3_CANDIDATES_PATH
+    global V3_FROZEN_PATH
+    global V3_COMMITMENT_PATH
+    global V3_SELECTION_PATH
+    global V3_FREEZE_PATH
+    global V3_CONTRACT_PATH
+    global V3_GATE_RESULTS_PATH
+    global V3_MANIFEST_PATH
+    global V3_REPORT_PATH
+    global V3_FAILURE_PATH
+    global V3_CANDIDATES
+    global WORKFLOW_EXPERIMENT_VERSION
+    global WORKFLOW_STATE_PREFIX
+    global WORKFLOW_FILE_STEM
+    global WORKFLOW_DOCUMENT_STEM
+    global WORKFLOW_PROPOSED_TAG
+    global WORKFLOW_USES_POPULATION_ADOPTION
+
+    V3_ACTIVATION_PATH = _V3_SPEC_PATHS['activation']
+    V3_DEVELOPMENT_PATH = _V3_SPEC_PATHS['development']
+    V3_CANDIDATES_PATH = _V3_SPEC_PATHS['candidates']
+    V3_FROZEN_PATH = _V3_SPEC_PATHS['frozen']
+    V3_COMMITMENT_PATH = _V3_SPEC_PATHS['commitment']
+    V3_SELECTION_PATH = _V3_SPEC_PATHS['selection']
+    V3_FREEZE_PATH = _V3_SPEC_PATHS['freeze']
+    V3_CONTRACT_PATH = _V3_SPEC_PATHS['contract']
+    V3_GATE_RESULTS_PATH = _V3_SPEC_PATHS['gates']
+    V3_MANIFEST_PATH = _V3_SPEC_PATHS['manifest']
+    V3_REPORT_PATH = _V3_SPEC_PATHS['report']
+    V3_FAILURE_PATH = _V3_SPEC_PATHS['failure']
+    V3_CANDIDATES = _V3_SPEC_CANDIDATES
+    WORKFLOW_EXPERIMENT_VERSION = 'phase08-v3'
+    WORKFLOW_STATE_PREFIX = 'v3'
+    WORKFLOW_FILE_STEM = 'phase08_v3'
+    WORKFLOW_DOCUMENT_STEM = 'phase_08_v3'
+    WORKFLOW_PROPOSED_TAG = 'gesc-gaussian-simulation-ready-v3'
+    WORKFLOW_USES_POPULATION_ADOPTION = False
+
+
+def _activate_v4_spec():
+    """Select the bounded V4 identity while retaining the V3 engine."""
+    global V3_ACTIVATION_PATH
+    global V3_DEVELOPMENT_PATH
+    global V3_CANDIDATES_PATH
+    global V3_FROZEN_PATH
+    global V3_COMMITMENT_PATH
+    global V3_SELECTION_PATH
+    global V3_FREEZE_PATH
+    global V3_CONTRACT_PATH
+    global V3_GATE_RESULTS_PATH
+    global V3_MANIFEST_PATH
+    global V3_REPORT_PATH
+    global V3_FAILURE_PATH
+    global V3_CANDIDATES
+    global WORKFLOW_EXPERIMENT_VERSION
+    global WORKFLOW_STATE_PREFIX
+    global WORKFLOW_FILE_STEM
+    global WORKFLOW_DOCUMENT_STEM
+    global WORKFLOW_PROPOSED_TAG
+    global WORKFLOW_USES_POPULATION_ADOPTION
+
+    V3_ACTIVATION_PATH = V4_ACTIVATION_PATH
+    V3_DEVELOPMENT_PATH = V4_DEVELOPMENT_PATH
+    V3_CANDIDATES_PATH = V4_CANDIDATES_PATH
+    V3_FROZEN_PATH = V4_FROZEN_PATH
+    V3_COMMITMENT_PATH = V4_ADOPTION_PATH
+    V3_SELECTION_PATH = V4_SELECTION_PATH
+    V3_FREEZE_PATH = V4_FREEZE_PATH
+    V3_CONTRACT_PATH = V4_CONTRACT_PATH
+    V3_GATE_RESULTS_PATH = V4_GATE_RESULTS_PATH
+    V3_MANIFEST_PATH = V4_MANIFEST_PATH
+    V3_REPORT_PATH = V4_REPORT_PATH
+    V3_FAILURE_PATH = V4_FAILURE_PATH
+    V3_CANDIDATES = V4_CANDIDATES
+    WORKFLOW_EXPERIMENT_VERSION = 'phase08-v4'
+    WORKFLOW_STATE_PREFIX = 'v4'
+    WORKFLOW_FILE_STEM = 'phase08_v4'
+    WORKFLOW_DOCUMENT_STEM = 'phase_08_v4'
+    WORKFLOW_PROPOSED_TAG = 'gesc-gaussian-simulation-ready-v4'
+    WORKFLOW_USES_POPULATION_ADOPTION = True
 V3_COMMON_OVERRIDES = {
     'goal_score_threshold': 0.95,
     'goal_score_rotation_period_sec': 3.0,
@@ -770,8 +914,10 @@ def _v3_authorize_replacement(
     return state
 
 
-def load_v3_candidates(path=V3_CANDIDATES_PATH):
+def load_v3_candidates(path=None):
     """Load exactly the three declared v3 five-factor bundles."""
+    if path is None:
+        path = V3_CANDIDATES_PATH
     document = yaml.safe_load(Path(path).read_text(encoding='utf-8'))
     if set(document) != {
         'schema_version',
@@ -1139,7 +1285,7 @@ def _v3_materialize_profile_suite(source_path, profile, destination):
     destination = Path(destination)
     destination.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(
-        prefix='phase08_v3_materialize_'
+        prefix=f'{WORKFLOW_FILE_STEM}_materialize_'
     ) as directory:
         temporary = _materialize_suite(
             source_path,
@@ -1182,7 +1328,10 @@ def _v3_load_progress(stage_root):
 
 
 def _v3_replacement_state_path(evidence_root):
-    return _state_root(evidence_root) / 'v3_replacements.json'
+    return (
+        _state_root(evidence_root)
+        / f'{WORKFLOW_STATE_PREFIX}_replacements.json'
+    )
 
 
 def _v3_load_replacement_state(evidence_root):
@@ -1591,7 +1740,7 @@ def _v3_stage_summary(
     ]
     summary = {
         'schema_version': 1,
-        'experiment_version': 'phase08-v3',
+        'experiment_version': WORKFLOW_EXPERIMENT_VERSION,
         'stage': stage,
         'suite_id': suite['suite_id'],
         'source_path': suite['source_path'],
@@ -1774,7 +1923,7 @@ def _v3_execute_serial_slots(
     if progress is None:
         progress = _v3_write_progress(stage_root, {
             'schema_version': 1,
-            'experiment_version': 'phase08-v3',
+            'experiment_version': WORKFLOW_EXPERIMENT_VERSION,
             'stage': stage,
             'candidate_id': candidate_id,
             'suite_path': str(Path(suite_path).resolve()),
@@ -4887,13 +5036,16 @@ def _v3_commitment_document(
 
 
 def _v3_state_path(evidence_root, stage):
-    return _state_root(evidence_root) / f'v3_{stage}.json'
+    return (
+        _state_root(evidence_root)
+        / f'{WORKFLOW_STATE_PREFIX}_{stage}.json'
+    )
 
 
 def _v3_write_state(evidence_root, stage, document):
     value = dict(document)
     value['schema_version'] = 1
-    value['experiment_version'] = 'phase08-v3'
+    value['experiment_version'] = WORKFLOW_EXPERIMENT_VERSION
     value['stage'] = stage
     if stage in {
         'contract',
@@ -5060,7 +5212,7 @@ def _v3_publish_prepare_transaction(
         'passed': True,
         'operator': operator,
         'lineage_id': transaction.get(
-            'experiment_version', 'phase08-v3'
+            'experiment_version', WORKFLOW_EXPERIMENT_VERSION
         ),
         'suite_path': str(suite_path.resolve()),
         'suite_sha256': commitment['suite_sha256'],
@@ -7076,6 +7228,223 @@ def run_v3_prepare(
     )
 
 
+def _v4_validate_population_adoption():
+    """Verify that V4 adopts an exact, never-executed formal population."""
+    adoption = _load_json(V4_ADOPTION_PATH)
+    adoption_sha256 = require_omission_sha256(
+        adoption,
+        'commitment_sha256',
+        'v4 population adoption',
+    )
+    reasons = []
+    if file_sha256(V3_PRECOMMITTED_SUITE_PATH) != adoption.get(
+        'suite_sha256'
+    ):
+        reasons.append('adopted formal suite bytes drifted')
+    source_commitment = _load_json(
+        VALIDATION_ROOT / 'phase_08_v3_suite_commitment.json'
+    )
+    source_sha256 = require_omission_sha256(
+        source_commitment,
+        'commitment_sha256',
+        'v3 suite commitment',
+    )
+    adoption_proof = adoption.get('adoption', {})
+    if (
+        adoption_proof.get('source_commitment_sha256')
+        != source_sha256
+        or adoption_proof.get('suite_byte_reuse') is not True
+        or adoption_proof.get('target_experiment_version')
+        != 'phase08-v4'
+    ):
+        reasons.append('formal population adoption binding drifted')
+    zero_execution = adoption_proof.get(
+        'zero_prior_execution', {}
+    )
+    if (
+        zero_execution.get('passed') is not True
+        or zero_execution.get('formal_case_overlap') != []
+    ):
+        reasons.append('formal population has prior execution overlap')
+    suite = _load_json(V3_PRECOMMITTED_SUITE_PATH)
+    formal_ids = sorted(case['case_id'] for case in suite['cases'])
+    formal_ids_sha256 = _sha256_bytes(
+        '\n'.join(formal_ids).encode('utf-8')
+    )
+    if (
+        len(formal_ids) != V3_EXPECTED_COUNTS['acceptance_total']
+        or adoption_proof.get('suite_case_count') != len(formal_ids)
+        or adoption_proof.get('formal_case_ids_sha256')
+        != formal_ids_sha256
+    ):
+        reasons.append('formal population case identity proof drifted')
+    observed_ids = set()
+    inspected_records = zero_execution.get('inspected_records', [])
+    for item in inspected_records:
+        path = Path(item.get('path', ''))
+        if (
+            not path.is_file()
+            or file_sha256(path) != item.get('sha256')
+        ):
+            reasons.append(
+                f'prior execution record drifted: {item.get("path")}'
+            )
+            continue
+        record = _load_json(path)
+        case_id = record.get('case_id')
+        if case_id != item.get('case_id'):
+            reasons.append(
+                f'prior execution identity drifted: {item.get("path")}'
+            )
+        if isinstance(case_id, str):
+            observed_ids.add(case_id)
+    if set(formal_ids) & observed_ids:
+        reasons.append('formal population case appears in prior records')
+    for field in ('v3_gate_results', 'v3_run_manifest'):
+        path = REPOSITORY_ROOT / zero_execution.get(f'{field}_path', '')
+        if (
+            not path.is_file()
+            or file_sha256(path)
+            != zero_execution.get(f'{field}_sha256')
+        ):
+            reasons.append(f'{field} terminal proof drifted')
+    if any(
+        value is not None
+        for value in zero_execution.get(
+            'formal_stage_state_hashes', {}
+        ).values()
+    ):
+        reasons.append('V3 formal-stage state is not empty')
+    unused_keys, historical_hashes = _v3_historical_case_keys()
+    del unused_keys
+    if historical_hashes != adoption.get(
+        'historical_exclusion_hashes'
+    ):
+        reasons.append('v4 historical exclusion hashes drifted')
+    validation = validate_v3_population(
+        suite,
+        historical_case_keys=_v3_historical_case_keys()[0],
+    )
+    if not validation['passed']:
+        reasons.extend(validation['reasons'])
+    return {
+        'passed': not reasons,
+        'reasons': reasons,
+        'adoption_sha256': adoption_sha256,
+        'suite_sha256': adoption.get('suite_sha256'),
+        'formal_case_count': len(formal_ids),
+        'inspected_prior_record_count': len(inspected_records),
+        'formal_case_overlap': sorted(set(formal_ids) & observed_ids),
+        'population_validation': validation,
+    }
+
+
+def run_v4_prepare(operator, evidence_root):
+    """Create the fresh V4 root and bind the unused V3 formal population."""
+    root = Path(evidence_root).expanduser().resolve()
+    state_path = _v3_state_path(root, 'prepare')
+    if state_path.is_file():
+        state = _v3_require_state(root, 'prepare')
+        _v3_require_operator(state, operator, 'prepare')
+        _v3_verify_repository_snapshot(state['repository'])
+        validation = _v4_validate_population_adoption()
+        if not validation['passed']:
+            raise RuntimeError(
+                'v4 population adoption drifted: '
+                + '; '.join(validation['reasons'])
+            )
+        return state
+    if root.exists():
+        raise RuntimeError('v4 prepare requires an absent fresh evidence root')
+    _v3_require_precommit_in_head()
+    processes_before = _v3_active_processes()
+    if processes_before:
+        raise RuntimeError('v4 prepare process set is not clean')
+    adoption_validation = _v4_validate_population_adoption()
+    if not adoption_validation['passed']:
+        raise RuntimeError(
+            'v4 population adoption failed: '
+            + '; '.join(adoption_validation['reasons'])
+        )
+    repository = _v3_repository_snapshot(
+        require_clean=True,
+        extra_paths=(
+            V3_PRECOMMITTED_SUITE_PATH,
+            V4_ADOPTION_PATH,
+        ),
+    )
+    disk = shutil.disk_usage(root.parent)
+    required_free_bytes = _v3_required_free_bytes(
+        root,
+        V3_EXPECTED_COUNTS['declared_total'],
+    )
+    if disk.free < required_free_bytes:
+        raise RuntimeError('v4 prepare disk forecast failed')
+    state_document = {
+        'passed': True,
+        'operator': operator,
+        'lineage_id': WORKFLOW_EXPERIMENT_VERSION,
+        'evidence_root': str(root),
+        'suite_path': str(V3_PRECOMMITTED_SUITE_PATH.resolve()),
+        'suite_sha256': adoption_validation['suite_sha256'],
+        'commitment_path': str(V4_ADOPTION_PATH.resolve()),
+        'commitment_sha256': adoption_validation['adoption_sha256'],
+        'population_visibility': (
+            'researcher_visible_before_v3_activation'
+        ),
+        'selection_blind': False,
+        'counts': _load_json(V4_ADOPTION_PATH)['counts'],
+        'family_counts': _load_json(V4_ADOPTION_PATH)['family_counts'],
+        'population_adoption_validation': adoption_validation,
+        'repository': repository,
+        'disk_forecast': {
+            'free_bytes': disk.free,
+            'required_free_bytes': required_free_bytes,
+            'remaining_declared_slots': (
+                V3_EXPECTED_COUNTS['declared_total']
+            ),
+        },
+        'processes_before': processes_before,
+    }
+    transaction = {
+        'schema_version': 1,
+        'experiment_version': WORKFLOW_EXPERIMENT_VERSION,
+        'operator': operator,
+        'evidence_root': str(root),
+        'suite_sha256': adoption_validation['suite_sha256'],
+        'adoption_sha256': adoption_validation['adoption_sha256'],
+        'repository': repository,
+    }
+    transaction['transaction_sha256'] = omission_sha256(
+        transaction,
+        'transaction_sha256',
+    )
+    root.parent.mkdir(parents=True, exist_ok=True)
+    staging_root = Path(tempfile.mkdtemp(
+        prefix=f'.{root.name}.prepare-',
+        dir=root.parent,
+    ))
+    try:
+        staging_root.chmod(0o700)
+        prepare_root = staging_root / 'prepare'
+        prepare_root.mkdir(parents=True, mode=0o700)
+        atomic_json(
+            prepare_root / 'prepare_transaction.json',
+            transaction,
+            mode=0o600,
+        )
+        state = _v3_write_state(
+            staging_root,
+            'prepare',
+            state_document,
+        )
+        os.replace(staging_root, root)
+    finally:
+        if staging_root.exists():
+            shutil.rmtree(staging_root)
+    return state
+
+
 def _v3_run_qualification_command(
     identifier,
     command,
@@ -7179,10 +7548,10 @@ def _v3_active_processes():
 def _v3_source_environment():
     environment = dict(os.environ)
     environment['ROS_LOG_DIR'] = (
-        '/tmp/dsim_phase08_v3_qualification_ros_logs'
+        f'/tmp/dsim_{WORKFLOW_FILE_STEM}_qualification_ros_logs'
     )
     environment['MPLCONFIGDIR'] = (
-        '/tmp/dsim_phase08_v3_qualification_mpl'
+        f'/tmp/dsim_{WORKFLOW_FILE_STEM}_qualification_mpl'
     )
     return environment
 
@@ -7241,7 +7610,7 @@ def _v3_qualification_commands(
             (0,),
         ),
         (
-            'installed_v3_resources',
+            f'installed_{WORKFLOW_STATE_PREFIX}_resources',
             setup_command
             + (
                 'cd /tmp && python3 -c "from '
@@ -7249,11 +7618,11 @@ def _v3_qualification_commands(
                 'PACKAGE_SCENARIO_ROOT; '
                 'assert PACKAGE_SCENARIO_ROOT is not None; '
                 'assert (PACKAGE_SCENARIO_ROOT / '
-                '\\"phase08_v3_activation.yaml\\").is_file(); '
+                f'\\"{V3_ACTIVATION_PATH.name}\\").is_file(); '
                 'assert (PACKAGE_SCENARIO_ROOT / '
-                '\\"phase08_v3_development.yaml\\").is_file(); '
+                f'\\"{V3_DEVELOPMENT_PATH.name}\\").is_file(); '
                 'assert (PACKAGE_SCENARIO_ROOT / '
-                '\\"phase08_v3_candidates.yaml\\").is_file()"'
+                f'\\"{V3_CANDIDATES_PATH.name}\\").is_file()"'
             ),
             30.0,
             (0,),
@@ -7334,7 +7703,7 @@ def _v3_qualification_commands(
             setup_command
             + (
                 f'ros2 run ros_esc run_scenario {V3_ACTIVATION_PATH} '
-                '--operator phase08_v3 --dry-run '
+                f'--operator {WORKFLOW_FILE_STEM} --dry-run '
                 f'--summary-output {qualification_root}/'
                 'activation_dry_run.yaml'
             ),
@@ -7346,7 +7715,7 @@ def _v3_qualification_commands(
             setup_command
             + (
                 f'ros2 run ros_esc run_scenario {V3_DEVELOPMENT_PATH} '
-                '--operator phase08_v3 --dry-run '
+                f'--operator {WORKFLOW_FILE_STEM} --dry-run '
                 f'--summary-output {qualification_root}/'
                 'development_dry_run.yaml'
             ),
@@ -7356,16 +7725,16 @@ def _v3_qualification_commands(
     ]
     if require_frozen:
         checks.insert(2, (
-            'installed_v3_frozen_resources',
+            f'installed_{WORKFLOW_STATE_PREFIX}_frozen_resources',
             setup_command
             + (
                 'cd /tmp && python3 -c "from '
                 'ros_esc.scenario_runner.phase08_validation import '
                 'PACKAGE_SCENARIO_ROOT; '
                 'assert (PACKAGE_SCENARIO_ROOT / '
-                '\\"phase08_v3_frozen_parameters.yaml\\").is_file(); '
+                f'\\"{V3_FROZEN_PATH.name}\\").is_file(); '
                 'assert (PACKAGE_SCENARIO_ROOT / '
-                '\\"phase08_v3_acceptance_suite.json\\").is_file()"'
+                f'\\"{V3_PRECOMMITTED_SUITE_PATH.name}\\").is_file()"'
             ),
             30.0,
             (0,),
@@ -7560,33 +7929,40 @@ def run_v3_qualify(operator, evidence_root):
     _v3_require_operator(prepare, operator, 'prepare')
     commitment = _load_json(V3_COMMITMENT_PATH)
     reasons = []
-    recovery = prepare.get('recovery')
-    if recovery is None:
-        raise RuntimeError(
-            'v3 corrected qualification requires '
-            'v3-adopt-precommit recovery'
-        )
-    recovery_validation = {
-        'required': True,
-        'passed': False,
-        'recovery_sha256': canonical_sha256(recovery),
-        'reasons': [],
-    }
-    expected_lineage = _v3_recovery_fresh_lineage_id(recovery)
-    if prepare.get('lineage_id') != expected_lineage:
-        recovery_validation['reasons'].append(
-            f'corrected prepare lineage is not {expected_lineage}'
-        )
-    try:
-        observed_recovery = _v3_revalidate_recovery(recovery)
-        if observed_recovery != recovery:
-            recovery_validation['reasons'].append(
-                'corrected prepare recovery proof drifted'
+    recovery = prepare.get('recovery', {})
+    if WORKFLOW_USES_POPULATION_ADOPTION:
+        recovery_validation = _v4_validate_population_adoption()
+        recovery_validation['required'] = True
+        reasons.extend(recovery_validation['reasons'])
+        if prepare.get('lineage_id') != WORKFLOW_EXPERIMENT_VERSION:
+            reasons.append('v4 prepare lineage identity drifted')
+    else:
+        if not recovery:
+            raise RuntimeError(
+                'v3 corrected qualification requires '
+                'v3-adopt-precommit recovery'
             )
-    except (KeyError, OSError, RuntimeError) as exc:
-        recovery_validation['reasons'].append(str(exc))
-    recovery_validation['passed'] = not recovery_validation['reasons']
-    reasons.extend(recovery_validation['reasons'])
+        recovery_validation = {
+            'required': True,
+            'passed': False,
+            'recovery_sha256': canonical_sha256(recovery),
+            'reasons': [],
+        }
+        expected_lineage = _v3_recovery_fresh_lineage_id(recovery)
+        if prepare.get('lineage_id') != expected_lineage:
+            recovery_validation['reasons'].append(
+                f'corrected prepare lineage is not {expected_lineage}'
+            )
+        try:
+            observed_recovery = _v3_revalidate_recovery(recovery)
+            if observed_recovery != recovery:
+                recovery_validation['reasons'].append(
+                    'corrected prepare recovery proof drifted'
+                )
+        except (KeyError, OSError, RuntimeError) as exc:
+            recovery_validation['reasons'].append(str(exc))
+        recovery_validation['passed'] = not recovery_validation['reasons']
+        reasons.extend(recovery_validation['reasons'])
     try:
         _v3_assert_worktree_changes({
             V3_PRECOMMITTED_SUITE_PATH,
@@ -7596,10 +7972,11 @@ def run_v3_qualify(operator, evidence_root):
             prepare['repository'],
             require_clean=False,
         )
-        _v3_verify_diagnostic_runtime_projection(
-            recovery,
-            prepare['repository'],
-        )
+        if not WORKFLOW_USES_POPULATION_ADOPTION:
+            _v3_verify_diagnostic_runtime_projection(
+                recovery,
+                prepare['repository'],
+            )
     except RuntimeError as exc:
         reasons.append(str(exc))
     before_processes = _v3_active_processes()
@@ -7768,9 +8145,15 @@ def run_v3_qualify(operator, evidence_root):
     return _v3_write_state(root, 'qualification', {
         'passed': not reasons,
         'operator': operator,
-        'lineage_id': prepare.get('lineage_id', 'phase08-v3'),
+        'lineage_id': prepare.get(
+            'lineage_id', WORKFLOW_EXPERIMENT_VERSION
+        ),
         'prepare_state_sha256': prepare['state_sha256'],
         'recovery_validation': recovery_validation,
+        'population_adoption_validation': (
+            recovery_validation
+            if WORKFLOW_USES_POPULATION_ADOPTION else None
+        ),
         'activation_contact_launch_contract': (
             activation_contact_contract
         ),
@@ -7877,7 +8260,9 @@ def _v3_record_integrity(record, *, require_terminal_outcomes=True):
 
 def _v3_activation_profile():
     return {
-        'profile_id': 'V3-ACTIVATION',
+        'profile_id': (
+            f'{WORKFLOW_STATE_PREFIX.upper()}-ACTIVATION'
+        ),
         'launch_overrides': dict(V3_CANDIDATES[0]['launch_overrides']),
     }
 
@@ -7892,6 +8277,18 @@ def _v3_verify_corrected_recovery_before_activation(
         != prepare.get('state_sha256')
     ):
         raise RuntimeError('v3 qualification is not bound to prepare')
+    if WORKFLOW_USES_POPULATION_ADOPTION:
+        adoption = qualification.get('recovery_validation', {})
+        if (
+            prepare.get('lineage_id') != WORKFLOW_EXPERIMENT_VERSION
+            or adoption.get('passed') is not True
+            or adoption.get('adoption_sha256')
+            != prepare.get('commitment_sha256')
+        ):
+            raise RuntimeError(
+                'v4 qualification lacks the population adoption proof'
+            )
+        return
     recovery = prepare.get('recovery')
     if recovery is None:
         raise RuntimeError(
@@ -8037,7 +8434,7 @@ def run_v3_activation(operator, evidence_root):
         _v3_activation_profile(),
         stage_root / 'resolved_suite.yaml',
     )
-    recovery = prepare['recovery']
+    recovery = prepare.get('recovery', {})
     carried_records = _v3_diagnostic_carried_records(recovery)
     diagnostic_completion = (
         recovery.get('kind')
@@ -8046,7 +8443,7 @@ def run_v3_activation(operator, evidence_root):
         == _v3_recovery_fresh_lineage_id(recovery)
     )
     diagnostic_label = str(
-        prepare.get('lineage_id', 'phase08-v3')
+        prepare.get('lineage_id', WORKFLOW_EXPERIMENT_VERSION)
     ).removeprefix('phase08-').upper()
     required_execution_case_ids = (
         recovery.get(
@@ -8641,7 +9038,7 @@ def _v3_durable_freeze_document(
     """Project external freeze evidence into the tracked recovery record."""
     document = {
         'schema_version': 1,
-        'experiment_version': 'phase08-v3',
+        'experiment_version': WORKFLOW_EXPERIMENT_VERSION,
         'freeze_status': freeze_status,
         'current_stage': current_stage,
         'freeze_commit': freeze_commit,
@@ -8936,7 +9333,7 @@ def _v3_contract_document(root, population, freeze, commitment):
     ]
     contract = {
         'schema_version': 1,
-        'experiment_version': 'phase08-v3',
+        'experiment_version': WORKFLOW_EXPERIMENT_VERSION,
         'scenario_schema_version': 4,
         'freeze_state_sha256': freeze['state_sha256'],
         'freeze_repository': freeze['repository'],
@@ -9037,7 +9434,7 @@ def _v3_contract_document(root, population, freeze, commitment):
             'not_run',
         ],
         'evidence_root': str(root),
-        'proposed_tag': 'gesc-gaussian-simulation-ready-v3',
+        'proposed_tag': WORKFLOW_PROPOSED_TAG,
     }
     contract['contract_sha256'] = omission_sha256(
         contract, 'contract_sha256'
@@ -9219,7 +9616,9 @@ def run_v3_seal(operator, evidence_root):
     sealed_directory = root / 'sealed'
     sealed_directory.mkdir(parents=True, exist_ok=True, mode=0o700)
     sealed_directory.chmod(0o700)
-    suite_path = sealed_directory / 'phase08_v3_acceptance_suite.json'
+    suite_path = (
+        sealed_directory / f'{WORKFLOW_FILE_STEM}_acceptance_suite.json'
+    )
     create_or_verify_bytes(suite_path, suite_bytes, mode=0o400)
     contract = _v3_contract_document(
         root,
@@ -9236,7 +9635,8 @@ def run_v3_seal(operator, evidence_root):
         ) + '\n'
     ).encode('utf-8')
     sealed_contract = (
-        sealed_directory / 'phase_08_v3_acceptance_contract.json'
+        sealed_directory
+        / f'{WORKFLOW_DOCUMENT_STEM}_acceptance_contract.json'
     )
     create_or_verify_bytes(sealed_contract, contract_bytes, mode=0o400)
     create_or_verify_bytes(V3_CONTRACT_PATH, contract_bytes, mode=0o644)
@@ -11100,7 +11500,7 @@ def run_v3_report(operator, evidence_root):
     )
     result = {
         'schema_version': 1,
-        'experiment_version': 'phase08-v3',
+        'experiment_version': WORKFLOW_EXPERIMENT_VERSION,
         'simulation_ready': overall,
         'outcome': 'passed' if overall else 'failed',
         'contract_sha256': contract_sha256,
@@ -11111,7 +11511,7 @@ def run_v3_report(operator, evidence_root):
     create_or_verify_json(V3_GATE_RESULTS_PATH, result)
     manifest = {
         'schema_version': 1,
-        'experiment_version': 'phase08-v3',
+        'experiment_version': WORKFLOW_EXPERIMENT_VERSION,
         'operator': operator,
         'evidence_root': str(root),
         'contract_sha256': result['contract_sha256'],
@@ -11135,8 +11535,13 @@ def run_v3_report(operator, evidence_root):
         'gate_results_sha256': file_sha256(V3_GATE_RESULTS_PATH),
     }
     create_or_verify_json(V3_MANIFEST_PATH, manifest)
+    phase_label = (
+        '08.4'
+        if WORKFLOW_EXPERIMENT_VERSION == 'phase08-v4'
+        else '08.3'
+    )
     lines = [
-        '# Phase 08.3 Simulation Validation Report',
+        f'# Phase {phase_label} Simulation Validation Report',
         '',
         f'Outcome: **{"PASS" if overall else "FAIL"}**.',
         '',
@@ -11170,7 +11575,7 @@ def run_v3_report(operator, evidence_root):
     failure_hash = None
     if not overall:
         failure_bytes = '\n'.join([
-                '# Phase 08.3 Failure Report',
+                f'# Phase {phase_label} Failure Report',
                 '',
                 'The version is not simulation-ready. Unrun gates remain '
                 'not-run; thresholds were not weakened.',
@@ -11261,6 +11666,21 @@ def _parser():
         subparser = subparsers.add_parser(name)
         subparser.add_argument('--operator', required=True)
         subparser.add_argument('--evidence-root', required=True)
+    for name in (
+        'v4-prepare',
+        'v4-qualify',
+        'v4-activation',
+        'v4-development',
+        'v4-freeze',
+        'v4-seal',
+        'v4-holdout',
+        'v4-validation',
+        'v4-reproducibility',
+        'v4-report',
+    ):
+        subparser = subparsers.add_parser(name)
+        subparser.add_argument('--operator', required=True)
+        subparser.add_argument('--evidence-root', required=True)
     prepare = subparsers.add_parser('v3-prepare')
     prepare.add_argument('--operator', required=True)
     prepare.add_argument('--evidence-root', required=True)
@@ -11280,12 +11700,57 @@ def _empirical_sigterm_handler(signum, unused_frame):
 def main(argv=None):
     """CLI entry point."""
     arguments = _parser().parse_args(argv)
+    if arguments.subcommand.startswith('v4-'):
+        _activate_v4_spec()
+    else:
+        _activate_v3_spec()
     previous_sigterm_handler = None
     if arguments.subcommand in EMPIRICAL_SUBCOMMANDS:
         previous_sigterm_handler = signal.getsignal(signal.SIGTERM)
         signal.signal(signal.SIGTERM, _empirical_sigterm_handler)
     try:
-        if arguments.subcommand == 'v3-prepare':
+        if arguments.subcommand == 'v4-prepare':
+            result = run_v4_prepare(
+                arguments.operator,
+                arguments.evidence_root,
+            )
+        elif arguments.subcommand == 'v4-qualify':
+            result = run_v3_qualify(
+                arguments.operator, arguments.evidence_root
+            )
+        elif arguments.subcommand == 'v4-activation':
+            result = run_v3_activation(
+                arguments.operator, arguments.evidence_root
+            )
+        elif arguments.subcommand == 'v4-development':
+            result = run_v3_development(
+                arguments.operator, arguments.evidence_root
+            )
+        elif arguments.subcommand == 'v4-freeze':
+            result = run_v3_freeze(
+                arguments.operator, arguments.evidence_root
+            )
+        elif arguments.subcommand == 'v4-seal':
+            result = run_v3_seal(
+                arguments.operator, arguments.evidence_root
+            )
+        elif arguments.subcommand == 'v4-holdout':
+            result = run_v3_holdout(
+                arguments.operator, arguments.evidence_root
+            )
+        elif arguments.subcommand == 'v4-validation':
+            result = run_v3_validation(
+                arguments.operator, arguments.evidence_root
+            )
+        elif arguments.subcommand == 'v4-reproducibility':
+            result = run_v3_reproducibility(
+                arguments.operator, arguments.evidence_root
+            )
+        elif arguments.subcommand == 'v4-report':
+            result = run_v3_report(
+                arguments.operator, arguments.evidence_root
+            )
+        elif arguments.subcommand == 'v3-prepare':
             result = run_v3_prepare(
                 arguments.operator,
                 arguments.evidence_root,

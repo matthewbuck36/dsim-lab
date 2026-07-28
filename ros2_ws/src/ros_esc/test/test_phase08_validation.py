@@ -797,6 +797,144 @@ def test_v3_cli_routes_flat_subcommands(
     assert observed == [('v3-test', str(tmp_path))]
 
 
+@pytest.mark.parametrize(
+    ('subcommand', 'function_name'),
+    [
+        ('v4-prepare', 'run_v4_prepare'),
+        ('v4-qualify', 'run_v3_qualify'),
+        ('v4-activation', 'run_v3_activation'),
+        ('v4-development', 'run_v3_development'),
+        ('v4-freeze', 'run_v3_freeze'),
+        ('v4-seal', 'run_v3_seal'),
+        ('v4-holdout', 'run_v3_holdout'),
+        ('v4-validation', 'run_v3_validation'),
+        ('v4-reproducibility', 'run_v3_reproducibility'),
+        ('v4-report', 'run_v3_report'),
+    ],
+)
+def test_v4_cli_routes_through_bounded_shared_workflow(
+    tmp_path,
+    monkeypatch,
+    subcommand,
+    function_name,
+):
+    """Route V4 through the existing owner with the explicit V4 spec."""
+    observed = []
+
+    def fake(operator, evidence_root):
+        observed.append((
+            operator,
+            evidence_root,
+            phase08_validation.WORKFLOW_EXPERIMENT_VERSION,
+            phase08_validation.V3_ACTIVATION_PATH.name,
+        ))
+        return {'passed': True}
+
+    monkeypatch.setattr(phase08_validation, function_name, fake)
+    try:
+        assert main([
+            subcommand,
+            '--operator', 'v4-test',
+            '--evidence-root', str(tmp_path),
+        ]) == 0
+        assert observed == [(
+            'v4-test',
+            str(tmp_path),
+            'phase08-v4',
+            'phase08_v4_activation.yaml',
+        )]
+    finally:
+        phase08_validation._activate_v3_spec()
+
+
+def test_v4_static_inputs_are_fresh_and_exact():
+    """Precommit ten fresh GUI and ten transformed headless slots."""
+    activation_suite = load_suite(
+        phase08_validation.V4_ACTIVATION_PATH
+    )
+    development_suite = load_suite(
+        phase08_validation.V4_DEVELOPMENT_PATH
+    )
+    v4_activation, activation_unsupported = expand_suite(
+        activation_suite
+    )
+    v4_development, development_unsupported = expand_suite(
+        development_suite
+    )
+    v3_activation, unused = expand_suite(
+        load_suite(phase08_validation._V3_SPEC_PATHS['activation'])
+    )
+    v3_development, unused_development = expand_suite(
+        load_suite(phase08_validation._V3_SPEC_PATHS['development'])
+    )
+    assert not activation_unsupported
+    assert not development_unsupported
+    assert not unused
+    assert not unused_development
+    assert len(v4_activation) == 10
+    assert len(v4_development) == 10
+    assert [run['seed'] for run in v4_activation] == list(
+        range(10301, 10311)
+    )
+    assert [run['seed'] for run in v4_development] == list(
+        range(10401, 10411)
+    )
+    assert activation_suite['execution']['gazebo_gui'] is True
+    assert development_suite['execution']['gazebo_gui'] is False
+    v4_keys = {
+        run['case_key']
+        for run in v4_activation + v4_development
+    }
+    v3_keys = {
+        run['case_key']
+        for run in v3_activation + v3_development
+    }
+    assert len(v4_keys) == 20
+    assert not v4_keys & v3_keys
+    for v4_run, v3_run in zip(v4_development, v3_development):
+        assert (
+            v4_run['start']['x_m'],
+            v4_run['start']['y_m'],
+        ) == pytest.approx((
+            -v3_run['start']['y_m'],
+            v3_run['start']['x_m'],
+        ))
+    first = v4_activation[0]
+    assert first['case_id'] == 'v4a_goal_aggregate_robust'
+    assert first['metric_applicability']['escape_attempt'] is True
+    assert first['success']['controller']['required_state_path'] == [
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'DESIGN_OR_MERGE_FILL',
+        'ESCAPE_REPULSE',
+        'RECENTER',
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'GOAL_HOLD',
+    ]
+
+
+def test_v4_population_adoption_is_exact_and_unused():
+    """Bind the unchanged 70+10 bytes and zero-execution proof."""
+    try:
+        phase08_validation._activate_v4_spec()
+        validation = (
+            phase08_validation._v4_validate_population_adoption()
+        )
+        assert validation['passed'] is True
+        assert validation['formal_case_count'] == 80
+        assert validation['formal_case_overlap'] == []
+        assert validation['suite_sha256'] == (
+            'd733ef9dffb372d2c60b57f83c2b96e1062a0a62818587d'
+            'e59a0166df4efe88e'
+        )
+        assert phase08_validation._v3_state_path(
+            Path('/tmp/v4'), 'qualification'
+        ).name == 'v4_qualification.json'
+    finally:
+        phase08_validation._activate_v3_spec()
+
+
 def test_v3_empirical_cli_converts_sigterm_and_restores_handler(
     tmp_path,
     monkeypatch,

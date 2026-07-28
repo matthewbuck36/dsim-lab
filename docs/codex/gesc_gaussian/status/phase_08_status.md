@@ -2579,3 +2579,98 @@ clean commit before creating the V4 evidence root.
 - Do not create or run a V4 Gazebo root before M2/M3 qualification.
 - Stop for a required duplicate owner, physical fork, or unresolved
   historical-execution collision.
+
+## Phase 08.4 M2 workflow implementation completion
+
+Verified at `2026-07-28T11:03:00-07:00` from committed recorder boundary
+`43a27b6`.
+
+The existing `phase08_validation.py` owner is now bounded by an explicit
+V3/V4 specification selection. No workflow, runner, recorder, analyzer,
+controller, supervisor, fill, launch, or physical owner was duplicated.
+The flat V4 CLI exposes all ten planned stages and writes
+`workflow_state/v4_<stage>.json`.
+
+Fresh pre-runtime inputs are:
+
+- ten visible-Gazebo activation cases with seeds `10301..10310`;
+- ten common, start-pose-rotated headless development cases with seeds
+  `10401..10410`;
+- the three exact candidate bundles `V4-C0`, `V4-C1`, and `V4-C2`;
+- a new first activation contract that predeclares the demonstrated
+  fill/escape/recenter-to-goal lifecycle instead of relabeling V3's failed
+  direct-only requirement.
+
+The formal suite remains the exact original canonical bytes:
+
+```text
+phase08_v3_acceptance_suite.json
+  d733ef9dffb372d2c60b57f83c2b96e1062a0a62818587de59a0166df4efe88e
+```
+
+`phase_08_v4_population_adoption.json` binds those bytes to the original
+cleartext commitment, the terminal V3 gate/manifest hashes, null formal-stage
+state hashes, three inspected historical attempt records, and an empty
+formal-case overlap. No encryption or GPG key is used.
+
+Input and implementation SHA-256 values:
+
+```text
+phase08_validation.py
+  53577ac874d35cd48ef057d4faf38eb194a6334f634a826737814c814e0639c8
+test_phase08_validation.py
+  b32d209e7baa2a005db4f84b61ca9273045ebfa2d7efd27f9a040ea181de08d2
+phase08_v4_activation.yaml
+  7751a2aa97a0cc53ddc5d18576ea0c0729828687022da81758a9c1a4d974617b
+phase08_v4_development.yaml
+  c37fb227fb2b75937f473a33ad01ea79e2366ae971f6e6a1c9dfa2d4502d5bbd
+phase08_v4_candidates.yaml
+  2eb56f3a2a4f57eabb109a842885311c014b61f695ef339d51216c4f779a51df
+phase_08_v4_population_adoption.json
+  f250cf1877898ed9b2a25078026ec0e8ae7a612d558676a56d5a571fbee8c8e4
+```
+
+Validation:
+
+- focused workflow/schema tests: `223 passed in 53.17 s`;
+- complete retained functional gate, with writable isolated ROS logs:
+  `489 passed, 2 skipped in 86.28 s`;
+- the two skips are only the explicit headless/visible Gazebo opt-ins;
+- standard three-package build passed in `1 min 31 s`;
+- installed V4 activation/development resources and original formal suite are
+  present;
+- installed activation dry run: schema 4, `10` resolved, `0` unsupported,
+  GUI true;
+- installed development dry run: schema 4, `10` resolved, `0` unsupported,
+  GUI false;
+- installed help exposes all ten V4 commands;
+- fatal `flake8` (`E9/F63/F7/F82`), `py_compile`, and `git diff --check`
+  passed.
+
+The first complete functional invocation used an unwritable default ROS log
+location and failed at `rclpy.init`; it left the global context initialized,
+causing 20 derivative failures. The identical bounded test command passed
+when rerun with `ROS_LOG_DIR` and `ROS_HOME` under `/tmp`. This was an
+environment-only correction, not a product-code change.
+
+No V4 evidence root, Gazebo simulation, physical hardware, readiness tag, or
+Phase 09 action occurred during M2.
+
+## Current milestone
+
+**M3 — prepare and qualify V4.**
+
+### Next criterion
+
+Commit the exact M2 inputs, require clean Git, transactionally create
+`/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4`, then pass the
+zero-prior-execution recheck, full functional suite, isolated build, installed
+resource/launch/dry-run checks, recorder SIGINT smoke, disk forecast, and
+empty process-set gates. Only that passing state may start the ten real GUI
+Gazebo activation simulations.
+
+### M3 stop conditions
+
+- No Gazebo dispatch if prepare or qualification is incomplete or failed.
+- Do not alter an input captured by the V4 repository snapshot.
+- Do not reuse any V3 evidence record as V4 evidence.

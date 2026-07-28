@@ -3043,6 +3043,43 @@ It returned `1`, matching the terminal failed result, and wrote the v3 gate
 JSON, run manifest, validation report, failure report, and external terminal
 state. Do not rerun any V3D command.
 
+## Phase 08.4 V4 workflow commands
+
+V4 is a fresh pass-eligible experiment. It does not resume any V3 root.
+Preparation requires the root below to be absent, the M2 inputs to be tracked
+at clean HEAD, and the unchanged V3 formal-suite SHA-256 to equal
+`d733ef9dffb372d2c60b57f83c2b96e1062a0a62818587de59a0166df4efe88e`.
+No encryption key is used.
+
+```bash
+PHASE08_V4_ROOT=/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4
+
+timeout 1800s ros2 run ros_esc validate_robustness v4-prepare \
+  --operator phase08_v4 --evidence-root "$PHASE08_V4_ROOT"
+timeout 1800s ros2 run ros_esc validate_robustness v4-qualify \
+  --operator phase08_v4 --evidence-root "$PHASE08_V4_ROOT"
+timeout 10800s ros2 run ros_esc validate_robustness v4-activation \
+  --operator phase08_v4 --evidence-root "$PHASE08_V4_ROOT"
+timeout 28800s ros2 run ros_esc validate_robustness v4-development \
+  --operator phase08_v4 --evidence-root "$PHASE08_V4_ROOT"
+timeout 1800s ros2 run ros_esc validate_robustness v4-freeze \
+  --operator phase08_v4 --evidence-root "$PHASE08_V4_ROOT"
+timeout 1800s ros2 run ros_esc validate_robustness v4-seal \
+  --operator phase08_v4 --evidence-root "$PHASE08_V4_ROOT"
+timeout 21600s ros2 run ros_esc validate_robustness v4-holdout \
+  --operator phase08_v4 --evidence-root "$PHASE08_V4_ROOT"
+timeout 46800s ros2 run ros_esc validate_robustness v4-validation \
+  --operator phase08_v4 --evidence-root "$PHASE08_V4_ROOT"
+timeout 10800s ros2 run ros_esc validate_robustness v4-reproducibility \
+  --operator phase08_v4 --evidence-root "$PHASE08_V4_ROOT"
+timeout 1800s ros2 run ros_esc validate_robustness v4-report \
+  --operator phase08_v4 --evidence-root "$PHASE08_V4_ROOT"
+```
+
+Activation is serial and opens the Gazebo GUI. Development, holdout,
+validation, and reproducibility are serial headless Gazebo batches. Never
+advance past a failed state.
+
 ## Phase 08.4 M1 recorder signal-safe shutdown
 
 Verified on 2026-07-28 from the fresh V4 implementation boundary.

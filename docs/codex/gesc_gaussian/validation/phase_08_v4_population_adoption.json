@@ -1,0 +1,85 @@
+{
+  "adoption": {
+    "formal_case_ids_sha256": "ecd270b11398ddd0714510c03911596cc93fb51bc6a037c7599544ed35ae33e9",
+    "source_commitment_path": "docs/codex/gesc_gaussian/validation/phase_08_v3_suite_commitment.json",
+    "source_commitment_sha256": "cf981d60e235a3b4fd63ae5a61ccddae87e94ea76a3fb2d4ccaad78bcaa29437",
+    "source_experiment_version": "phase08-v3",
+    "source_suite_path": "ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v3_acceptance_suite.json",
+    "suite_byte_reuse": true,
+    "suite_case_count": 80,
+    "target_experiment_version": "phase08-v4",
+    "zero_prior_execution": {
+      "formal_case_overlap": [],
+      "formal_stage_state_hashes": {
+        "contract": null,
+        "development": null,
+        "freeze": null,
+        "holdout": null,
+        "reproducibility": null,
+        "validation": null
+      },
+      "inspected_record_count": 3,
+      "inspected_records": [
+        {
+          "case_id": "v3a_goal_aggregate_direct",
+          "path": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3/activation/attempts/001_v3a_goal_aggregate_direct/attempt_01/record.json",
+          "sha256": "50577be55befb88dba7b99d78909f7eaee2c0922235d91b57e4b404d3ba85868"
+        },
+        {
+          "case_id": "v3a_goal_aggregate_direct",
+          "path": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3b/activation/attempts/001_v3a_goal_aggregate_direct/attempt_01/record.json",
+          "sha256": "d1cc6b4b2f73d5ad70031d3b74d7ac4b535894bdf5425100d3f72175d2593ad5"
+        },
+        {
+          "case_id": "v3a_below_target_fill",
+          "path": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3d/activation/attempts/002_v3a_below_target_fill/attempt_01/record.json",
+          "sha256": "a8ddcdf5363e7dd05085a674336afe7db3c5143fc95bcc76f95a130971bb6f91"
+        }
+      ],
+      "passed": true,
+      "v3_gate_results_path": "docs/codex/gesc_gaussian/validation/phase_08_v3_gate_results.json",
+      "v3_gate_results_sha256": "3d9835ff504a9a87af4a752a77c30a9a1ac9f47ee143968b2d7912309ee83fce",
+      "v3_run_manifest_path": "docs/codex/gesc_gaussian/validation/phase_08_v3_run_manifest.json",
+      "v3_run_manifest_sha256": "81a721f5cbb815f85db11c946f0f7099969e09a05e845356a4baf6f9f1d319b3"
+    }
+  },
+  "commitment_sha256": "8612cf766bf0fe668c2094a0fe21fc12a0ae5f5a411174a2b09147e475ee86bf",
+  "counts": {
+    "holdout": 20,
+    "reproducibility": 10,
+    "unique": 70,
+    "validation": 50
+  },
+  "family_counts": {
+    "constraint_recovery": 8,
+    "lifecycle": 12,
+    "multi_close_overlap": 9,
+    "noise_delay": 8,
+    "ordered_two_source": 25,
+    "wall_corner": 8
+  },
+  "generator_version": "phase08-v4-population-adoption-1",
+  "historical_exclusion_hashes": {
+    "phase08_1_diagnostic_activation.yaml": "1e030602ecee99c2d1f563a0ae19e65b1c8e6608662e178eb52b8766edc5a9a7",
+    "phase08_2_recenter.yaml": "1b116ef7984d8a679f69da919576125a1ad066da3d55098466da9afac2bae017",
+    "phase08_full_matrix.yaml": "2786ba6aa58ab1e2eeb49b995b1c4abd68c71c1fe3f1eea13b6a993c5ef000e0",
+    "phase08_holdout.yaml": "f6d9a627f0157ad62f12279f8bde40fef815b0ebdaa487398f0d3641c5172b83",
+    "phase08_training.yaml": "9ac9c47e3bc76097d97396da3bd2868cf5986f0c25de42e36c13847019014fce",
+    "phase08_v2_activation.yaml": "a5e91d2132b3dacccedc24aba13bdacd9ef5ba4ec7c8ae7b69ced6eadaf47d72",
+    "phase08_v2_holdout.yaml": "6adb79d62830d2d0f65c3e27cdfc49d7dd2cd95fe4328b4337f08fefa19ab46b",
+    "phase08_v2_reproducibility.yaml": "3e7b12d0d48afa0f6eb8972ab2271454c592e248d8eb17cda445923de0f06309",
+    "phase08_v2_training.yaml": "313c27f9488a8b2d78730bc5ac3ef3d891c3979c1d5b1ad59155722536c56a1a",
+    "phase08_v2_validation.yaml": "ce2a9929e7e0a22744020a4135a338c8007ff5e64a7ae210c64b9d0df3252c91",
+    "phase08_v3_activation.yaml": "8fa385c50f19adf1f362dba286ed3e5c527a175b89692b38632d77471b450031",
+    "phase08_v3_development.yaml": "1c5ef231b5839386f8db67d7b83e25a6ca11dc2935bc1a7c6584a8645a57f433",
+    "phase08_v4_activation.yaml": "7751a2aa97a0cc53ddc5d18576ea0c0729828687022da81758a9c1a4d974617b",
+    "phase08_v4_development.yaml": "c37fb227fb2b75937f473a33ad01ea79e2366ae971f6e6a1c9dfa2d4502d5bbd",
+    "phase08_validation_support.yaml": "cb1a7611d2160740c00a3ed5d0e26c8d7ba0964666ffa96575a5047b71e6d13e"
+  },
+  "population_visibility": "researcher_visible_before_activation",
+  "precommit_mechanism": "canonical_json_sha256",
+  "scenario_schema_version": 4,
+  "schema_version": 1,
+  "selection_blind": false,
+  "suite_sha256": "d733ef9dffb372d2c60b57f83c2b96e1062a0a62818587de59a0166df4efe88e"
+}

@@ -1,0 +1,3774 @@
+schema_version: 4
+suite_id: phase08_v4_development
+description: Ten common headless cases for the three-candidate Phase 08 v4 development comparison.
+mode: simulation
+execution:
+  max_parallel_runs: 1
+  gazebo_gui: false
+  preflight_timeout_sec: 150.0
+  run_timeout_sec: 240.0
+  wall_timeout_sec: 600.0
+  shutdown_grace_sec: 30.0
+  stop_on_run_failure: false
+  stop_on_cleanup_failure: true
+metadata:
+  experiment_version: phase08-v4-development
+  operator_notes: Each candidate executes these ten common cases; all evidence is retained and excluded
+    from acceptance.
+level_map:
+  '1': 450.0
+  '2': 800.0
+  '3': 1200.0
+  '4': 1800.0
+  '5': 2500.0
+defaults:
+  bounds_m:
+  - -2.0
+  - 2.0
+  - -2.0
+  - 2.0
+  room_center_m:
+  - 0.0
+  - 0.0
+  validation_world: true
+  simulation_contacts_enabled: true
+  disturbances:
+    sensor_noise:
+      model: none
+      bound: 0.0
+    sensor_delay_sec: 0.0
+    pose_delay_sec: 0.0
+cases:
+- case_id: v4d_ordered_11_close
+  family: two_source
+  acceptance_family: ordered_two_source
+  acceptance_partition: development
+  description: Reach the aggregate target of a close ordered level-one pair. The geometry is the precommitted
+    90-degree V4 transform.
+  status: executable_unverified
+  profiles:
+  - robust_gaussian_v1
+  seeds:
+  - 10401
+  starts:
+  - id: southwest_northeast
+    x_m: 1.0
+    y_m: -1.3
+    yaw_rad: 2.070796326794897
+  sources:
+  - id: source_a
+    x_m: -0.05
+    y_m: 0.0
+    relative_lumen_input: 450.0
+    evaluation_role: goal
+  - id: source_b
+    x_m: 0.05
+    y_m: 0.0
+    relative_lumen_input: 450.0
+    evaluation_role: context
+  algorithm:
+    ablations: {}
+    launch_overrides: &id002
+      goal_score_threshold: 0.95
+      goal_score_rotation_period_sec: 3.0
+      goal_score_required_rotations: 2
+      goal_hold_sec: 3.0
+      undesired_score_hold_sec: 3.0
+      verification_max_sec: 12.0
+      fill_design_timeout_sec: 5.0
+      escape_max_sec: 20.0
+      escape_exit_hold_sec: 1.0
+      recenter_max_sec: 30.0
+      recenter_tolerance_m: 0.25
+      recenter_hold_sec: 1.0
+      direction_lookahead_m: 0.5
+      direction_candidate_step_rad: 0.7853981633974483
+      wall_margin_m: 0.35
+      fill_avoidance_margin_m: 0.1
+      approach_history_window_sec: 0.5
+  metric_applicability:
+    escape_attempt: false
+    escape_duration: false
+    orbit_count: false
+    revisit: false
+    delay: false
+    saturation: false
+  success:
+    all_of: &id001
+    - recording_complete
+    - cleanup_complete
+    - controller_goal
+    - ground_truth_goal
+    - expected_terminal_state
+    - required_state_path
+    - required_events
+    - no_forbidden_states
+    - no_forbidden_events
+    - collision_expectation
+    controller:
+      contract_id: v4d_ordered_11_close
+      expected_verification_outcome: goal
+      reachability_argument: The deterministic aggregate-field solver must qualify the close 450-plus-450
+        target at the fixed 0.95 score threshold.
+      expected_terminal_state: GOAL_HOLD
+      required_state_path:
+      - SEARCH
+      - VERIFY_EXTREMUM
+      - GOAL_HOLD
+      required_events:
+      - CONVERGENCE_CONFIRMED
+      - GOAL_REACHED
+      forbidden_states:
+      - DESIGN_OR_MERGE_FILL
+      - ESCAPE_REPULSE
+      - ESCAPE_ASSIST
+      - RECENTER
+      - FAILSAFE
+      forbidden_events:
+      - FILL_CREATED
+      - FILL_MERGED
+      - FILL_SUPERSEDED
+      - FILL_REJECTED
+      - FILL_DESIGN_FAILED
+      - ESCAPE_STARTED
+      - ESCAPE_STALLED
+      - RECENTER_STARTED
+      - RECENTER_COMPLETE
+      - TIMEOUT
+      - FAILSAFE
+    ground_truth:
+      method: aggregate_field
+      final_position_tolerance_m: 0.35
+      wall_margin_m: 0.35
+      minimum_source_score: 0.95
+      aggregate_field:
+        schema_version: 2
+        method: aggregate_field
+        model_config_path: /home/mattb/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json
+        model_config_sha256: 7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741
+        source_list_sha256: 2e1eacb17901ab23c4bac96ce444aadfd3fbf0c7d913446eecaa0af10cac4a9f
+        sources:
+        - id: source_a
+          x_m: -0.05
+          y_m: 0.0
+          relative_lumen_input: 450.0
+        - id: source_b
+          x_m: 0.05
+          y_m: 0.0
+          relative_lumen_input: 450.0
+        bounds_m:
+        - -2.0
+        - 2.0
+        - -2.0
+        - 2.0
+        wall_margin_m: 0.35
+        domain:
+          x_min_m: -1.65
+          x_max_m: 1.65
+          y_min_m: -1.65
+          y_max_m: 1.65
+          yaw_min_rad: 0.0
+          yaw_max_rad: 6.283185307179586
+        solver_settings:
+          position_spacing_m: 0.1
+          yaw_spacing_rad: 0.08726646259971647
+          offset_position_m: 0.05
+          offset_yaw_rad: 0.04363323129985824
+          retained_basins_per_scan: 32
+          merge_position_tolerance_m: 0.05
+          merge_cost_tolerance: 0.0001
+          scan_agreement_tolerance: 0.0001
+          global_equivalence_tolerance: 0.0001
+          optimizer_method: differential_evolution
+          optimizer_max_iterations: 60
+          optimizer_population_size: 5
+          optimizer_relative_tolerance: 1.0e-09
+          optimizer_absolute_tolerance: 1.0e-10
+        scan_summaries:
+        - scan_id: base
+          offset:
+            x_m: 0.0
+            y_m: 0.0
+            yaw_rad: 0.0
+          shape:
+          - 34
+          - 34
+          - 72
+          lattice_basin_count: 27
+          lattice_best_raw_cost: -2.99244833878241
+          refined_best_raw_cost: -3.7405851965771526
+        - scan_id: offset
+          offset:
+            x_m: 0.05
+            y_m: 0.05
+            yaw_rad: 0.04363323129985824
+          shape:
+          - 33
+          - 33
+          - 72
+          lattice_basin_count: 27
+          lattice_best_raw_cost: -2.504788731226366
+          refined_best_raw_cost: -3.7405851965771526
+        scan_agreement: 0.0
+        global_best_raw_cost: -3.7405851965771526
+        noise_margin_raw_cost: 0.0
+        noise_adjusted_source_score_lower_bound: 0.9747870578492843
+        minimum_source_score: 0.95
+        targets:
+        - target_id: aggregate_001
+          x_m: -0.2391315834896767
+          y_m: -0.001116670147113169
+          yaw_rad: 0.004048619206201476
+          raw_cost: -3.7405851965771526
+          source_score: 0.9747870578492843
+          noise_adjusted_source_score_lower_bound: 0.9747870578492843
+        - target_id: aggregate_002
+          x_m: 0.23209940750836822
+          y_m: 0.00017363223500144187
+          yaw_rad: 3.142723678009063
+          raw_cost: -3.7405851965771526
+          source_score: 0.9747870578492843
+          noise_adjusted_source_score_lower_bound: 0.9747870578492843
+        sensor_transform_config_path: /home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json
+        sensor_transform_config_sha256: 8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5
+        sensor_geometry_path: /home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/urdf/turtlebot3_rotating_sensor.urdf
+        sensor_geometry_sha256: 6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425
+        sensor_joint_position_m:
+        - 0.0
+        - 0.0
+        - 0.355
+        sensor_rotation_axis:
+        - 0.0
+        - 0.0
+        - 1.0
+        sensor_offset_xyz_m:
+        - 0.18
+        - 0.0
+        - 0.015
+        sensor_offset_rpy_rad:
+        - 0.0
+        - 0.0
+        - 0.0
+        sensor_offset_m: 0.18
+        result_sha256: 2623cfb2139d301fe1d6dc9ee88ceb26c133c6c7cb3bd81f3ca6802b332f205f
+    minimum_saturation_samples: 0
+    collision_expected: false
+    result_scopes:
+      full_lifecycle:
+        anchor_state: SEARCH
+        boundary_state: null
+        graceful_stop: false
+        all_of: *id001
+- case_id: v4d_ordered_25_local
+  family: two_source
+  acceptance_family: ordered_two_source
+  acceptance_partition: development
+  description: Escape a weak level-two local basin and reach the level-five aggregate target. The geometry
+    is the precommitted 90-degree V4 transform.
+  status: executable_unverified
+  profiles:
+  - robust_gaussian_v1
+  seeds:
+  - 10402
+  starts:
+  - id: weak_local_center
+    x_m: -0.0
+    y_m: -0.8
+    yaw_rad: 1.570796326794897
+  sources:
+  - id: weak_local
+    x_m: -0.8
+    y_m: 0.0
+    relative_lumen_input: 800.0
+    evaluation_role: local_minimum
+  - id: strong_target
+    x_m: 0.9
+    y_m: 0.4
+    relative_lumen_input: 2500.0
+    evaluation_role: goal
+  algorithm:
+    ablations: {}
+    launch_overrides: *id002
+  metric_applicability:
+    escape_attempt: true
+    escape_duration: true
+    orbit_count: true
+    revisit: false
+    delay: false
+    saturation: false
+  success:
+    all_of: *id001
+    controller:
+      contract_id: v4d_ordered_25_local
+      expected_verification_outcome: below_target_extremum
+      reachability_argument: The level-two local coordinate is below 0.95 while the aggregate-qualified
+        level-five target is reachable.
+      expected_terminal_state: GOAL_HOLD
+      required_state_path: &id003
+      - SEARCH
+      - VERIFY_EXTREMUM
+      - DESIGN_OR_MERGE_FILL
+      - ESCAPE_REPULSE
+      - RECENTER
+      - SEARCH
+      - VERIFY_EXTREMUM
+      - GOAL_HOLD
+      required_events: &id004
+      - CONVERGENCE_CONFIRMED
+      - FILL_CREATED
+      - ESCAPE_STARTED
+      - RECENTER_STARTED
+      - RECENTER_COMPLETE
+      - GOAL_REACHED
+      forbidden_states: &id005
+      - FAILSAFE
+      forbidden_events: &id006
+      - FILL_REJECTED
+      - FILL_DESIGN_FAILED
+      - TIMEOUT
+      - FAILSAFE
+    ground_truth:
+      method: aggregate_field
+      final_position_tolerance_m: 0.35
+      wall_margin_m: 0.35
+      minimum_source_score: 0.95
+      aggregate_field:
+        schema_version: 2
+        method: aggregate_field
+        model_config_path: /home/mattb/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json
+        model_config_sha256: 7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741
+        source_list_sha256: 3e26d51fcff9dd91ef7b2226e3ee15f5e5128634579d08a976441bba24e68440
+        sources:
+        - id: weak_local
+          x_m: -0.8
+          y_m: 0.0
+          relative_lumen_input: 800.0
+        - id: strong_target
+          x_m: 0.9
+          y_m: 0.4
+          relative_lumen_input: 2500.0
+        bounds_m:
+        - -2.0
+        - 2.0
+        - -2.0
+        - 2.0
+        wall_margin_m: 0.35
+        domain:
+          x_min_m: -1.65
+          x_max_m: 1.65
+          y_min_m: -1.65
+          y_max_m: 1.65
+          yaw_min_rad: 0.0
+          yaw_max_rad: 6.283185307179586
+        solver_settings:
+          position_spacing_m: 0.1
+          yaw_spacing_rad: 0.08726646259971647
+          offset_position_m: 0.05
+          offset_yaw_rad: 0.04363323129985824
+          retained_basins_per_scan: 32
+          merge_position_tolerance_m: 0.05
+          merge_cost_tolerance: 0.0001
+          scan_agreement_tolerance: 0.0001
+          global_equivalence_tolerance: 0.0001
+          optimizer_method: differential_evolution
+          optimizer_max_iterations: 60
+          optimizer_population_size: 5
+          optimizer_relative_tolerance: 1.0e-09
+          optimizer_absolute_tolerance: 1.0e-10
+        scan_summaries:
+        - scan_id: base
+          offset:
+            x_m: 0.0
+            y_m: 0.0
+            yaw_rad: 0.0
+          shape:
+          - 34
+          - 34
+          - 72
+          lattice_basin_count: 32
+          lattice_best_raw_cost: -3.8372093023255816
+          refined_best_raw_cost: -3.8372093023255816
+        - scan_id: offset
+          offset:
+            x_m: 0.05
+            y_m: 0.05
+            yaw_rad: 0.04363323129985824
+          shape:
+          - 33
+          - 33
+          - 72
+          lattice_basin_count: 32
+          lattice_best_raw_cost: -3.702943820076587
+          refined_best_raw_cost: -3.8372093023255816
+        scan_agreement: 0.0
+        global_best_raw_cost: -3.8372093023255816
+        noise_margin_raw_cost: 0.0
+        noise_adjusted_source_score_lower_bound: 1.0
+        minimum_source_score: 0.95
+        targets:
+        - target_id: aggregate_001
+          x_m: 0.5749120688711505
+          y_m: 0.4097650042431101
+          yaw_rad: 6.257418375334135
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_002
+          x_m: 0.6235549506953112
+          y_m: 0.2392239031643731
+          yaw_rad: 0.5325882003315776
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_003
+          x_m: 0.6435017387207842
+          y_m: 0.3634694309729677
+          yaw_rad: 0.1366725999526084
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_004
+          x_m: 0.657522910050418
+          y_m: 0.5793387975705011
+          yaw_rad: 5.641308856036435
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_005
+          x_m: 0.6677884660229132
+          y_m: 0.437096064175109
+          yaw_rad: 6.128436978896783
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_006
+          x_m: 0.6723950279986262
+          y_m: 0.18024431702600505
+          yaw_rad: 0.7731185144259758
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_007
+          x_m: 0.6838538395418073
+          y_m: 0.31609295077955324
+          yaw_rad: 0.35909147170692624
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_008
+          x_m: 0.7746155290650684
+          y_m: 0.5963872716404651
+          yaw_rad: 5.26804403247879
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_009
+          x_m: 0.7857946312364322
+          y_m: 0.21065602110227727
+          yaw_rad: 1.0366697377878409
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_010
+          x_m: 0.7871200210236674
+          y_m: 0.08419123085085696
+          yaw_rad: 1.2265331698336397
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_011
+          x_m: 0.7933350554537053
+          y_m: 0.7098219369837271
+          yaw_rad: 5.044727835426055
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_012
+          x_m: 0.8509345840646152
+          y_m: 0.09978078896910578
+          yaw_rad: 1.3999971214644211
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_013
+          x_m: 0.8552418892943507
+          y_m: 0.19302313225105644
+          yaw_rad: 1.3471834054548906
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_014
+          x_m: 0.9009324438030885
+          y_m: 0.1429281750849389
+          yaw_rad: 1.5786035034190382
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_015
+          x_m: 0.9369307193988629
+          y_m: 0.608242266162981
+          yaw_rad: 4.543819548754483
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_016
+          x_m: 0.9391766715756912
+          y_m: 0.6789790472278782
+          yaw_rad: 4.567724812919551
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_017
+          x_m: 1.0080561775493722
+          y_m: 0.6779389182200218
+          yaw_rad: 4.342746081439871
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_018
+          x_m: 1.0254968766306738
+          y_m: 0.6266071154613447
+          yaw_rad: 4.202941270085664
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_019
+          x_m: 1.051237054242965
+          y_m: 0.12235543207078373
+          yaw_rad: 2.070055232412513
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_020
+          x_m: 1.1323379809312897
+          y_m: 0.5753767380188688
+          yaw_rad: 3.79792506704056
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_021
+          x_m: 1.149734194352885
+          y_m: 0.3077356839948944
+          yaw_rad: 2.7982188435977577
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_022
+          x_m: 1.150270547908193
+          y_m: 0.21064711855351193
+          yaw_rad: 2.4873308090302695
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_023
+          x_m: 1.1839215399651215
+          y_m: 0.429364138820163
+          yaw_rad: 3.239136940768449
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_024
+          x_m: 1.1863225526059316
+          y_m: 0.48835475241761334
+          yaw_rad: 3.433916997273496
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_025
+          x_m: 1.2013672375576991
+          y_m: 0.3089918738968668
+          yaw_rad: 2.845680857031414
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_026
+          x_m: 1.226704163211962
+          y_m: 0.3858965513231717
+          yaw_rad: 3.104808323781638
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        sensor_transform_config_path: /home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json
+        sensor_transform_config_sha256: 8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5
+        sensor_geometry_path: /home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/urdf/turtlebot3_rotating_sensor.urdf
+        sensor_geometry_sha256: 6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425
+        sensor_joint_position_m:
+        - 0.0
+        - 0.0
+        - 0.355
+        sensor_rotation_axis:
+        - 0.0
+        - 0.0
+        - 1.0
+        sensor_offset_xyz_m:
+        - 0.18
+        - 0.0
+        - 0.015
+        sensor_offset_rpy_rad:
+        - 0.0
+        - 0.0
+        - 0.0
+        sensor_offset_m: 0.18
+        local_branch_qualifications:
+          schema_version: 2
+          method: authoritative_yaw_peak_at_source_coordinate
+          model_config_sha256: 7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741
+          source_list_sha256: 3e26d51fcff9dd91ef7b2226e3ee15f5e5128634579d08a976441bba24e68440
+          noise_margin_raw_cost: 0.0
+          threshold: 0.95
+          yaw_spacing_rad: 0.008726646259971648
+          points:
+          - source_id: weak_local
+            robot_center_x_m: -0.8
+            robot_center_y_m: 0.0
+            peak_yaw_rad: 0.23109065494927541
+            peak_raw_cost: -0.18919962106728072
+            peak_source_score: 0.04809409260368141
+            noise_adjusted_source_score_upper_bound: 0.04809409260368141
+          sensor_transform_config_sha256: 8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5
+          sensor_geometry_sha256: 6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425
+          sensor_joint_position_m:
+          - 0.0
+          - 0.0
+          - 0.355
+          sensor_rotation_axis:
+          - 0.0
+          - 0.0
+          - 1.0
+          sensor_offset_xyz_m:
+          - 0.18
+          - 0.0
+          - 0.015
+          sensor_offset_rpy_rad:
+          - 0.0
+          - 0.0
+          - 0.0
+          sensor_offset_m: 0.18
+          result_sha256: 8271d14d055e719db4a5ab7c354999a85189b0f0e2a7b0c6ec7751847fb1688c
+        result_sha256: c02c6d769adf9e78a484195975005218126f595421ae12e7bf45b7b880b74100
+    minimum_saturation_samples: 0
+    collision_expected: false
+    result_scopes:
+      full_lifecycle:
+        anchor_state: SEARCH
+        boundary_state: null
+        graceful_stop: false
+        all_of: *id001
+- case_id: v4d_ordered_52_mirror
+  family: two_source
+  acceptance_family: ordered_two_source
+  acceptance_partition: development
+  description: Mirror the ordered strong and weak sources, escape the weak basin, and reach the aggregate
+    target. The geometry is the precommitted 90-degree V4 transform.
+  status: executable_unverified
+  profiles:
+  - robust_gaussian_v1
+  seeds:
+  - 10403
+  starts:
+  - id: weak_local_center
+    x_m: 0.4
+    y_m: 0.9
+    yaw_rad: 4.71238898038469
+  sources:
+  - id: strong_target
+    x_m: -0.9
+    y_m: 0.4
+    relative_lumen_input: 2500.0
+    evaluation_role: goal
+  - id: weak_local
+    x_m: 0.9
+    y_m: -0.4
+    relative_lumen_input: 800.0
+    evaluation_role: local_minimum
+  algorithm:
+    ablations: {}
+    launch_overrides: *id002
+  metric_applicability:
+    escape_attempt: true
+    escape_duration: true
+    orbit_count: true
+    revisit: false
+    delay: false
+    saturation: false
+  success:
+    all_of: *id001
+    controller:
+      contract_id: v4d_ordered_52_mirror
+      expected_verification_outcome: below_target_extremum
+      reachability_argument: The mirrored level-two local coordinate is below 0.95 while the level-five
+        aggregate target is reachable.
+      expected_terminal_state: GOAL_HOLD
+      required_state_path: *id003
+      required_events: *id004
+      forbidden_states: *id005
+      forbidden_events: *id006
+    ground_truth:
+      method: aggregate_field
+      final_position_tolerance_m: 0.35
+      wall_margin_m: 0.35
+      minimum_source_score: 0.95
+      aggregate_field:
+        schema_version: 2
+        method: aggregate_field
+        model_config_path: /home/mattb/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json
+        model_config_sha256: 7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741
+        source_list_sha256: 5eb3675dad4de4a3daadaf76f041f1880508d420a75c02aeaf169cdb5d4687df
+        sources:
+        - id: strong_target
+          x_m: -0.9
+          y_m: 0.4
+          relative_lumen_input: 2500.0
+        - id: weak_local
+          x_m: 0.9
+          y_m: -0.4
+          relative_lumen_input: 800.0
+        bounds_m:
+        - -2.0
+        - 2.0
+        - -2.0
+        - 2.0
+        wall_margin_m: 0.35
+        domain:
+          x_min_m: -1.65
+          x_max_m: 1.65
+          y_min_m: -1.65
+          y_max_m: 1.65
+          yaw_min_rad: 0.0
+          yaw_max_rad: 6.283185307179586
+        solver_settings:
+          position_spacing_m: 0.1
+          yaw_spacing_rad: 0.08726646259971647
+          offset_position_m: 0.05
+          offset_yaw_rad: 0.04363323129985824
+          retained_basins_per_scan: 32
+          merge_position_tolerance_m: 0.05
+          merge_cost_tolerance: 0.0001
+          scan_agreement_tolerance: 0.0001
+          global_equivalence_tolerance: 0.0001
+          optimizer_method: differential_evolution
+          optimizer_max_iterations: 60
+          optimizer_population_size: 5
+          optimizer_relative_tolerance: 1.0e-09
+          optimizer_absolute_tolerance: 1.0e-10
+        scan_summaries:
+        - scan_id: base
+          offset:
+            x_m: 0.0
+            y_m: 0.0
+            yaw_rad: 0.0
+          shape:
+          - 34
+          - 34
+          - 72
+          lattice_basin_count: 32
+          lattice_best_raw_cost: -3.8372093023255816
+          refined_best_raw_cost: -3.8372093023255816
+        - scan_id: offset
+          offset:
+            x_m: 0.05
+            y_m: 0.05
+            yaw_rad: 0.04363323129985824
+          shape:
+          - 33
+          - 33
+          - 72
+          lattice_basin_count: 32
+          lattice_best_raw_cost: -3.7030872080132067
+          refined_best_raw_cost: -3.8372093023255816
+        scan_agreement: 0.0
+        global_best_raw_cost: -3.8372093023255816
+        noise_margin_raw_cost: 0.0
+        noise_adjusted_source_score_lower_bound: 1.0
+        minimum_source_score: 0.95
+        targets:
+        - target_id: aggregate_001
+          x_m: -1.2413756647382672
+          y_m: 0.3952278510325179
+          yaw_rad: 0.012188194505408312
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_002
+          x_m: -1.1803643432205781
+          y_m: 0.33272656998832134
+          yaw_rad: 0.2310669774845051
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_003
+          x_m: -1.1511396908038265
+          y_m: 0.16260488586392194
+          yaw_rad: 0.7563452010406442
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_004
+          x_m: -1.1440208707192003
+          y_m: 0.5898385208986819
+          yaw_rad: 5.615255202869545
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_005
+          x_m: -1.123842827236784
+          y_m: 0.27752634610887345
+          yaw_rad: 0.4852361231417941
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_006
+          x_m: -1.1048558745806953
+          y_m: 0.6265656487494886
+          yaw_rad: 5.451639918392157
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_007
+          x_m: -1.0618292332446468
+          y_m: 0.14531545894480918
+          yaw_rad: 0.9944656077788139
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_008
+          x_m: -1.0521476096127822
+          y_m: 0.5315122664079458
+          yaw_rad: 5.576249383178346
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_009
+          x_m: -1.0423129242126352
+          y_m: 0.6724126245500616
+          yaw_rad: 5.1990240101917315
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_010
+          x_m: -1.0184994992028795
+          y_m: 0.624705005161593
+          yaw_rad: 5.200191538759445
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_011
+          x_m: -0.9883213613068862
+          y_m: 0.6869435751136378
+          yaw_rad: 5.01273057388898
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_012
+          x_m: -0.9855623679010777
+          y_m: 0.14180193709585637
+          yaw_rad: 1.265394619936793
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_013
+          x_m: -0.9378001509854579
+          y_m: 0.18411108552306382
+          yaw_rad: 1.4004150966798583
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_014
+          x_m: -0.9323285361817071
+          y_m: 0.10520880874709908
+          yaw_rad: 1.4701815708485535
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_015
+          x_m: -0.907382885670675
+          y_m: 0.7466043651631027
+          yaw_rad: 4.734139705219456
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_016
+          x_m: -0.87881430298706
+          y_m: 0.18579806270589122
+          yaw_rad: 1.6709363555633994
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_017
+          x_m: -0.8274779691696624
+          y_m: 0.602481823819731
+          yaw_rad: 4.3805691267724605
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_018
+          x_m: -0.782334912543919
+          y_m: 0.5594363002914955
+          yaw_rad: 4.084347015575622
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_019
+          x_m: -0.776928922131819
+          y_m: 0.15745865527552078
+          yaw_rad: 2.032404284840227
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_020
+          x_m: -0.7464555668430221
+          y_m: 0.6003780575980593
+          yaw_rad: 4.057181226570372
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_021
+          x_m: -0.7300507074337582
+          y_m: 0.2005018471806566
+          yaw_rad: 2.288854527849075
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_022
+          x_m: -0.7255876542634652
+          y_m: 0.2618777925942926
+          yaw_rad: 2.4778671137518677
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_023
+          x_m: -0.6988511648461455
+          y_m: 0.359093652857037
+          yaw_rad: 2.944509230210839
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_024
+          x_m: -0.6979775388107751
+          y_m: 0.6198876551389402
+          yaw_rad: 3.9661442834594185
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_025
+          x_m: -0.6923615348055111
+          y_m: 0.5352098654924221
+          yaw_rad: 3.728517628431431
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_026
+          x_m: -0.674907386930532
+          y_m: 0.4039488438558547
+          yaw_rad: 3.144830939271175
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_027
+          x_m: -0.6299345370466405
+          y_m: 0.5065458013979253
+          yaw_rad: 3.5241723680279806
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_028
+          x_m: -0.6215230291083348
+          y_m: 0.43806026499794776
+          yaw_rad: 3.26952560715939
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        sensor_transform_config_path: /home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json
+        sensor_transform_config_sha256: 8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5
+        sensor_geometry_path: /home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/urdf/turtlebot3_rotating_sensor.urdf
+        sensor_geometry_sha256: 6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425
+        sensor_joint_position_m:
+        - 0.0
+        - 0.0
+        - 0.355
+        sensor_rotation_axis:
+        - 0.0
+        - 0.0
+        - 1.0
+        sensor_offset_xyz_m:
+        - 0.18
+        - 0.0
+        - 0.015
+        sensor_offset_rpy_rad:
+        - 0.0
+        - 0.0
+        - 0.0
+        sensor_offset_m: 0.18
+        local_branch_qualifications:
+          schema_version: 2
+          method: authoritative_yaw_peak_at_source_coordinate
+          model_config_sha256: 7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741
+          source_list_sha256: 5eb3675dad4de4a3daadaf76f041f1880508d420a75c02aeaf169cdb5d4687df
+          noise_margin_raw_cost: 0.0
+          threshold: 0.95
+          yaw_spacing_rad: 0.008726646259971648
+          points:
+          - source_id: weak_local
+            robot_center_x_m: 0.9
+            robot_center_y_m: -0.4
+            peak_yaw_rad: 2.7233683182124873
+            peak_raw_cost: -0.14481360008584565
+            peak_source_score: 0.036512074114226266
+            noise_adjusted_source_score_upper_bound: 0.036512074114226266
+          sensor_transform_config_sha256: 8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5
+          sensor_geometry_sha256: 6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425
+          sensor_joint_position_m:
+          - 0.0
+          - 0.0
+          - 0.355
+          sensor_rotation_axis:
+          - 0.0
+          - 0.0
+          - 1.0
+          sensor_offset_xyz_m:
+          - 0.18
+          - 0.0
+          - 0.015
+          sensor_offset_rpy_rad:
+          - 0.0
+          - 0.0
+          - 0.0
+          sensor_offset_m: 0.18
+          result_sha256: 3257f1897fe83d60a6aafe76283c6230325539e81f4786b12ccc757e3048a0e4
+        result_sha256: bfb6280171dc4abbbe68c0586fe14ce640982fc2bfbf596774ce24699b5b329b
+    minimum_saturation_samples: 0
+    collision_expected: false
+    result_scopes:
+      full_lifecycle:
+        anchor_state: SEARCH
+        boundary_state: null
+        graceful_stop: false
+        all_of: *id001
+- case_id: v4d_three_source_overlap
+  family: multi_source
+  acceptance_family: multi_close_overlap
+  acceptance_partition: development
+  description: Escape overlapping weak local sources and reach the aggregate-qualified strong target.
+    The geometry is the precommitted 90-degree V4 transform.
+  status: executable_unverified
+  profiles:
+  - robust_gaussian_v1
+  seeds:
+  - 10404
+  starts:
+  - id: local_a_center
+    x_m: 0.3
+    y_m: -0.7
+    yaw_rad: 1.820796326794897
+  sources:
+  - id: local_a
+    x_m: -0.7
+    y_m: -0.3
+    relative_lumen_input: 700.0
+    evaluation_role: local_minimum
+  - id: local_b
+    x_m: 0.0
+    y_m: 0.2
+    relative_lumen_input: 800.0
+    evaluation_role: local_minimum
+  - id: target
+    x_m: 1.2
+    y_m: 1.1
+    relative_lumen_input: 2500.0
+    evaluation_role: goal
+  algorithm:
+    ablations: {}
+    launch_overrides: *id002
+  metric_applicability:
+    escape_attempt: true
+    escape_duration: true
+    orbit_count: true
+    revisit: false
+    delay: false
+    saturation: false
+  success:
+    all_of: *id001
+    controller:
+      contract_id: v4d_three_source_overlap
+      expected_verification_outcome: below_target_extremum
+      reachability_argument: The initial overlapping weak-source coordinate remains below 0.95 and the
+        aggregate-qualified strong target is reachable.
+      expected_terminal_state: GOAL_HOLD
+      required_state_path: *id003
+      required_events: *id004
+      forbidden_states: *id005
+      forbidden_events: *id006
+    ground_truth:
+      method: aggregate_field
+      final_position_tolerance_m: 0.35
+      wall_margin_m: 0.35
+      minimum_source_score: 0.95
+      aggregate_field:
+        schema_version: 2
+        method: aggregate_field
+        model_config_path: /home/mattb/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json
+        model_config_sha256: 7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741
+        source_list_sha256: dd59b27781388b2d20d8408d9ab2fa5a00782d3b35f64df995da674337fc5985
+        sources:
+        - id: local_a
+          x_m: -0.7
+          y_m: -0.3
+          relative_lumen_input: 700.0
+        - id: local_b
+          x_m: 0.0
+          y_m: 0.2
+          relative_lumen_input: 800.0
+        - id: target
+          x_m: 1.2
+          y_m: 1.1
+          relative_lumen_input: 2500.0
+        bounds_m:
+        - -2.0
+        - 2.0
+        - -2.0
+        - 2.0
+        wall_margin_m: 0.35
+        domain:
+          x_min_m: -1.65
+          x_max_m: 1.65
+          y_min_m: -1.65
+          y_max_m: 1.65
+          yaw_min_rad: 0.0
+          yaw_max_rad: 6.283185307179586
+        solver_settings:
+          position_spacing_m: 0.1
+          yaw_spacing_rad: 0.08726646259971647
+          offset_position_m: 0.05
+          offset_yaw_rad: 0.04363323129985824
+          retained_basins_per_scan: 32
+          merge_position_tolerance_m: 0.05
+          merge_cost_tolerance: 0.0001
+          scan_agreement_tolerance: 0.0001
+          global_equivalence_tolerance: 0.0001
+          optimizer_method: differential_evolution
+          optimizer_max_iterations: 60
+          optimizer_population_size: 5
+          optimizer_relative_tolerance: 1.0e-09
+          optimizer_absolute_tolerance: 1.0e-10
+        scan_summaries:
+        - scan_id: base
+          offset:
+            x_m: 0.0
+            y_m: 0.0
+            yaw_rad: 0.0
+          shape:
+          - 34
+          - 34
+          - 72
+          lattice_basin_count: 32
+          lattice_best_raw_cost: -3.8372093023255816
+          refined_best_raw_cost: -3.8372093023255816
+        - scan_id: offset
+          offset:
+            x_m: 0.05
+            y_m: 0.05
+            yaw_rad: 0.04363323129985824
+          shape:
+          - 33
+          - 33
+          - 72
+          lattice_basin_count: 32
+          lattice_best_raw_cost: -3.7051498873260513
+          refined_best_raw_cost: -3.8372093023255816
+        scan_agreement: 0.0
+        global_best_raw_cost: -3.8372093023255816
+        noise_margin_raw_cost: 0.0
+        noise_adjusted_source_score_lower_bound: 1.0
+        minimum_source_score: 0.95
+        targets:
+        - target_id: aggregate_001
+          x_m: 0.8962196492281396
+          y_m: 1.034743723166951
+          yaw_rad: 0.22085692046175964
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_002
+          x_m: 0.9173426272248975
+          y_m: 1.1778793156197496
+          yaw_rad: 6.011439697812417
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_003
+          x_m: 0.9344814509864146
+          y_m: 1.1224892508614173
+          yaw_rad: 6.203222511963527
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_004
+          x_m: 0.9727504298944099
+          y_m: 1.0092347076682229
+          yaw_rad: 0.3914226676590511
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_005
+          x_m: 0.9786885945777393
+          y_m: 1.1910827070380514
+          yaw_rad: 5.882299765123398
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_006
+          x_m: 0.9804176832843915
+          y_m: 1.3038804216815976
+          yaw_rad: 5.527622539047188
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_007
+          x_m: 0.992236663229844
+          y_m: 1.0879338190057968
+          yaw_rad: 0.06127314377284865
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_008
+          x_m: 1.002009240490611
+          y_m: 1.2438033072519148
+          yaw_rad: 5.648058786188397
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_009
+          x_m: 1.0182503671437675
+          y_m: 0.8482832440335333
+          yaw_rad: 0.946306824182372
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_010
+          x_m: 1.019462258445682
+          y_m: 0.9482213023792077
+          yaw_rad: 0.6958547752270134
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_011
+          x_m: 1.0601929667105354
+          y_m: 1.2986087984239156
+          yaw_rad: 5.3196309472348915
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_012
+          x_m: 1.1094786585310457
+          y_m: 0.8067267100342336
+          yaw_rad: 1.2694464447047396
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_013
+          x_m: 1.113869118768594
+          y_m: 0.8679791685082616
+          yaw_rad: 1.210082866353787
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_014
+          x_m: 1.1219427050407293
+          y_m: 1.409525373273604
+          yaw_rad: 4.954059144645497
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_015
+          x_m: 1.1796199394043982
+          y_m: 0.8310364673712547
+          yaw_rad: 1.483648065990103
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_016
+          x_m: 1.1837549133326466
+          y_m: 1.3565965043387147
+          yaw_rad: 4.788155669111675
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_017
+          x_m: 1.2414569651350456
+          y_m: 0.8670597248900117
+          yaw_rad: 1.7552242831501996
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_018
+          x_m: 1.2547331231371424
+          y_m: 1.2828285158839237
+          yaw_rad: 4.417361351012805
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_019
+          x_m: 1.3080561775493724
+          y_m: 1.3779389182200217
+          yaw_rad: 4.342746081439871
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_020
+          x_m: 1.3476055268502565
+          y_m: 0.8263047647905036
+          yaw_rad: 2.074445902761396
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_021
+          x_m: 1.3582487198763298
+          y_m: 1.2311299061935699
+          yaw_rad: 3.842986981620252
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_022
+          x_m: 1.387859318899779
+          y_m: 1.3542212040942594
+          yaw_rad: 4.082889419449005
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_023
+          x_m: 1.391051897164865
+          y_m: 0.9581159314517927
+          yaw_rad: 2.4977537365332636
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_024
+          x_m: 1.4099997323033653
+          y_m: 0.8851141439406344
+          yaw_rad: 2.341694834929071
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_025
+          x_m: 1.4323379809312895
+          y_m: 1.275376738018869
+          yaw_rad: 3.79792506704056
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_026
+          x_m: 1.4700654629533596
+          y_m: 1.2065458013979256
+          yaw_rad: 3.5241723680279806
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_027
+          x_m: 1.4704519226643034
+          y_m: 1.131031579248311
+          yaw_rad: 3.253746149613636
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_028
+          x_m: 1.4907990486227638
+          y_m: 1.0440446994085435
+          yaw_rad: 2.939220203180253
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_029
+          x_m: 1.53037524906478
+          y_m: 1.1340703751646695
+          yaw_rad: 3.247814000672814
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_030
+          x_m: 1.5360182127779103
+          y_m: 1.1989188400681474
+          yaw_rad: 3.4279883320982627
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        sensor_transform_config_path: /home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json
+        sensor_transform_config_sha256: 8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5
+        sensor_geometry_path: /home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/urdf/turtlebot3_rotating_sensor.urdf
+        sensor_geometry_sha256: 6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425
+        sensor_joint_position_m:
+        - 0.0
+        - 0.0
+        - 0.355
+        sensor_rotation_axis:
+        - 0.0
+        - 0.0
+        - 1.0
+        sensor_offset_xyz_m:
+        - 0.18
+        - 0.0
+        - 0.015
+        sensor_offset_rpy_rad:
+        - 0.0
+        - 0.0
+        - 0.0
+        sensor_offset_m: 0.18
+        local_branch_qualifications:
+          schema_version: 2
+          method: authoritative_yaw_peak_at_source_coordinate
+          model_config_sha256: 7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741
+          source_list_sha256: dd59b27781388b2d20d8408d9ab2fa5a00782d3b35f64df995da674337fc5985
+          noise_margin_raw_cost: 0.0
+          threshold: 0.95
+          yaw_spacing_rad: 0.008726646259971648
+          points:
+          - source_id: local_a
+            robot_center_x_m: -0.7
+            robot_center_y_m: -0.3
+            peak_yaw_rad: 0.6202494907695999
+            peak_raw_cost: -0.4015184878409419
+            peak_source_score: 0.10349624369222442
+            noise_adjusted_source_score_upper_bound: 0.10349624369222442
+          - source_id: local_b
+            robot_center_x_m: 0.0
+            robot_center_y_m: 0.2
+            peak_yaw_rad: 3.76118453804778
+            peak_raw_cost: -0.28545683065526395
+            peak_source_score: 0.07321129744746949
+            noise_adjusted_source_score_upper_bound: 0.07321129744746949
+          sensor_transform_config_sha256: 8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5
+          sensor_geometry_sha256: 6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425
+          sensor_joint_position_m:
+          - 0.0
+          - 0.0
+          - 0.355
+          sensor_rotation_axis:
+          - 0.0
+          - 0.0
+          - 1.0
+          sensor_offset_xyz_m:
+          - 0.18
+          - 0.0
+          - 0.015
+          sensor_offset_rpy_rad:
+          - 0.0
+          - 0.0
+          - 0.0
+          sensor_offset_m: 0.18
+          result_sha256: 60166741d4ced7c148e8723e7635c766ac8f664906102232ca811dca3f9e49ee
+        result_sha256: ca0066e4f1246717403c44d47f97ad752e92c1ea5e40b788a71f032b7d8634a9
+    minimum_saturation_samples: 0
+    collision_expected: false
+    result_scopes:
+      full_lifecycle:
+        anchor_state: SEARCH
+        boundary_state: null
+        graceful_stop: false
+        all_of: *id001
+- case_id: v4d_pure_escape
+  family: escape
+  acceptance_family: lifecycle
+  acceptance_partition: development
+  description: Complete the nominal pure-repulsion escape and recenter path without assisted escape. The
+    geometry is the precommitted 90-degree V4 transform.
+  status: executable_unverified
+  profiles:
+  - robust_gaussian_v1
+  seeds:
+  - 10405
+  starts:
+  - id: local_center
+    x_m: -0.0
+    y_m: -0.8
+    yaw_rad: 1.570796326794897
+  sources:
+  - id: local
+    x_m: -0.8
+    y_m: 0.0
+    relative_lumen_input: 700.0
+    evaluation_role: local_minimum
+  - id: target
+    x_m: 1.3
+    y_m: 0.8
+    relative_lumen_input: 2200.0
+    evaluation_role: goal
+  algorithm:
+    ablations: {}
+    launch_overrides: *id002
+  metric_applicability:
+    escape_attempt: true
+    escape_duration: true
+    orbit_count: true
+    revisit: false
+    delay: false
+    saturation: false
+  success:
+    all_of: *id001
+    controller:
+      contract_id: v4d_pure_escape
+      expected_verification_outcome: below_target_extremum
+      reachability_argument: The 700-input local basin is below 0.95 and the aggregate-qualified 2200-input
+        target remains reachable.
+      expected_terminal_state: GOAL_HOLD
+      required_state_path: *id003
+      required_events: *id004
+      forbidden_states:
+      - ESCAPE_ASSIST
+      - FAILSAFE
+      forbidden_events:
+      - ESCAPE_STALLED
+      - FILL_REJECTED
+      - FILL_DESIGN_FAILED
+      - TIMEOUT
+      - FAILSAFE
+    ground_truth:
+      method: aggregate_field
+      final_position_tolerance_m: 0.35
+      wall_margin_m: 0.35
+      minimum_source_score: 0.95
+      aggregate_field:
+        schema_version: 2
+        method: aggregate_field
+        model_config_path: /home/mattb/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json
+        model_config_sha256: 7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741
+        source_list_sha256: b5e5ec0ac7971a436cec3f114d90842257462dfd7bad715982f9923b99b5eec6
+        sources:
+        - id: local
+          x_m: -0.8
+          y_m: 0.0
+          relative_lumen_input: 700.0
+        - id: target
+          x_m: 1.3
+          y_m: 0.8
+          relative_lumen_input: 2200.0
+        bounds_m:
+        - -2.0
+        - 2.0
+        - -2.0
+        - 2.0
+        wall_margin_m: 0.35
+        domain:
+          x_min_m: -1.65
+          x_max_m: 1.65
+          y_min_m: -1.65
+          y_max_m: 1.65
+          yaw_min_rad: 0.0
+          yaw_max_rad: 6.283185307179586
+        solver_settings:
+          position_spacing_m: 0.1
+          yaw_spacing_rad: 0.08726646259971647
+          offset_position_m: 0.05
+          offset_yaw_rad: 0.04363323129985824
+          retained_basins_per_scan: 32
+          merge_position_tolerance_m: 0.05
+          merge_cost_tolerance: 0.0001
+          scan_agreement_tolerance: 0.0001
+          global_equivalence_tolerance: 0.0001
+          optimizer_method: differential_evolution
+          optimizer_max_iterations: 60
+          optimizer_population_size: 5
+          optimizer_relative_tolerance: 1.0e-09
+          optimizer_absolute_tolerance: 1.0e-10
+        scan_summaries:
+        - scan_id: base
+          offset:
+            x_m: 0.0
+            y_m: 0.0
+            yaw_rad: 0.0
+          shape:
+          - 34
+          - 34
+          - 72
+          lattice_basin_count: 32
+          lattice_best_raw_cost: -3.8372093023255816
+          refined_best_raw_cost: -3.8372093023255816
+        - scan_id: offset
+          offset:
+            x_m: 0.05
+            y_m: 0.05
+            yaw_rad: 0.04363323129985824
+          shape:
+          - 33
+          - 33
+          - 72
+          lattice_basin_count: 32
+          lattice_best_raw_cost: -3.575929623345174
+          refined_best_raw_cost: -3.8372093023255816
+        scan_agreement: 0.0
+        global_best_raw_cost: -3.8372093023255816
+        noise_margin_raw_cost: 0.0
+        noise_adjusted_source_score_lower_bound: 1.0
+        minimum_source_score: 0.95
+        targets:
+        - target_id: aggregate_001
+          x_m: 0.9655205708341845
+          y_m: 0.842501432295608
+          yaw_rad: 6.157673192360379
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_002
+          x_m: 1.000094827098991
+          y_m: 0.7252184271381708
+          yaw_rad: 0.2501611738485203
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_003
+          x_m: 1.0078471434981306
+          y_m: 0.9588167188178323
+          yaw_rad: 5.788176446029101
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_004
+          x_m: 1.0233280963312805
+          y_m: 0.7724625670264738
+          yaw_rad: 0.09081366180928141
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_005
+          x_m: 1.0235549506953112
+          y_m: 0.6392239031643732
+          yaw_rad: 0.5325882003315776
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_006
+          x_m: 1.0330268580034074
+          y_m: 0.8549440638550101
+          yaw_rad: 6.081678937676179
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_007
+          x_m: 1.0785712291104783
+          y_m: 0.8176385321484455
+          yaw_rad: 6.1940020656040895
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_008
+          x_m: 1.1194279487710732
+          y_m: 0.605338569024658
+          yaw_rad: 0.8371461160978941
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_009
+          x_m: 1.1333012640628062
+          y_m: 0.6573252629052111
+          yaw_rad: 0.7136154846225149
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_010
+          x_m: 1.1548341032904128
+          y_m: 0.9781228234498867
+          yaw_rad: 5.404549505321172
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_011
+          x_m: 1.1885152934567365
+          y_m: 0.5434343842759336
+          yaw_rad: 1.1738476449523199
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_012
+          x_m: 1.2110215258256005
+          y_m: 1.079145510657802
+          yaw_rad: 5.018583140624362
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_013
+          x_m: 1.2837698478005894
+          y_m: 0.48043431504998085
+          yaw_rad: 1.5169354297555122
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_014
+          x_m: 1.3006810663277921
+          y_m: 0.5998412320734835
+          yaw_rad: 1.5772150457991239
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_015
+          x_m: 1.3402167726637482
+          y_m: 1.0228265508480074
+          yaw_rad: 4.541394427715302
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_016
+          x_m: 1.3425231326188438
+          y_m: 0.566773580851521
+          yaw_rad: 1.7380851181281434
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_017
+          x_m: 1.3773291194106794
+          y_m: 1.0782413196384624
+          yaw_rad: 4.442875822840942
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_018
+          x_m: 1.417003794279913
+          y_m: 1.1089489436666693
+          yaw_rad: 4.348822747148282
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_019
+          x_m: 1.4272131274159026
+          y_m: 0.5422152080268084
+          yaw_rad: 2.0170218127786437
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_020
+          x_m: 1.4272274156487805
+          y_m: 1.0212511037835181
+          yaw_rad: 4.191809163680421
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_021
+          x_m: 1.441406803854591
+          y_m: 0.6550413870045961
+          yaw_rad: 2.348212073875382
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_022
+          x_m: 1.4770119353998656
+          y_m: 0.8479511297070967
+          yaw_rad: 3.405741881049246
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_023
+          x_m: 1.4861807834146132
+          y_m: 0.5288021497751252
+          yaw_rad: 2.174100619372626
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_024
+          x_m: 1.490979325481743
+          y_m: 0.6429977749055288
+          yaw_rad: 2.448852967316613
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_025
+          x_m: 1.5112836693299767
+          y_m: 0.9078424591477747
+          yaw_rad: 3.6285224884410674
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_026
+          x_m: 1.518642259891917
+          y_m: 0.8020993393568759
+          yaw_rad: 3.150774020543707
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_027
+          x_m: 1.5339333587803363
+          y_m: 0.8591292455223544
+          yaw_rad: 3.386132431123664
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_028
+          x_m: 1.5559825074793896
+          y_m: 0.9410779719221346
+          yaw_rad: 3.6515311152444596
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_029
+          x_m: 1.5807078251026034
+          y_m: 0.8820157445517957
+          yaw_rad: 3.4207832774730935
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_030
+          x_m: 1.6115431351202394
+          y_m: 0.7637149729373727
+          yaw_rad: 3.0301127074390766
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        sensor_transform_config_path: /home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json
+        sensor_transform_config_sha256: 8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5
+        sensor_geometry_path: /home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/urdf/turtlebot3_rotating_sensor.urdf
+        sensor_geometry_sha256: 6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425
+        sensor_joint_position_m:
+        - 0.0
+        - 0.0
+        - 0.355
+        sensor_rotation_axis:
+        - 0.0
+        - 0.0
+        - 1.0
+        sensor_offset_xyz_m:
+        - 0.18
+        - 0.0
+        - 0.015
+        sensor_offset_rpy_rad:
+        - 0.0
+        - 0.0
+        - 0.0
+        sensor_offset_m: 0.18
+        local_branch_qualifications:
+          schema_version: 2
+          method: authoritative_yaw_peak_at_source_coordinate
+          model_config_sha256: 7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741
+          source_list_sha256: b5e5ec0ac7971a436cec3f114d90842257462dfd7bad715982f9923b99b5eec6
+          noise_margin_raw_cost: 0.0
+          threshold: 0.95
+          yaw_spacing_rad: 0.008726646259971648
+          points:
+          - source_id: local
+            robot_center_x_m: -0.8
+            robot_center_y_m: 0.0
+            peak_yaw_rad: 0.36397894351660637
+            peak_raw_cost: -0.09568382549996096
+            peak_source_score: 0.023692228021816246
+            noise_adjusted_source_score_upper_bound: 0.023692228021816246
+          sensor_transform_config_sha256: 8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5
+          sensor_geometry_sha256: 6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425
+          sensor_joint_position_m:
+          - 0.0
+          - 0.0
+          - 0.355
+          sensor_rotation_axis:
+          - 0.0
+          - 0.0
+          - 1.0
+          sensor_offset_xyz_m:
+          - 0.18
+          - 0.0
+          - 0.015
+          sensor_offset_rpy_rad:
+          - 0.0
+          - 0.0
+          - 0.0
+          sensor_offset_m: 0.18
+          result_sha256: 0da900143b29e80ef25e91ddf8114fab09b6ce8510efa975d7914f77a987e289
+        result_sha256: e8edc76b821ec6d67407ae3c12300c837ab6dc833d41f4852f406014173dde33
+    minimum_saturation_samples: 0
+    collision_expected: false
+    result_scopes:
+      full_lifecycle:
+        anchor_state: SEARCH
+        boundary_state: null
+        graceful_stop: false
+        all_of: *id001
+- case_id: v4d_assist_nominal
+  family: escape
+  acceptance_family: constraint_recovery
+  acceptance_partition: development
+  description: Reach the nominal stall and assisted-escape branch without case-specific forcing overrides.
+    The geometry is the precommitted 90-degree V4 transform.
+  status: executable_unverified
+  profiles:
+  - robust_gaussian_v1
+  seeds:
+  - 10406
+  starts:
+  - id: local_center
+    x_m: 0.25
+    y_m: -0.65
+    yaw_rad: 1.570796326794897
+  sources:
+  - id: local
+    x_m: -0.65
+    y_m: -0.25
+    relative_lumen_input: 800.0
+    evaluation_role: local_minimum
+  - id: target
+    x_m: 1.35
+    y_m: 0.9
+    relative_lumen_input: 2200.0
+    evaluation_role: goal
+  algorithm:
+    ablations: {}
+    launch_overrides: *id002
+  metric_applicability:
+    escape_attempt: true
+    escape_duration: true
+    orbit_count: true
+    revisit: false
+    delay: false
+    saturation: false
+  success:
+    all_of: *id001
+    controller:
+      contract_id: v4d_assist_nominal
+      expected_verification_outcome: below_target_extremum
+      reachability_argument: The initial 800-input basin is below 0.95 and this common case tests the
+        unforced candidate-specific stall response.
+      expected_terminal_state: GOAL_HOLD
+      required_state_path:
+      - SEARCH
+      - VERIFY_EXTREMUM
+      - DESIGN_OR_MERGE_FILL
+      - ESCAPE_REPULSE
+      - DESIGN_OR_MERGE_FILL
+      - ESCAPE_ASSIST
+      - RECENTER
+      - SEARCH
+      - VERIFY_EXTREMUM
+      - GOAL_HOLD
+      required_events:
+      - CONVERGENCE_CONFIRMED
+      - FILL_CREATED
+      - ESCAPE_STARTED
+      - ESCAPE_STALLED
+      - RECENTER_STARTED
+      - RECENTER_COMPLETE
+      - GOAL_REACHED
+      forbidden_states: *id005
+      forbidden_events: *id006
+    ground_truth:
+      method: aggregate_field
+      final_position_tolerance_m: 0.35
+      wall_margin_m: 0.35
+      minimum_source_score: 0.95
+      aggregate_field:
+        schema_version: 2
+        method: aggregate_field
+        model_config_path: /home/mattb/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json
+        model_config_sha256: 7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741
+        source_list_sha256: 5f56d7175522fe883db3cb66201b0b45865dfb9e2822d284e5722a69d45b16d6
+        sources:
+        - id: local
+          x_m: -0.65
+          y_m: -0.25
+          relative_lumen_input: 800.0
+        - id: target
+          x_m: 1.35
+          y_m: 0.9
+          relative_lumen_input: 2200.0
+        bounds_m:
+        - -2.0
+        - 2.0
+        - -2.0
+        - 2.0
+        wall_margin_m: 0.35
+        domain:
+          x_min_m: -1.65
+          x_max_m: 1.65
+          y_min_m: -1.65
+          y_max_m: 1.65
+          yaw_min_rad: 0.0
+          yaw_max_rad: 6.283185307179586
+        solver_settings:
+          position_spacing_m: 0.1
+          yaw_spacing_rad: 0.08726646259971647
+          offset_position_m: 0.05
+          offset_yaw_rad: 0.04363323129985824
+          retained_basins_per_scan: 32
+          merge_position_tolerance_m: 0.05
+          merge_cost_tolerance: 0.0001
+          scan_agreement_tolerance: 0.0001
+          global_equivalence_tolerance: 0.0001
+          optimizer_method: differential_evolution
+          optimizer_max_iterations: 60
+          optimizer_population_size: 5
+          optimizer_relative_tolerance: 1.0e-09
+          optimizer_absolute_tolerance: 1.0e-10
+        scan_summaries:
+        - scan_id: base
+          offset:
+            x_m: 0.0
+            y_m: 0.0
+            yaw_rad: 0.0
+          shape:
+          - 34
+          - 34
+          - 72
+          lattice_basin_count: 32
+          lattice_best_raw_cost: -3.8372093023255816
+          refined_best_raw_cost: -3.8372093023255816
+        - scan_id: offset
+          offset:
+            x_m: 0.05
+            y_m: 0.05
+            yaw_rad: 0.04363323129985824
+          shape:
+          - 33
+          - 33
+          - 72
+          lattice_basin_count: 32
+          lattice_best_raw_cost: -3.8372093023255816
+          refined_best_raw_cost: -3.8372093023255816
+        scan_agreement: 0.0
+        global_best_raw_cost: -3.8372093023255816
+        noise_margin_raw_cost: 0.0
+        noise_adjusted_source_score_lower_bound: 1.0
+        minimum_source_score: 0.95
+        targets:
+        - target_id: aggregate_001
+          x_m: 1.0624218369235847
+          y_m: 0.8310558858045334
+          yaw_rad: 0.2397887425856191
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_002
+          x_m: 1.0729086815646987
+          y_m: 0.9654924745247613
+          yaw_rad: 6.0515895134227025
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_003
+          x_m: 1.0984865361015885
+          y_m: 0.741921359151735
+          yaw_rad: 0.5703584354645486
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_004
+          x_m: 1.1008479668839695
+          y_m: 1.0953304745576673
+          yaw_rad: 5.619225589267913
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_005
+          x_m: 1.10221885680169
+          y_m: 0.8658667775945645
+          yaw_rad: 0.15196130775798977
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_006
+          x_m: 1.1659601615298203
+          y_m: 1.0379128321672277
+          yaw_rad: 5.654473351188468
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_007
+          x_m: 1.184804930049577
+          y_m: 0.7282129739013248
+          yaw_rad: 0.8030260405453693
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_008
+          x_m: 1.2472028968854916
+          y_m: 1.1540804154036057
+          yaw_rad: 5.104693975556035
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_009
+          x_m: 1.2667702354816013
+          y_m: 0.658203504749001
+          yaw_rad: 1.2434626318378446
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_010
+          x_m: 1.3009736684894877
+          y_m: 1.1320188489827512
+          yaw_rad: 4.921124129941346
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_011
+          x_m: 1.3321577405433505
+          y_m: 0.6648796629296649
+          yaw_rad: 1.4875247685435844
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_012
+          x_m: 1.3937641458049956
+          y_m: 1.2322550970752233
+          yaw_rad: 4.580908354936298
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_013
+          x_m: 1.4186240217463484
+          y_m: 1.1759183387330276
+          yaw_rad: 4.473288981675088
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_014
+          x_m: 1.4287794891976615
+          y_m: 0.5971668169482678
+          yaw_rad: 1.833220289445936
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_015
+          x_m: 1.4417329972589057
+          y_m: 0.6770503849040593
+          yaw_rad: 1.9517831036875377
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_016
+          x_m: 1.4703062695811346
+          y_m: 1.1722525144013352
+          yaw_rad: 4.287553710189705
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_017
+          x_m: 1.5414132365274684
+          y_m: 1.005518835823703
+          yaw_rad: 3.6510036750295956
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_018
+          x_m: 1.5461334108707192
+          y_m: 0.7411257550186323
+          yaw_rad: 2.4641235332366005
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_019
+          x_m: 1.5753363075253883
+          y_m: 1.0474245040110528
+          yaw_rad: 3.7119444210688357
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_020
+          x_m: 1.5895767224643185
+          y_m: 0.7879337423669404
+          yaw_rad: 2.6944620311636913
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_021
+          x_m: 1.603884903045381
+          y_m: 0.6718244027822358
+          yaw_rad: 2.4092586646918672
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_022
+          x_m: 1.6223002043840613
+          y_m: 0.8985004911530676
+          yaw_rad: 3.1465717868251963
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        sensor_transform_config_path: /home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json
+        sensor_transform_config_sha256: 8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5
+        sensor_geometry_path: /home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/urdf/turtlebot3_rotating_sensor.urdf
+        sensor_geometry_sha256: 6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425
+        sensor_joint_position_m:
+        - 0.0
+        - 0.0
+        - 0.355
+        sensor_rotation_axis:
+        - 0.0
+        - 0.0
+        - 1.0
+        sensor_offset_xyz_m:
+        - 0.18
+        - 0.0
+        - 0.015
+        sensor_offset_rpy_rad:
+        - 0.0
+        - 0.0
+        - 0.0
+        sensor_offset_m: 0.18
+        local_branch_qualifications:
+          schema_version: 2
+          method: authoritative_yaw_peak_at_source_coordinate
+          model_config_sha256: 7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741
+          source_list_sha256: 5f56d7175522fe883db3cb66201b0b45865dfb9e2822d284e5722a69d45b16d6
+          noise_margin_raw_cost: 0.0
+          threshold: 0.95
+          yaw_spacing_rad: 0.008726646259971648
+          points:
+          - source_id: local
+            robot_center_x_m: -0.65
+            robot_center_y_m: -0.25
+            peak_yaw_rad: 0.5218342668372343
+            peak_raw_cost: -0.09031948201913345
+            peak_source_score: 0.02229246467279429
+            noise_adjusted_source_score_upper_bound: 0.02229246467279429
+          sensor_transform_config_sha256: 8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5
+          sensor_geometry_sha256: 6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425
+          sensor_joint_position_m:
+          - 0.0
+          - 0.0
+          - 0.355
+          sensor_rotation_axis:
+          - 0.0
+          - 0.0
+          - 1.0
+          sensor_offset_xyz_m:
+          - 0.18
+          - 0.0
+          - 0.015
+          sensor_offset_rpy_rad:
+          - 0.0
+          - 0.0
+          - 0.0
+          sensor_offset_m: 0.18
+          result_sha256: dde326374d1beeb77082b0b4b24e174101cfe94d28533e598c3e5cef08414feb
+        result_sha256: 9600756e5ff95a1fe59aa17c8f5ee3589f05491867bf86a809f55bd890274c87
+    minimum_saturation_samples: 0
+    collision_expected: false
+    result_scopes:
+      full_lifecycle:
+        anchor_state: SEARCH
+        boundary_state: null
+        graceful_stop: false
+        all_of: *id001
+- case_id: v4d_merge_nominal
+  family: fill_merge
+  acceptance_family: lifecycle
+  acceptance_partition: development
+  description: Reach two nearby weak basins and require the nominal typed-fill supersede-and-merge sequence.
+    The geometry is the precommitted 90-degree V4 transform.
+  status: executable_unverified
+  profiles:
+  - robust_gaussian_v1
+  seeds:
+  - 10407
+  starts:
+  - id: local_a_center
+    x_m: -0.0
+    y_m: -0.45
+    yaw_rad: 1.720796326794896
+  sources:
+  - id: local_a
+    x_m: -0.45
+    y_m: 0.0
+    relative_lumen_input: 700.0
+    evaluation_role: local_minimum
+  - id: local_b
+    x_m: 0.05
+    y_m: 0.12
+    relative_lumen_input: 750.0
+    evaluation_role: local_minimum
+  - id: target
+    x_m: 1.45
+    y_m: 1.25
+    relative_lumen_input: 2500.0
+    evaluation_role: goal
+  algorithm:
+    ablations: {}
+    launch_overrides: *id002
+  metric_applicability:
+    escape_attempt: true
+    escape_duration: true
+    orbit_count: true
+    revisit: false
+    delay: false
+    saturation: false
+  success:
+    all_of: &id007
+    - recording_complete
+    - cleanup_complete
+    - controller_goal
+    - ground_truth_goal
+    - expected_terminal_state
+    - required_state_path
+    - required_events
+    - required_event_sequence
+    - no_forbidden_states
+    - no_forbidden_events
+    - collision_expectation
+    controller:
+      contract_id: v4d_merge_nominal
+      expected_verification_outcome: below_target_extremum
+      reachability_argument: Both nearby weak-source coordinates remain below 0.95 while the aggregate-qualified
+        2500-input target remains reachable.
+      expected_terminal_state: GOAL_HOLD
+      required_state_path:
+      - SEARCH
+      - VERIFY_EXTREMUM
+      - DESIGN_OR_MERGE_FILL
+      - ESCAPE_REPULSE
+      - DESIGN_OR_MERGE_FILL
+      - ESCAPE_ASSIST
+      - RECENTER
+      - SEARCH
+      - VERIFY_EXTREMUM
+      - GOAL_HOLD
+      required_events:
+      - CONVERGENCE_CONFIRMED
+      - FILL_CREATED
+      - ESCAPE_STARTED
+      - ESCAPE_STALLED
+      - RECENTER_STARTED
+      - RECENTER_COMPLETE
+      - GOAL_REACHED
+      required_event_sequence:
+      - FILL_SUPERSEDED
+      - FILL_MERGED
+      forbidden_states:
+      - FAILSAFE
+      forbidden_events:
+      - FILL_REJECTED
+      - FILL_DESIGN_FAILED
+      - TIMEOUT
+      - FAILSAFE
+    ground_truth:
+      method: aggregate_field
+      final_position_tolerance_m: 0.35
+      wall_margin_m: 0.35
+      minimum_source_score: 0.95
+      aggregate_field:
+        schema_version: 2
+        method: aggregate_field
+        model_config_path: /home/mattb/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json
+        model_config_sha256: 7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741
+        source_list_sha256: b56cfbf6c1cecf9def03d0d1b07ea303ecfbccaa7dd35b3a1c1c556430240092
+        sources:
+        - id: local_a
+          x_m: -0.45
+          y_m: 0.0
+          relative_lumen_input: 700.0
+        - id: local_b
+          x_m: 0.05
+          y_m: 0.12
+          relative_lumen_input: 750.0
+        - id: target
+          x_m: 1.45
+          y_m: 1.25
+          relative_lumen_input: 2500.0
+        bounds_m:
+        - -2.0
+        - 2.0
+        - -2.0
+        - 2.0
+        wall_margin_m: 0.35
+        domain:
+          x_min_m: -1.65
+          x_max_m: 1.65
+          y_min_m: -1.65
+          y_max_m: 1.65
+          yaw_min_rad: 0.0
+          yaw_max_rad: 6.283185307179586
+        solver_settings:
+          position_spacing_m: 0.1
+          yaw_spacing_rad: 0.08726646259971647
+          offset_position_m: 0.05
+          offset_yaw_rad: 0.04363323129985824
+          retained_basins_per_scan: 32
+          merge_position_tolerance_m: 0.05
+          merge_cost_tolerance: 0.0001
+          scan_agreement_tolerance: 0.0001
+          global_equivalence_tolerance: 0.0001
+          optimizer_method: differential_evolution
+          optimizer_max_iterations: 60
+          optimizer_population_size: 5
+          optimizer_relative_tolerance: 1.0e-09
+          optimizer_absolute_tolerance: 1.0e-10
+        scan_summaries:
+        - scan_id: base
+          offset:
+            x_m: 0.0
+            y_m: 0.0
+            yaw_rad: 0.0
+          shape:
+          - 34
+          - 34
+          - 72
+          lattice_basin_count: 32
+          lattice_best_raw_cost: -3.8372093023255816
+          refined_best_raw_cost: -3.8372093023255816
+        - scan_id: offset
+          offset:
+            x_m: 0.05
+            y_m: 0.05
+            yaw_rad: 0.04363323129985824
+          shape:
+          - 33
+          - 33
+          - 72
+          lattice_basin_count: 32
+          lattice_best_raw_cost: -3.6348051684769724
+          refined_best_raw_cost: -3.8372093023255816
+        scan_agreement: 0.0
+        global_best_raw_cost: -3.8372093023255816
+        noise_margin_raw_cost: 0.0
+        noise_adjusted_source_score_lower_bound: 1.0
+        minimum_source_score: 0.95
+        targets:
+        - target_id: aggregate_001
+          x_m: 1.1734231395606611
+          y_m: 1.220978514271885
+          yaw_rad: 0.0906165488547912
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_002
+          x_m: 1.1750417571261063
+          y_m: 1.4494430064735957
+          yaw_rad: 5.657253640647012
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_003
+          x_m: 1.1834834517516686
+          y_m: 1.2761070224064026
+          yaw_rad: 6.176824541448752
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_004
+          x_m: 1.1888785418192351
+          y_m: 1.3927167138199463
+          yaw_rad: 5.782083491411882
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_005
+          x_m: 1.1901320981147012
+          y_m: 1.1067301262314977
+          yaw_rad: 0.5162017113201847
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_006
+          x_m: 1.236734132625406
+          y_m: 1.4416377762731283
+          yaw_rad: 5.5445325175276565
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_007
+          x_m: 1.2422366632298443
+          y_m: 1.237933819005797
+          yaw_rad: 0.06127314377284865
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_008
+          x_m: 1.255200106984872
+          y_m: 0.9957994134991128
+          yaw_rad: 0.91114234061035
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_009
+          x_m: 1.265456085531953
+          y_m: 1.530390027219342
+          yaw_rad: 5.298383619971238
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_010
+          x_m: 1.3199640966574429
+          y_m: 1.5197798968191625
+          yaw_rad: 5.155492459920767
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_011
+          x_m: 1.351054553921455
+          y_m: 0.9425426165255588
+          yaw_rad: 1.2535849670032293
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_012
+          x_m: 1.392225279004717
+          y_m: 1.5053715143032498
+          yaw_rad: 4.924784799271519
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_013
+          x_m: 1.4101458410972751
+          y_m: 1.0108942452336815
+          yaw_rad: 1.4096494795418977
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_014
+          x_m: 1.4939022524591887
+          y_m: 1.0493939812133204
+          yaw_rad: 1.7806999044847196
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_015
+          x_m: 1.5091304592256576
+          y_m: 1.5908100847310784
+          yaw_rad: 4.538436760425681
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_016
+          x_m: 1.5117625626756206
+          y_m: 1.4918869395607723
+          yaw_rad: 4.448778742463681
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_017
+          x_m: 1.5465927042150545
+          y_m: 0.9754820684260218
+          yaw_rad: 1.9082962003504438
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_018
+          x_m: 1.5479180801413857
+          y_m: 1.5411306119091783
+          yaw_rad: 4.38935985119457
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_019
+          x_m: 1.5691140036598161
+          y_m: 1.4645702007701478
+          yaw_rad: 4.215677779833442
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_020
+          x_m: 1.6162674920787623
+          y_m: 1.4318561334537214
+          yaw_rad: 3.9665588318692966
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_021
+          x_m: 1.6334567348363462
+          y_m: 0.9845089241008419
+          yaw_rad: 2.1770036319425965
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        sensor_transform_config_path: /home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json
+        sensor_transform_config_sha256: 8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5
+        sensor_geometry_path: /home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/urdf/turtlebot3_rotating_sensor.urdf
+        sensor_geometry_sha256: 6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425
+        sensor_joint_position_m:
+        - 0.0
+        - 0.0
+        - 0.355
+        sensor_rotation_axis:
+        - 0.0
+        - 0.0
+        - 1.0
+        sensor_offset_xyz_m:
+        - 0.18
+        - 0.0
+        - 0.015
+        sensor_offset_rpy_rad:
+        - 0.0
+        - 0.0
+        - 0.0
+        sensor_offset_m: 0.18
+        local_branch_qualifications:
+          schema_version: 2
+          method: authoritative_yaw_peak_at_source_coordinate
+          model_config_sha256: 7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741
+          source_list_sha256: b56cfbf6c1cecf9def03d0d1b07ea303ecfbccaa7dd35b3a1c1c556430240092
+          noise_margin_raw_cost: 0.0
+          threshold: 0.95
+          yaw_spacing_rad: 0.008726646259971648
+          points:
+          - source_id: local_a
+            robot_center_x_m: -0.45
+            robot_center_y_m: 0.0
+            peak_yaw_rad: 0.23554498394282672
+            peak_raw_cost: -1.0913953733736834
+            peak_source_score: 0.28351163292997367
+            noise_adjusted_source_score_upper_bound: 0.28351163292997367
+          - source_id: local_b
+            robot_center_x_m: 0.05
+            robot_center_y_m: 0.12
+            peak_yaw_rad: 3.377137630923221
+            peak_raw_cost: -1.0007614762410195
+            peak_source_score: 0.25986176639201686
+            noise_adjusted_source_score_upper_bound: 0.25986176639201686
+          sensor_transform_config_sha256: 8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5
+          sensor_geometry_sha256: 6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425
+          sensor_joint_position_m:
+          - 0.0
+          - 0.0
+          - 0.355
+          sensor_rotation_axis:
+          - 0.0
+          - 0.0
+          - 1.0
+          sensor_offset_xyz_m:
+          - 0.18
+          - 0.0
+          - 0.015
+          sensor_offset_rpy_rad:
+          - 0.0
+          - 0.0
+          - 0.0
+          sensor_offset_m: 0.18
+          result_sha256: dcc77c7634ad2dab01dfd1459ce611aba11763a8eaa1bf30a2c62a6d0e69df13
+        result_sha256: 2c07740f5deb371fc6e277b13811bc7beb45e2be03adba07d0e73631e2feaa3b
+    minimum_saturation_samples: 0
+    collision_expected: false
+    result_scopes:
+      full_lifecycle:
+        anchor_state: SEARCH
+        boundary_state: null
+        graceful_stop: false
+        all_of: *id007
+- case_id: v4d_corner_recovery
+  family: boundary
+  acceptance_family: wall_corner
+  acceptance_partition: development
+  description: Complete the full local-escape and aggregate-goal lifecycle from a fresh corner start.
+    The geometry is the precommitted 90-degree V4 transform.
+  status: executable_unverified
+  profiles:
+  - robust_gaussian_v1
+  seeds:
+  - 10408
+  starts:
+  - id: southwest_corner
+    x_m: 1.35
+    y_m: -1.45
+    yaw_rad: 2.370796326794896
+  sources:
+  - id: local
+    x_m: -1.15
+    y_m: -1.0
+    relative_lumen_input: 750.0
+    evaluation_role: local_minimum
+  - id: target
+    x_m: 0.9
+    y_m: 0.9
+    relative_lumen_input: 2500.0
+    evaluation_role: goal
+  algorithm:
+    ablations: {}
+    launch_overrides: *id002
+  metric_applicability:
+    escape_attempt: true
+    escape_duration: true
+    orbit_count: true
+    revisit: false
+    delay: false
+    saturation: false
+  success:
+    all_of: *id001
+    controller:
+      contract_id: v4d_corner_recovery
+      expected_verification_outcome: below_target_extremum
+      reachability_argument: The weak corner basin is below 0.95 and the aggregate-qualified target lies
+        inside the fixed wall margin.
+      expected_terminal_state: GOAL_HOLD
+      required_state_path: *id003
+      required_events: *id004
+      forbidden_states: *id005
+      forbidden_events: *id006
+    ground_truth:
+      method: aggregate_field
+      final_position_tolerance_m: 0.35
+      wall_margin_m: 0.35
+      minimum_source_score: 0.95
+      aggregate_field:
+        schema_version: 2
+        method: aggregate_field
+        model_config_path: /home/mattb/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json
+        model_config_sha256: 7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741
+        source_list_sha256: 42c4ab4adfdbe635c79c849e8cbc7e72c8bf7378801bcc498d8f182be9de6514
+        sources:
+        - id: local
+          x_m: -1.15
+          y_m: -1.0
+          relative_lumen_input: 750.0
+        - id: target
+          x_m: 0.9
+          y_m: 0.9
+          relative_lumen_input: 2500.0
+        bounds_m:
+        - -2.0
+        - 2.0
+        - -2.0
+        - 2.0
+        wall_margin_m: 0.35
+        domain:
+          x_min_m: -1.65
+          x_max_m: 1.65
+          y_min_m: -1.65
+          y_max_m: 1.65
+          yaw_min_rad: 0.0
+          yaw_max_rad: 6.283185307179586
+        solver_settings:
+          position_spacing_m: 0.1
+          yaw_spacing_rad: 0.08726646259971647
+          offset_position_m: 0.05
+          offset_yaw_rad: 0.04363323129985824
+          retained_basins_per_scan: 32
+          merge_position_tolerance_m: 0.05
+          merge_cost_tolerance: 0.0001
+          scan_agreement_tolerance: 0.0001
+          global_equivalence_tolerance: 0.0001
+          optimizer_method: differential_evolution
+          optimizer_max_iterations: 60
+          optimizer_population_size: 5
+          optimizer_relative_tolerance: 1.0e-09
+          optimizer_absolute_tolerance: 1.0e-10
+        scan_summaries:
+        - scan_id: base
+          offset:
+            x_m: 0.0
+            y_m: 0.0
+            yaw_rad: 0.0
+          shape:
+          - 34
+          - 34
+          - 72
+          lattice_basin_count: 32
+          lattice_best_raw_cost: -3.8372093023255816
+          refined_best_raw_cost: -3.8372093023255816
+        - scan_id: offset
+          offset:
+            x_m: 0.05
+            y_m: 0.05
+            yaw_rad: 0.04363323129985824
+          shape:
+          - 33
+          - 33
+          - 72
+          lattice_basin_count: 32
+          lattice_best_raw_cost: -3.701646221556
+          refined_best_raw_cost: -3.8372093023255816
+        scan_agreement: 0.0
+        global_best_raw_cost: -3.8372093023255816
+        noise_margin_raw_cost: 0.0
+        noise_adjusted_source_score_lower_bound: 1.0
+        minimum_source_score: 0.95
+        targets:
+        - target_id: aggregate_001
+          x_m: 0.5721063873214973
+          y_m: 0.8167820704165468
+          yaw_rad: 0.2471703635625766
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_002
+          x_m: 0.6115388975283161
+          y_m: 0.8505745220310303
+          yaw_rad: 0.1666813869663204
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_003
+          x_m: 0.6225312075441201
+          y_m: 1.0542044021042714
+          yaw_rad: 5.777050374598341
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_004
+          x_m: 0.6698426045036354
+          y_m: 0.7699801850285066
+          yaw_rad: 0.5055691319108857
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_005
+          x_m: 0.6896082698813347
+          y_m: 0.8571293385483671
+          yaw_rad: 0.2089468324465722
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_006
+          x_m: 0.6951441254193048
+          y_m: 1.1265656487494886
+          yaw_rad: 5.451639918392157
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_007
+          x_m: 0.7281051264148286
+          y_m: 1.060335492040147
+          yaw_rad: 5.538438499517346
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_008
+          x_m: 0.7290598412468724
+          y_m: 0.746212051176114
+          yaw_rad: 0.7399449962437501
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_009
+          x_m: 0.7532571576792874
+          y_m: 0.6625210615885936
+          yaw_rad: 1.009285935505443
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_010
+          x_m: 0.7731821516546216
+          y_m: 1.134438541509469
+          yaw_rad: 5.220152376418049
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_011
+          x_m: 0.7875451378961791
+          y_m: 0.700359857230275
+          yaw_rad: 1.0708558412095335
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_012
+          x_m: 0.8172309269044825
+          y_m: 0.633831801689824
+          yaw_rad: 1.2835491659645741
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_013
+          x_m: 0.8421392263846682
+          y_m: 1.1651489603968255
+          yaw_rad: 4.92094747110383
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_014
+          x_m: 0.8785015373446335
+          y_m: 0.6139280051407372
+          yaw_rad: 1.4996128348884483
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_015
+          x_m: 0.8982787766319864
+          y_m: 1.196576989388521
+          yaw_rad: 4.730426324323217
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_016
+          x_m: 1.0080561775493722
+          y_m: 1.177938918220022
+          yaw_rad: 4.342746081439871
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_017
+          x_m: 1.021159678637178
+          y_m: 1.0968638460172524
+          yaw_rad: 4.157393517001399
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_018
+          x_m: 1.0455204176999007
+          y_m: 0.6542359180764131
+          yaw_rad: 2.1066328020797376
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_019
+          x_m: 1.05824871987633
+          y_m: 1.0311299061935701
+          yaw_rad: 3.842986981620252
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_020
+          x_m: 1.0641012632171323
+          y_m: 1.1766693574240954
+          yaw_rad: 4.173712797161271
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_021
+          x_m: 1.0728931946599134
+          y_m: 1.1189613981382893
+          yaw_rad: 4.057711647069256
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_022
+          x_m: 1.10842787758057
+          y_m: 0.7505581280116398
+          yaw_rad: 2.524981336530298
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_023
+          x_m: 1.1324674261518206
+          y_m: 1.0937493677970376
+          yaw_rad: 3.8235016370379387
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_024
+          x_m: 1.1759560242293714
+          y_m: 0.9859320483598312
+          yaw_rad: 3.43197773459194
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_025
+          x_m: 1.1839215399651215
+          y_m: 0.929364138820163
+          yaw_rad: 3.239136940768449
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_026
+          x_m: 1.1992848716090747
+          y_m: 0.8467403958354001
+          yaw_rad: 2.962915256196646
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_027
+          x_m: 1.2271981459200938
+          y_m: 0.777518990142895
+          yaw_rad: 2.7830388410192097
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        sensor_transform_config_path: /home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json
+        sensor_transform_config_sha256: 8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5
+        sensor_geometry_path: /home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/urdf/turtlebot3_rotating_sensor.urdf
+        sensor_geometry_sha256: 6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425
+        sensor_joint_position_m:
+        - 0.0
+        - 0.0
+        - 0.355
+        sensor_rotation_axis:
+        - 0.0
+        - 0.0
+        - 1.0
+        sensor_offset_xyz_m:
+        - 0.18
+        - 0.0
+        - 0.015
+        sensor_offset_rpy_rad:
+        - 0.0
+        - 0.0
+        - 0.0
+        sensor_offset_m: 0.18
+        local_branch_qualifications:
+          schema_version: 2
+          method: authoritative_yaw_peak_at_source_coordinate
+          model_config_sha256: 7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741
+          source_list_sha256: 42c4ab4adfdbe635c79c849e8cbc7e72c8bf7378801bcc498d8f182be9de6514
+          noise_margin_raw_cost: 0.0
+          threshold: 0.95
+          yaw_spacing_rad: 0.008726646259971648
+          points:
+          - source_id: local
+            robot_center_x_m: -1.15
+            robot_center_y_m: -1.0
+            peak_yaw_rad: 0.7474417286474706
+            peak_raw_cost: -0.06553493803702089
+            peak_source_score: 0.015825224755668
+            noise_adjusted_source_score_upper_bound: 0.015825224755668
+          sensor_transform_config_sha256: 8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5
+          sensor_geometry_sha256: 6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425
+          sensor_joint_position_m:
+          - 0.0
+          - 0.0
+          - 0.355
+          sensor_rotation_axis:
+          - 0.0
+          - 0.0
+          - 1.0
+          sensor_offset_xyz_m:
+          - 0.18
+          - 0.0
+          - 0.015
+          sensor_offset_rpy_rad:
+          - 0.0
+          - 0.0
+          - 0.0
+          sensor_offset_m: 0.18
+          result_sha256: 24aa1a5a641a18da043bdd67087b82b8c9eb41c6f24f18131251c8e9b72e0093
+        result_sha256: d7e1ec2749bfa049ac4e69252de023c0d652346fef1a4fdc6561466915f9161a
+    minimum_saturation_samples: 0
+    collision_expected: false
+    result_scopes:
+      full_lifecycle:
+        anchor_state: SEARCH
+        boundary_state: null
+        graceful_stop: false
+        all_of: *id001
+- case_id: v4d_noise_delay
+  family: noise_delay
+  acceptance_family: noise_delay
+  acceptance_partition: development
+  description: Complete the full lifecycle under seeded Gaussian noise and equal sensor and pose delays.
+    The geometry is the precommitted 90-degree V4 transform.
+  status: executable_unverified
+  profiles:
+  - robust_gaussian_v1
+  seeds:
+  - 10409
+  starts:
+  - id: local_center
+    x_m: -0.6
+    y_m: -0.8
+    yaw_rad: 1.170796326794897
+  sources:
+  - id: local
+    x_m: -0.8
+    y_m: 0.6
+    relative_lumen_input: 700.0
+    evaluation_role: local_minimum
+  - id: target
+    x_m: 1.2
+    y_m: -0.9
+    relative_lumen_input: 2500.0
+    evaluation_role: goal
+  disturbances:
+    sensor_noise:
+      model: gaussian
+      bound: 0.0
+      std_dev: 0.01
+    sensor_delay_sec: 0.05
+    pose_delay_sec: 0.05
+  algorithm:
+    ablations: {}
+    launch_overrides: *id002
+  metric_applicability:
+    escape_attempt: true
+    escape_duration: true
+    orbit_count: true
+    revisit: false
+    delay: true
+    saturation: false
+  success:
+    all_of: *id001
+    controller:
+      contract_id: v4d_noise_delay
+      expected_verification_outcome: below_target_extremum
+      reachability_argument: Aggregate qualification applies the three-standard-deviation raw-cost margin
+        before accepting this target.
+      expected_terminal_state: GOAL_HOLD
+      required_state_path: *id003
+      required_events: *id004
+      forbidden_states: *id005
+      forbidden_events: *id006
+    ground_truth:
+      method: aggregate_field
+      final_position_tolerance_m: 0.35
+      wall_margin_m: 0.35
+      minimum_source_score: 0.95
+      aggregate_field:
+        schema_version: 2
+        method: aggregate_field
+        model_config_path: /home/mattb/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json
+        model_config_sha256: 7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741
+        source_list_sha256: ef3b20ee7ae319cdc8bfd5d3180bf658d9663430b96fc21509f161062472a358
+        sources:
+        - id: local
+          x_m: -0.8
+          y_m: 0.6
+          relative_lumen_input: 700.0
+        - id: target
+          x_m: 1.2
+          y_m: -0.9
+          relative_lumen_input: 2500.0
+        bounds_m:
+        - -2.0
+        - 2.0
+        - -2.0
+        - 2.0
+        wall_margin_m: 0.35
+        domain:
+          x_min_m: -1.65
+          x_max_m: 1.65
+          y_min_m: -1.65
+          y_max_m: 1.65
+          yaw_min_rad: 0.0
+          yaw_max_rad: 6.283185307179586
+        solver_settings:
+          position_spacing_m: 0.1
+          yaw_spacing_rad: 0.08726646259971647
+          offset_position_m: 0.05
+          offset_yaw_rad: 0.04363323129985824
+          retained_basins_per_scan: 32
+          merge_position_tolerance_m: 0.05
+          merge_cost_tolerance: 0.0001
+          scan_agreement_tolerance: 0.0001
+          global_equivalence_tolerance: 0.0001
+          optimizer_method: differential_evolution
+          optimizer_max_iterations: 60
+          optimizer_population_size: 5
+          optimizer_relative_tolerance: 1.0e-09
+          optimizer_absolute_tolerance: 1.0e-10
+        scan_summaries:
+        - scan_id: base
+          offset:
+            x_m: 0.0
+            y_m: 0.0
+            yaw_rad: 0.0
+          shape:
+          - 34
+          - 34
+          - 72
+          lattice_basin_count: 32
+          lattice_best_raw_cost: -3.8372093023255816
+          refined_best_raw_cost: -3.8372093023255816
+        - scan_id: offset
+          offset:
+            x_m: 0.05
+            y_m: 0.05
+            yaw_rad: 0.04363323129985824
+          shape:
+          - 33
+          - 33
+          - 72
+          lattice_basin_count: 32
+          lattice_best_raw_cost: -3.70191452053189
+          refined_best_raw_cost: -3.8372093023255816
+        scan_agreement: 0.0
+        global_best_raw_cost: -3.8372093023255816
+        noise_margin_raw_cost: 0.03
+        noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        minimum_source_score: 0.95
+        targets:
+        - target_id: aggregate_001
+          x_m: 0.852633203647955
+          y_m: -0.9414400239677149
+          yaw_rad: 0.11832301341487117
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_002
+          x_m: 0.917967084053557
+          y_m: -0.922047675231224
+          yaw_rad: 0.08196700673784552
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_003
+          x_m: 0.9497008591743228
+          y_m: -0.7806625064346062
+          yaw_rad: 5.835234668357408
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_004
+          x_m: 0.9627473625231866
+          y_m: -0.721043294639485
+          yaw_rad: 5.645638561886469
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_005
+          x_m: 0.9721525344046862
+          y_m: -1.076999911088277
+          yaw_rad: 0.6580310077020606
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_006
+          x_m: 1.0043127722170029
+          y_m: -0.6657289551433025
+          yaw_rad: 5.4085551911158465
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_007
+          x_m: 1.0451041806755026
+          y_m: -0.6129440701946234
+          yaw_rad: 5.19990538441319
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_008
+          x_m: 1.052422339139068
+          y_m: -1.1464137374463181
+          yaw_rad: 1.0429495852580013
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_009
+          x_m: 1.087545137896179
+          y_m: -1.0996401427697249
+          yaw_rad: 1.0708558412095335
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_010
+          x_m: 1.1079043889382936
+          y_m: -0.5974038153632757
+          yaw_rad: 5.006552761737185
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_011
+          x_m: 1.1421066951776808
+          y_m: -1.1407597045668352
+          yaw_rad: 1.3480328301595381
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_012
+          x_m: 1.1837540709555192
+          y_m: -0.6614970558044687
+          yaw_rad: 4.7799755280418665
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_013
+          x_m: 1.2175056981224959
+          y_m: -1.1934940067407975
+          yaw_rad: 1.6230397670172128
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_014
+          x_m: 1.2434593956970765
+          y_m: -1.241300762368217
+          yaw_rad: 1.6948545519712688
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_015
+          x_m: 1.2752020536376685
+          y_m: -0.7094061485718519
+          yaw_rad: 4.340669935560998
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_016
+          x_m: 1.3311041298649775
+          y_m: -0.6468346418224444
+          yaw_rad: 4.221871769422926
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_017
+          x_m: 1.369529117994219
+          y_m: -0.7035986450919138
+          yaw_rad: 4.013240775841541
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_018
+          x_m: 1.3997958745106671
+          y_m: -1.031006236363103
+          yaw_rad: 2.5626228493072256
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_019
+          x_m: 1.4077767961498528
+          y_m: -0.6672700789297881
+          yaw_rad: 3.9816369294926925
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_020
+          x_m: 1.42907490613612
+          y_m: -0.8172739133021503
+          yaw_rad: 3.48306477135023
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_021
+          x_m: 1.448399036254381
+          y_m: -0.8761485390987608
+          yaw_rad: 3.233565427235763
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_022
+          x_m: 1.4643151829757288
+          y_m: -0.9999701748520442
+          yaw_rad: 2.7949279464427894
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_023
+          x_m: 1.4756165443752034
+          y_m: -1.0713293574098657
+          yaw_rad: 2.588928870532452
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        - target_id: aggregate_024
+          x_m: 1.4782293357629785
+          y_m: -0.7659544089589891
+          yaw_rad: 3.5920485602622327
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 0.9921718471942105
+        sensor_transform_config_path: /home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json
+        sensor_transform_config_sha256: 8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5
+        sensor_geometry_path: /home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/urdf/turtlebot3_rotating_sensor.urdf
+        sensor_geometry_sha256: 6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425
+        sensor_joint_position_m:
+        - 0.0
+        - 0.0
+        - 0.355
+        sensor_rotation_axis:
+        - 0.0
+        - 0.0
+        - 1.0
+        sensor_offset_xyz_m:
+        - 0.18
+        - 0.0
+        - 0.015
+        sensor_offset_rpy_rad:
+        - 0.0
+        - 0.0
+        - 0.0
+        sensor_offset_m: 0.18
+        local_branch_qualifications:
+          schema_version: 2
+          method: authoritative_yaw_peak_at_source_coordinate
+          model_config_sha256: 7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741
+          source_list_sha256: ef3b20ee7ae319cdc8bfd5d3180bf658d9663430b96fc21509f161062472a358
+          noise_margin_raw_cost: 0.03
+          threshold: 0.95
+          yaw_spacing_rad: 0.008726646259971648
+          points:
+          - source_id: local
+            robot_center_x_m: -0.8
+            robot_center_y_m: 0.6
+            peak_yaw_rad: 5.639684083160228
+            peak_raw_cost: -0.08459726481304129
+            peak_source_score: 0.020799318316887375
+            noise_adjusted_source_score_upper_bound: 0.02862747112267691
+          sensor_transform_config_sha256: 8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5
+          sensor_geometry_sha256: 6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425
+          sensor_joint_position_m:
+          - 0.0
+          - 0.0
+          - 0.355
+          sensor_rotation_axis:
+          - 0.0
+          - 0.0
+          - 1.0
+          sensor_offset_xyz_m:
+          - 0.18
+          - 0.0
+          - 0.015
+          sensor_offset_rpy_rad:
+          - 0.0
+          - 0.0
+          - 0.0
+          sensor_offset_m: 0.18
+          result_sha256: b69596ee30f0c68737ef60c9f6066cc2fe525bb235a90af7e4cdce784055b2f7
+        result_sha256: 4c950055884745ed0a7fff1a4df85685069d13fcfe69a4e3c868f9136794342d
+    minimum_saturation_samples: 0
+    collision_expected: false
+    result_scopes:
+      full_lifecycle:
+        anchor_state: SEARCH
+        boundary_state: null
+        graceful_stop: false
+        all_of: *id001
+- case_id: v4d_saturation_recenter_revisit
+  family: starts_saturation
+  acceptance_family: constraint_recovery
+  acceptance_partition: development
+  description: Require saturation, successful escape and recenter, and valid revisit evidence from a far
+    start. The geometry is the precommitted 90-degree V4 transform.
+  status: executable_unverified
+  profiles:
+  - robust_gaussian_v1
+  seeds:
+  - 10410
+  starts:
+  - id: northwest_far
+    x_m: -1.3
+    y_m: -1.45
+    yaw_rad: 0.870796326794897
+  sources:
+  - id: local
+    x_m: -0.9
+    y_m: -0.5
+    relative_lumen_input: 750.0
+    evaluation_role: local_minimum
+  - id: target
+    x_m: 1.2
+    y_m: 1.2
+    relative_lumen_input: 2500.0
+    evaluation_role: goal
+  algorithm:
+    ablations: {}
+    launch_overrides: *id002
+  metric_applicability:
+    escape_attempt: true
+    escape_duration: true
+    orbit_count: true
+    revisit: true
+    delay: false
+    saturation: true
+  success:
+    all_of: &id008
+    - recording_complete
+    - cleanup_complete
+    - controller_goal
+    - ground_truth_goal
+    - expected_terminal_state
+    - required_state_path
+    - required_events
+    - no_forbidden_states
+    - no_forbidden_events
+    - minimum_saturation_samples
+    - collision_expectation
+    controller:
+      contract_id: v4d_saturation_recenter_revisit
+      expected_verification_outcome: below_target_extremum
+      reachability_argument: The weak local basin is below 0.95 and the aggregate-qualified target supports
+        saturation, recenter, and revisit evaluation.
+      expected_terminal_state: GOAL_HOLD
+      required_state_path: *id003
+      required_events: *id004
+      forbidden_states: *id005
+      forbidden_events: *id006
+    ground_truth:
+      method: aggregate_field
+      final_position_tolerance_m: 0.35
+      wall_margin_m: 0.35
+      minimum_source_score: 0.95
+      aggregate_field:
+        schema_version: 2
+        method: aggregate_field
+        model_config_path: /home/mattb/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json
+        model_config_sha256: 7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741
+        source_list_sha256: 30502172c034b49f2f5fa1327d611d2f8f434a421f465565f28974a83e681a9f
+        sources:
+        - id: local
+          x_m: -0.9
+          y_m: -0.5
+          relative_lumen_input: 750.0
+        - id: target
+          x_m: 1.2
+          y_m: 1.2
+          relative_lumen_input: 2500.0
+        bounds_m:
+        - -2.0
+        - 2.0
+        - -2.0
+        - 2.0
+        wall_margin_m: 0.35
+        domain:
+          x_min_m: -1.65
+          x_max_m: 1.65
+          y_min_m: -1.65
+          y_max_m: 1.65
+          yaw_min_rad: 0.0
+          yaw_max_rad: 6.283185307179586
+        solver_settings:
+          position_spacing_m: 0.1
+          yaw_spacing_rad: 0.08726646259971647
+          offset_position_m: 0.05
+          offset_yaw_rad: 0.04363323129985824
+          retained_basins_per_scan: 32
+          merge_position_tolerance_m: 0.05
+          merge_cost_tolerance: 0.0001
+          scan_agreement_tolerance: 0.0001
+          global_equivalence_tolerance: 0.0001
+          optimizer_method: differential_evolution
+          optimizer_max_iterations: 60
+          optimizer_population_size: 5
+          optimizer_relative_tolerance: 1.0e-09
+          optimizer_absolute_tolerance: 1.0e-10
+        scan_summaries:
+        - scan_id: base
+          offset:
+            x_m: 0.0
+            y_m: 0.0
+            yaw_rad: 0.0
+          shape:
+          - 34
+          - 34
+          - 72
+          lattice_basin_count: 32
+          lattice_best_raw_cost: -3.8372093023255816
+          refined_best_raw_cost: -3.8372093023255816
+        - scan_id: offset
+          offset:
+            x_m: 0.05
+            y_m: 0.05
+            yaw_rad: 0.04363323129985824
+          shape:
+          - 33
+          - 33
+          - 72
+          lattice_basin_count: 32
+          lattice_best_raw_cost: -3.7017737050549506
+          refined_best_raw_cost: -3.8372093023255816
+        scan_agreement: 0.0
+        global_best_raw_cost: -3.8372093023255816
+        noise_margin_raw_cost: 0.0
+        noise_adjusted_source_score_lower_bound: 1.0
+        minimum_source_score: 0.95
+        targets:
+        - target_id: aggregate_001
+          x_m: 0.8777293471983173
+          y_m: 1.139481353609619
+          yaw_rad: 0.1787047813333258
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_002
+          x_m: 0.9020977070208662
+          y_m: 1.355980299462471
+          yaw_rad: 5.80200879066849
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_003
+          x_m: 0.9314702399417408
+          y_m: 1.1340811728295426
+          yaw_rad: 0.24888675104692926
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_004
+          x_m: 0.9598211062124369
+          y_m: 1.3809157105027867
+          yaw_rad: 5.645686542307955
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_005
+          x_m: 0.9679746168670225
+          y_m: 1.0473512868926793
+          yaw_rad: 0.5824538487316708
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_006
+          x_m: 1.0060812907218417
+          y_m: 1.4233741996465399
+          yaw_rad: 5.430739239726229
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_007
+          x_m: 1.0261509456323528
+          y_m: 1.0381679865011335
+          yaw_rad: 0.7598338362433865
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_008
+          x_m: 1.0281051264148284
+          y_m: 1.3603354920401474
+          yaw_rad: 5.538438499517346
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_009
+          x_m: 1.0532571576792873
+          y_m: 0.9625210615885934
+          yaw_rad: 1.009285935505443
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_010
+          x_m: 1.0731821516546214
+          y_m: 1.434438541509469
+          yaw_rad: 5.220152376418049
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_011
+          x_m: 1.0766445601582904
+          y_m: 1.3465402446717107
+          yaw_rad: 5.4128498000586776
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_012
+          x_m: 1.087545137896179
+          y_m: 1.0003598572302748
+          yaw_rad: 1.0708558412095335
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_013
+          x_m: 1.1172309269044827
+          y_m: 0.9338318016898238
+          yaw_rad: 1.2835491659645741
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_014
+          x_m: 1.142139226384668
+          y_m: 1.4651489603968253
+          yaw_rad: 4.92094747110383
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_015
+          x_m: 1.178501537344634
+          y_m: 0.913928005140737
+          yaw_rad: 1.4996128348884483
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_016
+          x_m: 1.2856443393164227
+          y_m: 1.4515678877026552
+          yaw_rad: 4.400812579551113
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_017
+          x_m: 1.3249140844157083
+          y_m: 0.9569419659554105
+          yaw_rad: 2.035756170636046
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_018
+          x_m: 1.3514822557307342
+          y_m: 1.474626536835791
+          yaw_rad: 4.217206943695061
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_019
+          x_m: 1.3582487198763298
+          y_m: 1.3311299061935702
+          yaw_rad: 3.842986981620252
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_020
+          x_m: 1.3728931946599132
+          y_m: 1.4189613981382891
+          yaw_rad: 4.057711647069256
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_021
+          x_m: 1.3864303489060708
+          y_m: 1.0546851897921428
+          yaw_rad: 2.4948250718444656
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_022
+          x_m: 1.4324674261518204
+          y_m: 1.3937493677970378
+          yaw_rad: 3.8235016370379387
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_023
+          x_m: 1.4658027813240049
+          y_m: 1.1721563956665437
+          yaw_rad: 3.037242677526576
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_024
+          x_m: 1.4782293357629785
+          y_m: 1.3340455910410112
+          yaw_rad: 3.5920485602622327
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_025
+          x_m: 1.4839215399651213
+          y_m: 1.2293641388201633
+          yaw_rad: 3.239136940768449
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        - target_id: aggregate_026
+          x_m: 1.4944674780403502
+          y_m: 1.0776284678975439
+          yaw_rad: 2.7480760453597646
+          raw_cost: -3.8372093023255816
+          source_score: 1.0
+          noise_adjusted_source_score_lower_bound: 1.0
+        sensor_transform_config_path: /home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json
+        sensor_transform_config_sha256: 8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5
+        sensor_geometry_path: /home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/urdf/turtlebot3_rotating_sensor.urdf
+        sensor_geometry_sha256: 6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425
+        sensor_joint_position_m:
+        - 0.0
+        - 0.0
+        - 0.355
+        sensor_rotation_axis:
+        - 0.0
+        - 0.0
+        - 1.0
+        sensor_offset_xyz_m:
+        - 0.18
+        - 0.0
+        - 0.015
+        sensor_offset_rpy_rad:
+        - 0.0
+        - 0.0
+        - 0.0
+        sensor_offset_m: 0.18
+        local_branch_qualifications:
+          schema_version: 2
+          method: authoritative_yaw_peak_at_source_coordinate
+          model_config_sha256: 7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741
+          source_list_sha256: 30502172c034b49f2f5fa1327d611d2f8f434a421f465565f28974a83e681a9f
+          noise_margin_raw_cost: 0.0
+          threshold: 0.95
+          yaw_spacing_rad: 0.008726646259971648
+          points:
+          - source_id: local
+            robot_center_x_m: -0.9
+            robot_center_y_m: -0.5
+            peak_yaw_rad: 0.680521210719899
+            peak_raw_cost: -0.07087182109516113
+            peak_source_score: 0.01721782262519304
+            noise_adjusted_source_score_upper_bound: 0.01721782262519304
+          sensor_transform_config_sha256: 8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5
+          sensor_geometry_sha256: 6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425
+          sensor_joint_position_m:
+          - 0.0
+          - 0.0
+          - 0.355
+          sensor_rotation_axis:
+          - 0.0
+          - 0.0
+          - 1.0
+          sensor_offset_xyz_m:
+          - 0.18
+          - 0.0
+          - 0.015
+          sensor_offset_rpy_rad:
+          - 0.0
+          - 0.0
+          - 0.0
+          sensor_offset_m: 0.18
+          result_sha256: 3fd258c41b3b366c9ffb9467e2dfd507481b78a4f8ac94939253d0cb06868cdb
+        result_sha256: 0da3ce6a12f4db4f16bceafe15274c896f312909cfc779efbdc6bf8c8e21d346
+    minimum_saturation_samples: 1
+    collision_expected: false
+    result_scopes:
+      full_lifecycle:
+        anchor_state: SEARCH
+        boundary_state: null
+        graceful_stop: false
+        all_of: *id008

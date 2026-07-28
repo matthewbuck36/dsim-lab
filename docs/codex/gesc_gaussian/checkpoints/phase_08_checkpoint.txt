@@ -1,59 +1,62 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-28T17:33:10+00:00
-Base HEAD: 70d9cdcb53e05daab3fd84eec06d08cf0c861074
+Generated: 2026-07-28T18:01:29+00:00
+Base HEAD: 43a27b689f09a006ca34c9acbaf4dcf7d28d87fd
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 0a241c7b3029edc5ac7062b0efca7199fb87fdf7abdc45406710e14836d57d15
+Status sha256: cbb921bb1fdd9073296d3ca2184b75cc53967b23587c23eaddba6b9ef4b42b88
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_4_plan.md
 Active subphase plan sha256: 63369edbbfa2c8fb987822f5f05d0dea7487443f27e4963e5b61e24ccc644f69
-Unstaged diff sha256: df31d4bae0e17f4aaf1f029a66a874d491fbf809f184da57ae5a811dd7a83027
+Unstaged diff sha256: fe6c8694c1bdb2cb24e21fc6cdbc6c24b82ce0b327cbfddb1a9de281b3f24447
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 28]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 29]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
- M docs/codex/gesc_gaussian/recording_runs.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
  M docs/codex/gesc_gaussian/test_commands.md
- M ros2_ws/src/ros_esc/ros_esc/experiment_recording/record_run.py
- M ros2_ws/src/ros_esc/test/test_experiment_recording.py
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py
+ M ros2_ws/src/ros_esc/setup.py
+ M ros2_ws/src/ros_esc/test/test_phase08_validation.py
+?? docs/codex/gesc_gaussian/validation/phase_08_v4_population_adoption.json
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v4_activation.yaml
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v4_candidates.yaml
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v4_development.yaml
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  57 +-----
- docs/codex/gesc_gaussian/recording_runs.md         |  10 +
- docs/codex/gesc_gaussian/status/phase_08_status.md |  69 +++++++
- docs/codex/gesc_gaussian/test_commands.md          |  68 +++++++
- .../ros_esc/experiment_recording/record_run.py     | 225 ++++++++++++++++++---
- .../src/ros_esc/test/test_experiment_recording.py  | 182 ++++++++++++++++-
- 6 files changed, 532 insertions(+), 79 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  52 +-
+ docs/codex/gesc_gaussian/status/phase_08_status.md |  95 ++++
+ docs/codex/gesc_gaussian/test_commands.md          |  37 ++
+ .../ros_esc/scenario_runner/phase08_validation.py  | 589 ++++++++++++++++++---
+ ros2_ws/src/ros_esc/setup.py                       |   2 +-
+ .../src/ros_esc/test/test_phase08_validation.py    | 138 +++++
+ 6 files changed, 810 insertions(+), 103 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**M2 — implement and precommit the fresh V4 workflow.**
+**M3 — prepare and qualify V4.**
 
 ### Next criterion
 
-Parameterize the existing Phase 08 workflow owner for V4 without duplicating
-it, add new activation/development/candidate inputs, bind the unchanged unused
-70+10 formal population with a zero-prior-execution proof, add V4 CLI and
-stage/hash tests, then pass source/build/installed dry qualification at a
-clean commit before creating the V4 evidence root.
+Commit the exact M2 inputs, require clean Git, transactionally create
+`/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4`, then pass the
+zero-prior-execution recheck, full functional suite, isolated build, installed
+resource/launch/dry-run checks, recorder SIGINT smoke, disk forecast, and
+empty process-set gates. Only that passing state may start the ten real GUI
+Gazebo activation simulations.
 
-### M2 stop conditions
+### M3 stop conditions
 
-- Do not change algorithm behavior or formal acceptance thresholds silently.
-- Do not modify the adopted 70+10 population bytes.
-- Do not create or run a V4 Gazebo root before M2/M3 qualification.
-- Stop for a required duplicate owner, physical fork, or unresolved
-  historical-execution collision.
+- No Gazebo dispatch if prepare or qualification is incomplete or failed.
+- Do not alter an input captured by the V4 repository snapshot.
+- Do not reuse any V3 evidence record as V4 evidence.
 
 
 This file describes the base HEAD and diff before the next commit; it is
