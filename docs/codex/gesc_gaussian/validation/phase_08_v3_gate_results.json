@@ -1,0 +1,169 @@
+{
+  "confidence_intervals": null,
+  "contract_sha256": null,
+  "experiment_version": "phase08-v3",
+  "gates": [
+    {
+      "gate": "context_qualification",
+      "passed": false,
+      "reason": null,
+      "status": "evaluated",
+      "threshold": "complete verified prepare/qualification/freeze/contract chain",
+      "value": {
+        "contract": null,
+        "errors": [
+          "v3 development state is missing",
+          "v3 freeze state is missing",
+          "v3 contract state is missing",
+          "v3 holdout state is missing",
+          "v3 validation state is missing",
+          "v3 reproducibility state is missing",
+          "tracked v3 acceptance contract is missing"
+        ],
+        "freeze": null,
+        "prepare": true,
+        "qualification": true
+      }
+    },
+    {
+      "gate": "activation",
+      "passed": false,
+      "reason": null,
+      "status": "evaluated",
+      "threshold": "10/10",
+      "value": 0
+    },
+    {
+      "gate": "development_freeze",
+      "passed": false,
+      "reason": null,
+      "status": "evaluated",
+      "threshold": "one eligible winner plus verified freeze and contract",
+      "value": null
+    },
+    {
+      "gate": "holdout",
+      "passed": false,
+      "reason": "not run after the pre-holdout early-stop gate failed",
+      "status": "not_run",
+      "threshold": ">=18/20 and exact family floors",
+      "value": "not_run"
+    },
+    {
+      "gate": "contract_population_binding",
+      "passed": false,
+      "reason": "not run after the pre-validation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "fixed acceptance contract",
+      "value": "not_run"
+    },
+    {
+      "gate": "completeness_analysis_integrity",
+      "passed": false,
+      "reason": "not run after the pre-validation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "fixed acceptance contract",
+      "value": "not_run"
+    },
+    {
+      "gate": "behavior_contracts",
+      "passed": false,
+      "reason": "not run after the pre-validation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "fixed acceptance contract",
+      "value": "not_run"
+    },
+    {
+      "gate": "end_to_end",
+      "passed": false,
+      "reason": "not run after the pre-validation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "fixed acceptance contract",
+      "value": "not_run"
+    },
+    {
+      "gate": "family_floors",
+      "passed": false,
+      "reason": "not run after the pre-validation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "fixed acceptance contract",
+      "value": "not_run"
+    },
+    {
+      "gate": "local_escape",
+      "passed": false,
+      "reason": "not run after the pre-validation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "fixed acceptance contract",
+      "value": "not_run"
+    },
+    {
+      "gate": "escape_duration",
+      "passed": false,
+      "reason": "not run after the pre-validation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "fixed acceptance contract",
+      "value": "not_run"
+    },
+    {
+      "gate": "orbit_count",
+      "passed": false,
+      "reason": "not run after the pre-validation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "fixed acceptance contract",
+      "value": "not_run"
+    },
+    {
+      "gate": "revisit",
+      "passed": false,
+      "reason": "not run after the pre-validation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "fixed acceptance contract",
+      "value": "not_run"
+    },
+    {
+      "gate": "lifecycle_coverage",
+      "passed": false,
+      "reason": "not run after the pre-validation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "fixed acceptance contract",
+      "value": "not_run"
+    },
+    {
+      "gate": "disturbance_constraint_evidence",
+      "passed": false,
+      "reason": "not run after the pre-validation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "fixed acceptance contract",
+      "value": "not_run"
+    },
+    {
+      "gate": "metric_applicability",
+      "passed": false,
+      "reason": "not run after the pre-validation early-stop gate failed",
+      "status": "not_run",
+      "threshold": "fixed acceptance contract",
+      "value": "not_run"
+    },
+    {
+      "gate": "reproducibility",
+      "passed": false,
+      "reason": "not run after the pre-reproducibility early-stop gate failed",
+      "status": "not_run",
+      "threshold": "10/10 comparisons",
+      "value": "not_run"
+    }
+  ],
+  "outcome": "failed",
+  "schema_version": 1,
+  "simulation_ready": false,
+  "state_chain_errors": [
+    "v3 development state is missing",
+    "v3 freeze state is missing",
+    "v3 contract state is missing",
+    "v3 holdout state is missing",
+    "v3 validation state is missing",
+    "v3 reproducibility state is missing",
+    "tracked v3 acceptance contract is missing"
+  ]
+}

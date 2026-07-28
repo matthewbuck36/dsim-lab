@@ -2982,3 +2982,63 @@ before starting. Direct non-dry `run_scenario` calls for formal v3 suites must
 fail in favor of this workflow entry point. The activation stage remains
 serial and GUI-visible and reruns all ten cases; the old V3A run does not enter
 its result.
+
+## Phase 08.3 M3E V3D terminal commands
+
+V3D adoption and qualification used the clean, audited source boundary:
+
+```bash
+source /opt/ros/humble/setup.bash
+source /home/mattb/dsim-lab/ros2_ws/install/setup.bash
+
+timeout --signal=INT --kill-after=30s 1800s \
+  ros2 run ros_esc validate_robustness v3-adopt-precommit \
+    --operator phase08_v3 \
+    --evidence-root \
+      /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3d \
+    --superseded-evidence-root \
+      /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3b
+
+timeout --signal=INT --kill-after=30s 1800s \
+  ros2 run ros_esc validate_robustness v3-qualify \
+    --operator phase08_v3 \
+    --evidence-root \
+      /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3d
+```
+
+Adoption passed. Qualification passed, including `475 passed, 2 skipped in
+63.88 s`, isolated build, installed resources/entrypoint, real-ROS no-Gazebo
+boundary smoke, bounded supervisor/fill instantiation, and two ten-case dry
+runs with zero unsupported cases.
+
+The actual GUI activation command was:
+
+```bash
+timeout --signal=INT --kill-after=120s 10800s \
+  ros2 run ros_esc validate_robustness v3-activation \
+    --operator phase08_v3 \
+    --evidence-root \
+      /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3d
+```
+
+It returned `1` after one new GUI Gazebo execution. The run reached readiness
+and the declared fill/escape boundary, then `record_run` returned `2` with
+`RCLError: Failed to publish: publisher's context is invalid`. The workflow
+retained the run and bag, reran the functional integrity gate (`475 passed,
+2 skipped in 64.72 s`), classified the slot
+`runner_or_recorder_failure`, marked the remaining eight cases `not_run`, and
+stopped without retry or replacement.
+
+Terminal reporting used:
+
+```bash
+timeout --signal=INT --kill-after=30s 1800s \
+  ros2 run ros_esc validate_robustness v3-report \
+    --operator phase08_v3 \
+    --evidence-root \
+      /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3d
+```
+
+It returned `1`, matching the terminal failed result, and wrote the v3 gate
+JSON, run manifest, validation report, failure report, and external terminal
+state. Do not rerun any V3D command.

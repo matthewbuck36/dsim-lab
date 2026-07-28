@@ -1,50 +1,58 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-28T09:32:56+00:00
-Base HEAD: 7a0db9533491eaed7eaed29fe4f6a26ee038913a
+Generated: 2026-07-28T09:52:20+00:00
+Base HEAD: a21671e858d504c81761c258cea18e407924c2e2
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: ef774ac2357bdcfb60bfa57385a130b59bd440be2ff99f5acd77ee7916ca564e
+Status sha256: 634ec1d1223f5b306b0bfbfa849fcaa3108094c6c46f3fd07eb8ece9bb833bcc
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_3_plan.md
 Active subphase plan sha256: 9a2c0dcdf23d1fcb18c471205aaeae254f0bfc93967fffae6fbab12250887053
-Unstaged diff sha256: c9ed882fff87f5737318bd6d5262713fb650403a9680d029e1fee4396b929bd1
+Unstaged diff sha256: 8581bad6c08e2126e0a8b8170440a5965c096632957f6b8312aa1a9ccbabf975
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 25]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 26]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
+ M docs/codex/gesc_gaussian/test_commands.md
+?? docs/codex/gesc_gaussian/handoffs/phase_08_3_handoff.md
+?? docs/codex/gesc_gaussian/validation/phase_08_v3_failure_report.md
+?? docs/codex/gesc_gaussian/validation/phase_08_v3_gate_results.json
+?? docs/codex/gesc_gaussian/validation/phase_08_v3_run_manifest.json
+?? docs/codex/gesc_gaussian/validation/phase_08_v3_validation_report.md
+?? docs/codex/gesc_gaussian/validation/phase_08_v3d_failure_report.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 52 ++------------
- docs/codex/gesc_gaussian/status/phase_08_status.md | 82 ++++++++++++++++++++++
- 2 files changed, 87 insertions(+), 47 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  45 ++---
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 191 ++++++++++++++++++++-
+ docs/codex/gesc_gaussian/test_commands.md          |  60 +++++++
+ 3 files changed, 254 insertions(+), 42 deletions(-)
 
 ## Current milestone snapshot
 
-- Closed lineages V3A, V3B, and V3C remain immutable failed evidence; V3C has
-  no Gazebo simulation outcome.
-- Current milestone: **M3E — execute the qualified fresh V3D diagnostic
-  activation**.
-- Fresh V3D root:
-  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3d`.
-- Adoption passed against commit
-  `7a0db9533491eaed7eaed29fe4f6a26ee038913a`.
-- Qualification passed: `475 passed, 2 skipped`, isolated install and
-  entrypoints passed, exact recovery proof passed, all `10/10` direct and
-  recorder launch contracts retained GUI-visible Gazebo, and process sets
-  before and after were empty.
-- Next criterion: commit this evidence-only status boundary, then run the
-  bounded `v3-activation` command. Carry the V3B direct case without dispatch
-  and execute only the exact nine remaining cases in fixed order, once each.
-- Terminal expectation: close Phase 08.3 failed after the nine diagnostics or
-  an unchanged hard stop. No M4 or readiness tag is possible.
+- Phase 08.3 status: **CLOSED / FAILED / NOT SIMULATION-READY**.
+- V3A, V3B, V3C, and V3D are immutable failed evidence roots.
+- V3D executed one real GUI Gazebo case and stopped at the declared
+  `runner_or_recorder_failure` hard gate.
+- Activation provenance: one carried V3B record, one new V3D execution, one
+  attempt, zero replacements, zero ambiguous attempts, and eight exact cases
+  `not_run`.
+- Development/tuning, freeze, acceptance-contract seal, holdout, unique
+  validation, and reproducibility are `NOT RUN`.
+- Terminal gate JSON, run manifest, validation report, generic failure report,
+  detailed V3D failure report, and Phase 08.3 handoff exist in the pending
+  closeout diff.
+- Complete terminal V3D root: `1576` regular files, manifest SHA-256
+  `94161e4ec08512d844c43949da4a7ff0883031b4ea536aafad79390c66f261c9`.
+- No simulation-ready tag, Phase 09 work, or physical hardware exists.
+- Next criterion: validate and commit the terminal closeout only. Do not rerun
+  V3D or start a successor automatically.
 
 
 

@@ -1,16 +1,16 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-28T01:27:18-07:00`
-Status: `IN PROGRESS — PHASE 08.3 V3 ACCEPTANCE`
+Last verified: `2026-07-28T02:48:20-07:00`
+Status: `CLOSED — PHASE 08.3 FAILED / NOT SIMULATION-READY`
 
 ## Objective
 
-Correct the one currently observed Phase 08.1 M6 recenter failure without
-changing the escape-assist selector, safety geometry, timeout, controller
-ownership, or legacy behavior. Prove the bounded correction with deterministic
-and integration tests, source-state validation, and one newly versioned
-development-only Gazebo probe. Historical v1, v2, and Phase 08.1 evidence
-remains immutable and cannot count toward a future acceptance attempt.
+Execute the fresh Phase 08.3 v3 robustness-acceptance design without changing
+controller ownership, cost sign or units, canonical topics, selectable legacy
+behavior, or simulation/physical algorithm parity. Preserve every failed
+version, stop at the first declared hard gate, and claim simulation readiness
+only if the full activation, development/freeze, holdout, unique-validation,
+and reproducibility chain passes.
 
 ## Verified repository state
 
@@ -23,8 +23,10 @@ remains immutable and cannot count toward a future acceptance attempt.
 - Plan: `docs/codex/gesc_gaussian/plans/phase_08_plan.md`
 - Closed recovery Plan:
   `docs/codex/gesc_gaussian/plans/phase_08_1_plan.md`
-- Active recovery Plan:
+- Completed recovery Plan:
   `docs/codex/gesc_gaussian/plans/phase_08_2_plan.md`.
+- Terminal v3 Plan:
+  `docs/codex/gesc_gaussian/plans/phase_08_3_plan.md`.
 - Phase 08.2 starting boundary: clean commit `db8bd66`
   (`phase 08.1: close mixed diagnostic recovery`), branch ahead of origin by
   ten commits.
@@ -2245,3 +2247,174 @@ v3a_safe_timeout
 The next action is the bounded `v3-activation` command with Gazebo GUI enabled.
 V3D and Phase 08.3 remain forced failed regardless of the nine outcomes; M4,
 readiness tagging, Phase 09, and physical hardware remain prohibited.
+
+## Phase 08.3 terminal V3D activation result
+
+Verified at `2026-07-28T02:48:20-07:00` against clean activation commit
+`a21671e858d504c81761c258cea18e407924c2e2`.
+
+Phase 08.3 is **CLOSED / FAILED / NOT SIMULATION-READY**. The bounded V3D
+activation command ran with X11 display `:0`, launched Gazebo server and client
+with `gazebo_gui:=True`, and executed exactly one new case:
+
+```text
+case: v3a_below_target_fill
+seed: 9302
+attempt: 1
+run_id:
+  20260728T093403582899Z_simulation_phase08_v3_activation-
+  v3a_below_target_fill-robust_gaussian_v1-f20cd3c751_74a3fcfb
+```
+
+The run enabled simulation contacts, disabled the physical contact probe, and
+used no headless argument. Motion readiness became true. The retained bag
+contains real Gazebo/ROS behavior through:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> RECENTER
+-> SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> FAILSAFE
+```
+
+The runner's boundary observer saw `CONVERGENCE_CONFIRMED`, `FILL_CREATED`,
+and `ESCAPE_STARTED` and requested a graceful scoped stop. That stop exposed
+an unchanged recorder hard failure:
+
+```text
+RCLError: Failed to publish: publisher's context is invalid
+```
+
+`record_run` used the default rclpy signal handlers. Scoped `SIGINT` invalidated
+its default context before the main thread could publish readiness false and
+stop true. `RecordingCoordinator.request_stop()` and the 10 Hz publisher timer
+then raced on the invalid context. The exception aborted the final-zero wait,
+owned target/bag stop sequence, executor/thread teardown, metadata
+finalization, and the final validator. The recorder returned `2`.
+
+This is an infrastructure/recording failure, not a valid behavioral result:
+
+- `recording_complete=false`;
+- infrastructure status `runner_or_recorder_failure`;
+- immutable `completeness.json` remains the `run did not finalize` sentinel;
+- `/stop_requested` has no retained message;
+- `/recording_ready` ends true with no final false;
+- shutdown/final-zero completeness was not proved;
+- partial analysis exists but cannot repair or reclassify the run.
+
+The SQLite bag itself is structurally healthy: both `PRAGMA quick_check` and
+`PRAGMA integrity_check` returned `ok`. It retains `400131` messages across
+`33` topics over `190.097876649 s`, including `5456` odometry,
+`37085` simulation-contact, `3713` algorithm-state, and `30`
+algorithm-event messages. Its diagnostic content remains useful, but it is
+not acceptance evidence.
+
+The activation correctly stopped without replacement or retry:
+
+- immutable carried V3B records: `1`;
+- new V3D executions: `1`;
+- V3D attempts: `1`, at `attempt_index=1`;
+- ambiguous interrupted attempts: `0`;
+- replacements: `0`;
+- behavior-contract passes: `0`;
+- integrity passes: `0`;
+- remaining exact cases marked `not_run`: `8`.
+
+The eight `not_run` cases are:
+
+```text
+v3a_pure_escape_recenter
+v3a_stalled_assist
+v3a_fill_merge
+v3a_full_lifecycle_goal
+v3a_revisit_guard
+v3a_boundary_saturation
+v3a_noise_delay
+v3a_safe_timeout
+```
+
+The executed slot is not replacement-eligible because readiness was true and
+the robot executed non-`SEARCH` behavior. V3D is immutable and must not be
+continued or rerun.
+
+Retained activation hashes:
+
+```text
+workflow_state/v3_activation.json
+  file: b1e4d5d9290057503f49e88976949c1ebb6eb337f6edf65110a56efac93e5c1c
+  internal: 24ea143a452ecf28b5cd8a2c54d91444932de49334862038bbe47f29c898adcb
+activation/progress.json
+  file: de919138523b7b04b1f5cca10c94f06e14e06b26387d2c7692633c61c0695c5f
+  internal: 30047de029892f16f16d6ab972bb23a47cfd3dc085caa5a6935cfcb5102e2b5a
+activation/attempt_records.json
+  8b7edaac2ddb2bbe07ecd4fc4f73c44e9c41589dd887fb809ad13480429721f5
+activation/records.json
+  ed32711e2206fde3da4b72e3bd634e480c6513c952218f2ae4ccab7fdcacec98
+activation/scenario_summary.yaml
+  196bd037e6d618ab0540fe612c4960f4a9c60ef943d1984b0a1c74462d3d17cf
+attempt scenario summary
+  ef8a6dd3b334db8de4069c9b38d49853ec362faa0b8b7fa7a2d691915f0ad5dc
+attempt record
+  a8ddcdf5363e7dd05085a674336afe7db3c5143fc95bcc76f95a130971bb6f91
+```
+
+The new run directory retains `33` files with manifest SHA-256
+`cfe30977ac51d11b04c35125a277c8eac0538c018f8ccb2faadc4a73c67ab6cd`.
+The bag SHA-256 is
+`c2c526bf0f969276a6c6c987517cc2da2d77484e7a20e33e27865f0caba274bd`.
+After terminal reporting, the complete V3D root contains `1576` regular files
+with SHA-256
+`94161e4ec08512d844c43949da4a7ff0883031b4ea536aafad79390c66f261c9`;
+its two excluded directory-symlink mappings are recorded by the root-manifest
+audit.
+
+The post-run functional integrity gate still passed:
+`475 passed, 2 skipped in 64.72 s`; the two skips remained the explicit
+Gazebo opt-in integration tests. Cleanup retained no new nodes or session
+processes, and the final ROS/Gazebo/workflow process scan was empty.
+
+## Phase 08.3 terminal report
+
+The declared `v3-report` command generated the terminal machine and human
+artifacts and returned `1`, matching the failed outcome:
+
+```text
+phase_08_v3_gate_results.json
+  3d9835ff504a9a87af4a752a77c30a9a1ac9f47ee143968b2d7912309ee83fce
+phase_08_v3_run_manifest.json
+  81a721f5cbb815f85db11c946f0f7099969e09a05e845356a4baf6f9f1d319b3
+phase_08_v3_validation_report.md
+  cb88420088dd71899806c496029e2e9c8b4e081fe4233537d36f204382b323e3
+phase_08_v3_failure_report.md
+  0b7ac933655c27a124b4251b046e69225ade15ec6e20a01b1f79ab04e80ac5cc
+workflow_state/v3_terminal.json
+  file: 09ff05ce70090553857377966bd983c4eba6e247b97393d045ef7eec992bc3b6
+  internal: e29c501868ea7f1a03fd678d78ca56f07bbf3eca8d4ea2688d6766c087370d74
+```
+
+Prepare and qualification passed; activation failed. Development/tuning,
+freeze, acceptance-contract seal, holdout, unique validation, and
+reproducibility are all `NOT RUN`. No candidate was selected, no frozen
+profile or acceptance contract was created, no Wilson interval denominator
+exists, and no result may be represented as Gaussian robustness acceptance.
+
+The detailed failure record is
+`docs/codex/gesc_gaussian/validation/phase_08_v3d_failure_report.md`.
+The terminal handoff is
+`docs/codex/gesc_gaussian/handoffs/phase_08_3_handoff.md`.
+
+No encryption or GPG key was used or required. No readiness tag was created.
+M4, Phase 09, and physical hardware were not started.
+
+The smallest justified next engineering work is a separately authorized
+recorder correction using `SignalHandlerOptions.NO`, the existing
+`DeferredSignalShutdown`, bounded executor shutdown/thread join, and
+exception-resilient finalization. The present Plan does not authorize an
+automatic V3E or v4. A diagnostic V3E would have to preserve both the V3B and
+V3D failed slots and execute only the remaining eight once; a pass-eligible
+claim requires a separately planned fresh v4/full activation.
