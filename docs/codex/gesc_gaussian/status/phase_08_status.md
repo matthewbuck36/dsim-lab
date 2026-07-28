@@ -3088,3 +3088,81 @@ Gazebo activation cases.
 - Do not change corrected activation identities, seeds, geometries, or
   contracts after the no-Gazebo qualification failure.
 - Do not dispatch Gazebo unless `phase08_v4r2b` qualification passes.
+
+## Phase 08.4.1 corrected-root qualification pass
+
+Commit `54559da` was cleanly and transactionally prepared at:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4r2b
+```
+
+Preparation passed with:
+
+- clean commit `54559da7455ff32afa4a9466a9437ff4b7b85552`;
+- repository tree `a36307e7f2a163016d493d9030bd2cbc522239c7`;
+- runtime-input SHA-256
+  `4eb7ad904b5c9713ac1f27f369543d4abc23d498c502b247598bf1ce40164979`;
+- exact formal suite SHA-256
+  `d733ef9dffb372d2c60b57f83c2b96e1062a0a62818587de59a0166df4efe88e`;
+- five prior V3/V4 records inspected and zero formal overlap;
+- no active ROS/Gazebo processes.
+
+The fresh immutable qualification passed:
+
+```text
+functional tests
+  491 passed, 2 skipped in 89.20 s
+isolated three-package build
+  passed
+installed truth and V4 scenario resources
+  passed
+installed validation entrypoint
+  passed
+process-level boundary observer smoke
+  passed
+launch argument introspection
+  passed
+supervisor and fill graph instantiation
+  passed with clean bounded SIGINT shutdown
+activation/development installed dry runs
+  10/10 resolved, zero unsupported
+direct/recorder activation launch contracts
+  10/10 and 10/10
+processes before/after
+  empty / empty
+```
+
+Retained qualification SHA-256 values:
+
+```text
+workflow_state/v4_prepare.json
+  63cc8834fd5ea8aa9ab97606ba68faa04ac4e54aa7a97985c4c502a2b69ee21c
+workflow_state/v4_qualification.json
+  bdf0646aedc7888c44cbda90d528836c856936704e1fa909c0bbd883ffb745c9
+qualification/activation_dry_run.yaml
+  e07fbb5f396b1d41a6e5a926ca9b94d63c97e32e2fc1c1a3f9e90cebe178bb47
+qualification/development_dry_run.yaml
+  ee74e67218f14f8fabb85d5f162de91e708bd5aa8a89c6e3102adfe9ef203627
+qualification/logs/isolated_build.log
+  126f3a97f7bdce6a8f4af01332bfadcfef9ec72998dc1d8f9c3f955132f072af
+```
+
+No Gazebo case has yet run in either corrected root.
+
+## Current milestone
+
+**M4.3 — execute the ten-case corrected visible-Gazebo activation gate.**
+
+### Next criterion
+
+Run all ten `v4r2a_*` cases serially with visible Gazebo and bounded
+durations. Preserve every attempt and require a complete `10/10` activation
+pass before starting the 30 headless development runs.
+
+### M4.3 stop conditions
+
+- A valid behavioral predicate failure closes V4.1 before development.
+- Any integrity, collision, cleanup, hash, ownership, or orphan-process
+  failure stops dispatch immediately.
+- Do not enter headless development unless corrected activation is `10/10`.

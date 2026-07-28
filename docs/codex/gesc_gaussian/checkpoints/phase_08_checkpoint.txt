@@ -1,62 +1,48 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-28T18:58:25+00:00
-Base HEAD: e9c6369ebc2af89fadcfbfaaa8a30d6fbf084b48
+Generated: 2026-07-28T19:05:26+00:00
+Base HEAD: 54559da7455ff32afa4a9466a9437ff4b7b85552
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 8a1c53c5412ce7f33653ab8e0feb0f56217e6b5d59eadd767363750b08e3b64d
+Status sha256: 0c7aa00c5a8fbd8f8487f5691b00eaef2c70e20f16216160b355bbfdb366c5eb
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_4_1_plan.md
 Active subphase plan sha256: 2a6d945f7453962469338ea0b0ec710df099691264fa1cb8e54927352875d0ba
-Unstaged diff sha256: c40fecbab926afeb9c3ffad61ac5a0afb7331cbee02cd4c7ae9afd20a2333bf4
+Unstaged diff sha256: f443f1994150b19f03c56ad8f679bc0692d30e03853145575ef2ff9cb472bbb9
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 33]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 34]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
- M docs/codex/gesc_gaussian/plans/phase_08_4_1_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
- M docs/codex/gesc_gaussian/test_commands.md
- M ros2_ws/src/ros_esc/setup.py
- M ros2_ws/src/ros_esc/test/test_phase08_validation.py
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 56 ++------------
- .../codex/gesc_gaussian/plans/phase_08_4_1_plan.md | 11 ++-
- docs/codex/gesc_gaussian/status/phase_08_status.md | 87 ++++++++++++++++++++++
- docs/codex/gesc_gaussian/test_commands.md          |  5 +-
- ros2_ws/src/ros_esc/setup.py                       |  1 +
- .../src/ros_esc/test/test_phase08_validation.py    |  9 +++
- 6 files changed, 117 insertions(+), 52 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 49 ++------------
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 78 ++++++++++++++++++++++
+ 2 files changed, 83 insertions(+), 44 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**M4.2b — checkpoint packaging correction and requalify prelaunch.**
+**M4.3 — execute the ten-case corrected visible-Gazebo activation gate.**
 
 ### Next criterion
 
-Pass focused source and packaging checks, checkpoint and commit, build the
-installed package, then transactionally prepare and qualify:
+Run all ten `v4r2a_*` cases serially with visible Gazebo and bounded
+durations. Preserve every attempt and require a complete `10/10` activation
+pass before starting the 30 headless development runs.
 
-```text
-/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4r2b
-```
+### M4.3 stop conditions
 
-Only its passing immutable qualification may start the ten corrected visible
-Gazebo activation cases.
-
-### M4.2b stop conditions
-
-- Do not alter or resume either `phase08_v4` or `phase08_v4r2`.
-- Do not change corrected activation identities, seeds, geometries, or
-  contracts after the no-Gazebo qualification failure.
-- Do not dispatch Gazebo unless `phase08_v4r2b` qualification passes.
+- A valid behavioral predicate failure closes V4.1 before development.
+- Any integrity, collision, cleanup, hash, ownership, or orphan-process
+  failure stops dispatch immediately.
+- Do not enter headless development unless corrected activation is `10/10`.
 
 
 This file describes the base HEAD and diff before the next commit; it is
