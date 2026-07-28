@@ -244,8 +244,7 @@ PHASE08_V3_ROOT=~/Experiments/GESC-Gaussian/runs/phase08_v3
 
 ros2 run ros_esc validate_robustness v3-prepare \
   --operator phase08_v3 \
-  --evidence-root "$PHASE08_V3_ROOT" \
-  --holdout-recipient USER_APPROVED_GPG_FINGERPRINT
+  --evidence-root "$PHASE08_V3_ROOT"
 
 ros2 run ros_esc validate_robustness v3-qualify \
   --operator phase08_v3 \
@@ -260,11 +259,12 @@ one requires the same operator and evidence root, and each refuses an
 out-of-order stage.
 
 `v3-prepare` owns creation of the root: it must be absent on first entry. A
-private mode-`0600` prepare transaction retains only the ciphertext,
-non-identifying commitment, approved recipient fingerprint, and input hashes.
-It contains no plaintext cases or seed and makes publication resumable after
-an interruption. Do not create the root manually or delete one side of that
-transaction.
+private mode-`0600` prepare transaction retains the canonical cleartext suite,
+hash commitment, and input hashes so publication is resumable after an
+interruption. The tracked suite is researcher-visible before activation and
+is explicitly not selection-blind. It must be checkpointed and committed
+unchanged before `v3-activation`; do not create the root manually, delete one
+side of the transaction, or edit/regenerate the suite after preparation.
 
 Fresh activation is a serial, GUI-visible diagnostic gate. Development,
 holdout, additional validation, and reproducibility are serial headless

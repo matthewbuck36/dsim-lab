@@ -10,9 +10,11 @@
 > recovery but retained a downstream recenter timeout. Phase 08.2 implements
 > and validates the bounded deterministic correction in one fresh full-path
 > Gazebo probe. Phase 08.3 M1 adds schema-v4, aggregate truth, runner,
-> analyzer, encryption, and workflow contracts, but no v3 workflow or Gazebo
-> stage has run. This is not v3 robustness acceptance, so simulation readiness
-> remains unestablished.
+> analyzer, and workflow contracts. The user-authorized M1A amendment replaces
+> the v3-only encryption envelope with a canonical cleartext suite and SHA-256
+> commitment; it does not change ROS interfaces or robustness gates. No v3
+> workflow or Gazebo stage has run. This is not v3 robustness acceptance, so
+> simulation readiness remains unestablished.
 
 This dictionary is the resolved Phase 05 interface contract for the current
 `dsim-lab` checkout. `algorithm_profile=legacy` remains the default and keeps

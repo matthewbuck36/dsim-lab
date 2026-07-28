@@ -2823,12 +2823,16 @@ v3-reproducibility
 v3-report
 ```
 
-Every subcommand requires `--operator` and `--evidence-root`;
-`v3-prepare` also requires a user-approved `--holdout-recipient`. The
-qualification form is:
+Every subcommand requires `--operator` and `--evidence-root`; no v3 command
+requires an encryption key or recipient. The prepare and qualification forms
+are:
 
 ```bash
 PHASE08_V3_ROOT=~/Experiments/GESC-Gaussian/runs/phase08_v3
+
+timeout 1800s ros2 run ros_esc validate_robustness v3-prepare \
+  --operator phase08_v3 \
+  --evidence-root "$PHASE08_V3_ROOT"
 
 timeout 1800s ros2 run ros_esc validate_robustness v3-qualify \
   --operator phase08_v3 \
@@ -2836,19 +2840,22 @@ timeout 1800s ros2 run ros_esc validate_robustness v3-qualify \
 ```
 
 `v3-qualify` is not a substitute for `v3-prepare`, stage-order checks, the
-encrypted-suite commitment, or the live-status gate. Successful help, dry-run,
+cleartext-suite commitment, or the live-status gate. Successful help, dry-run,
 or qualification output does not authorize activation and is not behavioral
 acceptance evidence.
 
 `v3-prepare` requires the evidence root to be absent. It writes one
-mode-`0600` encrypted prepare transaction under that fresh root before
-publishing the tracked ciphertext and non-identifying commitment, so a crash
-can resume without regenerating or writing plaintext. `v3-qualify` binds its
+mode-`0600` recoverable prepare transaction under that fresh root before
+publishing the tracked canonical cleartext suite and hash commitment, so a
+crash can resume without regeneration. The suite is explicitly
+researcher-visible and not selection-blind. `v3-qualify` parses and revalidates
+those exact bytes and binds its
 functional, isolated-build, installed-resource, instantiation, and dry-run
 results to the exact runtime-input hash map. Activation and development rehash
-that map before dispatch and before each attempt. M5 repeats the complete
-build/dry-run qualification after generating the frozen profile; a clean
-commit is required before `v3-seal`.
+that map before dispatch and before each attempt. Activation additionally
+requires the suite and commitment to be exact tracked `HEAD` blobs. M5 repeats
+the complete build/dry-run qualification after generating the frozen profile;
+a clean commit is required before `v3-seal`.
 
 ### M1 retained result
 
@@ -2891,3 +2898,12 @@ terminal-report rejection. These are evidence-safety corrections only. No
 acceptance population, ciphertext, fresh v3 evidence root, runtime attempt,
 tuning result, freeze, seal, tag, Phase 09 action, or physical command was
 created.
+
+### M1A cleartext-precommit amendment
+
+Before M2 or any Gazebo run, the user authorized replacing the v3-only GPG
+envelope with a canonical researcher-visible suite plus SHA-256 commitment.
+The amendment does not change any case allocation, threshold, denominator,
+behavioral gate, safety gate, replacement cap, or execution stage. M1 remains
+the historical encrypted-workflow implementation result; M1A is the separate
+tested and checkpointed successor boundary.

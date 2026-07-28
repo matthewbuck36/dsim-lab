@@ -3,7 +3,6 @@
 from collections import Counter
 import json
 from pathlib import Path
-import shutil
 import subprocess
 from types import SimpleNamespace
 
@@ -797,38 +796,43 @@ def test_v3_cli_routes_flat_subcommands(
     assert observed == [('v3-test', str(tmp_path))]
 
 
-def test_v3_prepare_cli_requires_and_routes_exact_recipient(
+def test_v3_prepare_cli_routes_without_encryption_key(
     tmp_path,
     monkeypatch,
 ):
-    """Make the recipient fingerprint explicit at the only create stage."""
+    """Prepare the fixed visible suite without any key material."""
     observed = []
 
-    def fake(operator, evidence_root, recipient):
-        observed.append((operator, evidence_root, recipient))
+    def fake(operator, evidence_root):
+        observed.append((operator, evidence_root))
         return {'passed': True}
 
     monkeypatch.setattr(phase08_validation, 'run_v3_prepare', fake)
-    fingerprint = 'A1' * 20
 
     assert main([
         'v3-prepare',
         '--operator', 'v3-test',
         '--evidence-root', str(tmp_path),
-        '--holdout-recipient', fingerprint,
     ]) == 0
-    assert observed == [('v3-test', str(tmp_path), fingerprint)]
+    assert observed == [('v3-test', str(tmp_path))]
+
+    with pytest.raises(SystemExit):
+        main([
+            'v3-prepare',
+            '--operator', 'v3-test',
+            '--evidence-root', str(tmp_path),
+            '--holdout-recipient', 'A1' * 20,
+        ])
 
 
 def test_v3_prepare_recovers_from_post_transaction_interruption(
     tmp_path,
     monkeypatch,
 ):
-    """Resume safely without regenerating or exposing the plaintext suite."""
+    """Resume safely without regenerating the precommitted suite."""
     root = tmp_path / 'fresh-evidence'
-    ciphertext_path = tmp_path / 'suite.json.asc'
+    suite_path = tmp_path / 'suite.json'
     commitment_path = tmp_path / 'commitment.json'
-    fingerprint = 'A1' * 20
     monkeypatch.setattr(
         phase08_validation,
         '_v3_active_processes',
@@ -875,18 +879,11 @@ def test_v3_prepare_recovers_from_post_transaction_interruption(
         'generate_v3_acceptance_population',
         lambda *args, **kwargs: {'cases': []},
     )
-    monkeypatch.setattr(
-        phase08_validation,
-        '_v3_encrypt',
-        lambda *args, **kwargs: (
-            b'-----BEGIN PGP MESSAGE-----\nopaque\n'
-        ),
-    )
     real_atomic_bytes = phase08_validation.atomic_bytes
     interrupted = {'armed': True}
 
     def flaky_atomic_bytes(path, value, mode=None):
-        if Path(path) == ciphertext_path and interrupted['armed']:
+        if Path(path) == suite_path and interrupted['armed']:
             interrupted['armed'] = False
             raise RuntimeError('simulated interruption')
         return real_atomic_bytes(path, value, mode=mode)
@@ -900,29 +897,33 @@ def test_v3_prepare_recovers_from_post_transaction_interruption(
         phase08_validation.run_v3_prepare(
             'test',
             root,
-            fingerprint,
             seed_bytes=b'x' * 32,
-            ciphertext_path=ciphertext_path,
+            suite_path=suite_path,
             commitment_path=commitment_path,
         )
     assert phase08_validation._v3_prepare_transaction_path(
         root
     ).is_file()
-    assert not ciphertext_path.exists()
+    assert not suite_path.exists()
 
     state = phase08_validation.run_v3_prepare(
         'test',
         root,
-        fingerprint,
-        ciphertext_path=ciphertext_path,
+        suite_path=suite_path,
         commitment_path=commitment_path,
     )
 
     assert state['passed'] is True
-    assert ciphertext_path.is_file()
+    assert state['selection_blind'] is False
+    assert suite_path.is_file()
+    assert json.loads(suite_path.read_text(encoding='utf-8')) == {'cases': []}
     commitment = json.loads(commitment_path.read_text(encoding='utf-8'))
-    assert 'recipient_fingerprint' not in commitment
-    assert not any(root.rglob('*plaintext*'))
+    assert commitment['suite_sha256'] == phase08_validation.file_sha256(
+        suite_path
+    )
+    assert commitment['population_visibility'] == (
+        'researcher_visible_before_activation'
+    )
 
 
 def test_v3_prepare_rejects_a_preexisting_unowned_root(tmp_path):
@@ -934,8 +935,7 @@ def test_v3_prepare_rejects_a_preexisting_unowned_root(tmp_path):
         phase08_validation.run_v3_prepare(
             'test',
             root,
-            'A1' * 20,
-            ciphertext_path=tmp_path / 'suite.asc',
+            suite_path=tmp_path / 'suite.json',
             commitment_path=tmp_path / 'commitment.json',
         )
 
@@ -992,9 +992,8 @@ def test_v3_prepare_failure_before_transaction_leaves_root_absent(
         phase08_validation.run_v3_prepare(
             'test',
             root,
-            'A1' * 20,
             seed_bytes=b'x' * 32,
-            ciphertext_path=tmp_path / 'suite.asc',
+            suite_path=tmp_path / 'suite.json',
             commitment_path=tmp_path / 'commitment.json',
         )
 
@@ -1002,66 +1001,83 @@ def test_v3_prepare_failure_before_transaction_leaves_root_absent(
     assert not list(tmp_path.glob('.fresh-evidence.prepare-*'))
 
 
-def test_v3_gpg_round_trip_uses_ephemeral_test_key(tmp_path):
-    """Encrypt and decrypt only in memory with a disposable local key."""
-    executable = shutil.which('gpg')
-    if executable is None:
-        pytest.skip('gpg is unavailable')
-    gpg_home = tmp_path / 'gnupg'
-    gpg_home.mkdir(mode=0o700)
-    identity = 'Phase08 V3 Test <phase08-v3-test@example.invalid>'
-    generated = subprocess.run(
-        [
-            executable,
-            '--batch',
-            '--homedir', str(gpg_home),
-            '--passphrase', '',
-            '--quick-generate-key',
-            identity,
-            'rsa2048',
-            'encrypt',
-            '0',
-        ],
-        capture_output=True,
-        timeout=30.0,
-        check=False,
-    )
-    assert generated.returncode == 0
-    listed = subprocess.run(
-        [
-            executable,
-            '--batch',
-            '--homedir', str(gpg_home),
-            '--with-colons',
-            '--fingerprint',
-            identity,
-        ],
-        capture_output=True,
-        text=True,
-        timeout=10.0,
-        check=True,
-    )
-    fingerprint = next(
-        line.split(':')[9]
-        for line in listed.stdout.splitlines()
-        if line.startswith('fpr:')
-    )
-    plaintext = b'phase08-v3-ephemeral-round-trip'
-
-    ciphertext = phase08_validation._v3_encrypt(
-        plaintext,
-        fingerprint,
-        gpg_home=gpg_home,
-        executable=executable,
+def test_v3_commitment_declares_visible_sha256_precommit():
+    """Record the exact non-blind precommit semantics in the hash document."""
+    suite_bytes = b'{"cases":[]}'
+    commitment = phase08_validation._v3_commitment_document(
+        {'cases': []},
+        suite_bytes,
+        {},
     )
 
-    assert plaintext not in ciphertext
-    assert ciphertext.startswith(b'-----BEGIN PGP MESSAGE-----')
-    assert phase08_validation._v3_decrypt(
-        ciphertext,
-        gpg_home=gpg_home,
-        executable=executable,
-    ) == plaintext
+    assert commitment['suite_sha256'] == (
+        phase08_validation._sha256_bytes(suite_bytes)
+    )
+    assert commitment['selection_blind'] is False
+    assert commitment['population_visibility'] == (
+        'researcher_visible_before_activation'
+    )
+    assert commitment['precommit_mechanism'] == 'canonical_json_sha256'
+    assert 'ciphertext_sha256' not in commitment
+    assert 'recipient_fingerprint' not in commitment
+
+
+def test_v3_precommit_requires_exact_tracked_head_blobs(
+    tmp_path,
+    monkeypatch,
+):
+    """Require committed suite bytes before activation dispatch."""
+    suite_path = tmp_path / 'suite.json'
+    commitment_path = tmp_path / 'commitment.json'
+    suite_path.write_text('{}', encoding='utf-8')
+    commitment_path.write_text('{}', encoding='utf-8')
+    monkeypatch.setattr(
+        phase08_validation,
+        'REPOSITORY_ROOT',
+        tmp_path,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        'V3_PRECOMMITTED_SUITE_PATH',
+        suite_path,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        'V3_COMMITMENT_PATH',
+        commitment_path,
+    )
+
+    def exact(*arguments):
+        if arguments[0] == 'hash-object':
+            return {
+                'suite.json': 'suite-blob',
+                'commitment.json': 'commitment-blob',
+            }[arguments[1]]
+        return {
+            'HEAD:suite.json': 'suite-blob',
+            'HEAD:commitment.json': 'commitment-blob',
+        }[arguments[1]]
+
+    monkeypatch.setattr(phase08_validation, '_git', exact)
+    phase08_validation._v3_require_precommit_in_head()
+
+    def mismatch(*arguments):
+        if arguments[0] == 'hash-object':
+            return 'working-tree-blob'
+        return 'head-blob'
+
+    monkeypatch.setattr(phase08_validation, '_git', mismatch)
+    with pytest.raises(RuntimeError, match='differs from HEAD'):
+        phase08_validation._v3_require_precommit_in_head()
+
+    def untracked(*arguments):
+        if arguments[0] == 'hash-object':
+            return 'working-tree-blob'
+        raise subprocess.CalledProcessError(128, ['git', *arguments])
+
+    monkeypatch.setattr(phase08_validation, '_git', untracked)
+    with pytest.raises(RuntimeError, match='not tracked in HEAD'):
+        phase08_validation._v3_require_precommit_in_head()
 
 
 def test_v3_state_hash_detects_mutation(tmp_path):
@@ -1258,13 +1274,13 @@ def test_v3_freeze_enforces_the_full_m5_requalification(
             'candidates': [selected],
         },
     )
-    ciphertext_path = tmp_path / 'phase08_v3_suite.asc'
+    suite_path = tmp_path / 'phase08_v3_suite.json'
     commitment_path = tmp_path / 'phase08_v3_commitment.json'
     frozen_path = tmp_path / 'phase08_v3_frozen.yaml'
     selection_path = tmp_path / 'phase08_v3_selection.json'
     freeze_path = tmp_path / 'phase08_v3_freeze.json'
-    ciphertext = b'-----BEGIN PGP MESSAGE-----\nopaque\n'
-    phase08_validation.atomic_bytes(ciphertext_path, ciphertext)
+    suite_bytes = b'{"cases":[]}'
+    phase08_validation.atomic_bytes(suite_path, suite_bytes)
     historical = {'phase08_v3_activation.yaml': 'c' * 64}
     commitment = {
         'schema_version': 1,
@@ -1278,10 +1294,12 @@ def test_v3_freeze_enforces_the_full_m5_requalification(
         },
         'family_counts': {},
         'historical_exclusion_hashes': historical,
-        'plaintext_sha256': 'd' * 64,
-        'ciphertext_sha256': (
-            phase08_validation._sha256_bytes(ciphertext)
+        'suite_sha256': phase08_validation._sha256_bytes(suite_bytes),
+        'population_visibility': (
+            'researcher_visible_before_activation'
         ),
+        'selection_blind': False,
+        'precommit_mechanism': 'canonical_json_sha256',
     }
     commitment['commitment_sha256'] = (
         phase08_validation.omission_sha256(
@@ -1296,13 +1314,13 @@ def test_v3_freeze_enforces_the_full_m5_requalification(
         {
             'passed': True,
             'commitment_sha256': commitment['commitment_sha256'],
-            'ciphertext_sha256': commitment['ciphertext_sha256'],
+            'suite_sha256': commitment['suite_sha256'],
         },
     )
     monkeypatch.setattr(
         phase08_validation,
-        'V3_CIPHERTEXT_PATH',
-        ciphertext_path,
+        'V3_PRECOMMITTED_SUITE_PATH',
+        suite_path,
     )
     monkeypatch.setattr(
         phase08_validation,
@@ -1430,7 +1448,7 @@ def test_v3_seal_rerun_uses_immutable_state_fast_path(
     tmp_path,
     monkeypatch,
 ):
-    """Never decrypt or overwrite sealed artifacts after state publication."""
+    """Never reread or overwrite sealed artifacts after state publication."""
     freeze = phase08_validation._v3_write_state(
         tmp_path,
         'freeze',
@@ -1479,16 +1497,6 @@ def test_v3_seal_rerun_uses_immutable_state_fast_path(
         lambda observed_freeze, observed_contract: published.append(
             (observed_freeze, observed_contract)
         ),
-    )
-
-    def forbidden_decrypt(*unused, **unused_keywords):
-        del unused, unused_keywords
-        raise AssertionError('seal rerun must not decrypt')
-
-    monkeypatch.setattr(
-        phase08_validation,
-        '_v3_decrypt',
-        forbidden_decrypt,
     )
 
     result = phase08_validation.run_v3_seal('test', tmp_path)
@@ -1558,10 +1566,10 @@ def test_v3_qualification_rejects_historical_hash_drift(
 ):
     """Detect exclusion-input drift before any activation run."""
     root = tmp_path / 'evidence'
-    ciphertext_path = tmp_path / 'phase08_v3_suite.asc'
+    suite_path = tmp_path / 'phase08_v3_suite.json'
     commitment_path = tmp_path / 'phase08_v3_commitment.json'
-    ciphertext = b'-----BEGIN PGP MESSAGE-----\nopaque\n'
-    phase08_validation.atomic_bytes(ciphertext_path, ciphertext)
+    suite_bytes = b'{"cases":[]}'
+    phase08_validation.atomic_bytes(suite_path, suite_bytes)
     commitment = {
         'schema_version': 1,
         'generator_version': 'test',
@@ -1574,10 +1582,12 @@ def test_v3_qualification_rejects_historical_hash_drift(
         },
         'family_counts': {},
         'historical_exclusion_hashes': {'before': 'a' * 64},
-        'plaintext_sha256': 'b' * 64,
-        'ciphertext_sha256': (
-            phase08_validation._sha256_bytes(ciphertext)
+        'suite_sha256': phase08_validation._sha256_bytes(suite_bytes),
+        'population_visibility': (
+            'researcher_visible_before_activation'
         ),
+        'selection_blind': False,
+        'precommit_mechanism': 'canonical_json_sha256',
     }
     commitment['commitment_sha256'] = (
         phase08_validation.omission_sha256(
@@ -1591,15 +1601,15 @@ def test_v3_qualification_rejects_historical_hash_drift(
         'prepare',
         {
             'passed': True,
-            'ciphertext_sha256': commitment['ciphertext_sha256'],
+            'suite_sha256': commitment['suite_sha256'],
             'commitment_sha256': commitment['commitment_sha256'],
             'repository': {},
         },
     )
     monkeypatch.setattr(
         phase08_validation,
-        'V3_CIPHERTEXT_PATH',
-        ciphertext_path,
+        'V3_PRECOMMITTED_SUITE_PATH',
+        suite_path,
     )
     monkeypatch.setattr(
         phase08_validation,

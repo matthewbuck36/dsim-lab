@@ -257,10 +257,12 @@ development probe through `RECENTER -> SEARCH` without timeout, failsafe,
 collision, recording, cleanup, or final-zero failure.
 
 Those results validate recenter recovery but do not establish simulation
-readiness. The smallest currently justified successor is a separately reviewed
-v3 acceptance Plan with a new sealed contract, development/tuning boundary,
-clean freeze, selection-blind holdout, unique validation denominator, and
-reproducibility evidence.
+readiness. The active successor is the separately reviewed v3 acceptance Plan
+with a new sealed contract, development/tuning boundary, clean freeze,
+predeclared holdout, unique validation denominator, and reproducibility
+evidence. Its user-authorized Amendment A1 makes the acceptance population
+researcher-visible before activation and explicitly removes any
+selection-blindness claim while preserving every numeric and behavioral gate.
 
 The following are future-version steps, not Phase 08.1 completion criteria or
 authorization:
@@ -268,8 +270,8 @@ authorization:
 1. Declare the bounded v3 development/tuning design and retain every attempt.
 2. Declare and hash one machine-readable acceptance contract before freeze.
 3. Freeze and commit one code/parameter/scenario set.
-4. Run a new selection-blind holdout and fixed unique validation denominator
-   once for that version, followed by separately reported repeats.
+4. Run the fixed predeclared holdout and unique validation denominator once
+   for that version, followed by separately reported repeats.
 5. Run legacy regression and write a structured success/failure report.
 6. Tag the simulation-ready commit only if every declared gate passes.
 

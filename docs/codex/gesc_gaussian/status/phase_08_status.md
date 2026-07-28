@@ -1193,3 +1193,96 @@ algorithm parity.
 - Never reinterpret a valid behavioral miss, replace an attempt without the
   bound raw proof, weaken a frozen threshold, reveal holdout identities early,
   or create the readiness tag before all sealed gates pass.
+
+## Phase 08.3 M1A cleartext-precommit amendment
+
+The user explicitly authorized execution without an encryption key on
+2026-07-27. This append-only section supersedes the GPG, recipient,
+ciphertext, hidden-identity, and selection-blind requirements in the prior M1
+status without rewriting that historical result.
+
+The amended scientific design is a fixed, predeclared, researcher-visible
+evaluation. It does not support a selection-blind or independently
+administered claim. The 120 declared slots, 70 unique-case denominator, ten
+repeats, family allocations/floors, candidate-selection rule, aggregate truth,
+thresholds, replacements, stage order, early stops, and every behavioral,
+safety, evidence, collision, completeness, cleanup, final-zero, timestamp, and
+causality gate remain unchanged.
+
+Authority and implementation:
+
+- amended active Plan SHA-256:
+  `4dfcb2d99f3347d40862ea530e71566783352cbef77bd24a73f0fa310c74a63a`;
+- `v3-prepare` now writes
+  `phase08_v3_acceptance_suite.json` as canonical cleartext plus
+  `phase_08_v3_suite_commitment.json`; no GPG executable, fingerprint, key, or
+  recipient argument is used;
+- the commitment declares
+  `population_visibility=researcher_visible_before_activation`,
+  `selection_blind=false`, and
+  `precommit_mechanism=canonical_json_sha256`;
+- `v3-qualify` reparses the tracked bytes, verifies canonical serialization,
+  revalidates all 70 unique cases and ten repeat references, and binds the
+  exact suite hash into its runtime-input snapshot;
+- M3 refuses dispatch unless both precommit files are exact tracked `HEAD`
+  blobs and the worktree is clean;
+- freeze, seal, contract, stage-state, checkpoint, context-bundle, and terminal
+  audit fields use the exact suite SHA-256 rather than ciphertext/plaintext
+  hashes.
+
+### M1A validation evidence
+
+- Focused v3 workflow:
+  `81 passed in 13.95 s`.
+- Full source-first functional gate:
+  `382 passed, 2 skipped in 55.72 s`. The only skips were the opt-in headless
+  Phase 06 Gazebo integration and visible Gazebo recording smoke; neither ran.
+- `ament_flake8` and `ament_pep257` passed for both modified Python files.
+- Python compilation, shell syntax for the checkpoint/context-bundle tools,
+  `git diff --check`, normal Phase 08 Implement validation, strict-history
+  validation, and required-document validation passed.
+- The CLI accepts `v3-prepare --operator ... --evidence-root ...` and rejects
+  the retired `--holdout-recipient` option.
+- Focused tests cover exact tracked-HEAD acceptance, working-tree mismatch
+  rejection, untracked precommit rejection, prepare crash recovery, canonical
+  hash metadata, and the unchanged freeze/terminal chain.
+- No algorithm, controller, recorder, validator, analyzer, topic, ROS
+  interface, launch graph, simulation/physical fork, cost sign/unit, threshold,
+  allocation, denominator, or candidate value changed.
+- The fresh v3 evidence root, cleartext acceptance suite, commitment, frozen
+  profile, selection file, contract, and proposed tag remain absent. No
+  Gazebo, rosbag, v3 runtime, tuning, holdout, validation, repeat, Phase 09,
+  physical, or hardware action ran in M1A.
+
+## Current milestone
+
+- Completed milestone: **M0 — reopen context without rewriting history**.
+- Completed milestone: **M1 — implement and test v3 evidence contracts**.
+- Completed milestone: **M1A — adopt the user-authorized cleartext
+  precommit**.
+- State: **READY TO CHECKPOINT AND COMMIT M1A**.
+- Next criterion: create the bounded M1A checkpoint/commit, then run M2
+  `v3-prepare` and `v3-qualify`.
+- M2 performs no Gazebo simulation. If M2 passes and its generated suite and
+  commitment are checkpointed and committed, M3 runs ten serial GUI-visible
+  Gazebo activation simulations. Development, holdout, validation, and
+  reproducibility remain serial headless batches.
+
+## Remaining work
+
+- Checkpoint and commit only the reviewed M1A source/test/Plan/status/operator
+  documentation boundary.
+- Execute M2–M9 in declared order while every prior gate remains open.
+
+## Stop conditions
+
+- Preserve all historical, M1, and unchanged Plan stop conditions except the
+  explicitly superseded encryption/blinding requirements.
+- Do not create the v3 evidence root or cleartext suite before the M1A
+  checkpoint/commit is clean.
+- Stop before Gazebo if M2 source, dependency-closure build, installed runtime,
+  schema, dry-run, suite/commitment, historical-exclusion, process, disk, or
+  cleanup qualification fails.
+- Never alter or regenerate the suite after its M2 commitment, weaken a gate,
+  reinterpret a valid behavioral miss, replace an attempt without bound raw
+  proof, or create the readiness tag before all sealed gates pass.

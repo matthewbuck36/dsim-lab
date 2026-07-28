@@ -66,6 +66,32 @@ closed Phase 08 status
   2ec7af29796b599bce8a49a27e28e2ec706cc79e2b889414ab40ab45565cc075
 ```
 
+## Amendment A1 — fixed cleartext acceptance population
+
+Authorized by the user on 2026-07-27 before M2 and before any v3 suite was
+generated or any v3 Gazebo simulation ran.
+
+This amendment removes the GPG/encryption and selection-blindness requirement.
+`v3-prepare` instead generates the complete 70 unique cases plus ten repeat
+references before activation, serializes them canonically to the tracked
+cleartext file
+`phase08_v3_acceptance_suite.json`, and binds that exact file through SHA-256,
+the commitment document, the M2 checkpoint/commit, the later freeze, and the
+sealed acceptance contract. The case allocation, generator, historical
+exclusion, aggregate qualification, thresholds, denominators, candidate
+selection, stage order, replacement limits, early-stop rules, and behavioral,
+safety, evidence, completeness, collision, cleanup, final-zero, timestamp, and
+causality gates are unchanged.
+
+The scientific claim is correspondingly narrowed: v3 is a predeclared,
+researcher-visible evaluation, not a selection-blind evaluation. The suite may
+not be edited or regenerated after its M2 commitment, and development outcomes
+may not be used to change its cases, partition, or repeats. Every later
+reference in this Plan to GPG, a recipient fingerprint, ciphertext,
+decryption, hidden or unexposed identities, an encrypted envelope, or
+selection-blindness is superseded by this amendment. Operational paths,
+commands, milestones, and stop conditions below are updated to match.
+
 ## Objective, success claim, and non-claims
 
 ### Objective
@@ -73,7 +99,7 @@ closed Phase 08 status
 Using the corrected Phase 08.2 implementation, select one bounded parameter
 bundle from fresh development evidence, freeze one implementation/profile and
 one precommitted scenario population, then evaluate that fixed system over a
-new selection-blind holdout, a fixed additional unique validation sample, and
+new predeclared holdout, a fixed additional unique validation sample, and
 predeclared repeats.
 
 ### Permitted success claim
@@ -101,6 +127,7 @@ V3 does not establish:
 - Heavy-Ball ESC behavior;
 - validity outside the sealed source counts, intensities, geometries,
   disturbances, starts, constraints, and runtime limits;
+- selection-blind, blinded, or independently administered evaluation;
 - Phase 09 authorization.
 
 ## Run-allocation decision
@@ -111,7 +138,7 @@ The fresh 120-declared-run structure is retained:
 |---|---:|---|
 | Fresh activation | 10 | No; mandatory pre-tuning gate |
 | Bounded development/tuning | 30 = 3 candidates × 10 common cases | No; selection only |
-| Fresh encrypted selection-blind holdout | 20 | Yes |
+| Fresh predeclared researcher-visible holdout | 20 | Yes |
 | Additional unique validation | 50 | Yes |
 | Targeted reproducibility repeats | 10 | No; separate reproducibility gate |
 | **Total** | **120** | **70 unique acceptance cases** |
@@ -134,9 +161,9 @@ It is not a mechanical copy of v2:
    denominator.
 4. V3 seals one machine-readable contract with exact thresholds,
    denominators, N/A rules, hashes, and replacement limits.
-5. V3 precommits the full 70-case population and ten repeat references in an
-   encrypted envelope before activation. Neither holdout nor additional
-   acceptance identities are exposed until after the clean freeze.
+5. V3 precommits the full researcher-visible 70-case population and ten repeat
+   references before activation. Their canonical file and SHA-256 are fixed at
+   M2 and cannot change after development.
 6. V3 evaluates per-attempt escape durations/orbits instead of relying only on
    one run-level aggregate.
 7. V3 fixes the v2 not-run representation: `outcome: "not_run"` and
@@ -211,8 +238,8 @@ Plan review.
 5. Schema 3 and both online/offline ground-truth paths use manually assigned
    `goal_source_ids`.
 6. V2 gates omit exact metric-applicability and minimum-denominator rules.
-7. V2's workflow cannot keep new holdout identities encrypted until after
-   freeze.
+7. V2's workflow cannot bind a schema-v4 cleartext population and its exact
+   canonical hash through prepare, freeze, contract, and terminal reporting.
 8. V2 summary logic does not expose one valid scalar duration and orbit value
    per escape attempt to the acceptance evaluator.
 
@@ -453,7 +480,7 @@ All other code and parameters are fixed across candidates, including:
 - readiness, topic, timestamp, causality, recording, collision, cleanup, and
   final-zero contracts;
 - development case identities, starts, sources, disturbances, and seeds;
-- acceptance-suite generator, family allocation, thresholds, and encrypted
+- acceptance-suite generator, family allocation, thresholds, and cleartext
   population commitment.
 
 ### Development eligibility and selection
@@ -492,12 +519,11 @@ occurs. If no candidate is eligible, development closes v3 with a failure
 report before freeze. Development attempts remain in their original paths and
 never enter the 70-case or ten-repeat results.
 
-## Precommitted, selection-blind acceptance population
+## Precommitted, researcher-visible acceptance population
 
-### Sealing mechanism
+### Commitment mechanism
 
-The implementation milestone requires one user-controlled GPG recipient
-fingerprint. Before activation, `v3-prepare` shall:
+Before activation, `v3-prepare` shall:
 
 1. generate a fresh 256-bit seed with Python `secrets.token_bytes(32)` and
    retain it only in process memory;
@@ -509,44 +535,41 @@ fingerprint. Before activation, `v3-prepare` shall:
 5. serialize the complete suite canonically in memory as UTF-8 JSON with
    sorted keys, separators `(",", ":")`, `ensure_ascii=false`,
    `allow_nan=false`, and schema-formatted finite numeric values;
-6. calculate its plaintext SHA-256;
-7. encrypt it directly from memory with GPG to the approved recipient,
-   producing ASCII armor only;
-8. write only the ciphertext and a non-identifying commitment document to the
+6. calculate its SHA-256;
+7. write the exact canonical cleartext suite and commitment document to the
    repository;
-9. discard the plaintext process buffer without writing a plaintext suite to
-   disk.
+8. record explicitly that the population is researcher-visible and not
+   selection-blind;
+9. checkpoint and commit those exact bytes before activation.
 
-Tracked pre-freeze paths:
+Tracked pre-activation paths:
 
 ```text
 ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/
-  phase08_v3_acceptance_suite.json.asc
+  phase08_v3_acceptance_suite.json
 docs/codex/gesc_gaussian/validation/
   phase_08_v3_suite_commitment.json
 ```
 
-The commitment exposes schema/generator versions, total counts, family counts,
-historical-exclusion hashes, ciphertext SHA-256, and plaintext SHA-256. It
-does not expose cases, starts, sources, seeds, the 20/50 partition, or repeat
-references.
+The commitment records schema/generator versions, total counts, family counts,
+historical-exclusion hashes, the suite SHA-256, visibility, the explicit
+`selection_blind=false` value, and the canonical-JSON SHA-256 mechanism. The
+tracked suite exposes cases, starts, sources, seeds, the 20/50 partition, and
+repeat references by user authorization. Their visibility does not permit
+post-commit changes.
 
-After the clean freeze, `v3-seal` may invoke the user's GPG private key. It
-decrypts in process memory, verifies both hashes and every qualification, and
-writes the revealed suite with mode `0400` only under:
+After the clean freeze, `v3-seal` verifies the same suite hash and every
+qualification, then copies the exact already committed bytes with mode `0400`
+under:
 
 ```text
 /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3/
   sealed/phase08_v3_acceptance_suite.json
 ```
 
-The root and `sealed/` directory use mode `0700`; the reveal is an atomic
-same-directory create/rename and neither plaintext nor case-identifying GPG
-output is written to a temporary file or log.
-
-No plaintext holdout file is tracked before freeze. "Hidden" is enforced as a
-selection-blind workflow boundary, not claimed as protection from a machine
-administrator or private-key holder.
+The root and `sealed/` directory use mode `0700`; the sealed copy is an atomic
+same-directory create/rename. No key, credential, decryption step, or GPG
+dependency exists.
 
 ### Fixed 70-case allocation
 
@@ -588,13 +611,13 @@ Every acceptance case:
 - contributes exactly once to the 70-run end-to-end denominator.
 
 Starts use a generator-fixed balanced schedule over five positions, four
-heading quadrants, source-layout rotations, and fresh encrypted seeds. The
+heading quadrants, source-layout rotations, and fresh random seeds. The
 20/50 split is sampled before activation subject only to the fixed family
 counts. It cannot be changed after observing development.
 
 ### Reproducibility references
 
-The encrypted suite preselects:
+The precommitted suite preselects:
 
 - two ordered-pair references;
 - two multi/close/overlap references;
@@ -615,20 +638,21 @@ After development selects one eligible candidate:
 
 1. generate `phase08_v3_frozen_parameters.yaml`;
 2. generate `phase_08_v3_parameter_selection.json`;
-3. verify the encrypted acceptance suite and commitment are byte-identical to
+3. verify the cleartext acceptance suite and commitment are byte-identical to
    their pre-activation forms;
 4. run the complete qualification/test/build/dry-run gate;
 5. update and checkpoint the live status;
 6. create the one implementation/parameter/scenario freeze commit only when a
    future Implement chat explicitly authorizes commits;
-7. require a clean worktree before revealing the acceptance suite.
+7. require a clean worktree before binding the acceptance suite into the
+   contract.
 
 The freeze identity includes:
 
 - exact implementation commit and tree;
 - frozen parameter file and canonical override hash;
 - activation/development/candidate YAML hashes;
-- encrypted acceptance-suite and commitment hashes;
+- cleartext acceptance-suite and commitment hashes;
 - generator, schema, runner, validator, analyzer, cost-model config, launch,
   supervisor, fill, filter, controller, topic-manifest, and package hashes;
 - installed package build provenance;
@@ -641,7 +665,7 @@ The worktree must be clean before each empirical stage.
 
 ### One machine-readable contract
 
-After freeze and reveal, generate:
+After freeze and suite verification, generate:
 
 ```text
 /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3/sealed/
@@ -654,7 +678,7 @@ The two files must be byte-identical. The contract contains:
 
 - experiment and schema versions;
 - freeze commit/tree and every frozen input hash;
-- ciphertext and revealed-suite hashes;
+- precommitted-suite and sealed-copy hashes;
 - exact 70 identities, 20/50 partition, and ten repeat mappings;
 - aggregate-field truth records and hashes;
 - family allocations and metric-applicability sets;
@@ -747,8 +771,8 @@ All gates are conjunctive:
 
 1. **Context and qualification:** active v3 Plan/status/freeze state agree;
    functional tests, isolated build, launch instantiation, schema
-   qualification, historical exclusion, GPG envelope checks, and dry runs
-   pass.
+   qualification, historical exclusion, cleartext suite/commitment hash
+   checks, and dry runs pass.
 2. **Activation:** all ten fresh activation contracts pass.
 3. **Development/freeze:** one eligible candidate is selected by the frozen
    lexicographic rule; freeze and contract hashes are valid and immutable.
@@ -945,7 +969,8 @@ notes.md
 analysis/
 ```
 
-No large bag, plot, verbose log, or decrypted suite enters Git.
+No large bag, plot, or verbose log enters Git. The user-authorized canonical
+cleartext suite and its commitment enter Git before activation.
 
 ## Files proposed for modification
 
@@ -996,7 +1021,7 @@ No large bag, plot, verbose log, or decrypted suite enters Git.
   - preserve v1/v2 read/report compatibility;
   - add the v3 prepare/qualify/activation/development/freeze/seal/holdout/
     validation/reproducibility/report workflow;
-  - enforce encryption, commitments, stage order, replacements, freeze
+  - enforce cleartext commitments, stage order, replacements, freeze
     hashes, denominators, early stops, Wilson intervals, and partial/final
     artifacts.
 - `ros2_ws/src/ros_esc/ros_esc/plotting_scripts/gesc_gaussian_bag_analysis.py`
@@ -1004,7 +1029,7 @@ No large bag, plot, verbose log, or decrypted suite enters Git.
   - expose per-attempt duration/orbit rows and applicability in
     `summary_metrics.json` without changing existing v1–v3 analysis behavior.
 - `ros2_ws/src/ros_esc/setup.py`
-  - install the new v3 YAML/JSON-armor inputs; retain the existing
+  - install the new v3 YAML/JSON inputs; retain the existing
     `validate_robustness` entry point.
 
 ### Tests and documentation
@@ -1043,8 +1068,8 @@ formula and creates no ROS owner or interface.
 - `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v3_candidates.yaml`
 - `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v3_frozen_parameters.yaml`
   - generated only after selection.
-- `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v3_acceptance_suite.json.asc`
-  - generated and committed before activation; encrypted until freeze.
+- `ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v3_acceptance_suite.json`
+  - generated, hashed, and committed in cleartext before activation.
 
 ### Durable v3 evidence
 
@@ -1080,19 +1105,18 @@ ros2 run ros_esc validate_robustness v3-report
 ```
 
 Every subcommand requires `--operator` and `--evidence-root`.
-`v3-prepare` additionally requires `--holdout-recipient`.
-`v3-seal` uses the already committed recipient and the user's GPG agent.
+`v3-prepare` requires no encryption-key argument. `v3-seal` verifies and binds
+the already committed suite without credential or key handling.
 
 V1 execution remains retired. V2 remains terminally failed. Their report
 readers and durable artifacts remain readable. Schema versions 1–3 retain
 their current parsing, normalized identities, manual-goal compatibility, and
 classification. Schema 4 is v3-only.
 
-The GPG executable is an offline workflow prerequisite already available at
-`/usr/bin/gpg`; it is not a ROS runtime dependency and is not added to
-`package.xml`. The aggregate helper uses the repository environment's existing
-NumPy/SciPy and cost-model implementation. V3 adds no package, ROS dependency,
-node, message, service, action, topic, or launch owner.
+GPG is not a Phase 08.3 prerequisite or ROS runtime dependency. The aggregate
+helper uses the repository environment's existing NumPy/SciPy and cost-model
+implementation. V3 adds no package, ROS dependency, node, message, service,
+action, topic, or launch owner.
 
 ## Milestones, checkpoints, and proposed commit boundaries
 
@@ -1151,9 +1175,43 @@ Proposed commit:
 phase 08.3: add aggregate-grounded v3 contracts
 ```
 
+Next criterion: the user-authorized Amendment A1 boundary.
+
+### M1A — Adopt the user-authorized cleartext precommit
+
+This milestone records the post-M1 design amendment without rewriting the
+historical M1 result. It occurs before M2, suite generation, or Gazebo.
+
+Work:
+
+- remove GPG, recipient, encryption, ciphertext, and decryption handling from
+  the v3-only workflow;
+- make `v3-prepare` write canonical cleartext suite bytes plus a hash
+  commitment;
+- require the suite and commitment to be checkpointed and tracked exactly in
+  Git before M3 activation;
+- retain every numeric gate, allocation, threshold, denominator, stage-order,
+  replacement, and early-stop rule;
+- update active operator guidance and append-only status without rewriting
+  historical v1/v2/08.1/08.2 or M1 evidence.
+
+Exit:
+
+- focused v3 workflow, context, documentation, syntax, style, and compatibility
+  checks pass;
+- the CLI accepts no key or recipient argument;
+- no acceptance suite, evidence root, Gazebo run, or hardware action exists;
+- status and checkpoint identify the researcher-visible non-blind design.
+
+Proposed commit:
+
+```text
+phase 08.3: adopt cleartext v3 precommit
+```
+
 Next criterion: pre-activation source/build/dry-run qualification.
 
-### M2 — Pre-activation qualification and opaque suite commitment
+### M2 — Pre-activation qualification and cleartext suite commitment
 
 This is the required small pre-activation qualification milestone. It performs
 no acceptance run.
@@ -1163,18 +1221,18 @@ Work:
 - isolated build and installed entry-point checks;
 - functional suite and schema-v4 dry runs;
 - runtime parameter instantiation without Gazebo motion;
-- generate and aggregate-qualify the encrypted 70+10 acceptance population in
-  memory;
-- commit only ciphertext and the non-identifying commitment;
+- generate and aggregate-qualify the cleartext 70+10 acceptance population;
+- commit the canonical suite and hash commitment;
 - verify activation/development counts `10` and `10`;
 - verify acceptance counts/allocation `20/50/70/10`;
 - verify all historical case keys are excluded;
-- verify fresh root, process cleanliness, GPG recipient, and disk forecast.
+- verify fresh root, process cleanliness, exact suite/commitment hashes, and
+  disk forecast.
 
 Exit:
 
 - qualification state passes;
-- encrypted acceptance identities remain unexposed;
+- cleartext acceptance identities and hashes are fixed and checkpointed;
 - activation may start.
 
 Proposed commit:
@@ -1236,10 +1294,10 @@ Work:
 
 - generate frozen YAML;
 - rerun source/build/test/dry-run qualification;
-- verify ciphertext/commitment unchanged;
+- verify cleartext suite/commitment unchanged;
 - commit the implementation/profile/scenario freeze;
 - require clean Git;
-- reveal the encrypted suite;
+- verify and bind the precommitted cleartext suite;
 - generate and hash the one acceptance contract and run manifest;
 - commit only evidence/contract/status changes;
 - verify runtime input hashes still match the freeze.
@@ -1451,8 +1509,7 @@ export PHASE08_V3_ROOT=/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3
 
 timeout 1800s ros2 run ros_esc validate_robustness v3-prepare \
   --operator phase08_v3 \
-  --evidence-root "$PHASE08_V3_ROOT" \
-  --holdout-recipient USER_APPROVED_GPG_FINGERPRINT
+  --evidence-root "$PHASE08_V3_ROOT"
 
 timeout 1800s ros2 run ros_esc validate_robustness v3-qualify \
   --operator phase08_v3 \
@@ -1599,8 +1656,8 @@ Before and after each run/stage:
   behavior, or shared simulation/physical algorithm semantics would change;
 - a new controller, recorder, validator, analyzer, algorithm node, package, or
   physical fork appears necessary;
-- the GPG recipient/private-key workflow cannot keep the acceptance
-  population unexposed until freeze;
+- the cleartext acceptance suite or commitment cannot be kept byte-identical
+  from M2 through freeze and terminal reporting;
 - aggregate truth cannot call the authoritative cost owner without copying or
   changing its semantics;
 - unrelated user changes overlap this scope and cannot be preserved;
@@ -1654,15 +1711,15 @@ Git status/diff/log
 
 Recover completed work from manifests, records, completeness files, analysis
 summaries, contract/freeze hashes, and checkpoints. Never rerun a matrix,
-repeat analysis, reveal holdouts early, or rehash large retained bags merely
-to recover chat context.
+repeat analysis, alter the precommitted suite, or rehash large retained bags
+merely to recover chat context.
 
 ## Implementation-time assumptions to verify
 
 - planning HEAD and historical hashes remain available;
 - v3 root remains absent before M2 preparation;
-- `gpg`, NumPy, SciPy, PyYAML, rosbag2 sqlite3, Gazebo contacts, and installed
-  ROS message classes remain available;
+- NumPy, SciPy, PyYAML, rosbag2 sqlite3, Gazebo contacts, and installed ROS
+  message classes remain available;
 - current broad/focused baselines remain reproducible in the intended
   environment with writable ROS/Matplotlib paths;
 - schema 1–3 case keys and behavior remain unchanged;
@@ -1670,7 +1727,7 @@ to recover chat context.
   installed/source imports;
 - the ten activation and ten development geometries satisfy their aggregate
   reachability/classification contracts;
-- the encrypted suite has 70 unique keys, the exact allocations, ten valid
+- the cleartext suite has 70 unique keys, the exact allocations, ten valid
   repeat references, and no historical/development collision;
 - scenario run duration `240 s` and wall bound `600 s` remain finite and
   adequate without changing algorithm timeouts;
@@ -1685,12 +1742,9 @@ Level A/B/C policy.
 
 ## Decisions requiring user approval before implementation can finish
 
-1. Provide or approve the exact GPG recipient fingerprint that will hold the
-   acceptance-suite decryption key. V3 cannot prepare the encrypted suite
-   without it.
-2. Explicitly authorize the proposed commit boundaries in the future
-   Implement chat. This Plan-only authorization does not itself authorize
-   commits or the conditional tag.
+The user has authorized the cleartext-suite amendment and the Implement
+continuation with its declared checkpoint/commit boundaries. The conditional
+simulation-ready tag remains unauthorized unless every v3 gate passes.
 
 No unresolved scientific allocation, threshold, denominator, candidate,
 family, freeze, early-stop, replacement, evidence-root, or tag-name decision
@@ -1698,7 +1752,7 @@ remains in this Plan.
 
 ## Terminal boundary
 
-No physical hardware, Phase 09 work, v3 Gazebo stage, tuning, holdout reveal,
-acceptance run, reproducibility run, readiness tag, or source implementation
-is authorized or performed by saving this Plan. The next action after review
-is a separately authorized v3 Implement continuation beginning at M0.
+No physical hardware, Phase 09 work, v3 Gazebo stage, tuning, acceptance run,
+reproducibility run, readiness tag, or source implementation is authorized or
+performed by saving this Plan. The next action after review is a separately
+authorized v3 Implement continuation beginning at M0.

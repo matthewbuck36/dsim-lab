@@ -69,7 +69,7 @@ for key in (
     "freeze_commit",
     "freeze_tree_sha256",
     "frozen_parameters_sha256",
-    "acceptance_suite_ciphertext_sha256",
+    "acceptance_suite_sha256",
     "contract_sha256",
     "runtime_inputs_sha256",
 ):

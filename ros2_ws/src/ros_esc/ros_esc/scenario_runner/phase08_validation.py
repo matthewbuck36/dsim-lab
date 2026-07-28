@@ -120,8 +120,8 @@ V3_ACTIVATION_PATH = SCENARIO_ROOT / 'phase08_v3_activation.yaml'
 V3_DEVELOPMENT_PATH = SCENARIO_ROOT / 'phase08_v3_development.yaml'
 V3_CANDIDATES_PATH = SCENARIO_ROOT / 'phase08_v3_candidates.yaml'
 V3_FROZEN_PATH = SCENARIO_ROOT / 'phase08_v3_frozen_parameters.yaml'
-V3_CIPHERTEXT_PATH = (
-    SCENARIO_ROOT / 'phase08_v3_acceptance_suite.json.asc'
+V3_PRECOMMITTED_SUITE_PATH = (
+    SCENARIO_ROOT / 'phase08_v3_acceptance_suite.json'
 )
 V3_COMMITMENT_PATH = (
     VALIDATION_ROOT / 'phase_08_v3_suite_commitment.json'
@@ -547,84 +547,6 @@ def create_or_verify_yaml(path, value, mode=0o644):
         sort_keys=False,
     ).encode('utf-8')
     create_or_verify_bytes(path, payload, mode=mode)
-
-
-def _v3_recipient_fingerprint(value):
-    fingerprint = str(value).replace(' ', '').upper()
-    if not re.fullmatch('[0-9A-F]{40}', fingerprint):
-        raise ValueError(
-            'holdout recipient must be an exact 40-hex GPG fingerprint'
-        )
-    return fingerprint
-
-
-def _v3_gpg(
-    arguments,
-    payload,
-    gpg_home=None,
-    executable='gpg',
-):
-    command = [
-        executable,
-        '--batch',
-        '--yes',
-        '--no-tty',
-        '--status-fd',
-        '2',
-    ]
-    if gpg_home is not None:
-        command.extend(('--homedir', str(gpg_home)))
-    command.extend(arguments)
-    result = subprocess.run(
-        command,
-        input=payload,
-        capture_output=True,
-        timeout=120.0,
-    )
-    if result.returncode != 0:
-        status_lines = [
-            line
-            for line in result.stderr.decode(
-                'utf-8', errors='replace'
-            ).splitlines()
-            if line.startswith('[GNUPG:]')
-        ]
-        raise RuntimeError(
-            'GPG operation failed'
-            + (f': {status_lines[-1]}' if status_lines else '')
-        )
-    return result.stdout
-
-
-def _v3_encrypt(
-    plaintext,
-    recipient,
-    gpg_home=None,
-    executable='gpg',
-):
-    fingerprint = _v3_recipient_fingerprint(recipient)
-    return _v3_gpg(
-        [
-            '--trust-model',
-            'always',
-            '--armor',
-            '--recipient',
-            fingerprint,
-            '--encrypt',
-        ],
-        plaintext,
-        gpg_home=gpg_home,
-        executable=executable,
-    )
-
-
-def _v3_decrypt(ciphertext, gpg_home=None, executable='gpg'):
-    return _v3_gpg(
-        ['--decrypt'],
-        ciphertext,
-        gpg_home=gpg_home,
-        executable=executable,
-    )
 
 
 def _v3_replacement_eligible(evidence):
@@ -3554,7 +3476,7 @@ def _v3_normalized_success(success):
 
 
 def _v3_resolved_case(suite, case, frozen_profile=None):
-    """Build the exact normalized one-run identity without a plaintext file."""
+    """Build the exact normalized one-run identity from the suite document."""
     resolved = {
         'schema_version': 4,
         'suite_id': suite['suite_id'],
@@ -3948,7 +3870,7 @@ def generate_v3_acceptance_population(
     historical_case_keys=None,
     solver_settings=None,
 ):
-    """Generate the complete selection-blind 70+10 schema-v4 population."""
+    """Generate the complete predeclared 70+10 schema-v4 population."""
     if not isinstance(seed_bytes, bytes) or len(seed_bytes) != 32:
         raise ValueError('v3 generator seed must contain exactly 256 bits')
     rng = random.Random(int.from_bytes(seed_bytes, byteorder='big'))
@@ -3956,7 +3878,7 @@ def generate_v3_acceptance_population(
         'schema_version': 4,
         'suite_id': 'phase08_v3_sealed_acceptance',
         'description': (
-            'Selection-blind Phase 08.3 unique and reproducibility cases.'
+            'Predeclared Phase 08.3 unique and reproducibility cases.'
         ),
         'mode': 'simulation',
         'execution': {
@@ -3972,8 +3894,13 @@ def generate_v3_acceptance_population(
         'metadata': {
             'experiment_version': 'phase08-v3',
             'operator_notes': (
-                'Generated before activation; identities remained encrypted.'
+                'Generated, hashed, and checkpointed before activation; '
+                'identities were researcher-visible.'
             ),
+            'population_visibility': (
+                'researcher_visible_before_activation'
+            ),
+            'selection_blind': False,
         },
         'level_map': {},
         'defaults': {
@@ -4344,8 +4271,7 @@ def validate_v3_population(document, historical_case_keys=None):
 
 def _v3_commitment_document(
     document,
-    plaintext,
-    ciphertext,
+    suite_bytes,
     historical_exclusion_hashes,
 ):
     family_counts = Counter(
@@ -4367,8 +4293,12 @@ def _v3_commitment_document(
         'historical_exclusion_hashes': dict(sorted(
             historical_exclusion_hashes.items()
         )),
-        'plaintext_sha256': _sha256_bytes(plaintext),
-        'ciphertext_sha256': _sha256_bytes(ciphertext),
+        'suite_sha256': _sha256_bytes(suite_bytes),
+        'population_visibility': (
+            'researcher_visible_before_activation'
+        ),
+        'selection_blind': False,
+        'precommit_mechanism': 'canonical_json_sha256',
     }
     commitment['commitment_sha256'] = omission_sha256(
         commitment, 'commitment_sha256'
@@ -4491,24 +4421,21 @@ def _v3_publish_prepare_transaction(
     root,
     transaction,
     *,
-    holdout_recipient,
     operator,
-    ciphertext_path,
+    suite_path,
     commitment_path,
     restore_outputs,
 ):
-    fingerprint = _v3_recipient_fingerprint(holdout_recipient)
     if (
-        transaction.get('recipient_fingerprint') != fingerprint
-        or transaction.get('operator') != operator
-        or transaction.get('ciphertext_path')
-        != str(ciphertext_path.resolve())
+        transaction.get('operator') != operator
+        or transaction.get('suite_path')
+        != str(suite_path.resolve())
         or transaction.get('commitment_path')
         != str(commitment_path.resolve())
     ):
         raise RuntimeError('v3 prepare transaction invocation drifted')
-    ciphertext = base64.b64decode(
-        transaction['ciphertext_base64'],
+    suite_bytes = base64.b64decode(
+        transaction['suite_base64'],
         validate=True,
     )
     commitment = transaction['commitment']
@@ -4518,7 +4445,7 @@ def _v3_publish_prepare_transaction(
         'acceptance commitment',
     )
     if (
-        _sha256_bytes(ciphertext) != commitment['ciphertext_sha256']
+        _sha256_bytes(suite_bytes) != commitment['suite_sha256']
         or commitment_hash != transaction['commitment_sha256']
     ):
         raise RuntimeError('v3 prepare transaction payload drifted')
@@ -4531,7 +4458,7 @@ def _v3_publish_prepare_transaction(
         ) + '\n'
     ).encode('utf-8')
     for path, payload, mode in (
-        (ciphertext_path, ciphertext, 0o644),
+        (suite_path, suite_bytes, 0o644),
         (commitment_path, commitment_bytes, 0o644),
     ):
         if path.exists():
@@ -4546,11 +4473,12 @@ def _v3_publish_prepare_transaction(
     return _v3_write_state(root, 'prepare', {
         'passed': True,
         'operator': operator,
-        'recipient_fingerprint': fingerprint,
-        'ciphertext_path': str(ciphertext_path.resolve()),
-        'ciphertext_sha256': commitment['ciphertext_sha256'],
+        'suite_path': str(suite_path.resolve()),
+        'suite_sha256': commitment['suite_sha256'],
         'commitment_path': str(commitment_path.resolve()),
         'commitment_sha256': commitment_hash,
+        'population_visibility': commitment['population_visibility'],
+        'selection_blind': commitment['selection_blind'],
         'counts': commitment['counts'],
         'family_counts': commitment['family_counts'],
         'repository': transaction['repository'],
@@ -4566,34 +4494,31 @@ def _v3_publish_prepare_transaction(
 def run_v3_prepare(
     operator,
     evidence_root,
-    holdout_recipient,
     *,
     seed_bytes=None,
-    gpg_home=None,
-    ciphertext_path=V3_CIPHERTEXT_PATH,
+    suite_path=V3_PRECOMMITTED_SUITE_PATH,
     commitment_path=V3_COMMITMENT_PATH,
 ):
-    """Generate, qualify, commit, and encrypt the selection-blind population."""
+    """Generate, qualify, and hash the fixed researcher-visible population."""
     root = Path(evidence_root).expanduser().resolve()
     state_path = _v3_state_path(root, 'prepare')
     transaction_path = _v3_prepare_transaction_path(root)
-    ciphertext_path = Path(ciphertext_path)
+    suite_path = Path(suite_path)
     commitment_path = Path(commitment_path)
     if state_path.is_file():
         transaction = _v3_load_prepare_transaction(transaction_path)
         return _v3_publish_prepare_transaction(
             root,
             transaction,
-            holdout_recipient=holdout_recipient,
             operator=operator,
-            ciphertext_path=ciphertext_path,
+            suite_path=suite_path,
             commitment_path=commitment_path,
             restore_outputs=False,
         )
     if transaction_path.is_file():
         transaction = _v3_load_prepare_transaction(transaction_path)
         _v3_assert_worktree_changes({
-            ciphertext_path,
+            suite_path,
             commitment_path,
         })
         _v3_verify_repository_snapshot(
@@ -4603,15 +4528,14 @@ def run_v3_prepare(
         return _v3_publish_prepare_transaction(
             root,
             transaction,
-            holdout_recipient=holdout_recipient,
             operator=operator,
-            ciphertext_path=ciphertext_path,
+            suite_path=suite_path,
             commitment_path=commitment_path,
             restore_outputs=True,
         )
     if root.exists():
         raise RuntimeError('v3 prepare requires an absent fresh evidence root')
-    if ciphertext_path.exists() or commitment_path.exists():
+    if suite_path.exists() or commitment_path.exists():
         raise RuntimeError(
             'v3 prepare found outputs without a resumable transaction'
         )
@@ -4626,34 +4550,24 @@ def run_v3_prepare(
     )
     if disk.free < required_free_bytes:
         raise RuntimeError('v3 prepare disk forecast failed')
-    fingerprint = _v3_recipient_fingerprint(holdout_recipient)
     historical_keys, historical_hashes = _v3_historical_case_keys()
     population = generate_v3_acceptance_population(
         seed_bytes or secrets.token_bytes(32),
         historical_case_keys=historical_keys,
     )
-    plaintext = canonical_json_bytes(population)
-    ciphertext = _v3_encrypt(
-        plaintext,
-        holdout_recipient,
-        gpg_home=gpg_home,
-    )
-    if b'-----BEGIN PGP MESSAGE-----' not in ciphertext:
-        raise RuntimeError('GPG output is not an ASCII-armored message')
+    suite_bytes = canonical_json_bytes(population)
     commitment = _v3_commitment_document(
         population,
-        plaintext,
-        ciphertext,
+        suite_bytes,
         historical_hashes,
     )
     transaction = {
         'schema_version': 1,
         'experiment_version': 'phase08-v3',
         'operator': operator,
-        'recipient_fingerprint': fingerprint,
-        'ciphertext_path': str(ciphertext_path.resolve()),
+        'suite_path': str(suite_path.resolve()),
         'commitment_path': str(commitment_path.resolve()),
-        'ciphertext_base64': base64.b64encode(ciphertext).decode('ascii'),
+        'suite_base64': base64.b64encode(suite_bytes).decode('ascii'),
         'commitment': commitment,
         'commitment_sha256': commitment['commitment_sha256'],
         'repository': repository,
@@ -4700,13 +4614,12 @@ def run_v3_prepare(
         if staging_root.exists():
             shutil.rmtree(staging_root)
     del population
-    del plaintext
+    del suite_bytes
     return _v3_publish_prepare_transaction(
         root,
         transaction,
-        holdout_recipient=holdout_recipient,
         operator=operator,
-        ciphertext_path=ciphertext_path,
+        suite_path=suite_path,
         commitment_path=commitment_path,
         restore_outputs=True,
     )
@@ -4975,7 +4888,7 @@ def _v3_qualification_commands(
                 'assert (PACKAGE_SCENARIO_ROOT / '
                 '\\"phase08_v3_frozen_parameters.yaml\\").is_file(); '
                 'assert (PACKAGE_SCENARIO_ROOT / '
-                '\\"phase08_v3_acceptance_suite.json.asc\\").is_file()"'
+                '\\"phase08_v3_acceptance_suite.json\\").is_file()"'
             ),
             30.0,
             (0,),
@@ -5014,7 +4927,7 @@ def run_v3_qualify(operator, evidence_root):
     reasons = []
     try:
         _v3_assert_worktree_changes({
-            V3_CIPHERTEXT_PATH,
+            V3_PRECOMMITTED_SUITE_PATH,
             V3_COMMITMENT_PATH,
         })
         _v3_verify_repository_snapshot(
@@ -5033,8 +4946,11 @@ def run_v3_qualify(operator, evidence_root):
     )
     if disk.free < required_free_bytes:
         reasons.append('disk forecast is below the declared v3 minimum')
-    if file_sha256(V3_CIPHERTEXT_PATH) != prepare['ciphertext_sha256']:
-        reasons.append('encrypted acceptance suite hash drifted')
+    if (
+        file_sha256(V3_PRECOMMITTED_SUITE_PATH)
+        != prepare['suite_sha256']
+    ):
+        reasons.append('precommitted acceptance suite hash drifted')
     try:
         commitment_hash = require_omission_sha256(
             commitment,
@@ -5062,10 +4978,7 @@ def run_v3_qualify(operator, evidence_root):
         include_v3_development=False
     )
     del unused_historical_hashes
-    unused_historical_keys, historical_hashes = (
-        _v3_historical_case_keys()
-    )
-    del unused_historical_keys
+    historical_keys, historical_hashes = _v3_historical_case_keys()
     new_keys = {
         run['case_key']
         for run in activation_runs + development_runs
@@ -5082,6 +4995,33 @@ def run_v3_qualify(operator, evidence_root):
         reasons.append(
             'historical exclusion hashes differ from the commitment'
         )
+    population_validation = {'passed': False, 'reasons': []}
+    try:
+        suite_bytes = V3_PRECOMMITTED_SUITE_PATH.read_bytes()
+        if _sha256_bytes(suite_bytes) != commitment.get('suite_sha256'):
+            raise RuntimeError(
+                'acceptance suite differs from its commitment'
+            )
+        population = json.loads(suite_bytes.decode('utf-8'))
+        if canonical_json_bytes(population) != suite_bytes:
+            raise RuntimeError(
+                'acceptance suite is not canonical JSON'
+            )
+        population_validation = validate_v3_population(
+            population,
+            historical_case_keys=historical_keys,
+        )
+        if not population_validation['passed']:
+            reasons.append(
+                'precommitted population failed validation: '
+                + '; '.join(population_validation['reasons'])
+            )
+    except (OSError, UnicodeError, ValueError, RuntimeError) as exc:
+        population_validation = {
+            'passed': False,
+            'reasons': [str(exc)],
+        }
+        reasons.append(str(exc))
     functional = _run_functional_tests()
     if not functional['passed']:
         reasons.append('retained functional test gate failed')
@@ -5115,14 +5055,17 @@ def run_v3_qualify(operator, evidence_root):
         reasons.append('post-qualification ROS/Gazebo process set is not clean')
     try:
         _v3_assert_worktree_changes({
-            V3_CIPHERTEXT_PATH,
+            V3_PRECOMMITTED_SUITE_PATH,
             V3_COMMITMENT_PATH,
         })
     except RuntimeError as exc:
         reasons.append(str(exc))
     repository = _v3_repository_snapshot(
         require_clean=False,
-        extra_paths=(V3_CIPHERTEXT_PATH, V3_COMMITMENT_PATH),
+        extra_paths=(
+            V3_PRECOMMITTED_SUITE_PATH,
+            V3_COMMITMENT_PATH,
+        ),
     )
     return _v3_write_state(root, 'qualification', {
         'passed': not reasons,
@@ -5131,6 +5074,7 @@ def run_v3_qualify(operator, evidence_root):
         'activation_count': len(activation_runs),
         'development_count': len(development_runs),
         'candidate_count': len(V3_CANDIDATES),
+        'population_validation': population_validation,
         'functional_tests': functional,
         'isolated_install_root': str(install_root),
         'qualification_commands': qualification_commands,
@@ -5236,6 +5180,7 @@ def run_v3_activation(operator, evidence_root):
     """Execute all ten fresh visible activation contracts."""
     root = Path(evidence_root).expanduser().resolve()
     qualification = _v3_require_state(root, 'qualification')
+    _v3_require_precommit_in_head()
     _v3_verify_repository_snapshot(qualification['repository'])
     stage_root = root / 'activation'
     suite_path = _v3_materialize_profile_suite(
@@ -5666,7 +5611,9 @@ def _v3_verify_repository_snapshot(snapshot, *, require_clean=True):
         REPOSITORY_ROOT / relative_path
         for relative_path in input_hashes
         if relative_path in {
-            str(V3_CIPHERTEXT_PATH.relative_to(REPOSITORY_ROOT)),
+            str(
+                V3_PRECOMMITTED_SUITE_PATH.relative_to(REPOSITORY_ROOT)
+            ),
             str(V3_COMMITMENT_PATH.relative_to(REPOSITORY_ROOT)),
             str(V3_FROZEN_PATH.relative_to(REPOSITORY_ROOT)),
             str(V3_SELECTION_PATH.relative_to(REPOSITORY_ROOT)),
@@ -5681,6 +5628,23 @@ def _v3_verify_repository_snapshot(snapshot, *, require_clean=True):
             'v3 runtime inputs differ from the qualified snapshot'
         )
     return current
+
+
+def _v3_require_precommit_in_head():
+    """Require the suite and commitment to be exact tracked HEAD blobs."""
+    for path in (V3_PRECOMMITTED_SUITE_PATH, V3_COMMITMENT_PATH):
+        relative = str(path.relative_to(REPOSITORY_ROOT))
+        try:
+            current_blob = _git('hash-object', relative)
+            head_blob = _git('rev-parse', f'HEAD:{relative}')
+        except subprocess.CalledProcessError as exc:
+            raise RuntimeError(
+                f'v3 precommit is not tracked in HEAD: {relative}'
+            ) from exc
+        if current_blob != head_blob:
+            raise RuntimeError(
+                f'v3 precommit differs from HEAD: {relative}'
+            )
 
 
 def _v3_durable_freeze_document(
@@ -5707,8 +5671,8 @@ def _v3_durable_freeze_document(
             'frozen_profile_sha256'
         ],
         'parameter_selection_sha256': freeze['selection_sha256'],
-        'acceptance_suite_ciphertext_sha256': file_sha256(
-            V3_CIPHERTEXT_PATH
+        'acceptance_suite_sha256': file_sha256(
+            V3_PRECOMMITTED_SUITE_PATH
         ),
         'suite_commitment_sha256': require_omission_sha256(
             _load_json(V3_COMMITMENT_PATH),
@@ -5810,12 +5774,12 @@ def run_v3_freeze(operator, evidence_root):
         if commitment_hash != prepare['commitment_sha256']:
             reasons.append('pre-freeze commitment hash drifted')
         if (
-            file_sha256(V3_CIPHERTEXT_PATH)
-            != prepare['ciphertext_sha256']
-            or file_sha256(V3_CIPHERTEXT_PATH)
-            != commitment['ciphertext_sha256']
+            file_sha256(V3_PRECOMMITTED_SUITE_PATH)
+            != prepare['suite_sha256']
+            or file_sha256(V3_PRECOMMITTED_SUITE_PATH)
+            != commitment['suite_sha256']
         ):
-            reasons.append('pre-freeze ciphertext hash drifted')
+            reasons.append('pre-freeze acceptance suite hash drifted')
         unused_keys, historical_hashes = _v3_historical_case_keys()
         del unused_keys
         if historical_hashes != commitment[
@@ -5882,7 +5846,7 @@ def run_v3_freeze(operator, evidence_root):
     repository = _v3_repository_snapshot(
         require_clean=False,
         extra_paths=(
-            V3_CIPHERTEXT_PATH,
+            V3_PRECOMMITTED_SUITE_PATH,
             V3_COMMITMENT_PATH,
             V3_FROZEN_PATH,
             V3_SELECTION_PATH,
@@ -6000,8 +5964,9 @@ def _v3_contract_document(root, population, freeze, commitment):
         },
         'frozen_profile': frozen,
         'commitment_sha256': commitment['commitment_sha256'],
-        'ciphertext_sha256': commitment['ciphertext_sha256'],
-        'plaintext_sha256': commitment['plaintext_sha256'],
+        'suite_sha256': commitment['suite_sha256'],
+        'population_visibility': commitment['population_visibility'],
+        'selection_blind': commitment['selection_blind'],
         'runtime_population_sha256': canonical_sha256(
             runtime_population
         ),
@@ -6135,10 +6100,10 @@ def _v3_verify_freeze_inputs(freeze, *, require_clean=True):
         'commitment_sha256',
         'acceptance commitment',
     )
-    if file_sha256(V3_CIPHERTEXT_PATH) != commitment[
-        'ciphertext_sha256'
+    if file_sha256(V3_PRECOMMITTED_SUITE_PATH) != commitment[
+        'suite_sha256'
     ]:
-        raise RuntimeError('v3 acceptance ciphertext drifted')
+        raise RuntimeError('v3 precommitted acceptance suite drifted')
     durable = _load_json(V3_FREEZE_PATH)
     require_omission_sha256(
         durable, 'freeze_state_sha256', 'durable freeze state'
@@ -6187,9 +6152,9 @@ def _v3_verify_runtime_contract(
     if (
         not suite_path.is_file()
         or file_sha256(suite_path) != contract_state['suite_sha256']
-        or file_sha256(suite_path) != commitment['plaintext_sha256']
+        or file_sha256(suite_path) != commitment['suite_sha256']
     ):
-        raise RuntimeError('v3 revealed suite hash drifted')
+        raise RuntimeError('v3 sealed suite hash drifted')
     if str(Path(contract['evidence_root']).resolve()) != str(root):
         raise RuntimeError('v3 contract evidence root drifted')
     return contract
@@ -6219,13 +6184,8 @@ def _v3_publish_sealed_durable_freeze(freeze, contract):
     atomic_json(V3_FREEZE_PATH, expected)
 
 
-def run_v3_seal(
-    operator,
-    evidence_root,
-    *,
-    gpg_home=None,
-):
-    """Reveal the committed suite only after a clean implementation freeze."""
+def run_v3_seal(operator, evidence_root):
+    """Bind the precommitted suite after a clean implementation freeze."""
     root = Path(evidence_root).expanduser().resolve()
     state_path = _v3_state_path(root, 'contract')
     if state_path.is_file():
@@ -6258,13 +6218,10 @@ def run_v3_seal(
         freeze,
         require_clean=not partial_contract,
     )
-    ciphertext = V3_CIPHERTEXT_PATH.read_bytes()
-    if _sha256_bytes(ciphertext) != commitment['ciphertext_sha256']:
-        raise RuntimeError('v3 ciphertext hash drifted')
-    plaintext = _v3_decrypt(ciphertext, gpg_home=gpg_home)
-    if _sha256_bytes(plaintext) != commitment['plaintext_sha256']:
-        raise RuntimeError('v3 plaintext commitment mismatch')
-    population = json.loads(plaintext.decode('utf-8'))
+    suite_bytes = V3_PRECOMMITTED_SUITE_PATH.read_bytes()
+    if _sha256_bytes(suite_bytes) != commitment['suite_sha256']:
+        raise RuntimeError('v3 precommitted suite hash drifted')
+    population = json.loads(suite_bytes.decode('utf-8'))
     historical_keys, historical_hashes = _v3_historical_case_keys()
     if historical_hashes != commitment['historical_exclusion_hashes']:
         raise RuntimeError('v3 historical exclusion inputs drifted')
@@ -6274,14 +6231,14 @@ def run_v3_seal(
     )
     if not validation['passed']:
         raise RuntimeError(
-            'revealed population failed validation: '
+            'precommitted population failed validation: '
             + '; '.join(validation['reasons'])
         )
     sealed_directory = root / 'sealed'
     sealed_directory.mkdir(parents=True, exist_ok=True, mode=0o700)
     sealed_directory.chmod(0o700)
     suite_path = sealed_directory / 'phase08_v3_acceptance_suite.json'
-    create_or_verify_bytes(suite_path, plaintext, mode=0o400)
+    create_or_verify_bytes(suite_path, suite_bytes, mode=0o400)
     contract = _v3_contract_document(
         root,
         population,
@@ -6314,7 +6271,7 @@ def run_v3_seal(
         'population_validation': validation,
     })
     _v3_publish_sealed_durable_freeze(freeze, contract)
-    del plaintext
+    del suite_bytes
     return state
 
 
@@ -7873,7 +7830,7 @@ def run_v3_report(operator, evidence_root):
                     'prepare transaction differs from state'
                 )
             for path_field, hash_field in (
-                ('ciphertext_path', 'ciphertext_sha256'),
+                ('suite_path', 'suite_sha256'),
                 ('commitment_path', None),
             ):
                 path = Path(prepare[path_field])
@@ -8297,7 +8254,6 @@ def _parser():
     prepare = subparsers.add_parser('v3-prepare')
     prepare.add_argument('--operator', required=True)
     prepare.add_argument('--evidence-root', required=True)
-    prepare.add_argument('--holdout-recipient', required=True)
     return parser
 
 
@@ -8309,7 +8265,6 @@ def main(argv=None):
             result = run_v3_prepare(
                 arguments.operator,
                 arguments.evidence_root,
-                arguments.holdout_recipient,
             )
         elif arguments.subcommand == 'v3-qualify':
             result = run_v3_qualify(

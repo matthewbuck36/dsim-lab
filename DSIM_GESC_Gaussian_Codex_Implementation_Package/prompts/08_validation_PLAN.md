@@ -1,3 +1,9 @@
+> Current Phase 08.3 execution note (2026-07-27): the user-authorized
+> Amendment A1 in `docs/codex/gesc_gaussian/plans/phase_08_3_plan.md`
+> supersedes this planning prompt's selection-blind/encryption requirement for
+> v3. The active workflow uses a fixed researcher-visible cleartext suite and
+> SHA-256 commitment without changing the declared robustness gates.
+
 You are working inside the existing `dsim-lab` Git repository. This repository already has a structured ROS 2 workspace and may already implement portions of the requested behavior.
 
 Read these files before doing anything:
