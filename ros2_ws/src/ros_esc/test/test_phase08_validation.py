@@ -849,6 +849,15 @@ def test_v4_cli_routes_through_bounded_shared_workflow(
 
 def test_v4_static_inputs_are_fresh_and_exact():
     """Precommit ten fresh GUI and ten transformed headless slots."""
+    setup_text = (
+        phase08_validation.REPOSITORY_ROOT
+        / 'ros2_ws/src/ros_esc/setup.py'
+    ).read_text(encoding='utf-8')
+    assert (
+        "'ros_esc/scenario_runner/scenarios/"
+        "phase08_v4r2_activation.yaml'"
+        in setup_text
+    )
     activation_suite = load_suite(
         phase08_validation.V4_ACTIVATION_PATH
     )

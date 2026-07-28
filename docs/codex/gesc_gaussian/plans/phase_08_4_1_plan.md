@@ -89,8 +89,16 @@ redispatched while avoiding behavior-driven geometry selection.
 The corrected pass-eligible root is:
 
 ```text
-/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4r2
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4r2b
 ```
+
+The initially named `phase08_v4r2` root is retained as a prelaunch
+qualification failure. Its source tests and isolated build passed, but the
+isolated installed-resource check proved that `setup.py` did not install the
+new corrected activation filename. It contains no Gazebo attempt and is never
+resumed. Adding that one file to the existing package-data owner is a bounded
+prelaunch packaging correction; the same predeclared activation suite may be
+used in `phase08_v4r2b` because no case was executed or observed.
 
 Before creation:
 
@@ -137,4 +145,3 @@ No GPG, encryption key, or encrypted artifact is required.
   policy applies inside the fresh corrected root.
 - A corrected-root failure is retained honestly; do not modify the formal
   suite, weaken a gate, or silently create V5.
-

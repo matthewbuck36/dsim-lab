@@ -1,67 +1,62 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-28T18:50:32+00:00
-Base HEAD: 90b8c744628eec528cb946c2faaaa822b264f7f3
+Generated: 2026-07-28T18:58:25+00:00
+Base HEAD: e9c6369ebc2af89fadcfbfaaa8a30d6fbf084b48
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 820e59762c6e3a4ce43db0945c6b762604de3b2d3edcbe1be33aa9391026d941
+Status sha256: 8a1c53c5412ce7f33653ab8e0feb0f56217e6b5d59eadd767363750b08e3b64d
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_4_1_plan.md
-Active subphase plan sha256: 226ea1a48b507a4aeb7aa847b7b43b0852ce0abc7c7647df888954ec95361802
-Unstaged diff sha256: ed950dfe1c63a808b87d215978d44d1c244d2ff149c02886d9c3bdd3fcc99d7d
+Active subphase plan sha256: 2a6d945f7453962469338ea0b0ec710df099691264fa1cb8e54927352875d0ba
+Unstaged diff sha256: c40fecbab926afeb9c3ffad61ac5a0afb7331cbee02cd4c7ae9afd20a2333bf4
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 32]
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/checkpoint_phase.sh
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 33]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
+ M docs/codex/gesc_gaussian/plans/phase_08_4_1_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
  M docs/codex/gesc_gaussian/test_commands.md
- M docs/codex/gesc_gaussian/validation/phase_08_v4_population_adoption.json
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py
+ M ros2_ws/src/ros_esc/setup.py
  M ros2_ws/src/ros_esc/test/test_phase08_validation.py
- M ros2_ws/src/ros_esc/test/test_scenario_runner.py
-?? docs/codex/gesc_gaussian/plans/phase_08_4_1_plan.md
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v4r2_activation.yaml
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../tools/checkpoint_phase.sh                      |   8 +-
- .../tools/validate_phase_context.sh                |   8 +-
- .../checkpoints/phase_08_checkpoint.txt            |  52 ++---
- docs/codex/gesc_gaussian/status/phase_08_status.md | 216 +++++++++++++++++++++
- docs/codex/gesc_gaussian/test_commands.md          |  43 ++++
- .../phase_08_v4_population_adoption.json           |  17 +-
- .../ros_esc/scenario_runner/phase08_validation.py  |   2 +-
- .../ros_esc/scenario_runner/run_scenario.py        |  47 ++++-
- .../src/ros_esc/test/test_phase08_validation.py    |  31 ++-
- ros2_ws/src/ros_esc/test/test_scenario_runner.py   |  72 ++++++-
- 10 files changed, 441 insertions(+), 55 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 56 ++------------
+ .../codex/gesc_gaussian/plans/phase_08_4_1_plan.md | 11 ++-
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 87 ++++++++++++++++++++++
+ docs/codex/gesc_gaussian/test_commands.md          |  5 +-
+ ros2_ws/src/ros_esc/setup.py                       |  1 +
+ .../src/ros_esc/test/test_phase08_validation.py    |  9 +++
+ 6 files changed, 117 insertions(+), 52 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**M4.2 — commit, prepare, and qualify corrected V4.**
+**M4.2b — checkpoint packaging correction and requalify prelaunch.**
 
 ### Next criterion
 
-Checkpoint and commit this independently verified correction, require clean
-Git, transactionally create
-`/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4r2`, and pass the
-complete functional/build/installed/dry-run/process-level qualification
-before starting corrected GUI activation.
+Pass focused source and packaging checks, checkpoint and commit, build the
+installed package, then transactionally prepare and qualify:
 
-### M4.2 stop conditions
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4r2b
+```
 
-- No corrected evidence-root creation from a dirty or uncommitted tree.
-- No Gazebo dispatch unless corrected prepare and qualification both pass.
-- Preserve the original V4 root and all five inspected historical records.
+Only its passing immutable qualification may start the ten corrected visible
+Gazebo activation cases.
+
+### M4.2b stop conditions
+
+- Do not alter or resume either `phase08_v4` or `phase08_v4r2`.
+- Do not change corrected activation identities, seeds, geometries, or
+  contracts after the no-Gazebo qualification failure.
+- Do not dispatch Gazebo unless `phase08_v4r2b` qualification passes.
 
 
 This file describes the base HEAD and diff before the next commit; it is

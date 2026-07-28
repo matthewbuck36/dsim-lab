@@ -3001,3 +3001,90 @@ before starting corrected GUI activation.
 - No corrected evidence-root creation from a dirty or uncommitted tree.
 - No Gazebo dispatch unless corrected prepare and qualification both pass.
 - Preserve the original V4 root and all five inspected historical records.
+
+## Phase 08.4.1 first corrected-root qualification stop
+
+Commit `e9c6369` cleanly built and the first corrected root was prepared at:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4r2
+```
+
+Preparation passed:
+
+- exact formal suite SHA-256
+  `d733ef9dffb372d2c60b57f83c2b96e1062a0a62818587de59a0166df4efe88e`;
+- five historical V3/V4 records inspected;
+- zero formal-case overlap;
+- `348455469056` free bytes versus `91268055040` required;
+- clean commit/tree and empty process set.
+
+Qualification then stopped before any Gazebo dispatch:
+
+- retained functional gate: `491 passed, 2 skipped in 88.99 s`;
+- isolated three-package build: passed;
+- installed aggregate-truth resources: passed;
+- installed corrected V4 activation resource: failed;
+- process sets before and after: empty.
+
+Root cause: `setup.py` included `phase08_v4_*` through the pattern
+`phase08_v[34]_*`, which requires an underscore immediately after `v4`.
+It therefore did not package the new `phase08_v4r2_activation.yaml` name.
+This is an installed-resource packaging omission, not a source, behavior,
+simulation, or formal-population failure.
+
+Retained evidence SHA-256 values:
+
+```text
+workflow_state/v4_qualification.json
+  ee0ca8b4fbb684f39928cd1b2ae1e3cac363bd0b670a2110be9957637e5ed597
+qualification/logs/isolated_build.log
+  9e0cdd92fd096f189f6ca899ccf4efcc6c777146cd4f54c8dc542353a9caf854
+qualification/logs/installed_v4_resources.log
+  09a596a85bd2c6b81ed1c4f1519e29c8f5cdb5b6a1f7e3b5bde6b48fad697970
+```
+
+The failed qualification state is immutable. The `phase08_v4r2` root is not
+resumed or counted. Because it contains no Gazebo attempt, the exact already
+predeclared corrected activation suite remains unobserved and may be used
+from a new clean prelaunch root.
+
+The bounded correction explicitly adds
+`phase08_v4r2_activation.yaml` to the existing `setup.py` package-data list
+and adds a static test for that installed-resource ownership.
+
+Correction verification:
+
+```text
+setup.py
+  06a61a29d09d3a84130951e6f6d501fe0c00ca53f0d9a331eac1ba96d723fd6f
+test_phase08_validation.py
+  bbc04ed767ee39b5e3fe034fd246f29717ebbce1f517204274c8a925602ffd72
+focused runner/workflow/recorder gate
+  279 passed, 1 skipped in 50.17 s
+fatal flake8, py_compile, git diff --check
+  passed
+```
+
+## Current milestone
+
+**M4.2b — checkpoint packaging correction and requalify prelaunch.**
+
+### Next criterion
+
+Pass focused source and packaging checks, checkpoint and commit, build the
+installed package, then transactionally prepare and qualify:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4r2b
+```
+
+Only its passing immutable qualification may start the ten corrected visible
+Gazebo activation cases.
+
+### M4.2b stop conditions
+
+- Do not alter or resume either `phase08_v4` or `phase08_v4r2`.
+- Do not change corrected activation identities, seeds, geometries, or
+  contracts after the no-Gazebo qualification failure.
+- Do not dispatch Gazebo unless `phase08_v4r2b` qualification passes.

@@ -3151,10 +3151,11 @@ separate from functional acceptance.
 ## Phase 08.4.1 corrected V4 restart
 
 The original `phase08_v4` root stopped after two GUI cases and is immutable.
-The corrected predeclared root is:
+The first corrected root failed its prelaunch installed-resource check and is
+immutable. The pass-eligible corrected predeclared root is:
 
 ```bash
-PHASE08_V4_ROOT=/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4r2
+PHASE08_V4_ROOT=/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4r2b
 ```
 
 Use the same V4 commands above with this root only after the correction commit
