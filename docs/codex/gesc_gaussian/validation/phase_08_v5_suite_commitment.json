@@ -1,0 +1,50 @@
+{
+  "commitment_sha256": "3c9ea5c6679ba2547a643fe3dc394a308cd25fee7f4ffdedd19476a3259670cd",
+  "counts": {
+    "holdout": 20,
+    "reproducibility": 10,
+    "unique": 70,
+    "validation": 50
+  },
+  "direct_convergence_is_success": false,
+  "family_counts": {
+    "obstructing_noise_delay": 10,
+    "obstructing_three_light_lateral": 12,
+    "obstructing_three_light_sequential": 8,
+    "obstructing_two_light_collinear": 20,
+    "obstructing_two_light_offset": 12,
+    "obstructing_wall_corner": 8
+  },
+  "generator_version": "phase08-v5-route-obstruction-generator-1",
+  "historical_exclusion_hashes": {
+    "phase08_1_diagnostic_activation.yaml": "1e030602ecee99c2d1f563a0ae19e65b1c8e6608662e178eb52b8766edc5a9a7",
+    "phase08_2_recenter.yaml": "1b116ef7984d8a679f69da919576125a1ad066da3d55098466da9afac2bae017",
+    "phase08_full_matrix.yaml": "2786ba6aa58ab1e2eeb49b995b1c4abd68c71c1fe3f1eea13b6a993c5ef000e0",
+    "phase08_holdout.yaml": "f6d9a627f0157ad62f12279f8bde40fef815b0ebdaa487398f0d3641c5172b83",
+    "phase08_training.yaml": "9ac9c47e3bc76097d97396da3bd2868cf5986f0c25de42e36c13847019014fce",
+    "phase08_v2_activation.yaml": "a5e91d2132b3dacccedc24aba13bdacd9ef5ba4ec7c8ae7b69ced6eadaf47d72",
+    "phase08_v2_holdout.yaml": "6adb79d62830d2d0f65c3e27cdfc49d7dd2cd95fe4328b4337f08fefa19ab46b",
+    "phase08_v2_reproducibility.yaml": "3e7b12d0d48afa0f6eb8972ab2271454c592e248d8eb17cda445923de0f06309",
+    "phase08_v2_training.yaml": "313c27f9488a8b2d78730bc5ac3ef3d891c3979c1d5b1ad59155722536c56a1a",
+    "phase08_v2_validation.yaml": "ce2a9929e7e0a22744020a4135a338c8007ff5e64a7ae210c64b9d0df3252c91",
+    "phase08_v3_activation.yaml": "8fa385c50f19adf1f362dba286ed3e5c527a175b89692b38632d77471b450031",
+    "phase08_v3_development.yaml": "1c5ef231b5839386f8db67d7b83e25a6ca11dc2935bc1a7c6584a8645a57f433",
+    "phase08_v4_activation.yaml": "7751a2aa97a0cc53ddc5d18576ea0c0729828687022da81758a9c1a4d974617b",
+    "phase08_v4_development.yaml": "c37fb227fb2b75937f473a33ad01ea79e2366ae971f6e6a1c9dfa2d4502d5bbd",
+    "phase08_v4r2_activation.yaml": "c0727f48ec39517af1714cac1912c3c216f12d0b9f66e6c383baee7f30d817e1",
+    "phase08_v5_activation.yaml": "4258930cd99ca7b0c00112cdf74d27854317fa55ea45220a9d035df0b45f5fa0",
+    "phase08_v5_development.yaml": "ba91b76f552110a589855f82fe37adf65ab220f9e1e583228fd70e3841abb510",
+    "phase08_validation_support.yaml": "cb1a7611d2160740c00a3ed5d0e26c8d7ba0964666ffa96575a5047b71e6d13e"
+  },
+  "light_count_contract": [
+    2,
+    3
+  ],
+  "population_visibility": "researcher_visible_before_activation",
+  "precommit_mechanism": "canonical_json_sha256",
+  "route_barrier_required": true,
+  "scenario_schema_version": 4,
+  "schema_version": 1,
+  "selection_blind": false,
+  "suite_sha256": "b91d99405a29dc04688a8b6bac66f3344b09a564832077930ed62329587c4515"
+}

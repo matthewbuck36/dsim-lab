@@ -38,6 +38,12 @@ ACCEPTANCE_FAMILIES = {
     'noise_delay',
     'constraint_recovery',
     'lifecycle',
+    'obstructing_two_light_collinear',
+    'obstructing_two_light_offset',
+    'obstructing_three_light_lateral',
+    'obstructing_three_light_sequential',
+    'obstructing_wall_corner',
+    'obstructing_noise_delay',
 }
 ACCEPTANCE_PARTITIONS = {
     'activation',

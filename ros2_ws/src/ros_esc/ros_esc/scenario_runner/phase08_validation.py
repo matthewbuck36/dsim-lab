@@ -30,6 +30,7 @@ import yaml
 from . import scenario_schema
 from .aggregate_field_truth import (
     attach_local_branch_qualifications,
+    attach_route_barrier_qualification,
     derive_aggregate_field_truth,
     validate_aggregate_field_truth,
 )
@@ -172,6 +173,35 @@ V4_REPORT_PATH = (
 V4_FAILURE_PATH = (
     VALIDATION_ROOT / 'phase_08_v4_failure_report.md'
 )
+V5_ACTIVATION_PATH = SCENARIO_ROOT / 'phase08_v5_activation.yaml'
+V5_DEVELOPMENT_PATH = SCENARIO_ROOT / 'phase08_v5_development.yaml'
+V5_CANDIDATES_PATH = SCENARIO_ROOT / 'phase08_v5_candidates.yaml'
+V5_FROZEN_PATH = SCENARIO_ROOT / 'phase08_v5_frozen_parameters.yaml'
+V5_PRECOMMITTED_SUITE_PATH = (
+    SCENARIO_ROOT / 'phase08_v5_acceptance_suite.json'
+)
+V5_COMMITMENT_PATH = (
+    VALIDATION_ROOT / 'phase_08_v5_suite_commitment.json'
+)
+V5_SELECTION_PATH = (
+    VALIDATION_ROOT / 'phase_08_v5_parameter_selection.json'
+)
+V5_FREEZE_PATH = VALIDATION_ROOT / 'phase_08_v5_freeze_state.json'
+V5_CONTRACT_PATH = (
+    VALIDATION_ROOT / 'phase_08_v5_acceptance_contract.json'
+)
+V5_GATE_RESULTS_PATH = (
+    VALIDATION_ROOT / 'phase_08_v5_gate_results.json'
+)
+V5_MANIFEST_PATH = (
+    VALIDATION_ROOT / 'phase_08_v5_run_manifest.json'
+)
+V5_REPORT_PATH = (
+    VALIDATION_ROOT / 'phase_08_v5_validation_report.md'
+)
+V5_FAILURE_PATH = (
+    VALIDATION_ROOT / 'phase_08_v5_failure_report.md'
+)
 V3_CONTACT_CORRECTION_PATH = (
     VALIDATION_ROOT / 'phase_08_v3a_contact_probe_contamination.json'
 )
@@ -211,6 +241,11 @@ EMPIRICAL_SUBCOMMANDS = {
     'v4-holdout',
     'v4-validation',
     'v4-reproducibility',
+    'v5-activation',
+    'v5-development',
+    'v5-holdout',
+    'v5-validation',
+    'v5-reproducibility',
 }
 DIAGNOSTIC_CASES = {
     'diagnostic_recorded_smoke',
@@ -459,6 +494,37 @@ V4_CANDIDATES = tuple({
     'candidate_id': candidate['candidate_id'].replace('V3-', 'V4-', 1),
     'launch_overrides': dict(candidate['launch_overrides']),
 } for candidate in V3_CANDIDATES)
+V5_CANDIDATES = tuple({
+    **candidate,
+    'candidate_id': candidate['candidate_id'].replace('V3-', 'V5-', 1),
+    'launch_overrides': dict(candidate['launch_overrides']),
+} for candidate in V3_CANDIDATES)
+V5_FAMILY_ALLOCATION = {
+    'obstructing_two_light_collinear': {
+        'holdout': 6, 'validation': 14, 'unique': 20,
+        'reproducibility': 2,
+    },
+    'obstructing_two_light_offset': {
+        'holdout': 4, 'validation': 8, 'unique': 12,
+        'reproducibility': 2,
+    },
+    'obstructing_three_light_lateral': {
+        'holdout': 3, 'validation': 9, 'unique': 12,
+        'reproducibility': 2,
+    },
+    'obstructing_three_light_sequential': {
+        'holdout': 2, 'validation': 6, 'unique': 8,
+        'reproducibility': 1,
+    },
+    'obstructing_wall_corner': {
+        'holdout': 2, 'validation': 6, 'unique': 8,
+        'reproducibility': 1,
+    },
+    'obstructing_noise_delay': {
+        'holdout': 3, 'validation': 7, 'unique': 10,
+        'reproducibility': 2,
+    },
+}
 
 _V3_SPEC_PATHS = {
     'activation': V3_ACTIVATION_PATH,
@@ -473,6 +539,7 @@ _V3_SPEC_PATHS = {
     'manifest': V3_MANIFEST_PATH,
     'report': V3_REPORT_PATH,
     'failure': V3_FAILURE_PATH,
+    'suite': V3_PRECOMMITTED_SUITE_PATH,
 }
 _V3_SPEC_CANDIDATES = V3_CANDIDATES
 WORKFLOW_EXPERIMENT_VERSION = 'phase08-v3'
@@ -481,6 +548,7 @@ WORKFLOW_FILE_STEM = 'phase08_v3'
 WORKFLOW_DOCUMENT_STEM = 'phase_08_v3'
 WORKFLOW_PROPOSED_TAG = 'gesc-gaussian-simulation-ready-v3'
 WORKFLOW_USES_POPULATION_ADOPTION = False
+WORKFLOW_USES_FRESH_PRECOMMIT = False
 
 
 def _activate_v3_spec():
@@ -497,6 +565,7 @@ def _activate_v3_spec():
     global V3_MANIFEST_PATH
     global V3_REPORT_PATH
     global V3_FAILURE_PATH
+    global V3_PRECOMMITTED_SUITE_PATH
     global V3_CANDIDATES
     global WORKFLOW_EXPERIMENT_VERSION
     global WORKFLOW_STATE_PREFIX
@@ -504,6 +573,7 @@ def _activate_v3_spec():
     global WORKFLOW_DOCUMENT_STEM
     global WORKFLOW_PROPOSED_TAG
     global WORKFLOW_USES_POPULATION_ADOPTION
+    global WORKFLOW_USES_FRESH_PRECOMMIT
 
     V3_ACTIVATION_PATH = _V3_SPEC_PATHS['activation']
     V3_DEVELOPMENT_PATH = _V3_SPEC_PATHS['development']
@@ -517,6 +587,7 @@ def _activate_v3_spec():
     V3_MANIFEST_PATH = _V3_SPEC_PATHS['manifest']
     V3_REPORT_PATH = _V3_SPEC_PATHS['report']
     V3_FAILURE_PATH = _V3_SPEC_PATHS['failure']
+    V3_PRECOMMITTED_SUITE_PATH = _V3_SPEC_PATHS['suite']
     V3_CANDIDATES = _V3_SPEC_CANDIDATES
     WORKFLOW_EXPERIMENT_VERSION = 'phase08-v3'
     WORKFLOW_STATE_PREFIX = 'v3'
@@ -524,6 +595,7 @@ def _activate_v3_spec():
     WORKFLOW_DOCUMENT_STEM = 'phase_08_v3'
     WORKFLOW_PROPOSED_TAG = 'gesc-gaussian-simulation-ready-v3'
     WORKFLOW_USES_POPULATION_ADOPTION = False
+    WORKFLOW_USES_FRESH_PRECOMMIT = False
 
 
 def _activate_v4_spec():
@@ -547,6 +619,7 @@ def _activate_v4_spec():
     global WORKFLOW_DOCUMENT_STEM
     global WORKFLOW_PROPOSED_TAG
     global WORKFLOW_USES_POPULATION_ADOPTION
+    global WORKFLOW_USES_FRESH_PRECOMMIT
 
     V3_ACTIVATION_PATH = V4_ACTIVATION_PATH
     V3_DEVELOPMENT_PATH = V4_DEVELOPMENT_PATH
@@ -567,6 +640,54 @@ def _activate_v4_spec():
     WORKFLOW_DOCUMENT_STEM = 'phase_08_v4'
     WORKFLOW_PROPOSED_TAG = 'gesc-gaussian-simulation-ready-v4'
     WORKFLOW_USES_POPULATION_ADOPTION = True
+    WORKFLOW_USES_FRESH_PRECOMMIT = False
+
+
+def _activate_v5_spec():
+    """Select the route-obstruction-only V5 identity."""
+    global V3_ACTIVATION_PATH
+    global V3_DEVELOPMENT_PATH
+    global V3_CANDIDATES_PATH
+    global V3_FROZEN_PATH
+    global V3_PRECOMMITTED_SUITE_PATH
+    global V3_COMMITMENT_PATH
+    global V3_SELECTION_PATH
+    global V3_FREEZE_PATH
+    global V3_CONTRACT_PATH
+    global V3_GATE_RESULTS_PATH
+    global V3_MANIFEST_PATH
+    global V3_REPORT_PATH
+    global V3_FAILURE_PATH
+    global V3_CANDIDATES
+    global WORKFLOW_EXPERIMENT_VERSION
+    global WORKFLOW_STATE_PREFIX
+    global WORKFLOW_FILE_STEM
+    global WORKFLOW_DOCUMENT_STEM
+    global WORKFLOW_PROPOSED_TAG
+    global WORKFLOW_USES_POPULATION_ADOPTION
+    global WORKFLOW_USES_FRESH_PRECOMMIT
+
+    V3_ACTIVATION_PATH = V5_ACTIVATION_PATH
+    V3_DEVELOPMENT_PATH = V5_DEVELOPMENT_PATH
+    V3_CANDIDATES_PATH = V5_CANDIDATES_PATH
+    V3_FROZEN_PATH = V5_FROZEN_PATH
+    V3_PRECOMMITTED_SUITE_PATH = V5_PRECOMMITTED_SUITE_PATH
+    V3_COMMITMENT_PATH = V5_COMMITMENT_PATH
+    V3_SELECTION_PATH = V5_SELECTION_PATH
+    V3_FREEZE_PATH = V5_FREEZE_PATH
+    V3_CONTRACT_PATH = V5_CONTRACT_PATH
+    V3_GATE_RESULTS_PATH = V5_GATE_RESULTS_PATH
+    V3_MANIFEST_PATH = V5_MANIFEST_PATH
+    V3_REPORT_PATH = V5_REPORT_PATH
+    V3_FAILURE_PATH = V5_FAILURE_PATH
+    V3_CANDIDATES = V5_CANDIDATES
+    WORKFLOW_EXPERIMENT_VERSION = 'phase08-v5'
+    WORKFLOW_STATE_PREFIX = 'v5'
+    WORKFLOW_FILE_STEM = 'phase08_v5'
+    WORKFLOW_DOCUMENT_STEM = 'phase_08_v5'
+    WORKFLOW_PROPOSED_TAG = 'gesc-gaussian-simulation-ready-v5'
+    WORKFLOW_USES_POPULATION_ADOPTION = False
+    WORKFLOW_USES_FRESH_PRECOMMIT = True
 V3_COMMON_OVERRIDES = {
     'goal_score_threshold': 0.95,
     'goal_score_rotation_period_sec': 3.0,
@@ -4646,7 +4767,7 @@ def generate_v3_acceptance_population(
         'cases': [],
     }
     levels = (450.0, 800.0, 1200.0, 1800.0, 2500.0)
-    for family in sorted(ACCEPTANCE_FAMILIES):
+    for family in sorted(V3_FAMILY_ALLOCATION):
         allocation = V3_FAMILY_ALLOCATION[family]
         count = allocation['unique']
         holdout_indexes = set(rng.sample(
@@ -4678,10 +4799,10 @@ def generate_v3_acceptance_population(
             case for case in unique_cases
             if case['acceptance_family'] == family
         ]
-        for family in sorted(ACCEPTANCE_FAMILIES)
+        for family in sorted(V3_FAMILY_ALLOCATION)
     }
     repeat_cases = []
-    for family in sorted(ACCEPTANCE_FAMILIES):
+    for family in sorted(V3_FAMILY_ALLOCATION):
         references = rng.sample(
             by_family[family],
             V3_FAMILY_ALLOCATION[family]['reproducibility'],
@@ -4998,6 +5119,392 @@ def validate_v3_population(document, historical_case_keys=None):
     }
 
 
+def _v5_suite_shell(suite_id, description, gazebo_gui):
+    return {
+        'schema_version': 4,
+        'suite_id': suite_id,
+        'description': description,
+        'mode': 'simulation',
+        'execution': {
+            'max_parallel_runs': 1,
+            'gazebo_gui': bool(gazebo_gui),
+            'preflight_timeout_sec': 150.0,
+            'run_timeout_sec': 240.0,
+            'wall_timeout_sec': 600.0,
+            'shutdown_grace_sec': 30.0,
+            'stop_on_run_failure': False,
+            'stop_on_cleanup_failure': True,
+        },
+        'metadata': {
+            'experiment_version': 'phase08-v5',
+            'operator_notes': (
+                'Every case contains an aggregate-qualified local basin '
+                'on the start-to-global route and exactly two or three '
+                'lights. Direct convergence is a behavioral failure.'
+            ),
+        },
+        'level_map': {},
+        'defaults': {
+            'bounds_m': [-2.0, 2.0, -2.0, 2.0],
+            'room_center_m': [0.0, 0.0],
+            'disturbances': {
+                'sensor_noise': {'model': 'none', 'bound': 0.0},
+                'sensor_delay_sec': 0.0,
+                'pose_delay_sec': 0.0,
+            },
+            'validation_world': True,
+            'simulation_contacts_enabled': True,
+        },
+        'cases': [],
+    }
+
+
+def _v5_topology(family):
+    start = {'id': 'route_start', 'x_m': -1.2, 'y_m': 0.0}
+    local = (-0.35, 0.0)
+    global_point = (1.0, 0.0)
+    sources = [
+        _v3_source('blocker', local, 650.0, 'local_minimum', 0),
+        _v3_source('global', global_point, 2500.0, 'goal', 0),
+    ]
+    disturbances = {
+        'sensor_noise': {'model': 'none', 'bound': 0.0},
+        'sensor_delay_sec': 0.0,
+        'pose_delay_sec': 0.0,
+    }
+    if family == 'obstructing_two_light_offset':
+        start['y_m'] = 0.03
+        sources[0]['y_m'] = 0.03
+    elif family == 'obstructing_three_light_lateral':
+        sources.insert(
+            1,
+            _v3_source('lateral_context', (0.15, 0.75), 450.0, 'context', 0),
+        )
+    elif family == 'obstructing_three_light_sequential':
+        start['x_m'] = -1.5
+        sources.insert(
+            1,
+            _v3_source('route_context', (0.20, 0.0), 250.0, 'context', 0),
+        )
+    elif family == 'obstructing_wall_corner':
+        start['y_m'] = -1.2
+        for source in sources:
+            source['y_m'] = -1.2
+    elif family == 'obstructing_noise_delay':
+        disturbances = {
+            'sensor_noise': {'model': 'uniform', 'bound': 0.001},
+            'sensor_delay_sec': 0.05,
+            'pose_delay_sec': 0.05,
+        }
+    return start, sources, disturbances
+
+
+def _v5_truth(family, cache):
+    start, sources, disturbances = _v5_topology(family)
+    cache_key = canonical_sha256({
+        'start': start,
+        'sources': sources,
+        'disturbances': disturbances,
+    })
+    if cache_key not in cache:
+        truth = derive_aggregate_field_truth(
+            sources,
+            [-2.0, 2.0, -2.0, 2.0],
+            disturbances,
+        )
+        truth = attach_local_branch_qualifications(
+            truth,
+            sources,
+            ['blocker'],
+            disturbances,
+        )
+        truth = attach_route_barrier_qualification(
+            truth,
+            sources,
+            start,
+            'blocker',
+            'global',
+            disturbances,
+        )
+        cache[cache_key] = truth
+    return (
+        json.loads(json.dumps(start)),
+        json.loads(json.dumps(sources)),
+        json.loads(json.dumps(disturbances)),
+        json.loads(json.dumps(cache[cache_key])),
+    )
+
+
+def _v5_case(
+    suite,
+    family,
+    index,
+    partition,
+    seed,
+    truth_cache,
+    *,
+    case_prefix='v5',
+):
+    start, sources, disturbances, truth = _v5_truth(
+        family, truth_cache
+    )
+    start['yaw_rad'] = (
+        2.0 * math.pi * ((index * 7 + seed) % 36) / 36.0
+    )
+    case_id = f'{case_prefix}_{family}_{index + 1:02d}_{seed}'
+    success, applicability = _v3_case_success(
+        case_id,
+        True,
+        index % 3 == 0,
+        family == 'obstructing_wall_corner',
+    )
+    success['all_of'].append('route_blocker_encountered')
+    success['result_scopes']['full_lifecycle']['all_of'].append(
+        'route_blocker_encountered'
+    )
+    success['ground_truth']['aggregate_field'] = truth
+    applicability['delay'] = (
+        disturbances['sensor_delay_sec'] > 0.0
+        or disturbances['pose_delay_sec'] > 0.0
+    )
+    return {
+        'case_id': case_id,
+        'family': (
+            'boundary'
+            if family == 'obstructing_wall_corner'
+            else 'noise_delay'
+            if family == 'obstructing_noise_delay'
+            else 'multi_source'
+            if len(sources) == 3
+            else 'two_source'
+        ),
+        'description': (
+            f'V5 route-obstruction case {index + 1} in {family}; '
+            'the local basin lies between the start and global target.'
+        ),
+        'status': 'executable_unverified',
+        'profiles': ['robust_gaussian_v1'],
+        'seeds': [seed],
+        'starts': [start],
+        'sources': sources,
+        'disturbances': disturbances,
+        'algorithm': {
+            'ablations': {
+                'gaussian_fill_enabled': True,
+                'affine_assist_enabled': True,
+                'recenter_enabled': True,
+            },
+            'launch_overrides': dict(V3_COMMON_OVERRIDES),
+        },
+        'success': success,
+        'acceptance_family': family,
+        'acceptance_partition': partition,
+        'metric_applicability': applicability,
+    }
+
+
+def generate_v5_precommit_documents(truth_cache=None):
+    """Generate all researcher-visible V5 inputs before any execution."""
+    truth_cache = {} if truth_cache is None else truth_cache
+    activation = _v5_suite_shell(
+        'phase08_v5_activation',
+        'Ten visible V5 route-obstruction activation cases.',
+        True,
+    )
+    development = _v5_suite_shell(
+        'phase08_v5_development',
+        'Ten headless common V5 route-obstruction development cases.',
+        False,
+    )
+    families = tuple(V5_FAMILY_ALLOCATION)
+    for index in range(10):
+        family = families[index % len(families)]
+        activation['cases'].append(_v5_case(
+            activation,
+            family,
+            index,
+            'activation',
+            15001 + index,
+            truth_cache,
+            case_prefix='v5a',
+        ))
+        development['cases'].append(_v5_case(
+            development,
+            family,
+            index,
+            'development',
+            16001 + index,
+            truth_cache,
+            case_prefix='v5d',
+        ))
+    acceptance = _v5_suite_shell(
+        'phase08_v5_acceptance',
+        'Seventy unique and ten repeat V5 route-obstruction cases.',
+        False,
+    )
+    unique_cases = []
+    for family, allocation in V5_FAMILY_ALLOCATION.items():
+        for index in range(allocation['unique']):
+            partition = (
+                'holdout'
+                if index < allocation['holdout']
+                else 'validation'
+            )
+            case = _v5_case(
+                acceptance,
+                family,
+                index,
+                partition,
+                17001 + len(unique_cases),
+                truth_cache,
+            )
+            unique_cases.append(case)
+            acceptance['cases'].append(case)
+    for family, allocation in V5_FAMILY_ALLOCATION.items():
+        references = [
+            case for case in unique_cases
+            if case['acceptance_family'] == family
+        ][:allocation['reproducibility']]
+        for index, reference in enumerate(references):
+            repeat = json.loads(json.dumps(reference))
+            repeat['case_id'] = (
+                f'v5_repeat_{family}_{index + 1:02d}_'
+                f'{18001 + len(acceptance["cases"])}'
+            )
+            repeat['description'] = (
+                f'Precommitted repeat of {reference["case_id"]}.'
+            )
+            repeat['acceptance_partition'] = 'reproducibility'
+            repeat['repeat_reference'] = {
+                'partition': reference['acceptance_partition'],
+                'case_key': _v3_resolved_case(
+                    acceptance, reference
+                )['case_key'],
+            }
+            repeat['success']['controller']['contract_id'] = (
+                repeat['case_id']
+            )
+            acceptance['cases'].append(repeat)
+    return activation, development, acceptance
+
+
+def validate_v5_population(document, historical_case_keys=None):
+    """Validate the strict V5 topology, route proof, and allocation."""
+    reasons = []
+    cases = document.get('cases', [])
+    if document.get('schema_version') != 4:
+        reasons.append('scenario schema version is not 4')
+    if len(cases) != V3_EXPECTED_COUNTS['acceptance_total']:
+        reasons.append('V5 population does not contain exactly 80 cases')
+    partition_counts = Counter(
+        case.get('acceptance_partition') for case in cases
+    )
+    for partition in ('holdout', 'validation', 'reproducibility'):
+        if partition_counts[partition] != V3_EXPECTED_COUNTS[partition]:
+            reasons.append(f'V5 {partition} allocation drifted')
+    resolved_pairs = []
+    family_partition = Counter()
+    validated_truth_keys = set()
+    for case in cases:
+        case_id = case.get('case_id', '<missing>')
+        try:
+            sources = case['sources']
+            if len(sources) not in (2, 3):
+                raise ValueError('case must contain exactly two or three lights')
+            roles = Counter(
+                source.get('evaluation_role') for source in sources
+            )
+            if roles['goal'] != 1 or roles['local_minimum'] < 1:
+                raise ValueError(
+                    'case must declare one global and a local minimum'
+                )
+            success = case['success']
+            if 'route_blocker_encountered' not in success['all_of']:
+                raise ValueError('route encounter predicate is not mandatory')
+            expected_path = [
+                'SEARCH', 'VERIFY_EXTREMUM', 'DESIGN_OR_MERGE_FILL',
+                'ESCAPE_REPULSE', 'RECENTER', 'SEARCH',
+                'VERIFY_EXTREMUM', 'GOAL_HOLD',
+            ]
+            if success['controller']['required_state_path'] != expected_path:
+                raise ValueError('full fill/recenter path is not mandatory')
+            truth = success['ground_truth']['aggregate_field']
+            disturbances = case.get(
+                'disturbances',
+                document['defaults']['disturbances'],
+            )
+            truth_key = canonical_sha256({
+                'truth': truth,
+                'sources': sources,
+                'disturbances': disturbances,
+            })
+            if truth_key not in validated_truth_keys:
+                validate_aggregate_field_truth(
+                    truth,
+                    sources,
+                    [-2.0, 2.0, -2.0, 2.0],
+                    disturbances,
+                )
+                validated_truth_keys.add(truth_key)
+            route = truth.get('route_barrier_qualification')
+            if not isinstance(route, dict):
+                raise ValueError('authoritative route proof is absent')
+            resolved_pairs.append((
+                case, _v3_resolved_case(document, case)
+            ))
+        except Exception as exc:
+            reasons.append(
+                f'{case_id} qualification failed: '
+                f'{type(exc).__name__}: {exc}'
+            )
+        if case.get('acceptance_partition') in {'holdout', 'validation'}:
+            family_partition[(
+                case.get('acceptance_family'),
+                case.get('acceptance_partition'),
+            )] += 1
+    for family, allocation in V5_FAMILY_ALLOCATION.items():
+        for partition in ('holdout', 'validation'):
+            if family_partition[(family, partition)] != allocation[partition]:
+                reasons.append(f'{family} {partition} allocation drifted')
+    keys = [resolved['case_key'] for unused, resolved in resolved_pairs]
+    if len(keys) != len(set(keys)):
+        reasons.append('V5 population case keys are not unique')
+    collisions = sorted(set(historical_case_keys or []) & set(keys))
+    if collisions:
+        reasons.append(
+            f'{len(collisions)} V5 case keys collide with prior inputs'
+        )
+    unique_by_key = {
+        resolved['case_key']: (case, resolved)
+        for case, resolved in resolved_pairs
+        if resolved['acceptance_partition'] in {'holdout', 'validation'}
+    }
+    repeat_counts = Counter()
+    for case, unused_resolved in resolved_pairs:
+        if case.get('acceptance_partition') != 'reproducibility':
+            continue
+        reference = case.get('repeat_reference', {})
+        reference_key = reference.get('case_key')
+        if reference_key not in unique_by_key:
+            reasons.append(f'{case["case_id"]} repeat reference is unknown')
+        repeat_counts[case.get('acceptance_family')] += 1
+    for family, allocation in V5_FAMILY_ALLOCATION.items():
+        if repeat_counts[family] != allocation['reproducibility']:
+            reasons.append(f'{family} reproducibility allocation drifted')
+    return {
+        'passed': not reasons,
+        'reasons': reasons,
+        'partition_counts': dict(sorted(partition_counts.items())),
+        'family_partition_counts': {
+            f'{family}.{partition}': count
+            for (family, partition), count
+            in sorted(family_partition.items())
+        },
+        'case_keys_sha256': canonical_sha256(sorted(keys)),
+        'unique_case_key_count': len(set(keys)),
+    }
+
+
 def _v3_commitment_document(
     document,
     suite_bytes,
@@ -5033,6 +5540,127 @@ def _v3_commitment_document(
         commitment, 'commitment_sha256'
     )
     return commitment
+
+
+def run_v5_generate_inputs():
+    """Materialize the deterministic V5 inputs for review and commit."""
+    _activate_v5_spec()
+    truth_cache = {}
+    if V5_ACTIVATION_PATH.is_file():
+        prior = yaml.safe_load(
+            V5_ACTIVATION_PATH.read_text(encoding='utf-8')
+        )
+        for case in prior.get('cases', []):
+            start = dict(case.get('starts', [{}])[0])
+            start.pop('yaw_rad', None)
+            sources = case.get('sources')
+            disturbances = case.get('disturbances')
+            truth = (
+                case.get('success', {})
+                .get('ground_truth', {})
+                .get('aggregate_field')
+            )
+            if (
+                isinstance(sources, list)
+                and isinstance(disturbances, dict)
+                and isinstance(truth, dict)
+            ):
+                cache_key = canonical_sha256({
+                    'start': start,
+                    'sources': sources,
+                    'disturbances': disturbances,
+                })
+                truth_cache[cache_key] = truth
+    activation, development, acceptance = (
+        generate_v5_precommit_documents(truth_cache)
+    )
+    candidates = {
+        'schema_version': 1,
+        'candidate_set_id': 'phase08_v5_candidates',
+        'selection_order': [
+            'end_to_end_success_count',
+            'behavior_contract_pass_count',
+            'local_escape_success_rate',
+            'minimum_family_success_rate',
+            'escape_time_p95_sec',
+            'escape_time_median_sec',
+            'median_orbit_count',
+            'revisit_rate',
+            'median_convergence_time_sec',
+            'median_path_length_m',
+            'candidate_id',
+        ],
+        'candidates': list(V5_CANDIDATES),
+    }
+    atomic_yaml(V5_ACTIVATION_PATH, activation)
+    atomic_yaml(V5_DEVELOPMENT_PATH, development)
+    atomic_yaml(V5_CANDIDATES_PATH, candidates)
+    activation_runs, activation_unsupported = expand_suite(
+        load_suite(V5_ACTIVATION_PATH)
+    )
+    development_runs, development_unsupported = expand_suite(
+        load_suite(V5_DEVELOPMENT_PATH)
+    )
+    if (
+        len(activation_runs) != 10
+        or len(development_runs) != 10
+        or activation_unsupported
+        or development_unsupported
+    ):
+        raise RuntimeError('generated V5 development inputs are invalid')
+    historical_keys, historical_hashes = _v3_historical_case_keys()
+    validation = validate_v5_population(
+        acceptance,
+        historical_case_keys=historical_keys,
+    )
+    if not validation['passed']:
+        raise RuntimeError(
+            'generated V5 acceptance population is invalid: '
+            + '; '.join(validation['reasons'])
+        )
+    suite_bytes = canonical_json_bytes(acceptance)
+    atomic_bytes(V5_PRECOMMITTED_SUITE_PATH, suite_bytes)
+    family_counts = Counter(
+        case['acceptance_family']
+        for case in acceptance['cases']
+        if case['acceptance_partition'] in {'holdout', 'validation'}
+    )
+    commitment = {
+        'schema_version': 1,
+        'generator_version': 'phase08-v5-route-obstruction-generator-1',
+        'scenario_schema_version': 4,
+        'counts': {
+            'unique': 70,
+            'holdout': 20,
+            'validation': 50,
+            'reproducibility': 10,
+        },
+        'family_counts': dict(sorted(family_counts.items())),
+        'historical_exclusion_hashes': dict(sorted(
+            historical_hashes.items()
+        )),
+        'suite_sha256': _sha256_bytes(suite_bytes),
+        'population_visibility': (
+            'researcher_visible_before_activation'
+        ),
+        'selection_blind': False,
+        'light_count_contract': [2, 3],
+        'direct_convergence_is_success': False,
+        'route_barrier_required': True,
+        'precommit_mechanism': 'canonical_json_sha256',
+    }
+    commitment['commitment_sha256'] = omission_sha256(
+        commitment, 'commitment_sha256'
+    )
+    atomic_json(V5_COMMITMENT_PATH, commitment)
+    return {
+        'passed': True,
+        'activation_count': len(activation_runs),
+        'development_count': len(development_runs),
+        'acceptance_validation': validation,
+        'suite_sha256': commitment['suite_sha256'],
+        'commitment_sha256': commitment['commitment_sha256'],
+    }
 
 
 def _v3_state_path(evidence_root, stage):
@@ -5124,6 +5752,11 @@ def _v3_historical_case_keys(include_v3_development=True):
     }
     for path in sorted(SCENARIO_ROOT.glob('phase08*.yaml')):
         if path.name in excluded:
+            continue
+        if (
+            WORKFLOW_EXPERIMENT_VERSION != 'phase08-v5'
+            and path.name.startswith('phase08_v5_')
+        ):
             continue
         if not include_v3_development and path in {
             V3_ACTIVATION_PATH,
@@ -7445,6 +8078,161 @@ def run_v4_prepare(operator, evidence_root):
     return state
 
 
+def _v5_validate_precommit():
+    reasons = []
+    try:
+        suite_bytes = V5_PRECOMMITTED_SUITE_PATH.read_bytes()
+        suite = json.loads(suite_bytes.decode('utf-8'))
+        if canonical_json_bytes(suite) != suite_bytes:
+            reasons.append('V5 acceptance suite is not canonical JSON')
+        commitment = _load_json(V5_COMMITMENT_PATH)
+        commitment_sha256 = require_omission_sha256(
+            commitment,
+            'commitment_sha256',
+            'V5 suite commitment',
+        )
+        if commitment.get('suite_sha256') != _sha256_bytes(suite_bytes):
+            reasons.append('V5 suite hash differs from its commitment')
+        historical_keys, historical_hashes = _v3_historical_case_keys()
+        if (
+            commitment.get('historical_exclusion_hashes')
+            != historical_hashes
+        ):
+            reasons.append('V5 historical exclusion hashes drifted')
+        validation = validate_v5_population(
+            suite,
+            historical_case_keys=historical_keys,
+        )
+        reasons.extend(validation['reasons'])
+    except (OSError, UnicodeError, ValueError, RuntimeError) as exc:
+        commitment_sha256 = None
+        commitment = {}
+        validation = {'passed': False, 'reasons': [str(exc)]}
+        suite_bytes = b''
+        reasons.append(str(exc))
+    return {
+        'passed': not reasons,
+        'reasons': reasons,
+        'suite_sha256': (
+            _sha256_bytes(suite_bytes) if suite_bytes else None
+        ),
+        'commitment_sha256': commitment_sha256,
+        'counts': commitment.get('counts'),
+        'family_counts': commitment.get('family_counts'),
+        'population_validation': validation,
+    }
+
+
+def run_v5_prepare(operator, evidence_root):
+    """Create a fresh V5 root bound to the committed obstruction suite."""
+    root = Path(evidence_root).expanduser().resolve()
+    state_path = _v3_state_path(root, 'prepare')
+    if state_path.is_file():
+        state = _v3_require_state(root, 'prepare')
+        _v3_require_operator(state, operator, 'prepare')
+        _v3_verify_repository_snapshot(state['repository'])
+        validation = _v5_validate_precommit()
+        if not validation['passed']:
+            raise RuntimeError(
+                'V5 precommit drifted: '
+                + '; '.join(validation['reasons'])
+            )
+        return state
+    if root.exists():
+        raise RuntimeError('V5 prepare requires an absent fresh evidence root')
+    _v3_require_precommit_in_head()
+    processes_before = _v3_active_processes()
+    if processes_before:
+        raise RuntimeError('V5 prepare process set is not clean')
+    validation = _v5_validate_precommit()
+    if not validation['passed']:
+        raise RuntimeError(
+            'V5 precommit validation failed: '
+            + '; '.join(validation['reasons'])
+        )
+    repository = _v3_repository_snapshot(
+        require_clean=True,
+        extra_paths=(
+            V5_ACTIVATION_PATH,
+            V5_DEVELOPMENT_PATH,
+            V5_CANDIDATES_PATH,
+            V5_PRECOMMITTED_SUITE_PATH,
+            V5_COMMITMENT_PATH,
+        ),
+    )
+    disk = shutil.disk_usage(root.parent)
+    required_free_bytes = _v3_required_free_bytes(
+        root,
+        V3_EXPECTED_COUNTS['declared_total'],
+    )
+    if disk.free < required_free_bytes:
+        raise RuntimeError('V5 prepare disk forecast failed')
+    transaction = {
+        'schema_version': 1,
+        'experiment_version': WORKFLOW_EXPERIMENT_VERSION,
+        'operator': operator,
+        'evidence_root': str(root),
+        'suite_sha256': validation['suite_sha256'],
+        'commitment_sha256': validation['commitment_sha256'],
+        'repository': repository,
+    }
+    transaction['transaction_sha256'] = omission_sha256(
+        transaction, 'transaction_sha256'
+    )
+    transaction_path = root / 'prepare/prepare_transaction.json'
+    state_document = {
+        'passed': True,
+        'operator': operator,
+        'lineage_id': WORKFLOW_EXPERIMENT_VERSION,
+        'evidence_root': str(root),
+        'suite_path': str(V5_PRECOMMITTED_SUITE_PATH.resolve()),
+        'suite_sha256': validation['suite_sha256'],
+        'commitment_path': str(V5_COMMITMENT_PATH.resolve()),
+        'commitment_sha256': validation['commitment_sha256'],
+        'transaction_path': str(transaction_path),
+        'population_visibility': (
+            'researcher_visible_before_activation'
+        ),
+        'selection_blind': False,
+        'counts': validation['counts'],
+        'family_counts': validation['family_counts'],
+        'population_validation': validation['population_validation'],
+        'repository': repository,
+        'disk_forecast': {
+            'free_bytes': disk.free,
+            'required_free_bytes': required_free_bytes,
+            'remaining_declared_slots': (
+                V3_EXPECTED_COUNTS['declared_total']
+            ),
+        },
+        'processes_before': processes_before,
+    }
+    root.parent.mkdir(parents=True, exist_ok=True)
+    staging_root = Path(tempfile.mkdtemp(
+        prefix=f'.{root.name}.prepare-',
+        dir=root.parent,
+    ))
+    try:
+        staging_root.chmod(0o700)
+        prepare_root = staging_root / 'prepare'
+        prepare_root.mkdir(parents=True, mode=0o700)
+        atomic_json(
+            prepare_root / 'prepare_transaction.json',
+            transaction,
+        )
+        (prepare_root / 'prepare_transaction.json').chmod(0o600)
+        state = _v3_write_state(
+            staging_root,
+            'prepare',
+            state_document,
+        )
+        os.replace(staging_root, root)
+    finally:
+        if staging_root.exists():
+            shutil.rmtree(staging_root)
+    return state
+
+
 def _v3_run_qualification_command(
     identifier,
     command,
@@ -7936,6 +8724,12 @@ def run_v3_qualify(operator, evidence_root):
         reasons.extend(recovery_validation['reasons'])
         if prepare.get('lineage_id') != WORKFLOW_EXPERIMENT_VERSION:
             reasons.append('v4 prepare lineage identity drifted')
+    elif WORKFLOW_USES_FRESH_PRECOMMIT:
+        recovery_validation = _v5_validate_precommit()
+        recovery_validation['required'] = True
+        reasons.extend(recovery_validation['reasons'])
+        if prepare.get('lineage_id') != WORKFLOW_EXPERIMENT_VERSION:
+            reasons.append('V5 prepare lineage identity drifted')
     else:
         if not recovery:
             raise RuntimeError(
@@ -7972,7 +8766,10 @@ def run_v3_qualify(operator, evidence_root):
             prepare['repository'],
             require_clean=False,
         )
-        if not WORKFLOW_USES_POPULATION_ADOPTION:
+        if (
+            not WORKFLOW_USES_POPULATION_ADOPTION
+            and not WORKFLOW_USES_FRESH_PRECOMMIT
+        ):
             _v3_verify_diagnostic_runtime_projection(
                 recovery,
                 prepare['repository'],
@@ -8050,9 +8847,16 @@ def run_v3_qualify(operator, evidence_root):
             raise RuntimeError(
                 'acceptance suite is not canonical JSON'
             )
-        population_validation = validate_v3_population(
-            population,
-            historical_case_keys=historical_keys,
+        population_validation = (
+            validate_v5_population(
+                population,
+                historical_case_keys=historical_keys,
+            )
+            if WORKFLOW_USES_FRESH_PRECOMMIT
+            else validate_v3_population(
+                population,
+                historical_case_keys=historical_keys,
+            )
         )
         if not population_validation['passed']:
             reasons.append(
@@ -11681,6 +12485,22 @@ def _parser():
         subparser = subparsers.add_parser(name)
         subparser.add_argument('--operator', required=True)
         subparser.add_argument('--evidence-root', required=True)
+    for name in (
+        'v5-prepare',
+        'v5-qualify',
+        'v5-activation',
+        'v5-development',
+        'v5-freeze',
+        'v5-seal',
+        'v5-holdout',
+        'v5-validation',
+        'v5-reproducibility',
+        'v5-report',
+    ):
+        subparser = subparsers.add_parser(name)
+        subparser.add_argument('--operator', required=True)
+        subparser.add_argument('--evidence-root', required=True)
+    subparsers.add_parser('v5-generate-inputs')
     prepare = subparsers.add_parser('v3-prepare')
     prepare.add_argument('--operator', required=True)
     prepare.add_argument('--evidence-root', required=True)
@@ -11700,7 +12520,9 @@ def _empirical_sigterm_handler(signum, unused_frame):
 def main(argv=None):
     """CLI entry point."""
     arguments = _parser().parse_args(argv)
-    if arguments.subcommand.startswith('v4-'):
+    if arguments.subcommand.startswith('v5-'):
+        _activate_v5_spec()
+    elif arguments.subcommand.startswith('v4-'):
         _activate_v4_spec()
     else:
         _activate_v3_spec()
@@ -11709,7 +12531,50 @@ def main(argv=None):
         previous_sigterm_handler = signal.getsignal(signal.SIGTERM)
         signal.signal(signal.SIGTERM, _empirical_sigterm_handler)
     try:
-        if arguments.subcommand == 'v4-prepare':
+        if arguments.subcommand == 'v5-generate-inputs':
+            result = run_v5_generate_inputs()
+        elif arguments.subcommand == 'v5-prepare':
+            result = run_v5_prepare(
+                arguments.operator,
+                arguments.evidence_root,
+            )
+        elif arguments.subcommand == 'v5-qualify':
+            result = run_v3_qualify(
+                arguments.operator, arguments.evidence_root
+            )
+        elif arguments.subcommand == 'v5-activation':
+            result = run_v3_activation(
+                arguments.operator, arguments.evidence_root
+            )
+        elif arguments.subcommand == 'v5-development':
+            result = run_v3_development(
+                arguments.operator, arguments.evidence_root
+            )
+        elif arguments.subcommand == 'v5-freeze':
+            result = run_v3_freeze(
+                arguments.operator, arguments.evidence_root
+            )
+        elif arguments.subcommand == 'v5-seal':
+            result = run_v3_seal(
+                arguments.operator, arguments.evidence_root
+            )
+        elif arguments.subcommand == 'v5-holdout':
+            result = run_v3_holdout(
+                arguments.operator, arguments.evidence_root
+            )
+        elif arguments.subcommand == 'v5-validation':
+            result = run_v3_validation(
+                arguments.operator, arguments.evidence_root
+            )
+        elif arguments.subcommand == 'v5-reproducibility':
+            result = run_v3_reproducibility(
+                arguments.operator, arguments.evidence_root
+            )
+        elif arguments.subcommand == 'v5-report':
+            result = run_v3_report(
+                arguments.operator, arguments.evidence_root
+            )
+        elif arguments.subcommand == 'v4-prepare':
             result = run_v4_prepare(
                 arguments.operator,
                 arguments.evidence_root,

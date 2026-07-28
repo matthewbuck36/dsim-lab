@@ -1,0 +1,36 @@
+schema_version: 1
+candidate_set_id: phase08_v5_candidates
+selection_order:
+- end_to_end_success_count
+- behavior_contract_pass_count
+- local_escape_success_rate
+- minimum_family_success_rate
+- escape_time_p95_sec
+- escape_time_median_sec
+- median_orbit_count
+- revisit_rate
+- median_convergence_time_sec
+- median_path_length_m
+- candidate_id
+candidates:
+- candidate_id: V5-C0
+  launch_overrides:
+    gaussian_fill_covariance_scale: 2.5
+    gaussian_fill_amplitude_depth_scale: 1.5
+    gaussian_fill_exit_sigma: 2.5
+    stall_window_sec: 3.0
+    minimum_radial_progress_m: 0.05
+- candidate_id: V5-C1
+  launch_overrides:
+    gaussian_fill_covariance_scale: 2.0
+    gaussian_fill_amplitude_depth_scale: 1.2
+    gaussian_fill_exit_sigma: 2.25
+    stall_window_sec: 4.0
+    minimum_radial_progress_m: 0.03
+- candidate_id: V5-C2
+  launch_overrides:
+    gaussian_fill_covariance_scale: 3.0
+    gaussian_fill_amplitude_depth_scale: 1.8
+    gaussian_fill_exit_sigma: 2.75
+    stall_window_sec: 2.0
+    minimum_radial_progress_m: 0.08

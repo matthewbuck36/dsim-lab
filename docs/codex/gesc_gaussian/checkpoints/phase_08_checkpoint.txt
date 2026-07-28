@@ -1,53 +1,55 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-28T21:23:20+00:00
-Base HEAD: 8b1fd770209d6956f35ef6928f4f31d92bad8ba4
+Generated: 2026-07-28T21:47:25+00:00
+Base HEAD: 166e72cd563e46fdf1764705b625f984578fb7bd
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 5130fa3f95d9654b7e71023d00da8a46c7766f48e2b9999fc919b29b4762d31e
+Status sha256: d3a5c171655d6feebb2d93cb9f72b1f4b98c8a931cfa5d36cdd13871eb5d7bec
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_5_plan.md
 Active subphase plan sha256: b20fef2176dbabaaff0e3439a9c93355c8a65274ebb34e6236626b2fd852bd61
-Unstaged diff sha256: c1683e12a4e79322cd4a8ed4d5030fa0936ac7b3e5ab45306c68e437f72bbd46
+Unstaged diff sha256: c1cb12229a7af30f29b2c61beaaeccd46af8894b0d9b948a7800dfb61d17d25b
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 37]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 38]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/aggregate_field_truth.py
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py
  M ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py
- M ros2_ws/src/ros_esc/test/test_aggregate_field_truth.py
- M ros2_ws/src/ros_esc/test/test_scenario_runner.py
+ M ros2_ws/src/ros_esc/setup.py
+?? docs/codex/gesc_gaussian/validation/phase_08_v5_suite_commitment.json
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v5_acceptance_suite.json
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v5_activation.yaml
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v5_candidates.yaml
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v5_development.yaml
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  41 +--
- docs/codex/gesc_gaussian/status/phase_08_status.md |  63 ++++
- .../scenario_runner/aggregate_field_truth.py       | 386 +++++++++++++++++++++
- .../ros_esc/scenario_runner/run_scenario.py        |  72 ++++
- .../ros_esc/scenario_runner/scenario_schema.py     |  15 +
- .../src/ros_esc/test/test_aggregate_field_truth.py | 134 +++++++
- ros2_ws/src/ros_esc/test/test_scenario_runner.py   |  50 +++
- 7 files changed, 730 insertions(+), 31 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  46 +-
+ docs/codex/gesc_gaussian/status/phase_08_status.md |  90 +++
+ .../ros_esc/scenario_runner/phase08_validation.py  | 883 ++++++++++++++++++++-
+ .../ros_esc/scenario_runner/scenario_schema.py     |   6 +
+ ros2_ws/src/ros_esc/setup.py                       |   2 +-
+ 5 files changed, 983 insertions(+), 44 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**M2 — implement and precommit the fresh V5 workflow and population.**
+**M3 — commit the exact V5 inputs, qualify the fresh root, and execute the
+ten-case visible Gazebo activation gate.**
 
 ### Next criterion
 
-Generate and validate the exact ten activation, ten development, three
-candidate, 70 unique formal, and ten repeat inputs. Every case must contain
-exactly two or three lights, bind a route-barrier proof and blocker-encounter
-predicate, and require the full fill/escape/recenter/research/global-goal
-lifecycle. Commit all bytes before creating the V5 evidence root.
+Checkpoint and commit the M2 implementation and exact input bytes. Then create
+`/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v5`, run the bounded
+qualification gate, and execute all ten visible activation cases. Do not start
+headless development unless all ten cases complete cleanly and demonstrate the
+required blocker fill, escape, recenter, resumed search, and global goal.
 
 
 This file describes the base HEAD and diff before the next commit; it is

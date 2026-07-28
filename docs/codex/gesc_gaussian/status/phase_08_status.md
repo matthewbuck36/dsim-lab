@@ -3364,3 +3364,93 @@ candidate, 70 unique formal, and ten repeat inputs. Every case must contain
 exactly two or three lights, bind a route-barrier proof and blocker-encounter
 predicate, and require the full fill/escape/recenter/research/global-goal
 lifecycle. Commit all bytes before creating the V5 evidence root.
+
+## Phase 08.5 M2 precommitted population
+
+The existing Phase 08 workflow owner now exposes a separate `phase08-v5`
+identity and the bounded `v5-*` command family. V5 does not adopt or relabel
+the V3/V4 population. Its exact researcher-visible inputs are:
+
+```text
+ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/
+  phase08_v5_activation.yaml
+  phase08_v5_development.yaml
+  phase08_v5_candidates.yaml
+  phase08_v5_acceptance_suite.json
+docs/codex/gesc_gaussian/validation/
+  phase_08_v5_suite_commitment.json
+```
+
+The population contains ten visible activation cases, ten shared development
+cases executed once per each of three candidates, 20 holdout cases, 50
+validation cases, and ten preselected repeats. The 70 unique formal cases have
+the Plan-declared family allocation:
+
+```text
+20  obstructing two-light collinear
+12  obstructing two-light offset
+12  obstructing three-light lateral
+ 8  obstructing three-light sequential-route stress
+ 8  obstructing wall/corner
+10  obstructing noise/delay
+```
+
+All cases:
+
+- contain exactly two or three lights;
+- declare a strictly stronger global source and a weaker route blocker;
+- bind validated aggregate, local-branch, and route-barrier truth;
+- require `route_blocker_encountered`;
+- require `SEARCH -> VERIFY_EXTREMUM -> DESIGN_OR_MERGE_FILL ->
+  ESCAPE_REPULSE -> RECENTER -> SEARCH -> VERIFY_EXTREMUM -> GOAL_HOLD`;
+- treat direct convergence as a behavioral failure.
+
+Precommit validation passed with no reasons:
+
+```text
+activation cases       10
+development cases      10
+holdout cases          20
+validation cases       50
+reproducibility cases  10
+unique formal cases    70
+accepted light counts  2 or 3
+
+suite sha256
+  b91d99405a29dc04688a8b6bac66f3344b09a564832077930ed62329587c4515
+commitment sha256
+  3c9ea5c6679ba2547a643fe3dc394a308cd25fee7f4ffdedd19476a3259670cd
+
+focused regression
+  266 passed, 1 skipped in 60.38 s
+skip
+  explicit RUN_GESC_PHASE06_GAZEBO_E2E opt-in
+py_compile
+  passed
+fatal flake8 E9/F63/F7/F82
+  passed
+git diff --check
+  passed
+```
+
+The first full focused regression initially exposed that extending the schema
+family vocabulary affected the historical V3 generator iteration and that
+future V5 YAML changed the V4 historical scan. Both were corrected without
+changing V3/V4 bytes: the V3 generator iterates its own fixed allocation, and
+older workflow identities exclude future V5 inputs from their historical
+hash scan.
+
+No V5 evidence root, Gazebo process, physical action, or outcome exists yet.
+
+## Current milestone
+
+**M3 — commit the exact V5 inputs, qualify the fresh root, and execute the
+ten-case visible Gazebo activation gate.**
+
+### Next criterion
+
+Checkpoint and commit the M2 implementation and exact input bytes. Then create
+`/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v5`, run the bounded
+qualification gate, and execute all ten visible activation cases. Do not start
+headless development unless all ten cases complete cleanly and demonstrate the
+required blocker fill, escape, recenter, resumed search, and global goal.
