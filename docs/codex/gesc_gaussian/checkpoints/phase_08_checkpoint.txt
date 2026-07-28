@@ -1,49 +1,53 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-28T21:15:24+00:00
-Base HEAD: 028e14682718c8caede9dfff654b9d955f2ef601
+Generated: 2026-07-28T21:23:20+00:00
+Base HEAD: 8b1fd770209d6956f35ef6928f4f31d92bad8ba4
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 964c05a3211b50061bb09018ff3489342c8fef31133946864a3d0ef91be9ae6a
+Status sha256: 5130fa3f95d9654b7e71023d00da8a46c7766f48e2b9999fc919b29b4762d31e
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_5_plan.md
 Active subphase plan sha256: b20fef2176dbabaaff0e3439a9c93355c8a65274ebb34e6236626b2fd852bd61
-Unstaged diff sha256: f2451f78d25cbe499da19b4a51e1850fb0779ad77f791774e21808c50627689c
+Unstaged diff sha256: c1683e12a4e79322cd4a8ed4d5030fa0936ac7b3e5ab45306c68e437f72bbd46
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 36]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 37]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
-?? docs/codex/gesc_gaussian/plans/phase_08_5_plan.md
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/aggregate_field_truth.py
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py
+ M ros2_ws/src/ros_esc/test/test_aggregate_field_truth.py
+ M ros2_ws/src/ros_esc/test/test_scenario_runner.py
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 46 ++++------------------
- docs/codex/gesc_gaussian/status/phase_08_status.md | 43 ++++++++++++++++++++
- 2 files changed, 51 insertions(+), 38 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  41 +--
+ docs/codex/gesc_gaussian/status/phase_08_status.md |  63 ++++
+ .../scenario_runner/aggregate_field_truth.py       | 386 +++++++++++++++++++++
+ .../ros_esc/scenario_runner/run_scenario.py        |  72 ++++
+ .../ros_esc/scenario_runner/scenario_schema.py     |  15 +
+ .../src/ros_esc/test/test_aggregate_field_truth.py | 134 +++++++
+ ros2_ws/src/ros_esc/test/test_scenario_runner.py   |  50 +++
+ 7 files changed, 730 insertions(+), 31 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**M1 — implement deterministic route-barrier truth and encounter evidence.**
+**M2 — implement and precommit the fresh V5 workflow and population.**
 
 ### Next criterion
 
-Inside the existing aggregate-truth, runner, analyzer, and workflow owners:
-
-1. prove every declared local basin exists in the realized authoritative
-   field and lies in the start-to-global corridor;
-2. bind the proof into aggregate truth;
-3. prove at runtime that the first typed fill belongs to that blocker;
-4. add focused validation without changing existing V1-V4 behavior.
-
-No V5 evidence root or Gazebo process may exist before the exact fresh V5
-inputs and qualification are committed and pass.
+Generate and validate the exact ten activation, ten development, three
+candidate, 70 unique formal, and ten repeat inputs. Every case must contain
+exactly two or three lights, bind a route-barrier proof and blocker-encounter
+predicate, and require the full fill/escape/recenter/research/global-goal
+lifecycle. Commit all bytes before creating the V5 evidence root.
 
 
 This file describes the base HEAD and diff before the next commit; it is

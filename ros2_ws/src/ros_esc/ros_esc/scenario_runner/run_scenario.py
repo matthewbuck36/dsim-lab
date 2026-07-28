@@ -34,6 +34,7 @@ from ros_esc_interfaces.msg import (
     AlgorithmEvent,
     AlgorithmState,
     ControlDiagnostics,
+    GaussianFill,
 )
 
 import rosbag2_py
@@ -1163,6 +1164,9 @@ def _unavailable_outcomes(reason, readiness_interval_available=False):
         'expected_terminal_state_passed': None,
         'saturation_sample_count': None,
         'minimum_saturation_samples_passed': None,
+        'route_blocker_encountered_passed': None,
+        'route_blocker_fill_center': None,
+        'route_blocker_fill_distance_m': None,
         'collision_evidence_available': False,
         'collision_observed': None,
         'collision_expectation_passed': None,
@@ -1196,6 +1200,56 @@ def _ground_truth_targets(resolved):
     ]
 
 
+def _route_blocker_encounter(resolved, fill_messages):
+    """Match the first active typed fill to the precomputed route basin."""
+    aggregate = (
+        resolved.get('success', {})
+        .get('ground_truth', {})
+        .get('aggregate_field', {})
+    )
+    qualification = (
+        aggregate.get('route_barrier_qualification')
+        if isinstance(aggregate, dict)
+        else None
+    )
+    if qualification is None:
+        return None, None, None, None
+    basin = qualification.get('basin', {})
+    tolerance = qualification.get('fill_center_tolerance_m')
+    try:
+        basin_x = float(basin['x_m'])
+        basin_y = float(basin['y_m'])
+        limit = float(tolerance)
+    except (KeyError, TypeError, ValueError):
+        return None, None, None, (
+            'route barrier qualification is malformed'
+        )
+    if not all(math.isfinite(value) for value in (basin_x, basin_y, limit)):
+        return None, None, None, (
+            'route barrier qualification contains nonfinite values'
+        )
+    active = next(
+        (
+            message for message in fill_messages
+            if message.active and not message.superseded
+        ),
+        None,
+    )
+    if active is None:
+        return False, None, None, None
+    center_x = float(active.center_x)
+    center_y = float(active.center_y)
+    if not math.isfinite(center_x) or not math.isfinite(center_y):
+        return None, None, None, 'typed fill center is nonfinite'
+    distance = math.hypot(center_x - basin_x, center_y - basin_y)
+    return (
+        distance <= limit,
+        {'x_m': center_x, 'y_m': center_y},
+        distance,
+        None,
+    )
+
+
 def _bag_outcomes(run_directory, resolved):
     bag_directory = Path(run_directory) / 'bag'
     reader = rosbag2_py.SequentialReader()
@@ -1210,6 +1264,7 @@ def _bag_outcomes(run_directory, resolved):
         '/gesc_gaussian/algorithm_state': AlgorithmState,
         '/gesc_gaussian/algorithm_events': AlgorithmEvent,
         '/gesc_gaussian/control_diagnostics': ControlDiagnostics,
+        '/gesc_gaussian/gaussian_fills': GaussianFill,
         '/odom': Odometry,
         '/gesc_gaussian/simulation/contacts': ContactsState,
     }
@@ -1265,6 +1320,10 @@ def _bag_outcomes(run_directory, resolved):
         message for stamp, message
         in records['/gesc_gaussian/simulation/contacts'] if inside(stamp)
     ]
+    fills = [
+        message for stamp, message
+        in records['/gesc_gaussian/gaussian_fills'] if inside(stamp)
+    ]
     collision_observed = any(
         state
         for message in contacts
@@ -1284,6 +1343,13 @@ def _bag_outcomes(run_directory, resolved):
     )
     final_position = None
     outcome_error = state_error or event_error
+    (
+        route_blocker_encountered,
+        route_blocker_fill_center,
+        route_blocker_fill_distance,
+        route_error,
+    ) = _route_blocker_encounter(resolved, fills)
+    outcome_error = outcome_error or route_error
     if odometry:
         final_x = float(odometry[-1].pose.pose.position.x)
         final_y = float(odometry[-1].pose.pose.position.y)
@@ -1392,6 +1458,9 @@ def _bag_outcomes(run_directory, resolved):
             saturation_samples
             >= resolved['success']['minimum_saturation_samples']
         ),
+        'route_blocker_encountered_passed': route_blocker_encountered,
+        'route_blocker_fill_center': route_blocker_fill_center,
+        'route_blocker_fill_distance_m': route_blocker_fill_distance,
         'collision_evidence_available': bool(contacts),
         'collision_observed': collision_observed,
         'collision_expectation_passed': (
@@ -1448,6 +1517,9 @@ def classify_result(
         ),
         'minimum_saturation_samples': outcomes.get(
             'minimum_saturation_samples_passed'
+        ),
+        'route_blocker_encountered': outcomes.get(
+            'route_blocker_encountered_passed'
         ),
         'collision_expectation': outcomes.get(
             'collision_expectation_passed'

@@ -82,6 +82,7 @@ SUCCESS_PREDICATES = {
     'no_forbidden_events',
     'minimum_saturation_samples',
     'collision_expectation',
+    'route_blocker_encountered',
 }
 LAUNCH_OVERRIDES = {
     'approach_history_window_sec',
@@ -1532,6 +1533,19 @@ def load_suite(path):
             backed_predicates = set(declared_predicates)
             if has_ground_truth:
                 backed_predicates.add('ground_truth_goal')
+            route_qualification = (
+                normalized_ground_truth
+                .get('aggregate_field', {})
+                .get('route_barrier_qualification')
+                if isinstance(
+                    normalized_ground_truth.get('aggregate_field'),
+                    dict,
+                )
+                else None
+            )
+            if route_qualification is not None:
+                backed_predicates.add('route_blocker_encountered')
+                declared_predicates.add('route_blocker_encountered')
             if (
                 outcome == 'goal'
                 or (
@@ -1561,6 +1575,7 @@ def load_suite(path):
                 'no_forbidden_events',
                 'minimum_saturation_samples',
                 'collision_expectation',
+                'route_blocker_encountered',
             }
             unbacked_predicates = sorted(
                 (set(all_of) & predicates_requiring_backing)

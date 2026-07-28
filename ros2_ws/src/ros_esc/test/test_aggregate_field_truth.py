@@ -36,6 +36,41 @@ def _source(lumens=2500.0):
     }]
 
 
+@pytest.fixture(scope='module')
+def route_barrier_truth():
+    """Build one bounded two-light route proof for focused tests."""
+    sources = [
+        {
+            'id': 'local',
+            'x_m': -0.35,
+            'y_m': 0.0,
+            'relative_lumen_input': 650.0,
+        },
+        {
+            'id': 'global',
+            'x_m': 1.0,
+            'y_m': 0.0,
+            'relative_lumen_input': 2500.0,
+        },
+    ]
+    start = {'x_m': -1.2, 'y_m': 0.0, 'yaw_rad': 0.0}
+    aggregate = aggregate_field_truth.derive_aggregate_field_truth(
+        sources,
+        BOUNDS_M,
+        NO_NOISE,
+        solver_settings=FAST_SOLVER_SETTINGS,
+    )
+    attached = aggregate_field_truth.attach_route_barrier_qualification(
+        aggregate,
+        sources,
+        start,
+        'local',
+        'global',
+        NO_NOISE,
+    )
+    return sources, start, attached
+
+
 def test_sensor_geometry_owner_is_declared_runtime_dependency():
     """Ensure isolated installs include the package that owns the URDF."""
     root = ET.parse(PACKAGE_ROOT / 'package.xml').getroot()
@@ -137,6 +172,105 @@ def test_fast_solver_is_deterministic_and_records_authoritative_hashes():
         NO_NOISE,
         require_production_settings=False,
     ) == first
+
+
+def test_route_barrier_proves_two_light_obstructing_local_basin(
+    route_barrier_truth,
+):
+    """Bind a below-target local basin directly into the global route."""
+    sources, start, record = route_barrier_truth
+    proof = record['route_barrier_qualification']
+
+    assert proof['source_count'] == 2
+    assert proof['blocker_source_id'] == 'local'
+    assert proof['global_source_id'] == 'global'
+    assert 0.25 <= proof['blocker_geometry'][
+        'projection_fraction'
+    ] <= 0.70
+    assert proof['blocker_geometry'][
+        'perpendicular_distance_m'
+    ] <= 0.15
+    assert 0.25 <= proof['basin_geometry'][
+        'projection_fraction'
+    ] <= 0.70
+    assert proof['basin_geometry'][
+        'perpendicular_distance_m'
+    ] <= 0.15
+    assert proof['basin'][
+        'noise_adjusted_source_score_upper_bound'
+    ] < 0.95
+    assert proof[
+        'noise_adjusted_basin_depth_raw_cost'
+    ] >= 0.015
+    assert aggregate_field_truth.validate_aggregate_field_truth(
+        record,
+        sources,
+        BOUNDS_M,
+        NO_NOISE,
+        require_production_settings=False,
+    ) == record
+
+    repeated = aggregate_field_truth.attach_route_barrier_qualification(
+        {
+            key: value for key, value in record.items()
+            if key not in {
+                'result_sha256',
+                'route_barrier_qualification',
+            }
+        },
+        sources,
+        start,
+        'local',
+        'global',
+        NO_NOISE,
+    )
+    assert repeated['route_barrier_qualification'] == proof
+
+
+def test_route_barrier_rejects_out_of_scope_or_off_route_cases(
+    route_barrier_truth,
+):
+    """Reject more than three lights and a blocker outside the route."""
+    sources, unused_start, record = route_barrier_truth
+    aggregate = {
+        key: value for key, value in record.items()
+        if key not in {
+            'result_sha256',
+            'route_barrier_qualification',
+        }
+    }
+    four_lights = sources + [
+        {
+            'id': 'context_1',
+            'x_m': 0.0,
+            'y_m': 1.0,
+            'relative_lumen_input': 300.0,
+        },
+        {
+            'id': 'context_2',
+            'x_m': 0.0,
+            'y_m': -1.0,
+            'relative_lumen_input': 300.0,
+        },
+    ]
+    with pytest.raises(ValueError, match='exactly two or three'):
+        aggregate_field_truth.derive_route_barrier_qualification(
+            aggregate,
+            four_lights,
+            {'x_m': -1.2, 'y_m': 0.0},
+            'local',
+            'global',
+            NO_NOISE,
+        )
+    with pytest.raises(ValueError, match='outside the route corridor'):
+        aggregate_field_truth.derive_route_barrier_qualification(
+            aggregate,
+            sources,
+            {'x_m': -1.2, 'y_m': 0.8},
+            'local',
+            'global',
+            NO_NOISE,
+        )
 
 
 def test_validator_rejects_hash_source_noise_and_target_drift():

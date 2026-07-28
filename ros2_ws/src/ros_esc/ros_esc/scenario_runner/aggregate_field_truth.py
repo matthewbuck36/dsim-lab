@@ -148,6 +148,15 @@ DEFAULT_SOLVER_SETTINGS = {
     'optimizer_absolute_tolerance': 1.0e-10,
 }
 LOCAL_QUALIFICATION_YAW_SPACING_RAD = math.radians(0.5)
+ROUTE_BASIN_SEARCH_RADIUS_M = 0.35
+ROUTE_CORRIDOR_TOLERANCE_M = 0.15
+ROUTE_FILL_CENTER_TOLERANCE_M = 0.35
+ROUTE_RING_RADIUS_M = 0.25
+ROUTE_RING_POSITION_SAMPLES = 48
+ROUTE_RING_YAW_SPACING_RAD = math.radians(2.0)
+ROUTE_MINIMUM_BASIN_DEPTH = 0.015
+ROUTE_LOCAL_GRID_POINTS_PER_AXIS = 9
+ROUTE_LOCAL_YAW_SPACING_RAD = math.radians(5.0)
 
 
 def canonical_json_bytes(value):
@@ -620,6 +629,356 @@ def attach_local_branch_qualifications(
         derive_local_branch_qualifications(
             sources,
             source_ids,
+            disturbances,
+        )
+    )
+    result['result_sha256'] = canonical_sha256(result)
+    return result
+
+
+def _route_geometry(start, point, target):
+    """Resolve one point against the directed start-to-target segment."""
+    start_x = _finite_number(start.get('x_m'), 'start.x_m')
+    start_y = _finite_number(start.get('y_m'), 'start.y_m')
+    point_x = _finite_number(point.get('x_m'), 'point.x_m')
+    point_y = _finite_number(point.get('y_m'), 'point.y_m')
+    target_x = _finite_number(target.get('x_m'), 'target.x_m')
+    target_y = _finite_number(target.get('y_m'), 'target.y_m')
+    route_x = target_x - start_x
+    route_y = target_y - start_y
+    route_squared = route_x * route_x + route_y * route_y
+    if route_squared <= 0.0:
+        raise ValueError('route start and target must differ')
+    projection = (
+        (point_x - start_x) * route_x
+        + (point_y - start_y) * route_y
+    ) / route_squared
+    projected_x = start_x + projection * route_x
+    projected_y = start_y + projection * route_y
+    return {
+        'projection_fraction': projection,
+        'perpendicular_distance_m': math.hypot(
+            point_x - projected_x,
+            point_y - projected_y,
+        ),
+        'start_distance_m': math.hypot(
+            point_x - start_x,
+            point_y - start_y,
+        ),
+        'target_distance_m': math.hypot(
+            target_x - point_x,
+            target_y - point_y,
+        ),
+    }
+
+
+def derive_route_barrier_qualification(
+    aggregate_record,
+    sources,
+    start,
+    blocker_source_id,
+    global_source_id,
+    disturbances,
+    *,
+    threshold=0.95,
+    model_config_path=MODEL_CONFIG_PATH,
+    sensor_transform_config_path=SENSOR_TRANSFORM_CONFIG_PATH,
+    sensor_geometry_path=SENSOR_GEOMETRY_PATH,
+):
+    """Prove one sub-goal basin obstructs the route to the global target."""
+    normalized_sources = _normalized_sources(sources)
+    if len(normalized_sources) not in (2, 3):
+        raise ValueError('route barrier requires exactly two or three lights')
+    by_id = {source['id']: source for source in normalized_sources}
+    blocker_id = str(blocker_source_id)
+    global_id = str(global_source_id)
+    if (
+        blocker_id == global_id
+        or blocker_id not in by_id
+        or global_id not in by_id
+    ):
+        raise ValueError('route barrier source identifiers are invalid')
+    global_source = by_id[global_id]
+    blocker_source = by_id[blocker_id]
+    other_intensities = [
+        source['relative_lumen_input']
+        for source in normalized_sources
+        if source['id'] != global_id
+    ]
+    if (
+        global_source['relative_lumen_input']
+        <= max(other_intensities)
+    ):
+        raise ValueError(
+            'route barrier global source must be strictly strongest'
+        )
+    targets = aggregate_record.get('targets', [])
+    if not isinstance(targets, list) or not targets:
+        raise ValueError('route barrier requires aggregate targets')
+    localized_targets = [
+        item for item in targets
+        if math.hypot(
+            float(item['x_m']) - global_source['x_m'],
+            float(item['y_m']) - global_source['y_m'],
+        ) <= 0.50
+    ]
+    if not localized_targets:
+        raise ValueError(
+            'aggregate target is not localized at the global source'
+        )
+    target = min(
+        localized_targets,
+        key=lambda item: (
+            _route_geometry(
+                start,
+                blocker_source,
+                item,
+            )['perpendicular_distance_m'],
+            math.hypot(
+                float(item['x_m']) - global_source['x_m'],
+                float(item['y_m']) - global_source['y_m'],
+            ),
+            str(item.get('target_id', '')),
+        ),
+    )
+    target_source_distance = math.hypot(
+        float(target['x_m']) - global_source['x_m'],
+        float(target['y_m']) - global_source['y_m'],
+    )
+    blocker_geometry = _route_geometry(
+        start,
+        blocker_source,
+        target,
+    )
+    if not 0.25 <= blocker_geometry['projection_fraction'] <= 0.70:
+        raise ValueError('route blocker is not between start and target')
+    if (
+        blocker_geometry['perpendicular_distance_m']
+        > ROUTE_CORRIDOR_TOLERANCE_M
+    ):
+        raise ValueError('route blocker is outside the route corridor')
+    if blocker_geometry['start_distance_m'] < 0.50:
+        raise ValueError('route blocker is too close to the start')
+    if blocker_geometry['target_distance_m'] < 0.90:
+        raise ValueError('route blocker is too close to the global target')
+
+    sensor_binding = sensor_geometry_binding(
+        sensor_transform_config_path,
+        sensor_geometry_path,
+    )
+    model, config_path = _model(
+        normalized_sources,
+        model_config_path,
+        sensor_binding,
+    )
+    domain = aggregate_record.get('domain', {})
+    bounds = (
+        _finite_number(domain.get('x_min_m'), 'domain.x_min_m'),
+        _finite_number(domain.get('x_max_m'), 'domain.x_max_m'),
+        _finite_number(domain.get('y_min_m'), 'domain.y_min_m'),
+        _finite_number(domain.get('y_max_m'), 'domain.y_max_m'),
+    )
+    x_bounds = (
+        max(
+            bounds[0],
+            blocker_source['x_m'] - ROUTE_BASIN_SEARCH_RADIUS_M,
+        ),
+        min(
+            bounds[1],
+            blocker_source['x_m'] + ROUTE_BASIN_SEARCH_RADIUS_M,
+        ),
+    )
+    y_bounds = (
+        max(
+            bounds[2],
+            blocker_source['y_m'] - ROUTE_BASIN_SEARCH_RADIUS_M,
+        ),
+        min(
+            bounds[3],
+            blocker_source['y_m'] + ROUTE_BASIN_SEARCH_RADIUS_M,
+        ),
+    )
+    if x_bounds[0] >= x_bounds[1] or y_bounds[0] >= y_bounds[1]:
+        raise ValueError('route blocker search region is empty')
+
+    def objective(vector):
+        return evaluate_raw_cost(
+            model,
+            float(vector[0]),
+            float(vector[1]),
+            float(vector[2]) % (2.0 * math.pi),
+        )
+
+    local_yaws = _periodic_axis(
+        2.0 * math.pi,
+        ROUTE_LOCAL_YAW_SPACING_RAD,
+        0.0,
+    )
+    local_seed = min(
+        (
+            (
+                evaluate_raw_cost(model, x_value, y_value, yaw_value),
+                float(x_value),
+                float(y_value),
+                float(yaw_value),
+            )
+            for x_value in np.linspace(
+                x_bounds[0],
+                x_bounds[1],
+                ROUTE_LOCAL_GRID_POINTS_PER_AXIS,
+            )
+            for y_value in np.linspace(
+                y_bounds[0],
+                y_bounds[1],
+                ROUTE_LOCAL_GRID_POINTS_PER_AXIS,
+            )
+            for yaw_value in local_yaws
+        ),
+        key=lambda item: item,
+    )
+    optimized = optimize.minimize(
+        objective,
+        np.asarray(local_seed[1:], dtype=float),
+        method='L-BFGS-B',
+        bounds=[x_bounds, y_bounds, (0.0, 2.0 * math.pi)],
+        options={'ftol': 1.0e-12, 'gtol': 1.0e-9, 'maxiter': 500},
+    )
+    optimized_vector = np.asarray(optimized.x, dtype=float)
+    optimized_cost = objective(optimized_vector)
+    if local_seed[0] < optimized_cost:
+        optimized_vector = np.asarray(local_seed[1:], dtype=float)
+        optimized_cost = float(local_seed[0])
+    basin = {
+        'x_m': float(optimized_vector[0]),
+        'y_m': float(optimized_vector[1]),
+        'yaw_rad': float(optimized_vector[2] % (2.0 * math.pi)),
+        'raw_cost': optimized_cost,
+    }
+    basin_source_distance = math.hypot(
+        basin['x_m'] - blocker_source['x_m'],
+        basin['y_m'] - blocker_source['y_m'],
+    )
+    if basin_source_distance > ROUTE_BASIN_SEARCH_RADIUS_M:
+        raise ValueError('refined route basin escaped the blocker region')
+    basin_geometry = _route_geometry(start, basin, target)
+    if not 0.25 <= basin_geometry['projection_fraction'] <= 0.70:
+        raise ValueError('refined route basin is not between start and target')
+    if (
+        basin_geometry['perpendicular_distance_m']
+        > ROUTE_CORRIDOR_TOLERANCE_M
+    ):
+        raise ValueError('refined route basin is outside the route corridor')
+
+    noise_margin = _noise_margin(disturbances)
+    limit = _finite_number(threshold, 'threshold')
+    noise_score_upper = float(
+        model.source_score(basin['raw_cost'] - noise_margin)
+    )
+    if noise_score_upper >= limit:
+        raise ValueError(
+            'route blocker basin reaches the global score threshold'
+        )
+    ring_yaws = _periodic_axis(
+        2.0 * math.pi,
+        ROUTE_RING_YAW_SPACING_RAD,
+        0.0,
+    )
+    ring_costs = []
+    for angle in np.linspace(
+        0.0,
+        2.0 * math.pi,
+        ROUTE_RING_POSITION_SAMPLES,
+        endpoint=False,
+    ):
+        ring_x = basin['x_m'] + ROUTE_RING_RADIUS_M * math.cos(angle)
+        ring_y = basin['y_m'] + ROUTE_RING_RADIUS_M * math.sin(angle)
+        if not (
+            bounds[0] <= ring_x <= bounds[1]
+            and bounds[2] <= ring_y <= bounds[3]
+        ):
+            raise ValueError('route blocker ring leaves the valid domain')
+        ring_costs.append(min(
+            evaluate_raw_cost(model, ring_x, ring_y, yaw)
+            for yaw in ring_yaws
+        ))
+    ring_minimum = min(ring_costs)
+    basin_depth = ring_minimum - basin['raw_cost']
+    conservative_depth = basin_depth - 2.0 * noise_margin
+    if conservative_depth < ROUTE_MINIMUM_BASIN_DEPTH:
+        raise ValueError(
+            'route blocker does not retain the minimum basin depth'
+        )
+
+    record = {
+        'schema_version': 1,
+        'method': 'authoritative_obstructing_local_basin',
+        'source_count': len(normalized_sources),
+        'source_list_sha256': canonical_sha256(normalized_sources),
+        'blocker_source_id': blocker_id,
+        'global_source_id': global_id,
+        'start': {
+            'x_m': _finite_number(start.get('x_m'), 'start.x_m'),
+            'y_m': _finite_number(start.get('y_m'), 'start.y_m'),
+        },
+        'selected_global_target_id': str(target['target_id']),
+        'selected_global_target': {
+            'x_m': float(target['x_m']),
+            'y_m': float(target['y_m']),
+            'raw_cost': float(target['raw_cost']),
+            'source_score': float(target['source_score']),
+        },
+        'global_target_to_source_distance_m': target_source_distance,
+        'blocker_geometry': blocker_geometry,
+        'basin': basin | {
+            'source_distance_m': basin_source_distance,
+            'source_score': float(model.source_score(basin['raw_cost'])),
+            'noise_adjusted_source_score_upper_bound': noise_score_upper,
+        },
+        'basin_geometry': basin_geometry,
+        'goal_score_threshold': limit,
+        'corridor_tolerance_m': ROUTE_CORRIDOR_TOLERANCE_M,
+        'fill_center_tolerance_m': ROUTE_FILL_CENTER_TOLERANCE_M,
+        'search_radius_m': ROUTE_BASIN_SEARCH_RADIUS_M,
+        'local_grid_points_per_axis': (
+            ROUTE_LOCAL_GRID_POINTS_PER_AXIS
+        ),
+        'local_yaw_spacing_rad': ROUTE_LOCAL_YAW_SPACING_RAD,
+        'ring_radius_m': ROUTE_RING_RADIUS_M,
+        'ring_position_samples': ROUTE_RING_POSITION_SAMPLES,
+        'ring_yaw_spacing_rad': ROUTE_RING_YAW_SPACING_RAD,
+        'ring_minimum_raw_cost': ring_minimum,
+        'basin_depth_raw_cost': basin_depth,
+        'noise_margin_raw_cost': noise_margin,
+        'noise_adjusted_basin_depth_raw_cost': conservative_depth,
+        'minimum_basin_depth_raw_cost': ROUTE_MINIMUM_BASIN_DEPTH,
+        'model_config_sha256': file_sha256(config_path),
+    } | {
+        key: value
+        for key, value in _sensor_binding_record(sensor_binding).items()
+        if not key.endswith('_path')
+    }
+    record['result_sha256'] = canonical_sha256(record)
+    return record
+
+
+def attach_route_barrier_qualification(
+    aggregate_record,
+    sources,
+    start,
+    blocker_source_id,
+    global_source_id,
+    disturbances,
+):
+    """Bind one deterministic obstructing-local-basin proof into truth."""
+    result = deepcopy(aggregate_record)
+    result.pop('result_sha256', None)
+    result['route_barrier_qualification'] = (
+        derive_route_barrier_qualification(
+            result,
+            sources,
+            start,
+            blocker_source_id,
+            global_source_id,
             disturbances,
         )
     )
@@ -1131,6 +1490,33 @@ def validate_aggregate_field_truth(
         if local_qualifications != expected_local:
             raise ValueError(
                 'aggregate local branch qualification drifted'
+            )
+    route_qualification = candidate.get('route_barrier_qualification')
+    if route_qualification is not None:
+        if not isinstance(route_qualification, dict):
+            raise ValueError(
+                'aggregate route barrier qualification is invalid'
+            )
+        expected_route = derive_route_barrier_qualification(
+            candidate,
+            normalized_sources,
+            route_qualification.get('start', {}),
+            route_qualification.get('blocker_source_id'),
+            route_qualification.get('global_source_id'),
+            disturbances,
+            threshold=route_qualification.get(
+                'goal_score_threshold',
+                0.95,
+            ),
+            model_config_path=config_path,
+            sensor_transform_config_path=(
+                sensor_transform_config_path
+            ),
+            sensor_geometry_path=sensor_geometry_path,
+        )
+        if route_qualification != expected_route:
+            raise ValueError(
+                'aggregate route barrier qualification drifted'
             )
     settings = _solver_settings(candidate.get('solver_settings'))
     if (

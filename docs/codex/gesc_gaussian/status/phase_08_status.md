@@ -3301,3 +3301,66 @@ Inside the existing aggregate-truth, runner, analyzer, and workflow owners:
 
 No V5 evidence root or Gazebo process may exist before the exact fresh V5
 inputs and qualification are committed and pass.
+
+## Phase 08.5 M1 route-barrier implementation
+
+The existing aggregate-field owner now derives and validates a deterministic
+`route_barrier_qualification` for exactly two or three lights. It:
+
+- requires one strictly strongest declared global source;
+- selects an authoritative aggregate target localized at that source;
+- proves the designated weaker blocker and its refined local basin lie between
+  the start and selected global target inside the fixed route corridor;
+- proves the basin remains below the `0.95` goal threshold under declared
+  noise;
+- proves a conservative positive enclosing-ring depth;
+- binds model, source, sensor geometry, route geometry, local basin, ring,
+  threshold, and runtime fill-center tolerance into the aggregate result hash.
+
+The existing scenario runner now reads typed `GaussianFill` messages from the
+retained readiness interval and exposes the
+`route_blocker_encountered` predicate. The first active nonsuperseded fill must
+be within `0.35 m` of the precomputed blocker basin. Older scenarios without a
+route proof remain unchanged and report this predicate as not applicable.
+
+Schema support rejects unbacked use of the new predicate and requires a
+scenario containing a route proof to bind it into acceptance.
+
+Focused verification:
+
+```text
+test_aggregate_field_truth.py
++ test_scenario_runner.py
++ test_scenario_schema.py
+  97 passed, 1 skipped in 37.23 s
+
+skip
+  explicit RUN_GESC_PHASE06_GAZEBO_E2E opt-in
+
+py_compile
+  passed
+fatal flake8 E9/F63/F7/F82
+  passed
+git diff --check
+  passed
+```
+
+The focused two-light fixture proves a `650`-input blocker between a fixed
+start and `2500`-input global source. Its refined blocker score is below
+threshold and its noise-adjusted ring depth exceeds the fixed `0.015`
+minimum. Four-light and off-route inputs are rejected.
+
+No V5 scenario input, evidence root, Gazebo process, physical action, or
+formal execution exists.
+
+## Current milestone
+
+**M2 — implement and precommit the fresh V5 workflow and population.**
+
+### Next criterion
+
+Generate and validate the exact ten activation, ten development, three
+candidate, 70 unique formal, and ten repeat inputs. Every case must contain
+exactly two or three lights, bind a route-barrier proof and blocker-encounter
+predicate, and require the full fill/escape/recenter/research/global-goal
+lifecycle. Commit all bytes before creating the V5 evidence root.

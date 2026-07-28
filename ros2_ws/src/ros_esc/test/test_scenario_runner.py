@@ -172,6 +172,56 @@ def _v4_branch_resolved():
     return resolved
 
 
+def test_route_blocker_encounter_matches_first_active_typed_fill():
+    """Require the first accepted fill to belong to the route blocker."""
+    resolved = {
+        'success': {
+            'ground_truth': {
+                'aggregate_field': {
+                    'route_barrier_qualification': {
+                        'basin': {'x_m': -0.5, 'y_m': 0.1},
+                        'fill_center_tolerance_m': 0.35,
+                    },
+                },
+            },
+        },
+    }
+    close_fill = SimpleNamespace(
+        active=True,
+        superseded=False,
+        center_x=-0.4,
+        center_y=0.1,
+    )
+    far_fill = SimpleNamespace(
+        active=True,
+        superseded=False,
+        center_x=0.5,
+        center_y=0.1,
+    )
+
+    assert runner._route_blocker_encounter(
+        resolved,
+        [close_fill],
+    ) == (
+        True,
+        {'x_m': -0.4, 'y_m': 0.1},
+        pytest.approx(0.1),
+        None,
+    )
+    assert runner._route_blocker_encounter(
+        resolved,
+        [far_fill],
+    )[0] is False
+    assert runner._route_blocker_encounter(
+        resolved,
+        [],
+    ) == (False, None, None, None)
+    assert runner._route_blocker_encounter(
+        {'success': {'ground_truth': {'aggregate_field': {}}}},
+        [],
+    ) == (None, None, None, None)
+
+
 def test_launch_and_record_argv_compose_existing_owners_without_shell():
     """Compose only the existing launch and recorder through direct argv."""
     resolved = _resolved()
