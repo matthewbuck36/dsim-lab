@@ -3454,3 +3454,60 @@ Checkpoint and commit the M2 implementation and exact input bytes. Then create
 qualification gate, and execute all ten visible activation cases. Do not start
 headless development unless all ten cases complete cleanly and demonstrate the
 required blocker fill, escape, recenter, resumed search, and global goal.
+
+## Phase 08.5 M3 prepare and qualification
+
+The exact V5 implementation and input bytes were committed before evidence:
+
+```text
+a17518d4429b5496954982178c09af2246ac38e9
+phase 08.5: precommit obstructing V5 population
+```
+
+Fresh preparation passed at:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v5
+workflow_state/v5_prepare.json
+```
+
+The state binds the clean `a17518d` repository snapshot, suite and commitment
+hashes, exact 70+10 formal population, all six family counts, no pre-existing
+ROS/Gazebo processes, and a free-space forecast of `348087951360` bytes versus
+`91268055040` required bytes.
+
+Qualification passed with no reasons:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v5/
+  workflow_state/v5_qualification.json
+  qualification/
+```
+
+Evidence includes:
+
+- `494 passed, 2 skipped in 95.90 s`; the skips are the two explicit opt-in
+  Gazebo recording integrations;
+- an isolated source build and installed V5 resource check;
+- installed entrypoint, launch-argument, boundary-observer, supervisor, and
+  fill instantiation checks;
+- installed dry-run expansion of exactly ten activation and ten development
+  cases with zero unsupported cases;
+- passive contact launch arguments on both direct and recorder commands for
+  all ten activation cases;
+- revalidation of the exact V5 population and authoritative route proofs;
+- no process leakage after qualification.
+
+No V5 Gazebo outcome exists yet.
+
+## Current milestone
+
+**M3 — execute and inspect the ten-case visible Gazebo activation gate.**
+
+### Next criterion
+
+Commit this qualification checkpoint, then run `v5-activation` with the
+qualified isolated install. Preserve all completed evidence on interruption or
+failure. Headless development remains forbidden unless activation is exactly
+`10/10` infrastructure-complete and `10/10` on the mandatory blocker fill,
+escape, recenter, resumed search, and global-goal contract.
