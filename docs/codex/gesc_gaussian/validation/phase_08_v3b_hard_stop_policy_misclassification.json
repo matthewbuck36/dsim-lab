@@ -1,0 +1,96 @@
+{
+  "behavioral_result": {
+    "analysis_failures": [],
+    "analysis_status": "partial",
+    "applicability_integrity_passed": false,
+    "applicability_integrity_reasons": [
+      "escape occurred in a case declared not applicable"
+    ],
+    "classification_status": "failed",
+    "cleanup_complete": true,
+    "collision": false,
+    "contract_predicates": {
+      "controller_goal": true,
+      "expected_terminal_state": true,
+      "ground_truth_goal": true,
+      "no_forbidden_events": false,
+      "no_forbidden_states": false,
+      "required_events": true,
+      "required_state_path": false
+    },
+    "critical_inputs_complete": true,
+    "failsafe": false,
+    "final_aggregate_target_distance_m": 0.03908346942306904,
+    "fresh_phase05_validation_passed": true,
+    "infrastructure_status": "completed",
+    "invalid_metric_count": 0,
+    "observed_state_sequence": [
+      "SEARCH",
+      "VERIFY_EXTREMUM",
+      "DESIGN_OR_MERGE_FILL",
+      "ESCAPE_REPULSE",
+      "RECENTER",
+      "SEARCH",
+      "VERIFY_EXTREMUM",
+      "GOAL_HOLD"
+    ],
+    "recording_complete": true,
+    "recording_failures": [],
+    "terminal_state": "GOAL_HOLD",
+    "timeout": false
+  },
+  "classification": "behavioral_miss_routing_misclassified",
+  "correction": {
+    "activation_cases_changed": false,
+    "analyzer_output_changed": false,
+    "behavior_contract_changed": false,
+    "collision_gate_changed": false,
+    "final_record_integrity_gate_changed": false,
+    "fresh_activation_required": true,
+    "fresh_evidence_root": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3c",
+    "fresh_lineage_id": "phase08-v3c",
+    "hard_stop_policy": "pure_applicability_partial_is_behavioral_miss",
+    "rerun_all_activation_cases": true,
+    "reuse_precommitted_population_byte_identically": true
+  },
+  "correction_sha256": "dbec6d73e23a7b590e99558e43ec57c99c68fbe5f6921301a8fc618407ebf56e",
+  "experiment_version": "phase08-v3b",
+  "nested_recovery": {
+    "kind": "contact_probe_instrumentation_contamination",
+    "recovery_sha256": "b880fe9d2dc5724ed016fe5c2d42bb20796330aa7f1124f0ef7d875f0b6922e",
+    "superseded_evidence_root": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3"
+  },
+  "original_artifacts": {
+    "activation_attempt_records_file_sha256": "4d1edcddec10dbf5b529b0b46d4f1d8189ade380432838f1023cfa1e3c5544ec",
+    "activation_progress_file_sha256": "265d69ae8c4c806fadb5658cb41e88c04832738fc97b44817aa9d62e3e772e45",
+    "activation_progress_sha256": "49194f254dd6939216d3889623390f333df11eb4fc00d3e26044c0463346e113",
+    "activation_records_file_sha256": "4d1edcddec10dbf5b529b0b46d4f1d8189ade380432838f1023cfa1e3c5544ec",
+    "activation_scenario_summary_file_sha256": "6659675dde8230ac997067fc3caf71d801c48793fc0ed882add767fd4c9caa7c",
+    "activation_state_file_sha256": "e915d249e855d8b17c214bdd72efb378caa66636f9838c660ca327cd0c14a80e",
+    "activation_state_sha256": "8d50df1cf6eed92a8829758357aacbc61503f816f65086a3f51120e1105c9a48",
+    "analysis_completeness_file_sha256": "c3fc7196032469cb5d3d7966d15ed79706290e5ad506739d9c5ccdf5d300e43c",
+    "analysis_summary_file_sha256": "fa6f06a7a3cd1e80d8405616c6955644e944097ad5f2fceb23579d467540cbd6",
+    "attempt_record_file_sha256": "d1cc6b4b2f73d5ad70031d3b74d7ac4b535894bdf5425100d3f72175d2593ad5",
+    "metadata_file_sha256": "75fcb6ef8b8488c156ba8b06e6f102e04a88cae4a259ac0103f55370a61e288d",
+    "prepare_state_file_sha256": "db2961d542a586aa82d8265be57dc46fc4ccfbb69dc5b4ab091dccd57bb88942",
+    "qualification_state_file_sha256": "5e3489ee3c60e4e1dc218c480d880e6824d89ffcdba644414852ffd5c1e95fb3",
+    "raw_bag_file_sha256": "2d9b2813b2c15623f62fc44907dc391636e4cd53254d2d923ce13d71ac72453c",
+    "resolved_scenario_file_sha256": "aeb9f307cd584c5980d7d815d3bca42d28e20c3916c4ddccb05fc5d979c351e6",
+    "scenario_result_file_sha256": "375e6879a5372b424e340f9371e742f436e364f4722b7d914faccd4276f3dedb",
+    "transaction_file_sha256": "921fc049a938423ae83783d64efd46b3d55c7cedd40a537cf09b01c55be558fa"
+  },
+  "precommit": {
+    "commitment_file_sha256": "f142f9044b19c51113bb1363e5114f9a831d095648fe647fe15c5c04088e45a2",
+    "commitment_sha256": "cf981d60e235a3b4fd63ae5a61ccddae87e94ea76a3fb2d4ccaad78bcaa29437",
+    "suite_sha256": "d733ef9dffb372d2c60b57f83c2b96e1062a0a62818587de59a0166df4efe88e"
+  },
+  "qualified_runtime": {
+    "execution_commit": "23c2b9b",
+    "qualification_state_sha256": "5f36c29f5a008375da801b68ca1c8c22efbfc876595195a46f0aa80776e937cd",
+    "runtime_input_commit": "e9e1d500116fe884d06574d316143da94e25d920",
+    "runtime_inputs_sha256": "6b76ddfe0ca0751bfbbce7eba4a3fc39b247492e77f7a1e6731721b9f4f5c227"
+  },
+  "run_id": "20260728T064829892284Z_simulation_phase08_v3_activation-v3a_goal_aggregate_direct-robust_gaussian_v1-acd554565b_1b6fb3f5",
+  "schema_version": 1,
+  "superseded_evidence_root": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3b"
+}

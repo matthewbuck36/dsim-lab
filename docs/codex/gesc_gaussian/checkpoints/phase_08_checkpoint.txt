@@ -1,44 +1,53 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-28T06:46:23+00:00
-Base HEAD: e9e1d500116fe884d06574d316143da94e25d920
+Generated: 2026-07-28T07:07:11+00:00
+Base HEAD: 23c2b9b55ac766d2842fe33d79f7ccf86f9842f7
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 23f788d7e559a611aafb41e57e679970b68aae87a549ec8161c819648b8ec048
+Status sha256: b3321b4d77486d584c0f2e73cfc1d03ba81cf5c595356f81ed3d63d955830f81
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_3_plan.md
-Active subphase plan sha256: 229db7e64c347d3bd50b5aee243e788d5a3848d29a6a6e5f51d0383ff11b2252
-Unstaged diff sha256: eb96c052da464b9be2e9e8fe64dfa57efc24dcb115566c1576c1bd41f2640787
+Active subphase plan sha256: 2dcf17bba72f69ce5d3a3dc74ca349eac52e28aa568aca6f71ca3b3276b4d7cb
+Unstaged diff sha256: 0d8a9204489be25957790d6adc64d7310d39901b306aaa793622cb8d4aab0d84
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 20]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 21]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
+ M docs/codex/gesc_gaussian/plans/phase_08_3_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
+?? docs/codex/gesc_gaussian/validation/phase_08_v3b_failure_report.md
+?? docs/codex/gesc_gaussian/validation/phase_08_v3b_hard_stop_policy_misclassification.json
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  55 +----------
- docs/codex/gesc_gaussian/status/phase_08_status.md | 110 +++++++++++++++++++++
- 2 files changed, 115 insertions(+), 50 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  37 +---
+ docs/codex/gesc_gaussian/plans/phase_08_3_plan.md  | 200 +++++++++++++++++++++
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 145 +++++++++++++++
+ 3 files changed, 354 insertions(+), 28 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
 - Closed lineage: **M3 V3A — FAILED / INSTRUMENTATION-CONTAMINATED / NOT
   SIMULATION-READY**.
-- Completed corrected boundary: **M3B adoption and pre-activation
-  qualification — PASS**.
-- State: **READY TO CHECKPOINT, COMMIT THE EVIDENCE-ONLY QUALIFICATION
-  RECORD, AND START ALL TEN GUI-VISIBLE V3B ACTIVATION CASES**.
-- No actual V3B Gazebo run has executed yet.
-- Next criterion: serially execute all ten fixed activation cases with
-  `gazebo_gui=true`; pass every declared contract and integrity gate before
-  M4 development is permitted.
+- Closed lineage: **M3B V3B — FAILED / VALID DIRECT-PATH BEHAVIORAL MISS /
+  PREMATURE HARD-STOP ROUTING / NOT SIMULATION-READY**.
+- Current milestone: **M3C — preserve V3B and implement/test the bounded
+  behavioral-miss routing correction plus chained V3C recovery**.
+- Amended Plan: the append-only `M3C amendment` in
+  `docs/codex/gesc_gaussian/plans/phase_08_3_plan.md`.
+- Fresh corrected evidence root:
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3c`; confirmed absent.
+- The exact suite, commitment, cases, seeds, profile, contracts, thresholds,
+  denominators, collision gate, and final integrity verdict remain unchanged.
+- Next criterion: test/checkpoint/commit M3C; adopt the exact precommit into
+  V3C; rerun complete qualification; then execute all ten GUI-visible cases
+  from the beginning.
 
 
 

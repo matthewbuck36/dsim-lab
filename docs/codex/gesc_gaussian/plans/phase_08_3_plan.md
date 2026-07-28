@@ -1907,3 +1907,203 @@ closes failed before development.
 This amendment is the required Plan review for the post-precommit
 runner/evidence-lineage correction. It does not authorize an algorithm or
 scenario-population change.
+
+## M3C amendment — behavioral-miss routing and fresh V3C lineage
+
+This append-only amendment was added after V3B executed its first
+GUI-visible activation case. It supersedes only the immediate hard-stop
+routing and recovery lineage needed to finish the ten-case activation
+diagnosis. It does not rewrite V3A or V3B, change the research objective,
+algorithm, profile, activation cases, seeds, geometry, suite, candidates,
+thresholds, denominators, family floors, stage order, collision gate,
+evidence-integrity gate, final behavior verdict, or readiness-tag gate.
+
+The user authorized continued implementation and actual Gazebo simulation.
+That authority includes this bounded validation-workflow correction and a
+fresh corrected lineage. It does not authorize weakening the observed V3B
+behavioral failure, physical hardware, Phase 09, post-outcome scenario
+adaptation, or a simulation-readiness claim without every declared pass.
+
+### Observed V3B result
+
+V3B ran `v3a_goal_aggregate_direct`, seed `9301`, once from a clean
+evidence-only successor of qualified runtime commit
+`e9e1d500116fe884d06574d316143da94e25d920`. Gazebo used
+`gazebo_gui=true`, passive contact sensors were enabled, and the physical
+positive-control probe was disabled.
+
+Recording, sqlite3 readability, fresh Phase 05 validation, cleanup, final
+zero, final readiness false, timestamp/causality evidence, and collision
+evidence passed. No timeout, failsafe, non-ground collision, analysis
+exception, invalid metric, missing critical input, or raw-bag drift occurred.
+The controller and aggregate-field goal both passed; the final aggregate
+distance was `0.03908346942306904 m` and the terminal state was `GOAL_HOLD`.
+
+The direct-path behavior contract nevertheless failed. It required:
+
+```text
+SEARCH -> VERIFY_EXTREMUM -> GOAL_HOLD
+```
+
+and forbade fill, escape, and recenter. The observed path was:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> RECENTER
+-> SEARCH
+-> VERIFY_EXTREMUM
+-> GOAL_HOLD
+```
+
+This is a valid behavioral miss. The eventual recovery does not make the
+predeclared direct-path contract pass.
+
+### Observed routing contradiction
+
+The direct case predeclared escape metrics as not applicable. The analyzer
+correctly recorded the unexpected escape as:
+
+```text
+applicability_integrity.passed = false
+analysis_status = partial
+reason = "escape occurred in a case declared not applicable"
+```
+
+The outer V3 workflow then treated every non-`complete` analysis status as an
+immediate corrupt-evidence hard stop. That stopped the other nine activation
+cases. It contradicts the unchanged activation rule that an ordinary valid
+behavioral miss must be retained, the remaining activation questions must
+still run, and development must then stop.
+
+Durable records:
+
+- failure report:
+  `validation/phase_08_v3b_failure_report.md`;
+- machine-readable audit:
+  `validation/phase_08_v3b_hard_stop_policy_misclassification.json`;
+- audit omission SHA-256:
+  `dbec6d73e23a7b590e99558e43ec57c99c68fbe5f6921301a8fc618407ebf56e`;
+- superseded immutable root:
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3b`;
+- activation internal state SHA-256:
+  `8d50df1cf6eed92a8829758357aacbc61503f816f65086a3f51120e1105c9a48`;
+- raw bag SHA-256:
+  `2d9b2813b2c15623f62fc44907dc391636e4cd53254d2d923ce13d71ac72453c`.
+
+### V3B disposition
+
+V3B is closed failed and is not simulation-ready. Its prepare, qualification,
+activation state, progress, records, one attempt, raw bag, analysis, and nine
+`not_run` IDs are immutable. The first attempt is not
+infrastructure-invalid, is not eligible for replacement, and is not imported
+as a passing V3C record. V3B is never resumed, overwritten, combined with
+V3C, or counted.
+
+### Bounded correction
+
+The analyzer remains unchanged. The record's `analysis_status=partial`,
+failed applicability integrity, failed final record-integrity result, and
+failed direct behavior contract all remain unchanged.
+
+Only immediate dispatch routing changes:
+
+- a `partial` analysis caused solely by a predeclared metric-applicability
+  violation is an ordinary behavioral miss for the activation early-stop
+  decision when all critical inputs, Phase 05 validation, recording,
+  cleanup, collision evidence, raw-bag hashes, and extracted metrics are
+  otherwise valid;
+- it does not make final record integrity or behavior pass;
+- an analysis exception, invalid critical input or metric, recording failure,
+  missing or drifting hash, collision, cleanup contamination, timeout,
+  duplicate ownership, or other original hard-stop condition still stops
+  dispatch immediately.
+
+Focused tests must prove both sides: the retained V3B record is non-hard for
+dispatch but remains final-integrity failed; a true incomplete/corrupt
+analysis still hard-stops.
+
+### Fresh V3C recovery contract
+
+Corrected execution uses the absent fresh root:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3c
+```
+
+The existing `v3-adopt-precommit` public action is generalized internally by
+recovery kind. For V3C it must:
+
+1. require a clean committed corrected checkout, the exact operator, an
+   absent fresh root, and an empty ROS/Gazebo process set;
+2. verify V3B prepare, qualification, activation state, progress, records,
+   attempt record, scenario summary, metadata, resolved scenario, scenario
+   result, analysis summary/completeness, and raw-bag hashes against the new
+   machine audit;
+3. prove the exact V3B failure shape: completed infrastructure, good
+   recording/cleanup/collision evidence, one record, nine `not_run`, a failed
+   direct behavior contract, and the sole applicability-driven partial
+   analysis;
+4. recursively re-run the existing V3A contamination proof and require it to
+   equal the recovery bound inside V3B prepare;
+5. prove against corrected source that the retained V3B record no longer
+   triggers an immediate hard stop while its final record-integrity check
+   remains failed;
+6. leave every V3A and V3B byte unchanged;
+7. adopt the exact tracked suite and commitment bytes without regeneration;
+8. bind the V3A-to-V3B-to-V3C recovery chain, current repository snapshot,
+   fixed suite/commitment hashes, disk forecast, root, and operator into the
+   fresh prepare transaction and state;
+9. reject any source, operator, root, precommit, nested-recovery, audit, or
+   retained-artifact drift.
+
+V3C then reruns the complete qualification gate. Qualification must re-prove
+both recovery generations, the full functional/build/runtime gate, all ten
+installed GUI/contact/probe-off activation commands, and the unchanged
+precommit. Activation repeats that proof immediately before dispatch.
+
+V3C reruns all ten activation cases from the beginning with
+`gazebo_gui=true`. It does not run only the nine V3B `not_run` cases, reuse
+the V3B attempt, change a case, or regenerate the population. This is a
+one-time validation-harness restart, not a behavioral retry budget.
+
+If V3C has an ordinary valid behavioral miss, it finishes all ten and closes
+before development. If it has collision, corrupt evidence, cleanup
+contamination, hash drift, or another original hard stop, it stops
+immediately. M4 remains prohibited unless V3C passes `10/10` activation
+contracts and every integrity check.
+
+### Amended milestone sequence
+
+#### M3C — retain V3B and validate the hard-stop routing correction
+
+- preserve and hash all V3B evidence;
+- add the failure report and machine-readable routing audit;
+- implement the pure-applicability behavioral-miss routing rule;
+- generalize adoption/qualification/activation recovery by lineage kind;
+- add V3B preservation, nested-recovery, fresh-root, exact-precommit,
+  invocation-drift, policy, integrity, and true-corruption tests;
+- run focused/full functional, lint, syntax, context, document, build, and
+  installed dry-run qualification;
+- checkpoint and commit before empirical redispatch.
+
+Exit: V3B is durably closed; corrected source and the chained recovery
+workflow pass; the worktree is clean at an independently reviewable commit.
+
+#### M3D — adopt, qualify, and execute fresh V3C activation
+
+- create V3C through `v3-adopt-precommit`;
+- run `v3-qualify` in V3C and checkpoint its exact state;
+- execute all ten serial GUI-visible activation cases;
+- retain and analyze each attempt once;
+- apply only the unchanged pre-readiness infrastructure replacement policy.
+
+Exit: `10/10` V3C contracts and all integrity checks pass, or Phase 08.3
+closes failed before development.
+
+This amendment is the required Plan review for the post-outcome
+validation-workflow correction. It does not authorize an algorithm,
+parameter, analyzer-output, scenario, population, threshold, denominator, or
+acceptance-gate change.

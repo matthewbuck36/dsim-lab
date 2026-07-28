@@ -1679,3 +1679,148 @@ Retained paths:
   finish the ten activation cases, retain the complete diagnosis, and close
   V3B before development.
 - M4 remains prohibited unless V3B activation passes `10/10`.
+
+## Phase 08.3 M3B V3B retained activation result
+
+Actual Gazebo activation began from clean evidence-only commit `23c2b9b`
+against the qualified runtime-input snapshot at
+`e9e1d500116fe884d06574d316143da94e25d920`:
+
+```text
+timeout 10800s ros2 run ros_esc validate_robustness v3-activation \
+  --operator phase08_v3 \
+  --evidence-root /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3b
+```
+
+This was a real GUI-visible simulation, not a dry run or headless substitute.
+The first case launched `gzserver` and `gzclient` with `gazebo_gui=True`,
+seed `9301`, passive contacts enabled, and
+`simulation_contact_probe_enabled=False`.
+
+The workflow retained exactly one case:
+
+- case `v3a_goal_aggregate_direct`, seed `9301`;
+- run ID
+  `20260728T064829892284Z_simulation_phase08_v3_activation-v3a_goal_aggregate_direct-robust_gaussian_v1-acd554565b_1b6fb3f5`;
+- run directory under
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3b/activation/attempts/001_v3a_goal_aggregate_direct/attempt_01`;
+- raw bag SHA-256
+  `2d9b2813b2c15623f62fc44907dc391636e4cd53254d2d923ce13d71ac72453c`.
+
+Infrastructure and evidence observations:
+
+- recorder exit `0`, no outer timeout, and recording completeness passed;
+- sqlite3 bag readability, required topics/types/counts, fresh Phase 05
+  validation, timestamps, causality, strict JSON, and clean shutdown passed;
+- cleanup passed with no remaining descendants;
+- all final-command representations were zero and final readiness was false;
+- collision evidence was valid and reported zero non-ground collision;
+- no timeout or failsafe occurred;
+- no analysis exception, analysis failure, recording failure, invalid metric,
+  missing critical input, or raw-bag drift occurred;
+- the post-activation functional gate passed
+  `390 passed, 2 skipped in 58.92 s`;
+- no ROS or Gazebo process remained after the workflow exited.
+
+The controller and aggregate-field ground truth both passed. The terminal
+state was `GOAL_HOLD`, convergence time was approximately `234.225 s`, and
+the final aggregate-target distance was `0.03908346942306904 m`.
+
+The predeclared direct-path behavior contract nevertheless failed. It
+required:
+
+```text
+SEARCH -> VERIFY_EXTREMUM -> GOAL_HOLD
+```
+
+and forbade fill, escape, and recenter. The observed path was:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> RECENTER
+-> SEARCH
+-> VERIFY_EXTREMUM
+-> GOAL_HOLD
+```
+
+`FILL_CREATED`, `ESCAPE_STARTED`, `RECENTER_STARTED`, and
+`RECENTER_COMPLETE` were observed. This remains an ordinary valid behavioral
+miss even though the robustness path eventually recovered to the goal.
+
+### Premature hard-stop diagnosis
+
+The case predeclared escape metrics as not applicable. The analyzer correctly
+retained the unexpected escape as:
+
+```text
+analysis_status = partial
+applicability_integrity.passed = false
+reason = "escape occurred in a case declared not applicable"
+```
+
+The outer workflow incorrectly treated that pure behavioral applicability
+miss as corrupt evidence, hard-stopped, and left the other nine activation
+IDs `not_run`. This contradicts the Plan rule to finish all ten activation
+questions after an ordinary behavioral miss and then stop before development.
+
+V3B is therefore closed failed and immutable. It is not resumed or
+reclassified. The correction changes only immediate hard-stop routing; the
+retained partial analysis, failed applicability integrity, failed direct
+behavior contract, and final failed V3B verdict remain unchanged.
+
+Durable records:
+
+- failure report:
+  `docs/codex/gesc_gaussian/validation/phase_08_v3b_failure_report.md`;
+- machine-readable audit:
+  `docs/codex/gesc_gaussian/validation/phase_08_v3b_hard_stop_policy_misclassification.json`;
+- audit omission SHA-256
+  `dbec6d73e23a7b590e99558e43ec57c99c68fbe5f6921301a8fc618407ebf56e`;
+- activation internal state SHA-256
+  `8d50df1cf6eed92a8829758357aacbc61503f816f65086a3f51120e1105c9a48`
+  and retained state-file SHA-256
+  `e915d249e855d8b17c214bdd72efb378caa66636f9838c660ca327cd0c14a80e`;
+- progress internal SHA-256
+  `49194f254dd6939216d3889623390f333df11eb4fc00d3e26044c0463346e113`
+  and retained file SHA-256
+  `265d69ae8c4c806fadb5658cb41e88c04832738fc97b44817aa9d62e3e772e45`;
+- records and attempt-records file SHA-256
+  `4d1edcddec10dbf5b529b0b46d4f1d8189ade380432838f1023cfa1e3c5544ec`;
+- attempt-record SHA-256
+  `d1cc6b4b2f73d5ad70031d3b74d7ac4b535894bdf5425100d3f72175d2593ad5`;
+- analysis-summary SHA-256
+  `fa6f06a7a3cd1e80d8405616c6955644e944097ad5f2fceb23579d467540cbd6`;
+- analysis-completeness SHA-256
+  `c3fc7196032469cb5d3d7966d15ed79706290e5ad506739d9c5ccdf5d300e43c`.
+
+## Current milestone
+
+- Closed lineage: **M3 V3A — FAILED / INSTRUMENTATION-CONTAMINATED / NOT
+  SIMULATION-READY**.
+- Closed lineage: **M3B V3B — FAILED / VALID DIRECT-PATH BEHAVIORAL MISS /
+  PREMATURE HARD-STOP ROUTING / NOT SIMULATION-READY**.
+- Current milestone: **M3C — preserve V3B and implement/test the bounded
+  behavioral-miss routing correction plus chained V3C recovery**.
+- Amended Plan: the append-only `M3C amendment` in
+  `docs/codex/gesc_gaussian/plans/phase_08_3_plan.md`.
+- Fresh corrected evidence root:
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3c`; confirmed absent.
+- The exact suite, commitment, cases, seeds, profile, contracts, thresholds,
+  denominators, collision gate, and final integrity verdict remain unchanged.
+- Next criterion: test/checkpoint/commit M3C; adopt the exact precommit into
+  V3C; rerun complete qualification; then execute all ten GUI-visible cases
+  from the beginning.
+
+## Stop conditions
+
+- Never resume, overwrite, relabel, combine, or count the V3B root.
+- Never change the analyzer output or call the V3B direct case a pass.
+- V3C adoption must re-prove both V3B and its nested V3A recovery, bind a
+  fresh corrected runtime snapshot, and reject any retained-artifact drift.
+- A pure applicability-driven behavioral miss may continue dispatch only when
+  all other evidence is valid; every genuine evidence, collision, cleanup,
+  ownership, timeout, or hash failure remains an immediate stop.
+- M4 remains prohibited unless V3C activation passes `10/10`.
