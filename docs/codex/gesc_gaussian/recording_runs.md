@@ -95,6 +95,16 @@ block; the physical path deliberately has no such block, and manifest/runtime
 validation rejects a physical operational block rather than relying on that
 file convention.
 
+`record_run` owns a deferred signal-safe shutdown. It disables rclpy's
+automatic signal handlers, converts `SIGINT`/`SIGTERM` into a loop-visible
+request, and keeps the ROS context valid while it publishes readiness false
+and stop true, observes the final-zero representations, stops the target and
+bag, and closes the executor. The spin thread is joined before the coordinator
+node and context are destroyed. If an individual cleanup step raises, the
+remaining cleanup and finalization steps still run; the retained primary and
+cleanup errors make completeness fail instead of leaving a misleading
+`run did not finalize` sentinel.
+
 ## Run deterministic Gazebo scenario suites
 
 Phase 06 adds a simulation-only orchestration layer over the same

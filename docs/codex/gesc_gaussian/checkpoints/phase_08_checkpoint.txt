@@ -1,66 +1,59 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-28T17:21:37+00:00
-Base HEAD: db7db1cd5091053cefda3a1c8ee57d1357e9e538
+Generated: 2026-07-28T17:33:10+00:00
+Base HEAD: 70d9cdcb53e05daab3fd84eec06d08cf0c861074
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 85ec80aa8d16ac1d237e56e328297e8c8db8873176de021c482400d9bf11ddd7
+Status sha256: 0a241c7b3029edc5ac7062b0efca7199fb87fdf7abdc45406710e14836d57d15
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_4_plan.md
 Active subphase plan sha256: 63369edbbfa2c8fb987822f5f05d0dea7487443f27e4963e5b61e24ccc644f69
-Unstaged diff sha256: 5e1c350bf3ef7cfb0a8dd8d14385083af89ac05796912f754d15b6ab73d0482c
+Unstaged diff sha256: df31d4bae0e17f4aaf1f029a66a874d491fbf809f184da57ae5a811dd7a83027
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 27]
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/checkpoint_phase.sh
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/make_codex_context_bundle.sh
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 28]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
+ M docs/codex/gesc_gaussian/recording_runs.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
-?? docs/codex/gesc_gaussian/plans/phase_08_4_plan.md
+ M docs/codex/gesc_gaussian/test_commands.md
+ M ros2_ws/src/ros_esc/ros_esc/experiment_recording/record_run.py
+ M ros2_ws/src/ros_esc/test/test_experiment_recording.py
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../tools/checkpoint_phase.sh                      | 10 ++-
- .../tools/make_codex_context_bundle.sh             | 17 +++-
- .../checkpoints/phase_08_checkpoint.txt            | 53 +++----------
- docs/codex/gesc_gaussian/status/phase_08_status.md | 92 ++++++++++++++++++++++
- 4 files changed, 126 insertions(+), 46 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  57 +-----
+ docs/codex/gesc_gaussian/recording_runs.md         |  10 +
+ docs/codex/gesc_gaussian/status/phase_08_status.md |  69 +++++++
+ docs/codex/gesc_gaussian/test_commands.md          |  68 +++++++
+ .../ros_esc/experiment_recording/record_run.py     | 225 ++++++++++++++++++---
+ .../src/ros_esc/test/test_experiment_recording.py  | 182 ++++++++++++++++-
+ 6 files changed, 532 insertions(+), 79 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**M1 — repair recorder shutdown.**
-
-The M1 correction remains inside the sole existing `record_run` owner:
-
-1. initialize rclpy with `SignalHandlerOptions.NO`;
-2. use `DeferredSignalShutdown`;
-3. publish readiness false and stop true while the context is valid;
-4. observe final zero and stop the target and bag;
-5. stop the executor and join its thread before node/context teardown;
-6. complete every cleanup/finalization step after an individual exception
-   while retaining the primary failure.
+**M2 — implement and precommit the fresh V4 workflow.**
 
 ### Next criterion
 
-Focused recorder lifecycle/order/error tests, an installed real-ROS no-Gazebo
-SIGINT smoke, the retained functional gate, build/static checks, status,
-checkpoint, and a clean bounded commit must pass before V4 workflow
-implementation or any V4 Gazebo simulation.
+Parameterize the existing Phase 08 workflow owner for V4 without duplicating
+it, add new activation/development/candidate inputs, bind the unchanged unused
+70+10 formal population with a zero-prior-execution proof, add V4 CLI and
+stage/hash tests, then pass source/build/installed dry qualification at a
+clean commit before creating the V4 evidence root.
 
-### Stop conditions
+### M2 stop conditions
 
-- Stop for any Level A ownership, compatibility, cost-sign/unit, physical,
-  dependency, or overlapping-user-change conflict.
-- Document and test bounded recorder/runner/workflow corrections as Level B.
-- Close V4 honestly on any valid Level C activation, development, holdout,
-  validation, or reproducibility failure.
-- Never weaken a gate or replace a valid behavioral failure.
+- Do not change algorithm behavior or formal acceptance thresholds silently.
+- Do not modify the adopted 70+10 population bytes.
+- Do not create or run a V4 Gazebo root before M2/M3 qualification.
+- Stop for a required duplicate owner, physical fork, or unresolved
+  historical-execution collision.
 
 
 This file describes the base HEAD and diff before the next commit; it is

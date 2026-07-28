@@ -26,6 +26,8 @@ import rclpy
 from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
 from rclpy.parameter import Parameter, parameter_value_to_python
+from rclpy.signals import SignalHandlerOptions
+from ros_esc.deferred_signal_shutdown import DeferredSignalShutdown
 from ros_esc_interfaces.msg import (
     AlgorithmState,
     ControlDiagnostics,
@@ -1531,6 +1533,142 @@ def _stop_process(
     return process.returncode, clean
 
 
+def _cleanup_call(errors, label, callback, default=None):
+    """Run one cleanup step, retaining its error without aborting teardown."""
+    try:
+        return callback()
+    except Exception as exc:  # Cleanup must continue after a local failure.
+        errors.append(f'{label}: {type(exc).__name__}: {exc}')
+        return default
+
+
+def _shutdown_recording_resources(
+    *,
+    node,
+    executor,
+    spin_thread,
+    target_process,
+    bag_process,
+    shutdown_zero_timeout_sec,
+    post_zero_record_sec,
+    target_exit_timeout_sec,
+):
+    """Stop recording resources in signal-safe dependency order."""
+    errors = []
+    shutdown_started = time.monotonic()
+    zero_complete = False
+    if node is not None:
+        _cleanup_call(
+            errors,
+            'publish readiness false and stop true',
+            node.request_stop,
+        )
+        deadline = (
+            shutdown_started + max(0.0, shutdown_zero_timeout_sec)
+        )
+        while time.monotonic() <= deadline:
+            observed = _cleanup_call(
+                errors,
+                'observe final zero',
+                lambda: node.final_zero_after(shutdown_started),
+                default=False,
+            )
+            if errors and errors[-1].startswith('observe final zero:'):
+                break
+            if observed:
+                zero_complete = True
+                break
+            time.sleep(0.05)
+        if zero_complete:
+            _cleanup_call(
+                errors,
+                'retain post-zero recording window',
+                lambda: time.sleep(max(0.0, post_zero_record_sec)),
+            )
+
+    target_code, target_clean = _cleanup_call(
+        errors,
+        'stop target process',
+        lambda: _stop_process(
+            target_process,
+            target_exit_timeout_sec,
+            stop_named_descendants=('gazebo', 'gzserver', 'gzclient'),
+            signal_descendant_leaves=True,
+        ),
+        default=(None, False),
+    )
+    bag_code, bag_clean = _cleanup_call(
+        errors,
+        'stop rosbag process',
+        lambda: _stop_process(bag_process, 15.0),
+        default=(None, False),
+    )
+
+    if executor is not None and node is not None:
+        _cleanup_call(
+            errors,
+            'remove coordinator from executor',
+            lambda: executor.remove_node(node),
+        )
+    if executor is not None:
+        shutdown_result = _cleanup_call(
+            errors,
+            'stop coordinator executor',
+            lambda: executor.shutdown(timeout_sec=2.0),
+            default=False,
+        )
+        if shutdown_result is False and not any(
+            item.startswith('stop coordinator executor:')
+            for item in errors
+        ):
+            errors.append(
+                'stop coordinator executor: executor did not stop in 2.0 s'
+            )
+    if spin_thread is not None:
+        _cleanup_call(
+            errors,
+            'join coordinator spin thread',
+            lambda: spin_thread.join(timeout=2.0),
+        )
+        is_alive = _cleanup_call(
+            errors,
+            'inspect coordinator spin thread',
+            spin_thread.is_alive,
+            default=True,
+        )
+        if is_alive:
+            errors.append(
+                'join coordinator spin thread: thread remained alive'
+            )
+    if node is not None:
+        _cleanup_call(
+            errors,
+            'destroy recording coordinator',
+            node.destroy_node,
+        )
+    context_ok = _cleanup_call(
+        errors,
+        'inspect rclpy context',
+        rclpy.ok,
+        default=False,
+    )
+    if context_ok:
+        _cleanup_call(
+            errors,
+            'shutdown rclpy context',
+            rclpy.try_shutdown,
+        )
+    return {
+        'shutdown_started': shutdown_started,
+        'zero_complete': zero_complete,
+        'target_code': target_code,
+        'target_clean': target_clean,
+        'bag_code': bag_code,
+        'bag_clean': bag_clean,
+        'errors': errors,
+    }
+
+
 def _graph_snapshot(node, entries):
     graph_types = dict(node.get_topic_names_and_types())
     publishers = {}
@@ -1872,10 +2010,18 @@ def run(arguments):
     zero_complete = False
     target_clean = False
     bag_clean = False
+    target_code = None
+    bag_code = None
+    cleanup_errors = []
     resolved = {}
     current_stage = 'initialization'
+    shutdown = DeferredSignalShutdown()
+    shutdown.__enter__()
     try:
-        rclpy.init(args=[])
+        rclpy.init(
+            args=[],
+            signal_handler_options=SignalHandlerOptions.NO,
+        )
         node = RecordingCoordinator(
             arguments.recording_ready_topic,
             arguments.stop_topic,
@@ -1923,6 +2069,8 @@ def run(arguments):
         last_errors = ["preflight has not run"]
         operational_epoch_started = False
         while time.monotonic() <= deadline:
+            if shutdown.requested:
+                raise KeyboardInterrupt
             if bag_process.poll() is not None:
                 raise RuntimeError(f"rosbag exited during preflight: {bag_process.returncode}")
             if target_process.poll() is not None:
@@ -2041,6 +2189,8 @@ def run(arguments):
         final_errors = ['post-capture readiness has not run']
         authorization_passed = False
         while time.monotonic() <= deadline:
+            if shutdown.requested:
+                raise KeyboardInterrupt
             if bag_process.poll() is not None:
                 raise RuntimeError(
                     'rosbag exited during post-capture readiness: '
@@ -2115,6 +2265,8 @@ def run(arguments):
                 'post-capture operational readiness failed: '
                 + '; '.join(final_errors)
             )
+        if shutdown.requested:
+            raise KeyboardInterrupt
 
         current_stage = 'recording'
         metadata['recording']['preflight_passed'] = True
@@ -2136,6 +2288,8 @@ def run(arguments):
 
         ready_started = time.monotonic()
         while True:
+            if shutdown.requested:
+                raise KeyboardInterrupt
             if target_process.poll() is not None:
                 raise RuntimeError(f"target exited before requested shutdown: {target_process.returncode}")
             if bag_process.poll() is not None:
@@ -2156,34 +2310,48 @@ def run(arguments):
         metadata['recording']['failure_stage'] = current_stage
         console.log("record_run", run_failure)
     finally:
-        shutdown_started = time.monotonic()
-        console.log("record_run", "shutdown initiated; readiness false and stop requested")
-        if node is not None:
-            node.request_stop()
-            deadline = shutdown_started + max(0.0, arguments.shutdown_zero_timeout_sec)
-            while time.monotonic() <= deadline:
-                if node.final_zero_after(shutdown_started):
-                    zero_complete = True
-                    break
-                time.sleep(0.05)
-            if zero_complete:
-                time.sleep(max(0.0, arguments.post_zero_record_sec))
-        target_code, target_clean = _stop_process(
-            target_process,
-            arguments.target_exit_timeout_sec,
-            stop_named_descendants=("gazebo", "gzserver", "gzclient"),
-            signal_descendant_leaves=True,
+        try:
+            console.log(
+                'record_run',
+                'shutdown initiated; readiness false and stop requested',
+            )
+            cleanup = _shutdown_recording_resources(
+                node=node,
+                executor=executor,
+                spin_thread=spin_thread,
+                target_process=target_process,
+                bag_process=bag_process,
+                shutdown_zero_timeout_sec=(
+                    arguments.shutdown_zero_timeout_sec
+                ),
+                post_zero_record_sec=arguments.post_zero_record_sec,
+                target_exit_timeout_sec=arguments.target_exit_timeout_sec,
+            )
+            zero_complete = cleanup['zero_complete']
+            target_code = cleanup['target_code']
+            target_clean = cleanup['target_clean']
+            bag_code = cleanup['bag_code']
+            bag_clean = cleanup['bag_clean']
+            cleanup_errors.extend(cleanup['errors'])
+            for error in cleanup_errors:
+                console.log('record_run', f'cleanup error: {error}')
+            try:
+                console.close()
+            except Exception as exc:
+                cleanup_errors.append(
+                    f'close console: {type(exc).__name__}: {exc}'
+                )
+        finally:
+            shutdown.__exit__(None, None, None)
+
+    if cleanup_errors:
+        cleanup_failure = 'cleanup failure: ' + '; '.join(cleanup_errors)
+        run_failure = (
+            f'{run_failure}; {cleanup_failure}'
+            if run_failure is not None else cleanup_failure
         )
-        bag_code, bag_clean = _stop_process(bag_process, 15.0)
-        if executor is not None and node is not None:
-            executor.remove_node(node)
-            executor.shutdown()
-            node.destroy_node()
-        if rclpy.ok():
-            rclpy.try_shutdown()
-        if spin_thread is not None:
-            spin_thread.join(timeout=2.0)
-        console.close()
+        if metadata['recording'].get('failure_stage') is None:
+            metadata['recording']['failure_stage'] = 'shutdown'
 
     readiness_ever_true = bool(
         metadata['recording'].get('readiness_ever_true')
@@ -2223,6 +2391,7 @@ def run(arguments):
             pre_ready_lifecycle_violations
         ),
         "run_error": run_failure,
+        'cleanup_errors': cleanup_errors,
         "complete": bag_clean and target_clean and zero_complete and run_failure is None,
     })
     atomic_yaml(run_directory / "metadata.yaml", metadata)

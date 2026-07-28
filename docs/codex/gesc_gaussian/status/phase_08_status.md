@@ -2510,3 +2510,72 @@ implementation or any V4 Gazebo simulation.
 - Close V4 honestly on any valid Level C activation, development, holdout,
   validation, or reproducibility failure.
 - Never weaken a gate or replace a valid behavioral failure.
+
+## Phase 08.4 M1 recorder correction completion
+
+Verified at `2026-07-28T10:30:20-07:00` from committed V4-opening boundary
+`70d9cdc`.
+
+The sole existing recorder now:
+
+- initializes rclpy with `SignalHandlerOptions.NO`;
+- installs the shared `DeferredSignalShutdown`;
+- observes signal requests only at bounded orchestration boundaries;
+- publishes readiness false and stop true before context teardown;
+- retains the final-zero observation window before stopping the target/bag;
+- removes and stops the executor, joins its spin thread, destroys the
+  coordinator, and only then shuts down rclpy;
+- continues every later cleanup step after an individual exception;
+- stores cleanup errors in metadata and fails completeness honestly.
+
+This directly corrects the V3D
+`RCLError: Failed to publish: publisher's context is invalid` root cause
+without modifying controller, supervisor, Gaussian-fill, cost, filter,
+scenario, analyzer, topic, message, launch, or physical behavior.
+
+Source/test SHA-256 values:
+
+```text
+record_run.py
+  c46daa9e4b2193bb53777ddbc74b48b03f814b08026926cf46562f95749f9e8a
+test_experiment_recording.py
+  770a1457c475e0ad3bd0f2ccaf1a3ccf17ca93c0fe9b4e0de7c44ee1a5185520
+```
+
+Validation:
+
+- focused recording subset: `60 passed, 1 skipped in 1.22 s`;
+- complete retained functional gate:
+  `477 passed, 2 skipped in 63.56 s`;
+- standard build: three packages passed in `1 min 1 s`;
+- installed real-ROS, no-Gazebo, process-level SIGINT smoke: passed with
+  normal local DDS and no invalid-context error;
+- fatal `flake8` (`E9/F63/F7/F82`), `py_compile`, and
+  `git diff --check`: passed;
+- focused historical-file `ament_flake8` baseline remains `625` style
+  findings and production `pydocstyle` remains `17` inherited findings;
+  neither is represented as a passing gate.
+
+The two functional skips remain the explicit headless- and visible-Gazebo
+opt-in tests. No Gazebo, V4 evidence root, readiness tag, Phase 09, or hardware
+action ran during M1.
+
+## Current milestone
+
+**M2 — implement and precommit the fresh V4 workflow.**
+
+### Next criterion
+
+Parameterize the existing Phase 08 workflow owner for V4 without duplicating
+it, add new activation/development/candidate inputs, bind the unchanged unused
+70+10 formal population with a zero-prior-execution proof, add V4 CLI and
+stage/hash tests, then pass source/build/installed dry qualification at a
+clean commit before creating the V4 evidence root.
+
+### M2 stop conditions
+
+- Do not change algorithm behavior or formal acceptance thresholds silently.
+- Do not modify the adopted 70+10 population bytes.
+- Do not create or run a V4 Gazebo root before M2/M3 qualification.
+- Stop for a required duplicate owner, physical fork, or unresolved
+  historical-execution collision.

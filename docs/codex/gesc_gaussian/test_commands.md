@@ -3042,3 +3042,71 @@ timeout --signal=INT --kill-after=30s 1800s \
 It returned `1`, matching the terminal failed result, and wrote the v3 gate
 JSON, run manifest, validation report, failure report, and external terminal
 state. Do not rerun any V3D command.
+
+## Phase 08.4 M1 recorder signal-safe shutdown
+
+Verified on 2026-07-28 from the fresh V4 implementation boundary.
+
+Changed owner:
+
+```text
+ros2_ws/src/ros_esc/ros_esc/experiment_recording/record_run.py
+```
+
+The recorder now uses `SignalHandlerOptions.NO` plus the shared
+`DeferredSignalShutdown`, retains the ROS context through readiness-false,
+stop-true, final-zero, target/bag stop, executor shutdown, and thread join,
+then destroys the node/context. Cleanup is exception-resilient and records
+every local failure without skipping later owners.
+
+Focused recording tests:
+
+```text
+test_experiment_recording.py + test_recording_integration.py
+60 passed, 1 skipped in 1.22 s
+```
+
+The skip is the explicit visible-Gazebo opt-in test.
+
+Complete source-first retained functional gate:
+
+```text
+477 passed, 2 skipped in 63.56 s
+```
+
+The two skips are the explicit headless- and visible-Gazebo opt-in
+integrations.
+
+Standard build:
+
+```text
+ros_esc_interfaces, turtlebot3_rotating_sensor, ros_esc
+PASS: 3 packages in 1 min 1 s
+```
+
+Installed real-ROS process-level smoke:
+
+```text
+SignalHandlerOptions.NO
+DeferredSignalShutdown receives scoped SIGINT
+RecordingCoordinator publishes shutdown requests
+executor stops and spin thread joins before node/context teardown
+installed recorder SIGINT smoke: PASS
+```
+
+No Gazebo or hardware ran in M1.
+
+Static checks:
+
+```text
+fatal flake8 E9/F63/F7/F82: pass
+py_compile: pass
+git diff --check: pass
+```
+
+The repository-wide style wrapper is not claimed green for these historical
+files: focused `ament_flake8` reports the inherited 625 file-level quote,
+line-length, docstring, and ordering findings, and `pydocstyle` reports 17
+existing recorder findings. The new helpers have docstrings and the changed
+runtime path has no fatal lint finding; the inherited baseline remains
+separate from functional acceptance.

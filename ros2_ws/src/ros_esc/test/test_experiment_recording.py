@@ -18,6 +18,7 @@ from ros_esc.experiment_recording.record_run import (
     _capture_parameters,
     _full_node_name,
     _insert_parameter,
+    _shutdown_recording_resources,
     _stop_process,
     applicable_topics,
     atomic_json,
@@ -31,8 +32,8 @@ from ros_esc.experiment_recording.record_run import (
     operational_heartbeat_errors,
     operational_message_error,
     preauthorization_lifecycle_errors,
-    PreflightDeadlineExceeded,
     preflight_errors,
+    PreflightDeadlineExceeded,
     RecordingCoordinator,
     require_operational_topics,
     resolve_operational_heartbeat_aliases,
@@ -795,6 +796,171 @@ def test_coordinated_shutdown_signals_only_descendant_leaves(monkeypatch):
     assert sleeps == [0.1]
 
 
+def test_recording_shutdown_keeps_context_until_executor_thread_stops(
+    monkeypatch,
+):
+    """Publish shutdown evidence before ordered ROS context teardown."""
+    trace = []
+
+    class FakeNode:
+        def request_stop(self):
+            trace.append('request_stop')
+
+        def final_zero_after(self, _started):
+            trace.append('final_zero')
+            return True
+
+        def destroy_node(self):
+            trace.append('destroy_node')
+
+    class FakeExecutor:
+        def remove_node(self, _node):
+            trace.append('remove_node')
+
+        def shutdown(self, timeout_sec=None):
+            trace.append(f'executor_shutdown:{timeout_sec}')
+            return True
+
+    class FakeThread:
+        def join(self, timeout=None):
+            trace.append(f'thread_join:{timeout}')
+
+        def is_alive(self):
+            trace.append('thread_is_alive')
+            return False
+
+    target = SimpleNamespace(label='target')
+    bag = SimpleNamespace(label='bag')
+
+    def stop_process(process, *_args, **_kwargs):
+        trace.append(f'stop_{process.label}')
+        return 0, True
+
+    monkeypatch.setattr(recorder, '_stop_process', stop_process)
+    monkeypatch.setattr(
+        recorder.rclpy,
+        'ok',
+        lambda: trace.append('context_ok') or True,
+    )
+    monkeypatch.setattr(
+        recorder.rclpy,
+        'try_shutdown',
+        lambda: trace.append('context_shutdown'),
+    )
+
+    result = _shutdown_recording_resources(
+        node=FakeNode(),
+        executor=FakeExecutor(),
+        spin_thread=FakeThread(),
+        target_process=target,
+        bag_process=bag,
+        shutdown_zero_timeout_sec=1.0,
+        post_zero_record_sec=0.0,
+        target_exit_timeout_sec=1.0,
+    )
+
+    assert result['errors'] == []
+    assert result['zero_complete'] is True
+    assert result['target_clean'] is True
+    assert result['bag_clean'] is True
+    assert trace == [
+        'request_stop',
+        'final_zero',
+        'stop_target',
+        'stop_bag',
+        'remove_node',
+        'executor_shutdown:2.0',
+        'thread_join:2.0',
+        'thread_is_alive',
+        'destroy_node',
+        'context_ok',
+        'context_shutdown',
+    ]
+
+
+def test_recording_shutdown_continues_after_individual_cleanup_errors(
+    monkeypatch,
+):
+    """Retain failures while still stopping every later resource owner."""
+    trace = []
+
+    class FakeNode:
+        def request_stop(self):
+            trace.append('request_stop')
+            raise RuntimeError('publish failed')
+
+        def final_zero_after(self, _started):
+            trace.append('final_zero')
+            return True
+
+        def destroy_node(self):
+            trace.append('destroy_node')
+
+    class FakeExecutor:
+        def remove_node(self, _node):
+            trace.append('remove_node')
+
+        def shutdown(self, timeout_sec=None):
+            trace.append(f'executor_shutdown:{timeout_sec}')
+            raise RuntimeError('executor failed')
+
+    class FakeThread:
+        def join(self, timeout=None):
+            trace.append(f'thread_join:{timeout}')
+
+        def is_alive(self):
+            trace.append('thread_is_alive')
+            return False
+
+    target = SimpleNamespace(label='target')
+    bag = SimpleNamespace(label='bag')
+
+    def stop_process(process, *_args, **_kwargs):
+        trace.append(f'stop_{process.label}')
+        if process is target:
+            raise RuntimeError('target failed')
+        return 0, True
+
+    monkeypatch.setattr(recorder, '_stop_process', stop_process)
+    monkeypatch.setattr(
+        recorder.rclpy,
+        'ok',
+        lambda: trace.append('context_ok') or True,
+    )
+    monkeypatch.setattr(
+        recorder.rclpy,
+        'try_shutdown',
+        lambda: trace.append('context_shutdown'),
+    )
+
+    result = _shutdown_recording_resources(
+        node=FakeNode(),
+        executor=FakeExecutor(),
+        spin_thread=FakeThread(),
+        target_process=target,
+        bag_process=bag,
+        shutdown_zero_timeout_sec=1.0,
+        post_zero_record_sec=0.0,
+        target_exit_timeout_sec=1.0,
+    )
+
+    assert result['zero_complete'] is True
+    assert result['target_clean'] is False
+    assert result['bag_clean'] is True
+    assert result['errors'] == [
+        'publish readiness false and stop true: '
+        'RuntimeError: publish failed',
+        'stop target process: RuntimeError: target failed',
+        'stop coordinator executor: RuntimeError: executor failed',
+    ]
+    assert 'stop_bag' in trace
+    assert trace[-3:] == [
+        'destroy_node',
+        'context_ok',
+        'context_shutdown',
+    ]
+
+
 def test_amended_timestamp_tolerance_accepts_measured_boundary_only():
     tolerance = 150_000_000
 
@@ -1525,7 +1691,8 @@ def test_run_rechecks_operational_epoch_after_parameter_capture(
         def remove_node(self, _node):
             return None
 
-        def shutdown(self):
+        def shutdown(self, timeout_sec=None):
+            del timeout_sec
             return None
 
     pose = SimpleNamespace(
@@ -1696,7 +1863,12 @@ def test_run_rechecks_operational_epoch_after_parameter_capture(
         'get_registered_writers',
         lambda: ['sqlite3'],
     )
-    monkeypatch.setattr(recorder.rclpy, 'init', lambda args: None)
+    init_calls = []
+    monkeypatch.setattr(
+        recorder.rclpy,
+        'init',
+        lambda **kwargs: init_calls.append(kwargs),
+    )
     monkeypatch.setattr(recorder.rclpy, 'ok', lambda: True)
     monkeypatch.setattr(recorder.rclpy, 'try_shutdown', lambda: None)
     monkeypatch.setattr(
@@ -1757,6 +1929,10 @@ def test_run_rechecks_operational_epoch_after_parameter_capture(
     )
 
     assert recorder.run(arguments) == 1
+    assert init_calls == [{
+        'args': [],
+        'signal_handler_options': recorder.SignalHandlerOptions.NO,
+    }]
 
     relevant = [
         item for item in trace
