@@ -1,68 +1,45 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-28T06:38:31+00:00
-Base HEAD: d69407bfafdd3e79b96b82b5f02bd0a49c715369
+Generated: 2026-07-28T06:46:23+00:00
+Base HEAD: e9e1d500116fe884d06574d316143da94e25d920
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: dba85e57fb0d2be75633ce018a9e07dbfd22981d1378ab9e772eeefd6344b946
+Status sha256: 23f788d7e559a611aafb41e57e679970b68aae87a549ec8161c819648b8ec048
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_3_plan.md
 Active subphase plan sha256: 229db7e64c347d3bd50b5aee243e788d5a3848d29a6a6e5f51d0383ff11b2252
-Unstaged diff sha256: 720f994fa3775c8b7b52f2689a6535f5248767d23cbc33e642007afebe7edf8f
+Unstaged diff sha256: eb96c052da464b9be2e9e8fe64dfa57efc24dcb115566c1576c1bd41f2640787
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 19]
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/00_MASTER_IMPLEMENTATION_PLAN.md
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 20]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
- M docs/codex/gesc_gaussian/implementation_sequence.md
- M docs/codex/gesc_gaussian/plans/phase_08_3_plan.md
- M docs/codex/gesc_gaussian/recording_runs.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
- M docs/codex/gesc_gaussian/test_commands.md
- M docs/codex/gesc_gaussian/topic_dictionary.md
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py
- M ros2_ws/src/ros_esc/test/test_phase08_validation.py
- M ros2_ws/src/ros_esc/test/test_scenario_runner.py
- M ros2_ws/src/ros_esc/test/test_simulation_disturbances.py
-?? docs/codex/gesc_gaussian/validation/phase_08_v3a_contact_probe_contamination.json
-?? docs/codex/gesc_gaussian/validation/phase_08_v3a_failure_report.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../00_MASTER_IMPLEMENTATION_PLAN.md               |   5 +
- .../checkpoints/phase_08_checkpoint.txt            |  52 +-
- .../codex/gesc_gaussian/implementation_sequence.md |   9 +-
- docs/codex/gesc_gaussian/plans/phase_08_3_plan.md  | 151 +++++
- docs/codex/gesc_gaussian/recording_runs.md         |  40 ++
- docs/codex/gesc_gaussian/status/phase_08_status.md | 178 ++++++
- docs/codex/gesc_gaussian/test_commands.md          |  75 +++
- docs/codex/gesc_gaussian/topic_dictionary.md       |   8 +-
- .../ros_esc/scenario_runner/phase08_validation.py  | 631 ++++++++++++++++++++-
- .../ros_esc/scenario_runner/run_scenario.py        |  24 +-
- .../src/ros_esc/test/test_phase08_validation.py    | 446 +++++++++++++++
- ros2_ws/src/ros_esc/test/test_scenario_runner.py   |  35 +-
- .../ros_esc/test/test_simulation_disturbances.py   |  29 +-
- 13 files changed, 1633 insertions(+), 50 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  55 +----------
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 110 +++++++++++++++++++++
+ 2 files changed, 115 insertions(+), 50 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
 - Closed lineage: **M3 V3A — FAILED / INSTRUMENTATION-CONTAMINATED / NOT
   SIMULATION-READY**.
-- Completed implementation/test boundary: **M3A — bounded contact-control
-  correction and fresh-lineage qualification support**.
-- State: **READY TO CHECKPOINT AND COMMIT M3A**.
-- Fresh V3B root:
-  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3b`; confirmed absent.
-- Next criterion: checkpoint and commit this correction, create V3B with
-  `v3-adopt-precommit`, rerun the complete qualification there, and then
-  execute all ten GUI-visible activation cases from the beginning.
+- Completed corrected boundary: **M3B adoption and pre-activation
+  qualification — PASS**.
+- State: **READY TO CHECKPOINT, COMMIT THE EVIDENCE-ONLY QUALIFICATION
+  RECORD, AND START ALL TEN GUI-VISIBLE V3B ACTIVATION CASES**.
+- No actual V3B Gazebo run has executed yet.
+- Next criterion: serially execute all ten fixed activation cases with
+  `gazebo_gui=true`; pass every declared contract and integrity gate before
+  M4 development is permitted.
+
 
 
 This file describes the base HEAD and diff before the next commit; it is

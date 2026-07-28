@@ -1569,3 +1569,113 @@ Validation evidence:
 - Next criterion: checkpoint and commit this correction, create V3B with
   `v3-adopt-precommit`, rerun the complete qualification there, and then
   execute all ten GUI-visible activation cases from the beginning.
+
+## Phase 08.3 M3B V3B adoption and qualification
+
+The corrected fresh lineage was adopted and fully qualified from clean
+committed HEAD
+`e9e1d500116fe884d06574d316143da94e25d920`. These two commands performed
+evidence adoption, source/build/test/schema/launch qualification, and dry
+inspection only; they did not launch Gazebo or move a simulated robot:
+
+```text
+timeout 1800s ros2 run ros_esc validate_robustness v3-adopt-precommit \
+  --operator phase08_v3 \
+  --evidence-root /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3b \
+  --superseded-evidence-root /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3
+
+timeout 1800s ros2 run ros_esc validate_robustness v3-qualify \
+  --operator phase08_v3 \
+  --evidence-root /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3b
+```
+
+Both commands exited `0`. The adopted prepare state records:
+
+- lineage `phase08-v3b`, operator `phase08_v3`, and `passed=true`;
+- corrected source commit
+  `e9e1d500116fe884d06574d316143da94e25d920`, tree
+  `7681ec09563849acf5a55895472cd90aded29204`, and runtime-input SHA-256
+  `6b76ddfe0ca0751bfbbce7eba4a3fc39b247492e77f7a1e6731721b9f4f5c227`;
+- prepare internal state SHA-256
+  `f48514e2c5f4fc40517ffd690edc6d2ba4f6239b43d06f0cd867b0af5e7d502a`
+  and retained file SHA-256
+  `db2961d542a586aa82d8265be57dc46fc4ccfbb69dc5b4ab091dccd57bb88942`;
+- prepare transaction internal SHA-256
+  `1c758255cfece1da5925c99827417ad27e008cb8789e336bebe940876a2065a4`
+  and retained file SHA-256
+  `921fc049a938423ae83783d64efd46b3d55c7cedd40a537cf09b01c55be558fa`;
+- unchanged acceptance-suite file SHA-256
+  `d733ef9dffb372d2c60b57f83c2b96e1062a0a62818587de59a0166df4efe88e`;
+- unchanged commitment file SHA-256
+  `f142f9044b19c51113bb1363e5114f9a831d095648fe647fe15c5c04088e45a2`
+  and commitment omission SHA-256
+  `cf981d60e235a3b4fd63ae5a61ccddae87e94ea76a3fb2d4ccaad78bcaa29437`;
+- the required V3A contamination-recovery proof, immutable superseded root,
+  and researcher-visible, `selection_blind=false` population.
+
+The complete V3B qualification state records `passed=true`, no reasons, and:
+
+- internal state SHA-256
+  `5f36c29f5a008375da801b68ca1c8c22efbfc876595195a46f0aa80776e937cd`;
+- retained qualification-state file SHA-256
+  `5e3489ee3c60e4e1dc218c480d880e6824d89ffcdba644414852ffd5c1e95fb3`;
+- prepare-state binding
+  `f48514e2c5f4fc40517ffd690edc6d2ba4f6239b43d06f0cd867b0af5e7d502a`;
+- full source-first functional gate:
+  `390 passed, 2 skipped in 55.96 s`; the skips remain exactly the opt-in
+  recorded headless Phase 06 integration and visible Gazebo recording smoke;
+- isolated dependency-closure build: all three packages passed in `11.9 s`;
+  retained build-log SHA-256
+  `2999af9f17deba944d6c74e95864979273179149fb54722c50b5c65a276fcf6f`;
+- supervisor and Gaussian-fill runtime instantiation passed with the expected
+  bounded exit `124` after clean SIGINT;
+- activation/development/candidate counts `10/10/3`;
+- activation installed dry-run SHA-256
+  `f4841836249531d880ea051f4b33025de87624adbc9cfad642fed11aeaf841a2`
+  and development installed dry-run SHA-256
+  `8dfd72ae6ffc05ed7081a2de31988569f2f1ae76f1f9fdd4ca9dc47ebdcbeea2`;
+- activation contact-launch contract passed for all `10/10` direct and
+  `10/10` recorder commands: GUI enabled, passive contact sensors enabled,
+  and the positive-control probe disabled;
+- exact acceptance population passed with `80` distinct normalized case keys,
+  `20/50/70/10` holdout/validation/unique/repeat counts, and the fixed family
+  allocation;
+- recovery validation passed with SHA-256
+  `b880fe9d2dc5724ed016fe5c2d42bb20796330aa7f1124f0ef7d875f0b6922e`;
+- process sets before and after qualification were empty;
+- disk forecast passed with `349847269376` free bytes versus
+  `91268055040` required bytes.
+
+Retained paths:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3b/prepare/prepare_transaction.json
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3b/workflow_state/v3_prepare.json
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3b/workflow_state/v3_qualification.json
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3b/qualification/
+```
+
+## Current milestone
+
+- Closed lineage: **M3 V3A — FAILED / INSTRUMENTATION-CONTAMINATED / NOT
+  SIMULATION-READY**.
+- Completed corrected boundary: **M3B adoption and pre-activation
+  qualification — PASS**.
+- State: **READY TO CHECKPOINT, COMMIT THE EVIDENCE-ONLY QUALIFICATION
+  RECORD, AND START ALL TEN GUI-VISIBLE V3B ACTIVATION CASES**.
+- No actual V3B Gazebo run has executed yet.
+- Next criterion: serially execute all ten fixed activation cases with
+  `gazebo_gui=true`; pass every declared contract and integrity gate before
+  M4 development is permitted.
+
+## Stop conditions
+
+- Rehash the retained installed activation dry run and revalidate the V3A
+  recovery chain immediately before dispatch.
+- A real non-ground collision, cleanup contamination, corrupt evidence,
+  missing final zero, duplicate ownership, or frozen-input/hash drift stops
+  dispatch immediately.
+- An ordinary valid behavioral miss does not receive replacement or tuning:
+  finish the ten activation cases, retain the complete diagnosis, and close
+  V3B before development.
+- M4 remains prohibited unless V3B activation passes `10/10`.
