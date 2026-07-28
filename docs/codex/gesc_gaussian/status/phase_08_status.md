@@ -1,6 +1,6 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-28T01:22:51-07:00`
+Last verified: `2026-07-28T01:27:18-07:00`
 Status: `IN PROGRESS — PHASE 08.3 V3 ACCEPTANCE`
 
 ## Objective
@@ -1953,3 +1953,52 @@ this implementation or verification. The next operation is to checkpoint and
 commit this exact source state, adopt it into the fresh V3C root, rerun
 qualification, and then launch only the nine remaining GUI-visible Gazebo
 diagnostics.
+
+## Phase 08.3 V3C adoption and qualification
+
+The exact M3C source boundary was committed as
+`7cb7b44a33b23f575efe72abcd3a6f733041f0ab`
+(`phase 08.3: complete activation diagnosis without retry`) with a clean
+working tree. V3C adoption then passed and created the fresh cleartext evidence
+root:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3c
+```
+
+Adoption retained the fixed Phase 08 v3 suite and commitment, revalidated the
+immutable V3A/V3B recovery chain, and bound runtime-input SHA-256
+`c460f8ad67dcc5b44509e3f8c3be3e9b7c4eab33353c2724c87ac16ab8be6c83`.
+Its prepare internal state SHA-256 is
+`e8c2a7e3ad18ebe0ed87521108bee1adc4bff5f5309a284c9dfe382e7c9c9d4e`;
+the retained prepare-state file SHA-256 is
+`286d5b81f2714ad80a498778cb233c7203c16b5b235dee1bb3a6d8b6004a8a55`;
+and the retained prepare transaction file SHA-256 is
+`d3bd1971e7e35870bb13de526d1fccd3b434b9b39e841c698950dbecea79e15b`.
+
+V3C qualification passed:
+
+- isolated non-symlink build and installed-entrypoint/resource checks passed;
+- complete functional gate:
+  `433 passed, 2 skipped in 62.76 s`, with only the two explicit opt-in
+  Gazebo tests skipped;
+- activation and development installed dry runs each resolved `10` cases with
+  `0` unsupported;
+- all `10/10` direct and recorder activation launch contracts retained visible
+  Gazebo, simulation contacts, disabled physical contact probe, and enabled
+  zero-probe control;
+- chained recovery SHA-256 remained
+  `f4f347f17f886dcadb002f44f20b9e8eebe14163e462239b5e52a8787bb182f3`;
+- activation invocation contract remained
+  `8e1872d0ea6379ea664d4e37c36f31ed29dd58f8b54818ca2eeb5f5afa411e3b`;
+- qualification internal state SHA-256:
+  `b751fa5f3fc552c8929ff5b5c8c793a9bfa71a224e4dd88d6a5a5ec718111561`;
+- retained qualification-state file SHA-256:
+  `c5779b50dfef76b55bb00ecb17dd844e4c8fd066cac9f10201f85c6713ef23d5`;
+- process sets before and after qualification were empty.
+
+No V3C Gazebo case has run. The qualified next action is the bounded V3C
+activation command, which must carry the immutable V3B slot and launch only
+the exact nine remaining cases with the Gazebo GUI visible. The composite
+activation and Phase 08.3 verdict remain forced failed regardless of those
+nine diagnostic outcomes.

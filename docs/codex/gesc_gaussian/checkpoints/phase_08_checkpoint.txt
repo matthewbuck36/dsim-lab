@@ -1,43 +1,30 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-28T08:23:43+00:00
-Base HEAD: 1e3bd0c4581008c60e647a324f7b468ee9d8e3d6
+Generated: 2026-07-28T08:27:56+00:00
+Base HEAD: 7cb7b44a33b23f575efe72abcd3a6f733041f0ab
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: ae671fd55472b2f9ab164b8b05cd6539dcda18c5bf7bcbe5f627645c51e601e3
+Status sha256: bacdd4e4cffb03149f131d3510c197fecabd280a89541de70f3cbd7e2cb1b1ad
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_3_plan.md
 Active subphase plan sha256: d3cf5014f49269292824246053fb8d2c22177d5a90497486f1a63aba41150910
-Unstaged diff sha256: bff1ec8184ae2803fb7e4bbc6a28313959718060eab91348fcd4faaa2dd698c7
+Unstaged diff sha256: 6c921f96cb3bb7d14701166a026f2495b7c1ed7383bedf33b884b07426600d8b
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 22]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 23]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
- M docs/codex/gesc_gaussian/plans/phase_08_3_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
- M docs/codex/gesc_gaussian/validation/phase_08_v3b_failure_report.md
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py
- M ros2_ws/src/ros_esc/test/test_phase08_validation.py
- M ros2_ws/src/ros_esc/test/test_scenario_runner.py
-?? docs/codex/gesc_gaussian/validation/phase_08_v3b_diagnostic_completion.json
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |   48 +-
- docs/codex/gesc_gaussian/plans/phase_08_3_plan.md  |   97 ++
- docs/codex/gesc_gaussian/status/phase_08_status.md |  131 +-
- .../validation/phase_08_v3b_failure_report.md      |   25 +
- .../ros_esc/scenario_runner/phase08_validation.py  | 1689 ++++++++++++++++++--
- .../ros_esc/scenario_runner/run_scenario.py        |  282 +++-
- .../src/ros_esc/test/test_phase08_validation.py    | 1605 ++++++++++++++++++-
- ros2_ws/src/ros_esc/test/test_scenario_runner.py   |  445 ++++++
- 8 files changed, 4087 insertions(+), 235 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 48 +++-----------------
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 51 +++++++++++++++++++++-
+ 2 files changed, 55 insertions(+), 44 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
