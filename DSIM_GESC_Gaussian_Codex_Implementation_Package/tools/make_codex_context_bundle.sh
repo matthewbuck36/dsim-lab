@@ -5,8 +5,18 @@ ROOT="${1:-$(git rev-parse --show-toplevel)}"
 OUT="${2:-$ROOT/codex_context_bundle.txt}"
 DOCS="$ROOT/docs/codex/gesc_gaussian"
 PHASE08_STATUS="$DOCS/status/phase_08_status.md"
-PHASE08_FREEZE_STATE="$DOCS/validation/phase_08_v3_freeze_state.json"
-PHASE08_CONTRACT="$DOCS/validation/phase_08_v3_acceptance_contract.json"
+PHASE08_FREEZE_STATE="$(
+  find "$DOCS/validation" -maxdepth 1 -type f \
+    -name 'phase_08_v[0-9]*_freeze_state.json' -print 2>/dev/null |
+    sort -V |
+    tail -n 1
+)"
+PHASE08_CONTRACT="$(
+  find "$DOCS/validation" -maxdepth 1 -type f \
+    -name 'phase_08_v[0-9]*_acceptance_contract.json' -print 2>/dev/null |
+    sort -V |
+    tail -n 1
+)"
 ACTIVE_PHASE08_PLAN="$(
   find "$DOCS/plans" -maxdepth 1 -type f \
     -name "phase_08_[0-9]*_plan.md" -print 2>/dev/null |
@@ -20,6 +30,9 @@ print_last_status_section() {
   local maximum_lines="$3"
   awk -v heading="$heading" -v maximum_lines="$maximum_lines" '
     $0 == heading {
+      if (capture) {
+        latest = block
+      }
       block = $0 ORS
       capture = 1
       next

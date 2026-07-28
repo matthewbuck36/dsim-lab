@@ -23,7 +23,12 @@ SUBPHASE_PLAN="$(
     sort -V |
     tail -n 1
 )"
-FREEZE_STATE="$DOCS/validation/phase_${PHASE}_v3_freeze_state.json"
+FREEZE_STATE="$(
+  find "$DOCS/validation" -maxdepth 1 -type f \
+    -name "phase_${PHASE}_v[0-9]*_freeze_state.json" -print 2>/dev/null |
+    sort -V |
+    tail -n 1
+)"
 OUT="$DOCS/checkpoints/phase_${PHASE}_checkpoint.txt"
 
 if [[ ! -s "$STATUS" ]]; then
@@ -102,6 +107,9 @@ PY
   echo "## Current milestone snapshot"
   awk '
     /^## Current milestone$/ {
+      if (capture) {
+        latest = block
+      }
       block = $0 ORS
       capture = 1
       next

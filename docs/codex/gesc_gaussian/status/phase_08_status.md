@@ -2418,3 +2418,95 @@ exception-resilient finalization. The present Plan does not authorize an
 automatic V3E or v4. A diagnostic V3E would have to preserve both the V3B and
 V3D failed slots and execute only the remaining eight once; a pass-eligible
 claim requires a separately planned fresh v4/full activation.
+
+## Phase 08.4 V4 implementation authorization
+
+Opened at `2026-07-28` from clean repository HEAD
+`db7db1cd5091053cefda3a1c8ee57d1357e9e538`
+(`phase 08.3: close fresh robustness acceptance`).
+
+The user explicitly authorized planning and executing a fresh, pass-eligible
+V4 and requested that Codex make the bounded corrections needed to reach the
+120-run test. The binding Plan is:
+
+```text
+docs/codex/gesc_gaussian/plans/phase_08_4_plan.md
+SHA-256
+63369edbbfa2c8fb987822f5f05d0dea7487443f27e4963e5b61e24ccc644f69
+```
+
+V4 is not V3E and does not resume or retry V3A, V3B, V3C, or V3D. All prior
+roots and outcomes remain immutable failed evidence. The fresh proposed V4
+root is:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v4
+```
+
+The `10/30/20/50/10` 120-slot allocation and 70-unique-case denominator are
+retained. V4 uses new activation and development cases. It adopts the exact
+canonical bytes of the still-unexecuted V3 70+10 formal population, with a
+machine proof that none of those formal slots has a historical execution.
+This prevents post-V3 case adaptation while keeping V4 runs, implementation
+freeze, profile selection, contract, evidence root, and outcomes fresh.
+
+No encryption, GPG key, physical hardware, Phase 09, or readiness tag is
+authorized by opening V4.
+
+### M0 validation evidence
+
+Verified at `2026-07-28T10:21:19-07:00`:
+
+- normal and strict-history Phase 08 Implement context checks pass and select
+  `phase_08_4_plan.md`;
+- the V4 Plan SHA-256 is
+  `63369edbbfa2c8fb987822f5f05d0dea7487443f27e4963e5b61e24ccc644f69`;
+- required-document validation passes;
+- shell syntax passes for the context validator, checkpoint tool, and context
+  bundle;
+- the checkpoint and context bundle both select the V4 Plan and the latest V4
+  milestone;
+- versioned freeze-state and acceptance-contract discovery now prefers the
+  latest available Phase 08 version instead of hardcoding V3;
+- `git diff --check` passes;
+- no Gazebo, ROS runtime, V4 evidence root, or hardware action was started.
+
+The repeated-heading recovery defect exposed by the first M0 checkpoint was
+corrected in the existing tools. Their verified SHA-256 values are:
+
+```text
+checkpoint_phase.sh
+  144c5054c85c6cd0ec547571df8ac31517f34e7dad6ce5b1f7dc10c9e01d185e
+make_codex_context_bundle.sh
+  f6950d84305b8f328e67bb4e876fac99c2e27862be2a835c0a831924667c7962
+```
+
+## Current milestone
+
+**M1 — repair recorder shutdown.**
+
+The M1 correction remains inside the sole existing `record_run` owner:
+
+1. initialize rclpy with `SignalHandlerOptions.NO`;
+2. use `DeferredSignalShutdown`;
+3. publish readiness false and stop true while the context is valid;
+4. observe final zero and stop the target and bag;
+5. stop the executor and join its thread before node/context teardown;
+6. complete every cleanup/finalization step after an individual exception
+   while retaining the primary failure.
+
+### Next criterion
+
+Focused recorder lifecycle/order/error tests, an installed real-ROS no-Gazebo
+SIGINT smoke, the retained functional gate, build/static checks, status,
+checkpoint, and a clean bounded commit must pass before V4 workflow
+implementation or any V4 Gazebo simulation.
+
+### Stop conditions
+
+- Stop for any Level A ownership, compatibility, cost-sign/unit, physical,
+  dependency, or overlapping-user-change conflict.
+- Document and test bounded recorder/runner/workflow corrections as Level B.
+- Close V4 honestly on any valid Level C activation, development, holdout,
+  validation, or reproducibility failure.
+- Never weaken a gate or replace a valid behavioral failure.
