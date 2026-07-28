@@ -3511,3 +3511,64 @@ qualified isolated install. Preserve all completed evidence on interruption or
 failure. Headless development remains forbidden unless activation is exactly
 `10/10` infrastructure-complete and `10/10` on the mandatory blocker fill,
 escape, recenter, resumed search, and global-goal contract.
+
+## Phase 08.5 M3 prelaunch correction
+
+The first `v5-activation` invocation stopped before dispatch with:
+
+```text
+RuntimeError: v3 corrected activation requires adopted recovery
+```
+
+This was an orchestration precondition inherited from the V3 recovery engine.
+It occurred before `execute_suite`, created no activation state or run
+directory, and launched no Gazebo/ROS process. The qualified
+`phase08_v5` root is preserved unchanged and is not a behavioral attempt.
+
+The bounded correction adds a distinct fresh-precommit branch to the existing
+predispatch verifier. It requires:
+
+- V5 lineage identity in both prepare and qualification;
+- exact suite and commitment hashes from the fresh precommit proof;
+- all ten installed passive-contact launch contracts;
+- the retained installed activation dry-run hash;
+- byte-equivalent installed activation invocation projection.
+
+It does not change scenario bytes, parameters, aggregate truth, route proof,
+behavior predicates, recording, analysis, controller behavior, or acceptance
+gates. Focused compatibility verification passed:
+
+```text
+V5 fresh-precommit predispatch
+V3C diagnostic-recovery predispatch
+V4 population adoption
+  3 passed in 23.29 s
+py_compile
+  passed
+fatal flake8 E9/F63/F7/F82
+  passed
+git diff --check
+  passed
+```
+
+Because runtime inputs differ from the already qualified snapshot, the
+preserved root will not be mutated or executed. The same immutable V5
+population will restart after commit and full qualification at:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v5b
+```
+
+No Gazebo outcome exists yet.
+
+## Current milestone
+
+**M3 — qualify the bounded V5B prelaunch correction, then execute the same
+ten-case visible Gazebo activation gate.**
+
+### Next criterion
+
+Commit and checkpoint the prelaunch-only correction, prepare and qualify the
+fresh V5B root against that commit, and run visible activation. Do not change
+or regenerate any V5 scenario input. Headless development remains forbidden
+unless visible activation is a strict `10/10` lifecycle pass.

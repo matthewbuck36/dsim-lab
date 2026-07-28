@@ -9093,6 +9093,59 @@ def _v3_verify_corrected_recovery_before_activation(
                 'v4 qualification lacks the population adoption proof'
             )
         return
+    if WORKFLOW_USES_FRESH_PRECOMMIT:
+        precommit = qualification.get('recovery_validation', {})
+        if (
+            prepare.get('lineage_id') != WORKFLOW_EXPERIMENT_VERSION
+            or qualification.get('lineage_id')
+            != WORKFLOW_EXPERIMENT_VERSION
+            or precommit.get('passed') is not True
+            or precommit.get('commitment_sha256')
+            != prepare.get('commitment_sha256')
+            or precommit.get('suite_sha256')
+            != prepare.get('suite_sha256')
+        ):
+            raise RuntimeError(
+                'V5 qualification lacks the fresh precommit proof'
+            )
+        contact_contract = qualification.get(
+            'activation_contact_launch_contract', {}
+        )
+        if (
+            contact_contract.get('passed') is not True
+            or contact_contract.get('direct_pass_count')
+            != V3_EXPECTED_COUNTS['activation']
+            or contact_contract.get('recorder_pass_count')
+            != V3_EXPECTED_COUNTS['activation']
+        ):
+            raise RuntimeError(
+                'V5 qualification lacks installed passive-contact proof'
+            )
+        installed_dry_run = qualification.get(
+            'installed_dry_runs', {}
+        ).get('activation', {})
+        dry_run_path = Path(installed_dry_run.get('path', ''))
+        if (
+            not dry_run_path.is_file()
+            or installed_dry_run.get('sha256')
+            != file_sha256(dry_run_path)
+        ):
+            raise RuntimeError(
+                'V5 installed activation dry-run artifact drifted'
+            )
+        dry_run_summary = yaml.safe_load(
+            dry_run_path.read_text(encoding='utf-8')
+        )
+        if (
+            _v3_activation_contact_launch_contract(dry_run_summary)
+            != contact_contract
+            or _v3_activation_invocation_contract(dry_run_summary)
+            != qualification.get('activation_invocation_contract')
+        ):
+            raise RuntimeError(
+                'V5 installed activation invocation proof drifted'
+            )
+        return
     recovery = prepare.get('recovery')
     if recovery is None:
         raise RuntimeError(

@@ -3086,6 +3086,65 @@ def test_v3c_activation_revalidates_diagnostic_recovery(
         )
 
 
+def test_v5_activation_revalidates_fresh_precommit(tmp_path):
+    """Permit V5 without a legacy recovery while binding installed inputs."""
+    try:
+        phase08_validation._activate_v5_spec()
+        dry_run_path = tmp_path / 'activation_dry_run.yaml'
+        dry_run_summary = _v3_activation_dry_run_summary()
+        phase08_validation.atomic_yaml(dry_run_path, dry_run_summary)
+        contact_contract = (
+            phase08_validation._v3_activation_contact_launch_contract(
+                dry_run_summary
+            )
+        )
+        invocation_contract = (
+            phase08_validation._v3_activation_invocation_contract(
+                dry_run_summary
+            )
+        )
+        prepare = {
+            'state_sha256': 'p' * 64,
+            'lineage_id': 'phase08-v5',
+            'suite_sha256': 's' * 64,
+            'commitment_sha256': 'c' * 64,
+        }
+        qualification = {
+            'prepare_state_sha256': prepare['state_sha256'],
+            'lineage_id': 'phase08-v5',
+            'recovery_validation': {
+                'passed': True,
+                'suite_sha256': prepare['suite_sha256'],
+                'commitment_sha256': prepare['commitment_sha256'],
+            },
+            'activation_contact_launch_contract': contact_contract,
+            'activation_invocation_contract': invocation_contract,
+            'installed_dry_runs': {
+                'activation': {
+                    'path': str(dry_run_path),
+                    'sha256': phase08_validation.file_sha256(
+                        dry_run_path
+                    ),
+                },
+            },
+        }
+        phase08_validation._v3_verify_corrected_recovery_before_activation(
+            prepare,
+            qualification,
+        )
+        qualification['activation_invocation_contract'] = {}
+        with pytest.raises(RuntimeError, match='invocation proof drifted'):
+            (
+                phase08_validation
+                ._v3_verify_corrected_recovery_before_activation(
+                    prepare,
+                    qualification,
+                )
+            )
+    finally:
+        phase08_validation._activate_v3_spec()
+
+
 def test_v3c_carried_record_is_rehashed_and_remains_failed(tmp_path):
     """Reference the original V3B record without copying or relabeling."""
     record_path = tmp_path / 'record.json'

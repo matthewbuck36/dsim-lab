@@ -1,43 +1,47 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-28T21:54:29+00:00
-Base HEAD: a17518d4429b5496954982178c09af2246ac38e9
+Generated: 2026-07-28T21:57:08+00:00
+Base HEAD: 9a7d547d1f12e40a9b2022043f3b67939490b964
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 35ae146cbe04aee1b169ee38fbdd9c5da6895d85b72eef0e8e68e7fed07449ab
+Status sha256: c103a4a7e14e9f7538609a8d36fee6fb336ebdab8f410c087dea4eb8f65690b7
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_5_plan.md
 Active subphase plan sha256: b20fef2176dbabaaff0e3439a9c93355c8a65274ebb34e6236626b2fd852bd61
-Unstaged diff sha256: e31c9d82cde54e4158abc6c7c2fe16882fcee163f5a6c916e7447f967cf83643
+Unstaged diff sha256: f95a93993d142c5f1be3b59e6715ca4a1acd919ebc58b87dab4519a27ea164f0
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 39]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 40]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py
+ M ros2_ws/src/ros_esc/test/test_phase08_validation.py
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 42 ++--------------
- docs/codex/gesc_gaussian/status/phase_08_status.md | 57 ++++++++++++++++++++++
- 2 files changed, 62 insertions(+), 37 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 32 +++---------
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 61 ++++++++++++++++++++++
+ .../ros_esc/scenario_runner/phase08_validation.py  | 53 +++++++++++++++++++
+ .../src/ros_esc/test/test_phase08_validation.py    | 59 +++++++++++++++++++++
+ 4 files changed, 180 insertions(+), 25 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**M3 — execute and inspect the ten-case visible Gazebo activation gate.**
+**M3 — qualify the bounded V5B prelaunch correction, then execute the same
+ten-case visible Gazebo activation gate.**
 
 ### Next criterion
 
-Commit this qualification checkpoint, then run `v5-activation` with the
-qualified isolated install. Preserve all completed evidence on interruption or
-failure. Headless development remains forbidden unless activation is exactly
-`10/10` infrastructure-complete and `10/10` on the mandatory blocker fill,
-escape, recenter, resumed search, and global-goal contract.
+Commit and checkpoint the prelaunch-only correction, prepare and qualify the
+fresh V5B root against that commit, and run visible activation. Do not change
+or regenerate any V5 scenario input. Headless development remains forbidden
+unless visible activation is a strict `10/10` lifecycle pass.
 
 
 This file describes the base HEAD and diff before the next commit; it is
