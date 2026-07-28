@@ -1,0 +1,130 @@
+{
+  "classification": "prelaunch_failure_recovery",
+  "composite_activation": {
+    "carried_record_count": 1,
+    "composite_slot_count": 10,
+    "execute_case_ids": [
+      "v3a_below_target_fill",
+      "v3a_pure_escape_recenter",
+      "v3a_stalled_assist",
+      "v3a_fill_merge",
+      "v3a_full_lifecycle_goal",
+      "v3a_revisit_guard",
+      "v3a_boundary_saturation",
+      "v3a_noise_delay",
+      "v3a_safe_timeout"
+    ],
+    "new_execution_count": 9,
+    "terminal_activation_passed": false
+  },
+  "correction": {
+    "activation_cases_changed": false,
+    "allowed_runtime_correction_sha256": {
+      "ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py": "ea1ee693f2d57ec9f5d08030aff90df4631615d4798ec810e841455915369ea9",
+      "ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py": "82dd7b0f0d7aea90882fad0cc05f8c5a2694328e56f5fbb3b1320748765f7176",
+      "ros2_ws/src/ros_esc/test/test_phase08_validation.py": "cbb1d7394c705a823d4a87309fbf034b5442529efad89ecad8743aabbdadadbb",
+      "ros2_ws/src/ros_esc/test/test_scenario_runner.py": "adb2b4674ffed19d75b430175e6b0e11652ed4062c05d89cced6788cf6c94c80"
+    },
+    "analyzer_output_changed": false,
+    "behavior_contract_changed": false,
+    "carry_failed_slot_byte_identically": true,
+    "carry_superseded_behavioral_failure": true,
+    "collision_gate_changed": false,
+    "composite_activation_forced_fail": true,
+    "execute_only_never_run_activation_cases": true,
+    "final_record_integrity_gate_changed": false,
+    "fresh_evidence_root": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3d",
+    "fresh_lineage_id": "phase08-v3d",
+    "hard_stop_policy": "pure_applicability_partial_is_behavioral_miss",
+    "m4_prohibited": true,
+    "phase08_v3_terminal_failure_required": true,
+    "prelaunch_failure_not_behavioral_attempt": true,
+    "preserve_failed_v3c_root": true,
+    "rerun_all_activation_cases": false,
+    "rerun_carried_case": false,
+    "rerun_v3c_execution_error": false,
+    "reuse_precommitted_population_byte_identically": true
+  },
+  "correction_sha256": "00bc460ced8fd8d2490a6ffc88e430b531b6eb11f9564f20aff069afd2c30b4c",
+  "failed_evidence_root": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3c",
+  "prelaunch_failure": {
+    "ambiguous_interrupted_dispatch_case_ids": [],
+    "attempt_index": 1,
+    "case_id": "v3a_below_target_fill",
+    "error": "AttributeError: __enter__",
+    "execution_error_path": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3c/activation/attempts/002_v3a_below_target_fill/attempt_01/execution_error.json",
+    "expected_record_path": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3c/activation/attempts/002_v3a_below_target_fill/attempt_01/record.json",
+    "expected_runs_root": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3c/activation/attempts/002_v3a_below_target_fill/attempt_01/runs",
+    "expected_summary_path": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3c/activation/attempts/002_v3a_below_target_fill/attempt_01/scenario_summary.yaml",
+    "new_execution_count": 0,
+    "not_run_slot_ids": [
+      "v3a_below_target_fill",
+      "v3a_pure_escape_recenter",
+      "v3a_stalled_assist",
+      "v3a_fill_merge",
+      "v3a_full_lifecycle_goal",
+      "v3a_revisit_guard",
+      "v3a_boundary_saturation",
+      "v3a_noise_delay",
+      "v3a_safe_timeout"
+    ],
+    "outcome": "execution_error",
+    "slot_id": "activation.v3a_below_target_fill"
+  },
+  "retained_root_manifests": {
+    "v3a": {
+      "excluded_directory_symlinks": {
+        "qualification/isolated_build/logs/latest": "latest_build",
+        "qualification/isolated_build/logs/latest_build": "build_2026-07-27_22-35-50"
+      },
+      "file_count": 1574,
+      "file_symlink_count": 0,
+      "manifest_sha256": "14344a34be7990a9f1dc359b2b0bcca18eb0a7b775775d4a845e99d8ff943312",
+      "root": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3",
+      "special_entry_count": 0
+    },
+    "v3b": {
+      "excluded_directory_symlinks": {
+        "qualification/isolated_build/logs/latest": "latest_build",
+        "qualification/isolated_build/logs/latest_build": "build_2026-07-27_23-40-46"
+      },
+      "file_count": 1574,
+      "file_symlink_count": 0,
+      "manifest_sha256": "8cb4f77a4d4196e4fbabfe6b2dc4a2ce83b4ab0acc35de60b7f4472550f017c8",
+      "root": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3b",
+      "special_entry_count": 0
+    },
+    "v3c": {
+      "excluded_directory_symlinks": {
+        "qualification/isolated_build/logs/latest": "latest_build",
+        "qualification/isolated_build/logs/latest_build": "build_2026-07-28_01-26-02"
+      },
+      "file_count": 1540,
+      "file_symlink_count": 0,
+      "manifest_sha256": "b3befdcd760ac56f2e2b13a8fe4c1b50a3b7b78eba8e7f659e6193485ccec19d",
+      "root": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3c",
+      "special_entry_count": 0
+    }
+  },
+  "retained_v3c": {
+    "activation_progress_sha256": "e31a27ee6f4ab649fef24dd470af6a12acc4b59a3fee90da0c2963fc9f48edf4",
+    "activation_state_sha256": "bf0d085b31fa3b2e06c433743c507f89c21ea385f1d57fcc3047a0f8799cfcfe",
+    "nested_v3b_recovery_sha256": "f4f347f17f886dcadb002f44f20b9e8eebe14163e462239b5e52a8787bb182f3",
+    "original_artifacts": {
+      "activation_attempt_records_file_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "activation_progress_file_sha256": "1a878ced1c18201f28b1d3caadd5ffa7631d8cb16c002b4d57b2dbb0b69503ba",
+      "activation_records_file_sha256": "731d87ab80559b20087c00319062648c582b47a2e19f2623563df573266e423c",
+      "activation_resolved_suite_file_sha256": "75134d172a44ef70b5ca4370a6e6b9fd91fbb6981f786ce71565749481882108",
+      "activation_scenario_summary_file_sha256": "73bb4b3fd847b541391738d43adbaafd39dab47245d72da012875a51cabed789",
+      "activation_state_file_sha256": "54067b813957e7cd0e84b0388050dc972668499695bf87a583d7531d261f1186",
+      "execution_error_file_sha256": "233397500285c7c761bd09f9377d787d9dac7ce3b925a25db727402e1a56a891",
+      "prepare_state_file_sha256": "286d5b81f2714ad80a498778cb233c7203c16b5b235dee1bb3a6d8b6004a8a55",
+      "prepare_transaction_file_sha256": "d3bd1971e7e35870bb13de526d1fccd3b434b9b39e841c698950dbecea79e15b",
+      "qualification_state_file_sha256": "c5779b50dfef76b55bb00ecb17dd844e4c8fd066cac9f10201f85c6713ef23d5"
+    },
+    "prepare_state_sha256": "e8c2a7e3ad18ebe0ed87521108bee1adc4bff5f5309a284c9dfe382e7c9c9d4e",
+    "qualification_state_sha256": "b751fa5f3fc552c8929ff5b5c8c793a9bfa71a224e4dd88d6a5a5ec718111561"
+  },
+  "schema_version": 1,
+  "superseded_evidence_root": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3b"
+}

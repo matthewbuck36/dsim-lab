@@ -22,6 +22,7 @@ from gazebo_msgs.msg import ContactsState
 from nav_msgs.msg import Odometry
 
 import rclpy
+from rclpy.executors import SingleThreadedExecutor
 from rclpy.serialization import deserialize_message
 
 from ros_esc.experiment_recording.record_run import (
@@ -698,11 +699,12 @@ def _run_record_to_boundary(
 ):
     """Observe a development branch boundary and request orderly shutdown."""
     context = rclpy.context.Context()
-    rclpy.init(context=context)
-    node = rclpy.create_node(
-        f'phase08_v3_boundary_{uuid.uuid4().hex[:8]}',
-        context=context,
-    )
+    context_initialized = False
+    node = None
+    executor = None
+    node_added = False
+    process = None
+    primary_error = None
     observed = {
         'anchor': False,
         'boundary_state': False,
@@ -725,22 +727,30 @@ def _run_record_to_boundary(
         if observed['anchor'] and names:
             observed['events'].add(names[0])
 
-    node.create_subscription(
-        AlgorithmState,
-        '/gesc_gaussian/algorithm_state',
-        state_callback,
-        10,
-    )
-    node.create_subscription(
-        AlgorithmEvent,
-        '/gesc_gaussian/algorithm_events',
-        event_callback,
-        10,
-    )
     timed_out = False
     boundary_stop = False
-    process = None
     try:
+        rclpy.init(context=context)
+        context_initialized = True
+        node = rclpy.create_node(
+            f'phase08_v3_boundary_{uuid.uuid4().hex[:8]}',
+            context=context,
+        )
+        executor = SingleThreadedExecutor(context=context)
+        executor.add_node(node)
+        node_added = True
+        node.create_subscription(
+            AlgorithmState,
+            '/gesc_gaussian/algorithm_state',
+            state_callback,
+            10,
+        )
+        node.create_subscription(
+            AlgorithmEvent,
+            '/gesc_gaussian/algorithm_events',
+            event_callback,
+            10,
+        )
         with tempfile.TemporaryFile(mode='w+t', encoding='utf-8') as output:
             process = subprocess.Popen(
                 command,
@@ -755,10 +765,7 @@ def _run_record_to_boundary(
                 if remaining <= 0.0:
                     timed_out = True
                     break
-                rclpy.spin_once(
-                    node,
-                    timeout_sec=min(0.1, remaining),
-                )
+                executor.spin_once(timeout_sec=min(0.1, remaining))
                 if (
                     observed['boundary_state']
                     and set(boundary_required_events) <= observed['events']
@@ -774,17 +781,45 @@ def _run_record_to_boundary(
             output.flush()
             output.seek(0)
             stdout = output.read()
-    except BaseException:
+    except BaseException as exc:
+        primary_error = exc
         if process is not None:
-            _cancel_scoped_process(
-                process,
-                shutdown_grace_sec,
-                drain_output=False,
-            )
+            try:
+                _cancel_scoped_process(
+                    process,
+                    shutdown_grace_sec,
+                    drain_output=False,
+                )
+            except BaseException:
+                pass
         raise
     finally:
-        node.destroy_node()
-        rclpy.shutdown(context=context)
+        cleanup_error = None
+        if executor is not None and node_added:
+            try:
+                executor.remove_node(node)
+            except BaseException as exc:
+                cleanup_error = exc
+        if executor is not None:
+            try:
+                executor.shutdown()
+            except BaseException as exc:
+                if cleanup_error is None:
+                    cleanup_error = exc
+        if node is not None:
+            try:
+                node.destroy_node()
+            except BaseException as exc:
+                if cleanup_error is None:
+                    cleanup_error = exc
+        if context_initialized:
+            try:
+                rclpy.shutdown(context=context)
+            except BaseException as exc:
+                if cleanup_error is None:
+                    cleanup_error = exc
+        if primary_error is None and cleanup_error is not None:
+            raise cleanup_error
     return {
         'return_code': process.returncode,
         'timed_out': timed_out,

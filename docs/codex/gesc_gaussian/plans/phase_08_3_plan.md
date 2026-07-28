@@ -2204,3 +2204,88 @@ M3D does not have a passing exit. It completes when either:
 
 M4, freeze, holdout, additional validation, reproducibility, the readiness
 tag, Phase 09, and physical hardware remain prohibited.
+
+## M3D-B amendment — close V3C prelaunch failure and use fresh V3D
+
+This append-only amendment was added after the V3C activation command closed
+and before any V3D root, qualification, or dispatch existed. It does not
+change any behavior contract, case, seed, profile, threshold, denominator,
+collision rule, evidence rule, no-replacement rule, or final acceptance
+verdict.
+
+V3C is **CLOSED / FAILED / PRELAUNCH INFRASTRUCTURE ERROR / NO SIMULATION
+OUTCOME / NOT SIMULATION-READY**. Its evidence root is immutable:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3c
+```
+
+The first required new case, `v3a_below_target_fill`, did not produce a
+simulation run directory below `runs/`, an attempt scenario summary, an
+analyzed record, a bag, or a scientific outcome. V3C retained
+`new_execution_count=0`; its sole record is the immutable V3B direct-goal
+failure carried by pointer and hash. The V3C workflow's `run_count=1`
+therefore describes that carried record, not a V3C Gazebo simulation.
+
+The execution error is exactly:
+
+```text
+AttributeError: __enter__
+```
+
+The boundary observer created and initialized a private `rclpy` context and
+created its node on that context, but called `rclpy.spin_once` without an
+explicit executor. ROS 2 Humble then tried to construct the global executor
+on the uninitialized default context. Its guard condition attempted to enter
+the missing default-context handle and raised `AttributeError: __enter__`.
+The later `_sigint_gc` destructor message is a secondary symptom of that
+partially constructed executor, not a separate failure.
+
+Because V3C produced no new simulation result, a fresh infrastructure
+successor may execute the same nine previously undispatched cases once. That
+successor is V3D, under the currently absent root:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3d
+```
+
+### Binding V3D boundary
+
+V3D must:
+
+1. preserve V3A, V3B, and V3C byte-for-byte and prove the complete recovery
+   chain before dispatch;
+2. carry only the exact immutable V3B `v3a_goal_aggregate_direct` behavioral
+   failure by its original path and SHA-256;
+3. retain V3C solely as failed infrastructure provenance and never count its
+   carried record or failed dispatch as a V3D execution;
+4. make only the bounded validation-runner correction needed to bind the
+   boundary observer's executor to the same private ROS context and close it
+   deterministically;
+5. rerun qualification against a clean committed source state and the exact
+   unchanged suite and commitment;
+6. execute exactly these nine cases, in this order, at most once each:
+   `v3a_below_target_fill`, `v3a_pure_escape_recenter`,
+   `v3a_stalled_assist`, `v3a_fill_merge`,
+   `v3a_full_lifecycle_goal`, `v3a_revisit_guard`,
+   `v3a_boundary_saturation`, `v3a_noise_delay`, and
+   `v3a_safe_timeout`;
+7. retain GUI-visible Gazebo, simulation contacts, the disabled physical
+   contact probe, the enabled zero-probe control, serial dispatch, bounded
+   cleanup, and every original hard stop;
+8. report one carried failed V3B record plus at most nine new V3D records
+   with unambiguous provenance;
+9. force V3D activation and Phase 08.3 failed before M4 regardless of the
+   nine new outcomes.
+
+V3D is diagnostic completion only. It cannot pass Phase 08.3, establish
+simulation readiness, authorize a tag, start Phase 09, or authorize physical
+hardware. A future pass-eligible experiment remains outside this Plan.
+
+### Amended milestone M3E
+
+M3E implements and tests the private-context executor correction, records the
+V3C prelaunch failure, checkpoints a clean source boundary, adopts and
+qualifies fresh V3D, then executes only the exact nine cases above. It exits
+when all nine have retained outcomes or an unchanged hard stop ends dispatch
+earlier. Either exit closes Phase 08.3 failed with no M4.

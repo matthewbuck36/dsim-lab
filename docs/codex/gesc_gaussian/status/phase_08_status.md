@@ -2002,3 +2002,164 @@ activation command, which must carry the immutable V3B slot and launch only
 the exact nine remaining cases with the Gazebo GUI visible. The composite
 activation and Phase 08.3 verdict remain forced failed regardless of those
 nine diagnostic outcomes.
+
+## Phase 08.3 V3C prelaunch failure and V3D successor
+
+Verified at `2026-07-28T01:36:30-07:00` against repository HEAD
+`6af523fd9485802b8659bb3df4628867802e00b6`
+(`phase 08.3: qualify diagnostic v3c activation`).
+
+V3C is now **CLOSED / FAILED / PRELAUNCH INFRASTRUCTURE ERROR / NO
+SIMULATION OUTCOME / NOT SIMULATION-READY**. The qualified activation reached
+the first required new slot, `v3a_below_target_fill`, but failed in the
+runner's ROS boundary observer before a Gazebo run could produce evidence.
+The exact retained error is:
+
+```text
+AttributeError: __enter__
+```
+
+Root cause: `run_scenario._run_record_to_boundary` initialized a private
+`rclpy` context and created its observer node on that context, then called
+`rclpy.spin_once` without an explicit executor. ROS 2 Humble selected its
+global executor, whose default context was uninitialized. Guard-condition
+construction attempted `with self._context.handle` on that missing handle and
+raised the observed exception. The accompanying
+`SingleThreadedExecutor._sigint_gc` destructor warning is secondary cleanup
+from the same partially constructed executor.
+
+The failed V3C slot has no attempt run directory below `runs/`, no attempt
+scenario summary, no attempt record, no bag, and no simulation outcome.
+`attempt_records.json` is empty, the top-level scenario summary contains zero
+runs, and `new_execution_count=0`. The sole item in `records.json` is the
+immutable V3B `v3a_goal_aggregate_direct` failure carried by pointer and hash;
+the workflow's top-level `run_count=1` must not be reported as a V3C
+simulation.
+
+Retained V3C activation artifacts, rehashed read-only:
+
+```text
+activation/attempts/002_v3a_below_target_fill/attempt_01/
+  execution_error.json
+  233397500285c7c761bd09f9377d787d9dac7ce3b925a25db727402e1a56a891
+activation/progress.json
+  1a878ced1c18201f28b1d3caadd5ffa7631d8cb16c002b4d57b2dbb0b69503ba
+activation/attempt_records.json
+  37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570
+activation/records.json
+  731d87ab80559b20087c00319062648c582b47a2e19f2623563df573266e423c
+activation/scenario_summary.yaml
+  73bb4b3fd847b541391738d43adbaafd39dab47245d72da012875a51cabed789
+activation/resolved_suite.yaml
+  75134d172a44ef70b5ca4370a6e6b9fd91fbb6981f786ce71565749481882108
+workflow_state/v3_activation.json
+  54067b813957e7cd0e84b0388050dc972668499695bf87a583d7531d261f1186
+```
+
+The progress internal SHA-256 is
+`e31a27ee6f4ab649fef24dd470af6a12acc4b59a3fee90da0c2963fc9f48edf4`;
+the activation-state internal SHA-256 is
+`bf0d085b31fa3b2e06c433743c507f89c21ea385f1d57fcc3047a0f8799cfcfe`.
+The immutable V3C evidence root remains:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3c
+```
+
+The bounded successor is fresh V3D. Its root
+`/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3d` was confirmed absent.
+V3D must preserve V3C as failed infrastructure evidence, carry the immutable
+V3B direct-goal behavioral failure, and execute only the same exact nine
+previously undispatched case IDs once each after a focused executor-context
+correction, clean checkpoint, adoption, and full qualification.
+
+Current milestone: **M3E — implement and validate the private-context executor
+correction, then adopt, qualify, and execute fresh diagnostic V3D**. No V3D
+root or V3D result exists yet.
+
+V3D remains diagnostic-only and forced failed. M4, freeze, holdout,
+validation, reproducibility, a readiness tag, Phase 09, and physical hardware
+remain prohibited regardless of the nine outcomes.
+
+## Phase 08.3 M3E correction verification
+
+Verified at `2026-07-28T02:26:23-07:00` against repository HEAD
+`6af523fd9485802b8659bb3df4628867802e00b6` before the correction checkpoint.
+
+The bounded private-context executor correction is implemented. The boundary
+observer now owns a `SingleThreadedExecutor` created on the same initialized
+private `rclpy` context as its node, spins that executor directly, and
+deterministically removes the node, destroys the executor and node, and shuts
+down the context. Setup, subscription, spin, cancellation, and cleanup
+failures retain the primary exception and bounded descendant cleanup.
+
+The fresh V3D proof is fail-closed and binds:
+
+- immutable complete-root manifests for V3A, V3B, and V3C:
+  `1574`, `1574`, and `1540` regular files with SHA-256
+  `14344a34be7990a9f1dc359b2b0bcca18eb0a7b775775d4a845e99d8ff943312`,
+  `8cb4f77a4d4196e4fbabfe6b2dc4a2ce83b4ab0acc35de60b7f4472550f017c8`,
+  and `b3befdcd760ac56f2e2b13a8fe4c1b50a3b7b78eba8e7f659e6193485ccec19d`;
+- the exact retained V3B direct-goal record SHA-256
+  `d1cc6b4b2f73d5ad70031d3b74d7ac4b535894bdf5425100d3f72175d2593ad5`;
+- the exact nine V3C `not_run` cases in fixed order, one attempt each, with no
+  replacement state or infrastructure retry;
+- the exact V3C prelaunch artifacts and absence of an attempt summary, record,
+  runs directory, bag, or new execution;
+- the unchanged suite, commitment, operator, activation invocation, repository
+  projection, GUI/contact launch contract, and empty process boundary.
+
+The correction audit is retained at
+`docs/codex/gesc_gaussian/validation/phase_08_v3c_prelaunch_correction.json`.
+Its file SHA-256 is
+`b4ba3b2a270adc1eb399c995abc34472d874fc1f33691b9deea97c1e1847ae10`;
+its omission SHA-256 is
+`00bc460ced8fd8d2490a6ffc88e430b531b6eb11f9564f20aff069afd2c30b4c`.
+The four audit-bound source/test SHA-256 values are:
+
+```text
+phase08_validation.py
+  ea1ee693f2d57ec9f5d08030aff90df4631615d4798ec810e841455915369ea9
+run_scenario.py
+  82dd7b0f0d7aea90882fad0cc05f8c5a2694328e56f5fbb3b1320748765f7176
+test_phase08_validation.py
+  cbb1d7394c705a823d4a87309fbf034b5442529efad89ecad8743aabbdadadbb
+test_scenario_runner.py
+  adb2b4674ffed19d75b430175e6b0e11652ed4062c05d89cced6788cf6c94c80
+```
+
+Verification:
+
+- real-root production recovery proof: passed in `8.29 s`, resolving the exact
+  nine V3D execution IDs and the `1574/1574/1540` retained-root counts;
+- complete source-first functional gate:
+  `475 passed, 2 skipped in 65.83 s`; the skips are only the explicit
+  headless-Gazebo and visible-Gazebo opt-in tests; retained log:
+  `/tmp/dsim_phase08_v3d_functional_resealed.log`;
+- independent source-first focused gate:
+  `206 passed, 1 skipped`, with only the opt-in Gazebo test skipped;
+- targeted `ament_flake8` across the four changed Python files, fatal
+  `flake8` checks, production-file `pydocstyle`, `py_compile`, strict JSON,
+  context validation, and `git diff --check`: passed;
+- the repository-wide package lint wrappers remain outside a usable changed-
+  file gate because they report the existing broad baseline (`5130` flake8
+  and `589` pep257 violations); no result from those wrappers is claimed as
+  passed;
+- bounded standard build of `ros_esc_interfaces`,
+  `turtlebot3_rotating_sensor`, and `ros_esc`: passed, `3` packages in
+  `2.17 s`; retained colcon logs:
+  `/tmp/dsim_phase08_v3d_standard_build_resealed`;
+- installed `validate_robustness --help`: passed;
+- installed real-ROS, no-Gazebo private-context boundary smoke: passed, with
+  normal child exit, no timeout, no false boundary observation, and retained
+  child output;
+- installed copies of `phase08_validation.py` and `run_scenario.py` matched
+  the audit-bound source hashes exactly;
+- independent read-only audit: **GO** for checkpoint, commit, V3D adoption,
+  and V3D qualification.
+
+The V3D root remained absent and the ROS/Gazebo/workflow process set remained
+empty after verification. No Gazebo simulation was launched by this
+correction gate. The next action is a clean checkpoint and commit, followed by
+fresh V3D adoption and full qualification. Only a successful qualification
+may authorize the exact nine GUI-visible Gazebo diagnostic simulations.

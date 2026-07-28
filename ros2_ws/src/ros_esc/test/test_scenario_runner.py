@@ -46,6 +46,38 @@ V3_ACTIVATION = (
 )
 
 
+def _install_boundary_executor(
+    monkeypatch,
+    context,
+    node,
+    spin_once,
+    events,
+):
+    """Install a context-bound executor fake with visible lifecycle events."""
+    expected_context = context
+
+    class FakeExecutor:
+        def __init__(self, *, context):
+            assert context is expected_context
+            events.append('created')
+
+        def add_node(self, added_node):
+            assert added_node is node
+            events.append('added')
+
+        def spin_once(self, timeout_sec):
+            spin_once(timeout_sec)
+
+        def remove_node(self, removed_node):
+            assert removed_node is node
+            events.append('removed')
+
+        def shutdown(self):
+            events.append('shutdown')
+
+    monkeypatch.setattr(runner, 'SingleThreadedExecutor', FakeExecutor)
+
+
 def _resolved(profile='robust_gaussian_v1'):
     suite = load_suite(SMOKE)
     runs, _ = expand_suite(suite)
@@ -1145,11 +1177,138 @@ def test_cleanup_compares_only_new_graph_and_exact_session(monkeypatch):
     assert evidence['remaining_session_processes'][0]['session_id'] == 1234
 
 
+@pytest.mark.parametrize(
+    ('failure_stage', 'expected_events'),
+    [
+        (
+            'create_node',
+            ['context_init', 'create_node', 'context_shutdown'],
+        ),
+        (
+            'executor_init',
+            [
+                'context_init',
+                'create_node',
+                'executor_init',
+                'node_destroy',
+                'context_shutdown',
+            ],
+        ),
+        (
+            'add_node',
+            [
+                'context_init',
+                'create_node',
+                'executor_init',
+                'add_node',
+                'executor_shutdown',
+                'node_destroy',
+                'context_shutdown',
+            ],
+        ),
+    ],
+)
+def test_boundary_setup_failure_cleans_partial_lifecycle(
+    monkeypatch,
+    failure_stage,
+    expected_events,
+):
+    """Preserve setup errors while attempting every available cleanup."""
+    events = []
+    private_context = object()
+
+    class SetupFailure(RuntimeError):
+        pass
+
+    class CleanupFailure(RuntimeError):
+        pass
+
+    class FakeNode:
+        def create_subscription(self, *args, **kwargs):
+            raise AssertionError('setup failure reached subscriptions')
+
+        def destroy_node(self):
+            events.append('node_destroy')
+            raise CleanupFailure('node cleanup failed')
+
+    node = FakeNode()
+
+    class FakeExecutor:
+        def __init__(self, *, context):
+            assert context is private_context
+            events.append('executor_init')
+            if failure_stage == 'executor_init':
+                raise SetupFailure(failure_stage)
+
+        def add_node(self, added_node):
+            assert added_node is node
+            events.append('add_node')
+            if failure_stage == 'add_node':
+                raise SetupFailure(failure_stage)
+
+        def remove_node(self, removed_node):
+            raise AssertionError(
+                f'partially added node was removed: {removed_node}'
+            )
+
+        def shutdown(self):
+            events.append('executor_shutdown')
+            raise CleanupFailure('executor cleanup failed')
+
+    def init(*, context):
+        assert context is private_context
+        events.append('context_init')
+
+    def create_node(*args, **kwargs):
+        del args
+        assert kwargs['context'] is private_context
+        events.append('create_node')
+        if failure_stage == 'create_node':
+            raise SetupFailure(failure_stage)
+        return node
+
+    def shutdown(*, context):
+        assert context is private_context
+        events.append('context_shutdown')
+        raise CleanupFailure('context cleanup failed')
+
+    monkeypatch.setattr(
+        runner.rclpy.context,
+        'Context',
+        lambda: private_context,
+    )
+    monkeypatch.setattr(runner.rclpy, 'init', init)
+    monkeypatch.setattr(runner.rclpy, 'create_node', create_node)
+    monkeypatch.setattr(runner, 'SingleThreadedExecutor', FakeExecutor)
+    monkeypatch.setattr(runner.rclpy, 'shutdown', shutdown)
+    monkeypatch.setattr(
+        runner.subprocess,
+        'Popen',
+        lambda *args, **kwargs: pytest.fail(
+            'setup failure must precede child dispatch'
+        ),
+    )
+
+    with pytest.raises(SetupFailure, match=failure_stage):
+        runner.run_record_process(
+            ['must-not-start'],
+            5.0,
+            1.0,
+            anchor_state='VERIFY_EXTREMUM',
+            boundary_state='ESCAPE_REPULSE',
+            boundary_required_events=['ESCAPE_STARTED'],
+        )
+
+    assert events == expected_events
+
+
 def test_live_boundary_stop_waits_for_state_and_required_event(monkeypatch):
     """Request SIGINT only after the declared branch evidence is observable."""
     callbacks = {}
     dispatched = []
+    executor_events = []
     signals = []
+    private_context = object()
 
     class FakeNode:
         def create_subscription(
@@ -1164,6 +1323,8 @@ def test_live_boundary_stop_waits_for_state_and_required_event(monkeypatch):
 
         def destroy_node(self):
             return None
+
+    node = FakeNode()
 
     class FakeProcess:
         def __init__(self, command, stdout, **unused_kwargs):
@@ -1206,21 +1367,38 @@ def test_live_boundary_stop_waits_for_state_and_required_event(monkeypatch):
         ),
     ]
 
-    def spin_once(unused_node, timeout_sec):
+    def spin_once(timeout_sec):
         del timeout_sec
         topic, message = sequence.pop(0)
         dispatched.append(topic)
         callbacks[topic](message)
 
-    monkeypatch.setattr(runner.rclpy.context, 'Context', lambda: object())
+    monkeypatch.setattr(
+        runner.rclpy.context,
+        'Context',
+        lambda: private_context,
+    )
     monkeypatch.setattr(runner.rclpy, 'init', lambda context: None)
     monkeypatch.setattr(runner.rclpy, 'shutdown', lambda context: None)
     monkeypatch.setattr(
         runner.rclpy,
         'create_node',
-        lambda *args, **kwargs: FakeNode(),
+        lambda *args, **kwargs: node,
     )
-    monkeypatch.setattr(runner.rclpy, 'spin_once', spin_once)
+    _install_boundary_executor(
+        monkeypatch,
+        private_context,
+        node,
+        spin_once,
+        executor_events,
+    )
+    monkeypatch.setattr(
+        runner.rclpy,
+        'spin_once',
+        lambda *args, **kwargs: pytest.fail(
+            'boundary observer must not use the global executor'
+        ),
+    )
     monkeypatch.setattr(runner.subprocess, 'Popen', FakeProcess)
     monkeypatch.setattr(
         runner.os,
@@ -1248,12 +1426,15 @@ def test_live_boundary_stop_waits_for_state_and_required_event(monkeypatch):
         'ESCAPE_STARTED'
     ]
     assert result['stdout'] == 'boundary test\n'
+    assert executor_events == ['created', 'added', 'removed', 'shutdown']
 
 
 def test_boundary_stop_cleans_nested_session_after_outer_exit(monkeypatch):
     """Clean nested-session survivors while retaining boundary-stop output."""
     callbacks = {}
+    executor_events = []
     signals = []
+    private_context = object()
     identities = {
         5321: {
             'pid': 5321,
@@ -1288,6 +1469,8 @@ def test_boundary_stop_cleans_nested_session_after_outer_exit(monkeypatch):
         def destroy_node(self):
             return None
 
+    node = FakeNode()
+
     class FakeProcess:
         def __init__(self, command, stdout, **unused_kwargs):
             del command, unused_kwargs
@@ -1317,8 +1500,8 @@ def test_boundary_stop_cleans_nested_session_after_outer_exit(monkeypatch):
         process_holder['process'] = FakeProcess(*args, **kwargs)
         return process_holder['process']
 
-    def spin_once(unused_node, timeout_sec):
-        del unused_node, timeout_sec
+    def spin_once(timeout_sec):
+        del timeout_sec
         callbacks['/gesc_gaussian/algorithm_state'](
             SimpleNamespace(
                 state_name='VERIFY_EXTREMUM',
@@ -1349,15 +1532,25 @@ def test_boundary_stop_cleans_nested_session_after_outer_exit(monkeypatch):
         if process_group_id == 5322 and signum == runner.signal.SIGTERM:
             alive.discard(5322)
 
-    monkeypatch.setattr(runner.rclpy.context, 'Context', lambda: object())
+    monkeypatch.setattr(
+        runner.rclpy.context,
+        'Context',
+        lambda: private_context,
+    )
     monkeypatch.setattr(runner.rclpy, 'init', lambda context: None)
     monkeypatch.setattr(runner.rclpy, 'shutdown', lambda context: None)
     monkeypatch.setattr(
         runner.rclpy,
         'create_node',
-        lambda *args, **kwargs: FakeNode(),
+        lambda *args, **kwargs: node,
     )
-    monkeypatch.setattr(runner.rclpy, 'spin_once', spin_once)
+    _install_boundary_executor(
+        monkeypatch,
+        private_context,
+        node,
+        spin_once,
+        executor_events,
+    )
     monkeypatch.setattr(runner.subprocess, 'Popen', popen)
     monkeypatch.setattr(runner, '_process_identity', process_identity)
     monkeypatch.setattr(
@@ -1386,6 +1579,7 @@ def test_boundary_stop_cleans_nested_session_after_outer_exit(monkeypatch):
     assert result['stdout'] == 'nested boundary output\n'
     assert process_holder['process'].reaped is True
     assert alive == set()
+    assert executor_events == ['created', 'added', 'removed', 'shutdown']
 
 
 def test_record_interrupt_cleans_nested_session_and_reraises(monkeypatch):
@@ -1577,7 +1771,9 @@ def test_boundary_base_exception_cleans_process_group_and_reraises(
     monkeypatch,
 ):
     """Clean the boundary run session before propagating a BaseException."""
+    executor_events = []
     signals = []
+    private_context = object()
     identity = {
         'pid': 9876,
         'state': 'S',
@@ -1601,6 +1797,12 @@ def test_boundary_base_exception_cleans_process_group_and_reraises(
 
         def destroy_node(self):
             lifecycle['node_destroyed'] = True
+
+    node = FakeNode()
+
+    def cancel_on_spin(timeout_sec):
+        del timeout_sec
+        raise CancelRun
 
     class FakeProcess:
         def __init__(self, command, stdout, **unused_kwargs):
@@ -1639,7 +1841,11 @@ def test_boundary_base_exception_cleans_process_group_and_reraises(
         if signum == runner.signal.SIGKILL:
             alive.discard(process_group_id)
 
-    monkeypatch.setattr(runner.rclpy.context, 'Context', lambda: object())
+    monkeypatch.setattr(
+        runner.rclpy.context,
+        'Context',
+        lambda: private_context,
+    )
     monkeypatch.setattr(runner.rclpy, 'init', lambda context: None)
     monkeypatch.setattr(
         runner.rclpy,
@@ -1649,12 +1855,14 @@ def test_boundary_base_exception_cleans_process_group_and_reraises(
     monkeypatch.setattr(
         runner.rclpy,
         'create_node',
-        lambda *args, **kwargs: FakeNode(),
+        lambda *args, **kwargs: node,
     )
-    monkeypatch.setattr(
-        runner.rclpy,
-        'spin_once',
-        lambda *args, **kwargs: (_ for _ in ()).throw(CancelRun()),
+    _install_boundary_executor(
+        monkeypatch,
+        private_context,
+        node,
+        cancel_on_spin,
+        executor_events,
     )
     monkeypatch.setattr(runner.subprocess, 'Popen', popen)
     monkeypatch.setattr(runner.os, 'killpg', killpg)
@@ -1693,6 +1901,7 @@ def test_boundary_base_exception_cleans_process_group_and_reraises(
         'node_destroyed': True,
         'rclpy_shutdown': True,
     }
+    assert executor_events == ['created', 'added', 'removed', 'shutdown']
 
 
 def test_failed_run_is_retained_and_cleanup_failure_stops_suite(

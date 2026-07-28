@@ -1,5 +1,6 @@
 """Focused tests for the Phase 08 validation harness and frozen suites."""
 
+import base64
 from collections import Counter
 import json
 from pathlib import Path
@@ -947,6 +948,10 @@ def test_v3_adopt_precommit_preserves_old_root_and_exact_population(
         )
     )
     phase08_validation.atomic_json(commitment_path, commitment)
+    phase08_validation.atomic_json(
+        tmp_path / 'audit.json',
+        {'classification': 'instrumentation_contaminated'},
+    )
     repository = {
         'commit': 'a' * 40,
         'tree': 'b' * 40,
@@ -966,6 +971,7 @@ def test_v3_adopt_precommit_preserves_old_root_and_exact_population(
         ],
         'policy': {
             'fresh_evidence_root': str(fresh.resolve()),
+            'fresh_lineage_id': 'phase08-v3c',
         },
     }
     monkeypatch.setattr(
@@ -1151,6 +1157,7 @@ def test_v3_adopt_precommit_creates_diagnostic_v3c_lineage(
         ],
         'policy': {
             'fresh_evidence_root': str(fresh.resolve()),
+            'fresh_lineage_id': 'phase08-v3c',
         },
     }
     proof['baseline_runtime_projection'] = (
@@ -1219,10 +1226,16 @@ def test_v3_adopt_precommit_creates_diagnostic_v3c_lineage(
         )
 
 
-def test_v3_recovery_dispatcher_preserves_both_lineage_kinds(
+def test_v3_recovery_dispatcher_preserves_all_lineage_kinds(
     monkeypatch,
 ):
     """Revalidate the exact proof owner selected by each recovery kind."""
+    prelaunch_path = Path('/tmp/prelaunch.json')
+    monkeypatch.setattr(
+        phase08_validation,
+        'V3_PRELAUNCH_CORRECTION_PATH',
+        prelaunch_path,
+    )
     contact = {
         'kind': 'contact_probe_instrumentation_contamination',
         'superseded_evidence_root': '/tmp/v3a',
@@ -1232,6 +1245,18 @@ def test_v3_recovery_dispatcher_preserves_both_lineage_kinds(
         'kind': 'behavioral_miss_diagnostic_completion',
         'superseded_evidence_root': '/tmp/v3b',
         'correction_audit_path': '/tmp/diagnostic.json',
+        'policy': {'fresh_lineage_id': 'phase08-v3c'},
+    }
+    prelaunch = {
+        'kind': 'behavioral_miss_diagnostic_completion',
+        'superseded_evidence_root': '/tmp/v3b',
+        'failed_evidence_root': '/tmp/phase08_v3c',
+        'correction_audit_path': str(prelaunch_path),
+        'retained_v3c': {},
+        'retained_root_manifests': {},
+        'prelaunch_failure': {},
+        'nested_recovery': {},
+        'policy': {'fresh_lineage_id': 'phase08-v3d'},
     }
     observed = []
     monkeypatch.setattr(
@@ -1250,11 +1275,23 @@ def test_v3_recovery_dispatcher_preserves_both_lineage_kinds(
             or diagnostic
         ),
     )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_prelaunch_failure_recovery_proof',
+        lambda root, correction_path: (
+            observed.append(('prelaunch', root, str(correction_path)))
+            or prelaunch
+        ),
+    )
 
     assert phase08_validation._v3_revalidate_recovery(contact) == contact
     assert (
         phase08_validation._v3_revalidate_recovery(diagnostic)
         == diagnostic
+    )
+    assert (
+        phase08_validation._v3_revalidate_recovery(prelaunch)
+        == prelaunch
     )
     assert phase08_validation._v3_recovery_fresh_lineage_id(
         contact
@@ -1262,14 +1299,1056 @@ def test_v3_recovery_dispatcher_preserves_both_lineage_kinds(
     assert phase08_validation._v3_recovery_fresh_lineage_id(
         diagnostic
     ) == 'phase08-v3c'
+    assert phase08_validation._v3_recovery_fresh_lineage_id(
+        prelaunch
+    ) == 'phase08-v3d'
     assert observed == [
         ('contact', '/tmp/v3a', '/tmp/contact.json'),
         ('diagnostic', '/tmp/v3b', '/tmp/diagnostic.json'),
+        ('prelaunch', '/tmp/v3b', '/tmp/prelaunch.json'),
     ]
     with pytest.raises(RuntimeError, match='unsupported v3 recovery'):
         phase08_validation._v3_recovery_fresh_lineage_id({
             'kind': 'unknown',
         })
+
+
+def test_v3_adoption_recovery_selects_v3d_default_and_explicit(
+    tmp_path,
+    monkeypatch,
+):
+    """Route V3D only from its classified audit and V3B default."""
+    prelaunch_path = tmp_path / 'prelaunch.json'
+    diagnostic_path = tmp_path / 'diagnostic.json'
+    contact_path = tmp_path / 'contact.json'
+    unknown_path = tmp_path / 'unknown.json'
+    for path, classification in (
+        (prelaunch_path, 'prelaunch_failure_recovery'),
+        (diagnostic_path, 'behavioral_miss_diagnostic_completion'),
+        (contact_path, 'instrumentation_contaminated'),
+        (unknown_path, 'not_a_recovery_contract'),
+    ):
+        phase08_validation.atomic_json(
+            path,
+            {'classification': classification},
+        )
+    monkeypatch.setattr(
+        phase08_validation,
+        'V3_PRELAUNCH_CORRECTION_PATH',
+        prelaunch_path,
+    )
+    observed = []
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_prelaunch_failure_recovery_proof',
+        lambda root, correction_path=prelaunch_path: (
+            observed.append(('prelaunch', str(root), Path(correction_path)))
+            or {'proof': 'prelaunch'}
+        ),
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_hard_stop_policy_recovery_proof',
+        lambda root, correction_path=diagnostic_path: (
+            observed.append(('diagnostic', str(root), Path(correction_path)))
+            or {'proof': 'diagnostic'}
+        ),
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_harness_recovery_proof',
+        lambda root, correction_path=contact_path: (
+            observed.append(('contact', str(root), Path(correction_path)))
+            or {'proof': 'contact'}
+        ),
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_require_state',
+        lambda *unused, **unused_keywords: {
+            'lineage_id': 'phase08-v3b',
+        },
+    )
+
+    assert phase08_validation._v3_adoption_recovery_proof(
+        '/tmp/v3b',
+    ) == {'proof': 'prelaunch'}
+    assert phase08_validation._v3_adoption_recovery_proof(
+        '/tmp/v3b',
+        correction_path=prelaunch_path,
+    ) == {'proof': 'prelaunch'}
+    assert phase08_validation._v3_adoption_recovery_proof(
+        '/tmp/v3b',
+        correction_path=diagnostic_path,
+    ) == {'proof': 'diagnostic'}
+    assert phase08_validation._v3_adoption_recovery_proof(
+        '/tmp/v3a',
+        correction_path=contact_path,
+    ) == {'proof': 'contact'}
+    with pytest.raises(
+        RuntimeError,
+        match='unsupported v3 correction-audit classification',
+    ):
+        phase08_validation._v3_adoption_recovery_proof(
+            '/tmp/v3b',
+            correction_path=unknown_path,
+        )
+    assert observed == [
+        ('prelaunch', '/tmp/v3b', prelaunch_path),
+        ('prelaunch', '/tmp/v3b', prelaunch_path),
+        ('diagnostic', '/tmp/v3b', diagnostic_path),
+        ('contact', '/tmp/v3a', contact_path),
+    ]
+
+
+def _v3d_prelaunch_fixture(
+    tmp_path,
+    monkeypatch,
+    *,
+    activation_operator='test',
+    nested_fresh_evidence_root=None,
+    nested_suite_sha256=None,
+    nested_commitment_sha256=None,
+    qualification_activation_contract=None,
+    transaction_suite_bytes=None,
+):
+    """Build a minimal hash-valid V3B -> V3C -> V3D recovery chain."""
+    v3a_root = tmp_path / 'phase08_v3'
+    v3b_root = tmp_path / 'v3b'
+    v3c_root = tmp_path / 'phase08_v3c'
+    v3d_root = tmp_path / 'phase08_v3d'
+    v3a_marker = v3a_root / 'immutable.txt'
+    v3a_marker.parent.mkdir(parents=True)
+    v3a_marker.write_text('retained V3A\n', encoding='utf-8')
+    old_audit_path = tmp_path / 'v3b-audit.json'
+    new_audit_path = tmp_path / 'v3c-prelaunch-audit.json'
+    old_audit = {'schema_version': 1, 'classification': 'retained'}
+    old_audit['correction_sha256'] = (
+        phase08_validation.omission_sha256(
+            old_audit,
+            'correction_sha256',
+        )
+    )
+    phase08_validation.atomic_json(old_audit_path, old_audit)
+    monkeypatch.setattr(
+        phase08_validation,
+        'V3_HARD_STOP_CORRECTION_PATH',
+        old_audit_path,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        'V3_PRELAUNCH_CORRECTION_PATH',
+        new_audit_path,
+    )
+
+    suite_path = tmp_path / 'phase08_v3_acceptance_suite.json'
+    suite_path.write_bytes(b'{\"cases\":[],\"schema_version\":4}\\n')
+    suite_sha256 = phase08_validation.file_sha256(suite_path)
+    commitment_path = tmp_path / 'phase_08_v3_suite_commitment.json'
+    commitment = {
+        'schema_version': 1,
+        'suite_sha256': suite_sha256,
+    }
+    commitment['commitment_sha256'] = (
+        phase08_validation.omission_sha256(
+            commitment,
+            'commitment_sha256',
+        )
+    )
+    phase08_validation.atomic_json(commitment_path, commitment)
+    commitment_sha256 = commitment['commitment_sha256']
+    monkeypatch.setattr(
+        phase08_validation,
+        'V3_PRECOMMITTED_SUITE_PATH',
+        suite_path,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        'V3_COMMITMENT_PATH',
+        commitment_path,
+    )
+    v3b_prepare = phase08_validation._v3_write_state(
+        v3b_root,
+        'prepare',
+        {
+            'passed': True,
+            'lineage_id': 'phase08-v3b',
+            'suite_sha256': suite_sha256,
+            'commitment_sha256': commitment_sha256,
+        },
+    )
+    v3b_qualification = phase08_validation._v3_write_state(
+        v3b_root,
+        'qualification',
+        {
+            'passed': True,
+            'lineage_id': 'phase08-v3b',
+            'prepare_state_sha256': v3b_prepare['state_sha256'],
+        },
+    )
+    v3b_activation = phase08_validation._v3_write_state(
+        v3b_root,
+        'activation',
+        {
+            'passed': False,
+            'qualification_state_sha256': (
+                v3b_qualification['state_sha256']
+            ),
+        },
+    )
+    baseline_hashes = {
+        path: phase08_validation.file_sha256(
+            phase08_validation.REPOSITORY_ROOT / path
+        )
+        for path in (
+            phase08_validation.V3_DIAGNOSTIC_ALLOWED_RUNTIME_DRIFT
+        )
+    }
+    baseline_hashes['ros2_ws/src/ros_esc/package.xml'] = (
+        phase08_validation.file_sha256(
+            phase08_validation.REPOSITORY_ROOT
+            / 'ros2_ws/src/ros_esc/package.xml'
+        )
+    )
+    repository = {
+        'commit': 'c' * 40,
+        'tree': 'd' * 40,
+        'clean': True,
+        'input_hashes': baseline_hashes,
+        'runtime_inputs_sha256': phase08_validation.canonical_sha256(
+            baseline_hashes
+        ),
+    }
+    nested_recovery = {
+        'kind': 'behavioral_miss_diagnostic_completion',
+        'superseded_evidence_root': str(v3b_root.resolve()),
+        'superseded_prepare_state_sha256': (
+            v3b_prepare['state_sha256']
+        ),
+        'superseded_qualification_state_sha256': (
+            v3b_qualification['state_sha256']
+        ),
+        'superseded_activation_state_sha256': (
+            v3b_activation['state_sha256']
+        ),
+        'superseded_suite_sha256': (
+            suite_sha256
+            if nested_suite_sha256 is None
+            else nested_suite_sha256
+        ),
+        'superseded_commitment_sha256': (
+            commitment_sha256
+            if nested_commitment_sha256 is None
+            else nested_commitment_sha256
+        ),
+        'correction_audit_path': str(old_audit_path.resolve()),
+        'correction_audit_sha256': old_audit['correction_sha256'],
+        'run_id': 'retained-v3b-run',
+        'carried_record': {
+            'case_id': (
+                phase08_validation.V3_DIAGNOSTIC_CARRIED_CASE_ID
+            ),
+            'record_path': '/immutable/v3b/record.json',
+            'record_sha256': 'e' * 64,
+            'run_id': 'retained-v3b-run',
+            'source_lineage_id': 'phase08-v3b',
+        },
+        'run_directory_manifest': {
+            'root': '/immutable/v3b/run',
+            'file_count': 1,
+            'input_hashes': {'bag.db3': 'f' * 64},
+            'manifest_sha256': '1' * 64,
+        },
+        'composite_activation': {
+            'carried_record_count': 1,
+            'new_execution_count': 9,
+            'composite_slot_count': 10,
+            'terminal_activation_passed': False,
+            'execute_case_ids': list(
+                phase08_validation.V3_DIAGNOSTIC_EXECUTION_CASE_IDS
+            ),
+        },
+        'baseline_runtime_projection': (
+            phase08_validation._v3_runtime_input_projection(repository)
+        ),
+        'allowed_runtime_correction_sha256': {
+            path: baseline_hashes[path]
+            for path in (
+                phase08_validation.V3_DIAGNOSTIC_ALLOWED_RUNTIME_DRIFT
+            )
+        },
+        'activation_invocation_contract': {'contract': 'unchanged'},
+        'execution_commit': '2' * 40,
+        'original_artifacts': {'retained': '3' * 64},
+        'behavioral_result': {'status': 'failed'},
+        'retained_evidence_audit': {'path': 'retained'},
+        'nested_recovery': {
+            'kind': 'contact',
+            'superseded_evidence_root': str(v3a_root.resolve()),
+        },
+        'policy': {
+            'fresh_lineage_id': 'phase08-v3c',
+            'fresh_evidence_root': str(Path(
+                v3c_root
+                if nested_fresh_evidence_root is None
+                else nested_fresh_evidence_root
+            ).resolve()),
+        },
+    }
+    transaction = {
+        'schema_version': 1,
+        'experiment_version': 'phase08-v3c',
+        'operator': 'test',
+        'evidence_root': str(v3c_root.resolve()),
+        'suite_path': str(suite_path.resolve()),
+        'commitment_path': str(commitment_path.resolve()),
+        'suite_base64': base64.b64encode(
+            suite_path.read_bytes()
+            if transaction_suite_bytes is None
+            else transaction_suite_bytes
+        ).decode('ascii'),
+        'commitment': commitment,
+        'commitment_sha256': commitment_sha256,
+        'repository': repository,
+        'processes_before': [],
+        'recovery': nested_recovery,
+    }
+    transaction['transaction_sha256'] = (
+        phase08_validation.omission_sha256(
+            transaction,
+            'transaction_sha256',
+        )
+    )
+    phase08_validation.atomic_json(
+        phase08_validation._v3_prepare_transaction_path(v3c_root),
+        transaction,
+    )
+    v3c_prepare = phase08_validation._v3_write_state(
+        v3c_root,
+        'prepare',
+        {
+            'passed': True,
+            'operator': 'test',
+            'lineage_id': 'phase08-v3c',
+            'suite_sha256': suite_sha256,
+            'commitment_sha256': commitment_sha256,
+            'suite_path': str(suite_path.resolve()),
+            'commitment_path': str(commitment_path.resolve()),
+            'repository': repository,
+            'processes_before': [],
+            'transaction_path': str(
+                phase08_validation._v3_prepare_transaction_path(
+                    v3c_root
+                ).resolve()
+            ),
+            'transaction_sha256': transaction[
+                'transaction_sha256'
+            ],
+            'recovery': nested_recovery,
+        },
+    )
+    v3c_qualification = phase08_validation._v3_write_state(
+        v3c_root,
+        'qualification',
+        {
+            'passed': True,
+            'operator': 'test',
+            'lineage_id': 'phase08-v3c',
+            'prepare_state_sha256': v3c_prepare['state_sha256'],
+            'repository': repository,
+            'activation_invocation_contract': (
+                {'contract': 'unchanged'}
+                if qualification_activation_contract is None
+                else qualification_activation_contract
+            ),
+            'processes_before': [],
+            'processes_after': [],
+            'recovery_validation': {
+                'passed': True,
+                'recovery_sha256': (
+                    phase08_validation.canonical_sha256(
+                        nested_recovery
+                    )
+                ),
+            },
+        },
+    )
+
+    activation_root = v3c_root / 'activation'
+    resolved_suite_path = activation_root / 'resolved_suite.yaml'
+    phase08_validation.atomic_yaml(
+        resolved_suite_path,
+        {'schema_version': 4, 'cases': []},
+    )
+    attempt_root = (
+        activation_root
+        / 'attempts/002_v3a_below_target_fill/attempt_01'
+    )
+    execution_error_path = attempt_root / 'execution_error.json'
+    phase08_validation.atomic_json(
+        execution_error_path,
+        {
+            'schema_version': 1,
+            'slot_id': 'activation.v3a_below_target_fill',
+            'attempt_index': 1,
+            'error': 'AttributeError: __enter__',
+        },
+    )
+    attempt_summary_path = attempt_root / 'scenario_summary.yaml'
+    attempt_record_path = attempt_root / 'record.json'
+    attempt_runs_root = attempt_root / 'runs'
+    carried_record = {
+        'case_id': phase08_validation.V3_DIAGNOSTIC_CARRIED_CASE_ID,
+        'record_path': '/immutable/v3b/record.json',
+        'record_sha256': 'e' * 64,
+        'run_id': 'retained-v3b-run',
+        'source_lineage_id': 'phase08-v3b',
+        'source_evidence_root': str(v3b_root.resolve()),
+        'source_activation_state_sha256': (
+            v3b_activation['state_sha256']
+        ),
+        'run_directory_manifest': dict(
+            nested_recovery['run_directory_manifest']
+        ),
+        'disposition': 'carried_immutable_behavioral_failure',
+        'rerun': False,
+    }
+    execute_case_ids = list(
+        phase08_validation.V3_DIAGNOSTIC_EXECUTION_CASE_IDS
+    )
+    stopped_reason = (
+        'activation.v3a_below_target_fill: execution error'
+    )
+    progress = phase08_validation._v3_write_progress(
+        activation_root,
+        {
+            'schema_version': 1,
+            'experiment_version': 'phase08-v3',
+            'stage': 'activation',
+            'candidate_id': None,
+            'suite_path': str(resolved_suite_path.resolve()),
+            'suite_sha256': phase08_validation.file_sha256(
+                resolved_suite_path
+            ),
+            'slot_ids': [
+                phase08_validation.V3_DIAGNOSTIC_CARRIED_CASE_ID,
+                *execute_case_ids,
+            ],
+            'attempts': [{
+                'attempt_index': 1,
+                'case_id': 'v3a_below_target_fill',
+                'error_path': str(execution_error_path),
+                'error_sha256': phase08_validation.file_sha256(
+                    execution_error_path
+                ),
+                'expected_error_path': str(execution_error_path),
+                'expected_record_path': str(attempt_record_path),
+                'expected_summary_path': str(attempt_summary_path),
+                'outcome': 'execution_error',
+                'record_path': None,
+                'record_sha256': None,
+                'slot_id': 'activation.v3a_below_target_fill',
+                'summary_path': None,
+                'summary_sha256': None,
+            }],
+            'carried_records': [carried_record],
+            'carried_count': 1,
+            'newly_executed_count': 0,
+            'carried_record_count': 1,
+            'new_execution_count': 0,
+            'required_execution_case_ids': execute_case_ids,
+            'ambiguous_interrupted_dispatch_case_ids': [],
+            'final_record_paths': {
+                phase08_validation.V3_DIAGNOSTIC_CARRIED_CASE_ID: (
+                    carried_record['record_path']
+                ),
+            },
+            'stopped_early_reason': stopped_reason,
+            'not_run_slot_ids': execute_case_ids,
+        },
+    )
+    records_path = activation_root / 'records.json'
+    attempt_records_path = activation_root / 'attempt_records.json'
+    scenario_summary_path = activation_root / 'scenario_summary.yaml'
+    phase08_validation.atomic_json(
+        records_path,
+        [{
+            'schema_version': 1,
+            'case_id': (
+                phase08_validation.V3_DIAGNOSTIC_CARRIED_CASE_ID
+            ),
+            'disposition': 'carried_immutable_behavioral_failure',
+            'carried_record': carried_record,
+        }],
+    )
+    phase08_validation.atomic_json(attempt_records_path, [])
+    phase08_validation.atomic_yaml(
+        scenario_summary_path,
+        {
+            'schema_version': 1,
+            'source_path': str(resolved_suite_path.resolve()),
+            'declared_slot_count': 10,
+            'completed_slot_count': 1,
+            'attempted_slot_count': 1,
+            'ambiguous_interrupted_dispatch_case_ids': [],
+            'carried_record_count': 1,
+            'new_execution_count': 0,
+            'carried_count': 1,
+            'newly_executed_count': 0,
+            'carried_records': [carried_record],
+            'stopped_early_reason': stopped_reason,
+            'attempt_count': 1,
+            'runs': [],
+        },
+    )
+    v3c_activation = phase08_validation._v3_write_state(
+        v3c_root,
+        'activation',
+        {
+            'passed': False,
+            'operator': activation_operator,
+            'qualification_state_sha256': (
+                v3c_qualification['state_sha256']
+            ),
+            'run_count': 1,
+            'composite_slot_count': 1,
+            'carried_record_count': 1,
+            'new_execution_count': 0,
+            'carried_count': 1,
+            'newly_executed_count': 0,
+            'pass_eligible': False,
+            'diagnostic_completion': True,
+            'integrity_pass_count': 0,
+            'contract_pass_count': 0,
+            'scenario_summary_path': str(scenario_summary_path),
+            'scenario_summary_sha256': (
+                phase08_validation.file_sha256(
+                    scenario_summary_path
+                )
+            ),
+            'records_path': str(records_path),
+            'records_sha256': phase08_validation.file_sha256(
+                records_path
+            ),
+            'attempt_records_sha256': (
+                phase08_validation.file_sha256(attempt_records_path)
+            ),
+            'progress_sha256': progress['progress_sha256'],
+            'stopped_early_reason': stopped_reason,
+            'ambiguous_interrupted_dispatch_case_ids': [],
+            'not_run_slot_ids': execute_case_ids,
+            'replacement_state_sha256': None,
+        },
+    )
+    symlink_root = v3c_root / 'qualification/isolated_build/logs'
+    original_build_root = symlink_root / 'build_original'
+    alternate_build_root = symlink_root / 'build_alternate'
+    original_build_root.mkdir(parents=True)
+    alternate_build_root.mkdir()
+    latest_build_link = symlink_root / 'latest_build'
+    latest_build_link.symlink_to(
+        original_build_root.name,
+        target_is_directory=True,
+    )
+    (symlink_root / 'latest').symlink_to(
+        latest_build_link.name,
+        target_is_directory=True,
+    )
+    artifact_paths = {
+        'prepare_state_file_sha256': (
+            phase08_validation._v3_state_path(v3c_root, 'prepare')
+        ),
+        'qualification_state_file_sha256': (
+            phase08_validation._v3_state_path(
+                v3c_root, 'qualification'
+            )
+        ),
+        'activation_state_file_sha256': (
+            phase08_validation._v3_state_path(v3c_root, 'activation')
+        ),
+        'prepare_transaction_file_sha256': (
+            phase08_validation._v3_prepare_transaction_path(v3c_root)
+        ),
+        'activation_progress_file_sha256': (
+            activation_root / 'progress.json'
+        ),
+        'activation_records_file_sha256': records_path,
+        'activation_attempt_records_file_sha256': (
+            attempt_records_path
+        ),
+        'activation_scenario_summary_file_sha256': (
+            scenario_summary_path
+        ),
+        'activation_resolved_suite_file_sha256': resolved_suite_path,
+        'execution_error_file_sha256': execution_error_path,
+    }
+    allowed_hashes = {
+        path: phase08_validation.file_sha256(
+            phase08_validation.REPOSITORY_ROOT / path
+        )
+        for path in (
+            phase08_validation.V3_DIAGNOSTIC_ALLOWED_RUNTIME_DRIFT
+        )
+    }
+    policy = {
+        'hard_stop_policy': (
+            'pure_applicability_partial_is_behavioral_miss'
+        ),
+        'fresh_lineage_id': 'phase08-v3d',
+        'fresh_evidence_root': str(v3d_root.resolve()),
+        'carry_superseded_behavioral_failure': True,
+        'carry_failed_slot_byte_identically': True,
+        'execute_only_never_run_activation_cases': True,
+        'composite_activation_forced_fail': True,
+        'rerun_all_activation_cases': False,
+        'rerun_carried_case': False,
+        'm4_prohibited': True,
+        'phase08_v3_terminal_failure_required': True,
+        'reuse_precommitted_population_byte_identically': True,
+        'activation_cases_changed': False,
+        'analyzer_output_changed': False,
+        'behavior_contract_changed': False,
+        'collision_gate_changed': False,
+        'final_record_integrity_gate_changed': False,
+        'allowed_runtime_correction_sha256': allowed_hashes,
+        'preserve_failed_v3c_root': True,
+        'prelaunch_failure_not_behavioral_attempt': True,
+        'rerun_v3c_execution_error': False,
+    }
+    audit = {
+        'schema_version': 1,
+        'classification': 'prelaunch_failure_recovery',
+        'superseded_evidence_root': str(v3b_root.resolve()),
+        'failed_evidence_root': str(v3c_root.resolve()),
+        'retained_root_manifests': {
+            'v3a': phase08_validation._v3_compact_root_manifest(
+                v3a_root
+            ),
+            'v3b': phase08_validation._v3_compact_root_manifest(
+                v3b_root
+            ),
+            'v3c': phase08_validation._v3_compact_root_manifest(
+                v3c_root
+            ),
+        },
+        'retained_v3c': {
+            'prepare_state_sha256': v3c_prepare['state_sha256'],
+            'qualification_state_sha256': (
+                v3c_qualification['state_sha256']
+            ),
+            'activation_state_sha256': (
+                v3c_activation['state_sha256']
+            ),
+            'activation_progress_sha256': progress['progress_sha256'],
+            'nested_v3b_recovery_sha256': (
+                phase08_validation.canonical_sha256(nested_recovery)
+            ),
+            'original_artifacts': {
+                field: phase08_validation.file_sha256(path)
+                for field, path in artifact_paths.items()
+            },
+        },
+        'prelaunch_failure': {
+            'case_id': 'v3a_below_target_fill',
+            'slot_id': 'activation.v3a_below_target_fill',
+            'attempt_index': 1,
+            'outcome': 'execution_error',
+            'error': 'AttributeError: __enter__',
+            'execution_error_path': str(execution_error_path),
+            'expected_summary_path': str(attempt_summary_path),
+            'expected_record_path': str(attempt_record_path),
+            'expected_runs_root': str(attempt_runs_root),
+            'new_execution_count': 0,
+            'ambiguous_interrupted_dispatch_case_ids': [],
+            'not_run_slot_ids': execute_case_ids,
+        },
+        'composite_activation': dict(
+            nested_recovery['composite_activation']
+        ),
+        'correction': policy,
+    }
+    audit['correction_sha256'] = (
+        phase08_validation.omission_sha256(
+            audit,
+            'correction_sha256',
+        )
+    )
+    phase08_validation.atomic_json(new_audit_path, audit)
+    old_proof_calls = []
+
+    def old_proof(
+        root,
+        correction_path,
+        *,
+        runtime_input_hashes=None,
+    ):
+        old_proof_calls.append((
+            Path(root).resolve(),
+            Path(correction_path).resolve(),
+            runtime_input_hashes,
+        ))
+        return nested_recovery
+
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_hard_stop_policy_recovery_proof',
+        old_proof,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_diagnostic_carried_records',
+        lambda observed: (
+            [carried_record]
+            if observed == nested_recovery
+            else pytest.fail('unexpected nested recovery')
+        ),
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_active_processes',
+        lambda: [],
+    )
+    return {
+        'v3a_root': v3a_root,
+        'v3b_root': v3b_root,
+        'v3c_root': v3c_root,
+        'v3d_root': v3d_root,
+        'old_audit_path': old_audit_path,
+        'new_audit_path': new_audit_path,
+        'audit': audit,
+        'nested_recovery': nested_recovery,
+        'repository': repository,
+        'artifact_paths': artifact_paths,
+        'attempt_summary_path': attempt_summary_path,
+        'attempt_record_path': attempt_record_path,
+        'attempt_runs_root': attempt_runs_root,
+        'latest_build_link': latest_build_link,
+        'alternate_build_root': alternate_build_root,
+        'old_proof_calls': old_proof_calls,
+    }
+
+
+def test_v3d_prelaunch_recovery_binds_v3c_and_nested_v3b(
+    tmp_path,
+    monkeypatch,
+):
+    """Admit V3D only from the exact zero-execution V3C failure."""
+    fixture = _v3d_prelaunch_fixture(tmp_path, monkeypatch)
+
+    proof = phase08_validation._v3_prelaunch_failure_recovery_proof(
+        fixture['v3b_root'],
+        correction_path=fixture['new_audit_path'],
+    )
+
+    assert phase08_validation._v3_recovery_fresh_lineage_id(
+        proof
+    ) == 'phase08-v3d'
+    assert proof['superseded_evidence_root'] == str(
+        fixture['v3b_root'].resolve()
+    )
+    assert proof['failed_evidence_root'] == str(
+        fixture['v3c_root'].resolve()
+    )
+    assert proof['nested_recovery'] == fixture['nested_recovery']
+    assert proof['prelaunch_failure']['new_execution_count'] == 0
+    assert proof['composite_activation']['execute_case_ids'] == list(
+        phase08_validation.V3_DIAGNOSTIC_EXECUTION_CASE_IDS
+    )
+    assert fixture['old_proof_calls'] == [(
+        fixture['v3b_root'].resolve(),
+        fixture['old_audit_path'].resolve(),
+        fixture['repository']['input_hashes'],
+    )]
+
+
+@pytest.mark.parametrize('lineage', ['v3a', 'v3b', 'v3c'])
+def test_v3d_prelaunch_recovery_rejects_full_root_drift(
+    tmp_path,
+    monkeypatch,
+    lineage,
+):
+    """Any added retained-root byte invalidates the compact manifest."""
+    fixture = _v3d_prelaunch_fixture(tmp_path, monkeypatch)
+    root = fixture[f'{lineage}_root']
+    (root / 'unrecorded-byte.txt').write_text(
+        'drift\n',
+        encoding='utf-8',
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match='retained full-root contents drifted',
+    ):
+        phase08_validation._v3_prelaunch_failure_recovery_proof(
+            fixture['v3b_root'],
+            correction_path=fixture['new_audit_path'],
+        )
+
+
+def test_v3d_prelaunch_recovery_rejects_symlink_target_drift(
+    tmp_path,
+    monkeypatch,
+):
+    """The excluded directory-symlink targets are immutable too."""
+    fixture = _v3d_prelaunch_fixture(tmp_path, monkeypatch)
+    link = fixture['latest_build_link']
+    link.unlink()
+    link.symlink_to(
+        fixture['alternate_build_root'].name,
+        target_is_directory=True,
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match='retained full-root contents drifted',
+    ):
+        phase08_validation._v3_prelaunch_failure_recovery_proof(
+            fixture['v3b_root'],
+            correction_path=fixture['new_audit_path'],
+        )
+
+
+def test_v3d_prelaunch_recovery_rechecks_retained_runtime_projection(
+    tmp_path,
+    monkeypatch,
+):
+    """Do not trust V3C states without replaying the V3B projection gate."""
+    fixture = _v3d_prelaunch_fixture(tmp_path, monkeypatch)
+    calls = []
+
+    def reject_projection(recovery, repository):
+        calls.append((recovery, repository))
+        raise RuntimeError('retained runtime projection drifted')
+
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_verify_diagnostic_runtime_projection',
+        reject_projection,
+    )
+    with pytest.raises(
+        RuntimeError,
+        match='retained runtime projection drifted',
+    ):
+        phase08_validation._v3_prelaunch_failure_recovery_proof(
+            fixture['v3b_root'],
+            correction_path=fixture['new_audit_path'],
+        )
+    assert calls == [(
+        fixture['nested_recovery'],
+        fixture['repository'],
+    )]
+
+
+@pytest.mark.parametrize(
+    'fixture_keywords',
+    [
+        {'activation_operator': 'different-operator'},
+        {'nested_suite_sha256': '0' * 64},
+        {'nested_commitment_sha256': '0' * 64},
+        {
+            'qualification_activation_contract': {
+                'contract': 'changed',
+            },
+        },
+        {'transaction_suite_bytes': b'different-suite\n'},
+    ],
+)
+def test_v3d_prelaunch_recovery_rejects_adoption_lineage_drift(
+    tmp_path,
+    monkeypatch,
+    fixture_keywords,
+):
+    """Re-prove V3C adoption ownership, payload, and qualification."""
+    fixture = _v3d_prelaunch_fixture(
+        tmp_path,
+        monkeypatch,
+        **fixture_keywords,
+    )
+
+    with pytest.raises(RuntimeError):
+        phase08_validation._v3_prelaunch_failure_recovery_proof(
+            fixture['v3b_root'],
+            correction_path=fixture['new_audit_path'],
+        )
+
+
+def test_v3d_prelaunch_recovery_rejects_wrong_nested_fresh_root(
+    tmp_path,
+    monkeypatch,
+):
+    """The retained V3B recovery must have adopted this exact V3C root."""
+    fixture = _v3d_prelaunch_fixture(
+        tmp_path,
+        monkeypatch,
+        nested_fresh_evidence_root=tmp_path / 'wrong-v3c',
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match='adoption lineage binding drifted',
+    ):
+        phase08_validation._v3_prelaunch_failure_recovery_proof(
+            fixture['v3b_root'],
+            correction_path=fixture['new_audit_path'],
+        )
+
+
+def test_v3d_prelaunch_recovery_rejects_wrong_superseded_root(
+    tmp_path,
+    monkeypatch,
+):
+    """The V3D correction cannot be applied to another evidence root."""
+    fixture = _v3d_prelaunch_fixture(tmp_path, monkeypatch)
+    wrong_root = tmp_path / 'wrong-v3b'
+    wrong_root.mkdir()
+
+    with pytest.raises(
+        RuntimeError,
+        match='names a different failure',
+    ):
+        phase08_validation._v3_prelaunch_failure_recovery_proof(
+            wrong_root,
+            correction_path=fixture['new_audit_path'],
+        )
+
+
+@pytest.mark.parametrize(
+    'artifact_field',
+    [
+        'prepare_state_file_sha256',
+        'qualification_state_file_sha256',
+        'activation_state_file_sha256',
+        'prepare_transaction_file_sha256',
+        'activation_progress_file_sha256',
+        'activation_records_file_sha256',
+        'activation_attempt_records_file_sha256',
+        'activation_scenario_summary_file_sha256',
+        'activation_resolved_suite_file_sha256',
+        'execution_error_file_sha256',
+    ],
+)
+def test_v3d_prelaunch_recovery_rejects_every_artifact_drift(
+    tmp_path,
+    monkeypatch,
+    artifact_field,
+):
+    """Every V3C state, aggregate, suite, and error byte is immutable."""
+    fixture = _v3d_prelaunch_fixture(tmp_path, monkeypatch)
+    path = fixture['artifact_paths'][artifact_field]
+    path.write_bytes(path.read_bytes() + b'\nDRIFT')
+
+    with pytest.raises(RuntimeError, match='retained V3C artifact'):
+        phase08_validation._v3_prelaunch_failure_recovery_proof(
+            fixture['v3b_root'],
+            correction_path=fixture['new_audit_path'],
+        )
+
+
+@pytest.mark.parametrize(
+    'path_name,is_directory',
+    [
+        ('attempt_summary_path', False),
+        ('attempt_record_path', False),
+        ('attempt_runs_root', True),
+    ],
+)
+def test_v3d_prelaunch_recovery_rejects_runtime_evidence(
+    tmp_path,
+    monkeypatch,
+    path_name,
+    is_directory,
+):
+    """A summary, record, or runs root would make dispatch ambiguous."""
+    fixture = _v3d_prelaunch_fixture(tmp_path, monkeypatch)
+    path = fixture[path_name]
+    if is_directory:
+        path.mkdir(parents=True)
+    else:
+        path.write_text('unexpected\n', encoding='utf-8')
+
+    with pytest.raises(RuntimeError, match='contains runtime evidence'):
+        phase08_validation._v3_prelaunch_failure_recovery_proof(
+            fixture['v3b_root'],
+            correction_path=fixture['new_audit_path'],
+        )
+
+
+@pytest.mark.parametrize(
+    'section,field,value',
+    [
+        ('prelaunch_failure', 'new_execution_count', 1),
+        (
+            'prelaunch_failure',
+            'ambiguous_interrupted_dispatch_case_ids',
+            ['v3a_below_target_fill'],
+        ),
+        ('prelaunch_failure', 'not_run_slot_ids', []),
+        ('prelaunch_failure', 'error', 'RuntimeError: other'),
+        ('composite_activation', 'new_execution_count', 8),
+        ('correction', 'fresh_lineage_id', 'phase08-v3c'),
+        ('correction', 'preserve_failed_v3c_root', False),
+        ('retained_v3c', 'nested_v3b_recovery_sha256', '0' * 64),
+    ],
+)
+def test_v3d_prelaunch_recovery_rejects_policy_and_semantic_drift(
+    tmp_path,
+    monkeypatch,
+    section,
+    field,
+    value,
+):
+    """Rehashing a scientifically different audit cannot authorize V3D."""
+    fixture = _v3d_prelaunch_fixture(tmp_path, monkeypatch)
+    audit = json.loads(
+        fixture['new_audit_path'].read_text(encoding='utf-8')
+    )
+    audit[section][field] = value
+    audit['correction_sha256'] = (
+        phase08_validation.omission_sha256(
+            audit,
+            'correction_sha256',
+        )
+    )
+    phase08_validation.atomic_json(fixture['new_audit_path'], audit)
+
+    with pytest.raises(RuntimeError):
+        phase08_validation._v3_prelaunch_failure_recovery_proof(
+            fixture['v3b_root'],
+            correction_path=fixture['new_audit_path'],
+        )
+
+
+def test_v3d_prelaunch_recovery_rejects_audit_hash_and_processes(
+    tmp_path,
+    monkeypatch,
+):
+    """Reject both an unsigned audit mutation and a live process set."""
+    fixture = _v3d_prelaunch_fixture(tmp_path, monkeypatch)
+    audit = json.loads(
+        fixture['new_audit_path'].read_text(encoding='utf-8')
+    )
+    audit['classification'] = 'drifted'
+    phase08_validation.atomic_json(fixture['new_audit_path'], audit)
+    with pytest.raises(RuntimeError, match='correction hash drifted'):
+        phase08_validation._v3_prelaunch_failure_recovery_proof(
+            fixture['v3b_root'],
+            correction_path=fixture['new_audit_path'],
+        )
+
+    phase08_validation.atomic_json(
+        fixture['new_audit_path'],
+        fixture['audit'],
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_active_processes',
+        lambda: [{'pid': 99, 'command': 'gzserver'}],
+    )
+    with pytest.raises(RuntimeError, match='process set is not clean'):
+        phase08_validation._v3_prelaunch_failure_recovery_proof(
+            fixture['v3b_root'],
+            correction_path=fixture['new_audit_path'],
+        )
 
 
 def test_v3_adopt_precommit_rejects_the_superseded_root(
@@ -1687,6 +2766,7 @@ def test_v3c_activation_revalidates_diagnostic_recovery(
         'kind': 'behavioral_miss_diagnostic_completion',
         'superseded_evidence_root': '/tmp/v3b',
         'correction_audit_path': '/tmp/diagnostic.json',
+        'policy': {'fresh_lineage_id': 'phase08-v3c'},
     }
     prepare = {
         'state_sha256': 'p' * 64,
@@ -1820,6 +2900,7 @@ def test_v3c_activation_composite_is_permanently_not_pass_eligible(
     """Report one carried plus nine new slots and prohibit development."""
     recovery = {
         'kind': 'behavioral_miss_diagnostic_completion',
+        'policy': {'fresh_lineage_id': 'phase08-v3c'},
     }
     prepare = {
         'passed': True,
@@ -1902,6 +2983,7 @@ def test_v3c_activation_composite_is_permanently_not_pass_eligible(
         assert kwargs['carried_records'] == carried
         assert kwargs['required_execution_case_ids'] == case_ids[1:]
         assert kwargs['allow_pure_applicability_miss'] is True
+        assert kwargs['allow_infrastructure_replacements'] is False
         stage_root = Path(stage_root)
         summary_path = stage_root / 'scenario_summary.yaml'
         records_path = stage_root / 'records.json'
@@ -1910,7 +2992,7 @@ def test_v3c_activation_composite_is_permanently_not_pass_eligible(
         phase08_validation.atomic_json(records_path, records)
         phase08_validation.atomic_json(attempts_path, records[1:])
         attempts = [
-            {'case_id': case_id}
+            {'case_id': case_id, 'attempt_index': 1}
             for case_id in case_ids[1:]
         ]
         return (
@@ -2468,6 +3550,116 @@ def test_v3_qualification_builds_declared_dependency_closure(
         'ros_esc',
     ]
     assert '--packages-select' not in captured['isolated_build']
+
+
+def test_v3_qualification_runs_installed_boundary_observer_smoke(
+    tmp_path,
+    monkeypatch,
+):
+    """Exercise the private-context observer without Gazebo or a recorder."""
+    captured = {}
+
+    def run(
+        identifier,
+        command,
+        cwd,
+        log_root,
+        timeout_sec,
+        expected_return_codes=(0,),
+        environment=None,
+    ):
+        del cwd, log_root, environment
+        captured[identifier] = {
+            'command': command,
+            'timeout_sec': timeout_sec,
+            'expected_return_codes': expected_return_codes,
+        }
+        output = ''
+        if identifier in {
+            'supervisor_instantiation',
+            'fill_instantiation',
+        }:
+            output = 'timeout: sending signal INT to command'
+        return {
+            'identifier': identifier,
+            'passed': True,
+            'output_tail': output,
+        }
+
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_run_qualification_command',
+        run,
+    )
+
+    commands, unused_install = (
+        phase08_validation._v3_qualification_commands(tmp_path)
+    )
+
+    smoke = captured['boundary_observer_smoke']
+    assert smoke['command'][:2] == ['bash', '-c']
+    script = smoke['command'][2]
+    assert 'source ' in script
+    assert 'cd /tmp' in script
+    assert 'timeout --signal=TERM --kill-after=2s 15s' in script
+    assert 'run_record_process' in script
+    assert "anchor_state='VERIFY_EXTREMUM'" in script
+    assert "boundary_state='ESCAPE_REPULSE'" in script
+    assert "boundary_required_events=['ESCAPE_STARTED']" in script
+    assert 'boundary-probe' in script
+    assert 'gazebo' not in script.lower()
+    assert 'record_run' not in script
+    assert smoke['timeout_sec'] == 30.0
+    assert smoke['expected_return_codes'] == (0,)
+    assert any(
+        item['identifier'] == 'boundary_observer_smoke'
+        and item['passed']
+        for item in commands
+    )
+
+
+def test_v3_qualification_stops_on_boundary_observer_failure(
+    tmp_path,
+    monkeypatch,
+):
+    """A broken private-context observer must fail qualification early."""
+    observed = []
+
+    def run(
+        identifier,
+        command,
+        cwd,
+        log_root,
+        timeout_sec,
+        expected_return_codes=(0,),
+        environment=None,
+    ):
+        del command, cwd, log_root, timeout_sec
+        del expected_return_codes, environment
+        observed.append(identifier)
+        return {
+            'identifier': identifier,
+            'passed': identifier != 'boundary_observer_smoke',
+            'output_tail': '',
+        }
+
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_run_qualification_command',
+        run,
+    )
+
+    commands, unused_install = (
+        phase08_validation._v3_qualification_commands(tmp_path)
+    )
+
+    assert commands[-1] == {
+        'identifier': 'boundary_observer_smoke',
+        'passed': False,
+        'output_tail': '',
+    }
+    assert observed[-1] == 'boundary_observer_smoke'
+    assert 'launch_arguments' not in observed
 
 
 def test_v3_freeze_enforces_the_full_m5_requalification(
@@ -3926,7 +5118,7 @@ def test_v3_nonactivation_keeps_applicability_hard_stop(
     tmp_path,
     monkeypatch,
 ):
-    """Never apply V3C's diagnostic exception to another stage."""
+    """Never apply a diagnostic exception to another stage."""
     case_ids = ['partial-miss', 'must-not-run']
     suite = _v3_serial_suite(tmp_path, case_ids)
     calls = _install_v3_serial_mocks(
@@ -3953,7 +5145,7 @@ def test_v3_nonactivation_keeps_applicability_hard_stop(
         'stopped_early_reason'
     ]
     assert progress['not_run_slot_ids'] == [case_ids[1]]
-    with pytest.raises(RuntimeError, match='V3C activation-only'):
+    with pytest.raises(RuntimeError, match='diagnostic activation-only'):
         phase08_validation._v3_execute_serial_slots(
             suite,
             'test',
@@ -4628,6 +5820,49 @@ def test_v3_serial_links_one_pre_readiness_replacement(
     assert replacement['attempt_links'][0][
         'replacement_attempt_index'
     ] == 2
+
+
+def test_v3_diagnostic_serial_never_replaces_infrastructure_invalid(
+    tmp_path,
+    monkeypatch,
+):
+    """A diagnostic successor executes each remaining case at most once."""
+    case_ids = ['infra-invalid', 'must-not-run']
+    suite = _v3_serial_suite(tmp_path, case_ids)
+    calls = _install_v3_serial_mocks(
+        monkeypatch,
+        lambda case_id, unused_attempt: _v3_serial_record(
+            case_id,
+            status='infrastructure_invalid',
+        ),
+    )
+
+    unused_summary, records, progress = (
+        phase08_validation._v3_execute_serial_slots(
+            suite,
+            'test',
+            tmp_path / 'evidence',
+            tmp_path / 'evidence/activation',
+            'activation',
+            required_execution_case_ids=case_ids,
+            allow_pure_applicability_miss=True,
+            allow_infrastructure_replacements=False,
+        )
+    )
+
+    assert calls == [['infra-invalid']]
+    assert [record['case_id'] for record in records] == [
+        'infra-invalid',
+    ]
+    assert [
+        (item['case_id'], item['attempt_index'])
+        for item in progress['attempts']
+    ] == [('infra-invalid', 1)]
+    assert progress['not_run_slot_ids'] == ['must-not-run']
+    assert 'replacement prohibited' in progress['stopped_early_reason']
+    assert not phase08_validation._v3_replacement_state_path(
+        tmp_path / 'evidence'
+    ).exists()
 
 
 def test_v3_serial_resumes_persisted_replacement_after_crash(
