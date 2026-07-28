@@ -15,6 +15,7 @@ import random
 import re
 import secrets
 import shutil
+import signal
 import statistics
 import subprocess
 import sys
@@ -148,6 +149,34 @@ V3_FAILURE_PATH = (
 V3_CONTACT_CORRECTION_PATH = (
     VALIDATION_ROOT / 'phase_08_v3a_contact_probe_contamination.json'
 )
+V3_HARD_STOP_CORRECTION_PATH = (
+    VALIDATION_ROOT
+    / 'phase_08_v3b_diagnostic_completion.json'
+)
+V3_DIAGNOSTIC_ALLOWED_RUNTIME_DRIFT = (
+    (
+        'ros2_ws/src/ros_esc/ros_esc/scenario_runner/'
+        'phase08_validation.py'
+    ),
+    (
+        'ros2_ws/src/ros_esc/ros_esc/scenario_runner/'
+        'run_scenario.py'
+    ),
+    'ros2_ws/src/ros_esc/test/test_phase08_validation.py',
+    'ros2_ws/src/ros_esc/test/test_scenario_runner.py',
+)
+EMPIRICAL_SUBCOMMANDS = {
+    'activation',
+    'sweep',
+    'holdout',
+    'validation',
+    'reproducibility',
+    'v3-activation',
+    'v3-development',
+    'v3-holdout',
+    'v3-validation',
+    'v3-reproducibility',
+}
 DIAGNOSTIC_CASES = {
     'diagnostic_recorded_smoke',
     'diagnostic_legacy_ordered_levels',
@@ -443,6 +472,44 @@ def canonical_sha256(value):
         value, sort_keys=True, separators=(',', ':'), allow_nan=False,
     ).encode('utf-8')
     return _sha256_bytes(payload)
+
+
+def _v3_directory_manifest(directory):
+    """Hash every regular file below one retained evidence directory."""
+    root = Path(directory).expanduser().resolve()
+    if not root.is_dir():
+        raise RuntimeError(f'v3 retained directory is missing: {root}')
+    input_hashes = {
+        str(path.relative_to(root)): file_sha256(path)
+        for path in sorted(root.rglob('*'))
+        if path.is_file()
+    }
+    if not input_hashes:
+        raise RuntimeError(f'v3 retained directory is empty: {root}')
+    return {
+        'root': str(root),
+        'file_count': len(input_hashes),
+        'input_hashes': input_hashes,
+        'manifest_sha256': canonical_sha256(input_hashes),
+    }
+
+
+def _v3_verify_directory_manifest(manifest):
+    """Recompute and compare a retained evidence-directory manifest."""
+    if not isinstance(manifest, dict):
+        raise RuntimeError('v3 retained directory manifest is malformed')
+    input_hashes = manifest.get('input_hashes')
+    if (
+        not isinstance(input_hashes, dict)
+        or manifest.get('file_count') != len(input_hashes)
+        or manifest.get('manifest_sha256')
+        != canonical_sha256(input_hashes)
+    ):
+        raise RuntimeError('v3 retained directory manifest hash drifted')
+    observed = _v3_directory_manifest(manifest.get('root', ''))
+    if observed != manifest:
+        raise RuntimeError('v3 retained directory contents drifted')
+    return observed
 
 
 def omission_sha256(value, field):
@@ -1198,7 +1265,152 @@ def _v3_replacement_proof_artifacts(record, invalid_record_path):
     }
 
 
-def _v3_hard_stop_reason(record):
+def _v3_pure_applicability_behavior_miss(record, integrity):
+    """Recognize an analyzed behavior miss without weakening integrity."""
+    expected_integrity_reasons = {
+        'analysis is not complete',
+        'metric applicability integrity failed',
+        'analysis completeness status is not complete',
+    }
+    if (
+        integrity.get('passed') is not False
+        or set(integrity.get('reasons', []))
+        != expected_integrity_reasons
+        or len(integrity.get('reasons', []))
+        != len(expected_integrity_reasons)
+    ):
+        return False
+    classification = record.get('classification', {})
+    predicate_results = classification.get('predicate_results', {})
+    if not isinstance(predicate_results, dict):
+        return False
+    infrastructure_predicates = {
+        'recording_complete',
+        'cleanup_complete',
+        'collision_expectation',
+    }
+    behavior_predicates = {
+        'controller_goal',
+        'ground_truth_goal',
+        'expected_terminal_state',
+        'required_state_path',
+        'required_state_sequence',
+        'required_event_sequence',
+        'required_events',
+        'no_forbidden_states',
+        'no_forbidden_events',
+        'minimum_saturation_samples',
+    }
+    false_predicates = {
+        name
+        for name, passed in predicate_results.items()
+        if passed is False
+    }
+    if (
+        classification.get('status') != 'failed'
+        or classification.get('passed') is not False
+        or classification.get('infrastructure_status') != 'completed'
+        or not false_predicates
+        or not false_predicates <= behavior_predicates
+        or any(
+            predicate_results.get(name) is False
+            for name in infrastructure_predicates
+        )
+    ):
+        return False
+
+    analysis = record.get('analysis')
+    completeness = record.get('analysis_completeness')
+    applicability = record.get('metric_applicability')
+    if (
+        not isinstance(analysis, dict)
+        or not isinstance(completeness, dict)
+        or not isinstance(applicability, dict)
+        or analysis.get('analysis_status') != 'partial'
+        or completeness.get('status') != 'partial'
+        or analysis.get('metric_applicability') != applicability
+        or record.get('analysis_error')
+        or record.get('recording_complete') is not True
+        or record.get('cleanup', {}).get('passed') is not True
+        or record.get('record_process', {}).get('timed_out')
+    ):
+        return False
+    applicability_integrity = analysis.get('applicability_integrity', {})
+    applicability_reasons = applicability_integrity.get('reasons')
+    if (
+        applicability_integrity.get('passed') is not False
+        or applicability_reasons != [
+            'escape occurred in a case declared not applicable',
+        ]
+    ):
+        return False
+
+    critical_inputs = completeness.get('critical_inputs')
+    fresh_phase05 = completeness.get('fresh_phase05_validation', {})
+    if (
+        completeness.get('stored_phase05_passed') is not True
+        or fresh_phase05.get('passed') is not True
+        or critical_inputs != {
+            'control': True,
+            'cost': True,
+            'pose': True,
+            'readiness': True,
+        }
+        or completeness.get('recording_failures') != []
+        or completeness.get('analysis_failures') != []
+    ):
+        return False
+    metrics = analysis.get('metrics')
+    metric_validity = completeness.get('metric_validity')
+    if (
+        not isinstance(metrics, dict)
+        or not isinstance(metric_validity, dict)
+        or metric_validity != {
+            name: metric.get('status')
+            for name, metric in metrics.items()
+        }
+        or any(
+            status in {'invalid', 'unavailable'}
+            for status in metric_validity.values()
+        )
+        or completeness.get('run_id') != record.get('run_id')
+        or analysis.get('run_id') != record.get('run_id')
+    ):
+        return False
+    run_directory = Path(record.get('run_directory', '')).resolve()
+    artifact_paths = {
+        'resolved_scenario_sha256': (
+            run_directory / 'resolved_scenario.yaml'
+        ),
+        'analysis_summary_sha256': (
+            run_directory / 'analysis/phase08/summary_metrics.json'
+        ),
+        'analysis_completeness_sha256': (
+            run_directory
+            / 'analysis/phase08/analysis_completeness.json'
+        ),
+    }
+    if any(
+        not path.is_file()
+        or record.get(field) != file_sha256(path)
+        for field, path in artifact_paths.items()
+    ):
+        return False
+    if (
+        _load_json(artifact_paths['analysis_summary_sha256']) != analysis
+        or _load_json(
+            artifact_paths['analysis_completeness_sha256']
+        ) != completeness
+    ):
+        return False
+    return True
+
+
+def _v3_hard_stop_reason(
+    record,
+    *,
+    allow_pure_applicability_miss=False,
+):
     classification = record.get('classification', {})
     infrastructure = classification.get('infrastructure_status')
     if record.get('cleanup', {}).get('passed') is not True:
@@ -1222,6 +1434,11 @@ def _v3_hard_stop_reason(record):
         require_terminal_outcomes=False,
     )
     if not integrity['passed']:
+        if (
+            allow_pure_applicability_miss
+            and _v3_pure_applicability_behavior_miss(record, integrity)
+        ):
+            return None
         return f"evidence integrity: {integrity['reasons'][0]}"
     return None
 
@@ -1294,6 +1511,32 @@ def _v3_stage_summary(
         'serial_execution': True,
         'declared_slot_count': len(progress['slot_ids']),
         'completed_slot_count': len(progress['final_record_paths']),
+        'attempted_slot_count': (
+            len(progress['final_record_paths'])
+            + len(progress.get(
+                'ambiguous_interrupted_dispatch_case_ids',
+                [],
+            ))
+        ),
+        'ambiguous_interrupted_dispatch_case_ids': list(
+            progress.get(
+                'ambiguous_interrupted_dispatch_case_ids',
+                [],
+            )
+        ),
+        'carried_record_count': progress.get('carried_count', 0),
+        'new_execution_count': progress.get(
+            'newly_executed_count',
+            len(progress['final_record_paths']),
+        ),
+        'carried_count': progress.get('carried_count', 0),
+        'newly_executed_count': progress.get(
+            'newly_executed_count',
+            len(progress['final_record_paths']),
+        ),
+        'carried_records': list(
+            progress.get('carried_records', [])
+        ),
         'stopped_early_reason': progress.get('stopped_early_reason'),
         'attempt_count': len(progress['attempts']),
         'runs': runs,
@@ -1301,6 +1544,42 @@ def _v3_stage_summary(
     }
     atomic_yaml(summary_path, summary)
     return summary
+
+
+def _v3_verify_carried_record_bindings(carried_records, stage):
+    """Rehash carried records and their retained run directories."""
+    for item in carried_records:
+        case_id = item.get('case_id')
+        path = Path(item.get('record_path', '')).resolve()
+        expected_sha256 = item.get('record_sha256')
+        manifest = item.get('run_directory_manifest')
+        if (
+            not path.is_file()
+            or re.fullmatch(
+                r'[0-9a-f]{64}',
+                str(expected_sha256),
+            ) is None
+            or file_sha256(path) != expected_sha256
+        ):
+            raise RuntimeError(
+                f'v3 {stage} carried record binding failed: {case_id}'
+            )
+        record = _load_json(path)
+        if (
+            record.get('case_id') != case_id
+            or not isinstance(manifest, dict)
+            or Path(record.get('run_directory', '')).resolve()
+            != Path(manifest.get('root', '')).resolve()
+        ):
+            raise RuntimeError(
+                f'v3 {stage} carried record binding failed: {case_id}'
+            )
+        try:
+            _v3_verify_directory_manifest(manifest)
+        except RuntimeError as exc:
+            raise RuntimeError(
+                f'v3 {stage} carried record binding failed: {case_id}'
+            ) from exc
 
 
 def _v3_execute_serial_slots(
@@ -1313,10 +1592,17 @@ def _v3_execute_serial_slots(
     candidate_id=None,
     stop_decider=None,
     runtime_snapshot=None,
+    carried_records=None,
+    required_execution_case_ids=None,
+    allow_pure_applicability_miss=False,
 ):
     """Execute one declared case at a time with bounded replacements."""
     evidence_root = Path(evidence_root).expanduser().resolve()
     stage_root = Path(stage_root)
+    if allow_pure_applicability_miss and stage != 'activation':
+        raise RuntimeError(
+            'pure applicability continuation is V3C activation-only'
+        )
     stage_root.mkdir(parents=True, exist_ok=True, mode=0o700)
     stage_root.chmod(0o700)
     if _git('status', '--porcelain'):
@@ -1344,6 +1630,53 @@ def _v3_execute_serial_slots(
         raise RuntimeError(
             f'v3 {stage} slots must resolve to exactly one run each'
         )
+    carried_by_case = {}
+    for item in list(carried_records or []):
+        if not isinstance(item, dict):
+            raise RuntimeError(f'v3 {stage} carried record is malformed')
+        case_id = item.get('case_id')
+        path = Path(item.get('record_path', '')).resolve()
+        expected_sha256 = item.get('record_sha256')
+        if (
+            case_id not in slot_ids
+            or case_id in carried_by_case
+            or not path.is_file()
+            or re.fullmatch(
+                r'[0-9a-f]{64}',
+                str(expected_sha256),
+            ) is None
+            or file_sha256(path) != expected_sha256
+            or _load_json(path).get('case_id') != case_id
+        ):
+            raise RuntimeError(
+                f'v3 {stage} carried record binding failed: {case_id}'
+            )
+        carried_by_case[case_id] = {
+            **item,
+            'record_path': str(path),
+        }
+    normalized_carried = [
+        carried_by_case[case_id]
+        for case_id in slot_ids
+        if case_id in carried_by_case
+    ]
+    _v3_verify_carried_record_bindings(normalized_carried, stage)
+    execution_case_ids = [
+        case_id for case_id in slot_ids
+        if case_id not in carried_by_case
+    ]
+    normalized_required_execution_case_ids = (
+        list(required_execution_case_ids)
+        if required_execution_case_ids is not None else None
+    )
+    if (
+        normalized_required_execution_case_ids is not None
+        and execution_case_ids
+        != normalized_required_execution_case_ids
+    ):
+        raise RuntimeError(
+            f'v3 {stage} execution case IDs/order drifted'
+        )
     suite_sha256 = file_sha256(suite_path)
     progress = _v3_load_progress(stage_root)
     if progress is None:
@@ -1356,7 +1689,19 @@ def _v3_execute_serial_slots(
             'suite_sha256': suite_sha256,
             'slot_ids': slot_ids,
             'attempts': [],
-            'final_record_paths': {},
+            'carried_records': normalized_carried,
+            'carried_count': len(normalized_carried),
+            'newly_executed_count': 0,
+            'carried_record_count': len(normalized_carried),
+            'new_execution_count': 0,
+            'required_execution_case_ids': (
+                normalized_required_execution_case_ids
+            ),
+            'ambiguous_interrupted_dispatch_case_ids': [],
+            'final_record_paths': {
+                item['case_id']: item['record_path']
+                for item in normalized_carried
+            },
             'stopped_early_reason': None,
         })
     elif (
@@ -1364,8 +1709,26 @@ def _v3_execute_serial_slots(
         or progress.get('suite_sha256') != suite_sha256
         or progress.get('slot_ids') != slot_ids
         or progress.get('candidate_id') != candidate_id
+        or progress.get('carried_records', []) != normalized_carried
+        or progress.get('carried_count', 0) != len(normalized_carried)
+        or progress.get('required_execution_case_ids')
+        != normalized_required_execution_case_ids
     ):
         raise RuntimeError(f'v3 {stage} progress input drifted')
+    for item in normalized_carried:
+        if (
+            progress.get('final_record_paths', {}).get(item['case_id'])
+            != item['record_path']
+            or file_sha256(item['record_path'])
+            != item['record_sha256']
+            or any(
+                attempt.get('case_id') == item['case_id']
+                for attempt in progress.get('attempts', [])
+            )
+        ):
+            raise RuntimeError(
+                f'v3 {stage} carried record progress drifted'
+            )
     replacement_state = _v3_load_replacement_state(evidence_root)
     attempt_summaries = []
     final_records = []
@@ -1374,17 +1737,22 @@ def _v3_execute_serial_slots(
             break
         final_path_text = progress['final_record_paths'].get(case_id)
         if final_path_text:
+            if case_id in carried_by_case:
+                _v3_verify_carried_record_bindings(
+                    normalized_carried,
+                    stage,
+                )
             final_records.append(_load_json(final_path_text))
             continue
         slot_identifier = (
             f'{stage}.{candidate_id}.{case_id}'
             if candidate_id else f'{stage}.{case_id}'
         )
-        attempt_index = sum(
-            item['slot_id'] == slot_identifier
-            for item in progress['attempts']
-        )
         while True:
+            _v3_verify_carried_record_bindings(
+                normalized_carried,
+                stage,
+            )
             if (
                 not Path(suite_path).is_file()
                 or file_sha256(suite_path)
@@ -1395,30 +1763,93 @@ def _v3_execute_serial_slots(
                 )
             if runtime_snapshot is not None:
                 _v3_verify_repository_snapshot(runtime_snapshot)
-            remaining_slots = _v3_remaining_declared_slots(
-                evidence_root
-            )
-            free_bytes = shutil.disk_usage(stage_root).free
-            required_bytes = _v3_required_free_bytes(
-                evidence_root, remaining_slots
-            )
-            if free_bytes < required_bytes:
-                progress['stopped_early_reason'] = (
-                    f'{slot_identifier}: disk forecast failed '
-                    f'({free_bytes} < {required_bytes})'
+            slot_attempts = [
+                item for item in progress['attempts']
+                if item.get('slot_id') == slot_identifier
+            ]
+            pending_attempts = [
+                item for item in slot_attempts
+                if item.get('outcome') == 'dispatch_intent'
+            ]
+            if len(pending_attempts) > 1:
+                raise RuntimeError(
+                    f'v3 {stage} has multiple pending dispatch intents'
                 )
+            if pending_attempts:
+                attempt_entry = pending_attempts[0]
+                attempt_index = attempt_entry['attempt_index'] - 1
+                summary_path = Path(
+                    attempt_entry['expected_summary_path']
+                )
+                record_path = Path(
+                    attempt_entry['expected_record_path']
+                )
+                error_path = Path(
+                    attempt_entry['expected_error_path']
+                )
+                attempt_root = summary_path.parent
+                if not summary_path.is_file():
+                    ambiguous_case_ids = progress.setdefault(
+                        'ambiguous_interrupted_dispatch_case_ids',
+                        [],
+                    )
+                    if case_id not in ambiguous_case_ids:
+                        ambiguous_case_ids.append(case_id)
+                    progress['stopped_early_reason'] = (
+                        f'{slot_identifier}: ambiguous interrupted '
+                        'dispatch intent without a complete summary'
+                    )
+                    _v3_write_progress(stage_root, progress)
+                    break
+            else:
+                attempt_index = len(slot_attempts)
+                remaining_slots = _v3_remaining_declared_slots(
+                    evidence_root
+                )
+                free_bytes = shutil.disk_usage(stage_root).free
+                required_bytes = _v3_required_free_bytes(
+                    evidence_root, remaining_slots
+                )
+                if free_bytes < required_bytes:
+                    progress['stopped_early_reason'] = (
+                        f'{slot_identifier}: disk forecast failed '
+                        f'({free_bytes} < {required_bytes})'
+                    )
+                    _v3_write_progress(stage_root, progress)
+                    break
+                attempt_root = (
+                    stage_root
+                    / 'attempts'
+                    / f'{slot_index + 1:03d}_{case_id}'
+                    / f'attempt_{attempt_index + 1:02d}'
+                )
+                attempt_root.mkdir(
+                    parents=True,
+                    exist_ok=True,
+                    mode=0o700,
+                )
+                summary_path = (
+                    attempt_root / 'scenario_summary.yaml'
+                )
+                record_path = attempt_root / 'record.json'
+                error_path = attempt_root / 'execution_error.json'
+                attempt_entry = {
+                    'slot_id': slot_identifier,
+                    'case_id': case_id,
+                    'attempt_index': attempt_index + 1,
+                    'summary_path': None,
+                    'expected_summary_path': str(summary_path),
+                    'summary_sha256': None,
+                    'record_path': None,
+                    'expected_record_path': str(record_path),
+                    'record_sha256': None,
+                    'error_path': None,
+                    'expected_error_path': str(error_path),
+                    'error_sha256': None,
+                    'outcome': 'dispatch_intent',
+                }
+                progress['attempts'].append(attempt_entry)
                 _v3_write_progress(stage_root, progress)
-                break
-            attempt_root = (
-                stage_root
-                / 'attempts'
-                / f'{slot_index + 1:03d}_{case_id}'
-                / f'attempt_{attempt_index + 1:02d}'
-            )
-            attempt_root.mkdir(parents=True, exist_ok=True, mode=0o700)
-            summary_path = attempt_root / 'scenario_summary.yaml'
-            record_path = attempt_root / 'record.json'
-            error_path = attempt_root / 'execution_error.json'
             try:
                 if summary_path.is_file():
                     attempt_summary = yaml.safe_load(
@@ -1443,6 +1874,11 @@ def _v3_execute_serial_slots(
                         )
                     record = records[0]
                     atomic_json(record_path, record)
+                if record.get('case_id') != case_id:
+                    raise RuntimeError(
+                        f'v3 {stage} analyzed record belongs to '
+                        f'{record.get("case_id")}, not {case_id}'
+                    )
             except Exception as exc:
                 failure = {
                     'schema_version': 1,
@@ -1451,10 +1887,7 @@ def _v3_execute_serial_slots(
                     'error': f'{type(exc).__name__}: {exc}',
                 }
                 atomic_json(error_path, failure)
-                progress['attempts'].append({
-                    'slot_id': slot_identifier,
-                    'case_id': case_id,
-                    'attempt_index': attempt_index + 1,
+                attempt_entry.update({
                     'summary_path': (
                         str(summary_path)
                         if summary_path.is_file() else None
@@ -1473,10 +1906,7 @@ def _v3_execute_serial_slots(
                 )
                 _v3_write_progress(stage_root, progress)
                 break
-            progress['attempts'].append({
-                'slot_id': slot_identifier,
-                'case_id': case_id,
-                'attempt_index': attempt_index + 1,
+            attempt_entry.update({
                 'summary_path': str(summary_path),
                 'summary_sha256': file_sha256(summary_path),
                 'record_path': str(record_path),
@@ -1512,10 +1942,14 @@ def _v3_execute_serial_slots(
                     )
                     _v3_write_progress(stage_root, progress)
                     break
-                attempt_index += 1
                 _v3_write_progress(stage_root, progress)
                 continue
-            hard_stop = _v3_hard_stop_reason(record)
+            hard_stop = _v3_hard_stop_reason(
+                record,
+                allow_pure_applicability_miss=(
+                    allow_pure_applicability_miss
+                ),
+            )
             surviving_processes = _v3_active_processes()
             if surviving_processes:
                 hard_stop = (
@@ -1542,14 +1976,37 @@ def _v3_execute_serial_slots(
                 _v3_write_progress(stage_root, progress)
                 break
     summary_path = stage_root / 'scenario_summary.yaml'
+    _v3_verify_carried_record_bindings(normalized_carried, stage)
     final_records = [
         _load_json(progress['final_record_paths'][case_id])
         for case_id in slot_ids
         if case_id in progress['final_record_paths']
     ]
+    ambiguous_case_ids = [
+        case_id for case_id in slot_ids
+        if case_id not in progress['final_record_paths']
+        and any(
+            attempt.get('case_id') == case_id
+            and attempt.get('outcome') == 'dispatch_intent'
+            for attempt in progress.get('attempts', [])
+        )
+    ]
+    progress['ambiguous_interrupted_dispatch_case_ids'] = (
+        ambiguous_case_ids
+    )
     progress['not_run_slot_ids'] = [
         case_id for case_id in slot_ids
         if case_id not in progress['final_record_paths']
+        and case_id not in ambiguous_case_ids
+    ]
+    progress['carried_count'] = len(normalized_carried)
+    progress['newly_executed_count'] = (
+        len(progress['final_record_paths'])
+        - len(normalized_carried)
+    )
+    progress['carried_record_count'] = progress['carried_count']
+    progress['new_execution_count'] = progress[
+        'newly_executed_count'
     ]
     progress = _v3_write_progress(stage_root, progress)
     attempt_summaries = [
@@ -1568,7 +2025,24 @@ def _v3_execute_serial_slots(
         summary_path,
     )
     records_path = stage_root / 'records.json'
-    atomic_json(records_path, final_records)
+    aggregate_records = []
+    for case_id in slot_ids:
+        if case_id not in progress['final_record_paths']:
+            continue
+        if case_id in carried_by_case:
+            aggregate_records.append({
+                'schema_version': 1,
+                'case_id': case_id,
+                'disposition': (
+                    'carried_immutable_behavioral_failure'
+                ),
+                'carried_record': dict(carried_by_case[case_id]),
+            })
+        else:
+            aggregate_records.append(
+                _load_json(progress['final_record_paths'][case_id])
+            )
+    atomic_json(records_path, aggregate_records)
     attempts_path = stage_root / 'attempt_records.json'
     attempt_records = [
         _load_json(item['record_path'])
@@ -4725,6 +5199,620 @@ def _v3_harness_recovery_proof(
     }
 
 
+def _v3_behavioral_miss_audit(record):
+    """Project one retained record into the V3B correction audit."""
+    analysis = record.get('analysis', {})
+    completeness = record.get('analysis_completeness', {})
+    classification = record.get('classification', {})
+    predicates = classification.get('predicate_results', {})
+    metrics = analysis.get('metrics', {})
+    contract_predicate_names = (
+        'controller_goal',
+        'expected_terminal_state',
+        'ground_truth_goal',
+        'no_forbidden_events',
+        'no_forbidden_states',
+        'required_events',
+        'required_state_path',
+    )
+    return {
+        'analysis_failures': completeness.get('analysis_failures'),
+        'analysis_status': analysis.get('analysis_status'),
+        'applicability_integrity_passed': analysis.get(
+            'applicability_integrity', {}
+        ).get('passed'),
+        'applicability_integrity_reasons': analysis.get(
+            'applicability_integrity', {}
+        ).get('reasons'),
+        'classification_status': classification.get('status'),
+        'cleanup_complete': record.get('cleanup', {}).get('passed'),
+        'collision': metrics.get('collision', {}).get('value'),
+        'contract_predicates': {
+            name: predicates.get(name)
+            for name in contract_predicate_names
+        },
+        'critical_inputs_complete': (
+            isinstance(completeness.get('critical_inputs'), dict)
+            and bool(completeness['critical_inputs'])
+            and all(
+                value is True
+                for value in completeness['critical_inputs'].values()
+            )
+        ),
+        'failsafe': metrics.get('failsafe', {}).get('value'),
+        'final_aggregate_target_distance_m': metrics.get(
+            'final_aggregate_target_distance', {}
+        ).get('value'),
+        'fresh_phase05_validation_passed': completeness.get(
+            'fresh_phase05_validation', {}
+        ).get('passed'),
+        'infrastructure_status': classification.get(
+            'infrastructure_status'
+        ),
+        'invalid_metric_count': sum(
+            metric.get('status') == 'invalid'
+            for metric in metrics.values()
+        ),
+        'observed_state_sequence': record.get('outcomes', {}).get(
+            'observed_state_sequence'
+        ),
+        'recording_complete': record.get('recording_complete'),
+        'recording_failures': completeness.get('recording_failures'),
+        'terminal_state': metrics.get('terminal_state', {}).get('value'),
+        'timeout': metrics.get('timeout', {}).get('value'),
+    }
+
+
+def _v3_hard_stop_policy_recovery_proof(
+    superseded_evidence_root,
+    correction_path=V3_HARD_STOP_CORRECTION_PATH,
+):
+    """Verify immutable V3B evidence and the bounded dispatch correction."""
+    superseded_root = Path(
+        superseded_evidence_root
+    ).expanduser().resolve()
+    correction_path = Path(correction_path).resolve()
+    correction = _load_json(correction_path)
+    correction_sha256 = require_omission_sha256(
+        correction,
+        'correction_sha256',
+        'v3 behavioral-miss routing audit',
+    )
+    if (
+        correction.get('classification')
+        != 'behavioral_miss_diagnostic_completion'
+        or Path(
+            correction.get('superseded_evidence_root', '')
+        ).resolve() != superseded_root
+    ):
+        raise RuntimeError(
+            'v3 behavioral-miss audit names a different failure'
+        )
+    retained_audit = correction.get('retained_evidence_audit', {})
+    retained_path = Path(retained_audit.get('path', ''))
+    if not retained_path.is_absolute():
+        retained_path = REPOSITORY_ROOT / retained_path
+    retained_path = retained_path.resolve()
+    if (
+        not retained_path.is_file()
+        or retained_audit.get('file_sha256')
+        != file_sha256(retained_path)
+    ):
+        raise RuntimeError('v3 retained behavioral-miss audit drifted')
+    retained_correction = _load_json(retained_path)
+    retained_sha256 = require_omission_sha256(
+        retained_correction,
+        'correction_sha256',
+        'v3 retained behavioral-miss audit',
+    )
+    if (
+        retained_audit.get('omission_sha256') != retained_sha256
+        or retained_correction.get('classification')
+        != 'behavioral_miss_routing_misclassified'
+        or Path(
+            retained_correction.get('superseded_evidence_root', '')
+        ).resolve() != superseded_root
+    ):
+        raise RuntimeError(
+            'v3 retained behavioral-miss audit binding drifted'
+        )
+    policy = correction.get('correction', {})
+    if (
+        policy.get('hard_stop_policy')
+        != 'pure_applicability_partial_is_behavioral_miss'
+        or policy.get('fresh_lineage_id') != 'phase08-v3c'
+        or policy.get('carry_superseded_behavioral_failure') is not True
+        or policy.get('carry_failed_slot_byte_identically') is not True
+        or policy.get('execute_only_never_run_activation_cases') is not True
+        or policy.get('composite_activation_forced_fail') is not True
+        or policy.get('rerun_all_activation_cases') is not False
+        or policy.get('rerun_carried_case') is not False
+        or policy.get('m4_prohibited') is not True
+        or policy.get('phase08_v3_terminal_failure_required') is not True
+        or policy.get(
+            'reuse_precommitted_population_byte_identically'
+        ) is not True
+        or policy.get('activation_cases_changed') is not False
+        or policy.get('analyzer_output_changed') is not False
+        or policy.get('behavior_contract_changed') is not False
+        or policy.get('collision_gate_changed') is not False
+        or policy.get('final_record_integrity_gate_changed') is not False
+    ):
+        raise RuntimeError(
+            'v3 behavioral-miss correction policy drifted'
+        )
+    allowed_runtime_correction_sha256 = policy.get(
+        'allowed_runtime_correction_sha256'
+    )
+    if (
+        not isinstance(allowed_runtime_correction_sha256, dict)
+        or set(allowed_runtime_correction_sha256)
+        != set(V3_DIAGNOSTIC_ALLOWED_RUNTIME_DRIFT)
+        or any(
+            re.fullmatch(r'[0-9a-f]{64}', str(expected)) is None
+            or not (REPOSITORY_ROOT / path).is_file()
+            or file_sha256(REPOSITORY_ROOT / path) != expected
+            for path, expected in (
+                allowed_runtime_correction_sha256.items()
+            )
+        )
+    ):
+        raise RuntimeError(
+            'v3 allowed runtime-correction hash mapping drifted'
+        )
+    composite_activation = correction.get('composite_activation', {})
+    carried_audit = correction.get('carried_record', {})
+    expected_execute_case_ids = [
+        'v3a_below_target_fill',
+        'v3a_pure_escape_recenter',
+        'v3a_stalled_assist',
+        'v3a_fill_merge',
+        'v3a_full_lifecycle_goal',
+        'v3a_revisit_guard',
+        'v3a_boundary_saturation',
+        'v3a_noise_delay',
+        'v3a_safe_timeout',
+    ]
+    if (
+        composite_activation.get('carried_record_count') != 1
+        or composite_activation.get('new_execution_count') != 9
+        or composite_activation.get('composite_slot_count') != 10
+        or composite_activation.get('terminal_activation_passed')
+        is not False
+        or composite_activation.get('execute_case_ids')
+        != expected_execute_case_ids
+        or carried_audit.get('case_id')
+        != 'v3a_goal_aggregate_direct'
+        or carried_audit.get('source_lineage_id') != 'phase08-v3b'
+    ):
+        raise RuntimeError(
+            'v3 diagnostic-completion allocation drifted'
+        )
+
+    prepare = _v3_require_state(superseded_root, 'prepare')
+    qualification = _v3_require_state(
+        superseded_root, 'qualification'
+    )
+    activation = _v3_require_state(
+        superseded_root,
+        'activation',
+        require_pass=False,
+    )
+    if (
+        prepare.get('lineage_id') != 'phase08-v3b'
+        or qualification.get('lineage_id') != 'phase08-v3b'
+        or qualification.get('prepare_state_sha256')
+        != prepare.get('state_sha256')
+        or activation.get('qualification_state_sha256')
+        != qualification.get('state_sha256')
+        or activation.get('passed') is not False
+        or activation.get('run_count') != 1
+        or activation.get('integrity_pass_count') != 0
+        or activation.get('contract_pass_count') != 0
+        or activation.get('not_run_slot_ids')
+        != expected_execute_case_ids
+        or 'analysis is not complete' not in str(
+            activation.get('stopped_early_reason')
+        )
+    ):
+        raise RuntimeError(
+            'superseded V3B activation is not the audited failed state'
+        )
+
+    nested_recovery = prepare.get('recovery')
+    nested_audit = correction.get('nested_recovery', {})
+    if (
+        not isinstance(nested_recovery, dict)
+        or nested_recovery.get('kind')
+        != 'contact_probe_instrumentation_contamination'
+        or nested_audit.get('kind') != nested_recovery.get('kind')
+        or nested_audit.get('recovery_sha256')
+        != canonical_sha256(nested_recovery)
+        or Path(
+            nested_audit.get('superseded_evidence_root', '')
+        ).resolve()
+        != Path(
+            nested_recovery.get('superseded_evidence_root', '')
+        ).resolve()
+    ):
+        raise RuntimeError('V3B nested V3A recovery binding drifted')
+    observed_nested_recovery = _v3_harness_recovery_proof(
+        nested_recovery['superseded_evidence_root'],
+        correction_path=nested_recovery['correction_audit_path'],
+    )
+    if observed_nested_recovery != nested_recovery:
+        raise RuntimeError('V3B nested V3A recovery proof drifted')
+
+    progress_path = superseded_root / 'activation/progress.json'
+    records_path = superseded_root / 'activation/records.json'
+    attempt_records_path = (
+        superseded_root / 'activation/attempt_records.json'
+    )
+    summary_path = superseded_root / 'activation/scenario_summary.yaml'
+    transaction_path = _v3_prepare_transaction_path(superseded_root)
+    prepare_path = _v3_state_path(superseded_root, 'prepare')
+    qualification_path = _v3_state_path(
+        superseded_root, 'qualification'
+    )
+    activation_path = _v3_state_path(superseded_root, 'activation')
+    progress = _v3_load_progress(superseded_root / 'activation')
+    records = _load_json(records_path)
+    attempt_records = _load_json(attempt_records_path)
+    transaction = _v3_load_prepare_transaction(transaction_path)
+    if (
+        progress is None
+        or progress.get('progress_sha256')
+        != activation.get('progress_sha256')
+        or progress.get('stopped_early_reason')
+        != activation.get('stopped_early_reason')
+        or progress.get('not_run_slot_ids')
+        != expected_execute_case_ids
+        or len(records) != 1
+        or records != attempt_records
+        or activation.get('records_sha256')
+        != file_sha256(records_path)
+        or activation.get('attempt_records_sha256')
+        != file_sha256(attempt_records_path)
+        or activation.get('scenario_summary_sha256')
+        != file_sha256(summary_path)
+        or transaction.get('transaction_sha256')
+        != prepare.get('transaction_sha256')
+        or Path(transaction.get('evidence_root', '')).resolve()
+        != superseded_root
+    ):
+        raise RuntimeError('superseded V3B aggregate evidence drifted')
+    case_id = 'v3a_goal_aggregate_direct'
+    record_path_text = progress.get('final_record_paths', {}).get(
+        case_id
+    )
+    if not record_path_text:
+        raise RuntimeError('superseded V3B attempt record is missing')
+    record_path = Path(record_path_text)
+    record = _load_json(record_path)
+    if record != records[0]:
+        raise RuntimeError(
+            'superseded V3B final record differs from its aggregate'
+        )
+    run_directory = Path(record.get('run_directory', ''))
+    run_directory_manifest = _v3_directory_manifest(run_directory)
+    metadata_path = run_directory / 'metadata.yaml'
+    run_completeness_path = run_directory / 'completeness.json'
+    bag_metadata_path = run_directory / 'bag/metadata.yaml'
+    resolved_path = run_directory / 'resolved_scenario.yaml'
+    result_path = run_directory / 'scenario_result.yaml'
+    analysis_path = (
+        run_directory / 'analysis/phase08/summary_metrics.json'
+    )
+    completeness_path = (
+        run_directory / 'analysis/phase08/analysis_completeness.json'
+    )
+    raw_hashes = record.get(
+        'analysis_completeness', {}
+    ).get('raw_bag_sha256', {})
+    if not isinstance(raw_hashes, dict) or len(raw_hashes) != 1:
+        raise RuntimeError(
+            'superseded V3B raw-bag evidence is ambiguous'
+        )
+    raw_bag_path_text, retained_raw_hash = next(iter(raw_hashes.items()))
+    raw_bag_path = Path(raw_bag_path_text)
+    artifact_paths = {
+        'prepare_state_file_sha256': prepare_path,
+        'qualification_state_file_sha256': qualification_path,
+        'activation_state_file_sha256': activation_path,
+        'transaction_file_sha256': transaction_path,
+        'activation_progress_file_sha256': progress_path,
+        'activation_records_file_sha256': records_path,
+        'activation_attempt_records_file_sha256': attempt_records_path,
+        'activation_scenario_summary_file_sha256': summary_path,
+        'attempt_record_file_sha256': record_path,
+        'metadata_file_sha256': metadata_path,
+        'resolved_scenario_file_sha256': resolved_path,
+        'scenario_result_file_sha256': result_path,
+        'analysis_summary_file_sha256': analysis_path,
+        'analysis_completeness_file_sha256': completeness_path,
+        'raw_bag_file_sha256': raw_bag_path,
+    }
+    expected_hashes = retained_correction.get('original_artifacts', {})
+    for field, path in artifact_paths.items():
+        if (
+            not path.is_file()
+            or expected_hashes.get(field) != file_sha256(path)
+        ):
+            raise RuntimeError(
+                f'superseded V3B artifact drifted: {field}'
+            )
+    if (
+        carried_audit.get('run_directory_file_count')
+        != run_directory_manifest['file_count']
+        or carried_audit.get('run_directory_manifest_sha256')
+        != run_directory_manifest['manifest_sha256']
+        or not run_completeness_path.is_file()
+        or carried_audit.get('completeness_sha256')
+        != file_sha256(run_completeness_path)
+        or not bag_metadata_path.is_file()
+        or carried_audit.get('bag_metadata_sha256')
+        != file_sha256(bag_metadata_path)
+    ):
+        raise RuntimeError(
+            'superseded V3B run-directory evidence drifted'
+        )
+    if (
+        activation.get('state_sha256')
+        != expected_hashes.get('activation_state_sha256')
+        or progress.get('progress_sha256')
+        != expected_hashes.get('activation_progress_sha256')
+        or retained_raw_hash
+        != expected_hashes.get('raw_bag_file_sha256')
+        or record.get('resolved_scenario_sha256')
+        != file_sha256(resolved_path)
+        or record.get('analysis_summary_sha256')
+        != file_sha256(analysis_path)
+        or record.get('analysis_completeness_sha256')
+        != file_sha256(completeness_path)
+    ):
+        raise RuntimeError(
+            'superseded V3B retained hashes differ from its audit'
+        )
+    if (
+        record.get('case_id') != case_id
+        or record.get('run_id') != carried_audit.get('run_id')
+        or str(record_path.resolve())
+        != str(Path(carried_audit.get('record_path', '')).resolve())
+        or file_sha256(record_path)
+        != carried_audit.get('record_sha256')
+        or record.get('classification', {}).get('status')
+        != carried_audit.get('classification_status')
+        or record.get('classification', {}).get(
+            'infrastructure_status'
+        ) != carried_audit.get('infrastructure_status')
+        or _v3_behavioral_miss_audit(record)
+        != retained_correction.get('behavioral_result')
+    ):
+        raise RuntimeError(
+            'superseded V3B record is not the audited behavior miss'
+        )
+    metadata = yaml.safe_load(
+        metadata_path.read_text(encoding='utf-8')
+    )
+    resolved = yaml.safe_load(
+        resolved_path.read_text(encoding='utf-8')
+    )
+    target_argv = metadata.get('target_argv', [])
+    if (
+        'gazebo_gui:=True' not in target_argv
+        or 'simulation_contacts_enabled:=True' not in target_argv
+        or 'simulation_contact_probe_enabled:=False'
+        not in target_argv
+        or 'simulation_contact_probe_enabled:=True' in target_argv
+        or resolved.get('success', {}).get(
+            'collision_expected'
+        ) is not False
+    ):
+        raise RuntimeError(
+            'superseded V3B launch is not the corrected contact run'
+        )
+
+    final_integrity = _v3_record_integrity(record)
+    if (
+        _v3_hard_stop_reason(
+            record,
+            allow_pure_applicability_miss=True,
+        ) is not None
+        or final_integrity.get('passed') is not False
+        or 'metric applicability integrity failed'
+        not in final_integrity.get('reasons', [])
+    ):
+        raise RuntimeError(
+            'v3 behavioral-miss correction weakened or failed its boundary'
+        )
+    precommit = correction.get('precommit', {})
+    commitment = _load_json(V3_COMMITMENT_PATH)
+    if (
+        precommit.get('suite_sha256') != prepare.get('suite_sha256')
+        or precommit.get('commitment_sha256')
+        != prepare.get('commitment_sha256')
+        or precommit.get('suite_sha256')
+        != file_sha256(V3_PRECOMMITTED_SUITE_PATH)
+        or precommit.get('commitment_file_sha256')
+        != file_sha256(V3_COMMITMENT_PATH)
+        or precommit.get('commitment_sha256')
+        != require_omission_sha256(
+            commitment,
+            'commitment_sha256',
+            'acceptance commitment',
+        )
+    ):
+        raise RuntimeError('V3B precommit differs from its correction audit')
+    qualified = correction.get('qualified_runtime', {})
+    qualified_repository = qualification.get('repository', {})
+    if (
+        qualified.get('qualification_state_sha256')
+        != qualification.get('state_sha256')
+        or qualified.get('runtime_input_commit')
+        != qualified_repository.get('commit')
+        or qualified.get('runtime_inputs_sha256')
+        != qualified_repository.get(
+            'runtime_inputs_sha256'
+        )
+    ):
+        raise RuntimeError(
+            'V3B qualified runtime differs from its correction audit'
+        )
+    runtime_commit = qualified_repository.get('commit')
+    declared_execution_commit = qualified.get('execution_commit')
+    try:
+        resolved_runtime_commit = _git(
+            'rev-parse',
+            f'{runtime_commit}^{{commit}}',
+        )
+        resolved_execution_commit = _git(
+            'rev-parse',
+            f'{declared_execution_commit}^{{commit}}',
+        )
+        execution_line = _git(
+            'rev-list',
+            '--parents',
+            '-n',
+            '1',
+            resolved_execution_commit,
+        ).split()
+        _git(
+            'merge-base',
+            '--is-ancestor',
+            resolved_execution_commit,
+            'HEAD',
+        )
+        execution_changed_paths = set(
+            _git(
+                'diff',
+                '--name-only',
+                resolved_runtime_commit,
+                resolved_execution_commit,
+            ).splitlines()
+        )
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError(
+            'V3B qualified execution commit proof failed'
+        ) from exc
+    if (
+        resolved_runtime_commit != runtime_commit
+        or len(execution_line) != 2
+        or execution_line[0] != resolved_execution_commit
+        or execution_line[1] != resolved_runtime_commit
+        or qualified.get('execution_commit_resolved')
+        != resolved_execution_commit
+        or execution_changed_paths
+        & set(qualified_repository.get('input_hashes', {}))
+    ):
+        raise RuntimeError(
+            'V3B qualified execution commit boundary drifted'
+        )
+    baseline_runtime_projection = _v3_runtime_input_projection(
+        qualified_repository
+    )
+    installed_activation = qualification.get(
+        'installed_dry_runs', {}
+    ).get('activation', {})
+    activation_dry_run_path = Path(
+        installed_activation.get('path', '')
+    )
+    if (
+        not activation_dry_run_path.is_file()
+        or installed_activation.get('sha256')
+        != file_sha256(activation_dry_run_path)
+    ):
+        raise RuntimeError(
+            'V3B qualified activation dry run drifted'
+        )
+    activation_invocation_contract = (
+        _v3_activation_invocation_contract(
+            yaml.safe_load(
+                activation_dry_run_path.read_text(encoding='utf-8')
+            )
+        )
+    )
+    return {
+        'kind': 'behavioral_miss_diagnostic_completion',
+        'superseded_evidence_root': str(superseded_root),
+        'superseded_prepare_state_sha256': prepare['state_sha256'],
+        'superseded_qualification_state_sha256': (
+            qualification['state_sha256']
+        ),
+        'superseded_activation_state_sha256': activation['state_sha256'],
+        'superseded_suite_sha256': prepare['suite_sha256'],
+        'superseded_commitment_sha256': prepare['commitment_sha256'],
+        'correction_audit_path': str(correction_path),
+        'correction_audit_sha256': correction_sha256,
+        'run_id': record['run_id'],
+        'carried_record': dict(carried_audit),
+        'run_directory_manifest': run_directory_manifest,
+        'composite_activation': dict(composite_activation),
+        'baseline_runtime_projection': baseline_runtime_projection,
+        'allowed_runtime_correction_sha256': dict(
+            allowed_runtime_correction_sha256
+        ),
+        'activation_invocation_contract': (
+            activation_invocation_contract
+        ),
+        'execution_commit': resolved_execution_commit,
+        'original_artifacts': dict(expected_hashes),
+        'behavioral_result': dict(
+            retained_correction['behavioral_result']
+        ),
+        'retained_evidence_audit': dict(retained_audit),
+        'nested_recovery': nested_recovery,
+        'policy': dict(policy),
+    }
+
+
+def _v3_recovery_fresh_lineage_id(recovery):
+    kind = recovery.get('kind')
+    if kind == 'contact_probe_instrumentation_contamination':
+        return 'phase08-v3b'
+    if kind == 'behavioral_miss_diagnostic_completion':
+        return 'phase08-v3c'
+    raise RuntimeError(f'unsupported v3 recovery kind: {kind}')
+
+
+def _v3_revalidate_recovery(recovery):
+    """Recompute one retained recovery proof from its bound inputs."""
+    kind = recovery.get('kind')
+    if kind == 'contact_probe_instrumentation_contamination':
+        return _v3_harness_recovery_proof(
+            recovery['superseded_evidence_root'],
+            correction_path=recovery['correction_audit_path'],
+        )
+    if kind == 'behavioral_miss_diagnostic_completion':
+        return _v3_hard_stop_policy_recovery_proof(
+            recovery['superseded_evidence_root'],
+            correction_path=recovery['correction_audit_path'],
+        )
+    raise RuntimeError(f'unsupported v3 recovery kind: {kind}')
+
+
+def _v3_adoption_recovery_proof(
+    superseded_evidence_root,
+    correction_path=None,
+):
+    """Select the fixed proof for the exact superseded lineage."""
+    if correction_path is not None:
+        return _v3_harness_recovery_proof(
+            superseded_evidence_root,
+            correction_path=correction_path,
+        )
+    superseded = _v3_require_state(
+        superseded_evidence_root,
+        'prepare',
+    )
+    if superseded.get('lineage_id') == 'phase08-v3b':
+        return _v3_hard_stop_policy_recovery_proof(
+            superseded_evidence_root,
+        )
+    return _v3_harness_recovery_proof(
+        superseded_evidence_root,
+    )
+
+
 def _v3_adoption_matches_invocation(
     transaction,
     operator,
@@ -4740,8 +5828,8 @@ def _v3_adoption_matches_invocation(
         transaction.get('operator') != operator
         or Path(transaction.get('evidence_root', '')).resolve()
         != expected_fresh_root
-        or recovery.get('kind')
-        != 'contact_probe_instrumentation_contamination'
+        or transaction.get('experiment_version')
+        != _v3_recovery_fresh_lineage_id(recovery)
         or Path(
             recovery.get('superseded_evidence_root', '')
         ).resolve() != expected_root
@@ -4759,7 +5847,7 @@ def run_v3_adopt_precommit(
     *,
     suite_path=V3_PRECOMMITTED_SUITE_PATH,
     commitment_path=V3_COMMITMENT_PATH,
-    correction_path=V3_CONTACT_CORRECTION_PATH,
+    correction_path=None,
 ):
     """Adopt the exact v3 precommit into a fresh corrected lineage."""
     root = Path(evidence_root).expanduser().resolve()
@@ -4779,6 +5867,17 @@ def run_v3_adopt_precommit(
             superseded_root,
         )
         _v3_verify_repository_snapshot(transaction['repository'])
+        observed_recovery = _v3_revalidate_recovery(
+            transaction['recovery']
+        )
+        if observed_recovery != transaction['recovery']:
+            raise RuntimeError(
+                'v3 interrupted adoption recovery proof drifted'
+            )
+        _v3_verify_diagnostic_runtime_projection(
+            transaction['recovery'],
+            transaction['repository'],
+        )
         return _v3_publish_prepare_transaction(
             root,
             transaction,
@@ -4796,6 +5895,17 @@ def run_v3_adopt_precommit(
             superseded_root,
         )
         _v3_verify_repository_snapshot(transaction['repository'])
+        observed_recovery = _v3_revalidate_recovery(
+            transaction['recovery']
+        )
+        if observed_recovery != transaction['recovery']:
+            raise RuntimeError(
+                'v3 interrupted adoption recovery proof drifted'
+            )
+        _v3_verify_diagnostic_runtime_projection(
+            transaction['recovery'],
+            transaction['repository'],
+        )
         return _v3_publish_prepare_transaction(
             root,
             transaction,
@@ -4827,10 +5937,11 @@ def run_v3_adopt_precommit(
         require_clean=True,
         extra_paths=(suite_path, commitment_path),
     )
-    recovery = _v3_harness_recovery_proof(
+    recovery = _v3_adoption_recovery_proof(
         superseded_root,
         correction_path=correction_path,
     )
+    _v3_verify_diagnostic_runtime_projection(recovery, repository)
     declared_fresh_root = Path(
         recovery['policy'].get('fresh_evidence_root', '')
     ).resolve()
@@ -4872,7 +5983,9 @@ def run_v3_adopt_precommit(
         raise RuntimeError('v3 precommit adoption disk forecast failed')
     transaction = {
         'schema_version': 1,
-        'experiment_version': 'phase08-v3b',
+        'experiment_version': _v3_recovery_fresh_lineage_id(
+            recovery
+        ),
         'operator': operator,
         'evidence_root': str(root),
         'suite_path': str(suite_path.resolve()),
@@ -5359,6 +6472,116 @@ def _v3_qualification_commands(
     return commands, install_root
 
 
+def _v3_normalize_generated_noise_config(argument):
+    """Normalize only the generated Phase 06 noise-config path."""
+    if re.fullmatch(
+        (
+            r'cost_function_config_filepath:=/tmp/'
+            r'gesc_phase06_[A-Za-z0-9_]+/'
+            r'resolved_cost_function\.json'
+        ),
+        str(argument),
+    ):
+        return (
+            'cost_function_config_filepath:='
+            '<ephemeral-generated-noise-config>'
+        )
+    return argument
+
+
+def _v3_normalize_activation_launch_argv(argv):
+    """Normalize the one declared ephemeral launch argument."""
+    if not isinstance(argv, list):
+        raise RuntimeError('v3 activation launch argv is unavailable')
+    return [
+        _v3_normalize_generated_noise_config(argument)
+        for argument in argv
+    ]
+
+
+def _v3_normalize_activation_record_argv(argv):
+    """Normalize only declared ephemeral recorder argument values."""
+    if not isinstance(argv, list):
+        raise RuntimeError('v3 activation record argv is unavailable')
+    normalized = list(argv)
+    for index, value in enumerate(normalized):
+        if value not in {'--metadata-input', '--run-id'}:
+            continue
+        if index + 1 >= len(normalized):
+            raise RuntimeError(
+                f'v3 activation record argv ends after {value}'
+            )
+        normalized[index + 1] = '<ephemeral>'
+    return [
+        _v3_normalize_generated_noise_config(argument)
+        for argument in normalized
+    ]
+
+
+def _v3_activation_invocation_contract(summary):
+    """Project one installed activation dry run into a stable contract."""
+    if not isinstance(summary, dict):
+        raise RuntimeError('v3 activation dry-run summary is malformed')
+    runs = summary.get('runs')
+    if not isinstance(runs, list):
+        raise RuntimeError('v3 activation dry-run runs are unavailable')
+    normalized_runs = []
+    for run in runs:
+        if not isinstance(run, dict):
+            raise RuntimeError('v3 activation dry-run run is malformed')
+        required = {
+            'run_id',
+            'case_id',
+            'case_key',
+            'profile',
+            'seed',
+            'launch_argv',
+            'record_argv',
+            'activation_contract',
+            'metadata',
+        }
+        if not required <= set(run):
+            raise RuntimeError(
+                'v3 activation dry-run invocation fields are missing'
+            )
+        if not isinstance(run['launch_argv'], list):
+            raise RuntimeError(
+                'v3 activation launch argv is unavailable'
+            )
+        normalized_runs.append({
+            'run_id': '<ephemeral>',
+            'case_id': run['case_id'],
+            'case_key': run['case_key'],
+            'profile': run['profile'],
+            'seed': run['seed'],
+            'launch_argv': _v3_normalize_activation_launch_argv(
+                run['launch_argv']
+            ),
+            'record_argv': _v3_normalize_activation_record_argv(
+                run['record_argv']
+            ),
+            'activation_contract': run['activation_contract'],
+            'metadata': run['metadata'],
+        })
+    contract = {
+        'schema_version': summary.get('schema_version'),
+        'suite_id': summary.get('suite_id'),
+        'scenario_schema_version': summary.get(
+            'scenario_schema_version'
+        ),
+        'source_path': summary.get('source_path'),
+        'serial_execution': summary.get('serial_execution'),
+        'selected_case_ids': summary.get('selected_case_ids'),
+        'resolved_run_count': summary.get('resolved_run_count'),
+        'unsupported_count': summary.get('unsupported_count'),
+        'unsupported': summary.get('unsupported'),
+        'dry_run': summary.get('dry_run'),
+        'runs': normalized_runs,
+    }
+    contract['contract_sha256'] = canonical_sha256(contract)
+    return contract
+
+
 def _v3_activation_contact_launch_contract(summary):
     """Verify installed activation commands use passive contact evidence."""
     runs = summary.get('runs')
@@ -5425,15 +6648,13 @@ def run_v3_qualify(operator, evidence_root):
         'recovery_sha256': canonical_sha256(recovery),
         'reasons': [],
     }
-    if prepare.get('lineage_id') != 'phase08-v3b':
+    expected_lineage = _v3_recovery_fresh_lineage_id(recovery)
+    if prepare.get('lineage_id') != expected_lineage:
         recovery_validation['reasons'].append(
-            'corrected prepare lineage is not phase08-v3b'
+            f'corrected prepare lineage is not {expected_lineage}'
         )
     try:
-        observed_recovery = _v3_harness_recovery_proof(
-            recovery['superseded_evidence_root'],
-            correction_path=recovery['correction_audit_path'],
-        )
+        observed_recovery = _v3_revalidate_recovery(recovery)
         if observed_recovery != recovery:
             recovery_validation['reasons'].append(
                 'corrected prepare recovery proof drifted'
@@ -5450,6 +6671,10 @@ def run_v3_qualify(operator, evidence_root):
         _v3_verify_repository_snapshot(
             prepare['repository'],
             require_clean=False,
+        )
+        _v3_verify_diagnostic_runtime_projection(
+            recovery,
+            prepare['repository'],
         )
     except RuntimeError as exc:
         reasons.append(str(exc))
@@ -5553,6 +6778,7 @@ def run_v3_qualify(operator, evidence_root):
         'expected_count': V3_EXPECTED_COUNTS['activation'],
         'reasons': ['activation installed dry-run summary is missing'],
     }
+    activation_invocation_contract = None
     for name, expected in (
         ('activation', V3_EXPECTED_COUNTS['activation']),
         ('development', V3_EXPECTED_COUNTS['development_per_candidate']),
@@ -5582,6 +6808,22 @@ def run_v3_qualify(operator, evidence_root):
                 reasons.append(
                     'activation installed contact launch contract failed'
                 )
+            try:
+                activation_invocation_contract = (
+                    _v3_activation_invocation_contract(summary)
+                )
+                if (
+                    recovery.get('kind')
+                    == 'behavioral_miss_diagnostic_completion'
+                    and activation_invocation_contract
+                    != recovery.get('activation_invocation_contract')
+                ):
+                    reasons.append(
+                        'activation installed invocation contract '
+                        'differs from V3B'
+                    )
+            except RuntimeError as exc:
+                reasons.append(str(exc))
     after_processes = _v3_active_processes()
     if after_processes:
         reasons.append('post-qualification ROS/Gazebo process set is not clean')
@@ -5607,6 +6849,9 @@ def run_v3_qualify(operator, evidence_root):
         'recovery_validation': recovery_validation,
         'activation_contact_launch_contract': (
             activation_contact_contract
+        ),
+        'activation_invocation_contract': (
+            activation_invocation_contract
         ),
         'activation_count': len(activation_runs),
         'development_count': len(development_runs),
@@ -5728,9 +6973,10 @@ def _v3_verify_corrected_recovery_before_activation(
         raise RuntimeError(
             'v3 corrected activation requires adopted recovery'
         )
+    expected_lineage = _v3_recovery_fresh_lineage_id(recovery)
     if (
-        prepare.get('lineage_id') != 'phase08-v3b'
-        or qualification.get('lineage_id') != 'phase08-v3b'
+        prepare.get('lineage_id') != expected_lineage
+        or qualification.get('lineage_id') != expected_lineage
     ):
         raise RuntimeError('v3 corrected activation lineage drifted')
     recovery_validation = qualification.get('recovery_validation', {})
@@ -5776,16 +7022,80 @@ def _v3_verify_corrected_recovery_before_activation(
         raise RuntimeError(
             'v3 installed activation contact proof drifted'
         )
-    observed = _v3_harness_recovery_proof(
-        recovery['superseded_evidence_root'],
-        correction_path=recovery['correction_audit_path'],
-    )
+    if recovery.get('kind') == 'behavioral_miss_diagnostic_completion':
+        observed_invocation_contract = (
+            _v3_activation_invocation_contract(dry_run_summary)
+        )
+        if (
+            qualification.get('activation_invocation_contract')
+            != observed_invocation_contract
+            or recovery.get('activation_invocation_contract')
+            != observed_invocation_contract
+        ):
+            raise RuntimeError(
+                'v3 installed activation invocation contract drifted'
+            )
+    observed = _v3_revalidate_recovery(recovery)
     if observed != recovery:
         raise RuntimeError('v3 corrected recovery proof drifted')
 
 
+def _v3_diagnostic_carried_records(recovery):
+    """Bind V3C to V3B's immutable failed slot without redispatch."""
+    if recovery.get('kind') != 'behavioral_miss_diagnostic_completion':
+        return []
+    carried = recovery.get('carried_record', {})
+    record_path = Path(carried.get('record_path', '')).resolve()
+    record_sha256 = carried.get('record_sha256')
+    run_directory_manifest = recovery.get(
+        'run_directory_manifest'
+    )
+    if (
+        carried.get('case_id') != 'v3a_goal_aggregate_direct'
+        or carried.get('source_lineage_id') != 'phase08-v3b'
+        or not record_path.is_file()
+        or file_sha256(record_path) != record_sha256
+    ):
+        raise RuntimeError('v3 diagnostic carried record drifted')
+    record = _load_json(record_path)
+    try:
+        _v3_verify_directory_manifest(run_directory_manifest)
+    except RuntimeError as exc:
+        raise RuntimeError(
+            'v3 diagnostic carried run directory drifted'
+        ) from exc
+    if (
+        record.get('run_id') != carried.get('run_id')
+        or record.get('classification', {}).get('status') != 'failed'
+        or _v3_hard_stop_reason(
+            record,
+            allow_pure_applicability_miss=True,
+        ) is not None
+        or _v3_record_integrity(record).get('passed') is not False
+    ):
+        raise RuntimeError(
+            'v3 diagnostic carried record lost its failure boundary'
+        )
+    return [{
+        'case_id': carried['case_id'],
+        'record_path': str(record_path),
+        'record_sha256': record_sha256,
+        'run_id': carried['run_id'],
+        'source_lineage_id': carried['source_lineage_id'],
+        'source_evidence_root': recovery[
+            'superseded_evidence_root'
+        ],
+        'source_activation_state_sha256': recovery[
+            'superseded_activation_state_sha256'
+        ],
+        'run_directory_manifest': run_directory_manifest,
+        'disposition': 'carried_immutable_behavioral_failure',
+        'rerun': False,
+    }]
+
+
 def run_v3_activation(operator, evidence_root):
-    """Execute all ten fresh visible activation contracts."""
+    """Execute the corrected visible activation contract set."""
     root = Path(evidence_root).expanduser().resolve()
     prepare = _v3_require_state(root, 'prepare')
     qualification = _v3_require_state(root, 'qualification')
@@ -5803,6 +7113,18 @@ def run_v3_activation(operator, evidence_root):
         _v3_activation_profile(),
         stage_root / 'resolved_suite.yaml',
     )
+    carried_records = _v3_diagnostic_carried_records(
+        prepare['recovery']
+    )
+    diagnostic_completion = (
+        prepare.get('lineage_id') == 'phase08-v3c'
+    )
+    required_execution_case_ids = (
+        prepare['recovery'].get(
+            'composite_activation', {}
+        ).get('execute_case_ids')
+        if diagnostic_completion else None
+    )
     summary, records, progress = _v3_execute_serial_slots(
         suite_path,
         operator,
@@ -5810,6 +7132,9 @@ def run_v3_activation(operator, evidence_root):
         stage_root,
         'activation',
         runtime_snapshot=qualification['repository'],
+        carried_records=carried_records,
+        required_execution_case_ids=required_execution_case_ids,
+        allow_pure_applicability_miss=diagnostic_completion,
     )
     integrity = [_v3_record_integrity(record) for record in records]
     contract_passes = [
@@ -5817,6 +7142,11 @@ def run_v3_activation(operator, evidence_root):
         for record in records
     ]
     reasons = []
+    if diagnostic_completion:
+        reasons.append(
+            'V3C diagnostic completion carries the immutable V3B '
+            'behavioral failure and is not pass-eligible'
+        )
     if progress.get('stopped_early_reason'):
         reasons.append(
             f"activation hard stop: {progress['stopped_early_reason']}"
@@ -5827,6 +7157,25 @@ def run_v3_activation(operator, evidence_root):
         reasons.append('one or more activation integrity checks failed')
     if not all(contract_passes):
         reasons.append('one or more activation behavior contracts failed')
+    carried_count = progress.get('carried_count', 0)
+    newly_executed_count = progress.get(
+        'newly_executed_count',
+        len(records),
+    )
+    if diagnostic_completion and (
+        carried_count != 1
+        or newly_executed_count != 9
+        or len(records) != 10
+        or len(progress.get('attempts', [])) < 9
+        or any(
+            attempt.get('case_id') == 'v3a_goal_aggregate_direct'
+            for attempt in progress.get('attempts', [])
+        )
+    ):
+        reasons.append(
+            'V3C diagnostic completion did not retain one carried '
+            'and nine newly executed slots'
+        )
     functional = _run_functional_tests()
     if not functional['passed']:
         reasons.append('post-activation functional test gate failed')
@@ -5835,6 +7184,14 @@ def run_v3_activation(operator, evidence_root):
         'operator': operator,
         'qualification_state_sha256': qualification['state_sha256'],
         'run_count': len(records),
+        'composite_slot_count': len(records),
+        'carried_record_count': carried_count,
+        'new_execution_count': newly_executed_count,
+        'carried_count': carried_count,
+        'newly_executed_count': newly_executed_count,
+        'carried_records': progress.get('carried_records', []),
+        'pass_eligible': not diagnostic_completion,
+        'diagnostic_completion': diagnostic_completion,
         'integrity_pass_count': sum(
             item['passed'] for item in integrity
         ),
@@ -5852,6 +7209,10 @@ def run_v3_activation(operator, evidence_root):
         ),
         'progress_sha256': progress['progress_sha256'],
         'stopped_early_reason': progress.get('stopped_early_reason'),
+        'ambiguous_interrupted_dispatch_case_ids': progress.get(
+            'ambiguous_interrupted_dispatch_case_ids',
+            [],
+        ),
         'not_run_slot_ids': progress.get('not_run_slot_ids', []),
         'replacement_state_sha256': (
             file_sha256(_v3_replacement_state_path(root))
@@ -6103,6 +7464,12 @@ def run_v3_development(operator, evidence_root):
         metrics['stopped_early_reason'] = progress.get(
             'stopped_early_reason'
         )
+        metrics['ambiguous_interrupted_dispatch_case_ids'] = (
+            progress.get(
+                'ambiguous_interrupted_dispatch_case_ids',
+                [],
+            )
+        )
         metrics['not_run_slot_ids'] = progress.get(
             'not_run_slot_ids', []
         )
@@ -6195,6 +7562,70 @@ def _v3_repository_snapshot(require_clean=False, extra_paths=()):
         'input_hashes': input_hashes,
         'runtime_inputs_sha256': canonical_sha256(input_hashes),
     }
+
+
+def _v3_runtime_input_projection(snapshot):
+    """Exclude only four reviewed V3C validation-workflow files."""
+    input_hashes = snapshot.get('input_hashes')
+    if (
+        not isinstance(input_hashes, dict)
+        or canonical_sha256(input_hashes)
+        != snapshot.get('runtime_inputs_sha256')
+    ):
+        raise RuntimeError('v3 runtime-input snapshot hash drifted')
+    missing_allowed_paths = [
+        path
+        for path in V3_DIAGNOSTIC_ALLOWED_RUNTIME_DRIFT
+        if path not in input_hashes
+    ]
+    if missing_allowed_paths:
+        raise RuntimeError(
+            'v3 diagnostic runtime baseline lacks allowed correction '
+            f'paths: {missing_allowed_paths}'
+        )
+    projected = {
+        path: digest
+        for path, digest in input_hashes.items()
+        if path not in V3_DIAGNOSTIC_ALLOWED_RUNTIME_DRIFT
+    }
+    return {
+        'excluded_paths': list(
+            V3_DIAGNOSTIC_ALLOWED_RUNTIME_DRIFT
+        ),
+        'input_count': len(projected),
+        'input_hashes_sha256': canonical_sha256(projected),
+    }
+
+
+def _v3_verify_diagnostic_runtime_projection(recovery, snapshot):
+    """Reject drift outside four reviewed validation-workflow files."""
+    if recovery.get('kind') != 'behavioral_miss_diagnostic_completion':
+        return None
+    input_hashes = snapshot.get('input_hashes')
+    allowed_hashes = recovery.get(
+        'allowed_runtime_correction_sha256'
+    )
+    if (
+        not isinstance(input_hashes, dict)
+        or not isinstance(allowed_hashes, dict)
+        or set(allowed_hashes)
+        != set(V3_DIAGNOSTIC_ALLOWED_RUNTIME_DRIFT)
+        or any(
+            input_hashes.get(path) != expected
+            for path, expected in allowed_hashes.items()
+        )
+    ):
+        raise RuntimeError(
+            'v3 allowed runtime-correction hash mapping drifted'
+        )
+    expected = recovery.get('baseline_runtime_projection')
+    observed = _v3_runtime_input_projection(snapshot)
+    if expected != observed:
+        raise RuntimeError(
+            'v3 diagnostic runtime inputs drifted outside the allowed '
+            'validation-workflow correction'
+        )
+    return observed
 
 
 def _v3_assert_worktree_changes(allowed_paths):
@@ -7840,6 +9271,10 @@ def run_v3_holdout(operator, evidence_root):
         ),
         'progress_sha256': progress['progress_sha256'],
         'stopped_early_reason': progress.get('stopped_early_reason'),
+        'ambiguous_interrupted_dispatch_case_ids': progress.get(
+            'ambiguous_interrupted_dispatch_case_ids',
+            [],
+        ),
         'not_run_slot_ids': progress['not_run_slot_ids'],
         'replacement_state_sha256': (
             file_sha256(_v3_replacement_state_path(root))
@@ -7883,6 +9318,10 @@ def run_v3_validation(operator, evidence_root):
         ),
         'progress_sha256': progress['progress_sha256'],
         'stopped_early_reason': progress.get('stopped_early_reason'),
+        'ambiguous_interrupted_dispatch_case_ids': progress.get(
+            'ambiguous_interrupted_dispatch_case_ids',
+            [],
+        ),
         'not_run_slot_ids': progress['not_run_slot_ids'],
         'replacement_state_sha256': (
             file_sha256(_v3_replacement_state_path(root))
@@ -8134,6 +9573,10 @@ def run_v3_reproducibility(operator, evidence_root):
         ),
         'progress_sha256': progress['progress_sha256'],
         'stopped_early_reason': progress.get('stopped_early_reason'),
+        'ambiguous_interrupted_dispatch_case_ids': progress.get(
+            'ambiguous_interrupted_dispatch_case_ids',
+            [],
+        ),
         'not_run_slot_ids': progress['not_run_slot_ids'],
         'replacement_state_sha256': (
             file_sha256(_v3_replacement_state_path(root))
@@ -8208,12 +9651,28 @@ def _v3_serial_artifact_errors(label, state):
             or _load_json(attempts_path) != reconstructed_attempts
         ):
             raise RuntimeError('attempt-record aggregate drifted')
-        final_records = [
-            _load_json(progress['final_record_paths'][case_id])
-            for case_id in progress.get('slot_ids', [])
-            if case_id in progress.get('final_record_paths', {})
-        ]
-        if _load_json(records_path_text) != final_records:
+        carried_by_case = {
+            item['case_id']: item
+            for item in progress.get('carried_records', [])
+        }
+        aggregate_records = []
+        for case_id in progress.get('slot_ids', []):
+            if case_id not in progress.get('final_record_paths', {}):
+                continue
+            if case_id in carried_by_case:
+                aggregate_records.append({
+                    'schema_version': 1,
+                    'case_id': case_id,
+                    'disposition': (
+                        'carried_immutable_behavioral_failure'
+                    ),
+                    'carried_record': dict(carried_by_case[case_id]),
+                })
+            else:
+                aggregate_records.append(_load_json(
+                    progress['final_record_paths'][case_id]
+                ))
+        if _load_json(records_path_text) != aggregate_records:
             raise RuntimeError('final records differ from progress')
     except (
         KeyError,
@@ -8876,9 +10335,19 @@ def _parser():
     return parser
 
 
+def _empirical_sigterm_handler(signum, unused_frame):
+    """Convert a scoped empirical SIGTERM into controlled interruption."""
+    del signum, unused_frame
+    raise KeyboardInterrupt('empirical validation received SIGTERM')
+
+
 def main(argv=None):
     """CLI entry point."""
     arguments = _parser().parse_args(argv)
+    previous_sigterm_handler = None
+    if arguments.subcommand in EMPIRICAL_SUBCOMMANDS:
+        previous_sigterm_handler = signal.getsignal(signal.SIGTERM)
+        signal.signal(signal.SIGTERM, _empirical_sigterm_handler)
     try:
         if arguments.subcommand == 'v3-prepare':
             result = run_v3_prepare(
@@ -8972,12 +10441,24 @@ def main(argv=None):
                 raise RuntimeError(
                     f'{arguments.subcommand} is available only in v2'
                 )
+    except KeyboardInterrupt:
+        print(
+            'validate_robustness: empirical execution interrupted',
+            file=sys.stderr,
+        )
+        return 130
     except Exception as exc:
         print(
             f'validate_robustness: {type(exc).__name__}: {exc}',
             file=sys.stderr,
         )
         return 2
+    finally:
+        if previous_sigterm_handler is not None:
+            signal.signal(
+                signal.SIGTERM,
+                previous_sigterm_handler,
+            )
     print(json.dumps(result, sort_keys=True, allow_nan=False))
     if result.get('passed') is False:
         return 1

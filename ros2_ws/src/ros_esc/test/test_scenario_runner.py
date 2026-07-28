@@ -1250,6 +1250,451 @@ def test_live_boundary_stop_waits_for_state_and_required_event(monkeypatch):
     assert result['stdout'] == 'boundary test\n'
 
 
+def test_boundary_stop_cleans_nested_session_after_outer_exit(monkeypatch):
+    """Clean nested-session survivors while retaining boundary-stop output."""
+    callbacks = {}
+    signals = []
+    identities = {
+        5321: {
+            'pid': 5321,
+            'state': 'S',
+            'parent_pid': 1,
+            'process_group_id': 5321,
+            'session_id': 5321,
+            'start_ticks': 600,
+        },
+        5322: {
+            'pid': 5322,
+            'state': 'S',
+            'parent_pid': 5321,
+            'process_group_id': 5322,
+            'session_id': 5322,
+            'start_ticks': 700,
+        },
+    }
+    alive = {5321, 5322}
+
+    class FakeNode:
+        def create_subscription(
+            self,
+            unused_type,
+            topic,
+            callback,
+            unused_depth,
+        ):
+            callbacks[topic] = callback
+            return object()
+
+        def destroy_node(self):
+            return None
+
+    class FakeProcess:
+        def __init__(self, command, stdout, **unused_kwargs):
+            del command, unused_kwargs
+            self.pid = 5321
+            self.returncode = None
+            self.reaped = False
+            stdout.write('nested boundary output\n')
+
+        def poll(self):
+            if self.pid in alive:
+                return None
+            self.returncode = 0
+            self.reaped = True
+            return self.returncode
+
+        def wait(self, timeout=None):
+            del timeout
+            if self.pid in alive:
+                raise runner.subprocess.TimeoutExpired(['record'], 0.0)
+            self.returncode = 0
+            self.reaped = True
+            return self.returncode
+
+    process_holder = {}
+
+    def popen(*args, **kwargs):
+        process_holder['process'] = FakeProcess(*args, **kwargs)
+        return process_holder['process']
+
+    def spin_once(unused_node, timeout_sec):
+        del unused_node, timeout_sec
+        callbacks['/gesc_gaussian/algorithm_state'](
+            SimpleNamespace(
+                state_name='VERIFY_EXTREMUM',
+                state=runner.AlgorithmState.STATE_VERIFY_EXTREMUM,
+                state_valid=True,
+            )
+        )
+        callbacks['/gesc_gaussian/algorithm_state'](
+            SimpleNamespace(
+                state_name='ESCAPE_REPULSE',
+                state=runner.AlgorithmState.STATE_ESCAPE_REPULSE,
+                state_valid=True,
+            )
+        )
+        callbacks['/gesc_gaussian/algorithm_events'](
+            SimpleNamespace(
+                event_type=runner.AlgorithmEvent.EVENT_ESCAPE_STARTED
+            )
+        )
+
+    def process_identity(pid):
+        return dict(identities[pid]) if pid in alive else None
+
+    def killpg(process_group_id, signum):
+        signals.append((process_group_id, signum))
+        if process_group_id == 5321 and signum == runner.signal.SIGINT:
+            alive.discard(5321)
+        if process_group_id == 5322 and signum == runner.signal.SIGTERM:
+            alive.discard(5322)
+
+    monkeypatch.setattr(runner.rclpy.context, 'Context', lambda: object())
+    monkeypatch.setattr(runner.rclpy, 'init', lambda context: None)
+    monkeypatch.setattr(runner.rclpy, 'shutdown', lambda context: None)
+    monkeypatch.setattr(
+        runner.rclpy,
+        'create_node',
+        lambda *args, **kwargs: FakeNode(),
+    )
+    monkeypatch.setattr(runner.rclpy, 'spin_once', spin_once)
+    monkeypatch.setattr(runner.subprocess, 'Popen', popen)
+    monkeypatch.setattr(runner, '_process_identity', process_identity)
+    monkeypatch.setattr(
+        runner,
+        '_snapshot_process_tree',
+        lambda unused_pid: dict(identities),
+    )
+    monkeypatch.setattr(runner.os, 'killpg', killpg)
+    monkeypatch.setattr(runner, 'CANCEL_ESCALATION_SEC', 0.0)
+
+    result = runner.run_record_process(
+        ['record'],
+        5.0,
+        0.0,
+        anchor_state='VERIFY_EXTREMUM',
+        boundary_state='ESCAPE_REPULSE',
+        boundary_required_events=['ESCAPE_STARTED'],
+    )
+
+    assert signals == [
+        (5321, runner.signal.SIGINT),
+        (5322, runner.signal.SIGINT),
+        (5322, runner.signal.SIGTERM),
+    ]
+    assert result['graceful_boundary_stop'] is True
+    assert result['stdout'] == 'nested boundary output\n'
+    assert process_holder['process'].reaped is True
+    assert alive == set()
+
+
+def test_record_interrupt_cleans_nested_session_and_reraises(monkeypatch):
+    """Reap the outer runner and kill an owned surviving nested session."""
+    signals = []
+    identities = {
+        8765: {
+            'pid': 8765,
+            'state': 'S',
+            'parent_pid': 1,
+            'process_group_id': 8765,
+            'session_id': 8765,
+            'start_ticks': 100,
+        },
+        8766: {
+            'pid': 8766,
+            'state': 'S',
+            'parent_pid': 8765,
+            'process_group_id': 8766,
+            'session_id': 8766,
+            'start_ticks': 200,
+        },
+    }
+    alive = {8765, 8766}
+
+    class FakeProcess:
+        def __init__(self):
+            self.pid = 8765
+            self.returncode = None
+            self.communicate_timeouts = []
+            self.reaped = False
+
+        def communicate(self, timeout=None):
+            self.communicate_timeouts.append(timeout)
+            if len(self.communicate_timeouts) == 1:
+                raise KeyboardInterrupt
+            if self.pid in alive:
+                raise runner.subprocess.TimeoutExpired(
+                    ['record'],
+                    timeout,
+                )
+            self.returncode = 0
+            self.reaped = True
+            return '', None
+
+        def poll(self):
+            if self.pid in alive:
+                return None
+            self.returncode = 0
+            self.reaped = True
+            return self.returncode
+
+    process = FakeProcess()
+
+    def process_identity(pid):
+        if pid not in alive:
+            return None
+        return dict(identities[pid])
+
+    def killpg(process_group_id, signum):
+        signals.append((process_group_id, signum))
+        if process_group_id == 8765 and signum == runner.signal.SIGINT:
+            alive.discard(8765)
+        if process_group_id == 8766 and signum == runner.signal.SIGKILL:
+            alive.discard(8766)
+
+    monkeypatch.setattr(
+        runner.subprocess,
+        'Popen',
+        lambda *args, **kwargs: process,
+    )
+    monkeypatch.setattr(runner, '_process_identity', process_identity)
+    monkeypatch.setattr(
+        runner,
+        '_snapshot_process_tree',
+        lambda unused_pid: dict(identities),
+    )
+    monkeypatch.setattr(runner.os, 'killpg', killpg)
+    monkeypatch.setattr(runner, 'CANCEL_ESCALATION_SEC', 0.0)
+
+    with pytest.raises(KeyboardInterrupt):
+        runner.run_record_process(['record'], 10.0, 0.0)
+
+    assert signals == [
+        (8765, runner.signal.SIGINT),
+        (8766, runner.signal.SIGINT),
+        (8766, runner.signal.SIGTERM),
+        (8766, runner.signal.SIGKILL),
+    ]
+    assert process.communicate_timeouts == [10.0, 0.0, 0.0, 0.0, 0.0]
+    assert process.reaped is True
+    assert alive == set()
+
+
+def test_record_timeout_cleans_nested_session_and_keeps_result(monkeypatch):
+    """Keep timeout output while cleaning a child in a separate session."""
+    signals = []
+    identities = {
+        8865: {
+            'pid': 8865,
+            'state': 'S',
+            'parent_pid': 1,
+            'process_group_id': 8865,
+            'session_id': 8865,
+            'start_ticks': 400,
+        },
+        8866: {
+            'pid': 8866,
+            'state': 'S',
+            'parent_pid': 8865,
+            'process_group_id': 8866,
+            'session_id': 8866,
+            'start_ticks': 500,
+        },
+    }
+    alive = {8865, 8866}
+
+    class FakeProcess:
+        def __init__(self):
+            self.pid = 8865
+            self.returncode = None
+            self.communicate_calls = 0
+            self.reaped = False
+
+        def communicate(self, timeout=None):
+            self.communicate_calls += 1
+            if self.communicate_calls == 1:
+                raise runner.subprocess.TimeoutExpired(
+                    ['record'],
+                    timeout,
+                )
+            if self.pid in alive:
+                raise runner.subprocess.TimeoutExpired(
+                    ['record'],
+                    timeout,
+                )
+            self.returncode = 0
+            self.reaped = True
+            return 'retained timeout log', None
+
+        def poll(self):
+            if self.pid in alive:
+                return None
+            self.returncode = 0
+            self.reaped = True
+            return self.returncode
+
+    process = FakeProcess()
+
+    def process_identity(pid):
+        return dict(identities[pid]) if pid in alive else None
+
+    def killpg(process_group_id, signum):
+        signals.append((process_group_id, signum))
+        if process_group_id == 8865 and signum == runner.signal.SIGINT:
+            alive.discard(8865)
+        if process_group_id == 8866 and signum == runner.signal.SIGTERM:
+            alive.discard(8866)
+
+    monkeypatch.setattr(
+        runner.subprocess,
+        'Popen',
+        lambda *args, **kwargs: process,
+    )
+    monkeypatch.setattr(runner, '_process_identity', process_identity)
+    monkeypatch.setattr(
+        runner,
+        '_snapshot_process_tree',
+        lambda unused_pid: dict(identities),
+    )
+    monkeypatch.setattr(runner.os, 'killpg', killpg)
+    monkeypatch.setattr(runner, 'CANCEL_ESCALATION_SEC', 0.0)
+
+    result = runner.run_record_process(['record'], 10.0, 0.0)
+
+    assert result['timed_out'] is True
+    assert result['return_code'] == 0
+    assert result['stdout'] == 'retained timeout log'
+    assert signals == [
+        (8865, runner.signal.SIGINT),
+        (8866, runner.signal.SIGINT),
+        (8866, runner.signal.SIGTERM),
+    ]
+    assert process.reaped is True
+    assert alive == set()
+
+
+def test_boundary_base_exception_cleans_process_group_and_reraises(
+    monkeypatch,
+):
+    """Clean the boundary run session before propagating a BaseException."""
+    signals = []
+    identity = {
+        'pid': 9876,
+        'state': 'S',
+        'parent_pid': 1,
+        'process_group_id': 9876,
+        'session_id': 9876,
+        'start_ticks': 300,
+    }
+    alive = {9876}
+    lifecycle = {
+        'node_destroyed': False,
+        'rclpy_shutdown': False,
+    }
+
+    class CancelRun(BaseException):
+        pass
+
+    class FakeNode:
+        def create_subscription(self, *args, **kwargs):
+            return object()
+
+        def destroy_node(self):
+            lifecycle['node_destroyed'] = True
+
+    class FakeProcess:
+        def __init__(self, command, stdout, **unused_kwargs):
+            del command, unused_kwargs
+            self.pid = 9876
+            self.returncode = None
+            self.wait_timeouts = []
+            self.reaped = False
+            stdout.write('interrupted boundary test\n')
+
+        def poll(self):
+            if self.pid not in alive:
+                self.returncode = -runner.signal.SIGKILL
+                self.reaped = True
+            return self.returncode
+
+        def wait(self, timeout=None):
+            self.wait_timeouts.append(timeout)
+            if self.pid in alive:
+                raise runner.subprocess.TimeoutExpired(
+                    ['record'],
+                    timeout,
+                )
+            self.returncode = -runner.signal.SIGKILL
+            self.reaped = True
+            return self.returncode
+
+    process_holder = {}
+
+    def popen(*args, **kwargs):
+        process_holder['process'] = FakeProcess(*args, **kwargs)
+        return process_holder['process']
+
+    def killpg(process_group_id, signum):
+        signals.append((process_group_id, signum))
+        if signum == runner.signal.SIGKILL:
+            alive.discard(process_group_id)
+
+    monkeypatch.setattr(runner.rclpy.context, 'Context', lambda: object())
+    monkeypatch.setattr(runner.rclpy, 'init', lambda context: None)
+    monkeypatch.setattr(
+        runner.rclpy,
+        'shutdown',
+        lambda context: lifecycle.update(rclpy_shutdown=True),
+    )
+    monkeypatch.setattr(
+        runner.rclpy,
+        'create_node',
+        lambda *args, **kwargs: FakeNode(),
+    )
+    monkeypatch.setattr(
+        runner.rclpy,
+        'spin_once',
+        lambda *args, **kwargs: (_ for _ in ()).throw(CancelRun()),
+    )
+    monkeypatch.setattr(runner.subprocess, 'Popen', popen)
+    monkeypatch.setattr(runner.os, 'killpg', killpg)
+    monkeypatch.setattr(
+        runner,
+        '_snapshot_process_tree',
+        lambda unused_pid: {9876: dict(identity)},
+    )
+    monkeypatch.setattr(
+        runner,
+        '_process_identity',
+        lambda pid: dict(identity) if pid in alive else None,
+    )
+    monkeypatch.setattr(runner, 'CANCEL_ESCALATION_SEC', 0.0)
+
+    with pytest.raises(CancelRun):
+        runner.run_record_process(
+            ['record'],
+            10.0,
+            0.0,
+            anchor_state='VERIFY_EXTREMUM',
+            boundary_state='ESCAPE_REPULSE',
+            boundary_required_events=['ESCAPE_STARTED'],
+        )
+
+    process = process_holder['process']
+    assert signals == [
+        (9876, runner.signal.SIGINT),
+        (9876, runner.signal.SIGTERM),
+        (9876, runner.signal.SIGKILL),
+    ]
+    assert process.wait_timeouts == [0.0, 0.0, 0.0]
+    assert process.reaped is True
+    assert alive == set()
+    assert lifecycle == {
+        'node_destroyed': True,
+        'rclpy_shutdown': True,
+    }
+
+
 def test_failed_run_is_retained_and_cleanup_failure_stops_suite(
     monkeypatch, tmp_path
 ):

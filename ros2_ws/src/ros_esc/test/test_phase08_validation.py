@@ -796,6 +796,59 @@ def test_v3_cli_routes_flat_subcommands(
     assert observed == [('v3-test', str(tmp_path))]
 
 
+def test_v3_empirical_cli_converts_sigterm_and_restores_handler(
+    tmp_path,
+    monkeypatch,
+):
+    """Let timeout TERM unwind empirical execution as KeyboardInterrupt."""
+    previous_handler = object()
+    signal_state = {'handler': previous_handler}
+    installed_handlers = []
+
+    def fake_getsignal(signum):
+        assert signum == phase08_validation.signal.SIGTERM
+        return signal_state['handler']
+
+    def fake_signal(signum, handler):
+        assert signum == phase08_validation.signal.SIGTERM
+        installed_handlers.append(handler)
+        signal_state['handler'] = handler
+
+    def fake_activation(operator, evidence_root):
+        del operator, evidence_root
+        signal_state['handler'](
+            phase08_validation.signal.SIGTERM,
+            None,
+        )
+
+    monkeypatch.setattr(
+        phase08_validation.signal,
+        'getsignal',
+        fake_getsignal,
+    )
+    monkeypatch.setattr(
+        phase08_validation.signal,
+        'signal',
+        fake_signal,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        'run_v3_activation',
+        fake_activation,
+    )
+
+    assert main([
+        'v3-activation',
+        '--operator', 'v3-test',
+        '--evidence-root', str(tmp_path),
+    ]) == 130
+    assert installed_handlers == [
+        phase08_validation._empirical_sigterm_handler,
+        previous_handler,
+    ]
+    assert signal_state['handler'] is previous_handler
+
+
 def test_v3_prepare_cli_routes_without_encryption_key(
     tmp_path,
     monkeypatch,
@@ -904,6 +957,7 @@ def test_v3_adopt_precommit_preserves_old_root_and_exact_population(
     proof = {
         'kind': 'contact_probe_instrumentation_contamination',
         'superseded_evidence_root': str(superseded.resolve()),
+        'correction_audit_path': str(tmp_path / 'audit.json'),
         'superseded_suite_sha256': (
             phase08_validation.file_sha256(suite_path)
         ),
@@ -934,10 +988,16 @@ def test_v3_adopt_precommit_preserves_old_root_and_exact_population(
         '_v3_required_free_bytes',
         lambda *unused: 1,
     )
+    proof_calls = []
+
+    def recovery_proof(*unused, **unused_keywords):
+        proof_calls.append((unused, unused_keywords))
+        return proof
+
     monkeypatch.setattr(
         phase08_validation,
         '_v3_harness_recovery_proof',
-        lambda *unused, **kwargs: proof,
+        recovery_proof,
     )
 
     first = phase08_validation.run_v3_adopt_precommit(
@@ -958,6 +1018,7 @@ def test_v3_adopt_precommit_preserves_old_root_and_exact_population(
     )
 
     assert first == second
+    assert len(proof_calls) == 2
     assert first['passed'] is True
     assert first['suite_sha256'] == phase08_validation.file_sha256(
         suite_path
@@ -1027,6 +1088,188 @@ def test_v3_adopt_precommit_preserves_old_root_and_exact_population(
             commitment_path=commitment_path,
             correction_path=tmp_path / 'audit.json',
         )
+
+
+def test_v3_adopt_precommit_creates_diagnostic_v3c_lineage(
+    tmp_path,
+    monkeypatch,
+):
+    """Adopt the fixed population without changing the closed V3B root."""
+    superseded = tmp_path / 'v3b'
+    superseded.mkdir()
+    marker = superseded / 'immutable.bin'
+    marker.write_bytes(b'original-v3b-evidence')
+    original_marker = marker.read_bytes()
+    fresh = tmp_path / 'v3c'
+    suite_path = tmp_path / 'suite.json'
+    commitment_path = tmp_path / 'commitment.json'
+    suite_bytes = phase08_validation.canonical_json_bytes({
+        'schema_version': 4,
+        'cases': [],
+    })
+    suite_path.write_bytes(suite_bytes)
+    commitment = {
+        'schema_version': 1,
+        'suite_sha256': phase08_validation.file_sha256(suite_path),
+        'population_visibility': 'researcher_visible_before_activation',
+        'selection_blind': False,
+        'counts': {'unique': 70, 'reproducibility': 10},
+        'family_counts': {},
+    }
+    commitment['commitment_sha256'] = (
+        phase08_validation.omission_sha256(
+            commitment,
+            'commitment_sha256',
+        )
+    )
+    phase08_validation.atomic_json(commitment_path, commitment)
+    input_hashes = {
+        path: f'{index + 1:064x}'
+        for index, path in enumerate(
+            phase08_validation.V3_DIAGNOSTIC_ALLOWED_RUNTIME_DRIFT
+        )
+    }
+    input_hashes['ros2_ws/src/ros_esc/package.xml'] = 'f' * 64
+    repository = {
+        'commit': 'c' * 40,
+        'tree': 'd' * 40,
+        'clean': True,
+        'input_hashes': input_hashes,
+        'runtime_inputs_sha256': phase08_validation.canonical_sha256(
+            input_hashes
+        ),
+    }
+    proof = {
+        'kind': 'behavioral_miss_diagnostic_completion',
+        'superseded_evidence_root': str(superseded.resolve()),
+        'correction_audit_path': str(tmp_path / 'audit.json'),
+        'superseded_suite_sha256': phase08_validation.file_sha256(
+            suite_path
+        ),
+        'superseded_commitment_sha256': commitment[
+            'commitment_sha256'
+        ],
+        'policy': {
+            'fresh_evidence_root': str(fresh.resolve()),
+        },
+    }
+    proof['baseline_runtime_projection'] = (
+        phase08_validation._v3_runtime_input_projection(repository)
+    )
+    proof['allowed_runtime_correction_sha256'] = {
+        path: input_hashes[path]
+        for path in (
+            phase08_validation.V3_DIAGNOSTIC_ALLOWED_RUNTIME_DRIFT
+        )
+    }
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_require_precommit_in_head',
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_active_processes',
+        lambda: [],
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_repository_snapshot',
+        lambda **unused: repository,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_required_free_bytes',
+        lambda *unused: 1,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_adoption_recovery_proof',
+        lambda *unused, **unused_keywords: proof,
+    )
+
+    state = phase08_validation.run_v3_adopt_precommit(
+        'test',
+        fresh,
+        superseded,
+        suite_path=suite_path,
+        commitment_path=commitment_path,
+    )
+
+    assert state['passed'] is True
+    assert state['lineage_id'] == 'phase08-v3c'
+    assert state['recovery'] == proof
+    assert state['suite_sha256'] == phase08_validation.file_sha256(
+        suite_path
+    )
+    assert marker.read_bytes() == original_marker
+    transaction = phase08_validation._v3_load_prepare_transaction(
+        phase08_validation._v3_prepare_transaction_path(fresh)
+    )
+    assert transaction['experiment_version'] == 'phase08-v3c'
+    assert transaction['recovery'] == proof
+    drifted = dict(transaction)
+    drifted['experiment_version'] = 'phase08-v3b'
+    with pytest.raises(RuntimeError, match='invocation drifted'):
+        phase08_validation._v3_adoption_matches_invocation(
+            drifted,
+            'test',
+            fresh,
+            superseded,
+        )
+
+
+def test_v3_recovery_dispatcher_preserves_both_lineage_kinds(
+    monkeypatch,
+):
+    """Revalidate the exact proof owner selected by each recovery kind."""
+    contact = {
+        'kind': 'contact_probe_instrumentation_contamination',
+        'superseded_evidence_root': '/tmp/v3a',
+        'correction_audit_path': '/tmp/contact.json',
+    }
+    diagnostic = {
+        'kind': 'behavioral_miss_diagnostic_completion',
+        'superseded_evidence_root': '/tmp/v3b',
+        'correction_audit_path': '/tmp/diagnostic.json',
+    }
+    observed = []
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_harness_recovery_proof',
+        lambda root, correction_path: (
+            observed.append(('contact', root, str(correction_path)))
+            or contact
+        ),
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_hard_stop_policy_recovery_proof',
+        lambda root, correction_path: (
+            observed.append(('diagnostic', root, str(correction_path)))
+            or diagnostic
+        ),
+    )
+
+    assert phase08_validation._v3_revalidate_recovery(contact) == contact
+    assert (
+        phase08_validation._v3_revalidate_recovery(diagnostic)
+        == diagnostic
+    )
+    assert phase08_validation._v3_recovery_fresh_lineage_id(
+        contact
+    ) == 'phase08-v3b'
+    assert phase08_validation._v3_recovery_fresh_lineage_id(
+        diagnostic
+    ) == 'phase08-v3c'
+    assert observed == [
+        ('contact', '/tmp/v3a', '/tmp/contact.json'),
+        ('diagnostic', '/tmp/v3b', '/tmp/diagnostic.json'),
+    ]
+    with pytest.raises(RuntimeError, match='unsupported v3 recovery'):
+        phase08_validation._v3_recovery_fresh_lineage_id({
+            'kind': 'unknown',
+        })
 
 
 def test_v3_adopt_precommit_rejects_the_superseded_root(
@@ -1116,6 +1359,190 @@ def test_v3_harness_recovery_rejects_audited_precommit_drift(
         )
 
 
+def _v3_activation_dry_run_summary(case_ids=None):
+    """Build a complete installed activation invocation fixture."""
+    case_ids = case_ids or [
+        f'activation-{index}' for index in range(10)
+    ]
+    launch = [
+        'ros2',
+        'launch',
+        'turtlebot3_rotating_sensor',
+        'gazebo.launch.xml',
+        'gazebo_gui:=True',
+        'simulation_contacts_enabled:=True',
+        'simulation_contact_probe_enabled:=False',
+    ]
+    return {
+        'schema_version': 1,
+        'suite_id': 'phase08_v3_activation',
+        'scenario_schema_version': 4,
+        'source_path': '/workspace/phase08_v3_activation.yaml',
+        'serial_execution': True,
+        'selected_case_ids': [],
+        'resolved_run_count': len(case_ids),
+        'unsupported_count': 0,
+        'unsupported': [],
+        'dry_run': True,
+        'runs': [
+            {
+                'run_id': f'ephemeral-{case_id}',
+                'case_id': case_id,
+                'case_key': f'{index + 1:064x}',
+                'profile': 'robust_gaussian_v1',
+                'seed': 9301 + index,
+                'launch_argv': list(launch),
+                'record_argv': [
+                    'ros2',
+                    'run',
+                    'ros_esc',
+                    'record_run',
+                    '--metadata-input',
+                    f'/tmp/{case_id}/metadata.yaml',
+                    '--run-id',
+                    f'ephemeral-{case_id}',
+                    '--duration-sec',
+                    '240.0',
+                    '--',
+                    *launch,
+                ],
+                'activation_contract': {
+                    'contract_id': case_id,
+                    'expected_verification_outcome': 'goal',
+                },
+                'metadata': {
+                    'schema_version': 1,
+                    'experiment_version': 'phase08-v3-activation',
+                    'mode': 'simulation',
+                    'algorithm_profile': 'robust_gaussian_v1',
+                    'random_seed': 9301 + index,
+                    'environment': {
+                        'disturbances': {
+                            'sensor_noise': {
+                                'model': 'none',
+                                'bound': 0.0,
+                            },
+                            'sensor_delay_sec': 0.0,
+                            'pose_delay_sec': 0.0,
+                        },
+                    },
+                    'parameter_files': [
+                        '/workspace/base_cost.json',
+                        '/workspace/filter.json',
+                        '/workspace/controller.json',
+                    ],
+                    'scenario_runner': {
+                        'case_id': case_id,
+                        'case_key': f'{index + 1:064x}',
+                        'seed': 9301 + index,
+                    },
+                },
+            }
+            for index, case_id in enumerate(case_ids)
+        ],
+    }
+
+
+def test_v3_activation_invocation_normalizes_only_ephemeral_values():
+    """Normalize run IDs, metadata paths, and generated noise configs."""
+    baseline = _v3_activation_dry_run_summary()
+    old_noise_config = (
+        'cost_function_config_filepath:=/tmp/'
+        'gesc_phase06_old123/resolved_cost_function.json'
+    )
+    baseline['runs'][8]['launch_argv'].append(old_noise_config)
+    baseline['runs'][8]['record_argv'].append(old_noise_config)
+    observed = json.loads(json.dumps(baseline))
+    for index, run in enumerate(observed['runs']):
+        run['run_id'] = f'new-ephemeral-{index}'
+        for flag in ('--metadata-input', '--run-id'):
+            flag_index = run['record_argv'].index(flag)
+            run['record_argv'][flag_index + 1] = (
+                f'/new/ephemeral/{flag}/{index}'
+            )
+    new_noise_config = (
+        'cost_function_config_filepath:=/tmp/'
+        'gesc_phase06_new456/resolved_cost_function.json'
+    )
+    observed['runs'][8]['launch_argv'][-1] = new_noise_config
+    observed['runs'][8]['record_argv'][-1] = new_noise_config
+
+    assert (
+        phase08_validation._v3_activation_invocation_contract(
+            observed
+        )
+        == phase08_validation._v3_activation_invocation_contract(
+            baseline
+        )
+    )
+
+
+@pytest.mark.parametrize(
+    'defect',
+    [
+        'case_id',
+        'case_key',
+        'seed',
+        'profile',
+        'launch_argv',
+        'record_argv',
+        'activation_contract',
+        'metadata',
+        'repository_config_path',
+    ],
+)
+def test_v3_activation_invocation_rejects_non_ephemeral_drift(defect):
+    """Bind every non-ephemeral activation invocation input exactly."""
+    baseline = _v3_activation_dry_run_summary()
+    if defect == 'repository_config_path':
+        repository_config = (
+            'cost_function_config_filepath:=/home/mattb/dsim-lab/'
+            'ros2_ws/src/ros_esc/base_cost.json'
+        )
+        baseline['runs'][0]['launch_argv'].append(repository_config)
+        baseline['runs'][0]['record_argv'].append(repository_config)
+    observed = json.loads(json.dumps(baseline))
+    run = observed['runs'][0]
+    if defect == 'case_id':
+        run['case_id'] = 'drifted-case'
+    elif defect == 'case_key':
+        run['case_key'] = 'f' * 64
+    elif defect == 'seed':
+        run['seed'] += 1
+    elif defect == 'profile':
+        run['profile'] = 'legacy'
+    elif defect == 'launch_argv':
+        run['launch_argv'][-1] = (
+            'simulation_contact_probe_enabled:=True'
+        )
+    elif defect == 'record_argv':
+        duration_index = run['record_argv'].index('--duration-sec')
+        run['record_argv'][duration_index + 1] = '239.0'
+    elif defect == 'activation_contract':
+        run['activation_contract'][
+            'expected_verification_outcome'
+        ] = 'safe_timeout'
+    elif defect == 'metadata':
+        run['metadata']['environment']['disturbances'][
+            'sensor_delay_sec'
+        ] = 0.05
+    else:
+        run['launch_argv'][-1] = (
+            'cost_function_config_filepath:=/home/mattb/dsim-lab/'
+            'ros2_ws/src/ros_esc/changed_cost.json'
+        )
+        run['record_argv'][-1] = run['launch_argv'][-1]
+
+    assert (
+        phase08_validation._v3_activation_invocation_contract(
+            observed
+        )
+        != phase08_validation._v3_activation_invocation_contract(
+            baseline
+        )
+    )
+
+
 def test_v3_activation_contact_launch_contract_requires_passive_probe():
     """Require every installed direct and recorder launch to omit the probe."""
     required = [
@@ -1188,28 +1615,20 @@ def test_v3_activation_revalidates_corrected_recovery(
         'lineage_id': 'phase08-v3b',
         'recovery': recovery,
     }
-    required = [
-        'gazebo_gui:=True',
-        'simulation_contacts_enabled:=True',
-        'simulation_contact_probe_enabled:=False',
-    ]
     dry_run_path = tmp_path / 'activation_dry_run.yaml'
-    dry_run_summary = {
-        'runs': [
-            {
-                'case_id': f'activation-{index}',
-                'launch_argv': list(required),
-                'record_argv': list(required),
-            }
-            for index in range(10)
-        ],
-    }
+    dry_run_summary = _v3_activation_dry_run_summary()
     phase08_validation.atomic_yaml(dry_run_path, dry_run_summary)
     contact_contract = (
         phase08_validation._v3_activation_contact_launch_contract(
             dry_run_summary
         )
     )
+    invocation_contract = (
+        phase08_validation._v3_activation_invocation_contract(
+            dry_run_summary
+        )
+    )
+    recovery['activation_invocation_contract'] = invocation_contract
     qualification = {
         'prepare_state_sha256': prepare['state_sha256'],
         'lineage_id': 'phase08-v3b',
@@ -1220,6 +1639,7 @@ def test_v3_activation_revalidates_corrected_recovery(
             ),
         },
         'activation_contact_launch_contract': contact_contract,
+        'activation_invocation_contract': invocation_contract,
         'installed_dry_runs': {
             'activation': {
                 'path': str(dry_run_path),
@@ -1256,6 +1676,291 @@ def test_v3_activation_revalidates_corrected_recovery(
             prepare,
             qualification,
         )
+
+
+def test_v3c_activation_revalidates_diagnostic_recovery(
+    tmp_path,
+    monkeypatch,
+):
+    """Bind V3C predispatch to V3B and its retained installed dry run."""
+    recovery = {
+        'kind': 'behavioral_miss_diagnostic_completion',
+        'superseded_evidence_root': '/tmp/v3b',
+        'correction_audit_path': '/tmp/diagnostic.json',
+    }
+    prepare = {
+        'state_sha256': 'p' * 64,
+        'lineage_id': 'phase08-v3c',
+        'recovery': recovery,
+    }
+    dry_run_path = tmp_path / 'activation_dry_run.yaml'
+    dry_run_summary = _v3_activation_dry_run_summary()
+    phase08_validation.atomic_yaml(dry_run_path, dry_run_summary)
+    contact_contract = (
+        phase08_validation._v3_activation_contact_launch_contract(
+            dry_run_summary
+        )
+    )
+    invocation_contract = (
+        phase08_validation._v3_activation_invocation_contract(
+            dry_run_summary
+        )
+    )
+    recovery['activation_invocation_contract'] = invocation_contract
+    prepare['recovery'] = recovery
+    qualification = {
+        'prepare_state_sha256': prepare['state_sha256'],
+        'lineage_id': 'phase08-v3c',
+        'recovery_validation': {
+            'passed': True,
+            'recovery_sha256': phase08_validation.canonical_sha256(
+                recovery
+            ),
+        },
+        'activation_contact_launch_contract': contact_contract,
+        'activation_invocation_contract': invocation_contract,
+        'installed_dry_runs': {
+            'activation': {
+                'path': str(dry_run_path),
+                'sha256': phase08_validation.file_sha256(
+                    dry_run_path
+                ),
+            },
+        },
+    }
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_revalidate_recovery',
+        lambda value: value,
+    )
+
+    phase08_validation._v3_verify_corrected_recovery_before_activation(
+        prepare,
+        qualification,
+    )
+    drifted_summary = json.loads(json.dumps(dry_run_summary))
+    drifted_summary['runs'][0]['seed'] += 1
+    phase08_validation.atomic_yaml(dry_run_path, drifted_summary)
+    qualification['installed_dry_runs']['activation']['sha256'] = (
+        phase08_validation.file_sha256(dry_run_path)
+    )
+    with pytest.raises(RuntimeError, match='invocation contract drifted'):
+        phase08_validation._v3_verify_corrected_recovery_before_activation(
+            prepare,
+            qualification,
+        )
+    phase08_validation.atomic_yaml(dry_run_path, dry_run_summary)
+    qualification['installed_dry_runs']['activation']['sha256'] = (
+        phase08_validation.file_sha256(dry_run_path)
+    )
+    qualification['lineage_id'] = 'phase08-v3b'
+    with pytest.raises(RuntimeError, match='lineage drifted'):
+        phase08_validation._v3_verify_corrected_recovery_before_activation(
+            prepare,
+            qualification,
+        )
+
+
+def test_v3c_carried_record_is_rehashed_and_remains_failed(tmp_path):
+    """Reference the original V3B record without copying or relabeling."""
+    record_path = tmp_path / 'record.json'
+    record = _v3_applicability_partial_record(
+        tmp_path,
+        'v3a_goal_aggregate_direct',
+        run_id='retained-v3b-run',
+    )
+    phase08_validation.atomic_json(record_path, record)
+    original_bytes = record_path.read_bytes()
+    recovery = {
+        'kind': 'behavioral_miss_diagnostic_completion',
+        'superseded_evidence_root': '/tmp/v3b',
+        'superseded_activation_state_sha256': 's' * 64,
+        'run_directory_manifest': (
+            phase08_validation._v3_directory_manifest(
+                record['run_directory']
+            )
+        ),
+        'carried_record': {
+            'case_id': 'v3a_goal_aggregate_direct',
+            'record_path': str(record_path),
+            'record_sha256': phase08_validation.file_sha256(record_path),
+            'run_id': record['run_id'],
+            'source_lineage_id': 'phase08-v3b',
+        },
+    }
+
+    carried = phase08_validation._v3_diagnostic_carried_records(
+        recovery
+    )
+
+    assert len(carried) == 1
+    assert carried[0]['record_path'] == str(record_path.resolve())
+    assert carried[0]['rerun'] is False
+    assert carried[0]['disposition'] == (
+        'carried_immutable_behavioral_failure'
+    )
+    assert record_path.read_bytes() == original_bytes
+    bag_metadata = (
+        Path(record['run_directory']) / 'bag/metadata.yaml'
+    )
+    original_bag_metadata = bag_metadata.read_bytes()
+    bag_metadata.write_text('drifted: true\n', encoding='utf-8')
+    with pytest.raises(RuntimeError, match='run directory drifted'):
+        phase08_validation._v3_diagnostic_carried_records(recovery)
+    bag_metadata.write_bytes(original_bag_metadata)
+    record_path.write_text('{}\n', encoding='utf-8')
+    with pytest.raises(RuntimeError, match='carried record drifted'):
+        phase08_validation._v3_diagnostic_carried_records(recovery)
+
+
+def test_v3c_activation_composite_is_permanently_not_pass_eligible(
+    tmp_path,
+    monkeypatch,
+):
+    """Report one carried plus nine new slots and prohibit development."""
+    recovery = {
+        'kind': 'behavioral_miss_diagnostic_completion',
+    }
+    prepare = {
+        'passed': True,
+        'operator': 'test',
+        'state_sha256': 'p' * 64,
+        'lineage_id': 'phase08-v3c',
+        'recovery': recovery,
+    }
+    qualification = {
+        'passed': True,
+        'operator': 'test',
+        'state_sha256': 'q' * 64,
+        'lineage_id': 'phase08-v3c',
+        'repository': {},
+    }
+    states = {
+        'prepare': prepare,
+        'qualification': qualification,
+    }
+    case_ids = [
+        'v3a_goal_aggregate_direct',
+        *[f'new-slot-{index}' for index in range(9)],
+    ]
+    recovery['composite_activation'] = {
+        'execute_case_ids': case_ids[1:],
+    }
+    carried = [{
+        'case_id': case_ids[0],
+        'record_path': '/immutable/v3b/record.json',
+        'record_sha256': 'a' * 64,
+        'rerun': False,
+    }]
+    records = [
+        _v3_serial_record(
+            case_id,
+            status='failed' if index == 0 else 'passed',
+        )
+        for index, case_id in enumerate(case_ids)
+    ]
+
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_require_state',
+        lambda unused_root, stage, **unused: states[stage],
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_verify_corrected_recovery_before_activation',
+        lambda *unused: None,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_require_precommit_in_head',
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_verify_repository_snapshot',
+        lambda *unused, **unused_keywords: None,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_materialize_profile_suite',
+        lambda unused_source, unused_profile, destination: destination,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_diagnostic_carried_records',
+        lambda unused_recovery: carried,
+    )
+
+    def fake_execute(
+        unused_suite,
+        unused_operator,
+        unused_root,
+        stage_root,
+        unused_stage,
+        **kwargs,
+    ):
+        assert kwargs['carried_records'] == carried
+        assert kwargs['required_execution_case_ids'] == case_ids[1:]
+        assert kwargs['allow_pure_applicability_miss'] is True
+        stage_root = Path(stage_root)
+        summary_path = stage_root / 'scenario_summary.yaml'
+        records_path = stage_root / 'records.json'
+        attempts_path = stage_root / 'attempt_records.json'
+        phase08_validation.atomic_yaml(summary_path, {'runs': []})
+        phase08_validation.atomic_json(records_path, records)
+        phase08_validation.atomic_json(attempts_path, records[1:])
+        attempts = [
+            {'case_id': case_id}
+            for case_id in case_ids[1:]
+        ]
+        return (
+            {'summary_path': str(summary_path)},
+            records,
+            {
+                'progress_sha256': 'r' * 64,
+                'stopped_early_reason': None,
+                'not_run_slot_ids': [],
+                'attempts': attempts,
+                'carried_count': 1,
+                'newly_executed_count': 9,
+                'carried_records': carried,
+            },
+        )
+
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_execute_serial_slots',
+        fake_execute,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_record_integrity',
+        lambda record: {
+            'passed': record['case_id'] != case_ids[0],
+            'reasons': [],
+        },
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_run_functional_tests',
+        lambda: {'passed': True},
+    )
+
+    state = phase08_validation.run_v3_activation('test', tmp_path)
+
+    assert state['passed'] is False
+    assert state['pass_eligible'] is False
+    assert state['diagnostic_completion'] is True
+    assert state['composite_slot_count'] == 10
+    assert state['carried_count'] == 1
+    assert state['newly_executed_count'] == 9
+    assert state['carried_record_count'] == 1
+    assert state['new_execution_count'] == 9
+    assert state['ambiguous_interrupted_dispatch_case_ids'] == []
+    assert state['contract_pass_count'] == 9
+    assert any(
+        'not pass-eligible' in reason for reason in state['reasons']
+    )
 
 
 def test_v3_prepare_recovers_from_post_transaction_interruption(
@@ -1583,6 +2288,99 @@ def test_v3_runtime_snapshot_rejects_committed_source_drift(monkeypatch):
 
     with pytest.raises(RuntimeError, match='differ'):
         phase08_validation._v3_verify_repository_snapshot(snapshot)
+
+
+@pytest.mark.parametrize(
+    'drifted_path',
+    [
+        (
+            'ros2_ws/src/ros_esc/ros_esc/supervisor_node/'
+            'state_machine.py'
+        ),
+        (
+            'ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/'
+            'phase08_v3_activation.yaml'
+        ),
+    ],
+)
+def test_v3c_runtime_projection_allows_only_four_workflow_files(
+    drifted_path,
+):
+    """Allow four workflow files while rejecting algorithm/scenario drift."""
+    assert phase08_validation.V3_DIAGNOSTIC_ALLOWED_RUNTIME_DRIFT == (
+        (
+            'ros2_ws/src/ros_esc/ros_esc/scenario_runner/'
+            'phase08_validation.py'
+        ),
+        (
+            'ros2_ws/src/ros_esc/ros_esc/scenario_runner/'
+            'run_scenario.py'
+        ),
+        'ros2_ws/src/ros_esc/test/test_phase08_validation.py',
+        'ros2_ws/src/ros_esc/test/test_scenario_runner.py',
+    )
+    input_hashes = {
+        path: f'{index + 1:064x}'
+        for index, path in enumerate(
+            phase08_validation.V3_DIAGNOSTIC_ALLOWED_RUNTIME_DRIFT
+        )
+    }
+    input_hashes.update({
+        (
+            'ros2_ws/src/ros_esc/ros_esc/supervisor_node/'
+            'state_machine.py'
+        ): 'a' * 64,
+        (
+            'ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/'
+            'phase08_v3_activation.yaml'
+        ): 'b' * 64,
+    })
+
+    def snapshot(hashes):
+        return {
+            'input_hashes': hashes,
+            'runtime_inputs_sha256': (
+                phase08_validation.canonical_sha256(hashes)
+            ),
+        }
+
+    baseline = snapshot(dict(input_hashes))
+    recovery = {
+        'kind': 'behavioral_miss_diagnostic_completion',
+        'baseline_runtime_projection': (
+            phase08_validation._v3_runtime_input_projection(baseline)
+        ),
+    }
+    allowed = dict(input_hashes)
+    for path in phase08_validation.V3_DIAGNOSTIC_ALLOWED_RUNTIME_DRIFT:
+        allowed[path] = 'e' * 64
+    recovery['allowed_runtime_correction_sha256'] = {
+        path: allowed[path]
+        for path in (
+            phase08_validation.V3_DIAGNOSTIC_ALLOWED_RUNTIME_DRIFT
+        )
+    }
+    phase08_validation._v3_verify_diagnostic_runtime_projection(
+        recovery,
+        snapshot(allowed),
+    )
+    unapproved_correction = dict(allowed)
+    unapproved_correction[
+        phase08_validation.V3_DIAGNOSTIC_ALLOWED_RUNTIME_DRIFT[0]
+    ] = 'd' * 64
+    with pytest.raises(RuntimeError, match='hash mapping drifted'):
+        phase08_validation._v3_verify_diagnostic_runtime_projection(
+            recovery,
+            snapshot(unapproved_correction),
+        )
+    drifted = dict(allowed)
+    drifted[drifted_path] = 'f' * 64
+
+    with pytest.raises(RuntimeError, match='outside the allowed'):
+        phase08_validation._v3_verify_diagnostic_runtime_projection(
+            recovery,
+            snapshot(drifted),
+        )
 
 
 def test_v3_qualification_rejects_kill_after_instantiation(
@@ -2862,6 +3660,145 @@ def _v3_serial_record(
     }
 
 
+def _v3_applicability_partial_record(
+    tmp_path,
+    case_id='behavior-miss',
+    *,
+    run_id=None,
+):
+    """Build a complete record whose only analysis miss is applicability."""
+    run_directory = tmp_path / f'{case_id}-run-directory'
+    raw_bag = run_directory / 'bag/bag_0.db3'
+    raw_bag.parent.mkdir(parents=True, exist_ok=True)
+    raw_bag.write_bytes(b'complete retained bag')
+    applicability = {
+        'escape_attempt': False,
+        'escape_duration': False,
+        'orbit_count': False,
+        'revisit': False,
+        'delay': False,
+        'saturation': False,
+    }
+    metrics = {
+        'collision': _metric(False),
+        'timeout': _metric(False),
+        'failsafe': _metric(False),
+        'controller_success': _metric(True),
+        'simulation_ground_truth_success': _metric(True),
+        'escape_attempt_count': _metric(None, 'not_applicable'),
+    }
+    run_id = run_id or f'{case_id}-run'
+    analysis = {
+        'run_id': run_id,
+        'analysis_status': 'partial',
+        'metric_applicability': applicability,
+        'applicability_integrity': {
+            'passed': False,
+            'reasons': [
+                'escape occurred in a case declared not applicable',
+            ],
+        },
+        'metrics': metrics,
+    }
+    completeness = {
+        'run_id': run_id,
+        'status': 'partial',
+        'stored_phase05_passed': True,
+        'fresh_phase05_validation': {
+            'passed': True,
+            'failures': [],
+        },
+        'critical_inputs': {
+            'readiness': True,
+            'cost': True,
+            'pose': True,
+            'control': True,
+        },
+        'recording_failures': [],
+        'analysis_failures': [],
+        'metric_validity': {
+            name: metric['status']
+            for name, metric in metrics.items()
+        },
+        'raw_bag_sha256': {
+            str(raw_bag): phase08_validation.file_sha256(raw_bag),
+        },
+    }
+    resolved_path = run_directory / 'resolved_scenario.yaml'
+    analysis_path = (
+        run_directory / 'analysis/phase08/summary_metrics.json'
+    )
+    completeness_path = (
+        run_directory
+        / 'analysis/phase08/analysis_completeness.json'
+    )
+    phase08_validation.atomic_yaml(
+        resolved_path,
+        {'case_id': case_id, 'run_id': run_id},
+    )
+    phase08_validation.atomic_json(analysis_path, analysis)
+    phase08_validation.atomic_json(completeness_path, completeness)
+    phase08_validation.atomic_json(
+        run_directory / 'completeness.json',
+        {'run_id': run_id, 'passed': True},
+    )
+    phase08_validation.atomic_yaml(
+        run_directory / 'bag/metadata.yaml',
+        {'rosbag2_bagfile_information': {'storage_identifier': 'sqlite3'}},
+    )
+    return {
+        'run_id': run_id,
+        'run_directory': str(run_directory),
+        'case_id': case_id,
+        'recording_complete': True,
+        'cleanup': {'passed': True},
+        'record_process': {'timed_out': False},
+        'classification': {
+            'status': 'failed',
+            'passed': False,
+            'infrastructure_status': 'completed',
+            'predicate_results': {
+                'recording_complete': True,
+                'cleanup_complete': True,
+                'collision_expectation': True,
+                'controller_goal': True,
+                'ground_truth_goal': True,
+                'expected_terminal_state': True,
+                'required_state_path': False,
+                'required_events': True,
+                'no_forbidden_states': False,
+                'no_forbidden_events': False,
+            },
+        },
+        'outcomes': {
+            'observed_state_sequence': [
+                'SEARCH',
+                'VERIFY_EXTREMUM',
+                'DESIGN_OR_MERGE_FILL',
+                'ESCAPE_REPULSE',
+            ],
+        },
+        'analysis_error': None,
+        'metric_applicability': applicability,
+        'resolved_scenario_sha256': (
+            phase08_validation.file_sha256(resolved_path)
+        ),
+        'analysis_summary_sha256': (
+            phase08_validation.file_sha256(analysis_path)
+        ),
+        'analysis_completeness_sha256': (
+            phase08_validation.file_sha256(completeness_path)
+        ),
+        'success_contract': {
+            'controller': {
+                'expected_verification_outcome': 'goal',
+            },
+        },
+        'analysis': analysis,
+        'analysis_completeness': completeness,
+    }
+
+
 def _install_v3_serial_mocks(monkeypatch, record_factory):
     calls = []
     attempts = Counter()
@@ -2947,6 +3884,420 @@ def test_v3_serial_activation_dispatches_one_case_and_keeps_valid_miss(
     assert progress['not_run_slot_ids'] == []
 
 
+def test_v3_serial_keeps_pure_applicability_behavior_miss(
+    tmp_path,
+    monkeypatch,
+):
+    """An applicability-driven partial is final evidence, not a hard stop."""
+    case_ids = ['partial-miss', 'serial-b', 'serial-c']
+    suite = _v3_serial_suite(tmp_path, case_ids)
+
+    def record_factory(case_id, attempt):
+        del attempt
+        if case_id == case_ids[0]:
+            return _v3_applicability_partial_record(
+                tmp_path,
+                case_id,
+            )
+        return _v3_serial_record(case_id)
+
+    calls = _install_v3_serial_mocks(monkeypatch, record_factory)
+    unused_summary, records, progress = (
+        phase08_validation._v3_execute_serial_slots(
+            suite,
+            'test',
+            tmp_path / 'evidence',
+            tmp_path / 'evidence/activation',
+            'activation',
+            allow_pure_applicability_miss=True,
+        )
+    )
+
+    assert calls == [[case_id] for case_id in case_ids]
+    assert len(records) == 3
+    assert progress['stopped_early_reason'] is None
+    assert progress['not_run_slot_ids'] == []
+    assert phase08_validation._v3_record_integrity(
+        records[0]
+    )['passed'] is False
+
+
+def test_v3_nonactivation_keeps_applicability_hard_stop(
+    tmp_path,
+    monkeypatch,
+):
+    """Never apply V3C's diagnostic exception to another stage."""
+    case_ids = ['partial-miss', 'must-not-run']
+    suite = _v3_serial_suite(tmp_path, case_ids)
+    calls = _install_v3_serial_mocks(
+        monkeypatch,
+        lambda case_id, attempt: (
+            _v3_applicability_partial_record(tmp_path, case_id)
+            if case_id == case_ids[0]
+            else _v3_serial_record(case_id)
+        ),
+    )
+
+    unused_summary, unused_records, progress = (
+        phase08_validation._v3_execute_serial_slots(
+            suite,
+            'test',
+            tmp_path / 'evidence',
+            tmp_path / 'evidence/development',
+            'development',
+        )
+    )
+
+    assert calls == [[case_ids[0]]]
+    assert 'analysis is not complete' in progress[
+        'stopped_early_reason'
+    ]
+    assert progress['not_run_slot_ids'] == [case_ids[1]]
+    with pytest.raises(RuntimeError, match='V3C activation-only'):
+        phase08_validation._v3_execute_serial_slots(
+            suite,
+            'test',
+            tmp_path / 'other-evidence',
+            tmp_path / 'other-evidence/development',
+            'development',
+            allow_pure_applicability_miss=True,
+        )
+
+
+def test_v3_pure_applicability_miss_keeps_final_integrity_gate(tmp_path):
+    """Change dispatch routing without relabeling the retained record."""
+    record = _v3_applicability_partial_record(tmp_path)
+
+    assert phase08_validation._v3_hard_stop_reason(record) is not None
+    assert phase08_validation._v3_hard_stop_reason(
+        record,
+        allow_pure_applicability_miss=True,
+    ) is None
+    integrity = phase08_validation._v3_record_integrity(record)
+    assert integrity['passed'] is False
+    assert set(integrity['reasons']) == {
+        'analysis is not complete',
+        'metric applicability integrity failed',
+        'analysis completeness status is not complete',
+    }
+
+
+def test_v3_serial_carries_failed_slot_and_executes_only_unseen_slots(
+    tmp_path,
+    monkeypatch,
+):
+    """Bind an original record in place without rerun or rewriting."""
+    case_ids = ['carried-failure', 'serial-b', 'serial-c']
+    suite = _v3_serial_suite(tmp_path, case_ids)
+    carried_record = _v3_applicability_partial_record(
+        tmp_path,
+        case_ids[0],
+    )
+    carried_path = tmp_path / 'original_record.json'
+    phase08_validation.atomic_json(carried_path, carried_record)
+    carried = [{
+        'case_id': case_ids[0],
+        'record_path': str(carried_path.resolve()),
+        'record_sha256': phase08_validation.file_sha256(carried_path),
+        'run_directory_manifest': (
+            phase08_validation._v3_directory_manifest(
+                carried_record['run_directory']
+            )
+        ),
+        'source_lineage_id': 'phase08-v3b',
+        'disposition': 'carried_immutable_behavioral_failure',
+        'rerun': False,
+    }]
+    original_bytes = carried_path.read_bytes()
+
+    calls = _install_v3_serial_mocks(
+        monkeypatch,
+        lambda case_id, attempt: _v3_serial_record(case_id),
+    )
+    unused_summary, records, progress = (
+        phase08_validation._v3_execute_serial_slots(
+            suite,
+            'test',
+            tmp_path / 'evidence',
+            tmp_path / 'evidence/activation',
+            'activation',
+            carried_records=carried,
+            required_execution_case_ids=case_ids[1:],
+        )
+    )
+
+    assert calls == [['serial-b'], ['serial-c']]
+    assert records[0] == carried_record
+    assert progress['carried_count'] == 1
+    assert progress['newly_executed_count'] == 2
+    assert progress['carried_record_count'] == 1
+    assert progress['new_execution_count'] == 2
+    assert progress['carried_records'] == carried
+    assert progress['final_record_paths'][case_ids[0]] == str(
+        carried_path.resolve()
+    )
+    assert all(
+        attempt['case_id'] != case_ids[0]
+        for attempt in progress['attempts']
+    )
+    assert carried_path.read_bytes() == original_bytes
+    aggregate = json.loads(
+        (
+            tmp_path / 'evidence/activation/records.json'
+        ).read_text(encoding='utf-8')
+    )
+    assert aggregate[0] == {
+        'schema_version': 1,
+        'case_id': case_ids[0],
+        'disposition': 'carried_immutable_behavioral_failure',
+        'carried_record': carried[0],
+    }
+    assert 'analysis' not in aggregate[0]
+    attempt_records = json.loads(
+        (
+            tmp_path / 'evidence/activation/attempt_records.json'
+        ).read_text(encoding='utf-8')
+    )
+    assert [item['case_id'] for item in attempt_records] == case_ids[1:]
+    state = {
+        'records_path': str(
+            tmp_path / 'evidence/activation/records.json'
+        ),
+        'progress_sha256': progress['progress_sha256'],
+        'attempt_records_sha256': phase08_validation.file_sha256(
+            tmp_path / 'evidence/activation/attempt_records.json'
+        ),
+    }
+    assert phase08_validation._v3_serial_artifact_errors(
+        'activation',
+        state,
+    ) == []
+
+
+def test_v3_serial_rejects_carried_record_hash_drift(
+    tmp_path,
+    monkeypatch,
+):
+    """Rehash the original carried record on every resume."""
+    suite = _v3_serial_suite(tmp_path, ['carried-failure'])
+    carried_path = tmp_path / 'original_record.json'
+    phase08_validation.atomic_json(
+        carried_path,
+        _v3_applicability_partial_record(
+            tmp_path,
+            'carried-failure',
+        ),
+    )
+    carried = [{
+        'case_id': 'carried-failure',
+        'record_path': str(carried_path),
+        'record_sha256': phase08_validation.file_sha256(carried_path),
+        'run_directory_manifest': (
+            phase08_validation._v3_directory_manifest(
+                json.loads(
+                    carried_path.read_text(encoding='utf-8')
+                )['run_directory']
+            )
+        ),
+    }]
+    _install_v3_serial_mocks(
+        monkeypatch,
+        lambda case_id, attempt: _v3_serial_record(case_id),
+    )
+    phase08_validation._v3_execute_serial_slots(
+        suite,
+        'test',
+        tmp_path / 'evidence',
+        tmp_path / 'evidence/activation',
+        'activation',
+        carried_records=carried,
+    )
+    carried_path.write_text('{}\n', encoding='utf-8')
+
+    with pytest.raises(RuntimeError, match='carried record binding'):
+        phase08_validation._v3_execute_serial_slots(
+            suite,
+            'test',
+            tmp_path / 'evidence',
+            tmp_path / 'evidence/activation',
+            'activation',
+            carried_records=carried,
+        )
+
+
+def test_v3_serial_requires_exact_new_case_order(
+    tmp_path,
+    monkeypatch,
+):
+    """Bind the nine-run completion to the audited IDs and order."""
+    case_ids = ['carried-failure', 'serial-b', 'serial-c']
+    suite = _v3_serial_suite(tmp_path, case_ids)
+    record = _v3_applicability_partial_record(
+        tmp_path,
+        case_ids[0],
+    )
+    record_path = tmp_path / 'carried.json'
+    phase08_validation.atomic_json(record_path, record)
+    carried = [{
+        'case_id': case_ids[0],
+        'record_path': str(record_path),
+        'record_sha256': phase08_validation.file_sha256(record_path),
+        'run_directory_manifest': (
+            phase08_validation._v3_directory_manifest(
+                record['run_directory']
+            )
+        ),
+    }]
+    calls = _install_v3_serial_mocks(
+        monkeypatch,
+        lambda case_id, attempt: _v3_serial_record(case_id),
+    )
+
+    with pytest.raises(RuntimeError, match='IDs/order drifted'):
+        phase08_validation._v3_execute_serial_slots(
+            suite,
+            'test',
+            tmp_path / 'evidence',
+            tmp_path / 'evidence/activation',
+            'activation',
+            carried_records=carried,
+            required_execution_case_ids=list(reversed(case_ids[1:])),
+        )
+
+    assert calls == []
+
+
+@pytest.mark.parametrize('new_case_ids', [['serial-b'], ['serial-b', 'serial-c']])
+def test_v3_serial_rehashes_carry_before_dispatch_and_final_reload(
+    tmp_path,
+    monkeypatch,
+    new_case_ids,
+):
+    """Detect carried-record drift before every dispatch and final load."""
+    case_ids = ['carried-failure', *new_case_ids]
+    suite = _v3_serial_suite(tmp_path, case_ids)
+    record = _v3_applicability_partial_record(
+        tmp_path,
+        case_ids[0],
+    )
+    record_path = tmp_path / 'carried.json'
+    phase08_validation.atomic_json(record_path, record)
+    carried = [{
+        'case_id': case_ids[0],
+        'record_path': str(record_path),
+        'record_sha256': phase08_validation.file_sha256(record_path),
+        'run_directory_manifest': (
+            phase08_validation._v3_directory_manifest(
+                record['run_directory']
+            )
+        ),
+    }]
+    calls = _install_v3_serial_mocks(
+        monkeypatch,
+        lambda case_id, attempt: _v3_serial_record(case_id),
+    )
+    original_execute = phase08_validation.execute_suite
+
+    def execute_and_drift(*args, **kwargs):
+        result = original_execute(*args, **kwargs)
+        if len(calls) == 1:
+            record_path.write_text('{}\n', encoding='utf-8')
+        return result
+
+    monkeypatch.setattr(
+        phase08_validation,
+        'execute_suite',
+        execute_and_drift,
+    )
+
+    with pytest.raises(RuntimeError, match='carried record binding'):
+        phase08_validation._v3_execute_serial_slots(
+            suite,
+            'test',
+            tmp_path / 'evidence',
+            tmp_path / 'evidence/activation',
+            'activation',
+            carried_records=carried,
+            required_execution_case_ids=new_case_ids,
+        )
+
+    assert calls == [['serial-b']]
+
+
+@pytest.mark.parametrize(
+    'defect',
+    [
+        'analysis_error',
+        'phase05_failure',
+        'invalid_metric',
+        'unavailable_metric',
+        'raw_bag_drift',
+        'nonbehavior_predicate',
+        'missing_applicability_reason',
+        'unknown_applicability_reason',
+        'missing_critical_input',
+        'artifact_drift',
+    ],
+)
+def test_v3_partial_analysis_corruption_still_hard_stops(
+    tmp_path,
+    defect,
+):
+    """Only the rigorously complete applicability partial may continue."""
+    record = _v3_applicability_partial_record(tmp_path)
+    if defect == 'analysis_error':
+        record['analysis_error'] = 'RuntimeError: failed analysis'
+    elif defect == 'phase05_failure':
+        record['analysis_completeness'][
+            'fresh_phase05_validation'
+        ]['passed'] = False
+    elif defect == 'invalid_metric':
+        record['analysis']['metrics'][
+            'controller_success'
+        ]['status'] = 'invalid'
+        record['analysis_completeness']['metric_validity'][
+            'controller_success'
+        ] = 'invalid'
+    elif defect == 'unavailable_metric':
+        record['analysis']['metrics'][
+            'controller_success'
+        ]['status'] = 'unavailable'
+        record['analysis_completeness']['metric_validity'][
+            'controller_success'
+        ] = 'unavailable'
+    elif defect == 'raw_bag_drift':
+        raw_path = Path(next(iter(
+            record['analysis_completeness']['raw_bag_sha256']
+        )))
+        raw_path.write_bytes(b'drifted retained bag')
+    elif defect == 'nonbehavior_predicate':
+        record['classification']['predicate_results'][
+            'recording_complete'
+        ] = False
+    elif defect == 'missing_applicability_reason':
+        record['analysis']['applicability_integrity']['reasons'] = []
+    elif defect == 'unknown_applicability_reason':
+        record['analysis']['applicability_integrity']['reasons'] = [
+            'some other nonempty applicability reason',
+        ]
+    elif defect == 'missing_critical_input':
+        del record['analysis_completeness']['critical_inputs']['pose']
+    else:
+        run_directory = Path(record['run_directory'])
+        (run_directory / 'resolved_scenario.yaml').write_text(
+            'case_id: drifted\n',
+            encoding='utf-8',
+        )
+
+    reason = phase08_validation._v3_hard_stop_reason(
+        record,
+        allow_pure_applicability_miss=True,
+    )
+
+    assert reason is not None
+    assert reason.startswith('evidence integrity:')
+
+
 def test_v3_serial_rechecks_the_qualified_runtime_snapshot(
     tmp_path,
     monkeypatch,
@@ -3014,6 +4365,150 @@ def test_v3_serial_rehashes_suite_before_every_dispatch(
         )
 
     assert calls == [['first']]
+
+
+def test_v3_serial_rejects_analyzed_record_from_another_slot(
+    tmp_path,
+    monkeypatch,
+):
+    """Never attribute one analyzed run to a different dispatched case."""
+    case_ids = ['expected-slot', 'must-not-run']
+    suite = _v3_serial_suite(tmp_path, case_ids)
+    calls = _install_v3_serial_mocks(
+        monkeypatch,
+        lambda case_id, attempt: _v3_serial_record('wrong-slot'),
+    )
+
+    unused_summary, records, progress = (
+        phase08_validation._v3_execute_serial_slots(
+            suite,
+            'test',
+            tmp_path / 'evidence',
+            tmp_path / 'evidence/activation',
+            'activation',
+        )
+    )
+
+    assert calls == [[case_ids[0]]]
+    assert records == []
+    assert 'execution error' in progress['stopped_early_reason']
+    assert progress['attempts'][0]['outcome'] == 'execution_error'
+    error = json.loads(Path(
+        progress['attempts'][0]['error_path']
+    ).read_text(encoding='utf-8'))
+    assert 'wrong-slot' in error['error']
+
+
+def test_v3_serial_does_not_redispatch_ambiguous_intent(
+    tmp_path,
+    monkeypatch,
+):
+    """An interrupted dispatch with no summary is permanently ambiguous."""
+    suite = _v3_serial_suite(tmp_path, ['interrupted-slot'])
+    _install_v3_serial_mocks(
+        monkeypatch,
+        lambda case_id, attempt: _v3_serial_record(case_id),
+    )
+    dispatch_count = 0
+
+    def interrupt_before_summary(*unused, **unused_keywords):
+        nonlocal dispatch_count
+        dispatch_count += 1
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(
+        phase08_validation,
+        'execute_suite',
+        interrupt_before_summary,
+    )
+    stage_root = tmp_path / 'evidence/activation'
+    with pytest.raises(KeyboardInterrupt):
+        phase08_validation._v3_execute_serial_slots(
+            suite,
+            'test',
+            tmp_path / 'evidence',
+            stage_root,
+            'activation',
+        )
+    intent = phase08_validation._v3_load_progress(stage_root)
+    assert len(intent['attempts']) == 1
+    assert intent['attempts'][0]['outcome'] == 'dispatch_intent'
+
+    summary, records, progress = (
+        phase08_validation._v3_execute_serial_slots(
+            suite,
+            'test',
+            tmp_path / 'evidence',
+            stage_root,
+            'activation',
+        )
+    )
+
+    assert dispatch_count == 1
+    assert records == []
+    assert len(progress['attempts']) == 1
+    assert progress['ambiguous_interrupted_dispatch_case_ids'] == [
+        'interrupted-slot',
+    ]
+    assert progress['not_run_slot_ids'] == []
+    assert summary['attempted_slot_count'] == 1
+    assert summary['completed_slot_count'] == 0
+    assert summary[
+        'ambiguous_interrupted_dispatch_case_ids'
+    ] == ['interrupted-slot']
+    assert 'ambiguous interrupted dispatch intent' in progress[
+        'stopped_early_reason'
+    ]
+
+
+def test_v3_serial_resumes_summary_without_redispatch(
+    tmp_path,
+    monkeypatch,
+):
+    """Analyze a completed journaled summary after an interruption."""
+    suite = _v3_serial_suite(tmp_path, ['recoverable-slot'])
+    calls = _install_v3_serial_mocks(
+        monkeypatch,
+        lambda case_id, attempt: _v3_serial_record(case_id),
+    )
+    original_execute = phase08_validation.execute_suite
+
+    def interrupt_after_summary(*args, **kwargs):
+        original_execute(*args, **kwargs)
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(
+        phase08_validation,
+        'execute_suite',
+        interrupt_after_summary,
+    )
+    stage_root = tmp_path / 'evidence/activation'
+    with pytest.raises(KeyboardInterrupt):
+        phase08_validation._v3_execute_serial_slots(
+            suite,
+            'test',
+            tmp_path / 'evidence',
+            stage_root,
+            'activation',
+        )
+
+    unused_summary, records, progress = (
+        phase08_validation._v3_execute_serial_slots(
+            suite,
+            'test',
+            tmp_path / 'evidence',
+            stage_root,
+            'activation',
+        )
+    )
+
+    assert calls == [['recoverable-slot']]
+    assert [record['case_id'] for record in records] == [
+        'recoverable-slot',
+    ]
+    assert len(progress['attempts']) == 1
+    assert progress['attempts'][0]['outcome'] == 'passed'
+    assert progress['stopped_early_reason'] is None
 
 
 def test_v3_serial_artifact_audit_detects_attempt_aggregate_drift(

@@ -99,6 +99,7 @@ EVENT_NAMES = {
     if name.startswith('EVENT_') and isinstance(value, int)
 }
 RUN_ID_SAFE = re.compile('[^A-Za-z0-9._-]+')
+CANCEL_ESCALATION_SEC = 5.0
 
 
 def _utc_now():
@@ -469,23 +470,222 @@ def ensure_ros_daemon():
     )
 
 
-def _wait_for_scoped_shutdown(process, shutdown_grace_sec):
-    """Escalate only one child session after its requested SIGINT."""
+def _process_identity(pid):
+    """Read one Linux process identity without trusting a reusable PID."""
     try:
-        process.wait(timeout=shutdown_grace_sec)
-    except subprocess.TimeoutExpired:
+        stat_text = Path(f'/proc/{int(pid)}/stat').read_text(
+            encoding='utf-8'
+        )
+    except (OSError, ValueError):
+        return None
+    closing_parenthesis = stat_text.rfind(')')
+    if closing_parenthesis < 0:
+        return None
+    fields = stat_text[closing_parenthesis + 2:].split()
+    if len(fields) <= 19:
+        return None
+    try:
+        return {
+            'pid': int(pid),
+            'state': fields[0],
+            'parent_pid': int(fields[1]),
+            'process_group_id': int(fields[2]),
+            'session_id': int(fields[3]),
+            'start_ticks': int(fields[19]),
+        }
+    except ValueError:
+        return None
+
+
+def _process_children(pid):
+    """Read the direct children of one process from procfs."""
+    try:
+        children_text = Path(
+            f'/proc/{int(pid)}/task/{int(pid)}/children'
+        ).read_text(encoding='utf-8')
+        return [int(value) for value in children_text.split()]
+    except (OSError, ValueError):
+        return []
+
+
+def _snapshot_process_tree(root_pid):
+    """Snapshot descendants, including nested sessions, before signaling."""
+    snapshot = {}
+    pending = [int(root_pid)]
+    while pending:
+        pid = pending.pop()
+        if pid in snapshot:
+            continue
+        identity = _process_identity(pid)
+        if identity is None:
+            continue
+        snapshot[pid] = identity
+        pending.extend(_process_children(pid))
+    return snapshot
+
+
+def _matching_process(identity):
+    """Return the current identity only when the snapshotted PID is unchanged."""
+    current = _process_identity(identity['pid'])
+    if current is None or current['state'] == 'Z':
+        return None
+    if current['start_ticks'] != identity['start_ticks']:
+        return None
+    return current
+
+
+def _live_snapshot_processes(snapshot):
+    """Return unchanged, non-zombie processes from one owned tree snapshot."""
+    live = {}
+    for pid, identity in snapshot.items():
+        current = _matching_process(identity)
+        if current is not None:
+            live[pid] = current
+    return live
+
+
+def _owned_process_groups(snapshot, live):
+    """Group live snapshotted identities without including the caller."""
+    current_pid = os.getpid()
+    current_group = os.getpgrp()
+    groups = {}
+    for pid, current in live.items():
+        original = snapshot[pid]
+        process_group_id = current['process_group_id']
+        if (
+            pid == current_pid
+            or process_group_id <= 0
+            or process_group_id == current_group
+            or process_group_id != original['process_group_id']
+        ):
+            continue
+        groups.setdefault(process_group_id, []).append(original)
+    return groups
+
+
+def _signal_owned_process_group(process_group_id, identities, signum):
+    """Signal a group only while an original member still matches procfs."""
+    if process_group_id <= 0 or process_group_id == os.getpgrp():
+        return False
+    safe_member_found = False
+    for identity in identities:
+        current = _matching_process(identity)
+        if (
+            current is not None
+            and current['process_group_id'] == process_group_id
+        ):
+            safe_member_found = True
+            break
+    if not safe_member_found:
+        return False
+    try:
+        os.killpg(process_group_id, signum)
+    except (ProcessLookupError, PermissionError):
+        return False
+    return True
+
+
+def _wait_for_cancelled_tree(
+    process,
+    snapshot,
+    timeout_sec,
+    drain_output,
+):
+    """Wait boundedly for the leader and every snapshotted descendant."""
+    timeout_sec = max(0.0, timeout_sec)
+    deadline = time.monotonic() + timeout_sec
+    leader_reaped = False
+    output = None
+    try:
+        if drain_output:
+            output, unused_stderr = process.communicate(timeout=timeout_sec)
+            del unused_stderr
+        else:
+            process.wait(timeout=timeout_sec)
+        leader_reaped = True
+    except BaseException:
         try:
-            os.killpg(process.pid, signal.SIGTERM)
-        except ProcessLookupError:
-            pass
-        try:
-            process.wait(timeout=5.0)
-        except subprocess.TimeoutExpired:
+            leader_reaped = process.poll() is not None
+        except BaseException:
+            leader_reaped = False
+    while True:
+        live = _live_snapshot_processes(snapshot)
+        if leader_reaped and not live:
+            return True, live, output
+        remaining = deadline - time.monotonic()
+        if remaining <= 0.0:
+            return leader_reaped, live, output
+        time.sleep(min(0.05, remaining))
+        if not leader_reaped:
             try:
-                os.killpg(process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-            process.wait()
+                leader_reaped = process.poll() is not None
+            except BaseException:
+                leader_reaped = False
+
+
+def _cancel_scoped_process(process, shutdown_grace_sec, drain_output):
+    """Stop the interrupted record tree, including its nested sessions."""
+    snapshot = _snapshot_process_tree(process.pid)
+    signal_levels = {}
+    captured_output = None
+    root_identity = snapshot.get(process.pid)
+    if (
+        root_identity is not None
+        and root_identity['process_group_id'] == process.pid
+        and _signal_owned_process_group(
+            process.pid,
+            [root_identity],
+            signal.SIGINT,
+        )
+    ):
+        signal_levels[process.pid] = 1
+    elif process.pid != os.getpgrp():
+        try:
+            if process.poll() is None:
+                os.killpg(process.pid, signal.SIGINT)
+                signal_levels[process.pid] = 1
+        except BaseException:
+            pass
+
+    leader_reaped, live, output = _wait_for_cancelled_tree(
+        process,
+        snapshot,
+        shutdown_grace_sec,
+        drain_output,
+    )
+    if output is not None:
+        captured_output = output
+    if leader_reaped and not live:
+        return captured_output
+
+    escalation_signals = (
+        signal.SIGINT,
+        signal.SIGTERM,
+        signal.SIGKILL,
+    )
+    for _ in escalation_signals:
+        groups = _owned_process_groups(snapshot, live)
+        for process_group_id, identities in sorted(groups.items()):
+            level = signal_levels.get(process_group_id, 0)
+            if level >= len(escalation_signals):
+                continue
+            if _signal_owned_process_group(
+                process_group_id,
+                identities,
+                escalation_signals[level],
+            ):
+                signal_levels[process_group_id] = level + 1
+        leader_reaped, live, output = _wait_for_cancelled_tree(
+            process,
+            snapshot,
+            CANCEL_ESCALATION_SEC,
+            drain_output,
+        )
+        if output is not None:
+            captured_output = output
+        if leader_reaped and not live:
+            return captured_output
+    return captured_output
 
 
 def _run_record_to_boundary(
@@ -566,14 +766,22 @@ def _run_record_to_boundary(
                     boundary_stop = True
                     break
             if boundary_stop or timed_out:
-                try:
-                    os.killpg(process.pid, signal.SIGINT)
-                except ProcessLookupError:
-                    pass
-                _wait_for_scoped_shutdown(process, shutdown_grace_sec)
+                _cancel_scoped_process(
+                    process,
+                    shutdown_grace_sec,
+                    drain_output=False,
+                )
             output.flush()
             output.seek(0)
             stdout = output.read()
+    except BaseException:
+        if process is not None:
+            _cancel_scoped_process(
+                process,
+                shutdown_grace_sec,
+                drain_output=False,
+            )
+        raise
     finally:
         node.destroy_node()
         rclpy.shutdown(context=context)
@@ -620,28 +828,24 @@ def run_record_process(
     )
     timed_out = False
     try:
-        output, _ = process.communicate(timeout=wall_timeout_sec)
-    except subprocess.TimeoutExpired:
-        timed_out = True
         try:
-            os.killpg(process.pid, signal.SIGINT)
-        except ProcessLookupError:
-            pass
-        try:
-            output, _ = process.communicate(timeout=shutdown_grace_sec)
+            output, _ = process.communicate(timeout=wall_timeout_sec)
         except subprocess.TimeoutExpired:
-            try:
-                os.killpg(process.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-            try:
-                output, _ = process.communicate(timeout=5.0)
-            except subprocess.TimeoutExpired:
-                try:
-                    os.killpg(process.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
-                output, _ = process.communicate()
+            timed_out = True
+            output = _cancel_scoped_process(
+                process,
+                shutdown_grace_sec,
+                drain_output=True,
+            )
+            if output is None:
+                output = ''
+    except BaseException:
+        _cancel_scoped_process(
+            process,
+            shutdown_grace_sec,
+            drain_output=True,
+        )
+        raise
     return {
         'return_code': process.returncode,
         'timed_out': timed_out,

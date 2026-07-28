@@ -126,3 +126,28 @@ analysis completeness
 raw bag
   2d9b2813b2c15623f62fc44907dc391636e4cd53254d2d923ce13d71ac72453c
 ```
+
+## Superseding diagnostic-completion clarification
+
+Independent review completed before M3C source changes or V3C execution found
+that rerunning all ten unchanged activation cases would retry a valid observed
+behavioral failure. That would violate the no-replacement rule. The earlier
+fresh-successor paragraph above is retained as superseded planning history;
+it is not the binding recovery.
+
+V3C instead carries the exact V3B direct-goal record by its original path and
+SHA-256, executes only the nine cases retained as `not_run`, and reports one
+carried failed record plus nine newly executed diagnostic records. The
+carried record is never rerun, rewritten, reanalyzed, relabeled, or counted as
+a V3C simulation. The composite result and Phase 08.3 are forced failed before
+M4 regardless of the nine new outcomes.
+
+Binding machine-readable policy:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_v3b_diagnostic_completion.json
+```
+
+Omission SHA-256:
+`c7a8acb97755ee7d41b3bd7932e7d4181bc854b7ee310bf1d4325f365a385e8d`.

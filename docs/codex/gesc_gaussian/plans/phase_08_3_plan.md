@@ -2107,3 +2107,100 @@ This amendment is the required Plan review for the post-outcome
 validation-workflow correction. It does not authorize an algorithm,
 parameter, analyzer-output, scenario, population, threshold, denominator, or
 acceptance-gate change.
+
+## M3C-A clarification — diagnostic completion without behavioral retry
+
+This append-only clarification was added before M3C source implementation,
+before V3C adoption, and before any V3C Gazebo dispatch. Independent review
+found a scientific no-replacement conflict in the immediately preceding M3C
+proposal to rerun all ten activation cases.
+
+V3A justified an all-ten restart because its physical positive-control probe
+contaminated the only trajectory. V3B is materially different: its first
+trajectory is unperturbed, recording-complete, collision-free, cleanup-valid,
+and behaviorally failed. It is valid evidence. Rerunning that same fixed slot
+after seeing its failure would be a post-outcome retry and would contradict
+the unchanged rule that a valid behavioral miss is never replaced.
+
+Therefore the preceding M3C/M3D statements that V3C reruns all ten from the
+beginning or may become a pass-eligible activation are retired. No code,
+root, qualification, or V3C run was created under that proposal. The
+machine-readable all-ten policy audit is retained as superseded planning
+history:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_v3b_hard_stop_policy_misclassification.json
+```
+
+The binding diagnostic-completion audit is:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_v3b_diagnostic_completion.json
+```
+
+Its omission SHA-256 is
+`c7a8acb97755ee7d41b3bd7932e7d4181bc854b7ee310bf1d4325f365a385e8d`.
+
+### Binding V3C disposition
+
+V3C is a diagnostic-completion lineage, not a new pass-eligible activation
+attempt:
+
+1. carry the exact immutable V3B
+   `v3a_goal_aggregate_direct` record by its original absolute path and
+   SHA-256;
+2. never copy over, rewrite, reanalyze, redispatch, replace, or relabel that
+   slot;
+3. explicitly record its provenance as one carried failed V3B record;
+4. execute only the nine activation IDs that V3B retained as `not_run`;
+5. retain the nine new GUI-visible results once each;
+6. produce one composite ten-slot diagnostic report with
+   `carried_record_count=1` and `new_execution_count=9`;
+7. force the composite activation verdict to failed because the carried
+   direct-path contract is failed;
+8. close Phase 08.3 failed before M4 regardless of the nine new outcomes.
+
+The fresh V3C root remains:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3c
+```
+
+Its progress and state must never claim ten fresh V3C simulations, `10/10`,
+or simulation readiness. A future pass-eligible attempt would require a
+separately precommitted new experiment version and is not authorized here.
+
+### Chained recovery requirements
+
+V3C adoption and qualification retain every M3C recovery proof, with these
+additional requirements:
+
+- the carried record path and SHA-256 must match V3B progress, records, the
+  diagnostic-completion audit, and every pre-dispatch recheck;
+- the carried record's full V3B run directory, raw bag, completeness,
+  analysis, and nested V3A recovery remain immutable and hash-valid;
+- V3C progress must distinguish `carried` from `executed` attempts;
+- the serial executor must begin with the second activation slot and reject
+  any attempt to dispatch the carried case;
+- the corrected source may change only validation-workflow/test/documentation
+  ownership; trajectory-affecting algorithm, profile, scenario, launch,
+  source, seed, disturbance, and contract inputs must remain byte- or
+  semantically identical;
+- a pure applicability-driven behavioral miss may continue the remaining
+  diagnostic dispatch only when all other evidence is valid;
+- every collision, cleanup, recording, missing-evidence, true analysis,
+  timeout, ownership, and hash failure remains an immediate hard stop.
+
+### Clarified M3D exit
+
+M3D does not have a passing exit. It completes when either:
+
+- all nine previously undispatched cases have retained results, after which
+  the composite ten-slot activation and Phase 08.3 close failed; or
+- an unchanged hard-stop condition ends diagnostic dispatch earlier, after
+  which Phase 08.3 closes failed with the remaining slots `not_run`.
+
+M4, freeze, holdout, additional validation, reproducibility, the readiness
+tag, Phase 09, and physical hardware remain prohibited.

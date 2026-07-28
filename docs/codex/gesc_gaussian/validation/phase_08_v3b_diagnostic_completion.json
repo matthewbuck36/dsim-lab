@@ -1,0 +1,88 @@
+{
+  "carried_record": {
+    "case_id": "v3a_goal_aggregate_direct",
+    "classification_status": "failed",
+    "infrastructure_status": "completed",
+    "bag_metadata_sha256": "4f164a6cbe9b36a3d32ccb38b6d316536b6c163263fccd66bced20947c62e9f4",
+    "completeness_sha256": "da1d8278e680b79f85c9c036bbdaa7799dc3af5e9c68785ae4df7ac9791cdf07",
+    "record_path": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3b/activation/attempts/001_v3a_goal_aggregate_direct/attempt_01/record.json",
+    "record_sha256": "d1cc6b4b2f73d5ad70031d3b74d7ac4b535894bdf5425100d3f72175d2593ad5",
+    "run_directory_file_count": 33,
+    "run_directory_manifest_sha256": "1794d2424f966fff75e08218379e69d5e3f990c912a144c1897d48bce1aefae5",
+    "run_id": "20260728T064829892284Z_simulation_phase08_v3_activation-v3a_goal_aggregate_direct-robust_gaussian_v1-acd554565b_1b6fb3f5",
+    "source_lineage_id": "phase08-v3b"
+  },
+  "classification": "behavioral_miss_diagnostic_completion",
+  "composite_activation": {
+    "carried_record_count": 1,
+    "composite_slot_count": 10,
+    "execute_case_ids": [
+      "v3a_below_target_fill",
+      "v3a_pure_escape_recenter",
+      "v3a_stalled_assist",
+      "v3a_fill_merge",
+      "v3a_full_lifecycle_goal",
+      "v3a_revisit_guard",
+      "v3a_boundary_saturation",
+      "v3a_noise_delay",
+      "v3a_safe_timeout"
+    ],
+    "new_execution_count": 9,
+    "terminal_activation_passed": false
+  },
+  "correction": {
+    "activation_cases_changed": false,
+    "allowed_runtime_correction_sha256": {
+      "ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py": "6605e6a615a266a472473537334416037e8ab7f70f568957bd73dd6677380fbb",
+      "ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py": "19627d23a8e6675e3431602e882a1680547213686f8b174714330456f8e76aff",
+      "ros2_ws/src/ros_esc/test/test_phase08_validation.py": "3cb0a63f5aa39de4d6f89772476d342a8321903e9e6f44546c95a46750bdf1c6",
+      "ros2_ws/src/ros_esc/test/test_scenario_runner.py": "8b4061e89b4192397f6341965639e58b8da69ea47ea51f9b8759d6694cae8a1d"
+    },
+    "analyzer_output_changed": false,
+    "behavior_contract_changed": false,
+    "carry_failed_slot_byte_identically": true,
+    "carry_superseded_behavioral_failure": true,
+    "collision_gate_changed": false,
+    "composite_activation_forced_fail": true,
+    "execute_only_never_run_activation_cases": true,
+    "final_record_integrity_gate_changed": false,
+    "fresh_evidence_root": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3c",
+    "fresh_lineage_id": "phase08-v3c",
+    "hard_stop_policy": "pure_applicability_partial_is_behavioral_miss",
+    "m4_prohibited": true,
+    "phase08_v3_terminal_failure_required": true,
+    "rerun_all_activation_cases": false,
+    "rerun_carried_case": false,
+    "reuse_precommitted_population_byte_identically": true
+  },
+  "correction_sha256": "c7a8acb97755ee7d41b3bd7932e7d4181bc854b7ee310bf1d4325f365a385e8d",
+  "experiment_version": "phase08-v3b",
+  "nested_recovery": {
+    "kind": "contact_probe_instrumentation_contamination",
+    "recovery_sha256": "b880fe9d2dc5724ed016fe5c2d42bb20796330aa7f1124f0ef7d875f0b6922e0",
+    "superseded_evidence_root": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3"
+  },
+  "precommit": {
+    "commitment_file_sha256": "f142f9044b19c51113bb1363e5114f9a831d095648fe647fe15c5c04088e45a2",
+    "commitment_sha256": "cf981d60e235a3b4fd63ae5a61ccddae87e94ea76a3fb2d4ccaad78bcaa29437",
+    "suite_sha256": "d733ef9dffb372d2c60b57f83c2b96e1062a0a62818587de59a0166df4efe88e"
+  },
+  "qualified_runtime": {
+    "execution_commit": "23c2b9b",
+    "execution_commit_resolved": "23c2b9b55ac766d2842fe33d79f7ccf86f9842f7",
+    "qualification_state_sha256": "5f36c29f5a008375da801b68ca1c8c22efbfc876595195a46f0aa80776e937cd",
+    "runtime_input_commit": "e9e1d500116fe884d06574d316143da94e25d920",
+    "runtime_inputs_sha256": "6b76ddfe0ca0751bfbbce7eba4a3fc39b247492e77f7a1e6731721b9f4f5c227"
+  },
+  "retained_evidence_audit": {
+    "file_sha256": "83c5be8f24d0be2142583c867aa5fc3901edcb8bdce01b42e8c59bfe46b50d6d",
+    "omission_sha256": "dbec6d73e23a7b590e99558e43ec57c99c68fbe5f6921301a8fc618407ebf56e",
+    "path": "docs/codex/gesc_gaussian/validation/phase_08_v3b_hard_stop_policy_misclassification.json"
+  },
+  "schema_version": 1,
+  "superseded_evidence_root": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3b",
+  "supersedes_policy": {
+    "reason": "rerunning a valid unperturbed behavioral failure would violate the no-replacement rule",
+    "rerun_all_activation_cases": true
+  }
+}

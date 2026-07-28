@@ -1,6 +1,6 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-27T17:09:19-07:00`
+Last verified: `2026-07-28T01:22:51-07:00`
 Status: `IN PROGRESS — PHASE 08.3 V3 ACCEPTANCE`
 
 ## Objective
@@ -1824,3 +1824,132 @@ Durable records:
   all other evidence is valid; every genuine evidence, collision, cleanup,
   ownership, timeout, or hash failure remains an immediate stop.
 - M4 remains prohibited unless V3C activation passes `10/10`.
+
+## Phase 08.3 M3C-A no-replacement clarification
+
+Independent review completed before M3C source implementation, V3C adoption,
+or V3C Gazebo dispatch found a scientific conflict in the proposed all-ten
+V3C restart.
+
+The V3B direct-goal trajectory is valid unperturbed behavioral evidence. It
+passed recording, cleanup, final-zero, collision, and goal-ground-truth
+checks, then failed its fixed direct-path contract. Unlike the
+instrumentation-contaminated V3A attempt, it cannot be rerun as if it never
+happened. An unchanged retry after observing the failure would violate the
+no-replacement rule.
+
+The previous all-ten V3C proposal is therefore retired before implementation.
+Its machine audit remains retained as superseded planning history. The
+binding policy is:
+
+- machine-readable audit:
+  `docs/codex/gesc_gaussian/validation/phase_08_v3b_diagnostic_completion.json`;
+- audit omission SHA-256:
+  `c7a8acb97755ee7d41b3bd7932e7d4181bc854b7ee310bf1d4325f365a385e8d`;
+- carry the exact V3B direct-goal record from its original path with SHA-256
+  `d1cc6b4b2f73d5ad70031d3b74d7ac4b535894bdf5425100d3f72175d2593ad5`;
+- do not copy, rewrite, reanalyze, redispatch, replace, or relabel it;
+- execute only the nine IDs retained by V3B as `not_run`;
+- report `carried_record_count=1`, `new_execution_count=9`, and an explicit
+  composite ten-slot provenance;
+- force V3C activation and Phase 08.3 failed before M4 because the carried
+  contract is failed, regardless of the nine new outcomes.
+
+This preserves the purpose of the routing correction: complete the remaining
+activation diagnosis after an ordinary behavioral miss. It does not create a
+second chance at the failed slot.
+
+## Current milestone
+
+- Closed lineage: **M3 V3A — FAILED / INSTRUMENTATION-CONTAMINATED / NOT
+  SIMULATION-READY**.
+- Closed lineage: **M3B V3B — FAILED / VALID DIRECT-PATH BEHAVIORAL MISS /
+  PREMATURE HARD-STOP ROUTING / NOT SIMULATION-READY**.
+- Current milestone: **M3C — implement/test a diagnostic-completion V3C
+  recovery with one immutable carried failure and nine new GUI runs**.
+- Fresh root:
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3c`; still absent.
+- Next criterion: prove the chained recovery, carried-record immutability,
+  non-dispatch of slot one, exact nine-case continuation, and unchanged true
+  hard stops; checkpoint and commit before V3C adoption.
+- Terminal expectation: after at most nine new activation diagnostics, close
+  Phase 08.3 failed. No M4 or readiness tag is possible in this version.
+
+## Stop conditions
+
+- Never rerun or reanalyze the carried V3B direct-goal slot.
+- Never claim ten fresh V3C simulations or a pass-eligible V3C activation.
+- Reject any V3A/V3B artifact, nested-recovery, carried-record, source,
+  operator, root, suite, commitment, launch-contract, or installed dry-run
+  drift.
+- Preserve every original collision, cleanup, recording, final-zero,
+  ownership, timeout, evidence-integrity, and hash hard stop.
+- M4, freeze, holdout, validation, reproducibility, tag, Phase 09, and
+  physical hardware are prohibited.
+
+## Phase 08.3 M3C implementation and verification
+
+The diagnostic-completion recovery is implemented and independently reviewed.
+It preserves the immutable V3B direct-goal failure by pointer and hash, rejects
+dispatch of that slot, and permits only the exact nine retained `not_run`
+case IDs in their fixed order. The pure applicability exception is limited to
+this diagnostic V3C activation and does not convert partial analysis,
+applicability failure, direct-path failure, or the composite verdict into a
+pass.
+
+Recovery and provenance proof:
+
+- canonical chained-recovery SHA-256:
+  `f4f347f17f886dcadb002f44f20b9e8eebe14163e462239b5e52a8787bb182f3`;
+- immutable V3B run-directory manifest SHA-256:
+  `1794d2424f966fff75e08218379e69d5e3f990c912a144c1897d48bce1aefae5`
+  across `33` files, rehashed before every dispatch;
+- V3B-to-current source projection:
+  `345` unchanged runtime inputs, SHA-256
+  `4fcd8c31e7bb8959c2e22ca7f843f121e91a1cce1699d6745fa36ffbc01c3d76`;
+- exact activation-invocation contract SHA-256:
+  `8e1872d0ea6379ea664d4e37c36f31ed29dd58f8b54818ca2eeb5f5afa411e3b`;
+- machine audit file SHA-256:
+  `029410f59f27db61bfb1271c0d6a27d429cbca7b94fbd632f93673c7fdf112fa`;
+- audit omission SHA-256:
+  `c7a8acb97755ee7d41b3bd7932e7d4181bc854b7ee310bf1d4325f365a385e8d`.
+
+Runtime interruption handling now journals dispatch intent before simulation,
+classifies an intent without a terminal summary as ambiguous rather than
+`not_run`, and never redispatches it. The scenario runner snapshots process,
+process-group, and session identities, then applies bounded
+`SIGINT -> SIGTERM -> SIGKILL` cleanup to owned descendants on normal timeout,
+graceful stop, `KeyboardInterrupt`, or other `BaseException`.
+
+Verification completed before V3C adoption:
+
+- complete functional gate:
+  `433 passed, 2 skipped in 64.62 s`; the skips are the two explicit opt-in
+  Gazebo tests;
+- focused recovery/runner gate:
+  `164 passed, 1 skipped`, plus a separate cleanup gate of
+  `37 passed, 1 skipped`;
+- `flake8`, `pydocstyle`, `compileall`, Bash syntax, strict JSON parsing,
+  repository context validation, required-document validation, and
+  `git diff --check`: passed;
+- standard build of `ros_esc_interfaces`,
+  `turtlebot3_rotating_sensor`, and `ros_esc`: passed;
+- isolated non-symlink three-package build under
+  `/tmp/dsim_phase08_v3_m3c_isolated.cKR2Ws`: passed in `13.0 s`;
+- installed activation dry run:
+  `10` cases, `0` unsupported, schema `4`, GUI and contacts enabled, physical
+  contact probe disabled, zero-probe control enabled; retained SHA-256
+  `c1979bc6ad23c2aabf6dd4a70369fda5f8eae6aa892fb39651322953648d6583`;
+- installed development dry run:
+  `10` cases, `0` unsupported, schema `4`; retained SHA-256
+  `4b5f69ea22a35551a123831aef8d7987375e832610757e815ccba642e8c47250`;
+- installed supervisor and fill-manager graph instantiation each reached the
+  expected bounded wrapper exit `124` after five seconds without `SIGKILL`;
+- a real nested-session cleanup smoke left no owned child process behind;
+- independent review verdict: **GO** for the bounded M3C correction.
+
+No V3C evidence root exists yet, and no Gazebo simulation was launched during
+this implementation or verification. The next operation is to checkpoint and
+commit this exact source state, adopt it into the fresh V3C root, rerun
+qualification, and then launch only the nine remaining GUI-visible Gazebo
+diagnostics.
