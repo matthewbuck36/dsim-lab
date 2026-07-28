@@ -2674,3 +2674,30 @@ Gazebo activation simulations.
 - No Gazebo dispatch if prepare or qualification is incomplete or failed.
 - Do not alter an input captured by the V4 repository snapshot.
 - Do not reuse any V3 evidence record as V4 evidence.
+
+### M3 transactional-prepare preflight correction
+
+The first `v4-prepare` invocation at
+`2026-07-28T11:08:00-07:00` stopped before publishing the fresh root because
+the new transaction path passed unsupported keyword `mode` to the existing
+`atomic_json` helper. The staging directory was removed and
+`phase08_v4` remained absent.
+
+This bounded workflow-only correction now writes the JSON through the
+existing helper and applies mode `0600` to the completed file. A new focused
+test proves the root contains both a valid `v4_prepare.json` state and a
+hash-valid mode-`0600` transaction. Focused Phase 08 validation tests pass:
+`179 passed in 45.39 s`; fatal `flake8`, `py_compile`, and
+`git diff --check` pass.
+
+Corrected hashes:
+
+```text
+phase08_validation.py
+  6d6e8059c89b8c5467c44bcc8082bcc4969404841e5dee0acf585161fa60f284
+test_phase08_validation.py
+  d4f8304e9d21a0aa7bb34c24533499153e67efbe7cc5e7c367c0b199533f0ae8
+```
+
+No evidence root, Gazebo process, simulation slot, hardware action, or
+scientific result was created by the failed invocation.

@@ -7431,8 +7431,8 @@ def run_v4_prepare(operator, evidence_root):
         atomic_json(
             prepare_root / 'prepare_transaction.json',
             transaction,
-            mode=0o600,
         )
+        (prepare_root / 'prepare_transaction.json').chmod(0o600)
         state = _v3_write_state(
             staging_root,
             'prepare',

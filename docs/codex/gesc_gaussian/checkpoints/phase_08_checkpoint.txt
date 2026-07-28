@@ -1,42 +1,34 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-28T18:01:29+00:00
-Base HEAD: 43a27b689f09a006ca34c9acbaf4dcf7d28d87fd
+Generated: 2026-07-28T18:04:09+00:00
+Base HEAD: de254b576aeb970ea420f74712945b01f6a26405
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: cbb921bb1fdd9073296d3ca2184b75cc53967b23587c23eaddba6b9ef4b42b88
+Status sha256: d513984005a9154cfcbd849dbb3d5dec7411fbfb76c9657209901907712bc4cf
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_4_plan.md
 Active subphase plan sha256: 63369edbbfa2c8fb987822f5f05d0dea7487443f27e4963e5b61e24ccc644f69
-Unstaged diff sha256: fe6c8694c1bdb2cb24e21fc6cdbc6c24b82ce0b327cbfddb1a9de281b3f24447
+Unstaged diff sha256: bf2d90d50b5554860c3e05e5c06d3134a14ffb89b7ddb4d8876b9ed560119d81
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 29]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 30]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
- M docs/codex/gesc_gaussian/test_commands.md
  M ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py
- M ros2_ws/src/ros_esc/setup.py
  M ros2_ws/src/ros_esc/test/test_phase08_validation.py
-?? docs/codex/gesc_gaussian/validation/phase_08_v4_population_adoption.json
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v4_activation.yaml
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v4_candidates.yaml
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v4_development.yaml
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  52 +-
- docs/codex/gesc_gaussian/status/phase_08_status.md |  95 ++++
- docs/codex/gesc_gaussian/test_commands.md          |  37 ++
- .../ros_esc/scenario_runner/phase08_validation.py  | 589 ++++++++++++++++++---
- ros2_ws/src/ros_esc/setup.py                       |   2 +-
- .../src/ros_esc/test/test_phase08_validation.py    | 138 +++++
- 6 files changed, 810 insertions(+), 103 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 47 ++------------
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 27 ++++++++
+ .../ros_esc/scenario_runner/phase08_validation.py  |  2 +-
+ .../src/ros_esc/test/test_phase08_validation.py    | 73 ++++++++++++++++++++++
+ 4 files changed, 106 insertions(+), 43 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
@@ -58,6 +50,17 @@ Gazebo activation simulations.
 - Do not alter an input captured by the V4 repository snapshot.
 - Do not reuse any V3 evidence record as V4 evidence.
 
+### M3 transactional-prepare preflight correction
+
+The first `v4-prepare` invocation at
+`2026-07-28T11:08:00-07:00` stopped before publishing the fresh root because
+the new transaction path passed unsupported keyword `mode` to the existing
+`atomic_json` helper. The staging directory was removed and
+`phase08_v4` remained absent.
+
+This bounded workflow-only correction now writes the JSON through the
+existing helper and applies mode `0600` to the completed file. A new focused
+test proves the root contains both a valid `v4_prepare.json` state and a
 
 This file describes the base HEAD and diff before the next commit; it is
 not a claim that the eventual commit contains itself or that tests passed.

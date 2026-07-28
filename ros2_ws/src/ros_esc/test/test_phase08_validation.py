@@ -935,6 +935,79 @@ def test_v4_population_adoption_is_exact_and_unused():
         phase08_validation._activate_v3_spec()
 
 
+def test_v4_prepare_publishes_fresh_root_transactionally(
+    tmp_path,
+    monkeypatch,
+):
+    """Publish prepare state only after the transaction is complete."""
+    root = tmp_path / 'phase08_v4'
+    repository = {
+        'commit': 'a' * 40,
+        'tree': 'b' * 40,
+        'clean': True,
+        'input_hashes': {},
+        'runtime_inputs_sha256': canonical_sha256({}),
+    }
+    adoption = {
+        'passed': True,
+        'reasons': [],
+        'adoption_sha256': 'c' * 64,
+        'suite_sha256': 'd' * 64,
+        'formal_case_count': 80,
+        'inspected_prior_record_count': 3,
+        'formal_case_overlap': [],
+        'population_validation': {'passed': True, 'reasons': []},
+    }
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_require_precommit_in_head',
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_active_processes',
+        lambda: [],
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v4_validate_population_adoption',
+        lambda: adoption,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_repository_snapshot',
+        lambda **unused: repository,
+    )
+    monkeypatch.setattr(
+        phase08_validation,
+        '_v3_required_free_bytes',
+        lambda unused_root, unused_count: 1,
+    )
+    try:
+        phase08_validation._activate_v4_spec()
+        state = phase08_validation.run_v4_prepare('test', root)
+        assert state['passed'] is True
+        assert state['experiment_version'] == 'phase08-v4'
+        assert (
+            root / 'workflow_state/v4_prepare.json'
+        ).is_file()
+        transaction_path = (
+            root / 'prepare/prepare_transaction.json'
+        )
+        assert transaction_path.is_file()
+        assert transaction_path.stat().st_mode & 0o777 == 0o600
+        transaction = json.loads(
+            transaction_path.read_text(encoding='utf-8')
+        )
+        phase08_validation.require_omission_sha256(
+            transaction,
+            'transaction_sha256',
+            'v4 prepare transaction',
+        )
+    finally:
+        phase08_validation._activate_v3_spec()
+
+
 def test_v3_empirical_cli_converts_sigterm_and_restores_handler(
     tmp_path,
     monkeypatch,
