@@ -3258,3 +3258,46 @@ formal population or weakening formal behavior gates.
 
 V4 headless development, freeze, holdout, validation, reproducibility,
 readiness tag, Phase 09, and physical hardware remain unauthorized.
+
+## Phase 08.5 V5 authority
+
+The user authorized a fresh V5 on 2026-07-28 with a narrower scientific
+objective:
+
+- exclude direct-convergence cases;
+- place a lower-intensity local minimum directly between the robot start and
+  stronger aggregate/global minimum;
+- use exactly two or three lights in every case;
+- require Gaussian fill, escape, recenter, resumed search, and final global
+  convergence.
+
+The binding Plan is:
+
+```text
+docs/codex/gesc_gaussian/plans/phase_08_5_plan.md
+```
+
+V5 uses a fresh pre-outcome population rather than the V3/V4 formal suite,
+because that older population contains four-light and direct-convergence
+responsibilities outside the user's question. All 120 V5 slots must satisfy a
+new deterministic route-barrier proof before any V5 Gazebo execution.
+
+Historical V1-V4 code/evidence remains preserved. V5 does not rerun or
+reclassify the V4 direct-goal failure.
+
+## Current milestone
+
+**M1 — implement deterministic route-barrier truth and encounter evidence.**
+
+### Next criterion
+
+Inside the existing aggregate-truth, runner, analyzer, and workflow owners:
+
+1. prove every declared local basin exists in the realized authoritative
+   field and lies in the start-to-global corridor;
+2. bind the proof into aggregate truth;
+3. prove at runtime that the first typed fill belongs to that blocker;
+4. add focused validation without changing existing V1-V4 behavior.
+
+No V5 evidence root or Gazebo process may exist before the exact fresh V5
+inputs and qualification are committed and pass.
