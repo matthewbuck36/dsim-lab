@@ -2163,3 +2163,85 @@ empty after verification. No Gazebo simulation was launched by this
 correction gate. The next action is a clean checkpoint and commit, followed by
 fresh V3D adoption and full qualification. Only a successful qualification
 may authorize the exact nine GUI-visible Gazebo diagnostic simulations.
+
+## Phase 08.3 V3D adoption and qualification
+
+Verified at `2026-07-28T02:32:07-07:00`.
+
+The M3E correction boundary was committed as
+`7a0db9533491eaed7eaed29fe4f6a26ee038913a`
+(`phase 08.3: recover prelaunch diagnostic activation`) with a clean working
+tree. Fresh V3D adoption then passed and created the cleartext evidence root:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3d
+```
+
+Adoption resolved lineage `phase08-v3d` and retained:
+
+- repository commit
+  `7a0db9533491eaed7eaed29fe4f6a26ee038913a`, tree
+  `a46e70a0ccca18824252f5a60eb8c98187fece8c`, and runtime-input SHA-256
+  `db8a707e7230d31a34833a89749f75d67aec7ed4628013dd6881f83cecc974af`;
+- unchanged suite SHA-256
+  `d733ef9dffb372d2c60b57f83c2b96e1062a0a62818587de59a0166df4efe88e`
+  and commitment SHA-256
+  `cf981d60e235a3b4fd63ae5a61ccddae87e94ea76a3fb2d4ccaad78bcaa29437`;
+- prepare internal state SHA-256
+  `f21fa08c1ee4ed702db2d25f681c0394b062664321c9e27268a25c602a804831`
+  and retained state-file SHA-256
+  `502c2f9c72ba990ccba3883fe7c84f3bae5fbe69e954658b77f20bcf59d5aa05`;
+- prepare transaction internal SHA-256
+  `f0f2f7bcade5d8f9ffd19e0365bedff9e47f26616f6cecf32fe9a30d9973cd16`
+  and retained file SHA-256
+  `004107ba936e25a574916b9fe1b4e0634006332a6318a31dff0d00535e7a2841`.
+
+V3D qualification passed:
+
+- complete functional gate:
+  `475 passed, 2 skipped in 63.88 s`; the only skips were the explicit
+  headless-Gazebo and visible-Gazebo opt-in integration tests;
+- isolated non-symlink three-package build, installed entrypoint/resources,
+  launch-argument resolution, and bounded supervisor/fill instantiation:
+  passed;
+- installed real-ROS private-context boundary smoke:
+  passed with retained log SHA-256
+  `24297f5e399060cabe44a88bc19d1946869ea99dac4e00f9789a6f9929729e4d`;
+- activation and development installed dry runs each resolved `10` cases with
+  `0` unsupported; retained SHA-256 values
+  `12e1b867b5e2bbde25a2a60b825eb5a36d1ec694ade5d3bd5b624fab369ddcf5`
+  and
+  `c9539a147b4b189946541d8d4ffc8f4c939233f68ba9db890f9af3062fce0f98`;
+- all `10/10` direct and `10/10` recorder activation launch contracts retained
+  GUI-visible Gazebo, simulation contacts, disabled physical contact probe,
+  and enabled zero-probe control;
+- exact activation invocation contract SHA-256 remained
+  `8e1872d0ea6379ea664d4e37c36f31ed29dd58f8b54818ca2eeb5f5afa411e3b`;
+- complete V3A-to-V3D recovery validation passed with SHA-256
+  `b335abafb92386d977c810bc58017b62fbb502546cc459cadec4470d88285fbd`;
+- qualification internal state SHA-256
+  `4019cb7293b2bf9cc666e2462b3562f8374d10ec86c3cfa44dd45f601105e1d8`
+  and retained state-file SHA-256
+  `972062154f51c3ad2313e71980b70cc8c01e171a170789c7d7d2e8090d0bfe28`;
+- process sets before and after qualification were empty.
+
+No Gazebo simulation was launched during adoption or qualification. V3D is
+now qualified for one bounded activation. That activation must carry the
+immutable V3B `v3a_goal_aggregate_direct` failure without dispatch and execute
+only these nine new cases, in order and at most once each:
+
+```text
+v3a_below_target_fill
+v3a_pure_escape_recenter
+v3a_stalled_assist
+v3a_fill_merge
+v3a_full_lifecycle_goal
+v3a_revisit_guard
+v3a_boundary_saturation
+v3a_noise_delay
+v3a_safe_timeout
+```
+
+The next action is the bounded `v3-activation` command with Gazebo GUI enabled.
+V3D and Phase 08.3 remain forced failed regardless of the nine outcomes; M4,
+readiness tagging, Phase 09, and physical hardware remain prohibited.

@@ -1,64 +1,50 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-28T09:27:36+00:00
-Base HEAD: 6af523fd9485802b8659bb3df4628867802e00b6
+Generated: 2026-07-28T09:32:56+00:00
+Base HEAD: 7a0db9533491eaed7eaed29fe4f6a26ee038913a
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 6710f1d1aefb9a7c0eba07e16703a031c346333931314e164f657b6a2298ea72
+Status sha256: ef774ac2357bdcfb60bfa57385a130b59bd440be2ff99f5acd77ee7916ca564e
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_3_plan.md
 Active subphase plan sha256: 9a2c0dcdf23d1fcb18c471205aaeae254f0bfc93967fffae6fbab12250887053
-Unstaged diff sha256: a2b2d46a15603ed4f936e9c94249c478e42481f4936296ef06f4be19c25cf02f
+Unstaged diff sha256: c9ed882fff87f5737318bd6d5262713fb650403a9680d029e1fee4396b929bd1
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 24]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 25]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
- M docs/codex/gesc_gaussian/plans/phase_08_3_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py
- M ros2_ws/src/ros_esc/test/test_phase08_validation.py
- M ros2_ws/src/ros_esc/test/test_scenario_runner.py
-?? docs/codex/gesc_gaussian/validation/phase_08_v3c_prelaunch_correction.json
-?? docs/codex/gesc_gaussian/validation/phase_08_v3c_prelaunch_failure_report.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |   44 +-
- docs/codex/gesc_gaussian/plans/phase_08_3_plan.md  |   85 ++
- docs/codex/gesc_gaussian/status/phase_08_status.md |  161 +++
- .../ros_esc/scenario_runner/phase08_validation.py  | 1002 +++++++++++++++-
- .../ros_esc/scenario_runner/run_scenario.py        |   95 +-
- .../src/ros_esc/test/test_phase08_validation.py    | 1243 +++++++++++++++++++-
- ros2_ws/src/ros_esc/test/test_scenario_runner.py   |  239 +++-
- 7 files changed, 2756 insertions(+), 113 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 52 ++------------
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 82 ++++++++++++++++++++++
+ 2 files changed, 87 insertions(+), 47 deletions(-)
 
 ## Current milestone snapshot
 
-- Closed lineage: **V3A — FAILED / INSTRUMENTATION-CONTAMINATED / NOT
-  SIMULATION-READY**.
-- Closed lineage: **V3B — FAILED / VALID DIRECT-PATH BEHAVIORAL MISS / NOT
-  SIMULATION-READY**.
-- Closed lineage: **V3C — FAILED / PRELAUNCH INFRASTRUCTURE ERROR / NO
-  SIMULATION OUTCOME / NOT SIMULATION-READY**.
-- Current milestone: **M3E — checkpoint the verified private-context executor
-  correction, then adopt and qualify fresh diagnostic V3D**.
-- Fresh root:
-  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3d`; still absent.
-- Verified boundary: real-root recovery proof, `475 passed, 2 skipped` full
-  functional gate, `206 passed, 1 skipped` independent focused gate, targeted
-  lint/docstrings, standard three-package build, installed entrypoint, and
-  installed no-Gazebo boundary smoke all passed.
-- Next criterion: commit this exact source boundary, adopt V3D, and complete
-  V3D qualification before any GUI Gazebo dispatch.
-- Terminal expectation: execute at most the exact nine previously undispatched
-  GUI-visible diagnostics, then close Phase 08.3 failed. No M4 or readiness
-  tag is possible in this version.
+- Closed lineages V3A, V3B, and V3C remain immutable failed evidence; V3C has
+  no Gazebo simulation outcome.
+- Current milestone: **M3E — execute the qualified fresh V3D diagnostic
+  activation**.
+- Fresh V3D root:
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v3d`.
+- Adoption passed against commit
+  `7a0db9533491eaed7eaed29fe4f6a26ee038913a`.
+- Qualification passed: `475 passed, 2 skipped`, isolated install and
+  entrypoints passed, exact recovery proof passed, all `10/10` direct and
+  recorder launch contracts retained GUI-visible Gazebo, and process sets
+  before and after were empty.
+- Next criterion: commit this evidence-only status boundary, then run the
+  bounded `v3-activation` command. Carry the V3B direct case without dispatch
+  and execute only the exact nine remaining cases in fixed order, once each.
+- Terminal expectation: close Phase 08.3 failed after the nine diagnostics or
+  an unchanged hard stop. No M4 or readiness tag is possible.
 
 
 
