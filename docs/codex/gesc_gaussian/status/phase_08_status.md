@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-28T18:50:00-07:00`
-Status: `ACTIVE — PHASE 08.6 / V6 TWO-LIGHT HUE-RATIO DEMONSTRATION`
+Last verified: `2026-07-28T19:10:00-07:00`
+Status: `CLOSED — PHASE 08.6 FAIL / NOT 120-RUN READY`
 
 ## Objective
 
@@ -3797,13 +3797,13 @@ committed and qualification begins.
 
 ## Current milestone
 
-**M2 — visible sweep complete; H25 repeats frozen.**
+**M3 — terminal closeout complete.**
 
 ### Next criterion
 
-Commit the selection and corrected causal evidence binding, then execute the
-three exact headless H25 repeats. Pass repeatability only with at least `2/3`
-complete recoveries and no integrity, cleanup, collision, or safety failure.
+Do not start the 120-run matrix or relabel V6. A successor Plan must choose
+prospectively between a first-recovery-episode claim and full-record
+multi-cycle stability, then diagnose only the behavior required by that claim.
 
 ## Phase 08.6 M1 implementation and qualification
 
@@ -3895,3 +3895,39 @@ seeds 17101, 17102, 17103
 
 The post-correction focused regression is
 `89 passed, 1 skipped in 12.93s`.
+
+## Phase 08.6 M3 repeats and terminal result
+
+The three headless H25 repeats ran from `2026-07-29T01:48:39Z` through
+`2026-07-29T02:06:44Z`. All recordings, cleanups, and collision checks passed.
+
+```text
+17101 full contract PASS
+17102 full contract FAIL — convergence/fill at global, then FAILSAFE
+17103 full contract FAIL — local recovery completed, later FILL_REJECTED/FAILSAFE
+```
+
+Fixed repeatability gate: `1/3`, below `2/3`.
+
+The requested first local-recovery episode occurred in `2/3` repeats, including
+17103, but V6's full-record forbidden-state/event contract makes 17103 a fixed
+failure. This distinction is retained and V6 is not weakened after execution.
+
+Across all seven V6 Gazebo executions, the full local convergence/fill/escape/
+recenter/resumed-search mechanism occurred four times. Two of those later
+failed a subsequent cycle. V6 therefore proves the mechanism can work but does
+not prove the stability needed for a 120-run campaign.
+
+Terminal artifacts:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v6/
+  phase08_v6_hue_sweep_summary.yaml
+  phase08_v6_selected_repeats_summary.yaml
+docs/codex/gesc_gaussian/validation/phase_08_v6_validation_report.md
+docs/codex/gesc_gaussian/validation/phase_08_v6_failure_report.md
+docs/codex/gesc_gaussian/handoffs/phase_08_6_handoff.md
+```
+
+No ROS/Gazebo descendants remained after the final cleanup. External evidence
+size at closeout was approximately `1.8 GiB`.
