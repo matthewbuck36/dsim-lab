@@ -2,8 +2,8 @@
 
 ## Status and authority
 
-**PLAN-ONLY — GEOMETRY AND TWO-STAGE SUCCESS CONTRACT APPROVED;
-IMPLEMENTATION AND EXECUTION NOT YET AUTHORIZED.**
+**PLAN-ONLY — GEOMETRY, STAGED FILL, AND GLOBAL-PROXIMITY STOP CONTRACT
+APPROVED; IMPLEMENTATION AND EXECUTION NOT YET AUTHORIZED.**
 
 The user approved the geometry in this Plan on 2026-07-29. This Plan makes the
 geometry durable and reviewable without modifying the sealed Phase 08.6
@@ -12,9 +12,9 @@ Gazebo execution, physical hardware, a 120-run campaign, Phase 09, or a
 simulation-readiness claim.
 
 The user resolved the V6 acceptance-window ambiguity on 2026-07-29. Each run
-must report local-recovery success separately from global stabilization, and
-end-to-end success requires both. The algorithm may use the declared number of
-local and global minima as known topology.
+must report local-recovery success separately from post-recovery global
+proximity, and end-to-end success requires both. The algorithm may use the
+declared number of local and global minima as known topology.
 
 ## User-approved coordinate contract
 
@@ -152,8 +152,8 @@ not increment the local-fill count. An extra distinct cluster, a missing
 cluster, a fill at the global source, or two locals sharing one cluster fails
 the fill-cardinality contract.
 
-Reaching `GOAL_HOLD` before all `N` local recoveries are complete is an
-early-global behavioral failure for this experiment: it does not prove the
+Entering global proximity before all `N` local recoveries are complete does
+not satisfy the stop boundary or combined result: it does not prove the
 required local-minimum escape sequence.
 
 ## Two-stage success contract
@@ -192,30 +192,41 @@ For two declared locals, the same local-recovery episode must occur twice,
 with distinct source assignments and distinct unique fill clusters, before
 Stage A passes.
 
-### Stage B — global acquisition and stabilization
+### Stage B — global proximity and operator-equivalent stop
 
 After Stage A, the robot must:
 
 ```text
 resumed SEARCH
--> VERIFY_EXTREMUM at the declared global
--> GOAL_HOLD
+-> approach the declared global
+-> enter the committed global-proximity radius
+-> graceful stop
 ```
 
 Stage B requires:
 
-- `GOAL_REACHED` only after every required local recovery;
-- convergence associated with the single declared global source;
-- odometry within `0.35 m` of `(3.5, 3.5)`;
-- continuous `GOAL_HOLD` for at least `30.0 s`;
-- odometry remaining within the same global tolerance throughout that hold;
-- zero commanded motion during the hold, subject to recorded numeric
-  tolerance;
-- no `FAILSAFE`, timeout, non-ground collision, or integrity failure before
-  the graceful evidence boundary.
+- every required local recovery and unique fill is already complete;
+- at least one valid, recorded, noninterpolated odometry sample is within
+  `0.35 m` of `(3.5, 3.5)`;
+- that sample occurs after Stage A's final resumed `SEARCH`;
+- no non-ground collision or evidence-integrity failure occurs before the
+  proximity boundary.
 
-The runner should stop gracefully after the complete 30-second global hold
-rather than continue an arbitrary 300-second post-success window.
+The first qualifying post-Stage-A sample triggers the scenario runner's
+graceful stop, equivalent to the user's allowed physical `Ctrl+C` after
+observing arrival. The recorder and controller still complete their existing
+final-zero, final-readiness-false, completeness, and cleanup contracts.
+
+Stage B does **not** require:
+
+- `VERIFY_EXTREMUM` at the global;
+- a `GOAL_REACHED` event;
+- entry into or persistence in `GOAL_HOLD`;
+- a dwell or stationary-observation interval;
+- behavior after the proximity boundary.
+
+Internal controller goal classification remains useful diagnostic evidence but
+cannot turn an objectively near-enough arrival into a behavioral failure.
 
 ### End-to-end result
 
@@ -223,7 +234,7 @@ The combined run passes only when:
 
 ```text
 Stage A local recovery = PASS
-Stage B global hold = PASS
+Stage B post-recovery global proximity = PASS
 recording/completeness/cleanup/collision evidence = PASS
 exact unique fill cardinality = PASS
 ```
@@ -298,7 +309,8 @@ Implementation must:
 - count and spatially associate distinct typed fill clusters rather than raw
   publications;
 - expose separate Stage A, Stage B, fill-cardinality, and combined results;
-- support a graceful evidence boundary after the verified global hold;
+- support a graceful evidence boundary at verified post-recovery global
+  proximity;
 - keep `custom_controller` as the sole `/cmd_vel` publisher;
 - preserve Nick's original GESC, zero-yaw startup, rotating sensor/encoder
   behavior, filters, gains, cost sign/units, topics, and legacy selection;
@@ -320,9 +332,9 @@ including:
 - more than one radius in the inclusive `1–2 m` band.
 
 Exact positions, ratios, seeds, and run count belong in an execution amendment.
-The success window is the approved Stage A plus 30-second Stage B global-hold
-contract above. No outcome-derived placement may be added to the same fixed
-experiment version.
+The success window is the approved Stage A plus immediate Stage B
+global-proximity boundary above. No outcome-derived placement may be added to
+the same fixed experiment version.
 
 ## Milestones
 
@@ -337,8 +349,8 @@ After explicit implementation approval, add and test the shifted world and
 backward-compatible scenario profile. Instantiate the launch graph and verify
 physical wall poses, resolved bounds, fixed points, wall margin, contacts, and
 historical case-key immutability. Add the known-topology, exact
-fill-cardinality, two-stage result, and global-hold evidence contracts. Do not
-launch a behavioral run.
+fill-cardinality, two-stage result, and global-proximity stop contracts. Do
+not launch a behavioral run.
 
 ### M2 — visible geometry probe
 

@@ -1,6 +1,6 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-29T13:27:50-07:00`
+Last verified: `2026-07-29T13:35:15-07:00`
 Status: `CLOSED — PHASE 08.6 FAIL / NOT 120-RUN READY`
 
 ## Objective
@@ -3971,7 +3971,7 @@ algorithm to know the number of local and global minima:
 
 ```text
 Stage A: complete every declared local convergence/fill/escape/recenter episode
-Stage B: after Stage A, acquire the declared global and remain in GOAL_HOLD
+Stage B: after Stage A, enter the global's committed proximity radius
 Combined: Stage A + Stage B + exact fill count + infrastructure evidence
 ```
 
@@ -3987,7 +3987,10 @@ Each fill must be associated one-to-one with a different declared local
 source. A global fill, missing fill, extra fill, or shared cluster fails the
 cardinality contract. Revisions and repeated publications do not add fills.
 
-Stage B requires global convergence at `(3.5,3.5)`, `GOAL_REACHED`, odometry
-within `0.35 m`, and at least `30.0 s` of continuous stationary `GOAL_HOLD`.
-The recorder then stops gracefully. Stage A remains reported independently if
-Stage B fails, while the combined run still fails.
+Stage B now requires only a valid post-Stage-A odometry sample within `0.35 m`
+of `(3.5,3.5)`. That sample triggers a graceful simulation stop equivalent to
+the user's allowed physical `Ctrl+C`. `GOAL_REACHED`, `GOAL_HOLD`, dwell,
+stationary observation, and post-arrival behavior are not behavioral gates.
+Stage A remains reported independently if Stage B fails, while the combined
+run still fails. Existing final-zero, final-readiness-false, completeness,
+cleanup, and collision evidence remain infrastructure requirements.

@@ -1,20 +1,20 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-29T20:28:01+00:00
-Base HEAD: bbdc3eabc5af851353bf22218a7808da98292026
+Generated: 2026-07-29T20:35:27+00:00
+Base HEAD: e6ba847721d687d9c7de85cc3c299b4b9f2279bb
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: f7ee158d4dfee4a40f6b473f3c1c1524461088964d8780fe9942de8ac08be8dc
+Status sha256: a2563ecd0d354a8f5202320e005fb6dfe785207d42e25e9bc02acfe1862f36de
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
-Active subphase plan sha256: 12331e92ccbc0fdbd29fcfeb660250df7f20b75d39408a95f4c9c7d1e2a202e5
-Unstaged diff sha256: 18e49486e4e09a73492b257705fa80462fe28fc3a4bb05838bde797bd362aeb5
+Active subphase plan sha256: 83452732b8c657e657629e8fed6d3ab63488a04168d438854b7ce316677fff2a
+Unstaged diff sha256: 6bc4ff97e4ff9089d9f1e80a2770f34aefe4975155e2ffaa3a60211d3b40c0bb
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 48]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 49]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
@@ -23,10 +23,10 @@ Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  33 +---
- docs/codex/gesc_gaussian/plans/phase_08_7_plan.md  | 167 +++++++++++++++++++--
- docs/codex/gesc_gaussian/status/phase_08_status.md |  34 ++++-
- 3 files changed, 189 insertions(+), 45 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 32 ++--------
+ docs/codex/gesc_gaussian/plans/phase_08_7_plan.md  | 68 +++++++++++++---------
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 15 +++--
+ 3 files changed, 55 insertions(+), 60 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
