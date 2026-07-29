@@ -1,6 +1,6 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-29T13:17:44-07:00`
+Last verified: `2026-07-29T13:27:50-07:00`
 Status: `CLOSED — PHASE 08.6 FAIL / NOT 120-RUN READY`
 
 ## Objective
@@ -3961,5 +3961,33 @@ shifted world while preserving the historical world and case identities.
 
 ### Phase 08.7 next criterion
 
-Review the complete Plan and prospectively choose first-episode versus
-full-record acceptance. Implementation and execution remain paused.
+Review the complete Plan and explicitly authorize implementation. Execution
+remains separately paused.
+
+## Phase 08.7 two-stage and known-topology amendment
+
+The user approved a two-stage result contract and explicitly allowed the
+algorithm to know the number of local and global minima:
+
+```text
+Stage A: complete every declared local convergence/fill/escape/recenter episode
+Stage B: after Stage A, acquire the declared global and remain in GOAL_HOLD
+Combined: Stage A + Stage B + exact fill count + infrastructure evidence
+```
+
+Fill count is defined by unique accepted typed fill clusters, not raw topic
+message count:
+
+```text
+1 local + 1 global -> exactly 1 unique local fill, max_fills=1
+2 locals + 1 global -> exactly 2 unique local fills, max_fills=2
+```
+
+Each fill must be associated one-to-one with a different declared local
+source. A global fill, missing fill, extra fill, or shared cluster fails the
+cardinality contract. Revisions and repeated publications do not add fills.
+
+Stage B requires global convergence at `(3.5,3.5)`, `GOAL_REACHED`, odometry
+within `0.35 m`, and at least `30.0 s` of continuous stationary `GOAL_HOLD`.
+The recorder then stops gracefully. Stage A remains reported independently if
+Stage B fails, while the combined run still fails.

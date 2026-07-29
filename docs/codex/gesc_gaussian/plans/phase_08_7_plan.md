@@ -2,8 +2,8 @@
 
 ## Status and authority
 
-**PLAN-ONLY — GEOMETRY APPROVED; IMPLEMENTATION AND EXECUTION NOT YET
-AUTHORIZED.**
+**PLAN-ONLY — GEOMETRY AND TWO-STAGE SUCCESS CONTRACT APPROVED;
+IMPLEMENTATION AND EXECUTION NOT YET AUTHORIZED.**
 
 The user approved the geometry in this Plan on 2026-07-29. This Plan makes the
 geometry durable and reviewable without modifying the sealed Phase 08.6
@@ -11,13 +11,10 @@ scenarios, world, evidence, results, or handoff. It does not yet authorize
 Gazebo execution, physical hardware, a 120-run campaign, Phase 09, or a
 simulation-readiness claim.
 
-Before implementation or execution, this Plan still requires a prospective
-choice between:
-
-1. first local-recovery episode through resumed `SEARCH`; and
-2. stable multi-cycle behavior across the complete recording window.
-
-That choice affects the acceptance window but not the geometry below.
+The user resolved the V6 acceptance-window ambiguity on 2026-07-29. Each run
+must report local-recovery success separately from global stabilization, and
+end-to-end success requires both. The algorithm may use the declared number of
+local and global minima as known topology.
 
 ## User-approved coordinate contract
 
@@ -106,6 +103,135 @@ An off-diagonal source that the robot never encounters is a valid attempted
 placement but not a successful local-recovery case. Direct convergence to the
 global source cannot satisfy the local-recovery predicate.
 
+## Known topology and exact fill cardinality
+
+Each scenario declares its extrema before execution:
+
+```text
+expected_local_minima
+expected_global_minima = 1
+```
+
+The initial two-light campaign has:
+
+```text
+1 declared local source
+1 declared global source
+gaussian_fill_max_fills = 1
+```
+
+A future three-light campaign may have:
+
+```text
+2 declared local sources
+1 declared global source
+gaussian_fill_max_fills = 2
+```
+
+The configured fill limit must equal the declared local-minimum count. This is
+an allowed use of known problem topology, not outcome-selected steering.
+
+“One fill” means one unique accepted active fill cluster, established by a
+valid `FILL_CREATED` event and typed `GaussianFill` identity. It does not mean
+one raw message publication: lifecycle observability may publish multiple
+messages for the same identity.
+
+Every accepted local recovery must satisfy all of the following:
+
+- exactly one unique fill cluster is associated with that declared local;
+- its causal convergence and fill center satisfy the committed local spatial
+  tolerances;
+- it is not associated with the global source;
+- no other declared local is assigned the same active cluster;
+- the escape, recenter, and resumed-search path completes.
+
+For `N` declared locals, the run must create exactly `N` unique local fill
+clusters and establish a one-to-one local-source-to-cluster assignment.
+Revisions, superseded versions, repeated messages, and `FILL_MERGED` events do
+not increment the local-fill count. An extra distinct cluster, a missing
+cluster, a fill at the global source, or two locals sharing one cluster fails
+the fill-cardinality contract.
+
+Reaching `GOAL_HOLD` before all `N` local recoveries are complete is an
+early-global behavioral failure for this experiment: it does not prove the
+required local-minimum escape sequence.
+
+## Two-stage success contract
+
+Every run reports two non-interchangeable results.
+
+### Stage A — local Gaussian recovery
+
+For one declared local, Stage A requires:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> RECENTER
+-> SEARCH
+```
+
+and the causal events:
+
+```text
+CONVERGENCE_CONFIRMED
+FILL_CREATED
+ESCAPE_STARTED
+RECENTER_STARTED
+RECENTER_COMPLETE
+```
+
+The convergence and unique fill must be associated with the declared local,
+not the global. Stage A passes as soon as the final required local episode
+returns to `SEARCH`. A later global-stage failure does not erase this result;
+it makes Stage B and end-to-end success fail.
+
+For two declared locals, the same local-recovery episode must occur twice,
+with distinct source assignments and distinct unique fill clusters, before
+Stage A passes.
+
+### Stage B — global acquisition and stabilization
+
+After Stage A, the robot must:
+
+```text
+resumed SEARCH
+-> VERIFY_EXTREMUM at the declared global
+-> GOAL_HOLD
+```
+
+Stage B requires:
+
+- `GOAL_REACHED` only after every required local recovery;
+- convergence associated with the single declared global source;
+- odometry within `0.35 m` of `(3.5, 3.5)`;
+- continuous `GOAL_HOLD` for at least `30.0 s`;
+- odometry remaining within the same global tolerance throughout that hold;
+- zero commanded motion during the hold, subject to recorded numeric
+  tolerance;
+- no `FAILSAFE`, timeout, non-ground collision, or integrity failure before
+  the graceful evidence boundary.
+
+The runner should stop gracefully after the complete 30-second global hold
+rather than continue an arbitrary 300-second post-success window.
+
+### End-to-end result
+
+The combined run passes only when:
+
+```text
+Stage A local recovery = PASS
+Stage B global hold = PASS
+recording/completeness/cleanup/collision evidence = PASS
+exact unique fill cardinality = PASS
+```
+
+Reports must retain Stage A independently. This prevents a later global-stage
+failure from hiding proof that Gaussian local recovery worked while still
+making the full navigation result fail honestly.
+
 ## Shifted Gazebo room
 
 The current historical validation world has physical wall inner faces at
@@ -167,6 +293,12 @@ Implementation must:
 - validate the exact room bounds, start, global point, local radius, and local
   angular sector before launch;
 - record local radius and angle in resolved metadata;
+- declare the known local/global counts and set the maximum unique active fill
+  clusters equal to the local count;
+- count and spatially associate distinct typed fill clusters rather than raw
+  publications;
+- expose separate Stage A, Stage B, fill-cardinality, and combined results;
+- support a graceful evidence boundary after the verified global hold;
 - keep `custom_controller` as the sole `/cmd_vel` publisher;
 - preserve Nick's original GESC, zero-yaw startup, rotating sensor/encoder
   behavior, filters, gains, cost sign/units, topics, and legacy selection;
@@ -187,9 +319,10 @@ including:
 - at least one case above the diagonal;
 - more than one radius in the inclusive `1–2 m` band.
 
-Exact positions, ratios, seeds, run count, success window, and stopping rules
-belong in an execution amendment. No outcome-derived placement may be added to
-the same fixed experiment version.
+Exact positions, ratios, seeds, and run count belong in an execution amendment.
+The success window is the approved Stage A plus 30-second Stage B global-hold
+contract above. No outcome-derived placement may be added to the same fixed
+experiment version.
 
 ## Milestones
 
@@ -203,7 +336,9 @@ reopening V6, checkpoint, and commit the Plan-only boundary.
 After explicit implementation approval, add and test the shifted world and
 backward-compatible scenario profile. Instantiate the launch graph and verify
 physical wall poses, resolved bounds, fixed points, wall margin, contacts, and
-historical case-key immutability. Do not launch a behavioral run.
+historical case-key immutability. Add the known-topology, exact
+fill-cardinality, two-stage result, and global-hold evidence contracts. Do not
+launch a behavioral run.
 
 ### M2 — visible geometry probe
 
@@ -215,7 +350,7 @@ contacts, cleanup, and evidence completeness separately from behavior.
 
 Only after M2 passes, commit a fresh multi-position suite covering the approved
 sector. Run serially, preserve every attempt, and apply the prospectively
-chosen first-episode or full-record contract.
+approved Stage A, Stage B, and combined contracts.
 
 ## Stop conditions
 
@@ -225,8 +360,8 @@ Stop before Gazebo if:
 - the robot or global point violates the selected wall margin;
 - any local source falls outside the radial or angular sector;
 - historical worlds, scenarios, normalized case keys, or evidence are changed;
-- the success window is still unresolved;
+- the configured maximum fill count differs from the declared local count;
+- distinct fills cannot be associated one-to-one with declared locals;
 - a second controller, launch graph, recorder, validator, or algorithm fork
   would be required;
 - required contacts or cleanup evidence are unavailable.
-
