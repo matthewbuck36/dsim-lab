@@ -1,44 +1,46 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-29T22:08:42+00:00
-Base HEAD: 7c87e5a9d8b486bdb0cb465d3e392d78ccc3959b
+Generated: 2026-07-29T22:30:16+00:00
+Base HEAD: a8b9d97031c44f4557936c2e24143da2d183c431
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: deaa0ed572c6edae98c389d7ea784960e2374ad08e563bc09636ad2e7e713098
+Status sha256: 7cac21e9fa5832f270ce097632a432b09e5b35daaa0250fe3068de14e4748512
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
-Active subphase plan sha256: f88142adaf487e51f9acc76302efdb2e12311eb04c129dfa690a72cac429d96e
-Unstaged diff sha256: cb7dab5fd1a8579a435a095c87ed39099c3109095341bfdcd2139c610d73dae6
+Active subphase plan sha256: 180811da5868a60c6399be423e3efb19e1a94e47c2f8f287a1264f0a3bbf2da4
+Unstaged diff sha256: 84369ac71e9b5a681261fd65048a40a2ccf50763e21c101db50a5348ed017dc8
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 51]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 52]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m2_geometry_probe.yaml
+?? docs/codex/gesc_gaussian/validation/phase_08_7_m2_geometry_probe_report.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 43 ++--------
- docs/codex/gesc_gaussian/plans/phase_08_7_plan.md  | 65 +++++++++++++--
- docs/codex/gesc_gaussian/status/phase_08_status.md | 93 +++++++++++++++++++++-
- 3 files changed, 157 insertions(+), 44 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  33 +---
+ docs/codex/gesc_gaussian/plans/phase_08_7_plan.md  |  16 +-
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 183 ++++++++++++++++++++-
+ 3 files changed, 200 insertions(+), 32 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**Phase 08.7 M2 — frozen case qualified; one visible probe authorized.**
+**Phase 08.7 M2 — executed and retained. Geometry/infrastructure, Stage A,
+and fill cardinality passed; Stage B and the combined behavioral contract
+failed.**
 
 ### Next criterion
 
-Commit the exact Plan amendment, scenario, live status, and checkpoint. Verify
-the clean commit and unchanged installed scenario hash, then dispatch exactly
-one bounded visible-Gazebo run to the fresh M2 evidence root.
+Stop at the M2 checkpoint. M3 remains unauthorized, and its Plan prerequisite
+has not been established by this combined M2 result. Await explicit user
+direction before any new scenario, tuning, retry, or Gazebo execution.
 
 
 This file describes the base HEAD and diff before the next commit; it is

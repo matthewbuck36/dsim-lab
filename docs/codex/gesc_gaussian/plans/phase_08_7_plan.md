@@ -2,15 +2,18 @@
 
 ## Status and authority
 
-**M1 IMPLEMENTED AND QUALIFIED; M2 VISIBLE GEOMETRY PROBE AUTHORIZED;
+**M1 IMPLEMENTED AND QUALIFIED; M2 EXECUTED AND RETAINED;
 M3 AND LATER EXECUTION NOT AUTHORIZED.**
 
 The user approved the geometry in this Plan on 2026-07-29. M1 was implemented,
 qualified without Gazebo execution, checkpointed, and committed at `7c87e5a`.
 The user separately authorized the one-run M2 visible geometry probe on
-2026-07-29. This authority does not extend to M3, physical hardware, a
-120-run campaign, Phase 09, or a simulation-readiness claim, and it does not
-modify the sealed Phase 08.6 scenarios, world, evidence, results, or handoff.
+2026-07-29. That one attempt is complete: geometry/infrastructure, Stage A,
+and exact fill cardinality passed; Stage B and the combined behavioral result
+failed. It was not retried. This authority does not extend to M3, physical
+hardware, a 120-run campaign, Phase 09, or a simulation-readiness claim, and
+it does not modify the sealed Phase 08.6 scenarios, world, evidence, results,
+or handoff.
 
 The user resolved the V6 acceptance-window ambiguity on 2026-07-29. Each run
 must report local-recovery success separately from post-recovery global
@@ -386,6 +389,11 @@ Infrastructure success does not convert a behavioral miss into a pass. A
 behavioral pass from this single development probe does not establish
 repeatability or simulation readiness. The attempt is retained without
 automatic retry regardless of its result.
+
+The completed result is retained in
+`docs/codex/gesc_gaussian/validation/
+phase_08_7_m2_geometry_probe_report.md`. Its combined result is a failure, so
+the M3 prerequisite below is not established.
 
 ## Milestones
 

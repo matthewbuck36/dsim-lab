@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-29T15:08:02-07:00`
-Status: `PHASE 08.7 M2 CASE FROZEN AND QUALIFIED — EXECUTION AUTHORIZED`
+Last verified: `2026-07-29T15:30:10-07:00`
+Status: `PHASE 08.7 M2 EXECUTED — GEOMETRY/INFRASTRUCTURE + STAGE A PASS; STAGE B/COMBINED FAIL`
 
 ## Objective
 
@@ -4265,3 +4265,182 @@ and Stage A/Stage B behavior remain separate results.
 Commit the exact Plan amendment, scenario, live status, and checkpoint. Verify
 the clean commit and unchanged installed scenario hash, then dispatch exactly
 one bounded visible-Gazebo run to the fresh M2 evidence root.
+
+## Phase 08.7 M2 execution and result
+
+The pre-execution case, Plan amendment, status, and checkpoint were committed
+cleanly at:
+
+```text
+a8b9d97031c44f4557936c2e24143da2d183c431
+phase 08.7: freeze M2 geometry probe
+```
+
+The installed scenario SHA-256 still matched the frozen source. From that
+clean boundary, the one authorized M2 attempt was dispatched once with the
+visible Gazebo GUI and no retry:
+
+```text
+source /opt/ros/humble/setup.bash
+source /tmp/phase08_7_m2_install/setup.bash
+ROS_DOMAIN_ID=88
+ROS_LOG_DIR=/tmp/phase08_7_m2_probe_ros_logs
+MPLCONFIGDIR=/tmp/phase08_7_m2_probe_mpl
+TURTLEBOT3_MODEL=burger
+DISPLAY=:0
+timeout --signal=INT --kill-after=60s 660s \
+  ros2 run ros_esc run_scenario \
+  /tmp/phase08_7_m2_install/ros_esc/share/ros_esc/scenario_runner/scenarios/phase08_v7_m2_geometry_probe.yaml \
+  --operator phase08_7_m2 \
+  --case-id v7_m2_diagonal_r1p5_h25_18001 \
+  --runs-root /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m2 \
+  --summary-output /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m2/phase08_v7_m2_geometry_probe_summary.yaml \
+  --gui
+```
+
+The outer runner returned `1` for failed behavioral classification. The
+recorder returned `0`, did not time out, retained a complete run, and passed
+cleanup:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m2/
+  2026-07-29/
+  20260729T220933564961Z_simulation_phase08_v7_m2_geometry_probe-
+  v7_m2_diagonal_r1p5_h25_18001-robust_gaussian_v1-d0_3ad17fc6
+```
+
+Suite summary:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m2/
+  phase08_v7_m2_geometry_probe_summary.yaml
+```
+
+### Geometry and infrastructure: PASS
+
+- Runtime `/get_model_list` plus read-only native Gazebo pose queries observed
+  wall centerlines at east `3.80`, west `-0.30`, north `3.80`, and south
+  `-0.30 m`, with orthogonal centers at `1.75 m`. These establish the frozen
+  inner faces at `-0.25` and `3.75 m`.
+- Runtime light poses were local `(1.06066, 1.06066)` and global
+  `(3.50, 3.50) m`.
+- The first readiness odometry pose was
+  `(0.000352821454192, 0.000458412508747) m`, verifying the corner-origin
+  spawn within settling error.
+- The contacts topic had the declared type, two Gazebo contact publishers,
+  and the rosbag recorder subscriber. The bag retained `71,918` contact
+  messages, collision evidence was available, and no non-ground collision was
+  observed.
+- `/cmd_vel` had one publisher, `custom_controller`.
+- `classification.infrastructure_status` is `completed`;
+  `recording_complete=true`; cleanup passed with no remaining new nodes or
+  session processes.
+- `completeness.json` passed with no failures or warnings; all three final
+  command streams were zero and final readiness was false.
+- `timeout 180s ros2 run ros_esc validate_run <run_dir>` returned `0` and
+  passed with no failures or warnings.
+- The `sqlite3` CLI was unavailable. Its read-only Python `sqlite3` fallback
+  ran `PRAGMA quick_check` on `bag/bag_0.db3` and returned `ok`.
+- Final process inspection found no Gazebo server/client, scenario runner,
+  recorder, ROS bag recorder, or physical-hardware process.
+
+The preferred `/gazebo/model_states` topic was absent. Its read-only query
+failed without mutating or interrupting the attempt; the available model-list
+service and native Gazebo pose query supplied the live geometry evidence.
+
+### Staged behavior
+
+**Stage A local recovery: PASS.** One episode completed:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> RECENTER
+-> SEARCH
+```
+
+The final resumed-SEARCH stamp is `1785363195303143037`. One unique accepted
+typed active cluster, id `1`, was associated with the local:
+
+```text
+fill center:              (1.2239058490, 1.4353952912) m
+convergence point:        (1.3282657490, 1.3428301900) m
+fill-to-convergence:      0.1394965472 m <= 0.50 m
+convergence-to-local:     0.3888864411 m <= 0.60 m
+convergence-to-global:    3.0610147413 m >= 0.75 m
+```
+
+**Exact fill cardinality: PASS.** Created, typed, and active cluster sets were
+all exactly `{1}`.
+
+**Stage B global proximity: FAIL.** All `4,268` finite post-Stage-A odometry
+samples were checked without interpolation. None entered the required
+`0.35 m` radius. The closest was
+`(1.9883714796, 1.8959068678) m`, `2.2041178645 m` from the global, at
+motion time `360.054148057 s`; the graceful global-proximity stop therefore
+did not trigger.
+
+The later sequence was
+`SEARCH -> VERIFY_EXTREMUM -> DESIGN_OR_MERGE_FILL -> FAILSAFE`, with
+`FILL_REJECTED` followed by `FAILSAFE`. The no-forbidden-state/event
+predicates failed. The combined behavioral result is therefore **FAIL** while
+the independent Stage A result remains **PASS**.
+
+### Retained offline evidence
+
+The standard bounded `analyze_run` command completed from the retained bag
+with exit code `0` and wrote eight plots, eleven tables, metrics, and
+analysis-completeness evidence under `<run_dir>/analysis`. It reports
+`analysis_status=partial`, one fill, one successful escape attempt, no
+collision, controller success false, and terminal `FAILSAFE`. Fresh embedded
+Phase 05 validation passed. The partial status retains one invalid
+state-duration gap and unavailable generic aggregate-target metrics; it is not
+relabeled as complete.
+
+Full command, runtime evidence, hashes, and interpretation:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m2_geometry_probe_report.md
+```
+
+Key immutable evidence SHA-256 values:
+
+```text
+389aa07e84a56bb5210071de5f1e82aef9b59536dfc5685e157dea810c26ba04  suite summary
+0f5773d92f6a7d318749f9e8182f26cd0294721d0d5ad78adf9a53efa376feeb  scenario_result.yaml
+6300173abb17a9e1227e8761d7412da571775501efa5fa6842c4ba560ca9b13e  completeness.json
+a590764b29dc824bbabbbf4a342ec3d0bac599e220d5d363ff4cd4e05c1de457  bag/bag_0.db3
+63664e5be15556ffdc5d15a8bc68654bc6b7b43668f552ed2bfcf9bd796fb310  analysis/summary_metrics.json
+171be0671ca2013f7126fac8b367ba786493fc8d639b1cbd2cb3a41ee174d125  analysis/analysis_completeness.json
+```
+
+Post-run repository qualification:
+
+- `validate_phase_context.sh 08 implement`: PASS with active subphase
+  `phase_08_7_plan.md`;
+- the first context-validation invocation used the nonexistent
+  `ros2_ws/src/ros_esc/tools/` path and returned `127` without changing the
+  workspace; the immediate invocation through
+  `DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/` passed;
+- focused shifted-world plus historical scenario/world immutability tests:
+  `2 passed, 58 deselected in 35.05s`;
+- `git diff --check`: PASS.
+
+M2 execution did not change algorithm code, the shifted world, V6, or any
+historical scenario/evidence. This one development attempt neither counts
+toward a fixed suite nor establishes simulation readiness.
+
+## Current milestone
+
+**Phase 08.7 M2 — executed and retained. Geometry/infrastructure, Stage A,
+and fill cardinality passed; Stage B and the combined behavioral contract
+failed.**
+
+### Next criterion
+
+Stop at the M2 checkpoint. M3 remains unauthorized, and its Plan prerequisite
+has not been established by this combined M2 result. Await explicit user
+direction before any new scenario, tuning, retry, or Gazebo execution.
