@@ -1269,26 +1269,24 @@ def _observed_local_recovery(resolved, event_messages, fill_messages):
     fill_stamp = float(active.source_timestamp)
     if not active.source_timestamp_valid or not math.isfinite(fill_stamp):
         return None, None, 'typed fill source timestamp is invalid'
-    convergence = next(
-        (
-            message for unused_stamp, message in event_messages
-            if (
-                message.event_type
-                == AlgorithmEvent.EVENT_CONVERGENCE_CONFIRMED
-                and message.source_timestamp_valid
-                and math.isclose(
-                    float(message.source_timestamp),
-                    fill_stamp,
-                    rel_tol=0.0,
-                    abs_tol=1.0e-9,
-                )
-            )
-        ),
-        None,
+    preceding = [
+        message for unused_stamp, message in event_messages
+        if (
+            message.event_type
+            == AlgorithmEvent.EVENT_CONVERGENCE_CONFIRMED
+            and message.source_timestamp_valid
+            and math.isfinite(float(message.source_timestamp))
+            and float(message.source_timestamp) <= fill_stamp
+        )
+    ]
+    convergence = max(
+        preceding,
+        key=lambda message: float(message.source_timestamp),
+        default=None,
     )
     if convergence is None:
         return False, {
-            'reason': 'no causally matching convergence event',
+            'reason': 'no preceding convergence event for active fill',
             'fill_source_timestamp': fill_stamp,
         }, None
     values = dict(zip(convergence.value_names, convergence.values))

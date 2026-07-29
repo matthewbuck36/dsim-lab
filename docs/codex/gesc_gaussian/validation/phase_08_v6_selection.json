@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "experiment_version": "phase08-v6",
+  "sweep_summary": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v6/phase08_v6_hue_sweep_summary.yaml",
+  "sweep_completed_at_utc": "2026-07-29T01:44:54.794066Z",
+  "attempt_count": 4,
+  "all_recordings_complete": true,
+  "all_cleanups_complete": true,
+  "all_collision_free": true,
+  "evidence_correction": {
+    "type": "bounded causal-binding correction",
+    "original_error": "The first implementation required the convergence and fill-design source timestamps to be identical.",
+    "observed_contract": "The fill-design timestamp follows the convergence timestamp; the first active fill center remains causally associated with the latest preceding CONVERGENCE_CONFIRMED event.",
+    "distance_thresholds_changed": false,
+    "gazebo_rerun_required": false
+  },
+  "cases": [
+    {
+      "case": "H25",
+      "ratio": 0.25,
+      "primary_recovery": true,
+      "eligible": true,
+      "convergence_to_local_m": 0.37013624410822754,
+      "convergence_to_global_m": 1.883621531142516,
+      "fill_to_convergence_m": 0.013971655673220465,
+      "secondary_global_goal": true
+    },
+    {
+      "case": "H50",
+      "ratio": 0.50,
+      "primary_recovery": false,
+      "eligible": false,
+      "reason": "ESCAPE_STALLED, FILL_REJECTED, and FAILSAFE before recenter"
+    },
+    {
+      "case": "H70",
+      "ratio": 0.70,
+      "primary_recovery": false,
+      "eligible": false,
+      "reason": "GOAL_HOLD at the local convergence with no typed fill"
+    },
+    {
+      "case": "H85",
+      "ratio": 0.85,
+      "primary_recovery": false,
+      "eligible": false,
+      "reason": "initial recovery completed, then a second FILL_REJECTED and FAILSAFE violated the no-failure contract"
+    }
+  ],
+  "selected_case": "H25",
+  "selected_ratio": 0.25,
+  "selection_reason": "H25 is the only complete eligible ratio and therefore the lowest eligible ratio.",
+  "repeat_scenario_path": "ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v6_selected_repeats.yaml",
+  "repeat_scenario_sha256": "3b9badc92cf63739f65662158999e3c2aab71761f790e3f360be9a52e6f38688",
+  "repeat_seeds": [17101, 17102, 17103]
+}

@@ -1,52 +1,47 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-29T01:19:38+00:00
-Base HEAD: 5e7cc46a9ed415d8bcf80eaba8503909804e7366
+Generated: 2026-07-29T01:48:18+00:00
+Base HEAD: 1482ff546afbad9816cdf678856234d24af80a3a
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: ce144430978662f0f5aac677a1b796491c83703fd153bcbf0489a7455448000a
+Status sha256: da317e569e0358e8b24b0753be97ac2ed4a932fb97ead7323d5705974ecad1a7
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_6_plan.md
 Active subphase plan sha256: b5e41f348870ec4f56b5f2129531c9f8c681f122599efdd6c8ac9b3c34215109
-Unstaged diff sha256: e692392cbd843798dfdbadda07c4e5abe07afca9afc7f070ff26e537be3b5955
+Unstaged diff sha256: 56bbb0d73d1b8e412b34a6269ae6637452c6cbd9c68c96466d86feee27cb7400
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 44]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 45]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
  M ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py
- M ros2_ws/src/ros_esc/setup.py
  M ros2_ws/src/ros_esc/test/test_scenario_runner.py
- M ros2_ws/src/ros_esc/test/test_scenario_schema.py
-?? docs/codex/gesc_gaussian/validation/phase_08_v6_sweep_commitment.json
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v6_hue_sweep.yaml
+?? docs/codex/gesc_gaussian/validation/phase_08_v6_selection.json
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v6_selected_repeats.yaml
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 36 +++-----
- docs/codex/gesc_gaussian/status/phase_08_status.md | 51 +++++++++--
- .../ros_esc/scenario_runner/run_scenario.py        | 99 ++++++++++++++++++++++
- .../ros_esc/scenario_runner/scenario_schema.py     | 75 +++++++++++++++-
- ros2_ws/src/ros_esc/setup.py                       |  2 +-
- ros2_ws/src/ros_esc/test/test_scenario_runner.py   | 49 +++++++++++
- ros2_ws/src/ros_esc/test/test_scenario_schema.py   | 27 ++++++
- 7 files changed, 308 insertions(+), 31 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 40 +++------------
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 58 ++++++++++++++++++++--
+ .../ros_esc/scenario_runner/run_scenario.py        | 32 ++++++------
+ ros2_ws/src/ros_esc/test/test_scenario_runner.py   |  3 +-
+ 4 files changed, 78 insertions(+), 55 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**M1 — implementation and qualification complete.**
+**M2 — visible sweep complete; H25 repeats frozen.**
 
 ### Next criterion
 
-Checkpoint and commit the qualified V6 implementation, then execute the exact
-four-case visible-Gazebo sweep from the fresh V6 evidence root.
+Commit the selection and corrected causal evidence binding, then execute the
+three exact headless H25 repeats. Pass repeatability only with at least `2/3`
+complete recoveries and no integrity, cleanup, collision, or safety failure.
 
 
 

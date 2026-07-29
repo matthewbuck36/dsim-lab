@@ -73,7 +73,7 @@ def test_observed_local_recovery_binds_fill_to_local_convergence():
     )
     event = SimpleNamespace(
         event_type=runner.AlgorithmEvent.EVENT_CONVERGENCE_CONFIRMED,
-        source_timestamp=42.0,
+        source_timestamp=41.0,
         source_timestamp_valid=True,
         value_names=['fill_center_x_m', 'fill_center_y_m'],
         values=[-0.78, 0.02],
@@ -85,6 +85,7 @@ def test_observed_local_recovery_binds_fill_to_local_convergence():
     assert passed is True
     assert error is None
     assert evidence['convergence_to_local_m'] < 0.60
+    assert evidence['fill_source_timestamp'] == 42.0
 
     event.values = [1.25, 0.75]
     passed, evidence, error = runner._observed_local_recovery(

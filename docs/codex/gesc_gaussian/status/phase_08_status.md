@@ -1,6 +1,6 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-28T18:20:00-07:00`
+Last verified: `2026-07-28T18:50:00-07:00`
 Status: `ACTIVE — PHASE 08.6 / V6 TWO-LIGHT HUE-RATIO DEMONSTRATION`
 
 ## Objective
@@ -3797,12 +3797,13 @@ committed and qualification begins.
 
 ## Current milestone
 
-**M1 — implementation and qualification complete.**
+**M2 — visible sweep complete; H25 repeats frozen.**
 
 ### Next criterion
 
-Checkpoint and commit the qualified V6 implementation, then execute the exact
-four-case visible-Gazebo sweep from the fresh V6 evidence root.
+Commit the selection and corrected causal evidence binding, then execute the
+three exact headless H25 repeats. Pass repeatability only with at least `2/3`
+complete recoveries and no integrity, cleanup, collision, or safety failure.
 
 ## Phase 08.6 M1 implementation and qualification
 
@@ -3845,3 +3846,52 @@ Qualification:
   validation-world contacts, fixed geometry, and the four exact intensities.
 - No Gazebo/ROS scenario descendant was active and the V6 root remained absent
   at qualification.
+
+## Phase 08.6 M2 visible sweep and selection
+
+The committed visible sweep executed all four cases from
+`2026-07-29T01:20:23Z` to `2026-07-29T01:44:54Z`. All four recordings,
+cleanups, and collision checks completed and passed. Retained summary:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v6/
+  phase08_v6_hue_sweep_summary.yaml
+```
+
+Behavior:
+
+- H25: complete local convergence, fill, escape, recenter, resumed search,
+  and secondary global goal.
+- H50: local fill created, then `ESCAPE_STALLED`, `FILL_REJECTED`, and
+  `FAILSAFE`; failed.
+- H70: entered `GOAL_HOLD` at the local convergence without a fill; failed.
+- H85: completed an initial recovery, but later `FILL_REJECTED` and
+  `FAILSAFE`; failed the no-failure contract.
+
+The sweep exposed a bounded evidence-binding bug: the first implementation
+required the convergence source timestamp to equal the later fill-design
+source timestamp. H25 actually converged at `84.7 s` and created the typed fill
+at `93.8 s`; their centers were only `0.0140 m` apart. The correction selects
+the latest valid `CONVERGENCE_CONFIRMED` event preceding the first active fill
+and retains all three committed distance thresholds unchanged.
+
+Corrected bag analysis identifies H25 as the only eligible ratio:
+
+```text
+convergence to local:  0.3701 m <= 0.60 m
+convergence to global: 1.8836 m >= 0.75 m
+fill to convergence:   0.0140 m <= 0.50 m
+```
+
+Selection and frozen repeats:
+
+```text
+docs/codex/gesc_gaussian/validation/phase_08_v6_selection.json
+ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/
+  phase08_v6_selected_repeats.yaml
+repeat sha256 3b9badc92cf63739f65662158999e3c2aab71761f790e3f360be9a52e6f38688
+seeds 17101, 17102, 17103
+```
+
+The post-correction focused regression is
+`89 passed, 1 skipped in 12.93s`.
