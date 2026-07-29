@@ -1,19 +1,18 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-28T16:08:02-07:00`
-Status: `CLOSED — PHASE 08.5 / V5 FAILED / NOT SIMULATION-READY`
+Last verified: `2026-07-28T18:08:25-07:00`
+Status: `ACTIVE — PHASE 08.6 / V6 TWO-LIGHT HUE-RATIO DEMONSTRATION`
 
 ## Objective
 
-Test only cases in which a weaker local aggregate-field minimum is directly
-between the robot and stronger global minimum, using exactly two or three
-lights. Require the Gaussian-fill, escape, recenter, resumed-search, and
-global-goal lifecycle at that local basin; direct convergence is not a V5
-success. Preserve controller ownership, cost sign and units, canonical
-topics, selectable legacy behavior, and simulation/physical algorithm parity.
-Claim simulation readiness only if the full visible activation, headless
-development/freeze, holdout, unique-validation, and reproducibility chain
-passes.
+Demonstrate with exactly two lights that unchanged GESC can converge at the
+lower-output local light, create a Gaussian fill there, escape, recenter, and
+resume search. Sweep physical Philips Hue-compatible nominal ratios inside the
+`4 m x 4 m` laboratory envelope without steering or orienting the robot toward
+the local light. Preserve controller ownership, cost sign and units, canonical
+topics, selectable legacy behavior, original sensor rotation, and
+simulation/physical algorithm parity. Treat global convergence as secondary,
+defer three-light execution, and make no simulation-readiness claim.
 
 ## Verified repository state
 
@@ -3739,3 +3738,69 @@ Do not resume or modify V5. Any successor requires a separately reviewed Plan
 that forces the local basin against the observed GESC trajectory/envelope,
 retains the two-/three-light cap and exact recovery responsibility, and fixes
 first-contract-miss activation dispatch before Gazebo.
+
+## Phase 08.6 V6 opening
+
+The user authorized a focused two-light Hue-ratio development demonstration
+instead of V5's formal 120-run acceptance design. The binding Plan is:
+
+```text
+docs/codex/gesc_gaussian/plans/phase_08_6_plan.md
+```
+
+V6 preserves Nick's original GESC and full-rotation photoresistor behavior.
+The wrapper's ordinary `init_yaw_angle=0`, encoder input, and constant
+full-rotation profile remain unchanged. No outcome-selected orientation,
+steering aid, duplicate controller, or physical command is authorized.
+
+The fixed `4 m x 4 m` geometry is:
+
+```text
+start   (-1.30, -0.20) m, yaw 0
+local   (-0.80,  0.00) m
+global  ( 1.30,  0.80) m
+```
+
+The four visible-Gazebo development ratios are:
+
+```text
+H25  local 25% / 400 nominal, global 100% / 1600 nominal
+H50  local 50% / 800 nominal, global 100% / 1600 nominal
+H70  local 70% / 1120 nominal, global 100% / 1600 nominal
+H85  local 85% / 1360 nominal, global 100% / 1600 nominal
+```
+
+The simulator lumen value is retained as a relative model input; Hue percentage
+and nominal lumens are recorded separately and are not claimed as a physical
+lux calibration.
+
+Primary success is:
+
+```text
+SEARCH -> VERIFY_EXTREMUM -> DESIGN_OR_MERGE_FILL -> ESCAPE_REPULSE
+-> RECENTER -> SEARCH
+```
+
+The runtime must bind the first fill to a confirmed nonglobal convergence near
+the declared local source and away from the global source. Global convergence
+after resumed search is secondary. Wall/corner, noise/delay, assist, merge,
+revisit, three-light, 70/70, and 120-run requirements are deferred.
+
+Fresh external root:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v6
+```
+
+The root is not created until the exact scenario and implementation are
+committed and qualification begins.
+
+## Current milestone
+
+**M0 — open and checkpoint V6.**
+
+### Next criterion
+
+Commit the V6 Plan/status boundary, then implement and test the
+`observed_local_recovery` evidence predicate and exact four-case suite without
+launching Gazebo or creating the V6 evidence root.
