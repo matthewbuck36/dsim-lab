@@ -13,8 +13,8 @@ from ros_esc.scenario_runner import aggregate_field_truth
 import yaml
 
 
-SCHEMA_VERSION = 4
-SUPPORTED_SCHEMA_VERSIONS = {1, 2, 3, 4}
+SCHEMA_VERSION = 5
+SUPPORTED_SCHEMA_VERSIONS = {1, 2, 3, 4, 5}
 PROFILES = {'legacy', 'robust_gaussian_v1'}
 STATUSES = {'executable_unverified', 'unsupported'}
 FAMILIES = {
@@ -30,6 +30,7 @@ FAMILIES = {
     'escape',
     'fill_merge',
     'recenter_resume',
+    'corner_origin',
 }
 ACCEPTANCE_FAMILIES = {
     'ordered_two_source',
@@ -44,6 +45,7 @@ ACCEPTANCE_FAMILIES = {
     'obstructing_three_light_sequential',
     'obstructing_wall_corner',
     'obstructing_noise_delay',
+    'corner_origin_diagonal_sector',
 }
 ACCEPTANCE_PARTITIONS = {
     'activation',
@@ -90,6 +92,9 @@ SUCCESS_PREDICATES = {
     'collision_expectation',
     'route_blocker_encountered',
     'observed_local_recovery',
+    'local_recovery_stage',
+    'post_recovery_global_proximity',
+    'fill_cardinality',
 }
 LAUNCH_OVERRIDES = {
     'approach_history_window_sec',
@@ -112,6 +117,7 @@ LAUNCH_OVERRIDES = {
     'gaussian_fill_estimation_window_sec',
     'gaussian_fill_exit_sigma',
     'gaussian_fill_low_confidence_threshold',
+    'gaussian_fill_max_fills',
     'gaussian_fill_maximum_design_escalations',
     'gaussian_fill_maximum_sample_age_sec',
     'gaussian_fill_merge_bandwidth_m',
@@ -156,7 +162,7 @@ EXECUTION_KEYS = {
 METADATA_KEYS = {'experiment_version', 'operator_notes'}
 DEFAULT_KEYS = {
     'bounds_m', 'room_center_m', 'disturbances', 'validation_world',
-    'simulation_contacts_enabled',
+    'simulation_contacts_enabled', 'geometry_profile',
 }
 DISTURBANCE_KEYS = {'sensor_noise', 'sensor_delay_sec', 'pose_delay_sec'}
 NOISE_KEYS = {'model', 'bound', 'std_dev'}
@@ -166,7 +172,7 @@ CASE_KEYS = {
     'disturbances', 'algorithm', 'success',
     'validation_world', 'simulation_contacts_enabled',
     'acceptance_family', 'acceptance_partition', 'repeat_reference',
-    'metric_applicability',
+    'metric_applicability', 'geometry_profile', 'known_topology',
 }
 START_KEYS = {'id', 'x_m', 'y_m', 'yaw_rad'}
 SOURCE_KEYS = {
@@ -177,6 +183,7 @@ ALGORITHM_KEYS = {'ablations', 'launch_overrides'}
 SUCCESS_KEYS = {
     'all_of', 'controller', 'ground_truth', 'minimum_saturation_samples',
     'collision_expected', 'result_scopes', 'local_recovery',
+    'staged_recovery',
 }
 LOCAL_RECOVERY_KEYS = {
     'local_source_id',
@@ -184,6 +191,18 @@ LOCAL_RECOVERY_KEYS = {
     'convergence_to_local_max_m',
     'convergence_to_global_min_m',
     'fill_to_convergence_max_m',
+}
+STAGED_RECOVERY_KEYS = {
+    'local_source_ids',
+    'global_source_id',
+    'convergence_to_local_max_m',
+    'convergence_to_global_min_m',
+    'fill_to_convergence_max_m',
+    'global_proximity_radius_m',
+}
+KNOWN_TOPOLOGY_KEYS = {
+    'expected_local_minima',
+    'expected_global_minima',
 }
 FROZEN_PROFILE_KEYS = {'profile_id', 'launch_overrides', 'sha256'}
 CONTROLLER_KEYS = {
@@ -200,6 +219,11 @@ AGGREGATE_GROUND_TRUTH_KEYS = {
     'wall_margin_m',
     'minimum_source_score',
     'aggregate_field',
+}
+STAGED_GROUND_TRUTH_KEYS = {
+    'method',
+    'global_source_id',
+    'proximity_radius_m',
 }
 RESULT_SCOPE_KEYS = {
     'anchor_state', 'boundary_state', 'graceful_stop', 'all_of',
@@ -290,6 +314,23 @@ DEFAULTS = {
     'simulation_contacts_enabled': False,
 }
 
+CORNER_ORIGIN_GEOMETRY_PROFILE = 'corner_origin_diagonal_sector_v1'
+GEOMETRY_PROFILES = {
+    CORNER_ORIGIN_GEOMETRY_PROFILE: {
+        'world_file': 'gesc_gaussian_corner_origin_validation.world',
+        'bounds_m': [-0.25, 3.75, -0.25, 3.75],
+        'room_center_m': [1.75, 1.75],
+        'start': {'x_m': 0.0, 'y_m': 0.0, 'yaw_rad': 0.0},
+        'global': {'x_m': 3.5, 'y_m': 3.5},
+        'wall_margin_m': 0.20,
+        'local_radius_min_m': 1.0,
+        'local_radius_max_m': 2.0,
+        'local_angle_center_rad': math.pi / 4.0,
+        'local_angle_half_width_rad': math.pi / 4.0,
+        'global_proximity_radius_m': 0.35,
+    },
+}
+
 
 def _unknown(mapping, allowed, location):
     if not isinstance(mapping, dict):
@@ -325,6 +366,226 @@ def _boolean(value, location):
     if not isinstance(value, bool):
         raise ValueError(f'{location} must be true or false')
     return value
+
+
+def _positive_integer(value, location):
+    if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+        raise ValueError(f'{location} must be a positive integer')
+    return value
+
+
+def _geometry_profile(value, location):
+    name = str(value or '')
+    if name not in GEOMETRY_PROFILES:
+        raise ValueError(f'{location} is unsupported')
+    return name
+
+
+def _same_floats(actual, expected):
+    return len(actual) == len(expected) and all(
+        math.isclose(
+            float(actual_value),
+            float(expected_value),
+            rel_tol=0.0,
+            abs_tol=1e-12,
+        )
+        for actual_value, expected_value in zip(actual, expected)
+    )
+
+
+def _wrap_angle(value):
+    return (float(value) + math.pi) % (2.0 * math.pi) - math.pi
+
+
+def _normalize_known_topology(value, location):
+    _unknown(value, KNOWN_TOPOLOGY_KEYS, location)
+    return {
+        name: _positive_integer(value.get(name), f'{location}.{name}')
+        for name in sorted(KNOWN_TOPOLOGY_KEYS)
+    }
+
+
+def _resolve_geometry_profile(
+    profile_name,
+    bounds,
+    center,
+    start,
+    sources,
+    launch_overrides,
+    validation,
+    known_topology,
+    staged_recovery,
+    location,
+):
+    """Validate and expose the fixed Phase 08.7 corner-origin geometry."""
+    profile = GEOMETRY_PROFILES[profile_name]
+    if not _same_floats(bounds, profile['bounds_m']):
+        raise ValueError(
+            f'{location}.bounds_m must match the geometry profile'
+        )
+    if not _same_floats(center, profile['room_center_m']):
+        raise ValueError(
+            f'{location}.room_center_m must match the geometry profile'
+        )
+    expected_start = profile['start']
+    if not _same_floats(
+        [start['x_m'], start['y_m'], start['yaw_rad']],
+        [
+            expected_start['x_m'],
+            expected_start['y_m'],
+            expected_start['yaw_rad'],
+        ],
+    ):
+        raise ValueError(
+            f'{location}.starts must use the fixed geometry-profile start'
+        )
+    if validation != {'world': True, 'contacts_enabled': True}:
+        raise ValueError(
+            f'{location} geometry profile requires its validation world '
+            'and contacts'
+        )
+    if launch_overrides.get('wall_margin_m') != profile['wall_margin_m']:
+        raise ValueError(
+            f'{location}.algorithm.launch_overrides.wall_margin_m must '
+            f'equal {profile["wall_margin_m"]}'
+        )
+    maximum_fills = launch_overrides.get('gaussian_fill_max_fills')
+    if (
+        isinstance(maximum_fills, bool)
+        or not isinstance(maximum_fills, int)
+        or maximum_fills != known_topology['expected_local_minima']
+    ):
+        raise ValueError(
+            f'{location}.algorithm.launch_overrides.'
+            'gaussian_fill_max_fills must be an integer equal to '
+            'known_topology.expected_local_minima'
+        )
+
+    local_sources = [
+        source for source in sources
+        if source['evaluation_role'] == 'local_minimum'
+    ]
+    global_sources = [
+        source for source in sources
+        if source['evaluation_role'] == 'goal'
+    ]
+    if (
+        known_topology['expected_local_minima'] != 1
+        or known_topology['expected_global_minima'] != 1
+        or len(local_sources) != 1
+        or len(global_sources) != 1
+        or len(sources) != 2
+    ):
+        raise ValueError(
+            f'{location} Phase 08.7 M1 supports exactly one declared local '
+            'and one declared global source'
+        )
+    local = local_sources[0]
+    global_source = global_sources[0]
+    expected_global = profile['global']
+    if not _same_floats(
+        [global_source['x_m'], global_source['y_m']],
+        [expected_global['x_m'], expected_global['y_m']],
+    ):
+        raise ValueError(
+            f'{location} goal source must use the fixed global point'
+        )
+    if (
+        'relative_lumen_input' not in local
+        or 'relative_lumen_input' not in global_source
+        or local['relative_lumen_input']
+        >= global_source['relative_lumen_input']
+    ):
+        raise ValueError(
+            f'{location} requires a fixed lower-output local source and '
+            'stronger global source'
+        )
+
+    delta_x = local['x_m'] - start['x_m']
+    delta_y = local['y_m'] - start['y_m']
+    radius = math.hypot(delta_x, delta_y)
+    angle = math.atan2(delta_y, delta_x)
+    angular_offset = abs(
+        _wrap_angle(angle - profile['local_angle_center_rad'])
+    )
+    if not (
+        profile['local_radius_min_m'] - 1e-12
+        <= radius
+        <= profile['local_radius_max_m'] + 1e-12
+    ):
+        raise ValueError(
+            f'{location} local source radius is outside the geometry profile'
+        )
+    if angular_offset > profile['local_angle_half_width_rad'] + 1e-12:
+        raise ValueError(
+            f'{location} local source angle is outside the geometry profile'
+        )
+    if staged_recovery['local_source_ids'] != [local['id']]:
+        raise ValueError(
+            f'{location}.success.staged_recovery.local_source_ids must '
+            'declare the geometry-profile local source'
+        )
+    if staged_recovery['global_source_id'] != global_source['id']:
+        raise ValueError(
+            f'{location}.success.staged_recovery.global_source_id must '
+            'declare the geometry-profile global source'
+        )
+    if (
+        staged_recovery['global_proximity_radius_m']
+        != profile['global_proximity_radius_m']
+    ):
+        raise ValueError(
+            f'{location}.success.staged_recovery.'
+            'global_proximity_radius_m must equal 0.35'
+        )
+
+    allowed_x_min = bounds[0] + profile['wall_margin_m']
+    allowed_x_max = bounds[1] - profile['wall_margin_m']
+    allowed_y_min = bounds[2] + profile['wall_margin_m']
+    allowed_y_max = bounds[3] - profile['wall_margin_m']
+    for label, point in (
+        ('start', start),
+        ('global', global_source),
+    ):
+        if not (
+            allowed_x_min <= point['x_m'] <= allowed_x_max
+            and allowed_y_min <= point['y_m'] <= allowed_y_max
+        ):
+            raise ValueError(
+                f'{location} {label} violates the geometry-profile '
+                'wall margin'
+            )
+    return {
+        'profile': profile_name,
+        'world_file': profile['world_file'],
+        'bounds_m': list(profile['bounds_m']),
+        'room_center_m': list(profile['room_center_m']),
+        'wall_margin_m': profile['wall_margin_m'],
+        'allowed_center_domain_m': [
+            allowed_x_min,
+            allowed_x_max,
+            allowed_y_min,
+            allowed_y_max,
+        ],
+        'fixed_start': dict(profile['start']),
+        'global_source_id': global_source['id'],
+        'fixed_global': dict(profile['global']),
+        'local_region': {
+            'radius_min_m': profile['local_radius_min_m'],
+            'radius_max_m': profile['local_radius_max_m'],
+            'angle_center_rad': profile['local_angle_center_rad'],
+            'angle_half_width_rad': profile[
+                'local_angle_half_width_rad'
+            ],
+        },
+        'local_placements': [{
+            'source_id': local['id'],
+            'radius_m': radius,
+            'angle_rad': angle,
+            'angle_deg': math.degrees(angle),
+            'angular_offset_rad': angular_offset,
+        }],
+    }
 
 
 def _contract_names(value, allowed, prefix, location, unique=True):
@@ -748,6 +1009,41 @@ def load_suite(path):
         raise ValueError(
             'schema version 4 is required for v3 acceptance fields'
         )
+    schema_v5_predicates = {
+        'local_recovery_stage',
+        'post_recovery_global_proximity',
+        'fill_cardinality',
+    }
+    uses_schema_v5_fields = (
+        'geometry_profile' in document.get('defaults', {})
+    )
+    if isinstance(raw_cases, list):
+        for case in raw_cases:
+            if not isinstance(case, dict):
+                continue
+            raw_success = case.get('success', {})
+            raw_all_of = (
+                raw_success.get('all_of', [])
+                if isinstance(raw_success, dict)
+                else []
+            )
+            uses_schema_v5_fields = uses_schema_v5_fields or (
+                bool({'geometry_profile', 'known_topology'} & set(case))
+                or (
+                    isinstance(raw_success, dict)
+                    and 'staged_recovery' in raw_success
+                )
+                or (
+                    isinstance(raw_all_of, list)
+                    and bool(schema_v5_predicates & set(raw_all_of))
+                )
+            )
+            if uses_schema_v5_fields:
+                break
+    if schema_version < 5 and uses_schema_v5_fields:
+        raise ValueError(
+            'schema version 5 is required for staged corner-origin fields'
+        )
     suite_id = _identifier(document.get('suite_id'), 'suite_id')
     if document.get('mode') != 'simulation':
         raise ValueError('mode must be simulation')
@@ -838,6 +1134,14 @@ def load_suite(path):
             supplied_defaults.get(name, DEFAULTS[name]),
             f'defaults.{name}',
         )
+    default_geometry_profile = None
+    if 'geometry_profile' in supplied_defaults:
+        default_geometry_profile = _geometry_profile(
+            supplied_defaults['geometry_profile'],
+            'defaults.geometry_profile',
+        )
+    if schema_version >= 5:
+        defaults['geometry_profile'] = default_geometry_profile
 
     cases = document.get('cases')
     if not isinstance(cases, list) or not cases:
@@ -949,6 +1253,15 @@ def load_suite(path):
                 f'{location}.simulation_contacts_enabled requires '
                 'validation_world'
             )
+        geometry_profile_name = None
+        if schema_version >= 5:
+            geometry_profile_name = _geometry_profile(
+                case.get(
+                    'geometry_profile',
+                    defaults.get('geometry_profile'),
+                ),
+                f'{location}.geometry_profile',
+            )
 
         starts = case.get('starts')
         if not isinstance(starts, list) or not starts:
@@ -1037,6 +1350,13 @@ def load_suite(path):
                     )
                 normalized['levels'] = labels
             normalized_sources.append(normalized)
+
+        known_topology = None
+        if schema_version >= 5:
+            known_topology = _normalize_known_topology(
+                case.get('known_topology'),
+                f'{location}.known_topology',
+            )
 
         algorithm = case.get('algorithm', {})
         _unknown(algorithm, ALGORITHM_KEYS, f'{location}.algorithm')
@@ -1316,7 +1636,7 @@ def load_suite(path):
                 'forbidden_events': forbidden_events,
             }
             if (
-                schema_version >= 4
+                schema_version == 4
                 and acceptance_partition in {
                     'holdout', 'validation', 'reproducibility',
                 }
@@ -1341,7 +1661,50 @@ def load_suite(path):
         ground_truth = success.get('ground_truth', {})
         ground_truth_location = f'{location}.success.ground_truth'
         goal_ids = []
-        if schema_version >= 4:
+        if schema_version >= 5:
+            _unknown(
+                ground_truth,
+                STAGED_GROUND_TRUTH_KEYS,
+                ground_truth_location,
+            )
+            if ground_truth.get('method') != 'declared_global_proximity':
+                raise ValueError(
+                    f'{ground_truth_location}.method must equal '
+                    'declared_global_proximity'
+                )
+            global_source_id = _identifier(
+                ground_truth.get('global_source_id'),
+                f'{ground_truth_location}.global_source_id',
+            )
+            source_roles = {
+                source['id']: source['evaluation_role']
+                for source in normalized_sources
+            }
+            if (
+                global_source_id not in source_roles
+                or source_roles[global_source_id] != 'goal'
+            ):
+                raise ValueError(
+                    f'{ground_truth_location}.global_source_id must '
+                    'reference the declared goal source'
+                )
+            tolerance = _number(
+                ground_truth.get('proximity_radius_m'),
+                f'{ground_truth_location}.proximity_radius_m',
+                positive=True,
+            )
+            if tolerance != 0.35:
+                raise ValueError(
+                    f'{ground_truth_location}.proximity_radius_m must '
+                    'equal 0.35'
+                )
+            normalized_ground_truth = {
+                'method': 'declared_global_proximity',
+                'global_source_id': global_source_id,
+                'proximity_radius_m': tolerance,
+            }
+            has_ground_truth = True
+        elif schema_version >= 4:
             _unknown(
                 ground_truth,
                 AGGREGATE_GROUND_TRUTH_KEYS,
@@ -1482,6 +1845,107 @@ def load_suite(path):
                     positive=True,
                 ),
             }
+        staged_recovery = success.get('staged_recovery')
+        if staged_recovery is not None:
+            staged_location = f'{location}.success.staged_recovery'
+            if schema_version < 5 or not isinstance(staged_recovery, dict):
+                raise ValueError(
+                    f'{staged_location} requires schema version 5 or newer '
+                    'and must be a mapping'
+                )
+            if local_recovery is not None:
+                raise ValueError(
+                    f'{location}.success cannot combine local_recovery and '
+                    'staged_recovery'
+                )
+            _unknown(
+                staged_recovery,
+                STAGED_RECOVERY_KEYS,
+                staged_location,
+            )
+            local_source_ids = staged_recovery.get('local_source_ids')
+            if (
+                not isinstance(local_source_ids, list)
+                or not local_source_ids
+            ):
+                raise ValueError(
+                    f'{staged_location}.local_source_ids must be non-empty'
+                )
+            local_source_ids = [
+                _identifier(
+                    source_id,
+                    f'{staged_location}.local_source_ids[{source_index}]',
+                )
+                for source_index, source_id in enumerate(local_source_ids)
+            ]
+            if len(local_source_ids) != len(set(local_source_ids)):
+                raise ValueError(
+                    f'{staged_location}.local_source_ids must be unique'
+                )
+            global_source_id = _identifier(
+                staged_recovery.get('global_source_id'),
+                f'{staged_location}.global_source_id',
+            )
+            if (
+                (set(local_source_ids) | {global_source_id}) - source_ids
+                or global_source_id in local_source_ids
+            ):
+                raise ValueError(
+                    f'{staged_location} source ids must be distinct '
+                    'declared sources'
+                )
+            source_roles = {
+                source['id']: source['evaluation_role']
+                for source in normalized_sources
+            }
+            if (
+                any(
+                    source_roles[source_id] != 'local_minimum'
+                    for source_id in local_source_ids
+                )
+                or source_roles[global_source_id] != 'goal'
+            ):
+                raise ValueError(
+                    f'{staged_location} sources must have local_minimum '
+                    'and goal roles'
+                )
+            staged_recovery = {
+                'local_source_ids': local_source_ids,
+                'global_source_id': global_source_id,
+                'convergence_to_local_max_m': _number(
+                    staged_recovery.get('convergence_to_local_max_m'),
+                    f'{staged_location}.convergence_to_local_max_m',
+                    positive=True,
+                ),
+                'convergence_to_global_min_m': _number(
+                    staged_recovery.get('convergence_to_global_min_m'),
+                    f'{staged_location}.convergence_to_global_min_m',
+                    positive=True,
+                ),
+                'fill_to_convergence_max_m': _number(
+                    staged_recovery.get('fill_to_convergence_max_m'),
+                    f'{staged_location}.fill_to_convergence_max_m',
+                    positive=True,
+                ),
+                'global_proximity_radius_m': _number(
+                    staged_recovery.get('global_proximity_radius_m'),
+                    f'{staged_location}.global_proximity_radius_m',
+                    positive=True,
+                ),
+            }
+            if (
+                len(local_source_ids)
+                != known_topology['expected_local_minima']
+            ):
+                raise ValueError(
+                    f'{staged_location}.local_source_ids must match '
+                    'known_topology.expected_local_minima'
+                )
+        elif schema_version >= 5:
+            raise ValueError(
+                f'{location}.success.staged_recovery is required for '
+                'schema version 5'
+            )
         minimum_saturation = success.get('minimum_saturation_samples', 0)
         if (
             isinstance(minimum_saturation, bool)
@@ -1531,7 +1995,7 @@ def load_suite(path):
                     'simulation contacts'
                 )
         formal_acceptance = (
-            schema_version >= 4
+            schema_version == 4
             and acceptance_partition in {
                 'holdout', 'validation', 'reproducibility',
             }
@@ -1591,6 +2055,114 @@ def load_suite(path):
                         f'{location}.metric_applicability.{name} must '
                         'match escape_attempt'
                     )
+        geometry = None
+        if schema_version >= 5:
+            staged_core = {
+                'recording_complete',
+                'cleanup_complete',
+                'local_recovery_stage',
+                'post_recovery_global_proximity',
+                'fill_cardinality',
+                'required_state_path',
+                'required_events',
+                'no_forbidden_states',
+                'no_forbidden_events',
+                'collision_expectation',
+            }
+            missing_core = sorted(staged_core - set(all_of))
+            if missing_core:
+                raise ValueError(
+                    f'{location}.success staged contract omits: '
+                    + ', '.join(missing_core)
+                )
+            expected_path = [
+                'SEARCH',
+                'VERIFY_EXTREMUM',
+                'DESIGN_OR_MERGE_FILL',
+                'ESCAPE_REPULSE',
+                'RECENTER',
+                'SEARCH',
+            ]
+            if (
+                normalized_controller['expected_verification_outcome']
+                != 'below_target_extremum'
+                or normalized_controller['required_state_path']
+                != expected_path
+            ):
+                raise ValueError(
+                    f'{controller_location} staged contract must bind the '
+                    'complete local recovery path'
+                )
+            required_staged_events = {
+                'CONVERGENCE_CONFIRMED',
+                'FILL_CREATED',
+                'ESCAPE_STARTED',
+                'RECENTER_STARTED',
+                'RECENTER_COMPLETE',
+            }
+            if not required_staged_events <= set(
+                normalized_controller['required_events']
+            ):
+                raise ValueError(
+                    f'{controller_location} staged contract must require '
+                    'every local recovery event'
+                )
+            if (
+                'FAILSAFE' not in normalized_controller['forbidden_states']
+                or not {'TIMEOUT', 'FAILSAFE'} <= set(
+                    normalized_controller['forbidden_events']
+                )
+            ):
+                raise ValueError(
+                    f'{controller_location} staged contract must forbid '
+                    'FAILSAFE and TIMEOUT'
+                )
+            if (
+                collision_expected is not False
+                or not ablations['gaussian_fill_enabled']
+                or not ablations['recenter_enabled']
+            ):
+                raise ValueError(
+                    f'{location} staged contract requires Gaussian fill, '
+                    'recenter, and collision_expected=false'
+                )
+            if (
+                set(result_scopes) != {'full_lifecycle'}
+                or result_scopes['full_lifecycle']['graceful_stop']
+            ):
+                raise ValueError(
+                    f'{location}.success.result_scopes must retain one '
+                    'full_lifecycle scope; the staged live stop is separate'
+                )
+            if (
+                normalized_ground_truth['global_source_id']
+                != staged_recovery['global_source_id']
+                or normalized_ground_truth['proximity_radius_m']
+                != staged_recovery['global_proximity_radius_m']
+            ):
+                raise ValueError(
+                    f'{location}.success ground truth and staged recovery '
+                    'must declare the same global proximity boundary'
+                )
+            if len(normalized_starts) != 1:
+                raise ValueError(
+                    f'{location} geometry profile requires exactly one start'
+                )
+            geometry = _resolve_geometry_profile(
+                geometry_profile_name,
+                bounds,
+                center,
+                normalized_starts[0],
+                normalized_sources,
+                overrides,
+                {
+                    'world': validation_world,
+                    'contacts_enabled': contacts_enabled,
+                },
+                known_topology,
+                staged_recovery,
+                location,
+            )
         normalized_success = {
             'all_of': list(all_of),
             'controller': normalized_controller,
@@ -1599,6 +2171,8 @@ def load_suite(path):
         }
         if local_recovery is not None:
             normalized_success['local_recovery'] = local_recovery
+        if staged_recovery is not None:
+            normalized_success['staged_recovery'] = staged_recovery
         if schema_version >= 2:
             normalized_success['collision_expected'] = collision_expected
         if schema_version >= 3:
@@ -1624,6 +2198,14 @@ def load_suite(path):
             if route_qualification is not None:
                 backed_predicates.add('route_blocker_encountered')
                 declared_predicates.add('route_blocker_encountered')
+            if staged_recovery is not None:
+                staged_predicates = {
+                    'local_recovery_stage',
+                    'post_recovery_global_proximity',
+                    'fill_cardinality',
+                }
+                backed_predicates.update(staged_predicates)
+                declared_predicates.update(staged_predicates)
             if (
                 outcome == 'goal'
                 or (
@@ -1655,6 +2237,9 @@ def load_suite(path):
                 'collision_expectation',
                 'route_blocker_encountered',
                 'observed_local_recovery',
+                'local_recovery_stage',
+                'post_recovery_global_proximity',
+                'fill_cardinality',
             }
             unbacked_predicates = sorted(
                 (set(all_of) & predicates_requiring_backing)
@@ -1710,6 +2295,14 @@ def load_suite(path):
                 'repeat_reference': repeat_reference,
                 'metric_applicability': metric_applicability,
             })
+        if schema_version >= 5:
+            normalized_case['validation']['geometry_profile'] = (
+                geometry_profile_name
+            )
+            normalized_case.update({
+                'known_topology': known_topology,
+                'geometry': geometry,
+            })
         normalized_cases.append(normalized_case)
 
     return {
@@ -1756,6 +2349,8 @@ def deterministic_case_key(resolved):
             'repeat_reference',
             'metric_applicability',
         ))
+    if resolved.get('schema_version', 1) >= 5:
+        fields.extend(('known_topology', 'geometry'))
     identity = {
         name: resolved[name]
         for name in fields
@@ -1805,7 +2400,7 @@ def expand_suite(suite, case_ids=None):
                             level_tuple.append(None)
                         sources.append(resolved_source)
                     resolved_success_template = deepcopy(case['success'])
-                    if suite['schema_version'] >= 4:
+                    if suite['schema_version'] == 4:
                         ground_truth = resolved_success_template[
                             'ground_truth'
                         ]
@@ -1904,6 +2499,13 @@ def expand_suite(suite, case_ids=None):
                                 'metric_applicability': deepcopy(
                                     case['metric_applicability']
                                 ),
+                            })
+                        if suite['schema_version'] >= 5:
+                            resolved.update({
+                                'known_topology': deepcopy(
+                                    case['known_topology']
+                                ),
+                                'geometry': deepcopy(case['geometry']),
                             })
                         resolved['case_key'] = deterministic_case_key(resolved)
                         runs.append(resolved)

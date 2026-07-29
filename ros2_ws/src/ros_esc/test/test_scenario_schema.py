@@ -3,7 +3,10 @@
 from copy import deepcopy
 from functools import lru_cache
 import hashlib
+import json
+import math
 from pathlib import Path
+import xml.etree.ElementTree as ET
 
 import pytest
 
@@ -42,6 +45,21 @@ V6_HUE_SWEEP = (
 HISTORICAL_V2_ACTIVATION = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml'
+)
+CORNER_ORIGIN_WORLD = (
+    PACKAGE_ROOT.parent
+    / 'turtlebot3_rotating_sensor/worlds/'
+    'gesc_gaussian_corner_origin_validation.world'
+)
+HISTORICAL_WORLD = (
+    PACKAGE_ROOT.parent
+    / 'turtlebot3_rotating_sensor/worlds/'
+    'gesc_gaussian_validation.world'
+)
+HISTORICAL_IMMUTABILITY = (
+    PACKAGE_ROOT.parents[2]
+    / 'docs/codex/gesc_gaussian/validation/'
+    'phase_08_7_m1_historical_immutability.json'
 )
 
 
@@ -209,6 +227,123 @@ def _v4_document():
     return document
 
 
+def _v5_document():
+    document = _v3_document()
+    document['schema_version'] = 5
+    document['defaults'].update({
+        'bounds_m': [-0.25, 3.75, -0.25, 3.75],
+        'room_center_m': [1.75, 1.75],
+        'validation_world': True,
+        'simulation_contacts_enabled': True,
+        'geometry_profile': 'corner_origin_diagonal_sector_v1',
+    })
+    case = document['cases'][0]
+    case.update({
+        'family': 'corner_origin',
+        'acceptance_family': 'corner_origin_diagonal_sector',
+        'acceptance_partition': 'development',
+        'known_topology': {
+            'expected_local_minima': 1,
+            'expected_global_minima': 1,
+        },
+        'metric_applicability': {
+            'escape_attempt': True,
+            'escape_duration': True,
+            'orbit_count': True,
+            'revisit': False,
+            'delay': False,
+            'saturation': False,
+        },
+        'starts': [{
+            'id': 'corner_start',
+            'x_m': 0.0,
+            'y_m': 0.0,
+            'yaw_rad': 0.0,
+        }],
+        'sources': [
+            {
+                'id': 'local',
+                'x_m': 1.0606601717798212,
+                'y_m': 1.0606601717798212,
+                'relative_lumen_input': 400.0,
+                'evaluation_role': 'local_minimum',
+            },
+            {
+                'id': 'global',
+                'x_m': 3.5,
+                'y_m': 3.5,
+                'relative_lumen_input': 1600.0,
+                'evaluation_role': 'goal',
+            },
+        ],
+    })
+    case['algorithm']['launch_overrides'].update({
+        'wall_margin_m': 0.20,
+        'gaussian_fill_max_fills': 1,
+    })
+    case['success'] = {
+        'all_of': [
+            'recording_complete',
+            'cleanup_complete',
+            'required_state_path',
+            'required_events',
+            'no_forbidden_states',
+            'no_forbidden_events',
+            'collision_expectation',
+            'local_recovery_stage',
+            'post_recovery_global_proximity',
+            'fill_cardinality',
+        ],
+        'controller': {
+            'contract_id': 'case_a',
+            'expected_verification_outcome': 'below_target_extremum',
+            'reachability_argument': (
+                'The declared weaker local precedes the stronger global.'
+            ),
+            'required_state_path': [
+                'SEARCH',
+                'VERIFY_EXTREMUM',
+                'DESIGN_OR_MERGE_FILL',
+                'ESCAPE_REPULSE',
+                'RECENTER',
+                'SEARCH',
+            ],
+            'required_events': [
+                'CONVERGENCE_CONFIRMED',
+                'FILL_CREATED',
+                'ESCAPE_STARTED',
+                'RECENTER_STARTED',
+                'RECENTER_COMPLETE',
+            ],
+            'forbidden_states': ['FAILSAFE'],
+            'forbidden_events': ['TIMEOUT', 'FAILSAFE'],
+        },
+        'ground_truth': {
+            'method': 'declared_global_proximity',
+            'global_source_id': 'global',
+            'proximity_radius_m': 0.35,
+        },
+        'staged_recovery': {
+            'local_source_ids': ['local'],
+            'global_source_id': 'global',
+            'convergence_to_local_max_m': 0.60,
+            'convergence_to_global_min_m': 0.75,
+            'fill_to_convergence_max_m': 0.50,
+            'global_proximity_radius_m': 0.35,
+        },
+        'collision_expected': False,
+    }
+    case['success']['result_scopes'] = {
+        'full_lifecycle': {
+            'anchor_state': 'SEARCH',
+            'boundary_state': None,
+            'graceful_stop': False,
+            'all_of': list(case['success']['all_of']),
+        },
+    }
+    return document
+
+
 @lru_cache(maxsize=1)
 def _v4_production_truth():
     return aggregate_field_truth.derive_aggregate_field_truth(
@@ -275,7 +410,7 @@ def test_checked_in_suites_validate_and_catalog_marks_gaps():
 @pytest.mark.parametrize(
     ('mutation', 'match'),
     [
-        (lambda doc: doc.update({'schema_version': 5}), 'schema_version'),
+        (lambda doc: doc.update({'schema_version': 6}), 'schema_version'),
         (
             lambda doc: doc.update({'mode': 'physical'}),
             'mode must be simulation',
@@ -796,6 +931,249 @@ def test_schema_v4_requires_repeat_reference_only_for_reproducibility(
     run = expand_suite(_load(tmp_path, document))[0][0]
 
     assert run['repeat_reference']['case_key'] == 'a' * 64
+
+
+def test_schema_v5_resolves_corner_geometry_and_known_topology(tmp_path):
+    """Bind the shifted world, local polar metadata, and exact fill limit."""
+    suite = _load(tmp_path, _v5_document())
+    runs, unsupported = expand_suite(suite)
+    run = runs[0]
+
+    assert unsupported == []
+    assert run['schema_version'] == 5
+    assert run['validation'] == {
+        'world': True,
+        'contacts_enabled': True,
+        'geometry_profile': 'corner_origin_diagonal_sector_v1',
+    }
+    assert run['known_topology'] == {
+        'expected_global_minima': 1,
+        'expected_local_minima': 1,
+    }
+    assert run['algorithm']['launch_overrides'][
+        'gaussian_fill_max_fills'
+    ] == 1
+    geometry = run['geometry']
+    assert geometry['world_file'] == (
+        'gesc_gaussian_corner_origin_validation.world'
+    )
+    assert geometry['bounds_m'] == [-0.25, 3.75, -0.25, 3.75]
+    assert geometry['allowed_center_domain_m'] == pytest.approx([
+        -0.05, 3.55, -0.05, 3.55
+    ])
+    local = geometry['local_placements'][0]
+    assert local['radius_m'] == pytest.approx(1.5)
+    assert local['angle_rad'] == pytest.approx(math.pi / 4.0)
+    assert local['angle_deg'] == pytest.approx(45.0)
+    assert deterministic_case_key(run) == run['case_key']
+
+
+@pytest.mark.parametrize(
+    ('mutation', 'match'),
+    [
+        (
+            lambda doc: doc['defaults'].update({
+                'bounds_m': [-2.0, 2.0, -2.0, 2.0],
+            }),
+            'bounds_m must match',
+        ),
+        (
+            lambda doc: doc['cases'][0]['starts'][0].update({
+                'x_m': 0.1,
+            }),
+            'fixed geometry-profile start',
+        ),
+        (
+            lambda doc: doc['cases'][0]['sources'][1].update({
+                'x_m': 3.4,
+            }),
+            'fixed global point',
+        ),
+        (
+            lambda doc: doc['cases'][0]['sources'][0].update({
+                'x_m': -1.0,
+                'y_m': 0.0,
+            }),
+            'angle is outside',
+        ),
+        (
+            lambda doc: doc['cases'][0]['algorithm'][
+                'launch_overrides'
+            ].update({'wall_margin_m': 0.35}),
+            'wall_margin_m must equal',
+        ),
+        (
+            lambda doc: doc['cases'][0]['algorithm'][
+                'launch_overrides'
+            ].update({'gaussian_fill_max_fills': 2}),
+            'must be an integer equal',
+        ),
+        (
+            lambda doc: doc['cases'][0]['known_topology'].update({
+                'expected_global_minima': 2,
+            }),
+            'supports exactly one declared local',
+        ),
+        (
+            lambda doc: doc['defaults'].update({
+                'simulation_contacts_enabled': False,
+            }),
+            'requires simulation contacts',
+        ),
+        (
+            lambda doc: doc['cases'][0]['success'][
+                'staged_recovery'
+            ].update({'global_proximity_radius_m': 0.34}),
+            'global proximity boundary',
+        ),
+    ],
+)
+def test_schema_v5_rejects_geometry_topology_or_stop_drift(
+    tmp_path,
+    mutation,
+    match,
+):
+    """Reject any drift from the user-approved M1 launch contract."""
+    document = _v5_document()
+    mutation(document)
+    with pytest.raises(ValueError, match=match):
+        _load(tmp_path, document)
+
+
+@pytest.mark.parametrize(
+    ('x_m', 'y_m', 'radius_m', 'angle_rad'),
+    [
+        (1.0, 0.0, 1.0, 0.0),
+        (0.0, 2.0, 2.0, math.pi / 2.0),
+    ],
+)
+def test_schema_v5_accepts_inclusive_sector_boundaries(
+    tmp_path,
+    x_m,
+    y_m,
+    radius_m,
+    angle_rad,
+):
+    """Keep both axes and both radial endpoints inside the closed sector."""
+    document = _v5_document()
+    document['cases'][0]['sources'][0].update({
+        'x_m': x_m,
+        'y_m': y_m,
+    })
+
+    run = expand_suite(_load(tmp_path, document))[0][0]
+    placement = run['geometry']['local_placements'][0]
+
+    assert placement['radius_m'] == pytest.approx(radius_m)
+    assert placement['angle_rad'] == pytest.approx(angle_rad)
+
+
+def test_corner_origin_world_has_exact_inner_faces_and_preserves_old_world():
+    """Verify shifted wall poses without changing the centered V1-V6 world."""
+    assert hashlib.sha256(HISTORICAL_WORLD.read_bytes()).hexdigest() == (
+        '8ecc1a231efec24401d74fef3cd5139d48c6029f88e71d044cefdf2fd14c5bef'
+    )
+    world = ET.parse(CORNER_ORIGIN_WORLD).getroot().find('world')
+    assert world is not None
+    models = {
+        model.attrib['name']: model
+        for model in world.findall('model')
+    }
+    expected = {
+        'corner_origin_validation_wall_west': {
+            'pose': [-0.30, 1.75],
+            'size': [0.10, 4.20],
+            'inner_face': -0.25,
+        },
+        'corner_origin_validation_wall_east': {
+            'pose': [3.80, 1.75],
+            'size': [0.10, 4.20],
+            'inner_face': 3.75,
+        },
+        'corner_origin_validation_wall_south': {
+            'pose': [1.75, -0.30],
+            'size': [4.00, 0.10],
+            'inner_face': -0.25,
+        },
+        'corner_origin_validation_wall_north': {
+            'pose': [1.75, 3.80],
+            'size': [4.00, 0.10],
+            'inner_face': 3.75,
+        },
+    }
+    for name, contract in expected.items():
+        model = models[name]
+        pose = [float(value) for value in model.findtext('pose').split()]
+        size = [
+            float(value)
+            for value in model.findtext(
+                'link/collision/geometry/box/size'
+            ).split()
+        ]
+        assert pose[:2] == pytest.approx(contract['pose'])
+        assert size[:2] == pytest.approx(contract['size'])
+        if name.endswith(('west', 'east')):
+            face = pose[0] + (
+                size[0] / 2.0 if name.endswith('west')
+                else -size[0] / 2.0
+            )
+        else:
+            face = pose[1] + (
+                size[1] / 2.0 if name.endswith('south')
+                else -size[1] / 2.0
+            )
+        assert face == pytest.approx(contract['inner_face'])
+
+
+def test_phase08_7_manifest_seals_all_historical_scenario_bytes_and_keys():
+    """Keep every pre-M1 scenario plus v1-v4 normalized launch identity."""
+    from ros_esc.scenario_runner.run_scenario import build_launch_command
+
+    manifest = json.loads(HISTORICAL_IMMUTABILITY.read_text(encoding='utf-8'))
+    scenario_root = (
+        PACKAGE_ROOT / 'ros_esc/scenario_runner/scenarios'
+    )
+    repository_root = PACKAGE_ROOT.parents[2]
+    historical_world = manifest['historical_world']
+    assert hashlib.sha256(
+        (repository_root / historical_world['path']).read_bytes()
+    ).hexdigest() == historical_world['sha256']
+
+    for filename, expected_sha in manifest[
+        'scenario_source_sha256'
+    ].items():
+        assert hashlib.sha256(
+            (scenario_root / filename).read_bytes()
+        ).hexdigest() == expected_sha
+
+    for filename, expected in manifest[
+        'normalized_suite_digests'
+    ].items():
+        suite = load_suite(scenario_root / filename)
+        runs, unsupported = expand_suite(suite)
+        case_key_bytes = json.dumps(
+            [run['case_key'] for run in runs],
+            separators=(',', ':'),
+        ).encode('utf-8')
+        launch_bytes = json.dumps(
+            [
+                build_launch_command(
+                    run,
+                    gui=suite['execution']['gazebo_gui'],
+                )
+                for run in runs
+            ],
+            separators=(',', ':'),
+        ).encode('utf-8')
+        assert suite['schema_version'] == expected['schema_version']
+        assert len(runs) == expected['resolved_run_count']
+        assert len(unsupported) == expected['unsupported_count']
+        assert hashlib.sha256(case_key_bytes).hexdigest() == expected[
+            'case_keys_sha256'
+        ]
+        assert hashlib.sha256(launch_bytes).hexdigest() == expected[
+            'launch_argv_sha256'
+        ]
 
 
 def test_historical_v2_activation_hash_and_case_keys_are_unchanged():

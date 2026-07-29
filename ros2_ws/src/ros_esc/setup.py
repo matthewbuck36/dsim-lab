@@ -21,7 +21,7 @@ scenario_files = [
     'ros_esc/scenario_runner/scenarios/phase08_v2_reproducibility.yaml',
     'ros_esc/scenario_runner/scenarios/phase08_v4r2_activation.yaml',
     *sorted(glob(
-        'ros_esc/scenario_runner/scenarios/phase08_v[3456]_*'
+        'ros_esc/scenario_runner/scenarios/phase08_v[34567]_*'
     )),
 ]
 

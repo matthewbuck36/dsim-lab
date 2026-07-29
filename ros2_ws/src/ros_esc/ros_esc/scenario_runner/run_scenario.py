@@ -4,6 +4,7 @@
 
 import argparse
 import datetime as dt
+import itertools
 import json
 import math
 import os
@@ -90,6 +91,11 @@ VALIDATION_WORLD = (
     / 'ros2_ws/src/turtlebot3_rotating_sensor/worlds/'
     'gesc_gaussian_validation.world'
 )
+CORNER_ORIGIN_VALIDATION_WORLD = (
+    REPOSITORY_ROOT
+    / 'ros2_ws/src/turtlebot3_rotating_sensor/worlds/'
+    'gesc_gaussian_corner_origin_validation.world'
+)
 STATE_NAMES = {
     value: name.removeprefix('STATE_')
     for name, value in vars(AlgorithmState).items()
@@ -153,6 +159,12 @@ def build_launch_command(resolved, cost_path=None, gui=False):
     contact_probe_enabled = (
         resolved['success'].get('collision_expected') is True
     )
+    validation_world = VALIDATION_WORLD
+    if resolved.get('schema_version', 1) >= 5:
+        world_file = resolved.get('geometry', {}).get('world_file')
+        if world_file != CORNER_ORIGIN_VALIDATION_WORLD.name:
+            raise ValueError('resolved geometry world file is unsupported')
+        validation_world = CORNER_ORIGIN_VALIDATION_WORLD
     arguments = {
         'gazebo_gui': gui,
         'gazebo_use_random_seed': True,
@@ -185,7 +197,7 @@ def build_launch_command(resolved, cost_path=None, gui=False):
         ],
         'recenter_after_escape': ablations['recenter_enabled'],
         'gazebo_world': (
-            str(VALIDATION_WORLD)
+            str(validation_world)
             if resolved['validation']['world'] else ''
         ),
         'simulation_contacts_enabled': resolved[
@@ -266,6 +278,11 @@ def build_metadata(resolved, operator, experiment_version, operator_notes):
             'repeat_reference': resolved['repeat_reference'],
             'metric_applicability': resolved['metric_applicability'],
         })
+    if resolved.get('schema_version', 1) >= 5:
+        scenario_runner.update({
+            'known_topology': resolved['known_topology'],
+            'geometry': resolved['geometry'],
+        })
     return {
         'schema_version': 1,
         'experiment_version': experiment_version,
@@ -290,6 +307,13 @@ def build_metadata(resolved, operator, experiment_version, operator_notes):
             },
             'disturbances': resolved['disturbances'],
             'validation': resolved['validation'],
+            **(
+                {
+                    'geometry': resolved['geometry'],
+                    'known_topology': resolved['known_topology'],
+                }
+                if resolved.get('schema_version', 1) >= 5 else {}
+            ),
         },
         'robot_starting_pose': {
             'x_m': resolved['start']['x_m'],
@@ -852,6 +876,236 @@ def _run_record_to_boundary(
     }
 
 
+def _run_record_to_global_proximity(
+    command,
+    wall_timeout_sec,
+    shutdown_grace_sec,
+    resolved,
+):
+    """Stop only at a verified post-recovery global odometry sample."""
+    context = rclpy.context.Context()
+    context_initialized = False
+    node = None
+    executor = None
+    node_added = False
+    process = None
+    primary_error = None
+    sequence = 0
+    state_messages = []
+    event_messages = []
+    fill_records = []
+    observed = {
+        'stage_a': False,
+        'fill_cardinality': False,
+        'stage_a_evidence': None,
+        'stage_error': None,
+        'global_proximity': False,
+        'global_sample': None,
+    }
+    staged_contract = resolved['success']['staged_recovery']
+    sources = {source['id']: source for source in resolved['sources']}
+    global_source = sources[staged_contract['global_source_id']]
+
+    def next_sequence():
+        nonlocal sequence
+        sequence += 1
+        return sequence
+
+    def refresh_stage_a():
+        (
+            stage_a_passed,
+            cardinality_passed,
+            evidence,
+            error,
+        ) = _staged_recovery_evidence(
+            resolved,
+            state_messages,
+            event_messages,
+            fill_records,
+        )
+        observed['stage_a'] = stage_a_passed is True
+        observed['fill_cardinality'] = cardinality_passed is True
+        observed['stage_a_evidence'] = evidence
+        observed['stage_error'] = error
+
+    def state_callback(message):
+        state_messages.append((next_sequence(), message))
+        refresh_stage_a()
+
+    def event_callback(message):
+        event_messages.append((next_sequence(), message))
+        refresh_stage_a()
+
+    def fill_callback(message):
+        fill_records.append((next_sequence(), message))
+        refresh_stage_a()
+
+    def odometry_callback(message):
+        sample_sequence = next_sequence()
+        refresh_stage_a()
+        if (
+            not observed['stage_a']
+            or not observed['fill_cardinality']
+        ):
+            return
+        completion_sequence = observed['stage_a_evidence'].get(
+            'stage_a_completion_stamp'
+        )
+        if (
+            completion_sequence is None
+            or sample_sequence <= completion_sequence
+        ):
+            return
+        try:
+            x_value = float(message.pose.pose.position.x)
+            y_value = float(message.pose.pose.position.y)
+        except (AttributeError, TypeError, ValueError):
+            return
+        if not all(math.isfinite(value) for value in (x_value, y_value)):
+            return
+        distance = math.hypot(
+            x_value - global_source['x_m'],
+            y_value - global_source['y_m'],
+        )
+        if distance <= staged_contract['global_proximity_radius_m']:
+            observed['global_proximity'] = True
+            observed['global_sample'] = {
+                'callback_sequence': sample_sequence,
+                'position': {'x_m': x_value, 'y_m': y_value},
+                'distance_m': distance,
+                'proximity_radius_m': staged_contract[
+                    'global_proximity_radius_m'
+                ],
+                'interpolation_used': False,
+            }
+
+    timed_out = False
+    proximity_stop = False
+    try:
+        rclpy.init(context=context)
+        context_initialized = True
+        node = rclpy.create_node(
+            f'phase08_v7_global_stop_{uuid.uuid4().hex[:8]}',
+            context=context,
+        )
+        executor = SingleThreadedExecutor(context=context)
+        executor.add_node(node)
+        node_added = True
+        node.create_subscription(
+            AlgorithmState,
+            '/gesc_gaussian/algorithm_state',
+            state_callback,
+            10,
+        )
+        node.create_subscription(
+            AlgorithmEvent,
+            '/gesc_gaussian/algorithm_events',
+            event_callback,
+            10,
+        )
+        node.create_subscription(
+            GaussianFill,
+            '/gesc_gaussian/gaussian_fills',
+            fill_callback,
+            10,
+        )
+        node.create_subscription(
+            Odometry,
+            '/odom',
+            odometry_callback,
+            10,
+        )
+        with tempfile.TemporaryFile(mode='w+t', encoding='utf-8') as output:
+            process = subprocess.Popen(
+                command,
+                stdout=output,
+                stderr=subprocess.STDOUT,
+                text=True,
+                start_new_session=True,
+            )
+            deadline = time.monotonic() + wall_timeout_sec
+            while process.poll() is None:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0.0:
+                    timed_out = True
+                    break
+                executor.spin_once(timeout_sec=min(0.1, remaining))
+                if observed['global_proximity']:
+                    proximity_stop = True
+                    break
+            if proximity_stop or timed_out:
+                cancellation_grace_sec = shutdown_grace_sec
+                if proximity_stop:
+                    cancellation_grace_sec += (
+                        BOUNDARY_RECORD_FINALIZATION_GRACE_SEC
+                    )
+                _cancel_scoped_process(
+                    process,
+                    cancellation_grace_sec,
+                    drain_output=False,
+                )
+            output.flush()
+            output.seek(0)
+            stdout = output.read()
+    except BaseException as exc:
+        primary_error = exc
+        if process is not None:
+            try:
+                _cancel_scoped_process(
+                    process,
+                    shutdown_grace_sec,
+                    drain_output=False,
+                )
+            except BaseException:
+                pass
+        raise
+    finally:
+        cleanup_error = None
+        if executor is not None and node_added:
+            try:
+                executor.remove_node(node)
+            except BaseException as exc:
+                cleanup_error = exc
+        if executor is not None:
+            try:
+                executor.shutdown()
+            except BaseException as exc:
+                if cleanup_error is None:
+                    cleanup_error = exc
+        if node is not None:
+            try:
+                node.destroy_node()
+            except BaseException as exc:
+                if cleanup_error is None:
+                    cleanup_error = exc
+        if context_initialized:
+            try:
+                rclpy.shutdown(context=context)
+            except BaseException as exc:
+                if cleanup_error is None:
+                    cleanup_error = exc
+        if primary_error is None and cleanup_error is not None:
+            raise cleanup_error
+    return {
+        'return_code': process.returncode,
+        'timed_out': timed_out,
+        'stdout': stdout,
+        'session_id': process.pid,
+        'graceful_boundary_stop': False,
+        'boundary_anchor_state': None,
+        'boundary_state': None,
+        'boundary_observed': False,
+        'boundary_required_events': [],
+        'boundary_required_events_observed': [],
+        'graceful_global_proximity_stop': proximity_stop,
+        'stage_a_observed_live': observed['stage_a'],
+        'fill_cardinality_observed_live': observed['fill_cardinality'],
+        'global_proximity_observed_live': observed['global_proximity'],
+        'global_proximity_sample_live': observed['global_sample'],
+        'staged_monitor_error': observed['stage_error'],
+    }
+
+
 def run_record_process(
     command,
     wall_timeout_sec,
@@ -859,8 +1113,18 @@ def run_record_process(
     anchor_state=None,
     boundary_state=None,
     boundary_required_events=None,
+    staged_recovery=None,
 ):
     """Run record_run with a wall timeout and scoped session escalation."""
+    if boundary_state is not None and staged_recovery is not None:
+        raise ValueError('only one live graceful-stop contract is allowed')
+    if staged_recovery is not None:
+        return _run_record_to_global_proximity(
+            command,
+            wall_timeout_sec,
+            shutdown_grace_sec,
+            staged_recovery,
+        )
     if boundary_state is not None:
         return _run_record_to_boundary(
             command,
@@ -1169,6 +1433,11 @@ def _unavailable_outcomes(reason, readiness_interval_available=False):
         'route_blocker_fill_distance_m': None,
         'observed_local_recovery_passed': None,
         'observed_local_recovery': None,
+        'local_recovery_stage_passed': None,
+        'local_recovery_stage': None,
+        'fill_cardinality_passed': None,
+        'post_recovery_global_proximity_passed': None,
+        'post_recovery_global_proximity': None,
         'collision_evidence_available': False,
         'collision_observed': None,
         'collision_expectation_passed': None,
@@ -1180,6 +1449,17 @@ def _unavailable_outcomes(reason, readiness_interval_available=False):
 def _ground_truth_targets(resolved):
     """Return manual legacy goals or schema-v4 aggregate targets."""
     ground_truth = resolved['success']['ground_truth']
+    if resolved.get('schema_version', 1) >= 5:
+        global_source_id = ground_truth['global_source_id']
+        return [
+            {
+                'id': source['id'],
+                'x_m': source['x_m'],
+                'y_m': source['y_m'],
+            }
+            for source in resolved['sources']
+            if source['id'] == global_source_id
+        ]
     if resolved.get('schema_version', 1) >= 4:
         aggregate = ground_truth.get('aggregate_field', {})
         return [
@@ -1336,6 +1616,474 @@ def _observed_local_recovery(resolved, event_messages, fill_messages):
     )
 
 
+def _message_source_timestamp(message):
+    try:
+        value = float(message.source_timestamp)
+    except (AttributeError, TypeError, ValueError):
+        return None
+    if (
+        not getattr(message, 'source_timestamp_valid', False)
+        or not math.isfinite(value)
+    ):
+        return None
+    return value
+
+
+def _event_value_map(message):
+    names = list(getattr(message, 'value_names', []))
+    values = list(getattr(message, 'values', []))
+    if len(names) != len(values):
+        raise ValueError('algorithm event names and values have different sizes')
+    return dict(zip(names, values))
+
+
+def _recovery_episodes(state_records, expected_count):
+    pattern = [
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'DESIGN_OR_MERGE_FILL',
+        'ESCAPE_REPULSE',
+        'RECENTER',
+        'SEARCH',
+    ]
+    episodes = []
+    cursor = 0
+    while cursor + len(pattern) <= len(state_records):
+        match = next(
+            (
+                index
+                for index in range(
+                    cursor,
+                    len(state_records) - len(pattern) + 1,
+                )
+                if [
+                    name
+                    for unused_stamp, name
+                    in state_records[index:index + len(pattern)]
+                ] == pattern
+            ),
+            None,
+        )
+        if match is None:
+            break
+        end = match + len(pattern) - 1
+        episodes.append({
+            'start_stamp': state_records[match][0],
+            'completion_stamp': state_records[end][0],
+            'state_path': list(pattern),
+        })
+        if len(episodes) >= expected_count:
+            break
+        cursor = end
+    return episodes
+
+
+def _created_fill_clusters(event_messages, fill_records):
+    """Join unique FILL_CREATED events to typed cluster identities."""
+    typed_by_fill_id = {}
+    typed_cluster_ids = set()
+    for stamp, message in fill_records:
+        try:
+            fill_id = int(message.fill_id)
+            cluster_id = int(message.cluster_id)
+            revision = int(message.revision)
+        except (AttributeError, TypeError, ValueError):
+            return None, 'typed fill identity is malformed'
+        if fill_id <= 0 or cluster_id <= 0 or revision < 0:
+            return None, 'typed fill identity must be positive'
+        typed_cluster_ids.add(cluster_id)
+        key = (cluster_id, revision)
+        existing = typed_by_fill_id.get(fill_id)
+        record = {
+            'bag_stamp': stamp,
+            'message': message,
+            'fill_id': fill_id,
+            'cluster_id': cluster_id,
+            'revision': revision,
+            'version_key': key,
+        }
+        if existing is not None and (
+            existing['cluster_id'] != cluster_id
+            or existing['revision'] != revision
+        ):
+            return None, 'one typed fill_id maps to conflicting identities'
+        typed_by_fill_id.setdefault(fill_id, record)
+
+    created_by_fill_id = {}
+    for bag_stamp, message in event_messages:
+        if message.event_type != AlgorithmEvent.EVENT_FILL_CREATED:
+            continue
+        try:
+            fill_id = int(message.fill_id)
+        except (AttributeError, TypeError, ValueError):
+            return None, 'FILL_CREATED fill_id is malformed'
+        if not message.fill_id_valid or fill_id <= 0:
+            return None, 'FILL_CREATED lacks a valid typed fill_id'
+        try:
+            values = _event_value_map(message)
+            raw_cluster_id = float(values['cluster_id'])
+            cluster_id = int(raw_cluster_id)
+        except (KeyError, TypeError, ValueError) as exc:
+            return None, f'FILL_CREATED cluster_id is malformed: {exc}'
+        if (
+            not math.isfinite(raw_cluster_id)
+            or raw_cluster_id != cluster_id
+            or cluster_id <= 0
+        ):
+            return None, 'FILL_CREATED cluster_id must be a positive integer'
+        typed = typed_by_fill_id.get(fill_id)
+        if typed is None:
+            return None, 'FILL_CREATED has no matching typed fill record'
+        if typed['cluster_id'] != cluster_id:
+            return None, 'FILL_CREATED and typed fill cluster_id disagree'
+        existing = created_by_fill_id.get(fill_id)
+        if existing is not None and existing['cluster_id'] != cluster_id:
+            return None, 'repeated FILL_CREATED identity is inconsistent'
+        created_by_fill_id.setdefault(fill_id, {
+            'bag_stamp': bag_stamp,
+            'event': message,
+            'fill_id': fill_id,
+            'cluster_id': cluster_id,
+            'typed': typed,
+        })
+
+    created = sorted(
+        created_by_fill_id.values(),
+        key=lambda item: (
+            _message_source_timestamp(item['typed']['message'])
+            if _message_source_timestamp(item['typed']['message'])
+            is not None else math.inf,
+            item['bag_stamp'],
+            item['fill_id'],
+        ),
+    )
+    created_cluster_ids = {item['cluster_id'] for item in created}
+    active_cluster_ids = set()
+    latest_by_cluster = {}
+    for record in typed_by_fill_id.values():
+        current = latest_by_cluster.get(record['cluster_id'])
+        if current is None or (
+            record['revision'],
+            record['bag_stamp'],
+        ) > (
+            current['revision'],
+            current['bag_stamp'],
+        ):
+            latest_by_cluster[record['cluster_id']] = record
+    for cluster_id, record in latest_by_cluster.items():
+        message = record['message']
+        if message.active and not message.superseded:
+            active_cluster_ids.add(cluster_id)
+    return {
+        'created': created,
+        'created_cluster_ids': created_cluster_ids,
+        'typed_cluster_ids': typed_cluster_ids,
+        'active_cluster_ids': active_cluster_ids,
+    }, None
+
+
+def _staged_recovery_evidence(
+    resolved,
+    state_messages,
+    event_messages,
+    fill_records,
+):
+    """Evaluate Stage A and exact unique-cluster cardinality independently."""
+    contract = resolved.get('success', {}).get('staged_recovery')
+    if contract is None:
+        return None, None, None, None
+    expected_count = resolved['known_topology']['expected_local_minima']
+    state_records, state_error = _canonical_state_records(state_messages)
+    unused_event_records, event_error = _canonical_event_records(
+        event_messages
+    )
+    del unused_event_records
+    if state_error or event_error:
+        return None, None, None, state_error or event_error
+    episodes = _recovery_episodes(state_records, expected_count)
+    clusters, cluster_error = _created_fill_clusters(
+        event_messages,
+        fill_records,
+    )
+    if cluster_error is not None:
+        return None, None, None, cluster_error
+
+    convergence_records = []
+    for bag_stamp, message in event_messages:
+        if (
+            message.event_type
+            != AlgorithmEvent.EVENT_CONVERGENCE_CONFIRMED
+        ):
+            continue
+        source_stamp = _message_source_timestamp(message)
+        if source_stamp is None:
+            return None, None, None, (
+                'CONVERGENCE_CONFIRMED source timestamp is invalid'
+            )
+        try:
+            values = _event_value_map(message)
+            x_value = float(values['fill_center_x_m'])
+            y_value = float(values['fill_center_y_m'])
+        except (KeyError, TypeError, ValueError):
+            return None, None, None, (
+                'CONVERGENCE_CONFIRMED coordinates are malformed'
+            )
+        if not all(math.isfinite(value) for value in (x_value, y_value)):
+            return None, None, None, (
+                'CONVERGENCE_CONFIRMED coordinates are nonfinite'
+            )
+        convergence_records.append({
+            'bag_stamp': bag_stamp,
+            'source_timestamp': source_stamp,
+            'x_m': x_value,
+            'y_m': y_value,
+        })
+
+    used_convergences = set()
+    candidates = []
+    for created in clusters['created']:
+        fill = created['typed']['message']
+        fill_stamp = _message_source_timestamp(fill)
+        if fill_stamp is None:
+            return None, None, None, (
+                'typed fill source timestamp is invalid'
+            )
+        try:
+            fill_x = float(fill.center_x)
+            fill_y = float(fill.center_y)
+        except (AttributeError, TypeError, ValueError):
+            return None, None, None, 'typed fill center is malformed'
+        if not all(math.isfinite(value) for value in (fill_x, fill_y)):
+            return None, None, None, 'typed fill center is nonfinite'
+        eligible = [
+            (index, record)
+            for index, record in enumerate(convergence_records)
+            if (
+                index not in used_convergences
+                and record['source_timestamp'] <= fill_stamp
+            )
+        ]
+        if not eligible:
+            candidates.append({
+                'cluster_id': created['cluster_id'],
+                'fill_id': created['fill_id'],
+                'reason': 'no unique preceding convergence',
+            })
+            continue
+        convergence_index, convergence = max(
+            eligible,
+            key=lambda item: (
+                item[1]['source_timestamp'],
+                item[1]['bag_stamp'],
+            ),
+        )
+        used_convergences.add(convergence_index)
+        candidates.append({
+            'cluster_id': created['cluster_id'],
+            'fill_id': created['fill_id'],
+            'fill_source_timestamp': fill_stamp,
+            'fill_center': {'x_m': fill_x, 'y_m': fill_y},
+            'convergence_source_timestamp': convergence[
+                'source_timestamp'
+            ],
+            'convergence_point': {
+                'x_m': convergence['x_m'],
+                'y_m': convergence['y_m'],
+            },
+            'fill_to_convergence_m': math.hypot(
+                fill_x - convergence['x_m'],
+                fill_y - convergence['y_m'],
+            ),
+        })
+
+    sources = {source['id']: source for source in resolved['sources']}
+    global_source = sources[contract['global_source_id']]
+    local_ids = list(contract['local_source_ids'])
+    best_assignment = None
+    best_distance = math.inf
+    if len(candidates) >= len(local_ids):
+        for selected in itertools.permutations(
+            candidates,
+            len(local_ids),
+        ):
+            assignments = []
+            total_distance = 0.0
+            valid = True
+            for local_id, candidate in zip(local_ids, selected):
+                convergence = candidate.get('convergence_point')
+                if convergence is None:
+                    valid = False
+                    break
+                local = sources[local_id]
+                local_distance = math.hypot(
+                    convergence['x_m'] - local['x_m'],
+                    convergence['y_m'] - local['y_m'],
+                )
+                global_distance = math.hypot(
+                    convergence['x_m'] - global_source['x_m'],
+                    convergence['y_m'] - global_source['y_m'],
+                )
+                valid = valid and (
+                    local_distance
+                    <= contract['convergence_to_local_max_m']
+                    and global_distance
+                    >= contract['convergence_to_global_min_m']
+                    and candidate['fill_to_convergence_m']
+                    <= contract['fill_to_convergence_max_m']
+                )
+                assignments.append({
+                    **candidate,
+                    'local_source_id': local_id,
+                    'convergence_to_local_m': local_distance,
+                    'convergence_to_global_m': global_distance,
+                })
+                total_distance += local_distance
+            if valid and total_distance < best_distance:
+                best_assignment = assignments
+                best_distance = total_distance
+
+    event_names, event_error = _canonical_event_sequence([
+        message for unused_stamp, message in event_messages
+    ])
+    if event_error is not None:
+        return None, None, None, event_error
+    required_event_counts = {
+        name: event_names.count(name)
+        for name in (
+            'CONVERGENCE_CONFIRMED',
+            'ESCAPE_STARTED',
+            'RECENTER_STARTED',
+            'RECENTER_COMPLETE',
+        )
+    }
+    required_event_counts['FILL_CREATED'] = len(
+        clusters['created_cluster_ids']
+    )
+    lifecycle_events_passed = all(
+        count >= expected_count
+        for count in required_event_counts.values()
+    )
+    stage_a_passed = (
+        len(episodes) >= expected_count
+        and best_assignment is not None
+        and lifecycle_events_passed
+    )
+    fill_cardinality_passed = (
+        len(clusters['created_cluster_ids']) == expected_count
+        and clusters['created_cluster_ids'] == clusters['typed_cluster_ids']
+        and clusters['created_cluster_ids'] == clusters['active_cluster_ids']
+        and best_assignment is not None
+        and {
+            item['cluster_id'] for item in best_assignment
+        } == clusters['created_cluster_ids']
+    )
+    assigned_cluster_ids = {
+        item['cluster_id'] for item in (best_assignment or [])
+    }
+    evidence = {
+        'expected_local_minima': expected_count,
+        'required_state_path': [
+            'SEARCH',
+            'VERIFY_EXTREMUM',
+            'DESIGN_OR_MERGE_FILL',
+            'ESCAPE_REPULSE',
+            'RECENTER',
+            'SEARCH',
+        ],
+        'completed_episode_count': len(episodes),
+        'episodes': episodes,
+        'stage_a_completion_stamp': (
+            episodes[expected_count - 1]['completion_stamp']
+            if len(episodes) >= expected_count else None
+        ),
+        'required_event_counts': required_event_counts,
+        'created_cluster_ids': sorted(clusters['created_cluster_ids']),
+        'typed_cluster_ids': sorted(clusters['typed_cluster_ids']),
+        'active_cluster_ids': sorted(clusters['active_cluster_ids']),
+        'assignments': best_assignment or [],
+        'unassigned_cluster_ids': sorted(
+            clusters['created_cluster_ids'] - assigned_cluster_ids
+        ),
+        'thresholds': dict(contract),
+    }
+    return stage_a_passed, fill_cardinality_passed, evidence, None
+
+
+def _post_recovery_global_proximity(
+    resolved,
+    stage_a_passed,
+    stage_a_evidence,
+    odometry_records,
+):
+    """Find the first finite, noninterpolated post-Stage-A global sample."""
+    contract = resolved.get('success', {}).get('staged_recovery')
+    if contract is None:
+        return None, None, None
+    if not stage_a_passed or not stage_a_evidence:
+        return False, {'reason': 'Stage A did not complete'}, None
+    completion_stamp = stage_a_evidence.get('stage_a_completion_stamp')
+    if completion_stamp is None:
+        return None, None, 'Stage A completion stamp is unavailable'
+    sources = {source['id']: source for source in resolved['sources']}
+    global_source = sources[contract['global_source_id']]
+    invalid_samples = 0
+    valid_samples = 0
+    for sample_index, (bag_stamp, message) in enumerate(odometry_records):
+        if bag_stamp <= completion_stamp:
+            continue
+        try:
+            x_value = float(message.pose.pose.position.x)
+            y_value = float(message.pose.pose.position.y)
+        except (AttributeError, TypeError, ValueError):
+            invalid_samples += 1
+            continue
+        if not all(math.isfinite(value) for value in (x_value, y_value)):
+            invalid_samples += 1
+            continue
+        valid_samples += 1
+        distance = math.hypot(
+            x_value - global_source['x_m'],
+            y_value - global_source['y_m'],
+        )
+        if distance <= contract['global_proximity_radius_m']:
+            return True, {
+                'global_source_id': contract['global_source_id'],
+                'global_point': {
+                    'x_m': global_source['x_m'],
+                    'y_m': global_source['y_m'],
+                },
+                'proximity_radius_m': contract[
+                    'global_proximity_radius_m'
+                ],
+                'sample_bag_stamp': bag_stamp,
+                'sample_index': sample_index,
+                'position': {'x_m': x_value, 'y_m': y_value},
+                'distance_m': distance,
+                'post_stage_a_valid_sample_count': valid_samples,
+                'post_stage_a_invalid_sample_count': invalid_samples,
+                'interpolation_used': False,
+            }, None
+    return False, {
+        'reason': 'no qualifying post-Stage-A odometry sample',
+        'global_source_id': contract['global_source_id'],
+        'proximity_radius_m': contract['global_proximity_radius_m'],
+        'post_stage_a_valid_sample_count': valid_samples,
+        'post_stage_a_invalid_sample_count': invalid_samples,
+        'interpolation_used': False,
+    }, None
+
+
+def _non_ground_collision(message):
+    return any(
+        state
+        for state in message.states
+        if (
+            'ground_plane' not in state.collision1_name
+            and 'ground_plane' not in state.collision2_name
+        )
+    )
+
+
 def _bag_outcomes(run_directory, resolved):
     bag_directory = Path(run_directory) / 'bag'
     reader = rosbag2_py.SequentialReader()
@@ -1399,26 +2147,22 @@ def _bag_outcomes(run_directory, resolved):
         message for stamp, message
         in records['/gesc_gaussian/control_diagnostics'] if inside(stamp)
     ]
-    odometry = [
-        message for stamp, message in records['/odom'] if inside(stamp)
+    odometry_records = [
+        (stamp, message)
+        for stamp, message in records['/odom'] if inside(stamp)
     ]
-    contacts = [
-        message for stamp, message
+    odometry = [message for unused_stamp, message in odometry_records]
+    contact_records = [
+        (stamp, message)
+        for stamp, message
         in records['/gesc_gaussian/simulation/contacts'] if inside(stamp)
     ]
-    fills = [
-        message for stamp, message
+    fill_records = [
+        (stamp, message)
+        for stamp, message
         in records['/gesc_gaussian/gaussian_fills'] if inside(stamp)
     ]
-    collision_observed = any(
-        state
-        for message in contacts
-        for state in message.states
-        if (
-            'ground_plane' not in state.collision1_name
-            and 'ground_plane' not in state.collision2_name
-        )
-    )
+    fills = [message for unused_stamp, message in fill_records]
     collision_expected = resolved['success'].get('collision_expected')
     state_records, state_error = _canonical_state_records(state_messages)
     event_records, event_error = _canonical_event_records(event_messages)
@@ -1442,6 +2186,105 @@ def _bag_outcomes(run_directory, resolved):
         local_recovery_error,
     ) = _observed_local_recovery(resolved, event_messages, fills)
     outcome_error = outcome_error or local_recovery_error
+    (
+        stage_a_passed,
+        fill_cardinality_passed,
+        stage_a_evidence,
+        staged_error,
+    ) = _staged_recovery_evidence(
+        resolved,
+        state_messages,
+        event_messages,
+        fill_records,
+    )
+    outcome_error = outcome_error or staged_error
+    (
+        global_proximity_passed,
+        global_proximity_evidence,
+        proximity_error,
+    ) = _post_recovery_global_proximity(
+        resolved,
+        stage_a_passed,
+        stage_a_evidence,
+        odometry_records,
+    )
+    outcome_error = outcome_error or proximity_error
+    if (
+        resolved.get('schema_version', 1) >= 5
+        and global_proximity_passed
+        and global_proximity_evidence
+    ):
+        proximity_stamp = global_proximity_evidence['sample_bag_stamp']
+        (
+            stage_a_passed,
+            fill_cardinality_passed,
+            stage_a_evidence,
+            staged_error,
+        ) = _staged_recovery_evidence(
+            resolved,
+            [
+                record for record in state_messages
+                if record[0] <= proximity_stamp
+            ],
+            [
+                record for record in event_messages
+                if record[0] <= proximity_stamp
+            ],
+            [
+                record for record in fill_records
+                if record[0] <= proximity_stamp
+            ],
+        )
+        outcome_error = outcome_error or staged_error
+        (
+            global_proximity_passed,
+            global_proximity_evidence,
+            proximity_error,
+        ) = _post_recovery_global_proximity(
+            resolved,
+            stage_a_passed,
+            stage_a_evidence,
+            odometry_records,
+        )
+        outcome_error = outcome_error or proximity_error
+    if (
+        resolved.get('schema_version', 1) >= 5
+        and global_proximity_passed is True
+        and fill_cardinality_passed is not True
+    ):
+        global_proximity_passed = False
+        global_proximity_evidence = {
+            **global_proximity_evidence,
+            'reason': 'fill cardinality was not complete at proximity',
+        }
+    collision_scope_end = None
+    if (
+        resolved.get('schema_version', 1) >= 5
+        and global_proximity_passed
+        and global_proximity_evidence
+    ):
+        collision_scope_end = global_proximity_evidence[
+            'sample_bag_stamp'
+        ]
+    scoped_contacts = [
+        message
+        for stamp, message in contact_records
+        if collision_scope_end is None or stamp <= collision_scope_end
+    ]
+    collision_observed = any(
+        _non_ground_collision(message) for message in scoped_contacts
+    )
+    if (
+        resolved.get('schema_version', 1) >= 5
+        and global_proximity_passed is True
+        and collision_observed
+    ):
+        global_proximity_passed = False
+        global_proximity_evidence = {
+            **global_proximity_evidence,
+            'reason': 'non-ground collision occurred before proximity',
+            'collision_before_proximity': True,
+        }
     if odometry:
         final_x = float(odometry[-1].pose.pose.position.x)
         final_y = float(odometry[-1].pose.pose.position.y)
@@ -1451,9 +2294,10 @@ def _bag_outcomes(run_directory, resolved):
                 'y_m': final_y,
             }
         else:
-            outcome_error = outcome_error or (
-                'terminal odometry contains a nonfinite position'
-            )
+            if resolved.get('schema_version', 1) < 5:
+                outcome_error = outcome_error or (
+                    'terminal odometry contains a nonfinite position'
+                )
     distances = {}
     if final_position:
         for target in _ground_truth_targets(resolved):
@@ -1482,6 +2326,10 @@ def _bag_outcomes(run_directory, resolved):
     ground_truth = 'not_applicable'
     if outcome_error is not None:
         ground_truth = 'unavailable'
+    elif resolved.get('schema_version', 1) >= 5:
+        ground_truth = (
+            'passed' if global_proximity_passed else 'failed'
+        )
     elif ground_truth_targets:
         tolerance = resolved['success']['ground_truth'][
             'final_position_tolerance_m'
@@ -1491,11 +2339,31 @@ def _bag_outcomes(run_directory, resolved):
             if distances and min(distances.values()) <= tolerance
             else 'failed'
         )
+    contract_state_records = state_records
+    contract_event_records = event_records
+    if (
+        resolved.get('schema_version', 1) >= 5
+        and collision_scope_end is not None
+    ):
+        contract_state_records = [
+            record for record in state_records
+            if record[0] <= collision_scope_end
+        ]
+        contract_event_records = [
+            record for record in event_records
+            if record[0] <= collision_scope_end
+        ]
+    contract_observed_states = [
+        name for unused_stamp, name in contract_state_records
+    ]
+    contract_observed_events = [
+        name for unused_stamp, name in contract_event_records
+    ]
     controller_expectations = resolved['success']['controller']
     controller_evidence = _controller_evidence(
         controller_expectations,
-        observed_states,
-        observed_events,
+        contract_observed_states,
+        contract_observed_events,
     )
     scope_results = {}
     for scope_name, scope in resolved['success'].get(
@@ -1503,8 +2371,8 @@ def _bag_outcomes(run_directory, resolved):
     ).items():
         observations = _scope_observations(
             scope,
-            state_records,
-            event_records,
+            contract_state_records,
+            contract_event_records,
         )
         observations['predicate_results'] = _controller_evidence(
             _scope_controller_expectations(
@@ -1555,11 +2423,18 @@ def _bag_outcomes(run_directory, resolved):
         'route_blocker_fill_distance_m': route_blocker_fill_distance,
         'observed_local_recovery_passed': local_recovery_passed,
         'observed_local_recovery': local_recovery_evidence,
-        'collision_evidence_available': bool(contacts),
+        'local_recovery_stage_passed': stage_a_passed,
+        'local_recovery_stage': stage_a_evidence,
+        'fill_cardinality_passed': fill_cardinality_passed,
+        'post_recovery_global_proximity_passed': (
+            global_proximity_passed
+        ),
+        'post_recovery_global_proximity': global_proximity_evidence,
+        'collision_evidence_available': bool(scoped_contacts),
         'collision_observed': collision_observed,
         'collision_expectation_passed': (
             collision_expected is None
-            or bool(contacts)
+            or bool(scoped_contacts)
             and collision_observed is collision_expected
         ),
         'result_scopes': scope_results,
@@ -1583,6 +2458,16 @@ def classify_result(
             return None
         return value == 'passed'
 
+    global_proximity = outcomes.get(
+        'post_recovery_global_proximity_passed'
+    )
+    if (
+        resolved.get('schema_version', 1) >= 5
+        and global_proximity is True
+    ):
+        global_proximity = (
+            process_result.get('graceful_global_proximity_stop') is True
+        )
     facts = {
         'recording_complete': bool(completeness.get('passed')),
         'cleanup_complete': bool(cleanup.get('passed')),
@@ -1617,6 +2502,13 @@ def classify_result(
         ),
         'observed_local_recovery': outcomes.get(
             'observed_local_recovery_passed'
+        ),
+        'local_recovery_stage': outcomes.get(
+            'local_recovery_stage_passed'
+        ),
+        'post_recovery_global_proximity': global_proximity,
+        'fill_cardinality': outcomes.get(
+            'fill_cardinality_passed'
         ),
         'collision_expectation': outcomes.get(
             'collision_expectation_passed'
@@ -1750,7 +2642,35 @@ def classify_result(
             if infrastructure_status == 'infrastructure_invalid'
             else 'failed'
         )
-    return {
+    staged_results = {}
+    if resolved.get('schema_version', 1) >= 5:
+        staged_results = {
+            'stage_a_local_recovery': {
+                'passed': facts['local_recovery_stage'],
+                'evidence': outcomes.get('local_recovery_stage'),
+            },
+            'stage_b_post_recovery_global_proximity': {
+                'passed': facts['post_recovery_global_proximity'],
+                'sample_evidence_passed': outcomes.get(
+                    'post_recovery_global_proximity_passed'
+                ),
+                'graceful_stop_triggered': process_result.get(
+                    'graceful_global_proximity_stop'
+                ),
+                'evidence': outcomes.get(
+                    'post_recovery_global_proximity'
+                ),
+            },
+            'fill_cardinality': {
+                'passed': facts['fill_cardinality'],
+                'evidence': outcomes.get('local_recovery_stage'),
+            },
+            'combined': {
+                'passed': passed,
+                'infrastructure_status': infrastructure_status,
+            },
+        }
+    classification = {
         'passed': passed,
         'status': status,
         'infrastructure_status': infrastructure_status,
@@ -1760,6 +2680,9 @@ def classify_result(
         'predicate_results': {name: facts[name] for name in all_of},
         'result_scopes': scope_classifications,
     }
+    if staged_results:
+        classification['staged_results'] = staged_results
+    return classification
 
 
 def _write_run_artifacts(
@@ -1868,6 +2791,8 @@ def execute_suite(
                 continue
             graceful_scope = _graceful_boundary_scope(resolved)
             boundary_arguments = {}
+            if resolved.get('schema_version', 1) >= 5:
+                boundary_arguments['staged_recovery'] = resolved
             if graceful_scope is not None:
                 controller = resolved['success']['controller']
                 required_events = []

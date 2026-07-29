@@ -1,44 +1,52 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-29T20:35:27+00:00
-Base HEAD: e6ba847721d687d9c7de85cc3c299b4b9f2279bb
+Generated: 2026-07-29T21:42:11+00:00
+Base HEAD: 970bdc02047aa7da9c3f94616c723ba8e6842206
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: a2563ecd0d354a8f5202320e005fb6dfe785207d42e25e9bc02acfe1862f36de
+Status sha256: a160f3e5bfa0cac15d0e48b4549557fffc3449ccef5dc2865ff67f1d83c5364b
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
 Active subphase plan sha256: 83452732b8c657e657629e8fed6d3ab63488a04168d438854b7ce316677fff2a
-Unstaged diff sha256: 6bc4ff97e4ff9089d9f1e80a2770f34aefe4975155e2ffaa3a60211d3b40c0bb
+Unstaged diff sha256: b2d4eb972c9d01108568b7e8a129705027a4d1b7c80ac2d137272a92b0616a85
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 49]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 50]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
- M docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py
+ M ros2_ws/src/ros_esc/setup.py
+ M ros2_ws/src/ros_esc/test/test_scenario_runner.py
+ M ros2_ws/src/ros_esc/test/test_scenario_schema.py
+?? docs/codex/gesc_gaussian/validation/phase_08_7_m1_historical_immutability.json
+?? ros2_ws/src/turtlebot3_rotating_sensor/worlds/gesc_gaussian_corner_origin_validation.world
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 32 ++--------
- docs/codex/gesc_gaussian/plans/phase_08_7_plan.md  | 68 +++++++++++++---------
- docs/codex/gesc_gaussian/status/phase_08_status.md | 15 +++--
- 3 files changed, 55 insertions(+), 60 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  38 +-
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 186 +++-
+ .../ros_esc/scenario_runner/run_scenario.py        | 977 ++++++++++++++++++++-
+ .../ros_esc/scenario_runner/scenario_schema.py     | 618 ++++++++++++-
+ ros2_ws/src/ros_esc/setup.py                       |   2 +-
+ ros2_ws/src/ros_esc/test/test_scenario_runner.py   | 477 ++++++++++
+ ros2_ws/src/ros_esc/test/test_scenario_schema.py   | 380 +++++++-
+ 7 files changed, 2614 insertions(+), 64 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**M3 — terminal closeout complete.**
+**Phase 08.7 M1 — qualified; implementation checkpoint boundary.**
 
 ### Next criterion
 
-Do not start the 120-run matrix or relabel V6. A successor Plan must choose
-prospectively between a first-recovery-episode claim and full-record
-multi-cycle stability, then diagnose only the behavior required by that claim.
-
+Keep execution paused. M2 requires separate explicit approval before committing
+a fresh scenario or starting the one bounded visible-Gazebo geometry probe.
 
 
 This file describes the base HEAD and diff before the next commit; it is

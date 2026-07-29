@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-29T13:35:15-07:00`
-Status: `CLOSED — PHASE 08.6 FAIL / NOT 120-RUN READY`
+Last verified: `2026-07-29T14:39:15-07:00`
+Status: `PHASE 08.7 M1 QUALIFIED — V6 CLOSED / GAZEBO EXECUTION PAUSED`
 
 ## Objective
 
@@ -3994,3 +3994,185 @@ stationary observation, and post-arrival behavior are not behavioral gates.
 Stage A remains reported independently if Stage B fails, while the combined
 run still fails. Existing final-zero, final-readiness-false, completeness,
 cleanup, and collision evidence remain infrastructure requirements.
+
+## Phase 08.7 M1 implementation and qualification
+
+M1 started from clean HEAD
+`970bdc02047aa7da9c3f94616c723ba8e6842206` on
+`feature/gesc-gaussian-robustness-v1`, ahead of its remote by 50 commits.
+`validate_phase_context.sh 08 implement` from
+`DSIM_GESC_Gaussian_Codex_Implementation_Package/tools` passed before editing
+and selected `phase_08_7_plan.md`. The prior checkpoint was the intentionally
+precommit Plan-amendment snapshot based on `e6ba847`; this M1 boundary
+refreshes it without reopening or relabeling V6.
+
+Implemented additively:
+
+- new world
+  `turtlebot3_rotating_sensor/worlds/gesc_gaussian_corner_origin_validation.world`;
+- exact inner wall faces `x,y = -0.25, 3.75 m`, corresponding wall
+  centerlines `-0.30, 3.80 m`, and orthogonal center `1.75 m`;
+- schema-v5 geometry profile `corner_origin_diagonal_sector_v1` with fixed
+  start `(0,0,0)`, fixed global `(3.5,3.5)`, inclusive local radius
+  `1.0-2.0 m`, inclusive local angle `0-90 degrees`, wall margin `0.20 m`,
+  contacts, and recorded local polar metadata;
+- a prospective two-light known-topology contract declaring one local and one
+  global minimum and requiring `gaussian_fill_max_fills=1`;
+- typed fill cardinality based on unique accepted `FILL_CREATED`
+  cluster/revision identity, with repeated publications and merges excluded
+  from the count and one-to-one spatial association to declared locals;
+- independent Stage A local-recovery, Stage B post-recovery global-proximity,
+  fill-cardinality, and combined result records;
+- the exact Stage A path
+  `SEARCH -> VERIFY_EXTREMUM -> DESIGN_OR_MERGE_FILL -> ESCAPE_REPULSE
+  -> RECENTER -> SEARCH`;
+- first finite recorded post-Stage-A odometry sample within `0.35 m` of the
+  declared global as the Stage B boundary, followed by scoped `SIGINT` through
+  the existing recorder process and its unchanged final-zero,
+  readiness-false, completeness, and cleanup path.
+
+No scenario suite, evidence root, algorithm fork, controller, launch graph,
+recorder, validator, or analyzer was added. `custom_controller` ownership and
+all legacy selection paths remain unchanged. The historical validation world
+remains byte-identical at
+`8ecc1a231efec24401d74fef3cd5139d48c6029f88e71d044cefdf2fd14c5bef`.
+The new world SHA-256 is
+`88b10b39aa24a6430f6f031c750334ed34e6835e54c84de8d36f4cc6a26444bf`.
+
+Historical preservation is sealed in:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m1_historical_immutability.json
+```
+
+It binds all 29 pre-M1 scenario/config source hashes, the old-world hash, and
+22 loadable schema-v1-through-v4 normalized case-key and launch-argv digests.
+The manifest separately retains the pre-M1
+`phase08_v5_acceptance_suite.json` aggregate-truth hash-drift expansion
+failure; M1 did not rewrite that historical artifact.
+
+### M1 qualification evidence
+
+All commands were bounded and no behavioral launch was performed.
+
+- Final milestone-owned tests, from `ros2_ws/src/ros_esc` with the isolated
+  overlay sourced:
+
+  ```text
+  timeout 180s env -u RUN_GAZEBO_E2E -u RUN_ROS_INTEGRATION \
+    python3 -m pytest -q \
+    test/test_scenario_schema.py test/test_scenario_runner.py
+  ```
+
+  Result: `107 passed, 1 skipped in 45.70s`. The skip is the explicit
+  `RUN_GESC_PHASE06_GAZEBO_E2E=1` recorded headless-Gazebo integration.
+
+- Focused recording, bag, legacy, and Phase-08 regressions:
+
+  ```text
+  timeout 300s env -u RUN_GAZEBO_E2E -u RUN_ROS_INTEGRATION \
+    python3 -m pytest -q \
+    test/test_experiment_recording.py \
+    test/test_recording_integration.py \
+    test/test_bag_analysis.py \
+    test/test_legacy_behavior.py \
+    test/test_phase08_validation.py \
+    -k 'not v4_population_adoption_is_exact_and_unused'
+  ```
+
+  Result: `282 passed, 1 skipped, 1 deselected in 29.25s`. The skip is the
+  explicit `DSIM_RUN_GAZEBO_RECORDING_TEST=1` visible-Gazebo smoke.
+
+- The same broad set plus the two M1-owned files, before the one historical
+  deselection, produced `389 passed, 2 skipped, 1 failed in 99.27s`. The sole
+  failure was the unchanged
+  `test_v4_population_adoption_is_exact_and_unused`: its V4 adoption proof
+  now sees the later
+  `phase08_v6_hue_sweep.yaml` and
+  `phase08_v6_selected_repeats.yaml` as two additional historical files.
+  Both files and the historical validator are present at base HEAD and have
+  zero M1 diff. Direct diagnostic output was
+  `reasons=["v4 historical exclusion hashes drifted"]`,
+  `expected_only=[]`, `actual_only=[the two V6 files]`, and
+  `hash_drift=[]`. This is retained as a pre-existing stale V4 test
+  expectation, not hidden or weakened by changing V6.
+
+- One initial broader invocation omitted the isolated overlay and stopped
+  during collection with
+  `ModuleNotFoundError: No module named 'ros_esc_interfaces'`; it ran no test,
+  ROS, or Gazebo process. The identical sourced rerun produced the results
+  above. An earlier targeted development selection exposed three
+  test-fixture expectation mismatches; those test-only fixtures were
+  corrected before the final 107-test qualification.
+
+- `ament_flake8` on the five changed Python/setup files: PASS,
+  `5 files checked`, no problems.
+- `ament_pep257` on the four changed Python/test modules: PASS.
+- bounded `python3 -m compileall -q` on the changed modules/tests: PASS.
+- final `validate_phase_context.sh 08 implement`: PASS; active subphase
+  `phase_08_7_plan.md`.
+- isolated build:
+
+  ```text
+  timeout 420s colcon \
+    --log-base /tmp/phase08_7_m1_colcon_log build \
+    --base-paths src \
+    --build-base /tmp/phase08_7_m1_build \
+    --install-base /tmp/phase08_7_m1_install \
+    --packages-select ros_esc_interfaces ros_esc \
+      turtlebot3_rotating_sensor \
+    --event-handlers console_cohesion+
+  ```
+
+  Result: `3 packages finished in 1.67s`. Final installed
+  `run_scenario.py`, `scenario_schema.py`, and shifted-world hashes exactly
+  match their source files.
+
+- Non-executing installed launch instantiation:
+
+  ```text
+  timeout 60s ros2 launch -p turtlebot3_rotating_sensor \
+    gazebo.launch.xml \
+    gazebo_gui:=False \
+    gazebo_world:=/tmp/phase08_7_m1_install/turtlebot3_rotating_sensor/share/turtlebot3_rotating_sensor/worlds/gesc_gaussian_corner_origin_validation.world \
+    algorithm_profile:=robust_gaussian_v1 \
+    init_x_position:=0.0 init_y_position:=0.0 init_yaw_angle:=0.0 \
+    number_of_lights:=2 \
+    light_1_x:=1.0606601717798212 \
+    light_1_y:=1.0606601717798212 \
+    light_1_intensity_lumens:=400.0 \
+    light_2_x:=3.5 light_2_y:=3.5 \
+    light_2_intensity_lumens:=1600.0 \
+    room_bounds_x_min_m:=-0.25 room_bounds_x_max_m:=3.75 \
+    room_bounds_y_min_m:=-0.25 room_bounds_y_max_m:=3.75 \
+    room_center_x_m:=1.75 room_center_y_m:=1.75 \
+    wall_margin_m:=0.2 gaussian_fill_max_fills:=1 \
+    escape_policy:=conditional_gaussian_fill \
+    recenter_after_escape:=True \
+    simulation_contacts_enabled:=True \
+    recording_ready_required:=True
+  ```
+
+  Result: PASS, 248-line launch description retained at
+  `/tmp/phase08_7_m1_launch_description.txt`. XML parsing of source and
+  installed worlds passed. Installed `ros2 run ros_esc run_scenario --help`
+  passed. `git diff --check` passed.
+
+Qualification verdict: **M1 PASS**. No Gazebo server/client, scenario run,
+physical-hardware process, or Phase 08.7 evidence root was started or created.
+This is implementation qualification only, not behavioral acceptance,
+simulation readiness, or a change to V6's terminal failure.
+
+`checkpoint_phase.sh 08` completed at the material M1 boundary and refreshed
+`docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt` against base
+HEAD `970bdc02047aa7da9c3f94616c723ba8e6842206`.
+
+## Current milestone
+
+**Phase 08.7 M1 — qualified; implementation checkpoint boundary.**
+
+### Next criterion
+
+Keep execution paused. M2 requires separate explicit approval before committing
+a fresh scenario or starting the one bounded visible-Gazebo geometry probe.

@@ -222,6 +222,199 @@ def _v4_branch_resolved():
     return resolved
 
 
+def _v5_staged_resolved():
+    resolved = _resolved()
+    resolved.update({
+        'schema_version': 5,
+        'start': {
+            'id': 'corner_start',
+            'x_m': 0.0,
+            'y_m': 0.0,
+            'yaw_rad': 0.0,
+        },
+        'sources': [
+            {
+                'id': 'local',
+                'x_m': 1.0606601717798212,
+                'y_m': 1.0606601717798212,
+                'relative_lumen_input': 400.0,
+                'evaluation_role': 'local_minimum',
+            },
+            {
+                'id': 'global',
+                'x_m': 3.5,
+                'y_m': 3.5,
+                'relative_lumen_input': 1600.0,
+                'evaluation_role': 'goal',
+            },
+        ],
+        'bounds_m': [-0.25, 3.75, -0.25, 3.75],
+        'room_center_m': [1.75, 1.75],
+        'validation': {
+            'world': True,
+            'contacts_enabled': True,
+            'geometry_profile': 'corner_origin_diagonal_sector_v1',
+        },
+        'known_topology': {
+            'expected_local_minima': 1,
+            'expected_global_minima': 1,
+        },
+        'acceptance_family': 'corner_origin_diagonal_sector',
+        'acceptance_partition': 'development',
+        'repeat_reference': None,
+        'metric_applicability': {
+            'escape_attempt': True,
+            'escape_duration': True,
+            'orbit_count': True,
+            'revisit': False,
+            'delay': False,
+            'saturation': False,
+        },
+        'geometry': {
+            'profile': 'corner_origin_diagonal_sector_v1',
+            'world_file': (
+                'gesc_gaussian_corner_origin_validation.world'
+            ),
+            'bounds_m': [-0.25, 3.75, -0.25, 3.75],
+            'room_center_m': [1.75, 1.75],
+            'wall_margin_m': 0.20,
+            'allowed_center_domain_m': [
+                -0.05, 3.55, -0.05, 3.55,
+            ],
+            'fixed_start': {
+                'x_m': 0.0, 'y_m': 0.0, 'yaw_rad': 0.0,
+            },
+            'global_source_id': 'global',
+            'fixed_global': {'x_m': 3.5, 'y_m': 3.5},
+            'local_region': {
+                'radius_min_m': 1.0,
+                'radius_max_m': 2.0,
+                'angle_center_rad': runner.math.pi / 4.0,
+                'angle_half_width_rad': runner.math.pi / 4.0,
+            },
+            'local_placements': [{
+                'source_id': 'local',
+                'radius_m': 1.5,
+                'angle_rad': runner.math.pi / 4.0,
+                'angle_deg': 45.0,
+                'angular_offset_rad': 0.0,
+            }],
+        },
+    })
+    resolved['algorithm']['launch_overrides'].update({
+        'wall_margin_m': 0.20,
+        'gaussian_fill_max_fills': 1,
+    })
+    resolved['success'] = {
+        'all_of': [
+            'recording_complete',
+            'cleanup_complete',
+            'local_recovery_stage',
+            'post_recovery_global_proximity',
+            'fill_cardinality',
+            'collision_expectation',
+        ],
+        'controller': {},
+        'ground_truth': {
+            'method': 'declared_global_proximity',
+            'global_source_id': 'global',
+            'proximity_radius_m': 0.35,
+        },
+        'minimum_saturation_samples': 0,
+        'collision_expected': False,
+        'staged_recovery': {
+            'local_source_ids': ['local'],
+            'global_source_id': 'global',
+            'convergence_to_local_max_m': 0.60,
+            'convergence_to_global_min_m': 0.75,
+            'fill_to_convergence_max_m': 0.50,
+            'global_proximity_radius_m': 0.35,
+        },
+        'result_scopes': {},
+    }
+    return resolved
+
+
+def _state_message(name):
+    return SimpleNamespace(
+        state=getattr(runner.AlgorithmState, f'STATE_{name}'),
+        state_name=name,
+        state_valid=True,
+    )
+
+
+def _event_message(name, **overrides):
+    values = {
+        'event_type': getattr(runner.AlgorithmEvent, f'EVENT_{name}'),
+        'source_timestamp': 0.0,
+        'source_timestamp_valid': False,
+        'fill_id': 0,
+        'fill_id_valid': False,
+        'value_names': [],
+        'values': [],
+    }
+    values.update(overrides)
+    return SimpleNamespace(**values)
+
+
+def _fill_message(fill_id=7, cluster_id=42, center=(1.05, 1.05)):
+    return SimpleNamespace(
+        fill_id=fill_id,
+        cluster_id=cluster_id,
+        revision=1,
+        source_timestamp=11.0 + fill_id * 0.001,
+        source_timestamp_valid=True,
+        center_x=center[0],
+        center_y=center[1],
+        active=True,
+        superseded=False,
+    )
+
+
+def _odom_message(x_m, y_m):
+    return SimpleNamespace(
+        pose=SimpleNamespace(
+            pose=SimpleNamespace(
+                position=SimpleNamespace(x=x_m, y=y_m),
+            ),
+        ),
+    )
+
+
+def _staged_records():
+    states = [
+        (1, _state_message('SEARCH')),
+        (2, _state_message('VERIFY_EXTREMUM')),
+        (4, _state_message('DESIGN_OR_MERGE_FILL')),
+        (7, _state_message('ESCAPE_REPULSE')),
+        (9, _state_message('RECENTER')),
+        (12, _state_message('SEARCH')),
+    ]
+    events = [
+        (3, _event_message(
+            'CONVERGENCE_CONFIRMED',
+            source_timestamp=10.0,
+            source_timestamp_valid=True,
+            value_names=['fill_center_x_m', 'fill_center_y_m'],
+            values=[1.04, 1.04],
+        )),
+        (6, _event_message(
+            'FILL_CREATED',
+            source_timestamp=11.007,
+            source_timestamp_valid=True,
+            fill_id=7,
+            fill_id_valid=True,
+            value_names=['cluster_id', 'revision'],
+            values=[42.0, 1.0],
+        )),
+        (8, _event_message('ESCAPE_STARTED')),
+        (10, _event_message('RECENTER_STARTED')),
+        (11, _event_message('RECENTER_COMPLETE')),
+    ]
+    fills = [(5, _fill_message())]
+    return states, events, fills
+
+
 def test_route_blocker_encounter_matches_first_active_typed_fill():
     """Require the first accepted fill to belong to the route blocker."""
     resolved = {
@@ -304,6 +497,173 @@ def test_launch_and_record_argv_compose_existing_owners_without_shell():
         not any(token in item for token in (';', '&&', '|'))
         for item in record
     )
+
+
+def test_v5_launch_and_metadata_bind_shifted_world_profile():
+    """Resolve the new world and typed geometry through existing owners."""
+    resolved = _v5_staged_resolved()
+
+    launch = build_launch_command(resolved, gui=False)
+    metadata = build_metadata(
+        resolved,
+        operator='phase08_7_m1',
+        experiment_version='phase08-v7',
+        operator_notes='qualification only',
+    )
+
+    assert any(
+        item.endswith(
+            'gesc_gaussian_corner_origin_validation.world'
+        )
+        for item in launch
+    )
+    for expected in (
+        'init_x_position:=0.0',
+        'init_y_position:=0.0',
+        'init_yaw_angle:=0.0',
+        'room_bounds_x_min_m:=-0.25',
+        'room_bounds_x_max_m:=3.75',
+        'room_bounds_y_min_m:=-0.25',
+        'room_bounds_y_max_m:=3.75',
+        'room_center_x_m:=1.75',
+        'room_center_y_m:=1.75',
+        'wall_margin_m:=0.2',
+        'gaussian_fill_max_fills:=1',
+        'simulation_contacts_enabled:=True',
+    ):
+        assert expected in launch
+    scenario = metadata['scenario_runner']
+    assert scenario['known_topology']['expected_local_minima'] == 1
+    local = scenario['geometry']['local_placements'][0]
+    assert local['source_id'] == 'local'
+    assert local['radius_m'] == pytest.approx(1.5)
+    assert local['angle_rad'] == pytest.approx(runner.math.pi / 4.0)
+    assert local['angle_deg'] == pytest.approx(45.0)
+    assert metadata['environment']['geometry']['fixed_global'] == {
+        'x_m': 3.5,
+        'y_m': 3.5,
+    }
+
+
+def test_staged_recovery_reports_stage_a_cardinality_and_global_sample():
+    """Separate local recovery, exact clusters, and post-recovery arrival."""
+    resolved = _v5_staged_resolved()
+    states, events, fills = _staged_records()
+
+    stage_a, cardinality, evidence, error = (
+        runner._staged_recovery_evidence(
+            resolved,
+            states,
+            events,
+            fills + [fills[0]],
+        )
+    )
+    stage_b, proximity, proximity_error = (
+        runner._post_recovery_global_proximity(
+            resolved,
+            stage_a,
+            evidence,
+            [
+                (11, _odom_message(3.5, 3.5)),
+                (13, _odom_message(3.0, 3.0)),
+                (14, _odom_message(3.30, 3.30)),
+                (15, _odom_message(3.49, 3.49)),
+            ],
+        )
+    )
+
+    assert error is None
+    assert stage_a is True
+    assert cardinality is True
+    assert evidence['created_cluster_ids'] == [42]
+    assert evidence['assignments'][0]['local_source_id'] == 'local'
+    assert stage_b is True
+    assert proximity_error is None
+    assert proximity['sample_bag_stamp'] == 14
+    assert proximity['distance_m'] == pytest.approx(
+        runner.math.hypot(0.20, 0.20)
+    )
+    assert proximity['interpolation_used'] is False
+
+    extra_fill = _fill_message(
+        fill_id=8,
+        cluster_id=43,
+        center=(3.5, 3.5),
+    )
+    extra_event = _event_message(
+        'FILL_CREATED',
+        source_timestamp=extra_fill.source_timestamp,
+        source_timestamp_valid=True,
+        fill_id=8,
+        fill_id_valid=True,
+        value_names=['cluster_id', 'revision'],
+        values=[43.0, 1.0],
+    )
+    stage_a, cardinality, evidence, error = (
+        runner._staged_recovery_evidence(
+            resolved,
+            states,
+            events + [(13, extra_event)],
+            fills + [(13, extra_fill)],
+        )
+    )
+    assert error is None
+    assert stage_a is True
+    assert cardinality is False
+    assert evidence['unassigned_cluster_ids'] == [43]
+
+
+def test_staged_classification_retains_stage_a_when_global_stop_fails():
+    """Keep Stage A visible while Stage B and combined result fail."""
+    resolved = _v5_staged_resolved()
+    base_outcomes = runner._unavailable_outcomes('unused')
+    base_outcomes.update({
+        'readiness_interval_available': True,
+        'local_recovery_stage_passed': True,
+        'local_recovery_stage': {'completed_episode_count': 1},
+        'fill_cardinality_passed': True,
+        'post_recovery_global_proximity_passed': True,
+        'post_recovery_global_proximity': {'distance_m': 0.20},
+        'collision_expectation_passed': True,
+        'outcome_error': None,
+    })
+    common = {
+        'resolved': resolved,
+        'completeness': {'passed': True},
+        'cleanup': {'passed': True},
+        'outcomes': base_outcomes,
+        'metadata': {},
+        'run_directory_available': True,
+    }
+
+    missed_stop = classify_result(
+        process_result={
+            'timed_out': False,
+            'return_code': 0,
+            'graceful_global_proximity_stop': False,
+        },
+        **common,
+    )
+    assert missed_stop['staged_results'][
+        'stage_a_local_recovery'
+    ]['passed'] is True
+    assert missed_stop['staged_results'][
+        'stage_b_post_recovery_global_proximity'
+    ]['passed'] is False
+    assert missed_stop['staged_results']['combined']['passed'] is False
+
+    stopped = classify_result(
+        process_result={
+            'timed_out': False,
+            'return_code': 0,
+            'graceful_global_proximity_stop': True,
+        },
+        **common,
+    )
+    assert stopped['staged_results'][
+        'stage_b_post_recovery_global_proximity'
+    ]['passed'] is True
+    assert stopped['staged_results']['combined']['passed'] is True
 
 
 def test_metadata_and_launch_share_inputs(tmp_path):
@@ -1543,6 +1903,123 @@ def test_live_boundary_stop_waits_for_state_and_required_event(monkeypatch):
         'ESCAPE_STARTED'
     ]
     assert result['stdout'] == 'boundary test\n'
+    assert executor_events == ['created', 'added', 'removed', 'shutdown']
+
+
+def test_live_global_stop_waits_for_stage_a_cardinality_and_near_odom(
+    monkeypatch,
+):
+    """Do not signal until local recovery and a post-recovery sample pass."""
+    callbacks = {}
+    dispatched = []
+    executor_events = []
+    signals = []
+    wait_timeouts = []
+    private_context = object()
+    resolved = _v5_staged_resolved()
+
+    class FakeNode:
+        def create_subscription(
+            self,
+            unused_type,
+            topic,
+            callback,
+            unused_depth,
+        ):
+            callbacks[topic] = callback
+            return object()
+
+        def destroy_node(self):
+            return None
+
+    node = FakeNode()
+
+    class FakeProcess:
+        def __init__(self, command, stdout, **unused_kwargs):
+            self.command = command
+            self.stdout = stdout
+            self.pid = 7321
+            self.returncode = None
+            stdout.write('global proximity test\n')
+
+        def poll(self):
+            return self.returncode
+
+        def wait(self, timeout=None):
+            wait_timeouts.append(timeout)
+            self.returncode = 0
+            return 0
+
+    states, events, fills = _staged_records()
+    sequence = [
+        ('/gesc_gaussian/algorithm_state', states[0][1]),
+        ('/gesc_gaussian/algorithm_state', states[1][1]),
+        ('/gesc_gaussian/algorithm_events', events[0][1]),
+        ('/gesc_gaussian/algorithm_state', states[2][1]),
+        ('/gesc_gaussian/gaussian_fills', fills[0][1]),
+        ('/gesc_gaussian/algorithm_events', events[1][1]),
+        ('/gesc_gaussian/algorithm_state', states[3][1]),
+        ('/gesc_gaussian/algorithm_events', events[2][1]),
+        ('/gesc_gaussian/algorithm_state', states[4][1]),
+        ('/gesc_gaussian/algorithm_events', events[3][1]),
+        ('/gesc_gaussian/algorithm_events', events[4][1]),
+        ('/gesc_gaussian/algorithm_state', states[5][1]),
+        ('/odom', _odom_message(2.5, 2.5)),
+        ('/odom', _odom_message(3.30, 3.30)),
+    ]
+
+    def spin_once(timeout_sec):
+        del timeout_sec
+        topic, message = sequence.pop(0)
+        dispatched.append(topic)
+        callbacks[topic](message)
+
+    monkeypatch.setattr(
+        runner.rclpy.context,
+        'Context',
+        lambda: private_context,
+    )
+    monkeypatch.setattr(runner.rclpy, 'init', lambda context: None)
+    monkeypatch.setattr(runner.rclpy, 'shutdown', lambda context: None)
+    monkeypatch.setattr(
+        runner.rclpy,
+        'create_node',
+        lambda *args, **kwargs: node,
+    )
+    _install_boundary_executor(
+        monkeypatch,
+        private_context,
+        node,
+        spin_once,
+        executor_events,
+    )
+    monkeypatch.setattr(runner.subprocess, 'Popen', FakeProcess)
+    monkeypatch.setattr(
+        runner.os,
+        'killpg',
+        lambda pid, signum: signals.append((pid, signum)),
+    )
+
+    result = runner.run_record_process(
+        ['record'],
+        5.0,
+        1.0,
+        staged_recovery=resolved,
+    )
+
+    assert sequence == []
+    assert dispatched[-2:] == ['/odom', '/odom']
+    assert signals == [(7321, runner.signal.SIGINT)]
+    assert wait_timeouts == [
+        1.0 + runner.BOUNDARY_RECORD_FINALIZATION_GRACE_SEC
+    ]
+    assert result['stage_a_observed_live'] is True
+    assert result['fill_cardinality_observed_live'] is True
+    assert result['graceful_global_proximity_stop'] is True
+    assert result['global_proximity_sample_live']['distance_m'] == (
+        pytest.approx(runner.math.hypot(0.20, 0.20))
+    )
+    assert result['stdout'] == 'global proximity test\n'
     assert executor_events == ['created', 'added', 'removed', 'shutdown']
 
 
