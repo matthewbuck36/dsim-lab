@@ -35,6 +35,10 @@ RECENTER_RECOVERY = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_2_recenter.yaml'
 )
+V6_HUE_SWEEP = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/phase08_v6_hue_sweep.yaml'
+)
 HISTORICAL_V2_ACTIVATION = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml'
@@ -816,3 +820,26 @@ def test_historical_v2_activation_hash_and_case_keys_are_unchanged():
         '2d9d00a07b06fc59151054b7b1936eacdbfab7146c459ea6f9c6d106d2c69e93',
         'c91832a5506809efe3f1f181e0e422dd67e0f64219bd5c03497e86bf98249066',
     ]
+
+
+def test_v6_hue_sweep_is_four_unassisted_two_light_cases():
+    """Seal the focused Hue ratios and local-recovery evidence contract."""
+    suite = load_suite(V6_HUE_SWEEP)
+    runs, unsupported = expand_suite(suite)
+
+    assert unsupported == []
+    assert len(runs) == 4
+    assert [
+        run['sources'][0]['relative_lumen_input'] for run in runs
+    ] == [400.0, 800.0, 1120.0, 1360.0]
+    for run in runs:
+        assert len(run['sources']) == 2
+        assert run['start']['yaw_rad'] == 0.0
+        assert run['algorithm']['ablations']['affine_assist_enabled'] is False
+        assert (
+            'observed_local_recovery'
+            in run['success']['all_of']
+        )
+        assert run['success']['local_recovery'][
+            'convergence_to_local_max_m'
+        ] == 0.60

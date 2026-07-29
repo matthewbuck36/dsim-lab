@@ -1,6 +1,6 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-28T18:08:25-07:00`
+Last verified: `2026-07-28T18:20:00-07:00`
 Status: `ACTIVE — PHASE 08.6 / V6 TWO-LIGHT HUE-RATIO DEMONSTRATION`
 
 ## Objective
@@ -3797,10 +3797,51 @@ committed and qualification begins.
 
 ## Current milestone
 
-**M0 — open and checkpoint V6.**
+**M1 — implementation and qualification complete.**
 
 ### Next criterion
 
-Commit the V6 Plan/status boundary, then implement and test the
-`observed_local_recovery` evidence predicate and exact four-case suite without
-launching Gazebo or creating the V6 evidence root.
+Checkpoint and commit the qualified V6 implementation, then execute the exact
+four-case visible-Gazebo sweep from the fresh V6 evidence root.
+
+## Phase 08.6 M1 implementation and qualification
+
+Implemented inside the existing scenario schema and runner:
+
+- optional schema-v3-or-newer `success.local_recovery`;
+- required `observed_local_recovery` predicate backing;
+- causal matching of the first active typed fill to its
+  `CONVERGENCE_CONFIRMED` source timestamp;
+- retained convergence-to-local, convergence-to-global, and
+  fill-to-convergence distances;
+- explicit behavioral failure for no active fill or no matching convergence,
+  while malformed/nonfinite evidence remains an integrity error.
+
+The exact visible suite is:
+
+```text
+ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/
+  phase08_v6_hue_sweep.yaml
+sha256 3be130581b88c986fd845aef0c33c9db94ceb02ecfe2a6361926b0317ef8e655
+```
+
+The commitment is retained at:
+
+```text
+docs/codex/gesc_gaussian/validation/phase_08_v6_sweep_commitment.json
+```
+
+Qualification:
+
+- Python compilation: PASS.
+- Focused schema and runner tests:
+  `89 passed, 1 skipped in 11.85s`.
+- Isolated `ros_esc` build:
+  PASS in `1.70s`; logs at `/tmp/phase08_v6_colcon_log`.
+- Installed-resource `run_scenario --dry-run --gui`:
+  PASS; four serial runs, zero unsupported.
+- Dry-run launch resolution confirms `init_yaw_angle:=0.0`,
+  `number_of_lights:=2`, `modified_cost_enable_affine_bias:=False`,
+  validation-world contacts, fixed geometry, and the four exact intensities.
+- No Gazebo/ROS scenario descendant was active and the V6 root remained absent
+  at qualification.

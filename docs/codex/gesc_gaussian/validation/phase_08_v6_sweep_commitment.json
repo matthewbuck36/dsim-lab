@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "experiment_version": "phase08-v6",
+  "suite_id": "phase08_v6_hue_sweep",
+  "scenario_path": "ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v6_hue_sweep.yaml",
+  "scenario_sha256": "3be130581b88c986fd845aef0c33c9db94ceb02ecfe2a6361926b0317ef8e655",
+  "execution_order": [
+    "v6_h25_local400_global1600_17001",
+    "v6_h50_local800_global1600_17002",
+    "v6_h70_local1120_global1600_17003",
+    "v6_h85_local1360_global1600_17004"
+  ],
+  "hue_mapping": {
+    "global": {"percentage": 100, "nominal_lumens": 1600},
+    "locals": [
+      {"case": "H25", "percentage": 25, "nominal_lumens": 400, "ratio": 0.25},
+      {"case": "H50", "percentage": 50, "nominal_lumens": 800, "ratio": 0.50},
+      {"case": "H70", "percentage": 70, "nominal_lumens": 1120, "ratio": 0.70},
+      {"case": "H85", "percentage": 85, "nominal_lumens": 1360, "ratio": 0.85}
+    ]
+  },
+  "geometry_m": {
+    "bounds": [-2.0, 2.0, -2.0, 2.0],
+    "start": [-1.3, -0.2, 0.0],
+    "local": [-0.8, 0.0],
+    "global": [1.3, 0.8]
+  },
+  "selection_rule": "Select the lowest ratio with complete recording, cleanup, collision, recovery-path, recovery-event, and observed-local-recovery predicates.",
+  "claim_boundary": "Development simulation demonstration only; not absolute lux calibration, three-light validation, physical authorization, or 120-run readiness."
+}

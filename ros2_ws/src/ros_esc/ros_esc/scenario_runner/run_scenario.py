@@ -1167,6 +1167,8 @@ def _unavailable_outcomes(reason, readiness_interval_available=False):
         'route_blocker_encountered_passed': None,
         'route_blocker_fill_center': None,
         'route_blocker_fill_distance_m': None,
+        'observed_local_recovery_passed': None,
+        'observed_local_recovery': None,
         'collision_evidence_available': False,
         'collision_observed': None,
         'collision_expectation_passed': None,
@@ -1246,6 +1248,92 @@ def _route_blocker_encounter(resolved, fill_messages):
         distance <= limit,
         {'x_m': center_x, 'y_m': center_y},
         distance,
+        None,
+    )
+
+
+def _observed_local_recovery(resolved, event_messages, fill_messages):
+    """Bind the first active fill to its local convergence observation."""
+    contract = resolved.get('success', {}).get('local_recovery')
+    if contract is None:
+        return None, None, None
+    active = next(
+        (
+            message for message in fill_messages
+            if message.active and not message.superseded
+        ),
+        None,
+    )
+    if active is None:
+        return False, {'reason': 'no active typed fill'}, None
+    fill_stamp = float(active.source_timestamp)
+    if not active.source_timestamp_valid or not math.isfinite(fill_stamp):
+        return None, None, 'typed fill source timestamp is invalid'
+    convergence = next(
+        (
+            message for unused_stamp, message in event_messages
+            if (
+                message.event_type
+                == AlgorithmEvent.EVENT_CONVERGENCE_CONFIRMED
+                and message.source_timestamp_valid
+                and math.isclose(
+                    float(message.source_timestamp),
+                    fill_stamp,
+                    rel_tol=0.0,
+                    abs_tol=1.0e-9,
+                )
+            )
+        ),
+        None,
+    )
+    if convergence is None:
+        return False, {
+            'reason': 'no causally matching convergence event',
+            'fill_source_timestamp': fill_stamp,
+        }, None
+    values = dict(zip(convergence.value_names, convergence.values))
+    try:
+        convergence_x = float(values['fill_center_x_m'])
+        convergence_y = float(values['fill_center_y_m'])
+        fill_x = float(active.center_x)
+        fill_y = float(active.center_y)
+    except (KeyError, TypeError, ValueError):
+        return None, None, 'local recovery coordinates are malformed'
+    if not all(math.isfinite(value) for value in (
+        convergence_x, convergence_y, fill_x, fill_y,
+    )):
+        return None, None, 'local recovery coordinates are nonfinite'
+    sources = {source['id']: source for source in resolved['sources']}
+    local = sources[contract['local_source_id']]
+    global_source = sources[contract['global_source_id']]
+    local_distance = math.hypot(
+        convergence_x - local['x_m'],
+        convergence_y - local['y_m'],
+    )
+    global_distance = math.hypot(
+        convergence_x - global_source['x_m'],
+        convergence_y - global_source['y_m'],
+    )
+    fill_distance = math.hypot(
+        fill_x - convergence_x,
+        fill_y - convergence_y,
+    )
+    evidence = {
+        'local_source_id': contract['local_source_id'],
+        'global_source_id': contract['global_source_id'],
+        'fill_source_timestamp': fill_stamp,
+        'convergence_point': {'x_m': convergence_x, 'y_m': convergence_y},
+        'fill_center': {'x_m': fill_x, 'y_m': fill_y},
+        'convergence_to_local_m': local_distance,
+        'convergence_to_global_m': global_distance,
+        'fill_to_convergence_m': fill_distance,
+        'thresholds': dict(contract),
+    }
+    return (
+        local_distance <= contract['convergence_to_local_max_m']
+        and global_distance >= contract['convergence_to_global_min_m']
+        and fill_distance <= contract['fill_to_convergence_max_m'],
+        evidence,
         None,
     )
 
@@ -1350,6 +1438,12 @@ def _bag_outcomes(run_directory, resolved):
         route_error,
     ) = _route_blocker_encounter(resolved, fills)
     outcome_error = outcome_error or route_error
+    (
+        local_recovery_passed,
+        local_recovery_evidence,
+        local_recovery_error,
+    ) = _observed_local_recovery(resolved, event_messages, fills)
+    outcome_error = outcome_error or local_recovery_error
     if odometry:
         final_x = float(odometry[-1].pose.pose.position.x)
         final_y = float(odometry[-1].pose.pose.position.y)
@@ -1461,6 +1555,8 @@ def _bag_outcomes(run_directory, resolved):
         'route_blocker_encountered_passed': route_blocker_encountered,
         'route_blocker_fill_center': route_blocker_fill_center,
         'route_blocker_fill_distance_m': route_blocker_fill_distance,
+        'observed_local_recovery_passed': local_recovery_passed,
+        'observed_local_recovery': local_recovery_evidence,
         'collision_evidence_available': bool(contacts),
         'collision_observed': collision_observed,
         'collision_expectation_passed': (
@@ -1520,6 +1616,9 @@ def classify_result(
         ),
         'route_blocker_encountered': outcomes.get(
             'route_blocker_encountered_passed'
+        ),
+        'observed_local_recovery': outcomes.get(
+            'observed_local_recovery_passed'
         ),
         'collision_expectation': outcomes.get(
             'collision_expectation_passed'

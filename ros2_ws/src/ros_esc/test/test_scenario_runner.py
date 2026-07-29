@@ -46,6 +46,55 @@ V3_ACTIVATION = (
 )
 
 
+def test_observed_local_recovery_binds_fill_to_local_convergence():
+    """Accept a causal local fill and reject the same event at the global."""
+    resolved = {
+        'sources': [
+            {'id': 'local', 'x_m': -0.8, 'y_m': 0.0},
+            {'id': 'global', 'x_m': 1.3, 'y_m': 0.8},
+        ],
+        'success': {
+            'local_recovery': {
+                'local_source_id': 'local',
+                'global_source_id': 'global',
+                'convergence_to_local_max_m': 0.60,
+                'convergence_to_global_min_m': 0.75,
+                'fill_to_convergence_max_m': 0.50,
+            },
+        },
+    }
+    fill = SimpleNamespace(
+        active=True,
+        superseded=False,
+        source_timestamp=42.0,
+        source_timestamp_valid=True,
+        center_x=-0.75,
+        center_y=0.05,
+    )
+    event = SimpleNamespace(
+        event_type=runner.AlgorithmEvent.EVENT_CONVERGENCE_CONFIRMED,
+        source_timestamp=42.0,
+        source_timestamp_valid=True,
+        value_names=['fill_center_x_m', 'fill_center_y_m'],
+        values=[-0.78, 0.02],
+    )
+
+    passed, evidence, error = runner._observed_local_recovery(
+        resolved, [(1, event)], [fill]
+    )
+    assert passed is True
+    assert error is None
+    assert evidence['convergence_to_local_m'] < 0.60
+
+    event.values = [1.25, 0.75]
+    passed, evidence, error = runner._observed_local_recovery(
+        resolved, [(1, event)], [fill]
+    )
+    assert passed is False
+    assert error is None
+    assert evidence['convergence_to_global_m'] < 0.75
+
+
 def _install_boundary_executor(
     monkeypatch,
     context,

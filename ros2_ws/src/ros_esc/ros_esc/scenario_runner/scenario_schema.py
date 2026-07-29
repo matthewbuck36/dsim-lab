@@ -89,6 +89,7 @@ SUCCESS_PREDICATES = {
     'minimum_saturation_samples',
     'collision_expectation',
     'route_blocker_encountered',
+    'observed_local_recovery',
 }
 LAUNCH_OVERRIDES = {
     'approach_history_window_sec',
@@ -175,7 +176,14 @@ SOURCE_KEYS = {
 ALGORITHM_KEYS = {'ablations', 'launch_overrides'}
 SUCCESS_KEYS = {
     'all_of', 'controller', 'ground_truth', 'minimum_saturation_samples',
-    'collision_expected', 'result_scopes',
+    'collision_expected', 'result_scopes', 'local_recovery',
+}
+LOCAL_RECOVERY_KEYS = {
+    'local_source_id',
+    'global_source_id',
+    'convergence_to_local_max_m',
+    'convergence_to_global_min_m',
+    'fill_to_convergence_max_m',
 }
 FROZEN_PROFILE_KEYS = {'profile_id', 'launch_overrides', 'sha256'}
 CONTROLLER_KEYS = {
@@ -1414,6 +1422,66 @@ def load_suite(path):
                 'final_position_tolerance_m': tolerance,
             }
             has_ground_truth = bool(goal_ids)
+        local_recovery = success.get('local_recovery')
+        if local_recovery is not None:
+            local_recovery_location = f'{location}.success.local_recovery'
+            if schema_version < 3 or not isinstance(local_recovery, dict):
+                raise ValueError(
+                    f'{local_recovery_location} requires schema version 3 '
+                    'or newer and must be a mapping'
+                )
+            _unknown(
+                local_recovery,
+                LOCAL_RECOVERY_KEYS,
+                local_recovery_location,
+            )
+            local_source_id = _identifier(
+                local_recovery.get('local_source_id'),
+                f'{local_recovery_location}.local_source_id',
+            )
+            global_source_id = _identifier(
+                local_recovery.get('global_source_id'),
+                f'{local_recovery_location}.global_source_id',
+            )
+            if (
+                local_source_id == global_source_id
+                or {local_source_id, global_source_id} - source_ids
+            ):
+                raise ValueError(
+                    f'{local_recovery_location} source ids must be distinct '
+                    'declared sources'
+                )
+            source_roles = {
+                source['id']: source['evaluation_role']
+                for source in normalized_sources
+            }
+            if (
+                source_roles[local_source_id] != 'local_minimum'
+                or source_roles[global_source_id] != 'goal'
+            ):
+                raise ValueError(
+                    f'{local_recovery_location} sources must have '
+                    'local_minimum and goal roles'
+                )
+            local_recovery = {
+                'local_source_id': local_source_id,
+                'global_source_id': global_source_id,
+                'convergence_to_local_max_m': _number(
+                    local_recovery.get('convergence_to_local_max_m'),
+                    f'{local_recovery_location}.convergence_to_local_max_m',
+                    positive=True,
+                ),
+                'convergence_to_global_min_m': _number(
+                    local_recovery.get('convergence_to_global_min_m'),
+                    f'{local_recovery_location}.convergence_to_global_min_m',
+                    positive=True,
+                ),
+                'fill_to_convergence_max_m': _number(
+                    local_recovery.get('fill_to_convergence_max_m'),
+                    f'{local_recovery_location}.fill_to_convergence_max_m',
+                    positive=True,
+                ),
+            }
         minimum_saturation = success.get('minimum_saturation_samples', 0)
         if (
             isinstance(minimum_saturation, bool)
@@ -1529,6 +1597,8 @@ def load_suite(path):
             'ground_truth': normalized_ground_truth,
             'minimum_saturation_samples': minimum_saturation,
         }
+        if local_recovery is not None:
+            normalized_success['local_recovery'] = local_recovery
         if schema_version >= 2:
             normalized_success['collision_expected'] = collision_expected
         if schema_version >= 3:
@@ -1536,6 +1606,8 @@ def load_suite(path):
                 declared_predicates.add('collision_expectation')
             if minimum_saturation > 0:
                 declared_predicates.add('minimum_saturation_samples')
+            if local_recovery is not None:
+                declared_predicates.add('observed_local_recovery')
             backed_predicates = set(declared_predicates)
             if has_ground_truth:
                 backed_predicates.add('ground_truth_goal')
@@ -1582,6 +1654,7 @@ def load_suite(path):
                 'minimum_saturation_samples',
                 'collision_expectation',
                 'route_blocker_encountered',
+                'observed_local_recovery',
             }
             unbacked_predicates = sorted(
                 (set(all_of) & predicates_requiring_backing)
