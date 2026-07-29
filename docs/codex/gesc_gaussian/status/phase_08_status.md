@@ -1,6 +1,6 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-28T19:10:00-07:00`
+Last verified: `2026-07-29T13:17:44-07:00`
 Status: `CLOSED — PHASE 08.6 FAIL / NOT 120-RUN READY`
 
 ## Objective
@@ -3931,3 +3931,35 @@ docs/codex/gesc_gaussian/handoffs/phase_08_6_handoff.md
 
 No ROS/Gazebo descendants remained after the final cleanup. External evidence
 size at closeout was approximately `1.8 GiB`.
+
+## Phase 08.7 Plan-only geometry contract
+
+The user approved a successor geometry contract on 2026-07-29. It is saved at:
+
+```text
+docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
+```
+
+V6 remains closed and unchanged. Phase 08.7 is Plan-only; no new world,
+scenario implementation, Gazebo run, or evidence root is authorized yet.
+
+Approved geometry:
+
+```text
+room bounds: x,y in [-0.25, 3.75] m
+robot start: (0.0, 0.0) m, yaw 0
+global:      (3.5, 3.5) m
+local:       radius 1.0-2.0 m
+             angle 0-90 degrees
+             equivalently +/-45 degrees around the 45-degree diagonal
+new wall margin: 0.20 m
+```
+
+The current centered validation world cannot implement these bounds merely by
+changing scenario values. The successor implementation must add a separate
+shifted world while preserving the historical world and case identities.
+
+### Phase 08.7 next criterion
+
+Review the complete Plan and prospectively choose first-episode versus
+full-record acceptance. Implementation and execution remain paused.
