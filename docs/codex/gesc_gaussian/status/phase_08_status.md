@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-29T14:39:15-07:00`
-Status: `PHASE 08.7 M1 QUALIFIED — V6 CLOSED / GAZEBO EXECUTION PAUSED`
+Last verified: `2026-07-29T15:08:02-07:00`
+Status: `PHASE 08.7 M2 CASE FROZEN AND QUALIFIED — EXECUTION AUTHORIZED`
 
 ## Objective
 
@@ -4176,3 +4176,92 @@ HEAD `970bdc02047aa7da9c3f94616c723ba8e6842206`.
 
 Keep execution paused. M2 requires separate explicit approval before committing
 a fresh scenario or starting the one bounded visible-Gazebo geometry probe.
+
+## Phase 08.7 M2 pre-execution freeze and qualification
+
+The user explicitly authorized M2 execution after the clean M1 commit:
+
+```text
+7c87e5a9d8b486bdb0cb465d3e392d78ccc3959b
+phase 08.7: qualify corner-origin M1
+```
+
+M2 began from that clean HEAD, branch ahead of its remote by 51 commits.
+`validate_phase_context.sh 08 implement` passed, `DISPLAY=:0` was available,
+approximately `320 GiB` was free, the fresh M2 evidence root was absent, and
+no runner, recorder, Gazebo server/client, or physical-hardware process was
+active.
+
+The committed-before-execution development probe is:
+
+```text
+suite:       phase08_v7_m2_geometry_probe
+case:        v7_m2_diagonal_r1p5_h25_18001
+case key:    d07a23d9a77f938038fbe58c5d2b312dd5e550394d4f60c56d22d6ead8ca2961
+seed:        18001
+start:       (0.0, 0.0), yaw 0
+local:       (1.0606601717798212, 1.0606601717798212)
+local polar: radius 1.5 m, angle 45 degrees
+inputs:      local 400.0, global 1600.0 nominal relative lumens
+global:      (3.5, 3.5)
+topology:    1 local, 1 global, max_fills=1
+presentation: visible Gazebo GUI
+run count:   exactly 1
+```
+
+Scenario:
+
+```text
+ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/
+  phase08_v7_m2_geometry_probe.yaml
+sha256 9623b001d91a1216d35c037c2eeb46d4a0f05cdf46d3b3ea68c2b4ad7a0af442
+```
+
+The Plan now contains the exact M2 execution amendment. The diagonal midpoint
+was selected from the Plan's prospective examples before any corner-origin
+Gazebo outcome. H25 is a development diagnostic carried from V6 and cannot
+tune, select, or count toward M3. V6 remains closed and unchanged.
+
+Pre-execution qualification:
+
+- strict schema load and deterministic expansion: PASS, one supported run;
+  resolved radius `1.4999999999999998 m`, angle `45 degrees`, and the exact
+  case key above;
+- the first read-only qualification script used exact floating equality for
+  derived radius/angle and raised `AssertionError`; its immediate
+  tolerance-aware rerun passed without changing the scenario;
+- focused schema/runner regression:
+  `107 passed, 1 skipped in 46.23s`; the skip is the explicitly gated
+  recorded headless-Gazebo integration;
+- fresh isolated build:
+  `3 packages finished in 11.5s`; logs under
+  `/tmp/phase08_7_m2_colcon_log`;
+- source and installed scenario hashes match; source and installed shifted
+  world hashes match;
+- XML/SDF wall-pose qualification: PASS for wall centerlines
+  `(-0.30, 3.80)` and inner faces `(-0.25, 3.75)` on both axes;
+- installed `run_scenario --gui --dry-run`: PASS, one resolved run, zero
+  unsupported, 70 launch arguments, and 89 recorder arguments;
+- dry-run launch resolution binds GUI, seed 18001, zero-yaw corner start,
+  exactly two lights at the frozen coordinates, shifted bounds/center,
+  wall margin `0.20`, contacts, no affine assist, and
+  `gaussian_fill_max_fills=1`;
+- dry-run summary:
+  `/tmp/phase08_7_m2_dry_run.yaml`;
+- `git diff --check`: PASS;
+- the external M2 evidence root remained absent and no ROS/Gazebo process was
+  started by qualification.
+
+The pre-execution material boundary is checkpointed before the scenario is
+committed. No automatic retry is authorized. Runtime geometry/infrastructure
+and Stage A/Stage B behavior remain separate results.
+
+## Current milestone
+
+**Phase 08.7 M2 — frozen case qualified; one visible probe authorized.**
+
+### Next criterion
+
+Commit the exact Plan amendment, scenario, live status, and checkpoint. Verify
+the clean commit and unchanged installed scenario hash, then dispatch exactly
+one bounded visible-Gazebo run to the fresh M2 evidence root.

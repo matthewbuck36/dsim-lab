@@ -2,14 +2,15 @@
 
 ## Status and authority
 
-**PLAN-ONLY — GEOMETRY, STAGED FILL, AND GLOBAL-PROXIMITY STOP CONTRACT
-APPROVED; IMPLEMENTATION AND EXECUTION NOT YET AUTHORIZED.**
+**M1 IMPLEMENTED AND QUALIFIED; M2 VISIBLE GEOMETRY PROBE AUTHORIZED;
+M3 AND LATER EXECUTION NOT AUTHORIZED.**
 
-The user approved the geometry in this Plan on 2026-07-29. This Plan makes the
-geometry durable and reviewable without modifying the sealed Phase 08.6
-scenarios, world, evidence, results, or handoff. It does not yet authorize
-Gazebo execution, physical hardware, a 120-run campaign, Phase 09, or a
-simulation-readiness claim.
+The user approved the geometry in this Plan on 2026-07-29. M1 was implemented,
+qualified without Gazebo execution, checkpointed, and committed at `7c87e5a`.
+The user separately authorized the one-run M2 visible geometry probe on
+2026-07-29. This authority does not extend to M3, physical hardware, a
+120-run campaign, Phase 09, or a simulation-readiness claim, and it does not
+modify the sealed Phase 08.6 scenarios, world, evidence, results, or handoff.
 
 The user resolved the V6 acceptance-window ambiguity on 2026-07-29. Each run
 must report local-recovery success separately from post-recovery global
@@ -335,6 +336,56 @@ Exact positions, ratios, seeds, and run count belong in an execution amendment.
 The success window is the approved Stage A plus immediate Stage B
 global-proximity boundary above. No outcome-derived placement may be added to
 the same fixed experiment version.
+
+## M2 execution amendment
+
+The one authorized M2 run is frozen before execution as:
+
+```text
+suite:              phase08_v7_m2_geometry_probe
+experiment version: phase08-v7-m2
+case:               v7_m2_diagonal_r1p5_h25_18001
+case key:           d07a23d9a77f938038fbe58c5d2b312dd5e550394d4f60c56d22d6ead8ca2961
+partition:          development
+run count:          1
+Gazebo presentation: visible GUI
+seed:               18001
+start:              (0.0, 0.0), yaw 0
+local:              (1.0606601717798212, 1.0606601717798212)
+local polar point:  radius 1.5 m, angle 45 degrees
+local input:        400.0 nominal relative lumens
+global:             (3.5, 3.5)
+global input:       1600.0 nominal relative lumens
+known topology:     1 local, 1 global
+maximum fills:      1
+wall margin:        0.20 m
+global proximity:   0.35 m
+run timeout:        360 s
+wall timeout:       540 s
+shutdown grace:     45 s
+```
+
+The exact scenario is
+`ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/
+phase08_v7_m2_geometry_probe.yaml`, SHA-256
+`9623b001d91a1216d35c037c2eeb46d4a0f05cdf46d3b3ea68c2b4ad7a0af442`.
+The direct-diagonal midpoint is one of the Plan's examples and was selected
+before any corner-origin Gazebo outcome. The H25 contrast is a development
+diagnostic carried from V6 because it previously exposed the desired
+mechanism; it does not change V6 and cannot tune, select, or count toward M3.
+
+M2 has two separately reported outcomes:
+
+1. geometry/infrastructure: shifted wall poses, robot and light spawns,
+   contacts endpoint/evidence, recording completeness, final-zero/readiness,
+   collision result, and cleanup;
+2. behavior: Stage A local recovery, exact fill cardinality, Stage B global
+   proximity and graceful stop, and the combined result.
+
+Infrastructure success does not convert a behavioral miss into a pass. A
+behavioral pass from this single development probe does not establish
+repeatability or simulation readiness. The attempt is retained without
+automatic retry regardless of its result.
 
 ## Milestones
 
