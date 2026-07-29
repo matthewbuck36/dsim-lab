@@ -350,6 +350,162 @@ def test_recenter_timeout():
     assert machine.step(8.0, TransitionInputs()).current == State.FAILSAFE
 
 
+def _completed_local_recovery_with_post_guidance():
+    machine = SupervisorStateMachine(
+        config=config(
+            max_fill_clusters=1,
+            post_recovery_guidance_enabled=True,
+            post_recovery_guidance_max_sec=60.0,
+            post_recovery_retry_limit=3,
+        )
+    )
+    machine.step(0.0, TransitionInputs(convergence_confirmed=True))
+    machine.step(
+        0.1,
+        TransitionInputs(source_score=0.2, source_score_valid=True),
+    )
+    transition = machine.step(
+        3.1,
+        TransitionInputs(source_score=0.2, source_score_valid=True),
+    )
+    assert transition.current == State.DESIGN_OR_MERGE_FILL
+    machine.register_fill_request(11.0)
+    transition = machine.step(
+        3.2,
+        TransitionInputs(
+            fill_result="success",
+            fill_source_timestamp=11.0,
+            fill_id=4,
+            active_fill_count=1,
+        ),
+    )
+    assert transition.current == State.ESCAPE_REPULSE
+    assert machine.step(
+        4.0, TransitionInputs(stable_exit=True)
+    ).current == State.RECENTER
+    assert machine.step(
+        5.0, TransitionInputs(recenter_complete=True)
+    ).current == State.SEARCH
+    return machine
+
+
+def test_final_local_recovery_authorizes_bounded_affine_search():
+    machine = _completed_local_recovery_with_post_guidance()
+
+    assert machine.post_recovery_guidance_active is True
+    assert machine.post_recovery_fill_id == 4
+    assert machine.active_escape_fill_id == 4
+    assert machine.weights == (1.0, 1.0, 1.0)
+
+    assert machine.step(64.99, TransitionInputs()) is None
+    assert machine.weights == (1.0, 1.0, 1.0)
+    assert machine.step(65.0, TransitionInputs()) is None
+    assert machine.post_recovery_guidance_active is False
+    assert machine.active_escape_fill_id is None
+    assert machine.weights == (1.0, 1.0, 0.0)
+
+
+def test_m2_replay_low_score_at_exact_fill_budget_resumes_guided_search():
+    machine = _completed_local_recovery_with_post_guidance()
+
+    transition = machine.step(
+        31.0,
+        TransitionInputs(convergence_confirmed=True),
+    )
+    assert transition.current == State.VERIFY_EXTREMUM
+    machine.step(
+        31.1,
+        TransitionInputs(source_score=0.018, source_score_valid=True),
+    )
+    transition = machine.step(
+        34.1,
+        TransitionInputs(source_score=0.018, source_score_valid=True),
+    )
+
+    assert transition.current == State.SEARCH
+    assert transition.reason == (
+        "known local-fill budget exhausted; resume guided search"
+    )
+    assert machine.post_recovery_retry_count == 1
+    assert machine.active_fill_count == 1
+    assert machine.active_escape_fill_id == 4
+    assert machine.fill_request_timestamp is None
+    assert machine.weights == (1.0, 1.0, 1.0)
+
+
+def test_topology_recovery_has_bounded_retry_limit():
+    machine = _completed_local_recovery_with_post_guidance()
+    now = 10.0
+    for expected_retry in range(1, 4):
+        machine.step(now, TransitionInputs(convergence_confirmed=True))
+        machine.step(
+            now + 0.1,
+            TransitionInputs(source_score=0.1, source_score_valid=True),
+        )
+        transition = machine.step(
+            now + 3.1,
+            TransitionInputs(source_score=0.1, source_score_valid=True),
+        )
+        assert transition.current == State.SEARCH
+        assert machine.post_recovery_retry_count == expected_retry
+        now += 5.0
+
+    machine.step(now, TransitionInputs(convergence_confirmed=True))
+    machine.step(
+        now + 0.1,
+        TransitionInputs(source_score=0.1, source_score_valid=True),
+    )
+    transition = machine.step(
+        now + 3.1,
+        TransitionInputs(source_score=0.1, source_score_valid=True),
+    )
+    assert transition.current == State.FAILSAFE
+    assert transition.reason == "post-recovery retry limit reached"
+
+
+def test_disabled_post_recovery_policy_preserves_fill_design_path():
+    machine = SupervisorStateMachine()
+    machine.active_fill_count = 1
+    machine.step(0.0, TransitionInputs(convergence_confirmed=True))
+    machine.step(
+        0.1,
+        TransitionInputs(source_score=0.1, source_score_valid=True),
+    )
+    transition = machine.step(
+        3.1,
+        TransitionInputs(source_score=0.1, source_score_valid=True),
+    )
+    assert transition.current == State.DESIGN_OR_MERGE_FILL
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {
+            "post_recovery_guidance_enabled": True,
+            "max_fill_clusters": 0,
+            "post_recovery_guidance_max_sec": 60.0,
+            "post_recovery_retry_limit": 3,
+        },
+        {
+            "post_recovery_guidance_enabled": True,
+            "max_fill_clusters": 1,
+            "post_recovery_guidance_max_sec": 0.0,
+            "post_recovery_retry_limit": 3,
+        },
+        {
+            "post_recovery_guidance_enabled": True,
+            "max_fill_clusters": 1,
+            "post_recovery_guidance_max_sec": 60.0,
+            "post_recovery_retry_limit": 0,
+        },
+    ],
+)
+def test_post_recovery_policy_rejects_unbounded_configuration(overrides):
+    with pytest.raises(ValueError):
+        config(**overrides)
+
+
 @pytest.mark.parametrize(
     "fault_input",
     [

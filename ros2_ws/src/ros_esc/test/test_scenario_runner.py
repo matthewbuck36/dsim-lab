@@ -44,6 +44,11 @@ V3_ACTIVATION = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_v3_activation.yaml'
 )
+M2_1_CORRECTION = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m2_1_correction_probe.yaml'
+)
 
 
 def test_observed_local_recovery_binds_fill_to_local_convergence():
@@ -543,6 +548,32 @@ def test_v5_launch_and_metadata_bind_shifted_world_profile():
         'x_m': 3.5,
         'y_m': 3.5,
     }
+
+
+def test_m2_1_launch_binds_detector_topology_affine_and_relaxed_stop():
+    """Resolve every correction through the existing central launch owner."""
+    runs, unsupported = expand_suite(load_suite(M2_1_CORRECTION))
+    resolved = runs[0]
+    launch = build_launch_command(resolved, gui=True)
+
+    assert unsupported == []
+    for expected in (
+        'gazebo_gui:=True',
+        'convergence_state_gating_enabled:=True',
+        'convergence_minimum_path_length_m:=0.2',
+        'convergence_maximum_path_efficiency:=0.35',
+        'gaussian_fill_max_fills:=1',
+        'modified_cost_enable_affine_bias:=True',
+        'post_recovery_guidance_enabled:=True',
+        'post_recovery_guidance_max_sec:=60.0',
+        'post_recovery_retry_limit:=3',
+        'modified_cost_affine_gain:=0.5',
+        'modified_cost_affine_max_age:=60.0',
+    ):
+        assert expected in launch
+    assert resolved['success']['staged_recovery'][
+        'global_proximity_radius_m'
+    ] == 0.60
 
 
 def test_staged_recovery_reports_stage_a_cardinality_and_global_sample():

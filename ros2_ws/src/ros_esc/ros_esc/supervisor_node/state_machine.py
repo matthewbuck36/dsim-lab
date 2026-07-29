@@ -50,6 +50,10 @@ class StateMachineConfig:
     escape_max_sec: float = 20.0
     recenter_after_escape: bool = True
     recenter_max_sec: float = 30.0
+    max_fill_clusters: int = 0
+    post_recovery_guidance_enabled: bool = False
+    post_recovery_guidance_max_sec: float = 0.0
+    post_recovery_retry_limit: int = 0
 
     def __post_init__(self):
         durations = (
@@ -65,6 +69,36 @@ class StateMachineConfig:
             raise ValueError("all supervisor durations must be finite and positive")
         if not math.isfinite(self.goal_score_threshold):
             raise ValueError("goal_score_threshold must be finite")
+        if (
+            isinstance(self.max_fill_clusters, bool)
+            or not isinstance(self.max_fill_clusters, int)
+            or self.max_fill_clusters < 0
+        ):
+            raise ValueError("max_fill_clusters must be a nonnegative integer")
+        if (
+            isinstance(self.post_recovery_retry_limit, bool)
+            or not isinstance(self.post_recovery_retry_limit, int)
+            or self.post_recovery_retry_limit < 0
+        ):
+            raise ValueError(
+                "post_recovery_retry_limit must be a nonnegative integer"
+            )
+        if self.post_recovery_guidance_enabled:
+            if self.max_fill_clusters <= 0:
+                raise ValueError(
+                    "post-recovery guidance requires a positive fill-cluster limit"
+                )
+            if (
+                not math.isfinite(self.post_recovery_guidance_max_sec)
+                or self.post_recovery_guidance_max_sec <= 0.0
+            ):
+                raise ValueError(
+                    "post-recovery guidance duration must be finite and positive"
+                )
+            if self.post_recovery_retry_limit <= 0:
+                raise ValueError(
+                    "post-recovery guidance requires a positive retry limit"
+                )
 
 
 @dataclass(frozen=True)
@@ -196,6 +230,10 @@ class SupervisorStateMachine:
         self.design_returns_to_assist = False
         self.active_fill_count = 0
         self.active_escape_fill_id = None
+        self.post_recovery_fill_id = None
+        self.post_recovery_guidance_active = False
+        self.post_recovery_guidance_started_sec = None
+        self.post_recovery_retry_count = 0
 
     @staticmethod
     def _require_time(now_sec):
@@ -206,6 +244,8 @@ class SupervisorStateMachine:
     def weights(self) -> Tuple[float, float, float]:
         """Return explicit raw, Gaussian, and affine weights."""
 
+        if self.state == State.SEARCH and self.post_recovery_guidance_active:
+            return (1.0, 1.0, 1.0)
         return STATE_WEIGHTS[self.state]
 
     def elapsed(self, now_sec: float) -> float:
@@ -251,6 +291,7 @@ class SupervisorStateMachine:
         if not inputs.sensor_valid:
             return self._transition(State.FAILSAFE, now_sec, "source sample invalid or stale")
 
+        self._expire_post_recovery_guidance(now_sec)
         if self.state == State.GOAL_HOLD:
             return None
         if self.state == State.SEARCH:
@@ -320,6 +361,28 @@ class SupervisorStateMachine:
                 now_sec - self.undesired_dwell_started_sec
                 >= self.config.undesired_score_hold_sec
             ):
+                if self._fill_budget_exhausted():
+                    if (
+                        self.post_recovery_retry_count
+                        >= self.config.post_recovery_retry_limit
+                    ):
+                        return self._transition(
+                            State.FAILSAFE,
+                            now_sec,
+                            "post-recovery retry limit reached",
+                        )
+                    if not self._activate_post_recovery_guidance(now_sec):
+                        return self._transition(
+                            State.FAILSAFE,
+                            now_sec,
+                            "post-recovery guidance has no accepted fill",
+                        )
+                    self.post_recovery_retry_count += 1
+                    return self._transition(
+                        State.SEARCH,
+                        now_sec,
+                        "known local-fill budget exhausted; resume guided search",
+                    )
                 return self._transition(
                     State.DESIGN_OR_MERGE_FILL,
                     now_sec,
@@ -345,6 +408,10 @@ class SupervisorStateMachine:
                     self.active_fill_count = int(inputs.active_fill_count)
                 if inputs.fill_id is not None and int(inputs.fill_id) > 0:
                     self.active_escape_fill_id = int(inputs.fill_id)
+                    self.post_recovery_fill_id = int(inputs.fill_id)
+                self.post_recovery_guidance_active = False
+                self.post_recovery_guidance_started_sec = None
+                self.post_recovery_retry_count = 0
                 destination = (
                     State.ESCAPE_ASSIST
                     if self.design_returns_to_assist
@@ -387,6 +454,13 @@ class SupervisorStateMachine:
 
     def _step_recenter(self, now_sec, inputs):
         if inputs.recenter_complete:
+            if self._fill_budget_exhausted():
+                if not self._activate_post_recovery_guidance(now_sec):
+                    return self._transition(
+                        State.FAILSAFE,
+                        now_sec,
+                        "post-recovery guidance has no accepted fill",
+                    )
             return self._transition(State.SEARCH, now_sec, "recenter complete")
         if self.elapsed(now_sec) >= self.config.recenter_max_sec:
             return self._transition(State.FAILSAFE, now_sec, "recenter timeout")
@@ -410,6 +484,37 @@ class SupervisorStateMachine:
             and now_sec - self.escape_started_sec >= self.config.escape_max_sec
         )
 
+    def _fill_budget_exhausted(self):
+        return bool(
+            self.config.post_recovery_guidance_enabled
+            and self.config.max_fill_clusters > 0
+            and self.active_fill_count >= self.config.max_fill_clusters
+        )
+
+    def _activate_post_recovery_guidance(self, now_sec):
+        fill_id = self.post_recovery_fill_id
+        if fill_id is None or int(fill_id) <= 0:
+            return False
+        self.post_recovery_guidance_active = True
+        self.post_recovery_guidance_started_sec = float(now_sec)
+        self.active_escape_fill_id = int(fill_id)
+        return True
+
+    def _expire_post_recovery_guidance(self, now_sec):
+        if (
+            not self.post_recovery_guidance_active
+            or self.post_recovery_guidance_started_sec is None
+        ):
+            return
+        if (
+            float(now_sec) - self.post_recovery_guidance_started_sec
+            >= self.config.post_recovery_guidance_max_sec
+        ):
+            self.post_recovery_guidance_active = False
+            self.post_recovery_guidance_started_sec = None
+            if self.state == State.SEARCH:
+                self.active_escape_fill_id = None
+
     def _transition(self, destination, now_sec, reason):
         previous = self.state
         self.previous_state = previous
@@ -427,8 +532,12 @@ class SupervisorStateMachine:
             self.escape_started_sec = None
             self.redesign_attempted = False
             self.design_returns_to_assist = False
-            self.active_escape_fill_id = None
+            if not self.post_recovery_guidance_active:
+                self.active_escape_fill_id = None
         if destination in (State.FAILSAFE, State.GOAL_HOLD):
             self.design_returns_to_assist = False
+            self.post_recovery_guidance_active = False
+            self.post_recovery_guidance_started_sec = None
+            self.active_escape_fill_id = None
 
         return Transition(previous, destination, reason)

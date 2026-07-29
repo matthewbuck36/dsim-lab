@@ -1,46 +1,68 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-29T22:30:16+00:00
-Base HEAD: a8b9d97031c44f4557936c2e24143da2d183c431
+Generated: 2026-07-29T23:47:04+00:00
+Base HEAD: 7d02fb6c4199034a116fa956cac5797d3257825e
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 7cac21e9fa5832f270ce097632a432b09e5b35daaa0250fe3068de14e4748512
+Status sha256: e53c7254399670f1656678cd9b8ac44a097a1c85e5ee136a9add067cc5163848
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
-Active subphase plan sha256: 180811da5868a60c6399be423e3efb19e1a94e47c2f8f287a1264f0a3bbf2da4
-Unstaged diff sha256: 84369ac71e9b5a681261fd65048a40a2ccf50763e21c101db50a5348ed017dc8
+Active subphase plan sha256: 00b4530604761fe0854bc24ef054872e9360b3c15d6519c08b3c10ad6026b881
+Unstaged diff sha256: 453ee7511bc6b3bd1a26ec202dbcbc321144393bd947b1b5f360a0698acb6678
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 52]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 53]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
-?? docs/codex/gesc_gaussian/validation/phase_08_7_m2_geometry_probe_report.md
+ M ros2_ws/src/ros_esc/ros_esc/convergence_detector_node/convergence_detector_node_script.py
+ M ros2_ws/src/ros_esc/ros_esc/modified_cost_node/modified_cost_script.py
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py
+ M ros2_ws/src/ros_esc/ros_esc/supervisor_node/state_machine.py
+ M ros2_ws/src/ros_esc/ros_esc/supervisor_node/supervisor_node_script.py
+ M ros2_ws/src/ros_esc/test/test_legacy_behavior.py
+ M ros2_ws/src/ros_esc/test/test_scenario_runner.py
+ M ros2_ws/src/ros_esc/test/test_scenario_schema.py
+ M ros2_ws/src/ros_esc/test/test_state_machine.py
+ M ros2_ws/src/ros_esc/test/test_supervisor_integration.py
+ M ros2_ws/src/turtlebot3_rotating_sensor/launch/gazebo.launch.xml
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m2_1_correction_probe.yaml
+?? ros2_ws/src/ros_esc/test/test_convergence_detector_policy.py
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  33 +---
- docs/codex/gesc_gaussian/plans/phase_08_7_plan.md  |  16 +-
- docs/codex/gesc_gaussian/status/phase_08_status.md | 183 ++++++++++++++++++++-
- 3 files changed, 200 insertions(+), 32 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  47 +++---
+ docs/codex/gesc_gaussian/plans/phase_08_7_plan.md  | 161 +++++++++++++++++-
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 182 +++++++++++++++++++++
+ .../convergence_detector_node_script.py            | 169 ++++++++++++++++++-
+ .../modified_cost_node/modified_cost_script.py     |  11 +-
+ .../ros_esc/scenario_runner/scenario_schema.py     | 119 +++++++++++++-
+ .../ros_esc/supervisor_node/state_machine.py       | 111 ++++++++++++-
+ .../supervisor_node/supervisor_node_script.py      |  98 ++++++++++-
+ ros2_ws/src/ros_esc/test/test_legacy_behavior.py   |  13 ++
+ ros2_ws/src/ros_esc/test/test_scenario_runner.py   |  31 ++++
+ ros2_ws/src/ros_esc/test/test_scenario_schema.py   |  59 +++++++
+ ros2_ws/src/ros_esc/test/test_state_machine.py     | 156 ++++++++++++++++++
+ .../ros_esc/test/test_supervisor_integration.py    | 130 +++++++++++++++
+ .../launch/gazebo.launch.xml                       |  14 ++
+ 14 files changed, 1258 insertions(+), 43 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**Phase 08.7 M2 — executed and retained. Geometry/infrastructure, Stage A,
-and fill cardinality passed; Stage B and the combined behavioral contract
-failed.**
+**Phase 08.7 M2.1 — implementation and no-Gazebo qualification PASS; exact
+input ready for pre-execution checkpoint and commit.**
 
 ### Next criterion
 
-Stop at the M2 checkpoint. M3 remains unauthorized, and its Plan prerequisite
-has not been established by this combined M2 result. Await explicit user
-direction before any new scenario, tuning, retry, or Gazebo execution.
+Checkpoint and commit this reviewed material boundary. Verify the clean commit
+and frozen installed scenario identity, then dispatch exactly one bounded
+visible-Gazebo M2.1 probe with no automatic retry.
 
 
 This file describes the base HEAD and diff before the next commit; it is

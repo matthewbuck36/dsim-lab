@@ -589,11 +589,20 @@ class ModifiedCost2D(Node):
         """Create exactly one robust affine term from the selected safe direction."""
 
         state = self.algorithm_state
+        authorized_state = bool(
+            state is not None
+            and state.state
+            in (
+                AlgorithmState.STATE_ESCAPE_ASSIST,
+                AlgorithmState.STATE_SEARCH,
+            )
+            and float(state.affine_weight) > 0.0
+        )
         if (
             not self.robust_profile
             or not self.enable_affine_bias
             or state is None
-            or state.state != AlgorithmState.STATE_ESCAPE_ASSIST
+            or not authorized_state
             or not state.active_escape_fill_id_valid
             or not state.safe_direction_valid
             or not state.safe_direction_revision_valid

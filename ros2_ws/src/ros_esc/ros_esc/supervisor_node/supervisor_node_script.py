@@ -140,6 +140,20 @@ class SupervisorNode(Node):
                     self.get_parameter("recenter_after_escape").value
                 ),
                 recenter_max_sec=self._float("recenter_max_sec"),
+                max_fill_clusters=self._nonnegative_int(
+                    "max_fill_clusters"
+                ),
+                post_recovery_guidance_enabled=bool(
+                    self.get_parameter(
+                        "post_recovery_guidance_enabled"
+                    ).value
+                ),
+                post_recovery_guidance_max_sec=self._float(
+                    "post_recovery_guidance_max_sec"
+                ),
+                post_recovery_retry_limit=self._nonnegative_int(
+                    "post_recovery_retry_limit"
+                ),
             ),
         )
         self.bounded_mode = bool(
@@ -311,6 +325,10 @@ class SupervisorNode(Node):
             "approach_history_window_sec": 3.0,
             "recenter_after_escape": True,
             "recenter_max_sec": 30.0,
+            "max_fill_clusters": 0,
+            "post_recovery_guidance_enabled": False,
+            "post_recovery_guidance_max_sec": 0.0,
+            "post_recovery_retry_limit": 0,
             "room_bounds_x_min_m": -2.0,
             "room_bounds_x_max_m": 2.0,
             "room_bounds_y_min_m": -2.0,
@@ -364,6 +382,12 @@ class SupervisorNode(Node):
         value = int(self.get_parameter(name).value)
         if value <= 0:
             raise ValueError(f"{name} must be positive")
+        return value
+
+    def _nonnegative_int(self, name):
+        value = int(self.get_parameter(name).value)
+        if value < 0:
+            raise ValueError(f"{name} must be nonnegative")
         return value
 
     def _string(self, name):
@@ -625,6 +649,11 @@ class SupervisorNode(Node):
             return self._ensure_safe_direction(recenter=False)
         if self.machine.state == State.RECENTER:
             return self._update_recenter(now_sec)
+        if (
+            self.machine.state == State.SEARCH
+            and self.machine.post_recovery_guidance_active
+        ):
+            return self._ensure_post_recovery_direction()
         return None
 
     def _transition_inputs(self, now_sec):
@@ -799,7 +828,14 @@ class SupervisorNode(Node):
             self._publish_failsafe_event(now_sec, transition.reason)
             self._reset_escape_attempt()
         if transition.current == State.SEARCH:
+            previous_revision = self.safe_direction_revision
             self._reset_escape_attempt()
+            if self.machine.post_recovery_guidance_active:
+                self.safe_direction_revision = previous_revision
+                failure = self._ensure_post_recovery_direction()
+                if failure is not None:
+                    self._force_failsafe(now_sec, failure)
+                    return
 
     def _force_failsafe(self, now_sec, reason):
         self.current_supervisor_command = Twist()
@@ -924,6 +960,48 @@ class SupervisorNode(Node):
         )
         if selected is None:
             return "no safe assisted/recenter direction candidate"
+        self.safe_direction = selected
+        self.safe_direction_revision += 1
+        return None
+
+    def _ensure_post_recovery_direction(self):
+        if self.latest_pose is None or not self.latest_pose_valid:
+            return "post-recovery guidance requires a valid pose"
+        record = self._record_for_fill(self.machine.active_escape_fill_id)
+        if record is None:
+            return "post-recovery guidance fill has no active finite geometry"
+        position = self.latest_pose.position
+        preferred = position - np.asarray(record["center"], dtype=np.float64)
+        if float(np.linalg.norm(preferred)) <= 1e-12:
+            return "post-recovery guidance direction is undefined at fill center"
+        fills = self._active_fill_avoidances()
+        if self.safe_direction is not None:
+            safe, clearance = evaluate_direction(
+                position,
+                self.safe_direction.direction,
+                preferred,
+                fills,
+                self.direction_config,
+                self.bounds,
+            )
+            if safe:
+                self.safe_direction = DirectionSelection(
+                    self.safe_direction.x,
+                    self.safe_direction.y,
+                    clearance,
+                    self.safe_direction.rotation_rad,
+                    self.safe_direction.candidate_index,
+                )
+                return None
+        selected = select_safe_direction(
+            position,
+            preferred,
+            fills,
+            self.direction_config,
+            self.bounds,
+        )
+        if selected is None:
+            return "no safe post-recovery direction candidate"
         self.safe_direction = selected
         self.safe_direction_revision += 1
         return None
@@ -1082,6 +1160,10 @@ class SupervisorNode(Node):
             "recenter_max_angular_velocity_rps",
             "recenter_rotate_in_place_angle_rad",
             'supervisor_command_stale_sec',
+            "max_fill_clusters",
+            "post_recovery_guidance_enabled",
+            "post_recovery_guidance_max_sec",
+            "post_recovery_retry_limit",
         ]
         values = [
             1.0 if self.bounded_mode else 0.0,
@@ -1116,6 +1198,14 @@ class SupervisorNode(Node):
             self.recenter_config.max_angular_velocity_rps,
             self.recenter_config.rotate_in_place_angle_rad,
             self.supervisor_command_stale_sec,
+            float(self.machine.config.max_fill_clusters),
+            (
+                1.0
+                if self.machine.config.post_recovery_guidance_enabled
+                else 0.0
+            ),
+            self.machine.config.post_recovery_guidance_max_sec,
+            float(self.machine.config.post_recovery_retry_limit),
         ]
         self._publish_event(
             AlgorithmEvent.EVENT_CONFIGURATION,
@@ -1194,7 +1284,13 @@ class SupervisorNode(Node):
                 state.escape_stalled_valid = progress.stalled_valid
         if (
             self.safe_direction is not None
-            and self.machine.state in (State.ESCAPE_ASSIST, State.RECENTER)
+            and (
+                self.machine.state in (State.ESCAPE_ASSIST, State.RECENTER)
+                or (
+                    self.machine.state == State.SEARCH
+                    and self.machine.post_recovery_guidance_active
+                )
+            )
         ):
             state.safe_direction_x = self.safe_direction.x
             state.safe_direction_y = self.safe_direction.y

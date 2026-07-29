@@ -42,6 +42,11 @@ V6_HUE_SWEEP = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_v6_hue_sweep.yaml'
 )
+M2_1_CORRECTION = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m2_1_correction_probe.yaml'
+)
 HISTORICAL_V2_ACTIVATION = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml'
@@ -966,6 +971,60 @@ def test_schema_v5_resolves_corner_geometry_and_known_topology(tmp_path):
     assert local['angle_rad'] == pytest.approx(math.pi / 4.0)
     assert local['angle_deg'] == pytest.approx(45.0)
     assert deterministic_case_key(run) == run['case_key']
+
+
+def test_m2_1_resolves_opt_in_correction_and_relaxed_stop():
+    """Freeze the fresh detector/topology/affine correction contract."""
+    runs, unsupported = expand_suite(load_suite(M2_1_CORRECTION))
+    run = runs[0]
+
+    assert unsupported == []
+    assert len(runs) == 1
+    assert run['algorithm']['ablations']['affine_assist_enabled'] is True
+    overrides = run['algorithm']['launch_overrides']
+    assert overrides['convergence_state_gating_enabled'] is True
+    assert overrides['convergence_minimum_path_length_m'] == 0.20
+    assert overrides['convergence_maximum_path_efficiency'] == 0.35
+    assert overrides['gaussian_fill_max_fills'] == 1
+    assert overrides['post_recovery_guidance_enabled'] is True
+    assert overrides['post_recovery_guidance_max_sec'] == 60.0
+    assert overrides['post_recovery_retry_limit'] == 3
+    assert overrides['modified_cost_affine_max_age'] == 60.0
+    assert run['success']['staged_recovery'][
+        'global_proximity_radius_m'
+    ] == 0.60
+    assert run['success']['ground_truth']['proximity_radius_m'] == 0.60
+    assert deterministic_case_key(run) == run['case_key']
+
+
+@pytest.mark.parametrize(
+    ('mutation', 'match'),
+    [
+        (
+            lambda doc: doc['cases'][0]['algorithm']['ablations'].update(
+                {'affine_assist_enabled': False}
+            ),
+            'requires algorithm.ablations.affine_assist_enabled',
+        ),
+        (
+            lambda doc: doc['cases'][0]['algorithm'][
+                'launch_overrides'
+            ].update({'post_recovery_guidance_max_sec': 0.0}),
+            'requires a positive post_recovery_guidance_max_sec',
+        ),
+        (
+            lambda doc: doc['cases'][0]['success'][
+                'staged_recovery'
+            ].update({'global_proximity_radius_m': 0.35}),
+            'must declare the same global proximity boundary',
+        ),
+    ],
+)
+def test_m2_1_rejects_partial_correction_contract(tmp_path, mutation, match):
+    document = yaml.safe_load(M2_1_CORRECTION.read_text(encoding='utf-8'))
+    mutation(document)
+    with pytest.raises(ValueError, match=match):
+        _load(tmp_path, document)
 
 
 @pytest.mark.parametrize(

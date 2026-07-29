@@ -102,6 +102,9 @@ LAUNCH_OVERRIDES = {
     'convergence_decay_rate',
     'convergence_hold_sec',
     'convergence_min_fill_periods',
+    'convergence_minimum_path_length_m',
+    'convergence_maximum_path_efficiency',
+    'convergence_state_gating_enabled',
     'convergence_threshold',
     'direction_candidate_step_rad',
     'direction_lookahead_m',
@@ -135,6 +138,11 @@ LAUNCH_OVERRIDES = {
     'goal_score_rotation_period_sec',
     'goal_score_threshold',
     'minimum_radial_progress_m',
+    'modified_cost_affine_gain',
+    'modified_cost_affine_max_age',
+    'post_recovery_guidance_enabled',
+    'post_recovery_guidance_max_sec',
+    'post_recovery_retry_limit',
     'recenter_angular_gain',
     'recenter_hold_sec',
     'recenter_linear_gain',
@@ -374,6 +382,79 @@ def _positive_integer(value, location):
     return value
 
 
+def _validate_correction_overrides(overrides, ablations, location):
+    """Validate optional Phase 08.7 robust correction controls."""
+
+    gate_name = 'convergence_state_gating_enabled'
+    if gate_name in overrides:
+        _boolean(overrides[gate_name], f'{location}.{gate_name}')
+    if 'convergence_minimum_path_length_m' in overrides:
+        _number(
+            overrides['convergence_minimum_path_length_m'],
+            f'{location}.convergence_minimum_path_length_m',
+            minimum=0.0,
+        )
+    if 'convergence_maximum_path_efficiency' in overrides:
+        efficiency = _number(
+            overrides['convergence_maximum_path_efficiency'],
+            f'{location}.convergence_maximum_path_efficiency',
+            minimum=0.0,
+        )
+        if efficiency > 1.0:
+            raise ValueError(
+                f'{location}.convergence_maximum_path_efficiency '
+                'must be at most 1.0'
+            )
+
+    guidance_name = 'post_recovery_guidance_enabled'
+    guidance_enabled = False
+    if guidance_name in overrides:
+        guidance_enabled = _boolean(
+            overrides[guidance_name], f'{location}.{guidance_name}'
+        )
+    if 'post_recovery_guidance_max_sec' in overrides:
+        _number(
+            overrides['post_recovery_guidance_max_sec'],
+            f'{location}.post_recovery_guidance_max_sec',
+            minimum=0.0,
+        )
+    if 'post_recovery_retry_limit' in overrides:
+        _positive_integer(
+            overrides['post_recovery_retry_limit'],
+            f'{location}.post_recovery_retry_limit',
+        )
+    if 'modified_cost_affine_gain' in overrides:
+        _number(
+            overrides['modified_cost_affine_gain'],
+            f'{location}.modified_cost_affine_gain',
+            positive=True,
+        )
+    if 'modified_cost_affine_max_age' in overrides:
+        _number(
+            overrides['modified_cost_affine_max_age'],
+            f'{location}.modified_cost_affine_max_age',
+            positive=True,
+        )
+
+    if guidance_enabled:
+        if not ablations['affine_assist_enabled']:
+            raise ValueError(
+                f'{location}.post_recovery_guidance_enabled requires '
+                'algorithm.ablations.affine_assist_enabled'
+            )
+        duration = overrides.get('post_recovery_guidance_max_sec')
+        if duration is None or float(duration) <= 0.0:
+            raise ValueError(
+                f'{location}.post_recovery_guidance_enabled requires a '
+                'positive post_recovery_guidance_max_sec'
+            )
+        if 'post_recovery_retry_limit' not in overrides:
+            raise ValueError(
+                f'{location}.post_recovery_guidance_enabled requires '
+                'post_recovery_retry_limit'
+            )
+
+
 def _geometry_profile(value, location):
     name = str(value or '')
     if name not in GEOMETRY_PROFILES:
@@ -530,13 +611,22 @@ def _resolve_geometry_profile(
             f'{location}.success.staged_recovery.global_source_id must '
             'declare the geometry-profile global source'
         )
-    if (
-        staged_recovery['global_proximity_radius_m']
-        != profile['global_proximity_radius_m']
+    corrected_stop = bool(
+        launch_overrides.get('post_recovery_guidance_enabled', False)
+    )
+    expected_global_proximity = (
+        0.60 if corrected_stop else profile['global_proximity_radius_m']
+    )
+    if not math.isclose(
+        staged_recovery['global_proximity_radius_m'],
+        expected_global_proximity,
+        rel_tol=0.0,
+        abs_tol=1e-12,
     ):
         raise ValueError(
             f'{location}.success.staged_recovery.'
-            'global_proximity_radius_m must equal 0.35'
+            'global_proximity_radius_m must equal '
+            f'{expected_global_proximity:.2f}'
         )
 
     allowed_x_min = bounds[0] + profile['wall_margin_m']
@@ -1398,6 +1488,11 @@ def load_suite(path):
                 **frozen_profile['launch_overrides'],
                 **overrides,
             }
+        _validate_correction_overrides(
+            overrides,
+            ablations,
+            f'{location}.algorithm.launch_overrides',
+        )
 
         success = case.get('success', {})
         _unknown(success, SUCCESS_KEYS, f'{location}.success')
@@ -1693,10 +1788,22 @@ def load_suite(path):
                 f'{ground_truth_location}.proximity_radius_m',
                 positive=True,
             )
-            if tolerance != 0.35:
+            expected_tolerance = (
+                0.60
+                if overrides.get(
+                    'post_recovery_guidance_enabled', False
+                )
+                else 0.35
+            )
+            if not math.isclose(
+                tolerance,
+                expected_tolerance,
+                rel_tol=0.0,
+                abs_tol=1e-12,
+            ):
                 raise ValueError(
                     f'{ground_truth_location}.proximity_radius_m must '
-                    'equal 0.35'
+                    f'equal {expected_tolerance:.2f}'
                 )
             normalized_ground_truth = {
                 'method': 'declared_global_proximity',

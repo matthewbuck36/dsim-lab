@@ -367,6 +367,136 @@ def test_recenter_suppresses_inward_translation_while_continuing_rotation():
         rclpy.shutdown()
 
 
+def test_post_recovery_search_publishes_safe_affine_authorization():
+    rclpy.init()
+    node = SupervisorNode(
+        parameter_overrides=[
+            Parameter("max_fill_clusters", value=1),
+            Parameter("post_recovery_guidance_enabled", value=True),
+            Parameter("post_recovery_guidance_max_sec", value=60.0),
+            Parameter("post_recovery_retry_limit", value=3),
+            Parameter("room_bounds_x_min_m", value=-0.25),
+            Parameter("room_bounds_x_max_m", value=3.75),
+            Parameter("room_bounds_y_min_m", value=-0.25),
+            Parameter("room_bounds_y_max_m", value=3.75),
+            Parameter("room_center_x_m", value=1.75),
+            Parameter("room_center_y_m", value=1.75),
+            Parameter("wall_margin_m", value=0.20),
+        ]
+    )
+    recorder = Recorder()
+    node.state_publisher = recorder
+    try:
+        node.latest_pose = Pose2D(10.0, 1.75, 1.75, 0.0)
+        node.latest_pose_valid = True
+        node.active_fill_records = {
+            1: {
+                "fill_id": 4,
+                "revision": 1,
+                "center": [1.22, 1.44],
+                "support_radius": 0.51,
+                "exit_radius": 0.42,
+            }
+        }
+        node.machine.state = State.SEARCH
+        node.machine.active_fill_count = 1
+        node.machine.post_recovery_fill_id = 4
+        node.machine.active_escape_fill_id = 4
+        node.machine.post_recovery_guidance_active = True
+        node.machine.post_recovery_guidance_started_sec = node._now_sec()
+
+        assert node._ensure_post_recovery_direction() is None
+        outward = node.latest_pose.position - [1.22, 1.44]
+        assert (
+            float(node.safe_direction.direction @ outward) > 0.0
+        )
+
+        node._publish_state_and_command(node._now_sec())
+        state = recorder.messages[-1]
+        assert state.state == AlgorithmState.STATE_SEARCH
+        assert state.active_escape_fill_id == 4
+        assert state.active_escape_fill_id_valid is True
+        assert state.safe_direction_valid is True
+        assert state.safe_direction_revision_valid is True
+        assert state.sensor_weight == 1.0
+        assert state.gaussian_weight == 1.0
+        assert state.affine_weight == 1.0
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m2_low_score_replay_does_not_publish_a_second_fill_request():
+    rclpy.init()
+    harness = SupervisorHarness(
+        overrides=[
+            Parameter("max_fill_clusters", value=1),
+            Parameter("post_recovery_guidance_enabled", value=True),
+            Parameter("post_recovery_guidance_max_sec", value=1.0),
+            Parameter("post_recovery_retry_limit", value=3),
+        ],
+        name="phase08_m2_topology_replay_peer",
+    )
+    try:
+        convergence = _convergence()
+        harness.publish_inputs(_pose(0.2), convergence, duration=0.25)
+        assert _wait_for(lambda: len(harness.requests) == 1)
+        harness.fill_pub.publish(_fill(harness.requests[0].timestamp))
+        assert _wait_for(
+            lambda: any(
+                state.state == AlgorithmState.STATE_ESCAPE_REPULSE
+                for state in harness.states
+            )
+        )
+
+        harness.publish_inputs(_pose(0.5), duration=0.28)
+        assert _wait_for(
+            lambda: any(
+                state.state == AlgorithmState.STATE_RECENTER
+                for state in harness.states
+            )
+        )
+        harness.publish_inputs(_pose(0.1), duration=0.08)
+        assert _wait_for(
+            lambda: any(
+                state.state == AlgorithmState.STATE_SEARCH
+                and state.affine_weight == 1.0
+                and state.safe_direction_valid
+                for state in harness.states
+            )
+        )
+
+        harness.convergence_pub.publish(convergence)
+        harness.event_pub.publish(_confirmed_convergence())
+        assert _wait_for(
+            lambda: harness.supervisor.machine.state
+            == State.VERIFY_EXTREMUM
+        )
+        harness.publish_inputs(_pose(0.1), duration=0.20, score=0.018)
+        assert _wait_for(
+            lambda: harness.supervisor.machine.state == State.SEARCH
+            and harness.supervisor.machine.post_recovery_retry_count == 1
+        )
+
+        assert len(harness.requests) == 1
+        assert harness.supervisor.machine.active_fill_count == 1
+        assert harness.supervisor.machine.transition_reason == (
+            "known local-fill budget exhausted; resume guided search"
+        )
+        assert any(
+            state.state == AlgorithmState.STATE_SEARCH
+            and state.affine_weight == 1.0
+            for state in harness.states
+        )
+        assert not any(
+            event.event_type == AlgorithmEvent.EVENT_FILL_REJECTED
+            for event in harness.events
+        )
+    finally:
+        harness.close()
+        rclpy.shutdown()
+
+
 def test_convergence_candidate_alone_does_not_activate_supervisor():
     rclpy.init()
     harness = SupervisorHarness(name="phase08_candidate_only_peer")

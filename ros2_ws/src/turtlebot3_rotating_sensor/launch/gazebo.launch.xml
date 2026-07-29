@@ -58,6 +58,9 @@
     <arg name="convergence_threshold" default="0.2"/>
     <arg name="convergence_decay_rate" default="0.15"/>
     <arg name="convergence_min_fill_periods" default="2.0"/>
+    <arg name="convergence_state_gating_enabled" default="False"/>
+    <arg name="convergence_minimum_path_length_m" default="0.0"/>
+    <arg name="convergence_maximum_path_efficiency" default="1.0"/>
     <arg name="gaussian_fill_amplitude" default="5.0"/>
     <arg name="gaussian_fill_min_sigma" default="3.16"/>
     <arg name="gaussian_fill_max_sigma" default="5.0"/>
@@ -149,6 +152,9 @@
     <arg name="approach_history_window_sec" default="3.0"/>
     <arg name="recenter_after_escape" default="True"/>
     <arg name="recenter_max_sec" default="30.0"/>
+    <arg name="post_recovery_guidance_enabled" default="False"/>
+    <arg name="post_recovery_guidance_max_sec" default="0.0"/>
+    <arg name="post_recovery_retry_limit" default="0"/>
     <arg name="room_bounds_x_min_m" default="-2.0"/>
     <arg name="room_bounds_x_max_m" default="2.0"/>
     <arg name="room_bounds_y_min_m" default="-2.0"/>
@@ -691,9 +697,13 @@
             -p threshold:=$(var convergence_threshold)
             -p decay_rate:=$(var convergence_decay_rate)
             -p min_fill_periods:=$(var convergence_min_fill_periods)
+            -p state_gating_enabled:=$(var convergence_state_gating_enabled)
+            -p minimum_path_length_m:=$(var convergence_minimum_path_length_m)
+            -p maximum_path_efficiency:=$(var convergence_maximum_path_efficiency)
             -p enable_observability:=$(var enable_observability)
             -p algorithm_profile:=$(var algorithm_profile)
             -p convergence_status_topic:=$(var convergence_status_topic)
+            -p algorithm_state_topic:=$(var algorithm_state_topic)
             -p algorithm_event_topic:=$(var algorithm_event_topic)
         "
     />
@@ -792,6 +802,10 @@
             -p approach_history_window_sec:=$(var approach_history_window_sec)
             -p recenter_after_escape:=$(var recenter_after_escape)
             -p recenter_max_sec:=$(var recenter_max_sec)
+            -p max_fill_clusters:=$(var gaussian_fill_max_fills)
+            -p post_recovery_guidance_enabled:=$(var post_recovery_guidance_enabled)
+            -p post_recovery_guidance_max_sec:=$(var post_recovery_guidance_max_sec)
+            -p post_recovery_retry_limit:=$(var post_recovery_retry_limit)
             -p room_bounds_x_min_m:=$(var room_bounds_x_min_m)
             -p room_bounds_x_max_m:=$(var room_bounds_x_max_m)
             -p room_bounds_y_min_m:=$(var room_bounds_y_min_m)

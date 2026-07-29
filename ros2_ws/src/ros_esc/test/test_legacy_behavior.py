@@ -886,7 +886,20 @@ def test_robust_affine_binds_once_to_supervisor_direction_revision(monkeypatch):
         node.algorithm_state_cb(state)
         assert node.robust_affine_terms[1]["t0"] == first_start
         state.state = AlgorithmState.STATE_SEARCH
+        state.affine_weight = 0.0
         node.algorithm_state_cb(state)
+        assert not node.robust_affine_terms
+
+        state.affine_weight = 1.0
+        state.safe_direction_revision = 2
+        state.safe_direction_x = 1.0
+        state.safe_direction_y = 0.0
+        node.algorithm_state_cb(state)
+        assert node.robust_affine_terms[1]["b0"] == pytest.approx(
+            [node.affine_gain, 0.0]
+        )
+        node.robust_affine_terms[1]["t0"] -= node.affine_max_age + 1.0
+        assert node._affine_bias_at_xy(1.0, 0.0) == 0.0
         assert not node.robust_affine_terms
     finally:
         node.destroy_node()

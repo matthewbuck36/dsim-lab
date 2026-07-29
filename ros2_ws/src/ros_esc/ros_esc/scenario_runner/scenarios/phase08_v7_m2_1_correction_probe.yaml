@@ -1,0 +1,147 @@
+schema_version: 5
+suite_id: phase08_v7_m2_1_correction_probe
+description: One visible M2.1 detector-topology-affine correction probe.
+mode: simulation
+execution:
+  max_parallel_runs: 1
+  gazebo_gui: true
+  runs_root: /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m2_1
+  preflight_timeout_sec: 150.0
+  run_timeout_sec: 360.0
+  wall_timeout_sec: 540.0
+  shutdown_grace_sec: 45.0
+  stop_on_run_failure: false
+  stop_on_cleanup_failure: true
+metadata:
+  experiment_version: phase08-v7-m2.1
+  operator_notes: One precommitted visible correction probe; retained M2 remains failed and immutable.
+level_map: {}
+defaults:
+  bounds_m: [-0.25, 3.75, -0.25, 3.75]
+  room_center_m: [1.75, 1.75]
+  validation_world: true
+  simulation_contacts_enabled: true
+  geometry_profile: corner_origin_diagonal_sector_v1
+  disturbances:
+    sensor_noise: {model: none, bound: 0.0}
+    sensor_delay_sec: 0.0
+    pose_delay_sec: 0.0
+cases:
+  - case_id: v7_m2_1_diagonal_r1p5_h25_18001
+    family: corner_origin
+    acceptance_family: corner_origin_diagonal_sector
+    acceptance_partition: development
+    description: Direct-diagonal M2 replay geometry with opt-in detector, topology, post-recovery affine, and relaxed-stop corrections.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [18001]
+    known_topology:
+      expected_local_minima: 1
+      expected_global_minima: 1
+    metric_applicability:
+      escape_attempt: true
+      escape_duration: true
+      orbit_count: true
+      revisit: false
+      delay: false
+      saturation: false
+    starts:
+      - {id: corner_start, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - id: local
+        x_m: 1.0606601717798212
+        y_m: 1.0606601717798212
+        relative_lumen_input: 400.0
+        evaluation_role: local_minimum
+      - id: global
+        x_m: 3.5
+        y_m: 3.5
+        relative_lumen_input: 1600.0
+        evaluation_role: goal
+    algorithm:
+      ablations:
+        gaussian_fill_enabled: true
+        affine_assist_enabled: true
+        recenter_enabled: true
+      launch_overrides:
+        convergence_min_fill_periods: 2.0
+        convergence_state_gating_enabled: true
+        convergence_minimum_path_length_m: 0.20
+        convergence_maximum_path_efficiency: 0.35
+        gaussian_fill_covariance_scale: 2.5
+        gaussian_fill_amplitude_depth_scale: 1.5
+        gaussian_fill_exit_sigma: 2.5
+        gaussian_fill_max_fills: 1
+        post_recovery_guidance_enabled: true
+        post_recovery_guidance_max_sec: 60.0
+        post_recovery_retry_limit: 3
+        modified_cost_affine_gain: 0.5
+        modified_cost_affine_max_age: 60.0
+        stall_window_sec: 3.0
+        minimum_radial_progress_m: 0.05
+        goal_score_threshold: 0.95
+        goal_score_rotation_period_sec: 3.0
+        goal_score_required_rotations: 2
+        goal_hold_sec: 3.0
+        undesired_score_hold_sec: 3.0
+        verification_max_sec: 12.0
+        fill_design_timeout_sec: 5.0
+        escape_max_sec: 20.0
+        escape_exit_hold_sec: 1.0
+        recenter_max_sec: 30.0
+        recenter_tolerance_m: 0.25
+        recenter_hold_sec: 1.0
+        direction_lookahead_m: 0.5
+        direction_candidate_step_rad: 0.7853981633974483
+        wall_margin_m: 0.20
+        fill_avoidance_margin_m: 0.1
+        approach_history_window_sec: 0.5
+    success:
+      all_of: &all_of
+        - recording_complete
+        - cleanup_complete
+        - required_state_path
+        - required_events
+        - no_forbidden_states
+        - no_forbidden_events
+        - collision_expectation
+        - local_recovery_stage
+        - post_recovery_global_proximity
+        - fill_cardinality
+      controller:
+        contract_id: v7_m2_1_diagonal_r1p5_h25_18001
+        expected_verification_outcome: below_target_extremum
+        reachability_argument: The fixed lower-output diagonal local precedes the stronger global; this correction probe cannot select M3 cases.
+        required_state_path:
+          - SEARCH
+          - VERIFY_EXTREMUM
+          - DESIGN_OR_MERGE_FILL
+          - ESCAPE_REPULSE
+          - RECENTER
+          - SEARCH
+        required_events:
+          - CONVERGENCE_CONFIRMED
+          - FILL_CREATED
+          - ESCAPE_STARTED
+          - RECENTER_STARTED
+          - RECENTER_COMPLETE
+        forbidden_states: [FAILSAFE]
+        forbidden_events: [TIMEOUT, FAILSAFE]
+      ground_truth:
+        method: declared_global_proximity
+        global_source_id: global
+        proximity_radius_m: 0.60
+      staged_recovery:
+        local_source_ids: [local]
+        global_source_id: global
+        convergence_to_local_max_m: 0.60
+        convergence_to_global_min_m: 0.75
+        fill_to_convergence_max_m: 0.50
+        global_proximity_radius_m: 0.60
+      collision_expected: false
+      result_scopes:
+        full_lifecycle:
+          anchor_state: SEARCH
+          boundary_state: null
+          graceful_stop: false
+          all_of: *all_of

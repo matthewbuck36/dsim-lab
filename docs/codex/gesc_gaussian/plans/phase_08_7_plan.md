@@ -395,6 +395,154 @@ The completed result is retained in
 phase_08_7_m2_geometry_probe_report.md`. Its combined result is a failure, so
 the M3 prerequisite below is not established.
 
+## M2.1 correction amendment
+
+On 2026-07-29 the user authorized a bounded correction of the retained M2
+failure before M3. M2 remains immutable and failed. M2.1 is a fresh development
+experiment version; it cannot relabel M2, count toward M3, or weaken the exact
+one-fill topology.
+
+The correction extends the existing convergence detector, supervisor, modified
+cost owner, central launch graph, scenario runner, and current test owners. It
+must not add another controller, state owner, launch graph, recorder,
+validator, or simulation/physical algorithm fork.
+
+### Detector lifecycle and motion qualification
+
+The new behavior is opt-in and robust-profile-only:
+
+- consume the existing typed `AlgorithmState`;
+- process convergence only during a valid `SEARCH` epoch;
+- reset the detector's history age, decay reference, crossing state, and
+  counter on each entry into `SEARCH`;
+- require the existing fresh-history delay after every reset;
+- require at least `0.20 m` of analyzed path and a maximum
+  net-displacement/path-length ratio of `0.35` before a crossing may decrement
+  the convergence counter;
+- retain the existing mean-position metric, event types, topics, units, and
+  legacy behavior when the new gate is disabled.
+
+Returning from verification to `SEARCH` provides the cooldown: the detector
+must reacquire a completely fresh SEARCH-only epoch before another confirmed
+event.
+
+### Topology-aware supervisor recovery
+
+The supervisor receives the same maximum-fill value already passed to the fill
+owner. When post-recovery guidance is enabled and the active fill count equals
+the nonzero configured maximum:
+
+- a verified high source score retains the existing goal path;
+- a verified low source score does not request another fill;
+- the supervisor returns to `SEARCH`, re-arms bounded guidance, and records the
+  topology-exhausted transition reason;
+- at most three such post-recovery retries are allowed before an honest
+  `FAILSAFE`;
+- unexpected fill-design rejection, invalid geometry, stale data, controller
+  faults, timeouts, and other existing safety failures remain failures.
+
+This prevents the expected exact-cardinality boundary from becoming an
+avoidable `FILL_REJECTED -> FAILSAFE` chain. Increasing
+`gaussian_fill_max_fills` is forbidden.
+
+### Bounded post-recovery affine guidance
+
+For M2.1 only, affine evaluation is enabled. After the final local escape and
+recenter:
+
+- `SEARCH` retains the accepted fill identity and publishes
+  `(raw, Gaussian, affine) = (1, 1, 1)` while guidance is authorized;
+- the affine direction is selected by the existing wall/fill-safe selector
+  from the current pose away from the accepted fill;
+- each topology-exhausted retry creates a new direction revision;
+- the affine term is bounded to `60.0 s`, retains the current gain and sign,
+  and is cleared outside authorized assisted escape or post-recovery SEARCH;
+- raw GESC, the accepted Gaussian fill, and the existing sole `/cmd_vel` owner
+  remain unchanged.
+
+The known global coordinates remain acceptance-only ground truth. They are not
+provided to the detector, supervisor direction selector, modified-cost node, or
+controller.
+
+### Relaxed operator-equivalent stop
+
+M2.1 and any later Phase 08.7 experiment derived from this correction use a
+committed post-Stage-A global-proximity radius of `0.60 m`. The historical M2
+radius and result remain `0.35 m` and failed.
+
+The first valid, recorded, noninterpolated post-Stage-A odometry sample within
+the M2.1 radius triggers the existing scenario-runner graceful stop. It does
+not require global convergence confirmation, `GOAL_REACHED`, `GOAL_HOLD`, or a
+stationary dwell. This is the simulation equivalent of the user's permitted
+physical `Ctrl+C` after observing sufficiently close global arrival. A future
+physical workflow must distinguish an explicitly recorded operator-success
+stop from a safety or abort stop; Phase 08 does not authorize hardware.
+
+### Qualification and execution boundary
+
+Before Gazebo, M2.1 must pass:
+
+1. detector SEARCH-epoch/reset and translation/orbit qualification tests;
+2. topology-exhausted supervisor replay of the retained M2 failure sequence;
+3. bounded post-recovery affine authorization, sign, revision, and expiry
+   tests;
+4. schema/runner tests for the fresh `0.60 m` stop contract;
+5. focused supervisor, convergence, scenario, legacy, V6, shifted-world,
+   final-zero, and launch-instantiation regressions;
+6. Phase 08 context validation, diff inspection, live-status update, and
+   checkpoint.
+
+Only after those gates pass may the exact fresh M2.1 scenario bytes and clean
+Git commit be used for one bounded visible-Gazebo probe. The run must use the
+same geometry, sources, seed, fill cardinality, wall margin, and bounded
+durations as M2, with only the declared correction controls and `0.60 m` stop
+radius changed. Its new evidence root is:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m2_1
+```
+
+The exact suite, case key, scenario SHA-256, commit, and run command must be
+recorded before dispatch. The attempt is retained without automatic retry.
+M3 remains unauthorized unless M2.1's Stage A, Stage B, exact cardinality,
+infrastructure, and combined results all pass.
+
+The qualified M2.1 input is frozen as:
+
+```text
+suite:              phase08_v7_m2_1_correction_probe
+experiment version: phase08-v7-m2.1
+case:               v7_m2_1_diagonal_r1p5_h25_18001
+case key:           2db8a5e49c8068373c22c621be13506419f9f2d7364ec50274f9f7d9895840eb
+partition:          development
+run count:          1
+Gazebo presentation: visible GUI
+seed:               18001
+start:              (0.0, 0.0), yaw 0
+local:              (1.0606601717798212, 1.0606601717798212)
+local input:        400.0 nominal relative lumens
+global:             (3.5, 3.5)
+global input:       1600.0 nominal relative lumens
+known topology:     1 local, 1 global
+maximum fills:      1
+detector gate:      SEARCH-only, 0.20 m path, 0.35 efficiency
+affine guidance:    enabled, 60.0 s maximum age
+recovery retries:   3
+wall margin:        0.20 m
+global proximity:   0.60 m
+run timeout:        360 s
+wall timeout:       540 s
+shutdown grace:     45 s
+```
+
+The exact scenario is
+`ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/
+phase08_v7_m2_1_correction_probe.yaml`, SHA-256
+`541194d6152a8384c469f5bcc8573aef9afdb295bde6e148e5a82a692b8e4c8b`.
+Any subsequent byte change requires recomputing this hash, repeating the full
+no-Gazebo qualification, updating this amendment, and committing before
+dispatch.
+
 ## Milestones
 
 ### M0 — geometry contract
@@ -417,11 +565,18 @@ After execution approval, commit one fresh two-light case and run one bounded
 visible-Gazebo probe. Verify wall placement, robot spawn, light coordinates,
 contacts, cleanup, and evidence completeness separately from behavior.
 
+### M2.1 — bounded integration correction
+
+After explicit correction approval, implement and qualify the opt-in detector,
+topology, affine-guidance, and relaxed-stop amendment above. Preserve and
+replay M2's failure evidence, checkpoint and commit the qualified correction,
+then run exactly one fresh bounded visible probe.
+
 ### M3 — fixed spatial suite
 
-Only after M2 passes, commit a fresh multi-position suite covering the approved
-sector. Run serially, preserve every attempt, and apply the prospectively
-approved Stage A, Stage B, and combined contracts.
+Only after the current prerequisite probe passes, commit a fresh multi-position
+suite covering the approved sector. Run serially, preserve every attempt, and
+apply the prospectively approved Stage A, Stage B, and combined contracts.
 
 ## Stop conditions
 

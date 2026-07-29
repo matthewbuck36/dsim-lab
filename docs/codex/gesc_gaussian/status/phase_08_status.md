@@ -4444,3 +4444,185 @@ failed.**
 Stop at the M2 checkpoint. M3 remains unauthorized, and its Plan prerequisite
 has not been established by this combined M2 result. Await explicit user
 direction before any new scenario, tuning, retry, or Gazebo execution.
+
+## Phase 08.7 M2.1 authorization and correction boundary
+
+The user authorized the complete bounded correction on 2026-07-29 after review
+of the retained M2 diagnosis. M2 remains immutable at commit `7d02fb6`; its
+Stage B and combined failures are not reopened, retried, or relabeled.
+
+Live recovery began from a clean
+`feature/gesc-gaussian-robustness-v1` worktree, ahead of its remote by 53
+commits. The active HEAD was `7d02fb6`. No ROS/Gazebo scenario process was
+running. The required context command passed:
+
+```text
+timeout 60s bash \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/\
+  validate_phase_context.sh 08 implement
+
+Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
+Phase 08 implement context is complete.
+```
+
+The approved M2.1 amendment is now durable in
+`plans/phase_08_7_plan.md`. It requires opt-in robust SEARCH-epoch convergence
+gating, fresh-history reset, motion/orbit qualification, topology-aware
+low-score recovery without a second fill, bounded post-recenter affine
+guidance, three recoverable retries, and a fresh `0.60 m` operator-equivalent
+Stage B stop. Legacy, V6, historical scenarios/worlds/evidence, cost semantics,
+topics, controller ownership, exact one-fill cardinality, and final-zero remain
+unchanged.
+
+**Current milestone: Phase 08.7 M2.1 implementation and no-Gazebo
+qualification.**
+
+No Gazebo execution is permitted until the amendment's focused, replay,
+legacy/V6, launch-instantiation, context, diff, status, and checkpoint gates
+all pass and the exact new scenario input is committed.
+
+## Phase 08.7 M2.1 no-Gazebo qualification
+
+The bounded correction is implemented in the existing detector, supervisor,
+modified-cost, central-launch, scenario, and test owners. The new behavior is
+opt-in; all new launch defaults preserve legacy and historical robust
+selection:
+
+- the convergence detector consumes typed state only when its new robust
+  SEARCH gate is enabled, resets at SEARCH boundaries, waits for fresh
+  history, and requires the frozen `0.20 m` path and `0.35` maximum path
+  efficiency;
+- the supervisor treats the known one-fill limit as topology exhaustion,
+  retains the accepted fill, resumes SEARCH without another fill request, and
+  allows three bounded low-score retries before an honest failsafe;
+- post-recenter SEARCH publishes the existing safe direction and weights
+  `(1, 1, 1)` for at most `60.0 s`; the existing modified-cost owner accepts
+  that typed SEARCH authorization and clears the affine term when the typed
+  weight or state no longer authorizes it;
+- the scenario schema retains the historical schema-v5 `0.35 m` contract and
+  allows the new `0.60 m` stop only for the explicit post-recovery correction;
+- the scenario runner's existing first-valid-sample graceful-stop mechanism is
+  unchanged.
+
+### Focused and regression evidence
+
+All required no-Gazebo behavior gates passed:
+
+```text
+convergence detector policy:
+  5 passed in 0.26s
+
+detector plus state-machine focus:
+  42 passed
+
+new supervisor integration focus:
+  5 passed, 3 deselected
+
+retained-M2 topology replay:
+  2 passed, 7 deselected
+
+new detector/supervisor/schema/runner selection:
+  31 passed, 155 deselected
+
+owned detector/supervisor/scenario/legacy/observability/recording suite:
+  269 passed, 1 skipped in 52.25s
+
+M1 recording/bag/legacy/Phase-08 regression:
+  282 passed, 1 skipped, 1 deselected in 29.02s
+
+full scenario-schema and runner regression:
+  112 passed, 1 skipped in 46.08s
+
+detector/state-machine/supervisor/observability focus:
+  67 passed in 3.55s
+```
+
+The skips are the repository's explicitly gated Gazebo integration tests; no
+runtime process was started by these commands. The historical scenario tests
+recomputed their existing case keys and passed. No V6 file, historical
+scenario, shifted-world file, interface, recorder, validator, topic, cost
+sign/unit, or controller owner is changed.
+
+The new detector-policy test passes both `ament_flake8` and `ament_pep257`.
+Running whole-file `ament_flake8` across the historically nonconforming owners
+reported `931` style-only findings (`886 Q`, `34 D`, and `11 I`). That inherited
+formatting baseline is not relabeled as a pass. The fatal Python selection
+`E9,F63,F7,F82` passes across every changed Python source and test, and
+`compileall` plus `git diff --check` pass.
+
+### Build and launch qualification
+
+The normal workspace build passed:
+
+```text
+colcon --log-base /tmp/phase08_7_m2_1_build_logs build \
+  --packages-select ros_esc_interfaces ros_esc \
+  turtlebot3_rotating_sensor
+
+Summary: 3 packages finished in 3.79s
+```
+
+A clean isolated source build also passed:
+
+```text
+build base:   /tmp/phase08_7_m2_1_qual/build
+install base: /tmp/phase08_7_m2_1_qual/install
+log base:     /tmp/phase08_7_m2_1_qual/log
+Summary: 3 packages finished in 11.7s
+```
+
+The isolated installed scenario dry-run resolved one supported run, zero
+unsupported runs, the frozen case key
+`2db8a5e49c8068373c22c621be13506419f9f2d7364ec50274f9f7d9895840eb`,
+and `75` launch arguments. It bound the frozen geometry, one-fill limit,
+typed detector gate, path qualification, three retries, affine gain and age,
+visible GUI, and both `0.60 m` stop radii. Its summary is retained at
+`/tmp/phase08_7_m2_1_dry_run.yaml`.
+
+Nonexecuting `ros2 launch -p` instantiation produced the expected `254`-line
+description at `/tmp/phase08_7_m2_1_launch_description.txt`. Separate bounded
+three-second supervisor, detector, and modified-cost node instantiations
+reached their expected outer timeout `124` after clean startup with the exact
+new parameter types and values; none produced an application error.
+
+Source and isolated-install identities match:
+
+```text
+541194d6152a8384c469f5bcc8573aef9afdb295bde6e148e5a82a692b8e4c8b  scenario
+9277b63743c7672268721c50b414020fc5951d719f358fd053d5f86d0b06e49c  central launch
+7820407ddea144e98cc1c30b1a4ee071861c153d887e324b7ee258db1a3a5182  detector
+```
+
+The required Phase 08 context validator passes from the active Phase 08.7
+plan. `DISPLAY=:0` is available, the external evidence root
+`/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m2_1` remains absent,
+and no Gazebo, scenario-runner, recorder, or physical-hardware process is
+running.
+
+Development-only corrections made before this qualified boundary are retained
+honestly:
+
+- the first pytest discovery omitted the installed overlay and failed import;
+  the sourced invocation passed;
+- the first schema selection exposed the historical fixed `0.35 m` check; the
+  schema was corrected to preserve it unless the new opt-in guidance contract
+  is present, then its focused and full suites passed;
+- the first new supervisor-integration fixture used bounds that admitted no
+  safe candidate at its synthetic pose; corrected representative corner bounds
+  made the intended replay pass;
+- the whole-file style baseline remains the inherited failure described above,
+  while the new test's style checks and all fatal checks pass.
+
+None of those development invocations started Gazebo, created the external
+evidence root, or altered retained evidence.
+
+## Current milestone
+
+**Phase 08.7 M2.1 — implementation and no-Gazebo qualification PASS; exact
+input ready for pre-execution checkpoint and commit.**
+
+### Next criterion
+
+Checkpoint and commit this reviewed material boundary. Verify the clean commit
+and frozen installed scenario identity, then dispatch exactly one bounded
+visible-Gazebo M2.1 probe with no automatic retry.

@@ -1,14 +1,85 @@
 #!/usr/bin/env python3
-import rclpy
 import numpy as np
+import rclpy
 from rclpy.node import Node
 import rclpy.parameter
+from ros_esc.supervisor_node.state_machine import ROBUST_PROFILE, VALID_PROFILES
 from ros_esc_interfaces.msg import (
     AlgorithmEvent,
     AlgorithmState,
     StampedFloat64MultiArray,
 )
-from ros_esc.supervisor_node.state_machine import ROBUST_PROFILE, VALID_PROFILES
+
+
+def trajectory_motion_statistics(history):
+    """Return finite path length, net displacement, and path efficiency."""
+    points = np.asarray(history, dtype=np.float64)
+    if (
+        points.ndim != 2
+        or points.shape[1] != 2
+        or points.shape[0] < 2
+        or not np.all(np.isfinite(points))
+    ):
+        raise ValueError(
+            "trajectory history must contain at least two finite 2D points"
+        )
+    increments = np.diff(points, axis=0)
+    path_length = float(np.sum(np.linalg.norm(increments, axis=1)))
+    net_displacement = float(np.linalg.norm(points[-1] - points[0]))
+    efficiency = net_displacement / path_length if path_length > 0.0 else 0.0
+    return path_length, net_displacement, float(efficiency)
+
+
+def motion_qualified(
+    path_length,
+    path_efficiency,
+    minimum_path_length,
+    maximum_path_efficiency,
+):
+    """Require a sufficiently long compact/orbiting trajectory."""
+    values = (
+        float(path_length),
+        float(path_efficiency),
+        float(minimum_path_length),
+        float(maximum_path_efficiency),
+    )
+    if not all(np.isfinite(value) for value in values):
+        return False
+    return bool(
+        path_length >= minimum_path_length
+        and path_efficiency <= maximum_path_efficiency
+    )
+
+
+class SearchEpochGate:
+    """Track valid typed SEARCH epochs without changing legacy behavior."""
+
+    ENTERED = "entered"
+    LEFT = "left"
+
+    def __init__(self, enabled):
+        self.enabled = bool(enabled)
+        self.active = not self.enabled
+        self.run_id = None
+
+    def update(self, state):
+        if not self.enabled:
+            return None
+        valid_search = bool(
+            state.state_valid and int(state.state) == AlgorithmState.STATE_SEARCH
+        )
+        run_id = str(state.run_id) if state.run_id_valid else None
+        if valid_search:
+            entered = not self.active or run_id != self.run_id
+            self.active = True
+            self.run_id = run_id
+            return self.ENTERED if entered else None
+        if self.active:
+            self.active = False
+            self.run_id = run_id
+            return self.LEFT
+        self.run_id = run_id
+        return None
 
 
 class ConvergenceDetector(Node):
@@ -79,6 +150,12 @@ class ConvergenceDetector(Node):
         self.declare_parameter(
             "convergence_status_topic", "/gesc_gaussian/convergence_status"
         )
+        self.declare_parameter("state_gating_enabled", False)
+        self.declare_parameter(
+            "algorithm_state_topic", "/gesc_gaussian/algorithm_state"
+        )
+        self.declare_parameter("minimum_path_length_m", 0.0)
+        self.declare_parameter("maximum_path_efficiency", 1.0)
 
         self.k = int(self.get_parameter("k_periods").value)
         self.th = float(self.get_parameter("threshold").value)
@@ -116,6 +193,31 @@ class ConvergenceDetector(Node):
         self.enable_observability = bool(
             self.get_parameter("enable_observability").value
         ) or self.robust_profile
+        self.state_gating_enabled = bool(
+            self.get_parameter("state_gating_enabled").value
+        )
+        if self.state_gating_enabled and not self.robust_profile:
+            raise ValueError(
+                "state_gating_enabled requires algorithm_profile="
+                f"{ROBUST_PROFILE}"
+            )
+        self.minimum_path_length_m = float(
+            self.get_parameter("minimum_path_length_m").value
+        )
+        self.maximum_path_efficiency = float(
+            self.get_parameter("maximum_path_efficiency").value
+        )
+        if (
+            not np.isfinite(self.minimum_path_length_m)
+            or self.minimum_path_length_m < 0.0
+        ):
+            raise ValueError("minimum_path_length_m must be finite and nonnegative")
+        if (
+            not np.isfinite(self.maximum_path_efficiency)
+            or self.maximum_path_efficiency < 0.0
+            or self.maximum_path_efficiency > 1.0
+        ):
+            raise ValueError("maximum_path_efficiency must be in [0, 1]")
         self.observability_configuration_published = False
 
         if self.count_start < 1:
@@ -130,6 +232,7 @@ class ConvergenceDetector(Node):
         self.t0 = None
         self.first_time = None
         self.last_metric = None
+        self.search_gate = SearchEpochGate(self.state_gating_enabled)
 
         # ---------------------------------------------------------------------
         # Subscribers
@@ -141,6 +244,14 @@ class ConvergenceDetector(Node):
             self.buffer_cb,
             10
         )
+        self.algorithm_state_subscriber = None
+        if self.state_gating_enabled:
+            self.algorithm_state_subscriber = self.create_subscription(
+                AlgorithmState,
+                str(self.get_parameter("algorithm_state_topic").value),
+                self.algorithm_state_cb,
+                10,
+            )
 
         # ---------------------------------------------------------------------
         # Publishers
@@ -191,8 +302,24 @@ class ConvergenceDetector(Node):
             f"ConvergenceDetector: k={self.k}, th={self.th}, b={self.b}, "
             f"N={self.N}, omega={self.omega:.3f}, dt_node={self.dt_node:.6f}, "
             f"min_trigger_time={self.min_time_before_trigger:.2f}s, "
-            f"count_start={self.count_start}"
+            f"count_start={self.count_start}, "
+            f"state_gating={self.state_gating_enabled}, "
+            f"minimum_path_length_m={self.minimum_path_length_m:.3f}, "
+            f"maximum_path_efficiency={self.maximum_path_efficiency:.3f}"
         )
+
+    def _reset_detection_state(self):
+        """Start a fresh detector epoch and convergence counter."""
+        self.t0 = None
+        self.first_time = None
+        self.last_metric = None
+        self.count_remaining = self.count_start
+
+    def algorithm_state_cb(self, msg):
+        """Reset on every typed SEARCH boundary and disarm outside SEARCH."""
+        boundary = self.search_gate.update(msg)
+        if boundary in (SearchEpochGate.ENTERED, SearchEpochGate.LEFT):
+            self._reset_detection_state()
 
     def buffer_cb(self, msg: StampedFloat64MultiArray):
         t = float(msg.timestamp)
@@ -213,6 +340,9 @@ class ConvergenceDetector(Node):
                     "omega_rad_sec",
                     "min_fill_periods",
                     "convergence_count_start",
+                    "state_gating_enabled",
+                    "minimum_path_length_m",
+                    "maximum_path_efficiency",
                 ],
                 values=[
                     float(self.k),
@@ -222,9 +352,15 @@ class ConvergenceDetector(Node):
                     self.omega,
                     self.min_fill_periods,
                     float(self.count_start),
+                    1.0 if self.state_gating_enabled else 0.0,
+                    self.minimum_path_length_m,
+                    self.maximum_path_efficiency,
                 ],
             )
             self.observability_configuration_published = True
+
+        if not self.search_gate.active:
+            return
 
         if self.first_time is None:
             self.first_time = t
@@ -279,6 +415,21 @@ class ConvergenceDetector(Node):
 
         seg_recent = U[0:M, :]
         seg_old = U[2 * M:3 * M, :]
+        motion_history = U[0:3 * M, :]
+        (
+            path_length,
+            net_displacement,
+            path_efficiency,
+        ) = trajectory_motion_statistics(motion_history)
+        if not motion_qualified(
+            path_length,
+            path_efficiency,
+            self.minimum_path_length_m,
+            self.maximum_path_efficiency,
+        ):
+            self.t0 = t
+            self.last_metric = None
+            return
 
         mean_recent = np.mean(seg_recent, axis=0)
         mean_old = np.mean(seg_old, axis=0)
@@ -383,6 +534,9 @@ class ConvergenceDetector(Node):
                     "mean_old_x_m",
                     "mean_old_y_m",
                     "count_remaining",
+                    "path_length_m",
+                    "net_displacement_m",
+                    "path_efficiency",
                 ],
                 values=[
                     metric,
@@ -393,6 +547,9 @@ class ConvergenceDetector(Node):
                     float(mean_old[0]),
                     float(mean_old[1]),
                     float(self.count_remaining),
+                    path_length,
+                    net_displacement,
+                    path_efficiency,
                 ],
             )
 
@@ -453,6 +610,9 @@ class ConvergenceDetector(Node):
                         "mean_old_x_m",
                         "mean_old_y_m",
                         "count_remaining",
+                        "path_length_m",
+                        "net_displacement_m",
+                        "path_efficiency",
                     ],
                     values=[
                         metric,
@@ -463,6 +623,9 @@ class ConvergenceDetector(Node):
                         float(mean_old[0]),
                         float(mean_old[1]),
                         float(self.count_remaining),
+                        path_length,
+                        net_displacement,
+                        path_efficiency,
                     ],
                 )
 
