@@ -6,8 +6,8 @@
 RETAINED AS FAILED; M2.3 EXECUTED AND RETAINED AS PASSED; M3 EXECUTED
 AND RETAINED AS FAILED AT 1/5; M4 RETAINED AS EVIDENCE FAIL;
 M4.1 EVIDENCE CORRECTION PASSED AND VISIBLE PROBE RETAINED AS STAGE B
-FAIL; M4.2 BEHAVIOR PASSED AND FORMAL EVIDENCE FAILED; M4.3
-EVIDENCE-ATTRIBUTION CORRECTION AUTHORIZED AND PLANNED.**
+FAIL; M4.2 BEHAVIOR PASSED AND FORMAL EVIDENCE FAILED; M4.3 EXECUTED
+AND RETAINED AS A CLEAN TWO-LIGHT BEHAVIORAL FAIL AT 6/8.**
 
 The user approved the geometry in this Plan on 2026-07-29. M1 was implemented,
 qualified without Gazebo execution, checkpointed, and committed at `7c87e5a`.
@@ -42,6 +42,16 @@ recording validator's closed producer-prefix map. On 2026-07-30 the user
 authorized the fresh M4.3 correction below. M4.3 changes evidence attribution
 and fresh experiment identity only; it does not alter M4.2 navigation or
 acceptance values and does not relabel the immutable M4.2 result.
+
+M4.3 corrected the attribution defect and its visible probe passed. Its
+conditional eight-case suite then retained six behavioral passes and two
+behavioral failures with complete `48/48` evidence and cleanup in every case.
+The corner-radius case entered `FAILSAFE` when a fixed `0.50 m` recenter
+lookahead produced no candidate inside a wall/fill pinch. The `22.5 degree`
+case completed Stage A but its maximum-clearance post-recovery direction
+pointed away from the global route and exhausted the `120.0 s` Stage B
+budget. M4.3 is closed and immutable; it does not authorize retries or the
+optional three-light probe.
 
 The user resolved the V6 acceptance-window ambiguity on 2026-07-29. Each run
 must report local-recovery success separately from post-recovery global

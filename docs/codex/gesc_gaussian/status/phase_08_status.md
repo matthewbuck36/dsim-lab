@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-30T01:58:46-07:00`
-Status: `PHASE 08.7 M4.3 VISIBLE PROBE PASS; SUITE DISPATCH PENDING`
+Last verified: `2026-07-30T03:01:26-07:00`
+Status: `PHASE 08.7 M4.3 CLOSED / TWO-LIGHT GATE FAIL 6/8; EVIDENCE CLEAN`
 
 ## Objective
 
@@ -7655,3 +7655,126 @@ two-light probe predeclared.**
 Refresh the Phase 08 checkpoint against commit `85fdd6f`, commit this dispatch
 record, reconfirm the clean process/evidence boundary, and execute only the
 bounded visible probe.
+
+## Phase 08.7 M4.3 retained two-light-suite result
+
+The passing visible gate opened exactly one serial execution of the committed
+eight-case M4.3 suite on ROS domain `162`. It ran from
+`2026-07-30T09:00:39.750638Z` through
+`2026-07-30T09:41:46.322069Z`. The outer timeout did not fire; all eight
+fixed cases executed exactly once in order, and the suite returned `1`
+because two behavioral contracts failed.
+
+The immutable result is:
+
+```text
+fixed visible probe:               PASS
+spatial suite cases:               3/5 PASS
+repeat cases:                      3/3 PASS
+fixed visible + central variants:  5/5 PASS
+all suite cases:                   6/8 PASS
+recording completeness:            8/8 PASS, each 48/48
+cleanup:                           8/8 PASS
+collision expectation:             8/8 PASS
+Stage A local recovery:            7/8 PASS
+Stage B global proximity:          6/8 PASS
+combined two-light readiness:      FAIL
+```
+
+All eight retained sqlite bags returned `ok` from read-only
+`PRAGMA quick_check`. Standard analysis ran exactly once per bag; all eight
+invocations returned `0`, report `complete` with no analysis failure, and
+retained eight plots plus eleven tables each. The summary SHA-256 is:
+
+```text
+40babf08ce27f22d23e5ccfbbf3913e1627e9d092ad7be602fafbe234377e367
+```
+
+The complete per-case table, paths, metrics, immutable hashes, and commands
+are retained in:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m4_3_two_light_suite_report.md
+```
+
+### Failure 1 — fixed-horizon corner recenter
+
+`v7_m4_3_r1p0_a45_h25_18309` converged near the declared corner local,
+created the exact one fill, and escaped it, then followed:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> RECENTER
+-> FAILSAFE
+```
+
+At simulation time `253.1 s`, it emitted
+`RECENTER->FAILSAFE: no safe recenter direction candidate`. The terminal
+robot center `(0.4455714550, 0.3016966342)` remained inside the physical
+room. Its `0.6086747487 m` conservative fill-avoidance circle and the
+southwest inset made every full `0.50 m` lookahead candidate invalid, even
+though a shorter outward segment remained physically available. This is a
+recoverable local-planner resolution defect, not a collision or
+physical-room violation.
+
+### Failure 2 — fill-clearance direction reversed global progress
+
+`v7_m4_3_r1p5_a22p5_h25_18309` passed Stage A and exact cardinality, then
+started post-recovery SEARCH from `(1.7300872541, 1.7399268693)`. The current
+selector chose `(-0.9615999066, 0.2744551323)` because it maximized hard-safe
+clearance and fill-distance progress. That direction pointed west; its dot
+product with the evidence-only anchor-to-global direction was approximately
+`-0.49`.
+
+The supervisor translation and robust affine term shared that direction.
+Liveness refreshed it once, requested one recoverable recenter, started a
+second epoch, and finally released ordinary search. The fixed `120.0 s`
+Stage B budget expired with `3,533` valid and `0` invalid post-Stage-A
+samples. The stop pose was `(1.2672143994, 1.1016695200)`, still
+`3.2767851058 m` from the global.
+
+The Gaussian fill already preserves the old basin. Maximizing distance from
+that fill is not a global navigation objective and can reverse source-led
+progress. Extending the timeout or relaxing the `1.20 m` stop would not
+correct this trajectory.
+
+### Closed boundary and next criterion
+
+M4.3 is **CLOSED / FAIL at 6/8 / NOT SIMULATION-READY**. No M4.3 case will
+be retried, changed, relabelled, or counted in a later gate. The optional
+three-light probe remains prohibited because the complete two-light gate did
+not pass. `gzserver`, `gzclient`, `run_scenario`, `record_run`, and matching
+launch processes are inactive after suite analysis.
+
+Any further code or Gazebo execution requires a fresh version. The smallest
+evidence-backed behavior correction is:
+
+1. adaptive finite recenter lookahead near a fill/wall pinch, while retaining
+   physical-room and collision hard stops;
+2. a source-led post-recovery SEARCH handoff before affine or supervisor
+   translation, so a safe fill-clearance direction cannot immediately
+   override ordinary GESC;
+3. liveness intervention only after measured source-led motion fails, with no
+   global coordinates supplied to the algorithm;
+4. unchanged `1.20 m` primary global-proximity stop and immutable M4.3,
+   V6, and historical artifacts.
+
+That correction must be planned, tested, checkpointed, and committed without
+Gazebo before any fresh fixed probe.
+
+## Current milestone
+
+**Phase 08.7 M4.3 — CLOSED / TWO-LIGHT QUALIFICATION FAIL AT 6/8 /
+COMPLETE EVIDENCE / NOT SIMULATION-READY.**
+
+### Next criterion
+
+Checkpoint and commit the immutable M4.3 suite result. Any further behavior
+change must use a fresh planned version, preserve all M4.3/V6/historical
+inputs and evidence, qualify without Gazebo, and commit its exact dispatch
+boundary before a new fixed simulation. The optional three-light probe,
+Phase 09, and physical hardware remain unauthorized.
