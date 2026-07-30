@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-30T01:50:09-07:00`
-Status: `PHASE 08.7 M4.3 QUALIFIED AND COMMITTED; VISIBLE DISPATCH RECORD PENDING`
+Last verified: `2026-07-30T01:58:46-07:00`
+Status: `PHASE 08.7 M4.3 VISIBLE PROBE PASS; SUITE DISPATCH PENDING`
 
 ## Objective
 
@@ -7050,6 +7050,145 @@ two-light probe predeclared.**
 Refresh the Phase 08 checkpoint against commit `a1f58fb`, commit this dispatch
 record, reconfirm the clean process/evidence boundary, and execute only the
 bounded visible probe.
+
+## Phase 08.7 M4.3 retained visible-probe result
+
+Exactly one visible-Gazebo attempt ran on ROS domain `161` from committed
+scenario SHA-256
+`cacbdafbc9aa289f178e684503519283bdf4b5496cbdd2dfb8c61ff69ebf1658`.
+The run is retained at:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_3_probe/
+  2026-07-30/
+  20260730T085116266752Z_simulation_phase08_v7_m4_3_visible_probe-
+  v7_m4_3_probe_r1p5_a45_h25_18308-robust_gaussian_v_91c59c52
+```
+
+The suite started at `2026-07-30T08:51:15.319251Z`, completed at
+`2026-07-30T08:56:09.342914Z`, and returned `0`. The fixed visible result is
+**PASS**:
+
+```text
+recording completeness:                   PASS (48/48)
+required state path and events:           PASS
+Stage A local recovery:                   PASS
+exact fill cardinality 1/1:               PASS
+Stage B primary 1.20 m proximity:         PASS
+post-Stage-A budget:                      PASS (not expired)
+collision expectation false:              PASS
+forbidden in-readiness states/events:      PASS
+final zero/readiness/cleanup:              PASS
+combined result:                           PASS
+```
+
+The accepted path was:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> RECENTER
+-> SEARCH
+```
+
+Exactly one fill was created. Pure Gaussian repulsion escaped in
+`8.735487521 s`, and recenter completed `0.1452067367 m` from its fixed
+safe-proxy target, inside the `0.15 m` tolerance.
+
+The M4.3 guidance epoch started at simulation time `216.1 s` and released
+normally at `236.7 s`:
+
+```text
+epoch path length:            1.7596027588 m
+epoch net displacement:       1.1082037413 m
+outward progress:             1.1045059990 m
+12 s window path:             1.0635155091 m
+12 s window displacement:     0.8501738801 m
+direction refresh count:      0
+liveness recenter attempted:  false
+```
+
+The first qualifying noninterpolated Stage B sample arrived approximately
+`25.36 s` into its independent `120.0 s` budget:
+
+```text
+pose:                      (2.9945190974, 2.4141474035) m
+distance to global:        1.1977423781 m
+valid post-A samples:      747
+invalid post-A samples:    0
+interpolation used:        false
+```
+
+The non-gating `1.00 m` closer diagnostic was not reached.
+
+Both new `post-recovery ` configuration events passed producer
+identification, per-producer ordering, and freshness. Read-only sqlite
+`PRAGMA quick_check` returned `ok` for `513,328` messages. Standard analysis
+returned `0`, reports `complete` with no analysis failures, and retained eight
+plots and eleven tables.
+
+Exact execution, behavior, evidence, and hashes are recorded in:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m4_3_visible_probe_report.md
+```
+
+Key retained hashes are:
+
+```text
+38565f76dc00424fecc6a4ac032ba9376a8cd8eb90e400f3fe2410ee6a5a93de  suite summary
+a8a3c54c11028c7746ae4739f9357e7bb2245fc69c5b51cd5793a82c36d60390  completeness
+6065e89a36628df5fa79bd04f3c6dbdeeb04fca137968c77d575c60ea94312e4  scenario result
+5346b6d8b2cbaa6bcfeedfe6abd071fbcca57291abb80cbbf2d9bdc7654566b9  sqlite bag
+eeac4d8f77d0dd5f94723f9f95f9edb760fa18670b4edb84be19fc238bdb6ba3  analysis completeness
+5e0700b9410c02a18bfed7808bb6c1b52b255bf03f7c2316d88d3333cd424b8b  summary metrics
+```
+
+The visible pass opens the fixed serial M4.3 two-light suite. It does not by
+itself establish readiness. The suite input remains committed at SHA-256
+`37c1f7f2d81132be46adee576a1b603093fd03dd5488c5465d53d8876b9d50cc`;
+its evidence root remains absent. All Gazebo, runner, and recorder processes
+are inactive after the visible cleanup.
+
+The exact suite dispatch is:
+
+```text
+source /opt/ros/humble/setup.bash
+source /tmp/phase08_7_m4_3_qual/install/setup.bash
+export ROS_DOMAIN_ID=162
+export ROS_LOG_DIR=/tmp/phase08_7_m4_3_suite_ros_logs
+export MPLCONFIGDIR=/tmp/phase08_7_m4_3_suite_mpl
+export TURTLEBOT3_MODEL=burger
+timeout --signal=INT --kill-after=90s 5400s \
+  ros2 run ros_esc run_scenario \
+  /tmp/phase08_7_m4_3_qual/install/ros_esc/share/ros_esc/\
+scenario_runner/scenarios/phase08_v7_m4_3_two_light_suite.yaml \
+  --operator Codex \
+  --runs-root \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_3 \
+  --summary-output \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_3/\
+phase08_v7_m4_3_two_light_suite_summary.yaml
+```
+
+Every case runs once in committed order and is retained regardless of
+behavioral outcome. A cleanup failure stops later dispatch. No failed case is
+retried or changed.
+
+## Current milestone
+
+**Phase 08.7 M4.3 — fixed visible probe PASS; serial eight-case two-light
+qualification is now authorized by the passing gate but has not started.**
+
+### Next criterion
+
+Checkpoint and commit the immutable visible pass plus exact suite dispatch
+record. Reconfirm the clean process/root/domain boundary, then run only the
+committed eight-case suite on ROS domain `162`. The optional three-light probe
+remains unauthorized.
 
 ## Phase 08.7 M4.2 retained visible-probe result
 
