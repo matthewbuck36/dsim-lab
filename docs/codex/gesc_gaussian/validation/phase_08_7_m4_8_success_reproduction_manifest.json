@@ -1,0 +1,197 @@
+{
+  "schema_version": 1,
+  "campaign_id": "phase08-v7-success-reproduction-1",
+  "selection_basis": "all 17 retained Phase 08.7 runs with successful Stage A, fill cardinality, Stage B, collision, and forbidden-state/event behavior",
+  "selection_is_retrospective": true,
+  "original_results_remain_immutable": true,
+  "minimum_majority_pass_count": 9,
+  "simulation_global_proximity_stop_only": true,
+  "physical_automatic_global_proximity_stop_authorized": false,
+  "physical_termination_policy": "manual operator Ctrl+C at operator-deemed sufficient global proximity",
+  "runs_root": "/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_success_reproduction_1",
+  "isolated_install": "/tmp/phase08_7_success_reproduction_qual/install",
+  "operator": "phase08_7_m4_8",
+  "dispatches": [
+    {
+      "order": 1,
+      "label": "m2_3",
+      "ros_domain_id": 168,
+      "gui": true,
+      "outer_timeout_sec": 660,
+      "scenario": "ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m2_3_assisted_recovery_stop_probe.yaml",
+      "scenario_sha256": "f03db4462527620321eb299656d9f56fe32e10362664e595f7d3850fc3f53eca",
+      "runs_root_child": "m2_3",
+      "cases": [
+        {
+          "case_id": "v7_m2_3_diagonal_r1p5_h25_18001",
+          "case_key": "13cf3a091db9f9e72fff3abc0c1885b4e64033766f5317ee628490e468e10cbd",
+          "seed": 18001
+        }
+      ]
+    },
+    {
+      "order": 2,
+      "label": "m3",
+      "ros_domain_id": 169,
+      "gui": false,
+      "outer_timeout_sec": 660,
+      "scenario": "ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m3_spatial_suite.yaml",
+      "scenario_sha256": "1221d8cb9d7235218d4f3da710f10d41284632a93712bd89d763d938a0437dae",
+      "runs_root_child": "m3",
+      "cases": [
+        {
+          "case_id": "v7_m3_r1p0_a45_h25_18101",
+          "case_key": "75d0c27b3cf3b0a88aff539723a907d7bd48c26f218eee2baae89487364b1712",
+          "seed": 18101
+        }
+      ]
+    },
+    {
+      "order": 3,
+      "label": "m4",
+      "ros_domain_id": 170,
+      "gui": true,
+      "outer_timeout_sec": 660,
+      "scenario": "ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m4_visible_probe.yaml",
+      "scenario_sha256": "37ba6e1e9adc842691328cc0a1c66e5fd04034db59c6fcdb0c05f6f6c4b769a1",
+      "runs_root_child": "m4",
+      "cases": [
+        {
+          "case_id": "v7_m4_probe_r1p5_a45_h25_18201",
+          "case_key": "a7d115b9893ee9b4ee0885a477820125ad68e21c93da689d858f69dc9aca9c32",
+          "seed": 18201
+        }
+      ]
+    },
+    {
+      "order": 4,
+      "label": "m4_2",
+      "ros_domain_id": 171,
+      "gui": true,
+      "outer_timeout_sec": 900,
+      "scenario": "ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m4_2_visible_probe.yaml",
+      "scenario_sha256": "e6ec6120df271afab3ae71192b601c4bcf866105a8cdaa13a10dcd94b7632973",
+      "runs_root_child": "m4_2",
+      "cases": [
+        {
+          "case_id": "v7_m4_2_probe_r1p5_a45_h25_18208",
+          "case_key": "d4aaa0d2d7e4af20c7721d2912620fe2a0a2f9f16004c462a0299e235f2866c8",
+          "seed": 18208
+        }
+      ]
+    },
+    {
+      "order": 5,
+      "label": "m4_3_probe",
+      "ros_domain_id": 172,
+      "gui": true,
+      "outer_timeout_sec": 900,
+      "scenario": "ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m4_3_visible_probe.yaml",
+      "scenario_sha256": "cacbdafbc9aa289f178e684503519283bdf4b5496cbdd2dfb8c61ff69ebf1658",
+      "runs_root_child": "m4_3_probe",
+      "cases": [
+        {
+          "case_id": "v7_m4_3_probe_r1p5_a45_h25_18308",
+          "case_key": "a5ea7f8b3d12aa01be4018ba059d12f9366f722687f95403e1c47c6929fc4655",
+          "seed": 18308
+        }
+      ]
+    },
+    {
+      "order": 6,
+      "label": "m4_3_suite",
+      "ros_domain_id": 173,
+      "gui": false,
+      "outer_timeout_sec": 4500,
+      "scenario": "ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m4_3_two_light_suite.yaml",
+      "scenario_sha256": "37c1f7f2d81132be46adee576a1b603093fd03dd5488c5465d53d8876b9d50cc",
+      "runs_root_child": "m4_3_suite",
+      "cases": [
+        {
+          "case_id": "v7_m4_3_r1p5_a45_h25_18309",
+          "case_key": "896201a5ad6b907860270b109aaac4ff4666878c08e502d3e96c8b91fa08940a",
+          "seed": 18309
+        },
+        {
+          "case_id": "v7_m4_3_r1p5_a67p5_h25_18309",
+          "case_key": "a90044d4ed94d4ebd03ac6fdc78369d06f19235d1aadc86706fc6718e9e68cf0",
+          "seed": 18309
+        },
+        {
+          "case_id": "v7_m4_3_r2p0_a45_h25_18309",
+          "case_key": "71f003ea659ab8f0a3ae8193fa24b6a0e43b9cd65b67d5c23d3d7108e53116d2",
+          "seed": 18309
+        },
+        {
+          "case_id": "v7_m4_3_repeat_r1p5_a45_h25_18310",
+          "case_key": "9fd3b4a5d3c8aefaca899bd73f6a273c8d1d88c61304794ed9631aeefc54a0c4",
+          "seed": 18310
+        },
+        {
+          "case_id": "v7_m4_3_repeat_r1p5_a45_h25_18311",
+          "case_key": "0542aa9a360e470ab9db2533ee350276b772312996a43503329f6493f78d047b",
+          "seed": 18311
+        },
+        {
+          "case_id": "v7_m4_3_repeat_r1p5_a45_h25_18312",
+          "case_key": "acac96fa8659c2e8efc042292d56b3a9e2cb099bcb18fcf840ee44419c618206",
+          "seed": 18312
+        }
+      ]
+    },
+    {
+      "order": 7,
+      "label": "m4_4_probe",
+      "ros_domain_id": 174,
+      "gui": true,
+      "outer_timeout_sec": 900,
+      "scenario": "ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m4_4_visible_probe.yaml",
+      "scenario_sha256": "1559ee2ab0a7d2fa26834bc0bfd226aaa2b8d6d7dad62dcdac85ca2e83293eb4",
+      "runs_root_child": "m4_4_probe",
+      "cases": [
+        {
+          "case_id": "v7_m4_4_probe_r1p5_a45_h25_18408",
+          "case_key": "22ce182a7f02becf7d5f53e8193e99fdb11266ebd0fc51018ca27b8ab23aafff",
+          "seed": 18408
+        }
+      ]
+    },
+    {
+      "order": 8,
+      "label": "m4_4_suite",
+      "ros_domain_id": 175,
+      "gui": false,
+      "outer_timeout_sec": 3900,
+      "scenario": "ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m4_4_two_light_suite.yaml",
+      "scenario_sha256": "78be277362ac060c7cb77c5d2215836cb914a95bd81a5ed9221f0db4bc62a188",
+      "runs_root_child": "m4_4_suite",
+      "cases": [
+        {
+          "case_id": "v7_m4_4_r1p0_a45_h25_18409",
+          "case_key": "699ff166fc90149cf52e528f82f064e3b4c2fd9fed338969a20966c6d46c4b86",
+          "seed": 18409
+        },
+        {
+          "case_id": "v7_m4_4_r1p5_a45_h25_18409",
+          "case_key": "cacad8b96a05e2bcda31072284edeeb4dea23f62a7bf016f46527a86d8e19b8f",
+          "seed": 18409
+        },
+        {
+          "case_id": "v7_m4_4_r1p5_a67p5_h25_18409",
+          "case_key": "8ee88d3ef6a9a74edcf5d41ef428b4d81414c82ea15379d3a577d884cdc437eb",
+          "seed": 18409
+        },
+        {
+          "case_id": "v7_m4_4_repeat_r1p5_a45_h25_18411",
+          "case_key": "443625cf507b870b420c383126b414f0fd5dc12490e7b6ec83165864017fd469",
+          "seed": 18411
+        },
+        {
+          "case_id": "v7_m4_4_repeat_r1p5_a45_h25_18412",
+          "case_key": "6f3ae4792673cf2176e62d54319efc152902b716444042a82be11d7bfbe21260",
+          "seed": 18412
+        }
+      ]
+    }
+  ]
+}

@@ -3502,8 +3502,18 @@ drift, or active conflicting ROS/Gazebo graph stops later dispatch.
 Each case is judged against its own unchanged historical contract. In
 particular, the M3 radius-1.0 case retains its stricter `1.00 m` Stage B
 boundary; every other selected case retains `1.20 m`. The global-proximity
-stop is simulation-only and does not authorize or specify a physical
-automatic stop.
+stop is simulation-only. It is owned by the simulation-only
+`run_scenario` live monitor and must not be carried into the Phase 09
+physical launch or recording path.
+
+For physical testing, automatic termination at `1.20 m`, `1.00 m`, or any
+other global-proximity radius is prohibited unless the user separately
+changes this requirement. The physical robot must continue operating until
+the operator judges it sufficiently close and presses `Ctrl+C`. That signal
+must use the audited Phase 05/09 ordered shutdown path, including readiness
+false, stop publication, final-zero verification, recording finalization,
+and scoped descendant cleanup. Global distance may still be recorded and
+reported as diagnostic evidence; it must not terminate physical motion.
 
 The user's requested “most pass again” observation is reported literally as
 at least `9/17` fresh formal combined passes. It is not silently upgraded

@@ -9604,7 +9604,7 @@ The durable campaign amendment is appended to
 `plans/phase_08_7_plan.md`, SHA-256:
 
 ```text
-355f8b76e187997c65332f7079e2a5377d43ca8dce5b663c02ab0912a8e4c1a5
+22b63bf0fff114b65b351f573139173ec0d85967704d6fb5d9da3781e215cece
 ```
 
 M4.8 changes no algorithm or scenario. It will re-execute the exact sealed
@@ -9633,15 +9633,115 @@ failed suite.
 No Gazebo process has started for M4.8. The campaign root is absent and the
 worktree contained no pre-existing change before this Plan amendment.
 
+### Physical termination clarification
+
+On 2026-07-30 the user explicitly clarified that the simulation
+`1.20 m`/`1.00 m` global-proximity stops must not apply to real physical
+testing. Physical termination remains under operator control: the robot
+continues until the operator judges it sufficiently close to the global and
+presses `Ctrl+C`.
+
+The current ownership supports that separation without an algorithm fork:
+`run_scenario.py` hard-codes `record_run --mode simulation`, exposes no
+physical mode, and owns the live post-recovery distance monitor that cancels
+the scoped simulation process. Future Phase 09 physical execution must use
+the audited physical launch/recording path without an automatic
+global-proximity termination monitor. The distance may be retained as a
+diagnostic. Manual `Ctrl+C` must enter the existing ordered recorder
+shutdown/final-zero path. No physical source or hardware action was taken for
+this clarification.
+
+## Phase 08.7 M4.8 no-Gazebo qualification
+
+The complete no-Gazebo qualification passed on 2026-07-30. The retained
+machine-readable manifest is:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m4_8_success_reproduction_manifest.json
+SHA-256
+69d946c64718fdc725485fdffe5d41878b72825341d17f50777dddef3e13cc1f
+```
+
+Read-only original-evidence discovery found exactly one source run for every
+selected case: `17/17` behavioral passes, `15/17` formal passes, and
+`17/17` cleanup passes. The two non-formal results are the preserved M4 and
+M4.2 recording-evidence failures; both still passed Stage A, exact one-fill
+cardinality, Stage B, collision, and forbidden-state/event behavior. No
+historical result was rewritten.
+
+Qualification evidence:
+
+```text
+focused:
+  405 passed, 1 skipped in 56.28 s
+  c1d87e369d3e32d8e6ec46ae084cd7fb9d452cf1adba58c0c47ded0602907157
+broad ROS-independent:
+  684 passed, 3 skipped, 1 deselected in 118.88 s
+  3e5436b35d27006e4c3f64778f6d024697e1e3d27cf41ea6c6c200c03fbe824c
+isolated build:
+  ros_esc_interfaces, ros_esc, turtlebot3_rotating_sensor
+  3 packages finished in 12.0 s
+source/install parity:
+  22 owner pairs PASS
+installed dry-run expansion:
+  8 dispatches, 17 exact cases, 0 unsupported
+```
+
+Fatal Python lint, Python compilation, JSON/YAML/XML parsing,
+`git diff --check`, current Phase 08 context validation, installed launch
+argument/description resolution, shifted-world parity, exact case keys,
+simulation-only mode, declared GUI/headless modes, stop radii, and fresh
+root routing all pass. The dry-runs did not create the campaign root.
+
+The fixed dispatch table is:
+
+| Order | Label | Domain | GUI | Outer bound | Cases | Fresh child |
+|---:|---|---:|---|---:|---:|---|
+| 1 | `m2_3` | 168 | yes | 660 s | 1 | `m2_3` |
+| 2 | `m3` | 169 | no | 660 s | 1 | `m3` |
+| 3 | `m4` | 170 | yes | 660 s | 1 | `m4` |
+| 4 | `m4_2` | 171 | yes | 900 s | 1 | `m4_2` |
+| 5 | `m4_3_probe` | 172 | yes | 900 s | 1 | `m4_3_probe` |
+| 6 | `m4_3_suite` | 173 | no | 4500 s | 6 | `m4_3_suite` |
+| 7 | `m4_4_probe` | 174 | yes | 900 s | 1 | `m4_4_probe` |
+| 8 | `m4_4_suite` | 175 | no | 3900 s | 5 | `m4_4_suite` |
+
+Each invocation uses the scenario and repeated `--case-id` values sealed in
+the manifest, operator `phase08_7_m4_8`, isolated install
+`/tmp/phase08_7_success_reproduction_qual/install`, distinct `/tmp` ROS log
+and MPL roots, and a summary in its fresh child. The sole campaign root is:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_v7_success_reproduction_1
+```
+
+The durable qualification report is:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m4_8_no_gazebo_qualification.md
+SHA-256
+cf65583e809e1003ead331a0c43ee7732ba9e6385a53692dfb42c3b96ff52b55
+```
+
+At qualification close the campaign root is absent,
+`/tmp/.X11-unix/X0` is available, and no matching Gazebo, scenario runner,
+recorder, rosbag recorder, or analyzer process is active. No physical or
+hardware action occurred.
+
 ## Current milestone
 
-**Phase 08.7 M4.8 — USER-AUTHORIZED REPRODUCTION CAMPAIGN PLANNED /
-17 EXACT HISTORICAL SUCCESS DEFINITIONS SELECTED / NO GAZEBO /
-NO-GAZEBO QUALIFICATION PENDING.**
+**Phase 08.7 M4.8 — NO-GAZEBO QUALIFICATION PASS /
+17 EXACT HISTORICAL SUCCESS DEFINITIONS SEALED /
+8 INSTALLED DISPATCHES DRY-RUN PASS / CAMPAIGN ROOT ABSENT /
+GAZEBO DISPATCH CHECKPOINT AND COMMIT PENDING.**
 
 ### Next criterion
 
-Checkpoint and commit the M4.8 Plan boundary. Then construct the exact
-machine-readable dispatch manifest, qualify all `17` selected expansions
-and the current installed graph without Gazebo, and checkpoint/commit the
-qualified dispatch before starting any reproduction attempt.
+Checkpoint Phase 08, inspect and commit this qualified dispatch boundary,
+then execute all eight invocations serially. Retain every attempt without
+retry. Continue after behavioral/formal/infrastructure failure only when
+the case evidence is readable and scoped cleanup passes; stop later
+dispatch for cleanup leak, evidence corruption, or source drift.
