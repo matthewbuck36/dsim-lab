@@ -1,65 +1,43 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-30T18:13:42+00:00
-Base HEAD: d6d82a11e9b7e3872269708e4450a499cbbfca7a
+Generated: 2026-07-30T18:15:22+00:00
+Base HEAD: 957b7e448814b2e743ac49aba8f36ebfd5e94a36
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 242ae46b0e5b694ea699ce0e961dbc7016e54f8923bf9b4b28b8ea128c9aa07a
+Status sha256: 851dfae3ecfe69a7f7203a111d4017d8df7f6b83a622bcac8b8a629287cd7eea
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
 Active subphase plan sha256: ddcc67c77c644f916dd3486c5ca71448f0224e84ba4d643015ad673bf9032dff
-Unstaged diff sha256: 01f773ce7eaa81e5c99b3b16ae7b6d209db0ac57800170db36e5b27f035a4e83
-Staged diff sha256: 6032b3d4292a8d9d20b87a67f29c08888512f53a240078a5384bba2c63cb8de5
+Unstaged diff sha256: 32f426ddb3c88b3840890332a99b220a7f1f7dcff45b93addd22fb8a89856d29
+Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 90]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 91]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
-M  docs/codex/gesc_gaussian/status/phase_08_status.md
-A  docs/codex/gesc_gaussian/validation/phase_08_7_m4_6_no_gazebo_qualification.md
-A  ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m4_6_two_light_suite.yaml
-A  ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m4_6_visible_probe.yaml
-M  ros2_ws/src/ros_esc/test/test_scenario_runner.py
-M  ros2_ws/src/ros_esc/test/test_scenario_schema.py
-M  ros2_ws/src/ros_esc/test/test_supervisor_integration.py
+ M docs/codex/gesc_gaussian/status/phase_08_status.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 41 +++++++---------------
- 1 file changed, 13 insertions(+), 28 deletions(-)
- docs/codex/gesc_gaussian/status/phase_08_status.md | 117 +++++++++
- .../phase_08_7_m4_6_no_gazebo_qualification.md     | 286 +++++++++++++++++++++
- .../scenarios/phase08_v7_m4_6_two_light_suite.yaml | 280 ++++++++++++++++++++
- .../scenarios/phase08_v7_m4_6_visible_probe.yaml   | 185 +++++++++++++
- ros2_ws/src/ros_esc/test/test_scenario_runner.py   |  51 ++++
- ros2_ws/src/ros_esc/test/test_scenario_schema.py   | 180 +++++++++++++
- .../ros_esc/test/test_supervisor_integration.py    | 134 +++++++++-
- 7 files changed, 1232 insertions(+), 1 deletion(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 56 +++---------------
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 67 ++++++++++++++++++++++
+ 2 files changed, 74 insertions(+), 49 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**Phase 08.7 M4.6 — IMPLEMENTED / NO-GAZEBO QUALIFICATION PASS /
-READY TO CHECKPOINT AND COMMIT / GAZEBO NOT STARTED.**
+**Phase 08.7 M4.6 — QUALIFIED IMPLEMENTATION COMMITTED / ONE FIXED VISIBLE
+TWO-LIGHT PROBE PREDECLARED / NO M4.6 SIMULATION YET.**
 
 ### Next criterion
 
-Checkpoint and commit this independently qualified no-Gazebo boundary.
-After that commit, record and checkpoint the exact visible paired dispatch
-command, then run only:
-
-```text
-suite: phase08_v7_m4_6_visible_probe
-case:  v7_m4_6_probe_r2p0_a45_h25_18508
-seed:  18508
-root:  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_6_probe
-```
-
-The fixed eight-case headless suite remains closed unless that one visible
-attempt passes every declared gate.
+Refresh the Phase 08 checkpoint against `957b7e4`, commit this exact dispatch
+record, reconfirm the clean process/evidence/domain boundary, and execute
+only the bounded visible probe. Do not dispatch the headless suite unless
+that visible attempt passes every declared predicate.
 
 
 This file describes the base HEAD and diff before the next commit; it is

@@ -9019,3 +9019,70 @@ root:  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_6_probe
 
 The fixed eight-case headless suite remains closed unless that one visible
 attempt passes every declared gate.
+
+## Phase 08.7 M4.6 committed visible-dispatch boundary
+
+The fresh explicit `-0.80` inputs, exact replay and retained-table
+regressions, no-Gazebo validation report, live status, and precommit
+checkpoint were committed at:
+
+```text
+957b7e448814b2e743ac49aba8f36ebfd5e94a36
+phase 08.7: qualify M4.6 continuity calibration
+```
+
+The post-commit worktree is clean and
+`validate_phase_context.sh 08 implement` passes. Source and isolated-install
+visible-scenario bytes remain identical:
+
+```text
+deb08439f285a1bcff7e7b5fe763acbf095e7175d995367c626f9d83d7b30e11
+```
+
+Both fresh evidence roots remain absent. No Gazebo, runner, recorder, rosbag,
+analyzer, or matching launch process is active. ROS domain `166` is empty
+without a localhost restriction and with the CLI daemon disabled.
+`DISPLAY=:0` passes `xdpyinfo`, the temporary ROS/MPL roots are absent, and
+the evidence filesystem has `310 GiB` available.
+
+Exactly one fresh visible attempt is predeclared:
+
+```text
+source /opt/ros/humble/setup.bash
+source /tmp/phase08_7_m4_6_qual/install/setup.bash
+export ROS_DOMAIN_ID=166
+export ROS_LOG_DIR=/tmp/phase08_7_m4_6_probe_ros_logs
+export MPLCONFIGDIR=/tmp/phase08_7_m4_6_probe_mpl
+export TURTLEBOT3_MODEL=burger
+export DISPLAY=:0
+timeout --signal=INT --kill-after=90s 780s \
+  ros2 run ros_esc run_scenario \
+  /tmp/phase08_7_m4_6_qual/install/ros_esc/share/ros_esc/\
+scenario_runner/scenarios/phase08_v7_m4_6_visible_probe.yaml \
+  --operator Codex \
+  --case-id v7_m4_6_probe_r2p0_a45_h25_18508 \
+  --runs-root \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_6_probe \
+  --summary-output \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_6_probe/\
+phase08_v7_m4_6_visible_probe_summary.yaml \
+  --gui
+```
+
+The attempt will be retained without retry or in-run changes. The fixed
+eight-case headless suite remains gated on a complete `48/48`, cleanup,
+collision, forbidden-evidence, Stage A, exact one-fill, primary `1.20 m`
+Stage B, final-zero, and combined visible pass. The optional three-light
+probe, Phase 09, and physical hardware remain unauthorized.
+
+## Current milestone
+
+**Phase 08.7 M4.6 — QUALIFIED IMPLEMENTATION COMMITTED / ONE FIXED VISIBLE
+TWO-LIGHT PROBE PREDECLARED / NO M4.6 SIMULATION YET.**
+
+### Next criterion
+
+Refresh the Phase 08 checkpoint against `957b7e4`, commit this exact dispatch
+record, reconfirm the clean process/evidence/domain boundary, and execute
+only the bounded visible probe. Do not dispatch the headless suite unless
+that visible attempt passes every declared predicate.
