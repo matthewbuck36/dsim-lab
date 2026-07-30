@@ -1,43 +1,48 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-30T12:47:55+00:00
-Base HEAD: f89e989bbad5645cd4ec3fe8f781577c50e6d4bb
+Generated: 2026-07-30T13:03:53+00:00
+Base HEAD: 9714be44548cbeeaa80b4803504002f3f2769751
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 1ddf944a52b599f427c30a8824a19b22990496f718f8ec6d9584292209bd1e91
+Status sha256: 124dd2bae0ed6720daf4a641a3bb7a829aa55d7d0cc6a55bae05694aed77ed5a
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
 Active subphase plan sha256: 96baca678644dd42e8f6994e28ef75fae220d8ce4048968b3b2948b61f067ca3
-Unstaged diff sha256: 6d1c47634d323d62e833f1d8ec5ebd8e07c852adde2d7463dbe23d05c40d670b
+Unstaged diff sha256: 0b216d1d8c16efb140e4d3d521955fad2d851a6c93161bcb3013e5329ae2297c
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 87]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 88]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
+?? docs/codex/gesc_gaussian/validation/phase_08_7_m4_5_visible_probe_report.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 64 ++------------------
- docs/codex/gesc_gaussian/status/phase_08_status.md | 69 ++++++++++++++++++++++
- 2 files changed, 74 insertions(+), 59 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  31 ++----
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 118 +++++++++++++++++++++
+ 2 files changed, 124 insertions(+), 25 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**Phase 08.7 M4.5 — QUALIFIED IMPLEMENTATION COMMITTED / ONE FIXED VISIBLE
-TWO-LIGHT PROBE PREDECLARED / NO M4.5 SIMULATION YET.**
+**Phase 08.7 M4.5 — CLOSED / VISIBLE GATE BEHAVIORAL FAIL /
+INFRASTRUCTURE, STAGE A, ONE-FILL, SAFETY, AND FULL-BUDGET PASS /
+STAGE B FAIL / SUITE NOT RUN / NOT SIMULATION-READY.**
 
 ### Next criterion
 
-Refresh the Phase 08 checkpoint against `f89e989`, commit this exact dispatch
-record, reconfirm the clean process/evidence/domain boundary, and execute only
-the bounded visible probe. Do not dispatch the headless suite unless that
-visible attempt passes every declared predicate.
+Checkpoint and commit this immutable M4.5 result. Any further correction must
+use a fresh reviewed version and fresh identities. The smallest supported
+M4.6 correction is to preserve all M4.5 code and gates, explicitly move only
+the enabled reversal threshold from `-0.90` to `-0.80`, add the exact
+M4.5 geometry regression, qualify without Gazebo, and checkpoint/commit
+before one fresh visible attempt. The optional three-light probe, Phase 09,
+and physical hardware remain unauthorized.
 
 
 This file describes the base HEAD and diff before the next commit; it is

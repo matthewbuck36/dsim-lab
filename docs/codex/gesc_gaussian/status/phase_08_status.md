@@ -8737,3 +8737,121 @@ Refresh the Phase 08 checkpoint against `f89e989`, commit this exact dispatch
 record, reconfirm the clean process/evidence/domain boundary, and execute only
 the bounded visible probe. Do not dispatch the headless suite unless that
 visible attempt passes every declared predicate.
+
+## Phase 08.7 M4.5 retained visible-probe failure
+
+The one committed fixed visible attempt ran on ROS domain `165` from
+`2026-07-30T12:48:48.771600Z` through
+`2026-07-30T12:54:25.580679Z`. The outer timeout did not fire. The record
+process returned `0`; the runner returned `1` because the combined behavioral
+gate failed.
+
+Retained run:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_5_probe/
+  2026-07-30/
+  20260730T124849713987Z_simulation_phase08_v7_m4_5_visible_probe-
+  v7_m4_5_probe_r2p0_a45_h25_18508-robust_gaussian_v_b36220b0
+```
+
+The immutable result is:
+
+```text
+controller startup and readiness: PASS
+recording completeness:           PASS, 48/48
+cleanup:                          PASS
+collision expectation:            PASS, no collision
+forbidden states/events:           PASS, none
+final zero/readiness false:        PASS
+Stage A local recovery:            PASS, 1 episode
+unique fill cardinality:           PASS, exactly 1
+Stage A time budget:               PASS
+complete Stage B opportunity:      PASS, 120.020 s observed
+Stage B global proximity:          FAIL
+combined result:                   FAIL
+```
+
+Stage A completed at the live `155.119 s` sample. The full Stage B window
+ended at `275.139 s`, position `(1.3800558824, 0.5554794317) m`, distance
+`3.6282729279 m` from the global. None of `3533` valid post-Stage-A
+noninterpolated samples entered the unchanged `1.20 m` primary radius or
+the non-gating `1.00 m` radius.
+
+The infrastructure corrections worked: the transient helper loaded,
+configured, and activated both controllers in fixed order and exited
+cleanly. The staged runner reserved and reported the full independent Stage B
+budget. No wall stop, collision stop, physical-room violation, startup retry,
+algorithm `TIMEOUT`, or `FAILSAFE` occurred.
+
+The behavioral miss is a source-continuity trigger-calibration defect. The
+source-led window moved `0.1784262940 m`, reduced global distance from
+`2.9999382809 m` to `2.8880476402 m`, and ended with radial/source dot
+`-0.8412123478`. The frozen M4.5 trigger required at most `-0.90`, so the
+bypass correctly remained inactive and the unchanged radial fallback
+`(-0.9252604036, -0.3793325526)` reversed the useful displacement. Because
+continuity never armed, it also did not survive the later recoverable
+recenter.
+
+Read-only reconstruction of every retained M4.4 behavioral source window
+shows that an explicit fresh `-0.80` threshold catches both radius-2
+reversals (`-0.999969`, `-0.841212`) while leaving every retained passing
+case outside the trigger; the nearest passing negative values are
+`-0.336356` and repeat-18412's `-0.192921`. Pure replay at `-0.80` selects a
+finite hard-safe outward/tangential forward-half-plane candidate and clears
+the declared bypass release radius within the fixed lookahead.
+
+Read-only SQLite `PRAGMA quick_check` returned `ok` for `582137` messages
+across 34 topics. The standard analyzer ran exactly once into
+`analysis/phase07`, wrote eight plots and eleven tables, and returned
+`analysis_status: partial` with no analysis failures. The partial status is
+limited to one AlgorithmState duration gap and unavailable generic
+aggregate-target metrics; fresh Phase 05 validation passes and the direct
+scenario result is complete.
+
+Full report:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m4_5_visible_probe_report.md
+SHA-256
+cd8c96e30cfe56e748147f2b5c28bc29af9b2cb50b7760b07f0c496e350f71b5
+```
+
+Retained hashes:
+
+```text
+c4f7da06667aa57f21c87d51d5a9c3cd1188bd55010dfe94cd39cc7ee6105e99
+  visible summary
+5d39fbcbf68c720ca35eb86a8e8aa2669445a20e42c8ad531ccd7cd0e065fd47
+  completeness
+0256fbce2cb2a302c1d7681febc6f103317d867d6198942b3ab88ebea23694fc
+  scenario result
+dfa0765978f67a4c317edc8e088fe62d29971da0ffb93ec348d5b8ac858f63be
+  bag
+197848518999cf2981007a1baa767ca8c33e0ae144f66a93d298c133ec6d0df7
+  analysis completeness
+caa56a51d65e75fe49721f15d35a89113765db6ee24b03a670955b5c901aa7c9
+  analysis metrics
+```
+
+Cleanup reconfirmed no Gazebo, runner, recorder, analyzer, rosbag, or matching
+launch process, and ROS domain `165` is empty with the CLI daemon disabled.
+The conditional M4.5 headless suite did not run. No retry, in-run change,
+three-light, Phase 09, physical, or hardware action occurred.
+
+## Current milestone
+
+**Phase 08.7 M4.5 — CLOSED / VISIBLE GATE BEHAVIORAL FAIL /
+INFRASTRUCTURE, STAGE A, ONE-FILL, SAFETY, AND FULL-BUDGET PASS /
+STAGE B FAIL / SUITE NOT RUN / NOT SIMULATION-READY.**
+
+### Next criterion
+
+Checkpoint and commit this immutable M4.5 result. Any further correction must
+use a fresh reviewed version and fresh identities. The smallest supported
+M4.6 correction is to preserve all M4.5 code and gates, explicitly move only
+the enabled reversal threshold from `-0.90` to `-0.80`, add the exact
+M4.5 geometry regression, qualify without Gazebo, and checkpoint/commit
+before one fresh visible attempt. The optional three-light probe, Phase 09,
+and physical hardware remain unauthorized.
