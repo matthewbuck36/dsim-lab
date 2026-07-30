@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-30T01:26:52-07:00`
-Status: `PHASE 08.7 M4.2 VISIBLE BEHAVIOR PASS; FORMAL EVIDENCE FAIL`
+Last verified: `2026-07-30T01:31:16-07:00`
+Status: `PHASE 08.7 M4.3 EVIDENCE CORRECTION AUTHORIZED; PLAN PENDING COMMIT`
 
 ## Objective
 
@@ -7207,3 +7207,48 @@ the existing AlgorithmEvent configuration-prefix map with
 its failed file immutable, preserve M4/M4.1 outcomes and hashes, requalify
 without Gazebo, and use a fresh case/seed/evidence root for the next visible
 gate.
+
+## Phase 08.7 M4.3 authorization and Plan boundary
+
+The M4.2 retained-result boundary was committed at `c418808`
+(`phase 08.7: retain M4.2 visible probe result`). The user then explicitly
+authorized the diagnosed correction with: "Great, then make that fix."
+
+M4.3 is therefore a fresh Level B evidence-contract correction. It adds only
+the existing supervisor's `post-recovery ` configuration-event prefix to the
+closed AlgorithmEvent producer map, extends the existing recording tests, and
+creates fresh visible and conditional two-light scenario identities. It does
+not change navigation, thresholds, safety classification, wall handling,
+affine guidance, Stage A/B behavior, or any M4.2 fixed launch value.
+
+Fresh fixed identities are:
+
+```text
+visible suite/version:  phase08_v7_m4_3_visible_probe
+                        phase08-v7-m4-3-probe
+visible case/seed:      v7_m4_3_probe_r1p5_a45_h25_18308 / 18308
+visible evidence root:  /home/mattb/Experiments/GESC-Gaussian/runs/
+                        phase08_v7_m4_3_probe
+headless suite/version: phase08_v7_m4_3_two_light_suite
+                        phase08-v7-m4-3
+headless seeds:         18309, 18310, 18311, 18312
+headless evidence root: /home/mattb/Experiments/GESC-Gaussian/runs/
+                        phase08_v7_m4_3
+```
+
+The M4.2 visible probe remains a formal failure and its failed completeness
+file remains immutable. The M4.3 Plan requires a read-only counterfactual
+M4.2 replay, retained M4/M4.1 replay and hash checks, focused and broad
+functional tests, build, installed dry-run, launch instantiation, checkpoint,
+and implementation commit before any new Gazebo process.
+
+## Current milestone
+
+**Phase 08.7 M4.3 — PLAN AUTHORIZED; no M4.3 implementation or Gazebo
+execution has started.**
+
+### Next criterion
+
+Validate, checkpoint, and commit the M4.3 amendment. Then implement only the
+declared evidence-prefix correction, regression coverage, and fresh frozen
+scenario identities; complete every no-Gazebo gate before dispatch.

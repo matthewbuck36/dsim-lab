@@ -6,7 +6,8 @@
 RETAINED AS FAILED; M2.3 EXECUTED AND RETAINED AS PASSED; M3 EXECUTED
 AND RETAINED AS FAILED AT 1/5; M4 RETAINED AS EVIDENCE FAIL;
 M4.1 EVIDENCE CORRECTION PASSED AND VISIBLE PROBE RETAINED AS STAGE B
-FAIL; M4.2 POST-RECOVERY LIVENESS CORRECTION AUTHORIZED AND PLANNED.**
+FAIL; M4.2 BEHAVIOR PASSED AND FORMAL EVIDENCE FAILED; M4.3
+EVIDENCE-ATTRIBUTION CORRECTION AUTHORIZED AND PLANNED.**
 
 The user approved the geometry in this Plan on 2026-07-29. M1 was implemented,
 qualified without Gazebo execution, checkpointed, and committed at `7c87e5a`.
@@ -32,6 +33,15 @@ failed Stage B after looping near the recenter region. No M4 suite or
 three-light run was executed. On 2026-07-30 the user authorized a fresh M4.2
 correction and its conditional two-light qualification sequence. M4.2 does
 not reopen or relabel any prior attempt.
+
+The one fixed M4.2 visible probe subsequently passed Stage A, exact one-fill
+cardinality, post-recovery translation, Stage B at `1.20 m`, collision,
+final-zero, and cleanup. Its formal result remains failed because two new
+supervisor-owned `post-recovery ` configuration events were absent from the
+recording validator's closed producer-prefix map. On 2026-07-30 the user
+authorized the fresh M4.3 correction below. M4.3 changes evidence attribution
+and fresh experiment identity only; it does not alter M4.2 navigation or
+acceptance values and does not relabel the immutable M4.2 result.
 
 The user resolved the V6 acceptance-window ambiguity on 2026-07-29. Each run
 must report local-recovery success separately from post-recovery global
@@ -1790,3 +1800,147 @@ Save, validate, checkpoint, and commit this amendment. Implement and qualify
 the full correction plus exact fixed inputs without Gazebo, checkpoint and
 commit the dispatch boundary, and then run only the conditional sequence
 above.
+
+## M4.3 AlgorithmEvent producer-attribution amendment
+
+The one fixed M4.2 visible probe is closed as a formal evidence failure even
+though every behavioral predicate passed. Its `completeness.json`, result,
+summary, bag, analysis, scenario bytes, case identity, seed, and evidence root
+remain immutable. M4.3 is the fresh, user-authorized Level B evidence-contract
+correction for the single diagnosed defect.
+
+### Narrow implementation boundary
+
+The existing Phase 05 recorder and validator remain the sole recording and
+completeness owners. In
+`ros_esc.experiment_recording.validate_run.algorithm_event_producer_stream`,
+extend the existing `EVENT_CONFIGURATION` prefix table with exactly:
+
+```text
+("post-recovery ", "supervisor")
+```
+
+This recognizes the M4.2 supervisor's typed configuration-event family,
+including:
+
+```text
+post-recovery guidance epoch started
+post-recovery outward progress completed
+```
+
+No wildcard producer fallback is allowed. Unknown event types, malformed
+watchdog signatures, and unrecognized configuration details must continue to
+fail producer identification. The correction changes no ROS message, node,
+topic, publisher, timestamp, recording field, navigation behavior, safety
+behavior, cost sign or unit, launch value, scenario schema, or acceptance
+threshold.
+
+### Compatibility and immutable replay
+
+Before any new Gazebo process starts, tests and read-only validation must
+prove:
+
+1. both observed `post-recovery ` signatures classify as `supervisor`;
+2. a post-recovery event participates in the same per-producer timestamp
+   stream as every other supervisor event, including a deliberate regression
+   fixture;
+3. an unknown configuration signature remains unidentified;
+4. the retained M4.2 bag would pass all `48/48` completeness checks with the
+   corrected code and `write_report=False`;
+5. the retained M4.2 failed `completeness.json`, suite summary, scenario
+   result, bag, and analysis files remain byte-identical;
+6. retained M4 and M4.1 read-only replays preserve their recorded formal
+   outcomes, and their retained completeness files remain byte-identical;
+7. all M4.2 scenario files, V6 scenarios, historical scenarios/worlds,
+   canonical topics, cost sign/units, and sole `/cmd_vel` ownership remain
+   unchanged.
+
+The read-only M4.2 replay is counterfactual diagnosis only. It cannot relabel
+M4.2 as passed or count M4.2 toward the fresh M4.3 gate.
+
+### Frozen M4.3 behavior
+
+M4.3 copies the complete M4.2 visible and two-light behavioral contracts.
+Every algorithm, source, start, geometry, topology, fill, recenter, affine,
+post-recovery liveness, wall, collision, Stage A, Stage B, stop, and timeout
+value remains identical. Only suite IDs, experiment versions, case IDs,
+seeds, descriptions, repeat references, and evidence roots are fresh.
+
+The fixed visible attempt is:
+
+```text
+suite:       phase08_v7_m4_3_visible_probe
+version:     phase08-v7-m4-3-probe
+case:        v7_m4_3_probe_r1p5_a45_h25_18308
+local:       (1.0606601717798214, 1.0606601717798212)
+seed:        18308
+evidence:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_3_probe
+```
+
+It must use visible Gazebo and pass all `48/48` recording checks, exact
+publisher ownership, timestamp evidence, Stage A, exact one-fill
+cardinality, primary noninterpolated `1.20 m` Stage B, collision, forbidden
+state/event, final-zero, cleanup, and combined predicates. It is retained
+without retry or in-run tuning.
+
+### Conditional M4.3 two-light qualification
+
+Only after the fixed visible M4.3 probe passes every formal and behavioral
+predicate may this serial headless suite run:
+
+| Case | Local position | Seed | Role |
+|---|---|---:|---|
+| `v7_m4_3_r1p0_a45_h25_18309` | `(0.7071067811865476, 0.7071067811865475)` | 18309 | spatial |
+| `v7_m4_3_r1p5_a22p5_h25_18309` | `(1.38581929876693, 0.5740251485476346)` | 18309 | spatial |
+| `v7_m4_3_r1p5_a45_h25_18309` | `(1.0606601717798214, 1.0606601717798212)` | 18309 | spatial |
+| `v7_m4_3_r1p5_a67p5_h25_18309` | `(0.5740251485476348, 1.38581929876693)` | 18309 | spatial |
+| `v7_m4_3_r2p0_a45_h25_18309` | `(1.4142135623730951, 1.414213562373095)` | 18309 | spatial |
+| `v7_m4_3_repeat_r1p5_a45_h25_18310` | `(1.0606601717798214, 1.0606601717798212)` | 18310 | repeat |
+| `v7_m4_3_repeat_r1p5_a45_h25_18311` | `(1.0606601717798214, 1.0606601717798212)` | 18311 | repeat |
+| `v7_m4_3_repeat_r1p5_a45_h25_18312` | `(1.0606601717798214, 1.0606601717798212)` | 18312 | repeat |
+
+The suite uses:
+
+```text
+suite:       phase08_v7_m4_3_two_light_suite
+version:     phase08-v7-m4-3
+evidence:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_3
+```
+
+The two-light readiness gate requires the visible probe plus all five spatial
+and all three repeat cases to pass every unchanged predicate. Every attempt
+is retained. A behavioral or formal failure is not retried inside M4.3.
+Cleanup failure stops further dispatch.
+
+### No-Gazebo qualification and dispatch
+
+Before the visible M4.3 probe, the exact implementation and fresh scenarios
+must pass:
+
+1. focused producer-classification, per-producer timestamp, recording,
+   scenario-schema, scenario-runner, and M4.2 behavioral regressions;
+2. broad ROS-independent functional tests;
+3. fatal lint and Python compilation;
+4. isolated three-package build;
+5. installed scenario dry-runs and nonexecuting launch instantiation;
+6. the immutable read-only replay and hash checks above;
+7. source/install byte parity for the corrected validator and fresh scenario;
+8. live-status update, checkpoint, and bounded Git commit.
+
+The scenario hashes and deterministic case keys are frozen and recorded at
+that dispatch commit. Any byte change requires a new hash and repetition of
+the complete no-Gazebo qualification.
+
+M4.3 authorizes only the conditional two-light simulation sequence above.
+The optional three-light development probe remains unexecuted and requires a
+complete M4.3 two-light gate plus separate user authorization. Phase 09 and
+every physical hardware command remain unauthorized.
+
+### M4.3 milestone
+
+Save, validate, checkpoint, and commit this amendment. Implement and qualify
+the exact evidence correction plus fixed fresh inputs without Gazebo,
+checkpoint and commit the dispatch boundary, then execute only the fixed
+visible probe and its passing-gated serial two-light suite.
