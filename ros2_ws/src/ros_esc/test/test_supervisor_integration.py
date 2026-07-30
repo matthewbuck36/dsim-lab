@@ -372,6 +372,168 @@ def test_recenter_suppresses_inward_translation_while_continuing_rotation():
         rclpy.shutdown()
 
 
+def _m4_4_adaptive_recenter_node(**overrides):
+    values = {
+        'recoverable_navigation_enabled': True,
+        'recovery_retry_limit': 3,
+        'adaptive_recenter_lookahead_enabled': True,
+        'room_bounds_x_min_m': -0.25,
+        'room_bounds_x_max_m': 3.75,
+        'room_bounds_y_min_m': -0.25,
+        'room_bounds_y_max_m': 3.75,
+        'room_center_x_m': 1.75,
+        'room_center_y_m': 1.75,
+        'wall_margin_m': 0.20,
+        'direction_lookahead_m': 0.50,
+        'fill_avoidance_margin_m': 0.10,
+        'recenter_max_sec': 1.0,
+        'recenter_max_linear_velocity_mps': 0.10,
+        'supervisor_command_stale_sec': 0.50,
+    }
+    values.update(overrides)
+    return SupervisorNode(
+        parameter_overrides=[
+            Parameter(name, value=value)
+            for name, value in values.items()
+        ]
+    )
+
+
+def _activate_m4_4_corner_recenter(node):
+    node.machine.state = State.RECENTER
+    node.machine.state_entered_sec = node.machine.last_now_sec
+    node.latest_pose = Pose2D(253.116, 0.3963, 0.2401, 0.1619)
+    node.latest_pose_valid = True
+    node.recenter_target = node.bounds.center.copy()
+    node.recenter_started_distance = float(
+        math.dist(node.latest_pose.position, node.recenter_target)
+    )
+    node.recenter_best_distance = node.recenter_started_distance
+    node.active_fill_records = {
+        1: {
+            'fill_id': 1,
+            'revision': 1,
+            'center': [0.5447780037, 0.8569669278],
+            'support_radius': 0.5086747487,
+            'exit_radius': 0.4238956239,
+        }
+    }
+
+
+def test_m4_4_adaptive_recenter_resolves_retained_corner_geometry():
+    rclpy.init()
+    node = _m4_4_adaptive_recenter_node()
+    try:
+        _activate_m4_4_corner_recenter(node)
+
+        assert node._update_recenter(253.116) is None
+        assert node.machine.state == State.RECENTER
+        assert node.safe_direction is not None
+        assert node.recenter_route_planner.selected_lookahead_m == (
+            pytest.approx(0.25)
+        )
+        assert node.recenter_recovery_allowed is True
+        assert node.recenter_route_unavailable_reported is False
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_4_empty_adaptive_route_holds_then_exhausts_bounded_recovery(
+    monkeypatch,
+):
+    rclpy.init()
+    node = _m4_4_adaptive_recenter_node()
+    events = Recorder()
+    node.event_publisher = events
+    try:
+        _activate_m4_4_corner_recenter(node)
+        monkeypatch.setattr(
+            node.recenter_route_planner,
+            'select',
+            lambda *args, **kwargs: None,
+        )
+
+        assert node._update_recenter(0.1) is None
+        assert node._update_recenter(0.2) is None
+        assert node.machine.state == State.RECENTER
+        assert node.current_supervisor_command.linear.x == 0.0
+        assert node.recenter_recovery_allowed is True
+        assert sum(
+            'recenter route temporarily unavailable; bounded '
+            'recovery continues' in event.detail
+            for event in events.messages
+        ) == 1
+
+        for unused_attempt in range(3):
+            transition = node.machine.step(
+                node.machine.state_entered_sec + 1.0,
+                TransitionInputs(recenter_recovery_allowed=True),
+            )
+            assert transition.current == State.RECENTER
+        exhausted = node.machine.step(
+            node.machine.state_entered_sec + 1.0,
+            TransitionInputs(recenter_recovery_allowed=True),
+        )
+        assert exhausted.current == State.FAILSAFE
+        assert exhausted.reason == 'recenter timeout'
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_4_adaptive_recenter_does_not_relax_physical_room_boundary():
+    rclpy.init()
+    node = _m4_4_adaptive_recenter_node()
+    try:
+        _activate_m4_4_corner_recenter(node)
+        node.latest_pose = Pose2D(253.2, -0.251, 0.24, 0.0)
+
+        assert node._prepare_geometry(253.2) == (
+            'pose outside physical room bounds'
+        )
+        assert node.recenter_route_unavailable_reported is False
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_4_controls_require_recoverable_progress_owners():
+    rclpy.init()
+    try:
+        with pytest.raises(
+            ValueError,
+            match='adaptive recenter look-ahead requires recoverable',
+        ):
+            SupervisorNode(
+                parameter_overrides=[
+                    Parameter(
+                        'adaptive_recenter_lookahead_enabled',
+                        value=True,
+                    ),
+                ]
+            )
+        with pytest.raises(
+            ValueError,
+            match='source-led handoff requires post-recovery progress',
+        ):
+            SupervisorNode(
+                parameter_overrides=[
+                    Parameter(
+                        'recoverable_navigation_enabled',
+                        value=True,
+                    ),
+                    Parameter('recovery_retry_limit', value=3),
+                    Parameter(
+                        'post_recovery_source_led_handoff_enabled',
+                        value=True,
+                    ),
+                ]
+            )
+    finally:
+        rclpy.shutdown()
+
+
 def test_post_recovery_search_publishes_safe_affine_authorization():
     rclpy.init()
     node = SupervisorNode(
@@ -521,7 +683,11 @@ def _m4_2_progress_node(**overrides):
     )
 
 
-def _activate_m4_2_guidance(node, pose_value=None):
+def _activate_m4_2_guidance(
+    node,
+    pose_value=None,
+    source_led_handoff=False,
+):
     pose_value = pose_value or Pose2D(10.0, 1.75, 1.75, 0.0)
     node.latest_pose = pose_value
     node.latest_pose_valid = True
@@ -541,7 +707,10 @@ def _activate_m4_2_guidance(node, pose_value=None):
     node.machine.active_escape_fill_id = 4
     node.machine.post_recovery_guidance_active = True
     node.machine.post_recovery_guidance_started_sec = node._now_sec()
-    assert node._start_post_recovery_epoch(node._now_sec()) is None
+    assert node._start_post_recovery_epoch(
+        node._now_sec(),
+        source_led_handoff=source_led_handoff,
+    ) is None
 
 
 def test_m4_2_progress_epoch_commands_then_holds_and_tapers_affine():
@@ -601,6 +770,201 @@ def test_m4_2_progress_epoch_commands_then_holds_and_tapers_affine():
         assert node.machine.post_recovery_guidance_active is False
         assert node.machine.active_escape_fill_id is None
         assert node.active_fill_records
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_4_source_led_window_has_no_affine_direction_or_supervisor_motion():
+    rclpy.init()
+    node = _m4_2_progress_node(
+        post_recovery_liveness_window_sec=12.0,
+        post_recovery_source_led_handoff_enabled=True,
+    )
+    states = Recorder()
+    commands = Recorder()
+    events = Recorder()
+    node.state_publisher = states
+    node.command_publisher = commands
+    node.event_publisher = events
+    try:
+        _activate_m4_2_guidance(node, source_led_handoff=True)
+        anchor = node.latest_pose.position.copy()
+
+        assert node.post_recovery_source_led_active is True
+        assert node.safe_direction is None
+        node._publish_state_and_command(node._now_sec())
+        assert states.messages[-1].sensor_weight == 1.0
+        assert states.messages[-1].gaussian_weight == 1.0
+        assert states.messages[-1].affine_weight == 0.0
+        assert states.messages[-1].safe_direction_valid is False
+        assert commands.messages[-1].linear.x == 0.0
+        assert commands.messages[-1].angular.z == 0.0
+
+        node.latest_pose = Pose2D(21.999, *(anchor + [0.19, 0.0]), 0.0)
+        node.latest_pose_sequence += 1
+        assert node._update_post_recovery_guidance(21.999) is None
+        node._publish_state_and_command(21.999)
+
+        assert node.post_recovery_source_led_active is True
+        assert node.machine.post_recovery_guidance_active is True
+        assert node.safe_direction is None
+        assert states.messages[-1].affine_weight == 0.0
+        assert commands.messages[-1].linear.x == 0.0
+        assert sum(
+            event.detail == 'post-recovery source-led handoff started'
+            for event in events.messages
+        ) == 1
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_4_recenter_search_boundary_starts_source_led_handoff():
+    rclpy.init()
+    node = _m4_2_progress_node(
+        post_recovery_liveness_window_sec=12.0,
+        post_recovery_source_led_handoff_enabled=True,
+    )
+    events = Recorder()
+    node.event_publisher = events
+    try:
+        node.latest_pose = Pose2D(10.0, 1.75, 1.75, 0.0)
+        node.latest_pose_valid = True
+        node.latest_pose_sequence += 1
+        node.active_fill_records = {
+            1: {
+                'fill_id': 4,
+                'revision': 1,
+                'center': [1.0, 1.0],
+                'support_radius': 0.30,
+                'exit_radius': 0.25,
+            }
+        }
+        node.machine.state = State.RECENTER
+        node.machine.state_entered_sec = node.machine.last_now_sec
+        node.machine.active_fill_count = 1
+        node.machine.post_recovery_fill_id = 4
+        node.machine.active_escape_fill_id = 4
+        node.recenter_target = node.bounds.center.copy()
+        node.recenter_distance = 0.0
+
+        now_sec = node.machine.last_now_sec + 0.1
+        transition = node.machine.step(
+            now_sec,
+            TransitionInputs(recenter_complete=True),
+        )
+        assert transition.previous == State.RECENTER
+        assert transition.current == State.SEARCH
+        node._handle_transition(transition, now_sec)
+
+        assert node.post_recovery_source_led_active is True
+        assert node.machine.post_recovery_guidance_active is True
+        assert node.safe_direction is None
+        assert node.current_supervisor_command.linear.x == 0.0
+        assert sum(
+            event.detail == 'post-recovery source-led handoff started'
+            for event in events.messages
+        ) == 1
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_4_source_led_handoff_does_not_restart_after_fallback_recenter():
+    rclpy.init()
+    node = _m4_2_progress_node(
+        post_recovery_liveness_window_sec=12.0,
+        post_recovery_source_led_handoff_enabled=True,
+    )
+    try:
+        _activate_m4_2_guidance(node)
+        node.post_recovery_recenter_attempted = True
+
+        assert node._start_post_recovery_epoch(
+            node._now_sec(),
+            source_led_handoff=True,
+        ) is None
+
+        assert node.post_recovery_source_led_active is False
+        assert node.safe_direction is not None
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_4_source_led_translation_releases_to_ordinary_search():
+    rclpy.init()
+    node = _m4_2_progress_node(
+        post_recovery_liveness_window_sec=12.0,
+        post_recovery_source_led_handoff_enabled=True,
+    )
+    states = Recorder()
+    events = Recorder()
+    node.state_publisher = states
+    node.event_publisher = events
+    try:
+        _activate_m4_2_guidance(node, source_led_handoff=True)
+        anchor = node.latest_pose.position.copy()
+        node.latest_pose = Pose2D(22.0, *(anchor + [0.21, 0.0]), 0.0)
+        node.latest_pose_sequence += 1
+
+        assert node._update_post_recovery_guidance(22.0) is None
+        node._publish_state_and_command(22.0)
+
+        assert node.post_recovery_source_led_active is False
+        assert node.machine.post_recovery_guidance_active is False
+        assert node.machine.state == State.SEARCH
+        assert node.safe_direction is None
+        assert node.current_supervisor_command.linear.x == 0.0
+        assert states.messages[-1].sensor_weight == 1.0
+        assert states.messages[-1].gaussian_weight == 1.0
+        assert states.messages[-1].affine_weight == 0.0
+        assert sum(
+            event.detail == 'post-recovery source-led handoff completed'
+            for event in events.messages
+        ) == 1
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_4_source_led_threshold_arms_exactly_one_existing_fallback():
+    rclpy.init()
+    node = _m4_2_progress_node(
+        post_recovery_liveness_window_sec=12.0,
+        post_recovery_source_led_handoff_enabled=True,
+    )
+    states = Recorder()
+    events = Recorder()
+    node.state_publisher = states
+    node.event_publisher = events
+    try:
+        _activate_m4_2_guidance(node, source_led_handoff=True)
+        anchor = node.latest_pose.position.copy()
+        node.latest_pose = Pose2D(22.0, *(anchor + [0.20, 0.0]), 0.0)
+        node.latest_pose_sequence += 1
+
+        assert node._update_post_recovery_guidance(22.0) is None
+        node._publish_state_and_command(22.0)
+
+        assert node.post_recovery_source_led_active is False
+        assert node.machine.post_recovery_guidance_active is True
+        assert node.safe_direction is not None
+        assert node.post_recovery_progress_tracker.latest.window_valid is False
+        assert states.messages[-1].affine_weight == pytest.approx(0.50)
+        detail = (
+            'post-recovery source-led handoff stalled; '
+            'fallback guidance armed'
+        )
+        assert sum(
+            event.detail == detail for event in events.messages
+        ) == 1
+
+        assert node._update_post_recovery_guidance(22.1) is None
+        assert sum(
+            event.detail == detail for event in events.messages
+        ) == 1
     finally:
         node.destroy_node()
         rclpy.shutdown()

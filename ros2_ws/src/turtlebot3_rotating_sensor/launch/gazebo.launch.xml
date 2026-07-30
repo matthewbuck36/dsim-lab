@@ -169,6 +169,7 @@
     <arg name="post_recovery_liveness_min_path_length_m" default="0.60"/>
     <arg name="post_recovery_liveness_max_displacement_m" default="0.20"/>
     <arg name="post_recovery_direction_refresh_limit" default="0"/>
+    <arg name="post_recovery_source_led_handoff_enabled" default="False"/>
     <arg name="robust_search_epoch_reset_enabled" default="False"/>
     <arg name="room_bounds_x_min_m" default="-2.0"/>
     <arg name="room_bounds_x_max_m" default="2.0"/>
@@ -178,6 +179,7 @@
     <arg name="room_center_y_m" default="0.0"/>
     <arg name="wall_margin_m" default="0.35"/>
     <arg name="direction_lookahead_m" default="0.50"/>
+    <arg name="adaptive_recenter_lookahead_enabled" default="False"/>
     <arg name="direction_candidate_step_rad" default="0.7853981633974483"/>
     <arg name="fill_avoidance_margin_m" default="0.10"/>
     <arg name="recenter_tolerance_m" default="0.25"/>
@@ -841,6 +843,7 @@
             -p post_recovery_liveness_min_path_length_m:=$(var post_recovery_liveness_min_path_length_m)
             -p post_recovery_liveness_max_displacement_m:=$(var post_recovery_liveness_max_displacement_m)
             -p post_recovery_direction_refresh_limit:=$(var post_recovery_direction_refresh_limit)
+            -p post_recovery_source_led_handoff_enabled:=$(var post_recovery_source_led_handoff_enabled)
             -p room_bounds_x_min_m:=$(var room_bounds_x_min_m)
             -p room_bounds_x_max_m:=$(var room_bounds_x_max_m)
             -p room_bounds_y_min_m:=$(var room_bounds_y_min_m)
@@ -849,6 +852,7 @@
             -p room_center_y_m:=$(var room_center_y_m)
             -p wall_margin_m:=$(var wall_margin_m)
             -p direction_lookahead_m:=$(var direction_lookahead_m)
+            -p adaptive_recenter_lookahead_enabled:=$(var adaptive_recenter_lookahead_enabled)
             -p direction_candidate_step_rad:=$(var direction_candidate_step_rad)
             -p fill_avoidance_margin_m:=$(var fill_avoidance_margin_m)
             -p recenter_tolerance_m:=$(var recenter_tolerance_m)

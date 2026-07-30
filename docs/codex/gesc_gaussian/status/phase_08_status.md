@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-30T03:07:14-07:00`
-Status: `PHASE 08.7 M4.4 AUTHORIZED AND PLANNED; IMPLEMENTATION PENDING`
+Last verified: `2026-07-30T03:42:03-07:00`
+Status: `PHASE 08.7 M4.4 IMPLEMENTED AND NO-GAZEBO QUALIFIED; CHECKPOINT AND COMMIT PENDING`
 
 ## Objective
 
@@ -7850,3 +7850,210 @@ default-off adaptive-recenter and source-led-handoff controls, regression
 coverage, and fresh fixed identities. Complete every no-Gazebo gate and
 commit the exact dispatch boundary before any fresh simulation. The
 three-light probe, Phase 09, and physical hardware remain unauthorized.
+
+## Phase 08.7 M4.4 implementation and no-Gazebo qualification
+
+The frozen M4.4 amendment was committed at `ff127a1`
+(`phase 08.7: plan M4.4 source-led recovery`). Implementation stayed inside
+its declared ownership and compatibility boundary:
+
+- `RecenterRoutePlanner` preserves the configured `0.50 m` candidate first
+  and, only when enabled and empty, evaluates `0.25`, `0.125`, `0.0625`, and
+  the full `0.05 m` supervisor-command persistence distance;
+- the retained M4.3 route-side sequence and exact corner geometry now select
+  a hard-safe `0.25 m` candidate, while default-off selection remains exactly
+  the prior single-horizon behavior;
+- a physically valid, finite empty adaptive route holds zero translation,
+  retains bounded angular replanning, reports one supervisor-owned typed event
+  per continuous episode, and remains under the existing finite timeout/retry
+  budget; physical-room violations, nonfinite geometry, hard faults, and
+  exhausted recovery remain terminal;
+- the accepted `RECENTER -> SEARCH` boundary starts one source-led window with
+  raw/Gaussian weights `1.0/1.0`, affine weight `0.0`, zero supervisor
+  translation, and no safe direction;
+- greater-than-`0.20 m` net displacement in the first complete `12.0 s`
+  window releases ordinary SEARCH; at-most-`0.20 m` arms the existing
+  hard-safe fallback exactly once, and that fallback's one recenter cannot
+  restart source-led mode;
+- both controls default `false`, are schema-v7-only robust controls, and bind
+  through the existing central launch and supervisor. No node, topic,
+  controller, `/cmd_vel` publisher, recorder, validator, message, source role,
+  global coordinate, cost sign/unit, or simulation/physical fork changed.
+
+The temporarily empty-route event uses the existing closed supervisor
+producer family without changing the validator:
+
+```text
+measured escape: recenter route temporarily unavailable; bounded recovery continues
+```
+
+The three source-led details retain the existing `post-recovery ` producer
+prefix. Focused recording classification covers all four new details and
+keeps unknown configuration signatures unidentified.
+
+### Source qualification
+
+The final focused command used the retained M4.3 interface overlay with source
+`ros_esc` first on `PYTHONPATH`:
+
+```text
+timeout --signal=INT --kill-after=20s 300s \
+  python3 -m pytest -q \
+  test_escape_recenter.py test_state_machine.py \
+  test_supervisor_integration.py test_scenario_schema.py \
+  test_scenario_runner.py test_observability_contract.py \
+  test_experiment_recording.py \
+  --junitxml=/tmp/phase08_7_m4_4_focused.xml
+
+355 passed, 1 skipped in 54.68 s
+SHA-256 22687adf5d60dfada12074992394cddccd2f86590f30f4a7ba44167631d403ab
+```
+
+The skip is the existing explicit Gazebo opt-in. Within that set, all nine
+M4.4 supervisor integration cases and all 67 recording tests pass. The exact
+M4.3 corner regression includes its preceding route-side sequence,
+full-horizon failure, adaptive `0.25 m` selection, and complete command-sweep
+safety.
+
+The final broad ROS-independent functional command was:
+
+```text
+timeout --signal=INT --kill-after=20s 300s \
+  python3 -m pytest -q ros2_ws/src/ros_esc/test \
+  --ignore=ros2_ws/src/ros_esc/test/test_flake8.py \
+  --ignore=ros2_ws/src/ros_esc/test/test_pep257.py \
+  -k 'not v4_population_adoption_is_exact_and_unused' \
+  --junitxml=/tmp/phase08_7_m4_4_broad_functional.xml
+
+634 passed, 3 skipped, 1 deselected in 117.43 s
+SHA-256 071af1256793f43d0af4651a51b78a2ee5ab869049226ff727899dd8d9e52f29
+```
+
+The skips remain the generated copyright-header check and two explicit
+Gazebo opt-ins. The one deselection remains the documented stale V4
+population assertion that treats every later fixed scenario as drift.
+An exploratory repository-root `ament_flake8`/`ament_pep257` invocation
+scanned historical repository content and reproduced the known large baseline
+of approximately 16,000 flake8 and 2,551 pep257 findings. It made no source
+change and is not the Plan's fatal gate. The bounded final
+`E9,F63,F7,F82` check on every changed Python source/test passes, as do
+`python3 -m py_compile`, `git diff --check`, and:
+
+```text
+DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/
+  validate_phase_context.sh 08 implement
+```
+
+### Fresh fixed inputs
+
+The M4.4 visible input SHA-256 and deterministic case key are:
+
+```text
+1559ee2ab0a7d2fa26834bc0bfd226aaa2b8d6d7dad62dcdac85ca2e83293eb4
+22ce182a7f02becf7d5f53e8193e99fdb11266ebd0fc51018ca27b8ab23aafff
+```
+
+The conditional suite SHA-256 is:
+
+```text
+78be277362ac060c7cb77c5d2215836cb914a95bd81a5ed9221f0db4bc62a188
+```
+
+Its fixed execution-order keys are:
+
+```text
+699ff166fc90149cf52e528f82f064e3b4c2fd9fed338969a20966c6d46c4b86
+eb3ff82af459346e884bfc2a8a304dfd8f0d242475efe1b36a7a83e13e527566
+cacad8b96a05e2bcda31072284edeeb4dea23f62a7bf016f46527a86d8e19b8f
+8ee88d3ef6a9a74edcf5d41ef428b4d81414c82ea15379d3a577d884cdc437eb
+8697df57b64a97f070c3f0657684bec265cadf38c0bae856ac3ee2e79e1daa03
+6f979d54f1cc796740003a1613d2e1f07e783590ad829e205e9a0d2efc304e4f
+443625cf507b870b420c383126b414f0fd5dc12490e7b6ec83165864017fd469
+6f3ae4792673cf2176e62d54319efc152902b716444042a82be11d7bfbe21260
+```
+
+All repeats bind the fresh central key
+`cacad8b96a05e2bcda31072284edeeb4dea23f62a7bf016f46527a86d8e19b8f`.
+Schema regression normalizes only fresh identities/descriptions and the two
+new enabled controls; all M4.3 behavior, execution controls, acceptance
+values, known topology, exact one-fill limit, and source geometry match.
+
+Historical source and retained-summary hashes remain:
+
+```text
+40babf08ce27f22d23e5ccfbbf3913e1627e9d092ad7be602fafbe234377e367  M4.3 suite summary
+cacbdafbc9aa289f178e684503519283bdf4b5496cbdd2dfb8c61ff69ebf1658  M4.3 visible
+37c1f7f2d81132be46adee576a1b603093fd03dd5488c5465d53d8876b9d50cc  M4.3 suite
+3be130581b88c986fd845aef0c33c9db94ceb02ecfe2a6361926b0317ef8e655  V6 sweep
+3b9badc92cf63739f65662158999e3c2aab71761f790e3f360be9a52e6f38688  V6 repeats
+88b10b39aa24a6430f6f031c750334ed34e6835e54c84de8d36f4cc6a26444bf  shifted world
+8ecc1a231efec24401d74fef3cd5139d48c6029f88e71d044cefdf2fd14c5bef  historical world
+```
+
+No retained validator or bag was rewritten or rerun.
+
+### Isolated installed qualification
+
+The fresh isolated build at `/tmp/phase08_7_m4_4_qual` passed:
+
+```text
+ros_esc_interfaces
+ros_esc
+turtlebot3_rotating_sensor
+
+Summary: 3 packages finished in 13.4 s
+```
+
+Installed-executable dry-runs passed:
+
+```text
+/tmp/phase08_7_m4_4_visible_installed_dry_run.yaml
+  1 supported case; GUI true
+  SHA-256 f0ade3b285cced325d0ab9a047e4d25d88e2b8914285f9acc11465db6d831d6f
+
+/tmp/phase08_7_m4_4_suite_installed_dry_run.yaml
+  8 supported cases; GUI false for every case
+  SHA-256 15d544d10de88d0b456fc2e8e58abcf8d3443378cd2f0bf7961f72d063ca218a
+```
+
+Every installed run resolves both M4.4 controls `true`; the fresh scenarios
+otherwise retain the fixed M4.3 launch and acceptance values. Nonexecuting
+installed `ros2 launch -p` expansion accepted all `94` supplied arguments and
+retained a `271`-line description:
+
+```text
+/tmp/phase08_7_m4_4_installed_launch_description.txt
+SHA-256 5abaa3b598d12dc3fcd41335d078252b36f96d09e7fa519d501077a6820fb860
+```
+
+The expansion binds both new parameters only into the existing supervisor.
+The central launch retains one `/cmd_vel` argument in the custom-controller
+path; the supervisor retains only `/gesc_gaussian/supervisor_command`.
+Installed/build-resolved production Python, both new scenarios, and the
+central launch are byte-identical to source. Source hashes are:
+
+```text
+c4842466ed4064d2708db8cfe10c674ba1b35a978753c8b88e1eacaf147c3475  scenario schema
+58bdc1bf28de841fb62efcb879fd2740464f71558a75faa62ce95108d0b03969  recenter geometry
+8c5e00fba21eff56506b8402d2cb5d18b4f4898165d0f1d75d450e733b7d90ef  supervisor
+61a3fb43eccd74216437ca0f7ac3b5fb634bf6373258ad4daff65de8dea59c9c  central launch
+```
+
+The fresh visible and suite evidence roots remain absent. `gzserver`,
+`gzclient`, `run_scenario`, `record_run`, and matching launch processes are
+inactive. ROS domain `163` has no discovered nodes with the CLI daemon
+disabled. No Gazebo or physical process started during implementation or
+qualification.
+
+## Current milestone
+
+**Phase 08.7 M4.4 — exact implementation and every required no-Gazebo
+qualification gate PASS; material-boundary checkpoint and commit pending.**
+
+### Next criterion
+
+Refresh the Phase 08 checkpoint, inspect and commit the exact qualified
+implementation plus fixed inputs, then reconfirm the clean dispatch boundary.
+Only then may the one fixed visible M4.4 probe run. The eight-case suite
+remains conditional on a complete visible pass; the optional three-light
+probe, Phase 09, and physical hardware remain unauthorized.

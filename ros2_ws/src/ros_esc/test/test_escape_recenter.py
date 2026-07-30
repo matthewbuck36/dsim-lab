@@ -535,6 +535,137 @@ def test_m3_infeasible_center_gets_safe_proxy_and_persistent_route():
     assert np.linalg.norm(position - fill.center) > fill.radius
 
 
+def test_m4_4_replays_corner_route_then_selects_quarter_meter_horizon():
+    """Resolve the retained M4.3 wall/fill pinch without changing hard safety."""
+    route = (
+        (0.5504177645, 0.3885305741),
+        (0.5389066854, 0.3772497381),
+        (0.5419987232, 0.3064148789),
+        (0.5724923686, 0.2450582289),
+        (0.5854407757, 0.2473396178),
+        (0.5987677698, 0.2442260660),
+        (0.6045627958, 0.2275838651),
+        (0.5628921985, 0.1649199236),
+        (0.4843416814, 0.1145440045),
+        (0.4114372722, 0.1003166989),
+        (0.3169666577, 0.1234985172),
+        (0.2990215844, 0.1212317053),
+        (0.2860028888, 0.1193869414),
+        (0.2727794802, 0.1229529479),
+        (0.2628485227, 0.1319624873),
+        (0.3052330114, 0.1914447476),
+        (0.3863094261, 0.2373509193),
+    )
+    failure_pose = np.array([0.3963, 0.2401])
+    target = np.array([1.75, 1.75])
+    fill = FillAvoidance(
+        1,
+        1,
+        0.5447780037,
+        0.8569669278,
+        0.6086747487,
+    )
+    bounds = OperatingBounds(
+        x_min=-0.25,
+        x_max=3.75,
+        y_min=-0.25,
+        y_max=3.75,
+        center_x=1.75,
+        center_y=1.75,
+        wall_margin=0.20,
+    )
+    full_config = DirectionConfig(lookahead_m=0.50)
+
+    fixed = RecenterRoutePlanner()
+    adaptive = RecenterRoutePlanner()
+    for position in route:
+        assert fixed.select(
+            position, target, [fill], full_config, bounds
+        ) is not None
+        assert adaptive.select(
+            position, target, [fill], full_config, bounds
+        ) is not None
+        assert fixed.side == adaptive.side == 1
+
+    assert fixed.select(
+        failure_pose,
+        target,
+        [fill],
+        full_config,
+        bounds,
+    ) is None
+    selection = adaptive.select(
+        failure_pose,
+        target,
+        [fill],
+        full_config,
+        bounds,
+        minimum_lookahead_m=0.05,
+    )
+
+    assert selection is not None
+    assert adaptive.side == 1
+    assert adaptive.selected_lookahead_m == pytest.approx(0.25)
+    assert evaluate_direction_safety(
+        failure_pose,
+        selection.direction,
+        [fill],
+        full_config,
+        bounds,
+    )[0] is False
+    assert evaluate_direction_safety(
+        failure_pose,
+        selection.direction,
+        [fill],
+        DirectionConfig(lookahead_m=0.25),
+        bounds,
+    )[0] is True
+    assert bounds.contains_physical(failure_pose)
+    assert command_sweep_is_safe(
+        failure_pose,
+        math.atan2(selection.y, selection.x),
+        0.10,
+        0.50,
+        [fill],
+        bounds,
+        allow_inward_from_margin=True,
+        boundary_trigger_clearance_m=0.025,
+    ) is True
+
+
+def test_adaptive_recenter_horizon_validation_preserves_default_selector():
+    planner = RecenterRoutePlanner()
+    config = DirectionConfig(lookahead_m=0.50)
+    target = [1.0, 0.0]
+    expected = planner.select([0.0, 0.0], target, [], config)
+    actual = planner.select(
+        [0.0, 0.0],
+        target,
+        [],
+        config,
+        minimum_lookahead_m=0.50,
+    )
+
+    assert actual == expected
+    assert planner.selected_lookahead_m == pytest.approx(0.50)
+    with pytest.raises(ValueError, match='finite and positive'):
+        planner.select(
+            [0.0, 0.0],
+            target,
+            [],
+            config,
+            minimum_lookahead_m=0.0,
+        )
+    with pytest.raises(ValueError, match='must not exceed'):
+        planner.select(
+            [0.0, 0.0],
+            target,
+            [],
+            config,
+            minimum_lookahead_m=0.51,
+        )
+
+
 @pytest.mark.parametrize(
     'yaw,velocity,horizon',
     [

@@ -74,6 +74,16 @@ M4_3_VISIBLE_PROBE = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v7_m4_3_visible_probe.yaml'
 )
+M4_4_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m4_4_visible_probe.yaml'
+)
+M4_4_TWO_LIGHT_SUITE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m4_4_two_light_suite.yaml'
+)
 
 
 def test_observed_local_recovery_binds_fill_to_local_convergence():
@@ -724,9 +734,9 @@ def test_m3_changes_only_position_seed_gui_and_reporting_contract():
 
 @pytest.mark.parametrize(
     'scenario_path',
-    [M4_2_VISIBLE_PROBE, M4_3_VISIBLE_PROBE],
+    [M4_2_VISIBLE_PROBE, M4_3_VISIBLE_PROBE, M4_4_VISIBLE_PROBE],
 )
-def test_m4_2_m4_3_launch_binds_progress_history_and_staged_budget(
+def test_m4_2_through_m4_4_launch_binds_progress_and_staged_budget(
     scenario_path,
 ):
     suite = load_suite(scenario_path)
@@ -754,6 +764,31 @@ def test_m4_2_m4_3_launch_binds_progress_history_and_staged_budget(
     assert suite['execution']['run_timeout_sec'] == 480.0
     assert suite['execution']['wall_timeout_sec'] == 660.0
     assert suite['execution']['shutdown_grace_sec'] == 45.0
+
+
+@pytest.mark.parametrize(
+    'scenario_path',
+    [M4_4_VISIBLE_PROBE, M4_4_TWO_LIGHT_SUITE],
+)
+def test_m4_4_launch_binds_only_default_off_behavior_controls(
+    scenario_path,
+):
+    suite = load_suite(scenario_path)
+    runs, unsupported = expand_suite(suite)
+
+    assert unsupported == []
+    for resolved in runs:
+        launch = build_launch_command(
+            resolved,
+            gui=suite['execution']['gazebo_gui'],
+        )
+        assert 'adaptive_recenter_lookahead_enabled:=True' in launch
+        assert 'post_recovery_source_led_handoff_enabled:=True' in launch
+        assert not any(
+            token.startswith('global_source_')
+            or token.startswith('source_role_')
+            for token in launch
+        )
 
 
 def test_staged_recovery_reports_stage_a_cardinality_and_global_sample():

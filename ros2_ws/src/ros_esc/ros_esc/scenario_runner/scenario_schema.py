@@ -108,6 +108,7 @@ LAUNCH_OVERRIDES = {
     'convergence_threshold',
     'direction_candidate_step_rad',
     'direction_lookahead_m',
+    'adaptive_recenter_lookahead_enabled',
     'escape_exit_hold_sec',
     'escape_max_sec',
     'fill_avoidance_margin_m',
@@ -154,6 +155,7 @@ LAUNCH_OVERRIDES = {
     'post_recovery_liveness_min_path_length_m',
     'post_recovery_liveness_max_displacement_m',
     'post_recovery_direction_refresh_limit',
+    'post_recovery_source_led_handoff_enabled',
     'robust_search_epoch_reset_enabled',
     'post_recovery_retry_limit',
     'recenter_angular_gain',
@@ -358,12 +360,14 @@ SCHEMA_V6_LAUNCH_OVERRIDES = {
     'recovery_retry_limit',
 }
 SCHEMA_V7_LAUNCH_OVERRIDES = {
+    'adaptive_recenter_lookahead_enabled',
     'post_recovery_direction_refresh_limit',
     'post_recovery_guidance_min_progress_m',
     'post_recovery_liveness_max_displacement_m',
     'post_recovery_liveness_min_path_length_m',
     'post_recovery_liveness_window_sec',
     'post_recovery_progress_enabled',
+    'post_recovery_source_led_handoff_enabled',
     'robust_search_epoch_reset_enabled',
 }
 DIRECT_STAGED_RECOVERY_STATE_PATH = (
@@ -449,6 +453,18 @@ def _positive_integer(value, location):
 
 def _validate_correction_overrides(overrides, ablations, location):
     """Validate optional Phase 08.7 robust correction controls."""
+    adaptive_recenter_enabled = False
+    if 'adaptive_recenter_lookahead_enabled' in overrides:
+        adaptive_recenter_enabled = _boolean(
+            overrides['adaptive_recenter_lookahead_enabled'],
+            f'{location}.adaptive_recenter_lookahead_enabled',
+        )
+    source_led_handoff_enabled = False
+    if 'post_recovery_source_led_handoff_enabled' in overrides:
+        source_led_handoff_enabled = _boolean(
+            overrides['post_recovery_source_led_handoff_enabled'],
+            f'{location}.post_recovery_source_led_handoff_enabled',
+        )
     gate_name = 'convergence_state_gating_enabled'
     if gate_name in overrides:
         _boolean(overrides[gate_name], f'{location}.{gate_name}')
@@ -611,6 +627,17 @@ def _validate_correction_overrides(overrides, ablations, location):
                 f'{location}.recoverable_navigation_enabled requires: '
                 + ', '.join(missing)
             )
+    if adaptive_recenter_enabled:
+        if not overrides.get('recoverable_navigation_enabled', False):
+            raise ValueError(
+                f'{location}.adaptive_recenter_lookahead_enabled requires '
+                'recoverable_navigation_enabled'
+            )
+        if not ablations['recenter_enabled']:
+            raise ValueError(
+                f'{location}.adaptive_recenter_lookahead_enabled requires '
+                'algorithm.ablations.recenter_enabled'
+            )
 
     if guidance_enabled:
         if not ablations['affine_assist_enabled']:
@@ -658,6 +685,17 @@ def _validate_correction_overrides(overrides, ablations, location):
             raise ValueError(
                 f'{location}.post_recovery_progress_enabled requires '
                 'robust_search_epoch_reset_enabled'
+            )
+    if source_led_handoff_enabled:
+        if not overrides.get('recoverable_navigation_enabled', False):
+            raise ValueError(
+                f'{location}.post_recovery_source_led_handoff_enabled '
+                'requires recoverable_navigation_enabled'
+            )
+        if not progress_enabled:
+            raise ValueError(
+                f'{location}.post_recovery_source_led_handoff_enabled '
+                'requires post_recovery_progress_enabled'
             )
 
 
@@ -1837,6 +1875,12 @@ def load_suite(path):
                 overrides.get('post_recovery_progress_enabled') is True
                 or overrides.get(
                     'robust_search_epoch_reset_enabled'
+                ) is True
+                or overrides.get(
+                    'adaptive_recenter_lookahead_enabled'
+                ) is True
+                or overrides.get(
+                    'post_recovery_source_led_handoff_enabled'
                 ) is True
             )
             and profiles != ['robust_gaussian_v1']

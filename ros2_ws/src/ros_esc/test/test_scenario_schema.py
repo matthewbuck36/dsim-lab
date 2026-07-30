@@ -92,6 +92,16 @@ M4_3_TWO_LIGHT_SUITE = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v7_m4_3_two_light_suite.yaml'
 )
+M4_4_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m4_4_visible_probe.yaml'
+)
+M4_4_TWO_LIGHT_SUITE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m4_4_two_light_suite.yaml'
+)
 M4_TWO_LIGHT_SUITE = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/'
@@ -1173,6 +1183,51 @@ def test_schema_v7_fields_require_v7_and_complete_dependencies(tmp_path):
         _load(tmp_path, document)
 
 
+def test_m4_4_controls_are_boolean_and_require_recoverable_progress(tmp_path):
+    document = _v7_document()
+    overrides = document['cases'][0]['algorithm']['launch_overrides']
+    overrides.update({
+        'adaptive_recenter_lookahead_enabled': True,
+        'post_recovery_source_led_handoff_enabled': True,
+    })
+    run = expand_suite(_load(tmp_path, document))[0][0]
+
+    assert run['algorithm']['launch_overrides'][
+        'adaptive_recenter_lookahead_enabled'
+    ] is True
+    assert run['algorithm']['launch_overrides'][
+        'post_recovery_source_led_handoff_enabled'
+    ] is True
+
+    document = _v7_document()
+    document['cases'][0]['algorithm']['launch_overrides'][
+        'adaptive_recenter_lookahead_enabled'
+    ] = 1
+    with pytest.raises(ValueError, match='must be true or false'):
+        _load(tmp_path, document)
+
+    document = _v7_document()
+    overrides = document['cases'][0]['algorithm']['launch_overrides']
+    overrides['recoverable_navigation_enabled'] = False
+    overrides['post_recovery_progress_enabled'] = False
+    overrides['adaptive_recenter_lookahead_enabled'] = True
+    with pytest.raises(
+        ValueError,
+        match='adaptive_recenter_lookahead_enabled requires',
+    ):
+        _load(tmp_path, document)
+
+    document = _v7_document()
+    overrides = document['cases'][0]['algorithm']['launch_overrides']
+    overrides['post_recovery_progress_enabled'] = False
+    overrides['post_recovery_source_led_handoff_enabled'] = True
+    with pytest.raises(
+        ValueError,
+        match='post_recovery_source_led_handoff_enabled requires',
+    ):
+        _load(tmp_path, document)
+
+
 def test_schema_v7_rejects_non_liveness_window_and_unbounded_budget(
     tmp_path,
 ):
@@ -1918,6 +1973,170 @@ def test_m4_3_changes_only_evidence_and_fresh_experiment_identity():
         for run in m4_3_two
         if run['acceptance_partition'] == 'reproducibility'
     } == {m4_3_two[2]['case_key']}
+
+
+def test_m4_4_changes_only_two_controls_and_fresh_experiment_identity():
+    m4_3_visible_suite = load_suite(M4_3_VISIBLE_PROBE)
+    m4_3_visible, m4_3_visible_unsupported = expand_suite(
+        m4_3_visible_suite
+    )
+    m4_4_visible_suite = load_suite(M4_4_VISIBLE_PROBE)
+    m4_4_visible, m4_4_visible_unsupported = expand_suite(
+        m4_4_visible_suite
+    )
+    m4_3_two_suite = load_suite(M4_3_TWO_LIGHT_SUITE)
+    m4_3_two, m4_3_two_unsupported = expand_suite(m4_3_two_suite)
+    m4_4_two_suite = load_suite(M4_4_TWO_LIGHT_SUITE)
+    m4_4_two, m4_4_two_unsupported = expand_suite(m4_4_two_suite)
+
+    assert (
+        m4_3_visible_unsupported
+        == m4_4_visible_unsupported
+        == m4_3_two_unsupported
+        == m4_4_two_unsupported
+        == []
+    )
+    assert [
+        (run['case_id'], run['seed'], run['case_key'])
+        for run in m4_4_visible
+    ] == [(
+        'v7_m4_4_probe_r1p5_a45_h25_18408',
+        18408,
+        '22ce182a7f02becf7d5f53e8193e99fdb11266ebd0fc51018ca27b8ab23aafff',
+    )]
+    assert [
+        (run['case_id'], run['seed'], run['case_key'])
+        for run in m4_4_two
+    ] == [
+        (
+            'v7_m4_4_r1p0_a45_h25_18409',
+            18409,
+            '699ff166fc90149cf52e528f82f064e3b4c2fd9fed338969a20966c6d46c4b86',
+        ),
+        (
+            'v7_m4_4_r1p5_a22p5_h25_18409',
+            18409,
+            'eb3ff82af459346e884bfc2a8a304dfd8f0d242475efe1b36a7a83e13e527566',
+        ),
+        (
+            'v7_m4_4_r1p5_a45_h25_18409',
+            18409,
+            'cacad8b96a05e2bcda31072284edeeb4dea23f62a7bf016f46527a86d8e19b8f',
+        ),
+        (
+            'v7_m4_4_r1p5_a67p5_h25_18409',
+            18409,
+            '8ee88d3ef6a9a74edcf5d41ef428b4d81414c82ea15379d3a577d884cdc437eb',
+        ),
+        (
+            'v7_m4_4_r2p0_a45_h25_18409',
+            18409,
+            '8697df57b64a97f070c3f0657684bec265cadf38c0bae856ac3ee2e79e1daa03',
+        ),
+        (
+            'v7_m4_4_repeat_r1p5_a45_h25_18410',
+            18410,
+            '6f979d54f1cc796740003a1613d2e1f07e783590ad829e205e9a0d2efc304e4f',
+        ),
+        (
+            'v7_m4_4_repeat_r1p5_a45_h25_18411',
+            18411,
+            '443625cf507b870b420c383126b414f0fd5dc12490e7b6ec83165864017fd469',
+        ),
+        (
+            'v7_m4_4_repeat_r1p5_a45_h25_18412',
+            18412,
+            '6f3ae4792673cf2176e62d54319efc152902b716444042a82be11d7bfbe21260',
+        ),
+    ]
+
+    def without_m4_4_delta(run):
+        result = deepcopy(run)
+        for field in (
+            'case_id',
+            'case_key',
+            'description',
+            'seed',
+            'suite_id',
+        ):
+            result.pop(field)
+        result['success']['controller']['contract_id'] = '<fresh-identity>'
+        if result['repeat_reference'] is not None:
+            result['repeat_reference']['case_key'] = '<fresh-central-case>'
+        overrides = result['algorithm']['launch_overrides']
+        assert overrides.pop(
+            'adaptive_recenter_lookahead_enabled',
+            False,
+        ) is True
+        assert overrides.pop(
+            'post_recovery_source_led_handoff_enabled',
+            False,
+        ) is True
+        return result
+
+    def without_fresh_identity(run):
+        result = deepcopy(run)
+        for field in (
+            'case_id',
+            'case_key',
+            'description',
+            'seed',
+            'suite_id',
+        ):
+            result.pop(field)
+        result['success']['controller']['contract_id'] = '<fresh-identity>'
+        if result['repeat_reference'] is not None:
+            result['repeat_reference']['case_key'] = '<fresh-central-case>'
+        return result
+
+    assert without_m4_4_delta(m4_4_visible[0]) == (
+        without_fresh_identity(m4_3_visible[0])
+    )
+    assert [
+        without_m4_4_delta(run) for run in m4_4_two
+    ] == [
+        without_fresh_identity(run) for run in m4_3_two
+    ]
+    assert {
+        run['repeat_reference']['case_key']
+        for run in m4_4_two
+        if run['acceptance_partition'] == 'reproducibility'
+    } == {m4_4_two[2]['case_key']}
+
+    assert m4_4_visible_suite['metadata']['experiment_version'] == (
+        'phase08-v7-m4-4-probe'
+    )
+    assert m4_4_two_suite['metadata']['experiment_version'] == (
+        'phase08-v7-m4-4'
+    )
+    assert m4_4_visible_suite['execution']['runs_root'].endswith(
+        '/phase08_v7_m4_4_probe'
+    )
+    assert m4_4_two_suite['execution']['runs_root'].endswith(
+        '/phase08_v7_m4_4'
+    )
+
+
+def test_m4_4_preserves_m4_3_v6_and_world_source_hashes():
+    expected = {
+        M4_3_VISIBLE_PROBE: (
+            'cacbdafbc9aa289f178e684503519283bdf4b5496cbdd2dfb8c61ff69ebf1658'
+        ),
+        M4_3_TWO_LIGHT_SUITE: (
+            '37c1f7f2d81132be46adee576a1b603093fd03dd5488c5465d53d8876b9d50cc'
+        ),
+        V6_HUE_SWEEP: (
+            '3be130581b88c986fd845aef0c33c9db94ceb02ecfe2a6361926b0317ef8e655'
+        ),
+        CORNER_ORIGIN_WORLD: (
+            '88b10b39aa24a6430f6f031c750334ed34e6835e54c84de8d36f4cc6a26444bf'
+        ),
+    }
+
+    assert {
+        path: hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in expected
+    } == expected
 
 
 def test_m4_2_preserves_m4_m4_1_v6_m3_and_world_source_hashes():

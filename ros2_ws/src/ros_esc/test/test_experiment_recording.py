@@ -2207,6 +2207,36 @@ def test_algorithm_event_timestamp_domains_are_strict_and_separate():
             0,
             'supervisor',
         ),
+        (
+            1,
+            'post-recovery source-led handoff started',
+            0,
+            'supervisor',
+        ),
+        (
+            1,
+            'post-recovery source-led handoff completed',
+            0,
+            'supervisor',
+        ),
+        (
+            1,
+            (
+                'post-recovery source-led handoff stalled; '
+                'fallback guidance armed'
+            ),
+            0,
+            'supervisor',
+        ),
+        (
+            1,
+            (
+                'measured escape: recenter route temporarily unavailable; '
+                'bounded recovery continues'
+            ),
+            0,
+            'supervisor',
+        ),
         (2, 'rotation-aware features unavailable', 1, 'cost_function'),
         (10, 'candidate', 0, 'convergence_detector'),
         (20, 'fill created', 0, 'gaussian_fill'),

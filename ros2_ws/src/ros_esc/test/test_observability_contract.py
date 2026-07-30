@@ -397,6 +397,7 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         "room_center_y_m": "0.0",
         "wall_margin_m": "0.35",
         "direction_lookahead_m": "0.50",
+        "adaptive_recenter_lookahead_enabled": "False",
         "direction_candidate_step_rad": "0.7853981633974483",
         "fill_avoidance_margin_m": "0.10",
         "recenter_tolerance_m": "0.25",
@@ -412,6 +413,7 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         "post_recovery_liveness_min_path_length_m": "0.60",
         "post_recovery_liveness_max_displacement_m": "0.20",
         "post_recovery_direction_refresh_limit": "0",
+        "post_recovery_source_led_handoff_enabled": "False",
         "robust_search_epoch_reset_enabled": "False",
         "gaussian_fill_pose_topic": "/odom",
         "gaussian_fill_estimation_channel_index": "0",
@@ -489,6 +491,9 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         '-p supervisor_command_stale_sec:=$(var supervisor_command_stale_sec)'
         in supervisor_commands[0].attrib['cmd']
     )
+    assert 'light_source' not in supervisor_commands[0].attrib['cmd']
+    assert 'evaluation_role' not in supervisor_commands[0].attrib['cmd']
+    assert 'global_source' not in supervisor_commands[0].attrib['cmd']
     for name in (
         'post_recovery_progress_enabled',
         'post_recovery_guidance_min_progress_m',
@@ -496,6 +501,8 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         'post_recovery_liveness_min_path_length_m',
         'post_recovery_liveness_max_displacement_m',
         'post_recovery_direction_refresh_limit',
+        'post_recovery_source_led_handoff_enabled',
+        'adaptive_recenter_lookahead_enabled',
     ):
         assert (
             f'-p {name}:=$(var {name})'

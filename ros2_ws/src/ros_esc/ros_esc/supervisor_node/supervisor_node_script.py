@@ -173,6 +173,16 @@ class SupervisorNode(Node):
         self.recoverable_navigation_enabled = (
             self.machine.config.recoverable_navigation_enabled
         )
+        self.adaptive_recenter_lookahead_enabled = bool(
+            self.get_parameter(
+                'adaptive_recenter_lookahead_enabled'
+            ).value
+        )
+        self.post_recovery_source_led_handoff_enabled = bool(
+            self.get_parameter(
+                'post_recovery_source_led_handoff_enabled'
+            ).value
+        )
         self.bounded_mode = bool(
             self.get_parameter("recenter_after_escape").value
         )
@@ -243,6 +253,29 @@ class SupervisorNode(Node):
         self.supervisor_command_stale_sec = self._nonnegative_float(
             'supervisor_command_stale_sec'
         )
+        self.adaptive_recenter_minimum_lookahead_m = (
+            self.recenter_config.max_linear_velocity_mps
+            * self.supervisor_command_stale_sec
+        )
+        if self.adaptive_recenter_lookahead_enabled:
+            if not self.recoverable_navigation_enabled:
+                raise ValueError(
+                    'adaptive recenter look-ahead requires recoverable '
+                    'navigation'
+                )
+            if not self.bounded_mode:
+                raise ValueError(
+                    'adaptive recenter look-ahead requires bounded recenter'
+                )
+            if (
+                self.adaptive_recenter_minimum_lookahead_m <= 0.0
+                or self.adaptive_recenter_minimum_lookahead_m
+                > self.direction_config.lookahead_m
+            ):
+                raise ValueError(
+                    'adaptive recenter persistence distance must be positive '
+                    'and no greater than direction look-ahead'
+                )
         self.boundary_recovery_trigger_clearance_m = self._nonnegative_float(
             'boundary_recovery_trigger_clearance_m'
         )
@@ -301,6 +334,17 @@ class SupervisorNode(Node):
                     'post-recovery progress requires a positive direction '
                     'refresh limit'
                 )
+        if self.post_recovery_source_led_handoff_enabled:
+            if not self.recoverable_navigation_enabled:
+                raise ValueError(
+                    'post-recovery source-led handoff requires recoverable '
+                    'navigation'
+                )
+            if not self.post_recovery_progress_enabled:
+                raise ValueError(
+                    'post-recovery source-led handoff requires post-recovery '
+                    'progress'
+                )
         self.run_id = uuid.uuid4().hex
         self.latest_pose_receipt_sec = None
         self.latest_pose_valid = False
@@ -337,6 +381,8 @@ class SupervisorNode(Node):
         self.post_recovery_direction_refresh_count = 0
         self.post_recovery_recenter_attempted = False
         self.post_recovery_guidance_release_reported = False
+        self.post_recovery_source_led_active = False
+        self.recenter_route_unavailable_reported = False
         self.current_supervisor_command = Twist()
         self.configuration_published = False
         self.stall_event_published = False
@@ -430,6 +476,8 @@ class SupervisorNode(Node):
             'post_recovery_liveness_min_path_length_m': 0.60,
             'post_recovery_liveness_max_displacement_m': 0.20,
             'post_recovery_direction_refresh_limit': 0,
+            'adaptive_recenter_lookahead_enabled': False,
+            'post_recovery_source_led_handoff_enabled': False,
             "room_bounds_x_min_m": -2.0,
             "room_bounds_x_max_m": 2.0,
             "room_bounds_y_min_m": -2.0,
@@ -947,6 +995,7 @@ class SupervisorNode(Node):
             self.current_supervisor_command = Twist()
             self._clear_post_recovery_epoch()
             self.safe_direction = None
+            self.recenter_route_unavailable_reported = False
             self.recenter_route_planner.reset()
             fills = self._active_fill_avoidances()
             if self.recoverable_navigation_enabled:
@@ -1035,7 +1084,12 @@ class SupervisorNode(Node):
             if self.machine.post_recovery_guidance_active:
                 self.safe_direction_revision = previous_revision
                 if self.post_recovery_progress_enabled:
-                    failure = self._start_post_recovery_epoch(now_sec)
+                    failure = self._start_post_recovery_epoch(
+                        now_sec,
+                        source_led_handoff=(
+                            transition.previous == State.RECENTER
+                        ),
+                    )
                     if failure is not None:
                         self._recover_post_recovery_direction_failure(
                             now_sec, failure
@@ -1143,6 +1197,11 @@ class SupervisorNode(Node):
                     fills,
                     self.direction_config,
                     self.bounds,
+                    minimum_lookahead_m=(
+                        self.adaptive_recenter_minimum_lookahead_m
+                        if self.adaptive_recenter_lookahead_enabled
+                        else None
+                    ),
                 )
             else:
                 selected = select_recenter_direction(
@@ -1156,6 +1215,7 @@ class SupervisorNode(Node):
                 return 'no safe recenter direction candidate'
             self.safe_direction = selected
             self.safe_direction_revision += 1
+            self.recenter_route_unavailable_reported = False
             return None
 
         if self.safe_direction is not None:
@@ -1249,7 +1309,11 @@ class SupervisorNode(Node):
         self.safe_direction_revision += 1
         return None
 
-    def _start_post_recovery_epoch(self, now_sec):
+    def _start_post_recovery_epoch(
+        self,
+        now_sec,
+        source_led_handoff=False,
+    ):
         """Anchor progress and recompute direction at a guided SEARCH boundary."""
         if self.latest_pose is None or not self.latest_pose_valid:
             return 'post-recovery epoch requires a valid pose'
@@ -1265,14 +1329,26 @@ class SupervisorNode(Node):
         self.post_recovery_direction_refresh_count = 0
         self.post_recovery_guidance_release_reported = False
         self.safe_direction = None
-        failure = self._ensure_post_recovery_direction()
-        if failure is not None:
-            return failure
+        self.post_recovery_source_led_active = bool(
+            source_led_handoff
+            and self.post_recovery_source_led_handoff_enabled
+            and not self.post_recovery_recenter_attempted
+        )
+        if self.post_recovery_source_led_active:
+            self.current_supervisor_command = Twist()
+        if not self.post_recovery_source_led_active:
+            failure = self._ensure_post_recovery_direction()
+            if failure is not None:
+                return failure
         progress = self.post_recovery_progress_tracker.latest
         self._publish_event(
             AlgorithmEvent.EVENT_CONFIGURATION,
             now_sec,
-            'post-recovery guidance epoch started',
+            (
+                'post-recovery source-led handoff started'
+                if self.post_recovery_source_led_active
+                else 'post-recovery guidance epoch started'
+            ),
             [
                 'anchor_x_m',
                 'anchor_y_m',
@@ -1333,6 +1409,36 @@ class SupervisorNode(Node):
             self.post_recovery_guidance_min_progress_m
             + self.post_recovery_affine_taper_distance_m
         )
+        if self.post_recovery_source_led_active:
+            self.current_supervisor_command = Twist()
+            self.safe_direction = None
+            if progress.outward_progress_m >= release_progress:
+                self._release_post_recovery_guidance(
+                    now_sec,
+                    'post-recovery source-led handoff completed',
+                )
+                return None
+            if not progress.window_valid:
+                return None
+            if (
+                progress.net_displacement_m
+                > self.post_recovery_progress_config.maximum_displacement_m
+            ):
+                self._release_post_recovery_guidance(
+                    now_sec,
+                    'post-recovery source-led handoff completed',
+                )
+                return None
+            self.post_recovery_source_led_active = False
+            self._publish_post_recovery_liveness_event(
+                now_sec,
+                'post-recovery source-led handoff stalled; '
+                'fallback guidance armed',
+                progress,
+            )
+            self.post_recovery_progress_tracker.reset_liveness_window()
+            progress = self.post_recovery_progress_tracker.latest
+
         if progress.outward_progress_m >= release_progress:
             self._release_post_recovery_guidance(
                 now_sec, 'post-recovery outward progress completed'
@@ -1532,6 +1638,7 @@ class SupervisorNode(Node):
         self.post_recovery_pose_sequence = 0
         self.post_recovery_direction_refresh_count = 0
         self.post_recovery_guidance_release_reported = False
+        self.post_recovery_source_led_active = False
         if not preserve_recenter_attempt:
             self.post_recovery_recenter_attempted = False
 
@@ -1593,6 +1700,49 @@ class SupervisorNode(Node):
             return None
         failure = self._ensure_safe_direction(recenter=True)
         if failure is not None:
+            if (
+                self.adaptive_recenter_lookahead_enabled
+                and self.recenter_recovery_allowed
+                and failure == 'no safe recenter direction candidate'
+            ):
+                preferred = target - self.latest_pose.position
+                _, angular = recenter_command(
+                    preferred,
+                    self.latest_pose.yaw,
+                    completion_distance,
+                    self.recenter_config,
+                )
+                self.safe_direction = None
+                command = Twist()
+                command.angular.z = angular
+                self.current_supervisor_command = command
+                if not self.recenter_route_unavailable_reported:
+                    self.recenter_route_unavailable_reported = True
+                    self._publish_event(
+                        AlgorithmEvent.EVENT_CONFIGURATION,
+                        now_sec,
+                        'measured escape: recenter route temporarily '
+                        'unavailable; bounded recovery continues',
+                        [
+                            'pose_x_m',
+                            'pose_y_m',
+                            'target_x_m',
+                            'target_y_m',
+                            'configured_lookahead_m',
+                            'minimum_lookahead_m',
+                            'recovery_retry_count',
+                        ],
+                        [
+                            self.latest_pose.x,
+                            self.latest_pose.y,
+                            float(target[0]),
+                            float(target[1]),
+                            self.direction_config.lookahead_m,
+                            self.adaptive_recenter_minimum_lookahead_m,
+                            float(self.machine.recovery_retry_count),
+                        ],
+                    )
+                return None
             return failure
         linear, angular = recenter_command(
             self.safe_direction.direction,
@@ -1635,6 +1785,7 @@ class SupervisorNode(Node):
         self.recenter_best_distance = float('nan')
         self.recenter_recovery_allowed = False
         self.recenter_recovery_requested = False
+        self.recenter_route_unavailable_reported = False
         if not preserve_post_recovery_recovery:
             self.post_recovery_direction_recovery_attempted = False
         self._clear_post_recovery_epoch(
@@ -1733,6 +1884,8 @@ class SupervisorNode(Node):
             "minimum_radial_progress_m",
             "approach_history_window_sec",
             "direction_lookahead_m",
+            'adaptive_recenter_lookahead_enabled',
+            'adaptive_recenter_minimum_lookahead_m',
             "direction_candidate_step_rad",
             "fill_avoidance_margin_m",
             "recenter_tolerance_m",
@@ -1760,6 +1913,7 @@ class SupervisorNode(Node):
             'post_recovery_liveness_min_path_length_m',
             'post_recovery_liveness_max_displacement_m',
             'post_recovery_direction_refresh_limit',
+            'post_recovery_source_led_handoff_enabled',
         ]
         values = [
             1.0 if self.bounded_mode else 0.0,
@@ -1784,6 +1938,12 @@ class SupervisorNode(Node):
             self.escape_progress_config.minimum_radial_progress_m,
             self.approach_history_window_sec,
             self.direction_config.lookahead_m,
+            (
+                1.0
+                if self.adaptive_recenter_lookahead_enabled
+                else 0.0
+            ),
+            self.adaptive_recenter_minimum_lookahead_m,
             self.direction_config.candidate_step_rad,
             self.fill_avoidance_margin_m,
             self.recenter_config.tolerance_m,
@@ -1815,6 +1975,11 @@ class SupervisorNode(Node):
             self.post_recovery_progress_config.minimum_path_length_m,
             self.post_recovery_progress_config.maximum_displacement_m,
             float(self.post_recovery_direction_refresh_limit),
+            (
+                1.0
+                if self.post_recovery_source_led_handoff_enabled
+                else 0.0
+            ),
         ]
         self._publish_event(
             AlgorithmEvent.EVENT_CONFIGURATION,
@@ -1920,9 +2085,16 @@ class SupervisorNode(Node):
             state.recenter_distance_valid = math.isfinite(self.recenter_distance)
         weights = list(self.machine.weights)
         if (
+            self.machine.state == State.SEARCH
+            and self.machine.post_recovery_guidance_active
+            and self.post_recovery_source_led_active
+        ):
+            weights[2] = 0.0
+        if (
             self.recoverable_navigation_enabled
             and self.machine.state == State.SEARCH
             and self.machine.post_recovery_guidance_active
+            and not self.post_recovery_source_led_active
         ):
             taper = self._post_recovery_affine_taper()
             weights[2] = self.post_recovery_affine_weight * taper
@@ -1960,6 +2132,8 @@ class SupervisorNode(Node):
 
     def _post_recovery_affine_taper(self):
         """Return the bounded spatial affine scale for post-recovery SEARCH."""
+        if self.post_recovery_source_led_active:
+            return 0.0
         if (
             self.post_recovery_progress_enabled
             and self.post_recovery_progress_tracker is not None

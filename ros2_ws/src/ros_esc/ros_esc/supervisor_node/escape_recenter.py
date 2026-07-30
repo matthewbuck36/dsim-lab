@@ -839,10 +839,12 @@ class RecenterRoutePlanner:
     def __init__(self):
         self.blocking_cluster_id = None
         self.side = 0
+        self.selected_lookahead_m = None
 
     def reset(self):
         self.blocking_cluster_id = None
         self.side = 0
+        self.selected_lookahead_m = None
 
     def select(
         self,
@@ -851,11 +853,68 @@ class RecenterRoutePlanner:
         fills: Sequence[FillAvoidance],
         config=None,
         bounds: Optional[OperatingBounds] = None,
+        minimum_lookahead_m=None,
     ):
         """Return a deterministic hard-safe direction toward a frozen target."""
         config = config or DirectionConfig()
         position = _finite_vector(position, 'position')
         target = _finite_vector(target, 'recenter target')
+        configs = self._lookahead_configs(config, minimum_lookahead_m)
+        self.selected_lookahead_m = None
+        for candidate_config in configs:
+            selection = self._select_at_lookahead(
+                position,
+                target,
+                fills,
+                candidate_config,
+                bounds,
+            )
+            if selection is not None:
+                self.selected_lookahead_m = candidate_config.lookahead_m
+                return selection
+        return None
+
+    @staticmethod
+    def _lookahead_configs(config, minimum_lookahead_m):
+        if minimum_lookahead_m is None:
+            return (config,)
+        minimum = float(minimum_lookahead_m)
+        if not math.isfinite(minimum) or minimum <= 0.0:
+            raise ValueError(
+                'minimum recenter look-ahead must be finite and positive'
+            )
+        if minimum > config.lookahead_m + _EPSILON:
+            raise ValueError(
+                'minimum recenter look-ahead must not exceed configured '
+                'look-ahead'
+            )
+        horizons = [float(config.lookahead_m)]
+        while horizons[-1] * 0.5 >= minimum - _EPSILON:
+            next_horizon = max(minimum, horizons[-1] * 0.5)
+            if abs(next_horizon - horizons[-1]) <= _EPSILON:
+                break
+            horizons.append(next_horizon)
+            if abs(next_horizon - minimum) <= _EPSILON:
+                break
+        if horizons[-1] > minimum + _EPSILON:
+            horizons.append(minimum)
+        return tuple(
+            DirectionConfig(
+                lookahead_m=horizon,
+                candidate_step_rad=config.candidate_step_rad,
+            )
+            for horizon in horizons
+        )
+
+    def _select_at_lookahead(
+        self,
+        position,
+        target,
+        fills,
+        config,
+        bounds,
+    ):
+        """Select at one horizon before any shorter horizon is considered."""
         preferred_vector = target - position
         if float(np.linalg.norm(preferred_vector)) <= _EPSILON:
             self.reset()
@@ -863,7 +922,8 @@ class RecenterRoutePlanner:
         preferred = _unit(preferred_vector, 'preferred direction')
         blocker = _segment_blocking_fill(position, target, fills)
         if blocker is None:
-            self.reset()
+            self.blocking_cluster_id = None
+            self.side = 0
             return select_recenter_direction(
                 position, target, fills, config, bounds
             )
@@ -916,7 +976,13 @@ class RecenterRoutePlanner:
 
         if not candidates and self.side != 0:
             self.side = 0
-            return self.select(position, target, fills, config, bounds)
+            return self._select_at_lookahead(
+                position,
+                target,
+                fills,
+                config,
+                bounds,
+            )
         if not candidates:
             return None
         unused_score, selected_side, selection = max(
