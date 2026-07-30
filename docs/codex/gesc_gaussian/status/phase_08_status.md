@@ -10307,3 +10307,50 @@ Run final context/diff validation, write the Phase 08 material-boundary
 checkpoint, inspect the exact diff, and commit the retained M4.8 result.
 The separately requested whole-Phase-08 report remains outside M4.8 and
 must start from this committed boundary.
+
+## Phase 08.7 M4.8 committed closeout
+
+The complete retained campaign result, durable report, live evidence
+record, and material-boundary checkpoint were committed at:
+
+```text
+7dbdd6606a3d775318d8c741a1fe83de8bd3808a
+phase 08.7: retain successful-run reproduction
+```
+
+Immediately after that commit the worktree was clean, the branch was
+`100` commits ahead of its tracked remote,
+`validate_phase_context.sh 08 implement` passed, the report remained:
+
+```text
+f385abf9030ad1f1cc2c26850cfda7b860da3a74df632a72b167ea306ee9c63a
+```
+
+and no Gazebo, scenario runner, recorder, validator, or analyzer process
+was active.
+
+M4.8 is closed. Its result is `13/17` formal and `14/17` behavioral passes
+from the retrospective known-success population, with all `17` SQLite,
+final-zero, and cleanup checks passing. The result clears only the
+user-defined “most pass again” observation. It does not reopen a failed
+suite, declare broad simulation readiness, or authorize three-light or
+physical execution.
+
+For physical work, the controlling requirement remains manual termination:
+no automatic global-proximity stop is authorized, and the operator presses
+`Ctrl+C` when the robot is sufficiently close.
+
+## Current milestone
+
+**Phase 08.7 M4.8 — CLOSED AND COMMITTED /
+17 EXACT REPRODUCTIONS RETAINED / 13 FORMAL PASS /
+14 BEHAVIORAL PASS / MOST THRESHOLD PASS /
+PHYSICAL AUTO-DISTANCE STOP PROHIBITED.**
+
+### Next criterion
+
+Begin the separately scoped whole-Phase-08 report only when requested.
+Reconstruct it from the current code, Git history, plans, status,
+checkpoints, handoffs, and retained validation artifacts. Do not infer
+Phase 09 implementation, three-light execution, or physical-hardware
+authorization from this M4.8 closeout.
