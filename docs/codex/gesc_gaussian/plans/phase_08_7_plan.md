@@ -4,7 +4,7 @@
 
 **M1 IMPLEMENTED AND QUALIFIED; M2, M2.1, AND M2.2 EXECUTED AND
 RETAINED AS FAILED; M2.3 EXECUTED AND RETAINED AS PASSED; M3 EXECUTED
-AND RETAINED AS FAILED AT 1/5; M4 AND LATER EXECUTION NOT AUTHORIZED.**
+AND RETAINED AS FAILED AT 1/5; M4 PLAN AND EXECUTION AUTHORIZED.**
 
 The user approved the geometry in this Plan on 2026-07-29. M1 was implemented,
 qualified without Gazebo execution, checkpointed, and committed at `7c87e5a`.
@@ -991,6 +991,290 @@ authorize parameter tuning, automatic retries, multi-seed repeatability, the
 120-run campaign, physical hardware, Phase 09, or a simulation-readiness
 claim.
 
+## M4 recoverable-navigation and two-light-readiness amendment
+
+On 2026-07-29 the user explicitly authorized planning, implementation,
+qualification, and execution of Phase 08.7 M4. M4 is a fresh correction
+version after the immutable M3 `1/5` result. It may replay M3 evidence
+read-only and may use the same geometric positions in new case identities,
+but it cannot alter, retry, relabel, or count M3, M2.3, V6, or any historical
+scenario or result.
+
+M4 addresses the four independent M3 runtime defects and the overly strict
+source-association acceptance rule:
+
+1. entry into the virtual wall-margin inset is terminal even while the robot
+   remains inside the physical room;
+2. recenter can target the room center even when that target lies inside an
+   active fill-avoidance region, and its per-cycle greedy selector can change
+   circumnavigation side;
+3. post-recovery affine guidance rejects every direction in the backward
+   half-plane and turns an empty candidate set into a terminal failure;
+4. targeted redesign reconstructs an old convergence window from moving live
+   buffers instead of reusing the accepted cluster's immutable samples;
+5. Stage A requires proximity to the declared lamp coordinate even though a
+   verified low-score controller trap can be displaced from that coordinate.
+
+The M4 correction is opt-in and robust-profile-only. Defaults and normalized
+behavior for schema versions 1 through 5 remain unchanged. M4 uses schema
+version 6 for its new recovery controls and evidence fields.
+
+### Safety classification
+
+M4 retains latched zero-output `FAILSAFE` for:
+
+- explicit stop;
+- controller/watchdog or command-authorization fault;
+- invalid, stale, or nonfinite pose or source data;
+- ROS clock reversal;
+- invalid room/fill geometry or supervisor exception;
+- a robot-center pose outside the declared physical room faces;
+- exhausted bounded recovery after the M4 recovery limit;
+- actual non-ground collision as a failed run-level safety predicate.
+
+M4 changes these valid-data algorithmic conditions from immediate terminal
+failures into bounded recovery:
+
+- entering or approaching the wall-margin inset;
+- an empty post-recovery affine candidate set;
+- a retryable fill rejection caused only by insufficient synchronized samples;
+- verification timeout with an otherwise fresh valid source stream;
+- escape or recenter timeout while finite geometry remains available.
+
+No invalid fill is ever applied. A recovery can be attempted at most three
+times per episode; repeated exhaustion remains an honest terminal failure.
+
+### Wall-margin recovery
+
+The physical wall margin remains exactly `0.20 m`. The rotating sensor
+collision geometry is `0.39 m` wide, so reducing this margin would remove
+real hardware clearance and is forbidden.
+
+M4 adds separate physical-room and wall-margin-inset predicates inside the
+existing supervisor geometry owner:
+
+- physical-room violation remains terminal;
+- boundary recovery is requested when inset clearance is at most `0.025 m`;
+- forward motion that decreases inset clearance is blocked;
+- the existing `RECENTER` controller turns and moves inward;
+- inward motion from just outside the inset is allowed only when it strictly
+  improves inset clearance and remains inside the physical room;
+- normal search resumes only after the recovered pose has at least `0.10 m`
+  inset clearance or completes its selected safe recenter target.
+
+The wall margin remains a motion constraint and run diagnostic, not a
+collision surrogate.
+
+### Safe recenter target and persistent routing
+
+Room center remains the preferred recenter target. If it lies inside any
+active fill-avoidance circle, M4 deterministically selects the nearest
+finite in-bounds proxy target outside every active fill plus `0.05 m`
+clearance. Recenter completion additionally requires the robot pose itself to
+be outside every active fill-avoidance circle.
+
+When the direct segment to the frozen target intersects a fill, the selector
+chooses a deterministic clockwise or counterclockwise route and locks that
+side until direct line-of-sight clears. It cannot switch sides every timer
+cycle. Target and route state are reset only on a new recenter episode.
+
+M4 scenarios use:
+
+```text
+recenter maximum:                 60.0 s
+recenter target tolerance:        0.35 m
+recenter target fill clearance:   0.05 m
+boundary trigger clearance:       0.025 m
+boundary release clearance:       0.10 m
+```
+
+An escape timeout with an accepted fill falls back to this safe recenter
+route. A finite recenter timeout may return to Gaussian-retaining `SEARCH`
+once per bounded recovery attempt; the third exhausted recovery latches
+`FAILSAFE`.
+
+### Bounded affine assistance
+
+Affine assistance remains enabled. It is not the long-term memory of an old
+basin; the accepted Gaussian fill provides that memory.
+
+M4 retains full affine authority in `ESCAPE_ASSIST`. During post-recovery
+`SEARCH`:
+
+- the state-level affine weight is `0.50`;
+- the term decays at `0.05 s^-1`;
+- maximum age is `20.0 s`;
+- affine weight tapers to zero over `0.50 m` after leaving the active fill
+  support;
+- wall recovery and recenter always override affine;
+- post-recovery selection uses hard wall/fill segment safety instead of the
+  blanket nonnegative preferred-direction dot-product gate;
+- no safe affine candidate requests recenter; if guidance remains unavailable
+  after recenter, affine is cleared and raw-plus-Gaussian `SEARCH` continues.
+
+Global coordinates remain evidence-only and are not provided to the detector,
+supervisor, modified-cost node, or controller.
+
+### Immutable targeted redesign
+
+Each accepted fill cluster already retains bounded immutable basin samples.
+With the M4 redesign-reuse control enabled, a targeted redesign resolves the
+requested fill to its active cluster and redesigns from those retained
+samples. It does not reconstruct the old convergence window from live buffers
+and does not lower the global `40`-sample estimator floor.
+
+An initial create request still requires the unchanged minimum. An
+insufficient-sample initial request is retryable only through a fresh
+SEARCH/verification episode; malformed geometry, an absent target cluster,
+or an invalid result remains terminal.
+
+### Trap-based Stage A evidence
+
+Schema-v6 staged recovery adds:
+
+```yaml
+local_association_mode: verified_trap
+```
+
+The default remains `declared_source`, preserving schema-v1 through v5.
+`verified_trap` requires:
+
+- the same verified below-threshold `VERIFY_EXTREMUM` decision;
+- one unique preceding convergence per created fill cluster;
+- fill center within the declared fill-to-convergence tolerance;
+- convergence outside the declared global exclusion distance;
+- the accepted direct or one-redesign recovery path;
+- the complete convergence, fill, escape, recenter-start, and
+  recenter-complete event set;
+- exact fill-cluster cardinality equal to known local topology.
+
+Nearest declared-local distance remains reported for every assignment but is
+diagnostic rather than the Stage A validity gate. This mode does not permit a
+global convergence to count as local recovery and does not weaken exact
+cardinality.
+
+Schema-v6 may also declare:
+
+```yaml
+global_closer_radius_m: 1.00
+```
+
+It is a non-gating post-Stage-A diagnostic strictly smaller than the primary
+operator-equivalent radius. M4 two-light readiness uses `1.20 m` as the
+primary Stage B and collision-scope boundary and reports `1.00 m` separately.
+M3 retains its original inverse relationship: `1.00 m` primary and `1.20 m`
+approach diagnostic.
+
+### M4 fixed implementation values
+
+All M4 two-light attempts retain:
+
+```text
+room bounds:                       [-0.25, 3.75] x [-0.25, 3.75] m
+room center:                       (1.75, 1.75) m
+start:                             (0.0, 0.0), yaw 0
+global:                            (3.5, 3.5), input 1600.0
+local input:                       400.0
+known topology:                    1 local, 1 global
+maximum fill clusters:             1
+detector path / efficiency gate:   0.20 m / 0.50
+wall margin:                       0.20 m
+fill minimum valid samples:        40
+recovery paths:                    direct or one-redesign assisted
+primary Stage B:                   1.20 m
+closer diagnostic:                 1.00 m
+collision expected:                false
+run / wall / shutdown bounds:      360 / 540 / 45 s
+```
+
+### No-Gazebo qualification
+
+Before any M4 Gazebo process starts:
+
+1. replay the retained `39/40` redesign boundary and prove one same-cluster
+   replacement from immutable accepted samples;
+2. replay boundary pressure and prove outward motion is blocked while inward
+   recovery is nonterminal;
+3. replay the M3 recenter geometry whose room center lies inside the fill and
+   prove a finite safe proxy target and eventual completion without side
+   switching;
+4. replay the post-recovery empty-candidate geometry and prove
+   recenter/fallback without `FAILSAFE`;
+5. prove hard faults and physical-room violations still latch zero output;
+6. prove schema-v1 through v5 normalization and case keys, V6 artifacts, M1
+   historical hashes, topics, cost sign/units, and sole `/cmd_vel` ownership
+   are unchanged;
+7. run focused and broad functional tests, an isolated three-package build,
+   installed dry-run, and nonexecuting launch instantiation;
+8. update live status, checkpoint Phase 08, and commit the exact source plus
+   scenarios before dispatch.
+
+### Fixed M4 execution sequence
+
+The first fresh attempt is one visible-Gazebo two-light probe:
+
+```text
+suite:       phase08_v7_m4_visible_probe
+version:     phase08-v7-m4-probe
+case:        v7_m4_probe_r1p5_a45_h25_18201
+local:       (1.0606601717798214, 1.0606601717798212)
+seed:        18201
+evidence:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_probe
+```
+
+If and only if that probe passes infrastructure, Stage A, exact cardinality,
+primary Stage B, collision, forbidden state/event, and combined predicates,
+run the fixed serial headless two-light qualification suite:
+
+| Case | Local position | Seed | Role |
+|---|---|---:|---|
+| `v7_m4_r1p0_a45_h25_18202` | `(0.7071067811865476, 0.7071067811865475)` | 18202 | spatial |
+| `v7_m4_r1p5_a22p5_h25_18202` | `(1.38581929876693, 0.5740251485476346)` | 18202 | spatial |
+| `v7_m4_r1p5_a45_h25_18202` | `(1.0606601717798214, 1.0606601717798212)` | 18202 | spatial |
+| `v7_m4_r1p5_a67p5_h25_18202` | `(0.5740251485476348, 1.38581929876693)` | 18202 | spatial |
+| `v7_m4_r2p0_a45_h25_18202` | `(1.4142135623730951, 1.414213562373095)` | 18202 | spatial |
+| `v7_m4_repeat_r1p5_a45_h25_18203` | `(1.0606601717798214, 1.0606601717798212)` | 18203 | repeat |
+| `v7_m4_repeat_r1p5_a45_h25_18204` | `(1.0606601717798214, 1.0606601717798212)` | 18204 | repeat |
+| `v7_m4_repeat_r1p5_a45_h25_18205` | `(1.0606601717798214, 1.0606601717798212)` | 18205 | repeat |
+
+The evidence root is:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4
+```
+
+M4's two-light gate requires the visible probe, all five spatial cases, and
+all three repeats to pass. Every attempt is retained; no case is retried and
+no value changes inside either fixed input.
+
+### Optional three-light development probe
+
+Only after the complete two-light gate passes may one visible three-light
+development attempt run:
+
+```text
+suite:       phase08_v7_m4_three_light_probe
+version:     phase08-v7-m4-three-light
+case:        v7_m4_three_light_sequential_18206
+start:       (0.0, 0.0), yaw 0
+local 1:     (1.1086554390135441, 0.4592201188381077), input 400.0
+local 2:     (0.6888301782571618, 1.662983158520316), input 400.0
+global:      (3.5, 3.5), input 1600.0
+topology:    2 local, 1 global
+max fills:   2
+seed:        18206
+evidence:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_three_light_probe
+```
+
+This optional attempt is development evidence only. Failure does not erase a
+passing two-light gate and success does not establish three-light
+repeatability or physical readiness.
+
+M4 authorizes simulation only. Phase 09 and all physical commands remain
+unauthorized.
+
 ## Milestones
 
 ### M0 — geometry contract
@@ -1033,6 +1317,14 @@ Commit and qualify the five fixed positions and the additive `1.20 m` approach
 diagnostic before Gazebo. Then run exactly one serial headless attempt per
 case. Preserve every attempt and require the stricter `1.00 m` primary Stage B
 boundary for each combined result and for the all-five suite gate.
+
+### M4 — recoverable navigation and two-light readiness
+
+Implement the opt-in recovery policy and schema-v6 evidence contract above.
+Qualify and commit without Gazebo, run the one visible probe, and only after a
+passing probe run the fixed eight-case spatial/repeatability suite. Run the
+single optional three-light probe only after the complete two-light gate
+passes.
 
 ## Stop conditions
 

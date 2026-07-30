@@ -5829,3 +5829,61 @@ follows this precommit snapshot.
 The retained-result checkpoint and commit close M3. No replacement suite,
 retry, tuning, M4, readiness claim, Phase 09 action, or physical command is
 authorized; await an explicit, separately planned next step.
+
+## Phase 08.7 M4 authorization and planning boundary
+
+On 2026-07-29 the user explicitly authorized planning and complete execution
+of Phase 08.7 M4. The fresh amendment is now recorded in
+`docs/codex/gesc_gaussian/plans/phase_08_7_plan.md`.
+
+M4 is a new schema-v6, opt-in robust correction. It preserves M3 as an
+immutable `1/5` failure and preserves M2.3, V6, every historical scenario,
+world, case key, result, evidence root, topic, cost sign/unit, and controller
+owner.
+
+The pre-edit reconstruction found:
+
+- branch `feature/gesc-gaussian-robustness-v1` at `a952909`, ahead of origin
+  by `62`, with a clean worktree;
+- Phase 08 implementation-context validation passed;
+- no M4 implementation or evidence root existed;
+- the `0.20 m` wall margin matches the rotating sensor's approximately
+  `0.195 m` half-span and will not be reduced;
+- the M3 radius-2.0 recenter started `0.5307223180 m` from room center,
+  reached only `0.5072853892 m`, and diverged to `0.7761077767 m`;
+- that run's fill-avoidance radius was approximately `0.6086747487 m`,
+  while the fill center was only approximately `0.0815 m` from room center,
+  making the old exact room-center target geometrically infeasible;
+- post-recovery direction selection still applies a blanket nonnegative
+  preferred-direction dot-product gate;
+- targeted redesign still reconstructs from moving live buffers although the
+  fill registry retains immutable accepted samples.
+
+The M4 plan freezes:
+
+- recoverable boundary behavior with the physical wall margin retained;
+- safe proxy recenter targets and persistent circumnavigation;
+- affine override/fallback, spatial taper, `0.50` post-recovery weight,
+  `0.05 s^-1` decay, and `20.0 s` age;
+- immutable redesign sample reuse with the `40`-sample floor unchanged;
+- schema-v6 verified-trap Stage A and a non-gating `1.00 m` closer diagnostic;
+- `1.20 m` primary two-light Stage B;
+- one visible probe followed, only on pass, by five spatial and three repeat
+  attempts;
+- one optional three-light development attempt only after the complete
+  two-light gate passes.
+
+Physical hardware and Phase 09 remain unauthorized.
+
+## Current milestone
+
+**Phase 08.7 M4 — amendment authorized and saved; implementation has not
+started.**
+
+### Next criterion
+
+Validate and checkpoint the M4 Plan boundary, commit it, then implement the
+opt-in runtime and schema changes. Do not start Gazebo until source tests,
+replays, regressions, isolated build, installed dry-run, launch
+instantiation, historical immutability, checkpoint, and a clean qualified
+commit all pass.

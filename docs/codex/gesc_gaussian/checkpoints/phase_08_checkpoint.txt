@@ -1,46 +1,46 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-30T03:58:42+00:00
-Base HEAD: d5d29aa2225c26d2bfa62f00a398b238b67a709b
+Generated: 2026-07-30T04:35:45+00:00
+Base HEAD: a95290979669ab7a5e99cdffb5eaf9dbba415ef3
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: c36b157f83976a551b3ebbb04a82ff7fb9f0b4636787ec47eb8489ad847b862b
+Status sha256: 0e27793cc1f1ba0f07eb470f0f9925167ab16d7f1680b14a1a054dada9d88c86
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
-Active subphase plan sha256: b41e9187b345989bd8b8b51c2e208a165006565ecc5e17301509377bf25a97e8
-Unstaged diff sha256: d392e9ca89f990178d16b2596b8143ada05c2cc7c7f41cef57d227fa2dedaf83
-Staged diff sha256: cca31a157b20b727d5d9cca0d22dc32a551e9772d67e4a9a9b257f07acc68712
+Active subphase plan sha256: 716490c3e0bda5e9a9d6936845802acf5799fd2314f9cc6bfa05a5a1de4df8bd
+Unstaged diff sha256: 6ce2fd2dad96051b25923a7feb4ddcfd5965c0914fce004da000172b4d34ec44
+Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 61]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 62]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
-M  docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
-M  docs/codex/gesc_gaussian/status/phase_08_status.md
-A  docs/codex/gesc_gaussian/validation/phase_08_7_m3_spatial_suite_report.md
+ M docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
+ M docs/codex/gesc_gaussian/status/phase_08_status.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 49 +++++-----------------
- 1 file changed, 10 insertions(+), 39 deletions(-)
- docs/codex/gesc_gaussian/plans/phase_08_7_plan.md  |  31 +-
- docs/codex/gesc_gaussian/status/phase_08_status.md | 193 +++++++++++-
- .../phase_08_7_m3_spatial_suite_report.md          | 324 +++++++++++++++++++++
- 3 files changed, 543 insertions(+), 5 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  40 +--
+ docs/codex/gesc_gaussian/plans/phase_08_7_plan.md  | 294 ++++++++++++++++++++-
+ docs/codex/gesc_gaussian/status/phase_08_status.md |  58 ++++
+ 3 files changed, 360 insertions(+), 32 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**Phase 08.7 M3 — executed once, retained as FAIL at 1/5, and closed.**
+**Phase 08.7 M4 — amendment authorized and saved; implementation has not
+started.**
 
 ### Next criterion
 
-The retained-result checkpoint and commit close M3. No replacement suite,
-retry, tuning, M4, readiness claim, Phase 09 action, or physical command is
-authorized; await an explicit, separately planned next step.
+Validate and checkpoint the M4 Plan boundary, commit it, then implement the
+opt-in runtime and schema changes. Do not start Gazebo until source tests,
+replays, regressions, isolated build, installed dry-run, launch
+instantiation, historical immutability, checkpoint, and a clean qualified
+commit all pass.
 
 
 This file describes the base HEAD and diff before the next commit; it is
