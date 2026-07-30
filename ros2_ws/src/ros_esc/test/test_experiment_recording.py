@@ -2136,6 +2136,25 @@ def test_algorithm_event_timestamp_domains_are_strict_and_separate():
     assert unidentified == []
     assert regressions[0]['producer_stream'] == 'gaussian_fill'
 
+    shared_supervisor = [
+        (1, _event(3, 10.0, 'RECENTER->SEARCH')),
+        (
+            2,
+            _event(
+                1,
+                8.0,
+                'post-recovery guidance epoch started',
+            ),
+        ),
+    ]
+    regressions, unidentified = algorithm_event_stream_regressions(
+        shared_supervisor,
+        tolerance,
+    )
+    assert unidentified == []
+    assert len(regressions) == 1
+    assert regressions[0]['producer_stream'] == 'supervisor'
+
     assert algorithm_event_producer_stream(
         _event(
             70,
@@ -2161,6 +2180,9 @@ def test_algorithm_event_timestamp_domains_are_strict_and_separate():
     assert algorithm_event_producer_stream(
         _event(70, 1.0, 'supervisor input invalid', reason_code=1)
     ) is None
+    assert algorithm_event_producer_stream(
+        _event(1, 1.0, 'unrecognized configuration signature')
+    ) is None
 
 
 @pytest.mark.parametrize(
@@ -2173,6 +2195,18 @@ def test_algorithm_event_timestamp_domains_are_strict_and_separate():
         (1, 'robust Gaussian estimator configuration', 0, 'gaussian_fill'),
         (1, 'Gaussian fill configuration; policy=none', 0, 'gaussian_fill'),
         (1, 'measured escape configuration', 0, 'supervisor'),
+        (
+            1,
+            'post-recovery guidance epoch started',
+            0,
+            'supervisor',
+        ),
+        (
+            1,
+            'post-recovery outward progress completed',
+            0,
+            'supervisor',
+        ),
         (2, 'rotation-aware features unavailable', 1, 'cost_function'),
         (10, 'candidate', 0, 'convergence_detector'),
         (20, 'fill created', 0, 'gaussian_fill'),

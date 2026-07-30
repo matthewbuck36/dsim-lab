@@ -69,6 +69,11 @@ M4_2_VISIBLE_PROBE = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v7_m4_2_visible_probe.yaml'
 )
+M4_3_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m4_3_visible_probe.yaml'
+)
 
 
 def test_observed_local_recovery_binds_fill_to_local_convergence():
@@ -717,8 +722,14 @@ def test_m3_changes_only_position_seed_gui_and_reporting_contract():
         assert staged['global_approach_radius_m'] == 1.20
 
 
-def test_m4_2_launch_binds_progress_history_and_staged_budget():
-    suite = load_suite(M4_2_VISIBLE_PROBE)
+@pytest.mark.parametrize(
+    'scenario_path',
+    [M4_2_VISIBLE_PROBE, M4_3_VISIBLE_PROBE],
+)
+def test_m4_2_m4_3_launch_binds_progress_history_and_staged_budget(
+    scenario_path,
+):
+    suite = load_suite(scenario_path)
     runs, unsupported = expand_suite(suite)
     resolved = runs[0]
     launch = build_launch_command(resolved, gui=True)

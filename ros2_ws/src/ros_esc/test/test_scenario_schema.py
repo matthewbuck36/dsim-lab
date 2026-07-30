@@ -82,6 +82,16 @@ M4_2_TWO_LIGHT_SUITE = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v7_m4_2_two_light_suite.yaml'
 )
+M4_3_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m4_3_visible_probe.yaml'
+)
+M4_3_TWO_LIGHT_SUITE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m4_3_two_light_suite.yaml'
+)
 M4_TWO_LIGHT_SUITE = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/'
@@ -1781,6 +1791,135 @@ def test_m4_2_freezes_progress_guidance_probe_and_two_light_gate():
         assert staged['global_closer_radius_m'] == 1.00
 
 
+def test_m4_3_changes_only_evidence_and_fresh_experiment_identity():
+    m4_2_visible_suite = load_suite(M4_2_VISIBLE_PROBE)
+    m4_2_visible, m4_2_visible_unsupported = expand_suite(
+        m4_2_visible_suite
+    )
+    m4_3_visible_suite = load_suite(M4_3_VISIBLE_PROBE)
+    m4_3_visible, m4_3_visible_unsupported = expand_suite(
+        m4_3_visible_suite
+    )
+    m4_2_two_suite = load_suite(M4_2_TWO_LIGHT_SUITE)
+    m4_2_two, m4_2_two_unsupported = expand_suite(m4_2_two_suite)
+    m4_3_two_suite = load_suite(M4_3_TWO_LIGHT_SUITE)
+    m4_3_two, m4_3_two_unsupported = expand_suite(m4_3_two_suite)
+
+    assert (
+        m4_2_visible_unsupported
+        == m4_3_visible_unsupported
+        == m4_2_two_unsupported
+        == m4_3_two_unsupported
+        == []
+    )
+    assert [
+        (run['case_id'], run['seed'], run['case_key'])
+        for run in m4_3_visible
+    ] == [(
+        'v7_m4_3_probe_r1p5_a45_h25_18308',
+        18308,
+        'a5ea7f8b3d12aa01be4018ba059d12f9366f722687f95403e1c47c6929fc4655',
+    )]
+    assert [
+        (run['case_id'], run['seed'], run['case_key'])
+        for run in m4_3_two
+    ] == [
+        (
+            'v7_m4_3_r1p0_a45_h25_18309',
+            18309,
+            'cf5bea10bd2d904bea008d4d9f6d22cc4a026862fdbda2e45fe7b63358cd5fab',
+        ),
+        (
+            'v7_m4_3_r1p5_a22p5_h25_18309',
+            18309,
+            'd58512ad9cc4488243861b89bd7120a9bce309473fa18ac0dc71966d69830540',
+        ),
+        (
+            'v7_m4_3_r1p5_a45_h25_18309',
+            18309,
+            '896201a5ad6b907860270b109aaac4ff4666878c08e502d3e96c8b91fa08940a',
+        ),
+        (
+            'v7_m4_3_r1p5_a67p5_h25_18309',
+            18309,
+            'a90044d4ed94d4ebd03ac6fdc78369d06f19235d1aadc86706fc6718e9e68cf0',
+        ),
+        (
+            'v7_m4_3_r2p0_a45_h25_18309',
+            18309,
+            '71f003ea659ab8f0a3ae8193fa24b6a0e43b9cd65b67d5c23d3d7108e53116d2',
+        ),
+        (
+            'v7_m4_3_repeat_r1p5_a45_h25_18310',
+            18310,
+            '9fd3b4a5d3c8aefaca899bd73f6a273c8d1d88c61304794ed9631aeefc54a0c4',
+        ),
+        (
+            'v7_m4_3_repeat_r1p5_a45_h25_18311',
+            18311,
+            '0542aa9a360e470ab9db2533ee350276b772312996a43503329f6493f78d047b',
+        ),
+        (
+            'v7_m4_3_repeat_r1p5_a45_h25_18312',
+            18312,
+            'acac96fa8659c2e8efc042292d56b3a9e2cb099bcb18fcf840ee44419c618206',
+        ),
+    ]
+
+    assert m4_3_visible_suite['metadata']['experiment_version'] == (
+        'phase08-v7-m4-3-probe'
+    )
+    assert m4_3_two_suite['metadata']['experiment_version'] == (
+        'phase08-v7-m4-3'
+    )
+    assert m4_3_visible_suite['execution']['runs_root'].endswith(
+        '/phase08_v7_m4_3_probe'
+    )
+    assert m4_3_two_suite['execution']['runs_root'].endswith(
+        '/phase08_v7_m4_3'
+    )
+
+    def without_fresh_identity(run):
+        result = deepcopy(run)
+        for field in (
+            'case_id',
+            'case_key',
+            'description',
+            'seed',
+            'suite_id',
+        ):
+            result.pop(field)
+        result['success']['controller']['contract_id'] = '<fresh-identity>'
+        if result['repeat_reference'] is not None:
+            result['repeat_reference']['case_key'] = '<fresh-central-case>'
+        return result
+
+    assert without_fresh_identity(m4_3_visible[0]) == (
+        without_fresh_identity(m4_2_visible[0])
+    )
+    assert [
+        without_fresh_identity(run) for run in m4_3_two
+    ] == [
+        without_fresh_identity(run) for run in m4_2_two
+    ]
+
+    for previous, fresh in (
+        (m4_2_visible_suite, m4_3_visible_suite),
+        (m4_2_two_suite, m4_3_two_suite),
+    ):
+        previous_execution = dict(previous['execution'])
+        fresh_execution = dict(fresh['execution'])
+        previous_execution.pop('runs_root')
+        fresh_execution.pop('runs_root')
+        assert fresh_execution == previous_execution
+
+    assert {
+        run['repeat_reference']['case_key']
+        for run in m4_3_two
+        if run['acceptance_partition'] == 'reproducibility'
+    } == {m4_3_two[2]['case_key']}
+
+
 def test_m4_2_preserves_m4_m4_1_v6_m3_and_world_source_hashes():
     expected = {
         M4_VISIBLE_PROBE: (
@@ -1800,6 +1939,12 @@ def test_m4_2_preserves_m4_m4_1_v6_m3_and_world_source_hashes():
         ),
         M3_SPATIAL_SUITE: (
             '1221d8cb9d7235218d4f3da710f10d41284632a93712bd89d763d938a0437dae'
+        ),
+        M4_2_VISIBLE_PROBE: (
+            'e6ec6120df271afab3ae71192b601c4bcf866105a8cdaa13a10dcd94b7632973'
+        ),
+        M4_2_TWO_LIGHT_SUITE: (
+            '8d56eb4872aafc485103f8ddd2e03a7105101fd97b8b26b532e880a9d7c84219'
         ),
         CORNER_ORIGIN_WORLD: (
             '88b10b39aa24a6430f6f031c750334ed34e6835e54c84de8d36f4cc6a26444bf'

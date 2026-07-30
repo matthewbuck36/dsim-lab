@@ -100,6 +100,7 @@ def algorithm_event_producer_stream(message):
         ('robust Gaussian estimator', 'gaussian_fill'),
         ('Gaussian fill configuration', 'gaussian_fill'),
         ('measured escape', 'supervisor'),
+        ('post-recovery ', 'supervisor'),
     )
     return next(
         (

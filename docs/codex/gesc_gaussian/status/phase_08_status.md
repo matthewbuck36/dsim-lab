@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-30T01:31:16-07:00`
-Status: `PHASE 08.7 M4.3 EVIDENCE CORRECTION AUTHORIZED; PLAN PENDING COMMIT`
+Last verified: `2026-07-30T01:47:50-07:00`
+Status: `PHASE 08.7 M4.3 IMPLEMENTED AND QUALIFIED; COMMIT PENDING`
 
 ## Objective
 
@@ -7252,3 +7252,204 @@ execution has started.**
 Validate, checkpoint, and commit the M4.3 amendment. Then implement only the
 declared evidence-prefix correction, regression coverage, and fresh frozen
 scenario identities; complete every no-Gazebo gate before dispatch.
+
+## Phase 08.7 M4.3 implementation and no-Gazebo qualification
+
+The M4.3 Plan amendment was committed at `6f7a5fa`
+(`phase 08.7: plan M4.3 event attribution correction`). Implementation stayed
+inside the declared boundary:
+
+- `algorithm_event_producer_stream()` now maps only
+  `EVENT_CONFIGURATION + detail.startswith("post-recovery ")` to the existing
+  `supervisor` producer;
+- the current signature matrix covers both observed M4.2 details;
+- a deliberate cross-event supervisor timestamp regression proves the new
+  signature participates in the existing supervisor stream;
+- unknown configuration signatures and malformed watchdog ownership remain
+  unidentified;
+- fresh M4.3 visible and conditional suite identities copy every M4.2
+  behavioral value.
+
+No ROS message, publisher, node, topic, launch control, navigation behavior,
+safety classification, cost sign/unit, schema field, acceptance threshold, or
+physical-hardware path changed.
+
+### Focused and broad source tests
+
+The first focused command sourced `/opt/ros/humble` but not the workspace
+install and stopped during collection because generated
+`ros_esc_interfaces` was unavailable. It exercised no test and changed no
+evidence. The corrected bounded command sourced both ROS and
+`ros2_ws/install/setup.bash`, with source `ros_esc` first on `PYTHONPATH`, and
+passed:
+
+```text
+ros2_ws/src/ros_esc/test/test_experiment_recording.py
+ros2_ws/src/ros_esc/test/test_scenario_schema.py
+ros2_ws/src/ros_esc/test/test_scenario_runner.py
+
+223 passed, 1 skipped in 50.39 s
+/tmp/phase08_7_m4_3_focused.xml
+SHA-256 5a191e33367f196c2d8f49015901e6c1f55b0616db6575e550e883b392b70df1
+```
+
+The skip is the existing explicit Gazebo opt-in. The final broad functional
+command was:
+
+```text
+timeout --signal=INT --kill-after=20s 300s \
+  python3 -m pytest -q ros2_ws/src/ros_esc/test \
+  --ignore=ros2_ws/src/ros_esc/test/test_flake8.py \
+  --ignore=ros2_ws/src/ros_esc/test/test_pep257.py \
+  -k 'not v4_population_adoption_is_exact_and_unused' \
+  --junitxml=/tmp/phase08_7_m4_3_broad_functional.xml
+
+613 passed, 3 skipped, 1 deselected in 113.89 s
+SHA-256 811da2678e342deb71fd7dfa118be7d6aeb7002270e8497ad48d3d37d8961176
+```
+
+The three skips remain the generated copyright-header check and two explicit
+Gazebo opt-ins. The deselected test is the sealed stale V4 population
+assertion that treats every later fixed scenario as drift. Fatal
+`E9/F63/F7/F82` checking, Python compilation, `git diff --check`, and:
+
+```text
+DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/
+  validate_phase_context.sh 08 implement
+```
+
+all pass.
+
+### Immutable read-only replay
+
+The first replay wrapper stopped before opening a bag because its hash
+manifest used nonexistent `scenario_result.json` rather than the retained
+`scenario_result.yaml`. The corrected wrapper ran all three validators with
+`write_report=False` and opened every sqlite bag `READ_ONLY`:
+
+```text
+M4:   passed false; 48 checks; original typed timestamp regression retained
+M4.1: passed true;  48 checks; no failures
+M4.2: passed true;  48 checks; no failures
+```
+
+This is counterfactual evidence for the correction only. M4.2 remains the
+stored formal failure. Hashes before and after replay were identical:
+
+```text
+4acc311734e63896faf33c07439b7c1c81e9ebdcd6902b0514bf9c9ce0846e88  M4 completeness
+afd4cbd707004e2a8b6965ea08f1db1329a08ff816ff0965b821d95f28a0fcc0  M4.1 completeness
+4abaecc2dacf8fb544de01ba198e4e26792566c5cc44c059e6d99e4802d746d0  M4.2 completeness
+b7f4a57a973f79ff9e2b07c5ad7c8968f341b7ee0d3fa6b3b2c9029fd07984fe  M4.2 result
+7dd10ccd0231cd9e17eb8b9e1a76d8dbba5779d19d7c8fd2e1dc2f3d8093af66  M4.2 bag
+414a9537a888adc30fc0b586b8c5832cb1039c6271913639c0264d0d7eb537cc  M4.2 analysis completeness
+9d296d50c203804f3938bcb22379b6b6bc6c5636d9c5880bded51ee4a75043ad  M4.2 suite summary
+```
+
+### Fresh frozen inputs
+
+The M4.3 visible scenario SHA-256 and deterministic key are:
+
+```text
+cacbdafbc9aa289f178e684503519283bdf4b5496cbdd2dfb8c61ff69ebf1658
+a5ea7f8b3d12aa01be4018ba059d12f9366f722687f95403e1c47c6929fc4655
+```
+
+The M4.3 conditional suite SHA-256 is:
+
+```text
+37c1f7f2d81132be46adee576a1b603093fd03dd5488c5465d53d8876b9d50cc
+```
+
+Its fixed execution-order keys are:
+
+```text
+cf5bea10bd2d904bea008d4d9f6d22cc4a026862fdbda2e45fe7b63358cd5fab
+d58512ad9cc4488243861b89bd7120a9bce309473fa18ac0dc71966d69830540
+896201a5ad6b907860270b109aaac4ff4666878c08e502d3e96c8b91fa08940a
+a90044d4ed94d4ebd03ac6fdc78369d06f19235d1aadc86706fc6718e9e68cf0
+71f003ea659ab8f0a3ae8193fa24b6a0e43b9cd65b67d5c23d3d7108e53116d2
+9fd3b4a5d3c8aefaca899bd73f6a273c8d1d88c61304794ed9631aeefc54a0c4
+0542aa9a360e470ab9db2533ee350276b772312996a43503329f6493f78d047b
+acac96fa8659c2e8efc042292d56b3a9e2cb099bcb18fcf840ee44419c618206
+```
+
+All three repeats bind the fresh central validation key
+`896201a5ad6b907860270b109aaac4ff4666878c08e502d3e96c8b91fa08940a`.
+The schema regression strips only fresh identity fields and proves every
+resolved behavior field plus all execution controls equal M4.2.
+
+Historical source hashes remain:
+
+```text
+e6ec6120df271afab3ae71192b601c4bcf866105a8cdaa13a10dcd94b7632973  M4.2 visible
+8d56eb4872aafc485103f8ddd2e03a7105101fd97b8b26b532e880a9d7c84219  M4.2 suite
+3be130581b88c986fd845aef0c33c9db94ceb02ecfe2a6361926b0317ef8e655  V6 sweep
+3b9badc92cf63739f65662158999e3c2aab71761f790e3f360be9a52e6f38688  V6 repeats
+88b10b39aa24a6430f6f031c750334ed34e6835e54c84de8d36f4cc6a26444bf  shifted world
+8ecc1a231efec24401d74fef3cd5139d48c6029f88e71d044cefdf2fd14c5bef  historical world
+```
+
+### Isolated build and installed qualification
+
+The bounded isolated build passed under
+`/tmp/phase08_7_m4_3_qual`:
+
+```text
+ros_esc_interfaces
+ros_esc
+turtlebot3_rotating_sensor
+
+Summary: 3 packages finished in 12.2 s
+```
+
+Installed dry-runs passed:
+
+```text
+/tmp/phase08_7_m4_3_visible_installed_dry_run.yaml
+  1 supported case; GUI true
+  SHA-256 f13e0f8a193c2254e9dc5759aaa6f1cecf468a8a5f5846387af02911031e633d
+
+/tmp/phase08_7_m4_3_suite_installed_dry_run.yaml
+  8 supported cases; GUI false for every case
+  SHA-256 9dd89302b97cea7190e517cffcd9aa72fa91e41cb6c1ffa1a7489a3532058786
+```
+
+Installed nonexecuting `ros2 launch -p` expansion passed with `92` supplied
+arguments and a `270`-line description:
+
+```text
+/tmp/phase08_7_m4_3_installed_launch_description.txt
+SHA-256 e297909cb1253fa6a7ca8cc2a3207e5ad8d6453a47548516c55596a3151e5578
+```
+
+The corrected validator and both fresh scenarios are byte-identical between
+source and isolated install. Their source hashes are:
+
+```text
+b709c0b093f49ad5f229cb070fe10512cd5590d4abf8c11f3a7ed39b5eec6597  validator
+cacbdafbc9aa289f178e684503519283bdf4b5496cbdd2dfb8c61ff69ebf1658  visible scenario
+37c1f7f2d81132be46adee576a1b603093fd03dd5488c5465d53d8876b9d50cc  suite scenario
+```
+
+The central launch still contains exactly one `/cmd_vel` argument in the
+custom controller path; the supervisor retains only
+`/gesc_gaussian/supervisor_command`.
+
+The fresh M4.3 evidence roots are absent. `gzserver`, `gzclient`,
+`run_scenario`, and `record_run` process names are inactive, and ROS domain
+`161` has no discovered nodes with the CLI daemon disabled. No Gazebo or
+physical process started during implementation or qualification.
+
+## Current milestone
+
+**Phase 08.7 M4.3 — exact implementation and every required no-Gazebo
+qualification gate PASS; material-boundary checkpoint and commit pending.**
+
+### Next criterion
+
+Refresh the Phase 08 checkpoint, inspect and commit the exact qualified
+implementation plus fixed inputs, then reconfirm the clean dispatch boundary.
+Only then may the one fixed visible M4.3 two-light probe run on ROS domain
+`161`. The eight-case headless suite remains conditional on a complete visible
+pass; the three-light probe remains unauthorized.
