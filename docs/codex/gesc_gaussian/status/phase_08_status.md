@@ -9745,3 +9745,565 @@ then execute all eight invocations serially. Retain every attempt without
 retry. Continue after behavioral/formal/infrastructure failure only when
 the case evidence is readable and scoped cleanup passes; stop later
 dispatch for cleanup leak, evidence corruption, or source drift.
+
+## Phase 08.7 M4.8 reproduction progress
+
+### Dispatch 1 — M2.3 visible
+
+The exact visible M2.3 reproduction ran once on ROS domain `168` from the
+qualified installed scenario. The outer `660 s` timeout did not fire.
+
+```text
+case:
+  v7_m2_3_diagonal_r1p5_h25_18001
+run ID:
+  20260730T202517751818Z_simulation_phase08_v7_m2_3_assisted_recovery_stop_probe-v7_m2_3_diagonal_r1p5_h25_18001-rob_57557390
+fresh root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+    phase08_v7_success_reproduction_1/m2_3
+```
+
+Result:
+
+```text
+formal combined:                PASS
+recording/completeness:         PASS
+cleanup:                        PASS
+Stage A local recovery:         PASS
+exact one-fill cardinality:     PASS
+Stage B <= 1.20 m:              PASS at 1.1996881207 m
+collision/forbidden evidence:   PASS
+SQLite quick_check:             ok
+bag messages/topics:            505819 / 34
+```
+
+The observed recovery path was direct
+`SEARCH -> VERIFY_EXTREMUM -> DESIGN_OR_MERGE_FILL -> ESCAPE_REPULSE ->
+RECENTER -> SEARCH`. No retry or parameter change occurred. Scoped process
+cleanup passed before the next dispatch.
+
+## Current milestone
+
+**Phase 08.7 M4.8 — 1/17 REPRODUCTIONS EXECUTED /
+1/1 FORMAL PASS / CLEANUP PASS / SERIAL CAMPAIGN CONTINUES.**
+
+### Next criterion
+
+Execute the one selected M3 case once on ROS domain `169`, retain its
+stricter `1.00 m` result, validate readable evidence and cleanup, then
+continue only if the stop conditions permit.
+
+### Dispatch 2 — M3 headless
+
+The selected M3 case ran once on ROS domain `169`. The outer `660 s`
+timeout did not fire.
+
+```text
+case:
+  v7_m3_r1p0_a45_h25_18101
+run ID:
+  20260730T203049438017Z_simulation_phase08_v7_m3_spatial_suite-v7_m3_r1p0_a45_h25_18101-robust_gaussian_v1-75d0c27b_8c0d4a9b
+fresh root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+    phase08_v7_success_reproduction_1/m3
+```
+
+Result:
+
+```text
+formal combined:                PASS
+recording/completeness:         PASS
+cleanup:                        PASS
+Stage A local recovery:         PASS
+exact one-fill cardinality:     PASS
+non-gating 1.20 m approach:     PASS at 1.1973876036 m
+primary Stage B <= 1.00 m:      PASS at 0.9997559645 m
+collision/forbidden evidence:   PASS
+SQLite quick_check:             ok
+bag messages/topics:            436263 / 34
+```
+
+The recovery path was direct. No retry or parameter change occurred, and
+scoped process cleanup passed.
+
+## Current milestone
+
+**Phase 08.7 M4.8 — 2/17 REPRODUCTIONS EXECUTED /
+2/2 FORMAL PASS / CLEANUP PASS / SERIAL CAMPAIGN CONTINUES.**
+
+### Next criterion
+
+Execute the M4 visible behavioral-success/evidence-failure source case once
+on ROS domain `170`. Judge the fresh run under its current unchanged
+scenario contract; do not rewrite the original failed completeness result.
+
+### Dispatch 3 — M4 visible
+
+The selected M4 case ran once on ROS domain `170`. The outer `660 s`
+timeout did not fire. The fresh run is a behavioral Stage B failure; it is
+not a retry or relabel of the original behavioral-pass/evidence-fail result.
+
+```text
+case:
+  v7_m4_probe_r1p5_a45_h25_18201
+run ID:
+  20260730T203530694811Z_simulation_phase08_v7_m4_visible_probe-v7_m4_probe_r1p5_a45_h25_18201-robust_gaussian_v1-a7_9bbd365c
+fresh root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+    phase08_v7_success_reproduction_1/m4
+```
+
+Result:
+
+```text
+formal combined:                     FAIL
+infrastructure/recording/completeness: PASS
+cleanup:                             PASS
+Stage A local recovery:              PASS
+exact one-fill cardinality:          PASS
+primary Stage B <= 1.20 m:           FAIL
+valid post-Stage-A samples:          1949
+final global distance:               2.3113715830 m
+collision/forbidden evidence:        PASS
+SQLite quick_check:                  ok
+bag messages/topics:                 769758 / 34
+```
+
+The recovery path was direct. No retry or parameter change occurred.
+Because the bag, completeness document, scenario result, SQLite database,
+and scoped cleanup are valid, the M4.8 contract permits continuing while
+retaining this failed reproduction.
+
+## Current milestone
+
+**Phase 08.7 M4.8 — 3/17 REPRODUCTIONS EXECUTED /
+2 FORMAL PASS, 1 BEHAVIORAL FAIL / ALL 3 CLEANUP PASS /
+SERIAL CAMPAIGN CONTINUES.**
+
+### Next criterion
+
+Execute the selected M4.2 visible case once on ROS domain `171`; preserve
+the M4 failure above and every original result.
+
+### Dispatch 4 — M4.2 visible
+
+The selected M4.2 case ran once on ROS domain `171`. The outer `900 s`
+timeout did not fire. Unlike its historical behavioral-pass/evidence-fail
+attempt, the fresh evidence is formally complete.
+
+```text
+case:
+  v7_m4_2_probe_r1p5_a45_h25_18208
+run ID:
+  20260730T204335759244Z_simulation_phase08_v7_m4_2_visible_probe-v7_m4_2_probe_r1p5_a45_h25_18208-robust_gaussian_v_d68fb585
+fresh root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+    phase08_v7_success_reproduction_1/m4_2
+```
+
+Result:
+
+```text
+formal combined:                PASS
+recording/completeness:         PASS
+cleanup:                        PASS
+Stage A local recovery:         PASS
+exact one-fill cardinality:     PASS
+primary Stage B <= 1.20 m:      PASS at 1.1992809523 m
+non-gating <= 1.00 m:           not reached
+collision/forbidden evidence:   PASS
+SQLite quick_check:             ok
+bag messages/topics:            609578 / 34
+```
+
+The recovery path was direct. No retry or parameter change occurred, and
+scoped process cleanup passed.
+
+## Current milestone
+
+**Phase 08.7 M4.8 — 4/17 REPRODUCTIONS EXECUTED /
+3 FORMAL PASS, 1 BEHAVIORAL FAIL / ALL 4 CLEANUP PASS /
+SERIAL CAMPAIGN CONTINUES.**
+
+### Next criterion
+
+Execute the selected M4.3 visible case once on ROS domain `172`, then
+validate its evidence and cleanup before the six-case headless invocation.
+
+### Dispatch 5 — M4.3 visible
+
+The selected M4.3 visible case ran once on ROS domain `172`. The outer
+`900 s` timeout did not fire.
+
+```text
+case:
+  v7_m4_3_probe_r1p5_a45_h25_18308
+run ID:
+  20260730T204959182242Z_simulation_phase08_v7_m4_3_visible_probe-v7_m4_3_probe_r1p5_a45_h25_18308-robust_gaussian_v_2544bb99
+fresh root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+    phase08_v7_success_reproduction_1/m4_3_probe
+```
+
+Result:
+
+```text
+formal combined:                PASS
+recording/completeness:         PASS
+cleanup:                        PASS
+Stage A local recovery:         PASS
+exact one-fill cardinality:     PASS
+primary Stage B <= 1.20 m:      PASS at 1.1979801903 m
+non-gating <= 1.00 m:           not reached
+collision/forbidden evidence:   PASS
+SQLite quick_check:             ok
+bag messages/topics:            573469 / 34
+```
+
+The recovery path was direct. No retry or parameter change occurred, and
+scoped cleanup passed.
+
+## Current milestone
+
+**Phase 08.7 M4.8 — 5/17 REPRODUCTIONS EXECUTED /
+4 FORMAL PASS, 1 BEHAVIORAL FAIL / ALL 5 CLEANUP PASS /
+SERIAL CAMPAIGN CONTINUES.**
+
+### Next criterion
+
+Execute the six selected M4.3 headless cases serially in their one fixed
+runner invocation on ROS domain `173`. Preserve each outcome once and stop
+later dispatch only on the declared cleanup/evidence-integrity conditions.
+
+### Dispatch 6 — M4.3 six-case headless subset
+
+The single fixed M4.3 invocation executed all six selected cases serially on
+ROS domain `173`. The outer `4500 s` timeout did not fire. The runner
+returned `1` because one behavioral predicate and one independent recording
+evidence predicate failed; every case executed once.
+
+| Case | Stage A / fill | Stage B | Completeness | Cleanup | Fresh result |
+|---|---|---|---|---|---|
+| `v7_m4_3_r1p5_a45_h25_18309` | pass / pass | pass, `1.1999686228 m` | pass | pass | formal pass |
+| `v7_m4_3_r1p5_a67p5_h25_18309` | pass / pass | pass, `1.1972467912 m` | pass | pass | formal pass |
+| `v7_m4_3_r2p0_a45_h25_18309` | pass / pass | fail, final `1.2138798751 m` | pass | pass | behavioral fail |
+| `v7_m4_3_repeat_r1p5_a45_h25_18310` | pass / pass | pass, `1.1983976710 m` | pass | pass | formal pass |
+| `v7_m4_3_repeat_r1p5_a45_h25_18311` | pass / pass | pass, `1.1973676652 m` | fail | pass | behavior pass / evidence fail |
+| `v7_m4_3_repeat_r1p5_a45_h25_18312` | pass / pass | pass, `1.1977328460 m` | pass | pass | formal pass |
+
+Subset totals:
+
+```text
+formal combined:                4/6 PASS
+behavioral Stage B:             5/6 PASS
+Stage A / one-fill:             6/6 PASS
+recording completeness:         5/6 PASS
+collision/forbidden evidence:   6/6 PASS
+cleanup:                        6/6 PASS
+SQLite quick_check:             6/6 ok
+```
+
+The radius-2.0 case retained `3533` valid post-Stage-A samples but no sample
+inside `1.20 m`. The seed-18311 repeat passed every behavioral predicate,
+final zero, clean shutdown metadata, and bag readability; its sole
+completeness failure was this retained console marker:
+
+```text
+[spawner-4]: process has died ... spawner velocity_controller ...
+exit code 1
+```
+
+The case still produced `539383` readable messages on `34` topics and
+scoped cleanup passed, so the declared M4.8 continuation condition remained
+satisfied. The other per-case message counts were `560691`, `352528`,
+`582491`, `629764`, and `447639`, each on `34` topics. No retry, parameter
+change, or post-outcome correction occurred.
+
+## Current milestone
+
+**Phase 08.7 M4.8 — 11/17 REPRODUCTIONS EXECUTED /
+8 FORMAL PASS, 1 BEHAVIORAL-PASS/EVIDENCE-FAIL,
+2 BEHAVIORAL FAIL / ALL 11 CLEANUP PASS /
+SERIAL CAMPAIGN CONTINUES.**
+
+### Next criterion
+
+Execute the selected M4.4 visible case once on ROS domain `174`, validate
+its evidence and cleanup, then proceed to the final five-case headless
+invocation only if the declared continuation conditions remain satisfied.
+
+### Dispatch 7 — M4.4 visible
+
+The selected M4.4 visible case ran once on ROS domain `174`. The outer
+`900 s` timeout did not fire.
+
+```text
+case:
+  v7_m4_4_probe_r1p5_a45_h25_18408
+run ID:
+  20260730T212658986946Z_simulation_phase08_v7_m4_4_visible_probe-v7_m4_4_probe_r1p5_a45_h25_18408-robust_gaussian_v_e00e619d
+fresh root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+    phase08_v7_success_reproduction_1/m4_4_probe
+```
+
+Result:
+
+```text
+formal combined:                PASS
+recording/completeness:         PASS
+cleanup:                        PASS
+Stage A local recovery:         PASS
+exact one-fill cardinality:     PASS
+primary Stage B <= 1.20 m:      PASS at 1.1992401437 m
+non-gating <= 1.00 m:           not reached
+collision/forbidden evidence:   PASS
+SQLite quick_check:             ok
+bag messages/topics:            512023 / 34
+```
+
+The recovery path was direct. No retry or parameter change occurred, and
+scoped cleanup passed. This result raises the fresh formal-pass count to
+`9/12`, satisfying the user-defined literal “most pass again” threshold of
+at least `9/17`. It does not stop or redefine the authorized 17-case
+campaign.
+
+## Current milestone
+
+**Phase 08.7 M4.8 — 12/17 REPRODUCTIONS EXECUTED /
+9 FORMAL PASS, 1 BEHAVIORAL-PASS/EVIDENCE-FAIL,
+2 BEHAVIORAL FAIL / USER-DEFINED MOST THRESHOLD REACHED /
+ALL 12 CLEANUP PASS / FINAL FIVE CASES PENDING.**
+
+### Next criterion
+
+Execute all five selected M4.4 headless cases serially in their one fixed
+invocation on ROS domain `175`. Preserve each outcome once, then close
+Gazebo dispatch and begin whole-campaign validation and analysis.
+
+### Dispatch 8 — M4.4 five-case headless subset
+
+The single fixed M4.4 invocation executed all five selected cases serially
+on ROS domain `175`. The outer `3900 s` timeout did not fire. The runner
+returned `1` because one case did not complete Stage A; every case executed
+once.
+
+| Case | Stage A / fill | Stage B | Completeness | Cleanup | Fresh result |
+|---|---|---|---|---|---|
+| `v7_m4_4_r1p0_a45_h25_18409` | fail / fail | unavailable; final `3.7207540935 m` | pass | pass | behavioral fail |
+| `v7_m4_4_r1p5_a45_h25_18409` | pass / pass | pass, `1.1993091417 m` | pass | pass | formal pass |
+| `v7_m4_4_r1p5_a67p5_h25_18409` | pass / pass | pass, `1.1996182415 m` | pass | pass | formal pass |
+| `v7_m4_4_repeat_r1p5_a45_h25_18411` | pass / pass | pass, `1.1997388853 m` | pass | pass | formal pass |
+| `v7_m4_4_repeat_r1p5_a45_h25_18412` | pass / pass | pass, `1.1998614311 m` | pass | pass | formal pass |
+
+Subset totals:
+
+```text
+formal combined:                4/5 PASS
+behavioral Stage A:             4/5 PASS
+behavioral Stage B:             4/5 PASS, one unavailable
+recording completeness:         5/5 PASS
+collision/forbidden evidence:   5/5 PASS
+cleanup:                        5/5 PASS
+SQLite quick_check:             5/5 ok
+```
+
+The radius-1.0 case remained in `SEARCH`, produced only two
+`CONVERGENCE_CANDIDATE` events, created no fill, and never opened Stage B.
+Its recording still contains `1027534` readable messages on `34` topics.
+The four passing cases contain `460651`, `353730`, `552298`, and `620166`
+messages respectively, each on `34` topics. No retry or parameter change
+occurred.
+
+### Completed raw campaign tally
+
+All `17` selected definitions executed exactly once in the sealed order:
+
+```text
+formal combined pass:                 13/17
+behavioral pass, evidence fail:        1/17
+behavioral failure:                    3/17
+Stage A local recovery:               16/17
+exact one-fill cardinality:           16/17
+Stage B, all cases:                   14 pass, 2 fail, 1 unavailable
+Stage B after completed Stage A:      14/16 pass, 2 fail
+collision/forbidden evidence:         17/17 pass
+cleanup:                              17/17 pass
+SQLite quick_check:                   17/17 ok
+user-defined most threshold:          PASS (13 >= 9)
+```
+
+The three behavioral failures are:
+
+1. M4 visible: Stage A passed, Stage B missed, final `2.3113715830 m`;
+2. M4.3 radius-2.0: Stage A passed, Stage B missed, final
+   `1.2138798751 m`;
+3. M4.4 radius-1.0: Stage A never completed, final `3.7207540935 m`.
+
+The independent evidence failure is M4.3 repeat seed `18311`: all
+behavioral gates passed at `1.1973676652 m`, but completeness rejected a
+controller-spawner exit marker. Original results remain immutable.
+
+At dispatch close no matching Gazebo, runner, recorder, or rosbag process
+remains. No automatic retry, three-light case, Phase 09 action, physical
+command, or hardware command occurred.
+
+## Current milestone
+
+**Phase 08.7 M4.8 — ALL 17 REPRODUCTIONS EXECUTED ONCE /
+13 FORMAL PASS / MOST THRESHOLD PASS /
+17 SQLITE INTEGRITY AND CLEANUP PASS /
+STANDARD VALIDATION, ANALYSIS, FINAL REPORT, CHECKPOINT PENDING.**
+
+### Next criterion
+
+Run the standard standalone validator and analyzer once against every
+complete/readable fresh run, diagnose the three behavioral disagreements
+and one evidence-only failure, write the durable M4.8 report, checkpoint,
+and commit the retained campaign result.
+
+## Phase 08.7 M4.8 standalone validation, analysis, and retained result
+
+The standard installed completeness validator was invoked exactly once
+against each of the `17` fresh run directories from the qualified isolated
+install. Its outcome agrees with the runner evidence:
+
+```text
+return code 0 / completeness pass: 16/17
+return code 1 / completeness fail:  1/17
+unexpected validator result:        0
+```
+
+The sole failure remains M4.3 repeat seed `18311`. Its only failed check is
+`console_clean`; final commands zero, final readiness false, clean shutdown
+metadata, readable bag, Stage A, one fill, Stage B, collision, forbidden
+states/events, and cleanup all pass.
+
+The standard installed analyzer was then invoked exactly once for every
+completeness-passing bag, with a per-run `600 s` subprocess bound and
+outputs below each run at `analysis/phase07`:
+
+```text
+analyzer return code 0:            16/16
+analysis complete:                 14/16
+analysis partial:                   2/16
+analysis failure:                   0/16
+recording failure in analyzed bag:  0/16
+outputs per analyzed bag:            8 plots, 11 tables
+```
+
+The M4.3 `r=1.5, 67.5 deg` analysis is partial because two
+`/algorithm_state` gaps exceed `0.150000 s`, invalidating only derived
+state durations. The M4.4 radius-1.0 failure is partial because Stage A
+never opened; its applicable escape duration, orbit count, and radial
+progress are consequently unavailable. The completeness-failed seed-18311
+bag was not forced through a weaker analyzer path.
+
+The corrected full tally is:
+
+```text
+formal combined pass:                  13/17
+behavioral pass, evidence fail:         1/17
+behavioral failure:                     3/17
+Stage A local recovery:                16/17
+exact one-fill cardinality:            16/17
+Stage B, all cases:                    14 pass, 2 fail, 1 unavailable
+Stage B after completed Stage A:       14/16 pass, 2 fail
+collision/forbidden evidence:          17/17 pass
+final command zero:                    17/17 pass
+cleanup:                               17/17 pass
+SQLite quick_check:                    17/17 ok
+formal classification agreement:      13/17
+behavioral agreement:                  14/17
+user-defined most threshold:           PASS (13 >= 9)
+```
+
+All `16` completed Stage A paths were direct; none entered
+`ESCAPE_ASSIST`. Visible cases were `4/5` formal and `4/5` behavioral.
+Headless cases were `9/12` formal and `10/12` behavioral.
+
+The three fresh behavioral disagreements are distinct:
+
+1. M4 visible completed Stage A at simulation time `294.834 s`. Its fixed
+   total horizon ended at `361.644 s`, leaving `66.810 s` after recovery.
+   It improved from `2.719234 m` to a best `2.270542 m`, then ended at
+   `2.311372 m`. No wall, collision, or failsafe stopped it.
+2. M4.3 radius-2.0 completed Stage A, used the full `120.020 s` Stage B
+   budget, and stopped with a live timeout sample at `1.221840 m`. Its
+   final recorded pose after ordered shutdown was `1.213880 m`, only
+   `0.013880 m` outside the unchanged gate. This is a retained time-budget
+   near miss.
+3. M4.4 radius-1.0 stayed in `SEARCH` for the full run and traveled
+   `29.129297 m` around the local field. It emitted candidates at
+   `73.1 s` and `124.8 s` but never the third confirmation, so no fill or
+   Stage A was produced. The original same-seed run confirmed at
+   `127.6 s`; the fresh failure is detector-to-supervisor confirmation
+   sensitivity, before recovery or global guidance.
+
+The seed-18311 evidence-only failure is also bounded. The controller
+reported activation success, but the controller manager failed to deliver
+the switch-service response. Thirty seconds later the spawner retried an
+already-active controller and exited `1`. Motion preflight and the full
+behavior then passed. The strict `console_clean` failure is retained.
+
+The durable report is:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m4_8_success_reproduction_report.md
+SHA-256
+f385abf9030ad1f1cc2c26850cfda7b860da3a74df632a72b167ea306ee9c63a
+```
+
+Its manifest-order result/completeness/analysis hash-inventory digest is:
+
+```text
+4445e970ba77b879798cfda841941442dcfbc6c48c108a92bb5e6480db861f73
+```
+
+No matching Gazebo, scenario runner, recorder, rosbag recorder, validator,
+or analyzer process remains. No retry, parameter correction, three-light
+case, Phase 09 action, physical command, or hardware action occurred.
+
+The physical boundary is explicit and unchanged: automatic global-distance
+termination is simulation-only. Physical testing must have no automatic
+`1.20 m`, `1.00 m`, or other proximity stop. The robot continues until the
+operator judges it close enough and presses `Ctrl+C`; that signal must use
+the ordered readiness-false, stop, final-zero, recording-finalization, and
+scoped-cleanup path.
+
+Final static validation passed:
+
+```text
+validate_phase_context.sh 08 implement: pass
+git diff --check:                         pass
+retained-evidence verifier:
+  runs/formal/complete/analyzed:          17 / 13 / 16 / 16
+  inventory digest:                      pass
+  report digest/status binding:          pass
+physical auto-stop manifest predicate:   false, pass
+matching active runtime processes:       none, pass
+```
+
+The first small report/status semantic smoke asserted the literal lowercase
+word `manual` before that word appeared in the report and stopped on that
+assertion. The physical policy was already explicit, but the report wording
+was made even more direct as “manual operator control,” its hash was
+updated above, and the complete corrected verifier passed. This was a
+documentation-check assertion, not a simulation, validator, analyzer, or
+product failure.
+
+## Current milestone
+
+**Phase 08.7 M4.8 — RETAINED RESULT QUALIFIED /
+17/17 EXECUTED EXACTLY ONCE / 13 FORMAL PASS /
+14 BEHAVIORAL PASS / USER-DEFINED MOST THRESHOLD PASS /
+17 SQLITE, FINAL-ZERO, AND CLEANUP PASS /
+DURABLE REPORT COMPLETE / CHECKPOINT AND COMMIT PENDING.**
+
+### Next criterion
+
+Run final context/diff validation, write the Phase 08 material-boundary
+checkpoint, inspect the exact diff, and commit the retained M4.8 result.
+The separately requested whole-Phase-08 report remains outside M4.8 and
+must start from this committed boundary.
