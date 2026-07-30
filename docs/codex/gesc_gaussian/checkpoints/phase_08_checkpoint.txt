@@ -1,46 +1,73 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-30T18:41:39+00:00
-Base HEAD: 75f8f23ffa3aa237995b3c032895fedd480c48b5
+Generated: 2026-07-30T19:24:46+00:00
+Base HEAD: c7e85631dec82411ecedca0c142613dc2239c383
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 78e178fbc57921b2eb0c24c53b21175ff7e60ed458937c86536617dac997ffe1
+Status sha256: 84b222a516e959f4f11fce91d17d196f80790c6e5da1d57081052ec3f1fe50d0
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
 Active subphase plan sha256: 94027653dbd4f4fad158da5612bbdd2d3dad8c5dec4c5b420ff45906d0770236
-Unstaged diff sha256: 479d2f6affc947ec3ed9aef94878c6f66f0f9a450e37117e72bd9cc9e9a5112d
+Unstaged diff sha256: e20fa2f679169ec6389cec61fc82d7884fd060f9d9e51bf7e8ed6efe292f841f
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 93]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 94]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
- M docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py
+ M ros2_ws/src/ros_esc/ros_esc/supervisor_node/escape_recenter.py
+ M ros2_ws/src/ros_esc/ros_esc/supervisor_node/supervisor_node_script.py
+ M ros2_ws/src/ros_esc/test/test_escape_recenter.py
+ M ros2_ws/src/ros_esc/test/test_observability_contract.py
+ M ros2_ws/src/ros_esc/test/test_scenario_runner.py
+ M ros2_ws/src/ros_esc/test/test_scenario_schema.py
+ M ros2_ws/src/ros_esc/test/test_supervisor_integration.py
+ M ros2_ws/src/turtlebot3_rotating_sensor/launch/gazebo.launch.xml
+?? docs/codex/gesc_gaussian/validation/phase_08_7_m4_7_no_gazebo_qualification.md
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m4_7_two_light_suite.yaml
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m4_7_visible_probe.yaml
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  37 +-
- docs/codex/gesc_gaussian/plans/phase_08_7_plan.md  | 448 +++++++++++++++++++++
- docs/codex/gesc_gaussian/status/phase_08_status.md |  82 ++++
- 3 files changed, 537 insertions(+), 30 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  46 +--
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 125 ++++++
+ .../ros_esc/scenario_runner/scenario_schema.py     |  32 ++
+ .../ros_esc/supervisor_node/escape_recenter.py     |  58 +++
+ .../supervisor_node/supervisor_node_script.py      | 393 +++++++++++++++++--
+ ros2_ws/src/ros_esc/test/test_escape_recenter.py   | 121 ++++++
+ .../ros_esc/test/test_observability_contract.py    |   4 +
+ ros2_ws/src/ros_esc/test/test_scenario_runner.py   |  49 +++
+ ros2_ws/src/ros_esc/test/test_scenario_schema.py   | 266 +++++++++++++
+ .../ros_esc/test/test_supervisor_integration.py    | 421 +++++++++++++++++++++
+ .../launch/gazebo.launch.xml                       |   4 +
+ 11 files changed, 1461 insertions(+), 58 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**Phase 08.7 M4.7 — PLAN-ONLY DEFAULT-OFF DYNAMIC SOURCE-RESUME CORRIDOR
-SAVED / NOT APPROVED / IMPLEMENTATION AND SIMULATION NOT STARTED.**
+**Phase 08.7 M4.7 — IMPLEMENTED / NO-GAZEBO QUALIFICATION PASS /
+READY TO CHECKPOINT AND COMMIT / GAZEBO NOT STARTED.**
 
 ### Next criterion
 
-Checkpoint and commit this Plan-only boundary for review. Do not implement,
-build, or run M4.7 until the user explicitly approves the fresh amendment.
-After approval, implementation must pass every no-Gazebo gate and be
-checkpointed and committed before a visible Gazebo process may start. The
-conditional suite remains passing-gated; the optional three-light probe,
+Checkpoint and commit this independently qualified no-Gazebo boundary.
+After that commit, record and checkpoint the exact fixed visible paired
+dispatch command before starting Gazebo. Run only:
+
+```text
+suite: phase08_v7_m4_7_visible_probe
+case:  v7_m4_7_probe_r2p0_a45_h25_18508
+seed:  18508
+root:  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_7_probe
+```
+
+The fixed eight-case headless suite remains closed unless that one visible
+attempt passes every declared predicate. The optional three-light probe,
 Phase 09, and physical hardware remain unauthorized.
 
 

@@ -9312,3 +9312,128 @@ After approval, implementation must pass every no-Gazebo gate and be
 checkpointed and committed before a visible Gazebo process may start. The
 conditional suite remains passing-gated; the optional three-light probe,
 Phase 09, and physical hardware remain unauthorized.
+
+## Phase 08.7 M4.7 authorization and no-Gazebo qualification
+
+The user explicitly approved M4.7 implementation. The reviewed default-off
+dynamic source-resume corridor is implemented in the existing helper,
+supervisor, schema, and Gazebo-launch owners. The implementation adds:
+
+```text
+post_recovery_source_resume_enabled: false
+post_recovery_source_resume_min_progress_m: 0.20
+```
+
+Fresh M4.7 inputs alone set the Boolean true and retain M4.6's explicit
+`-0.80` reversal threshold:
+
+```text
+ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/
+  phase08_v7_m4_7_visible_probe.yaml
+  SHA-256
+  1da37b5cdb8158723a937969447806e4d5e9e12b8f458e72fbb5764a0cb237ca
+
+  phase08_v7_m4_7_two_light_suite.yaml
+  SHA-256
+  654b8fcb65fe565e340c4ee08250c036635bfb4e87a66ecbbc0654716c47f2f4
+```
+
+When enabled, the corridor recomputes a hard-safe source-aligned candidate
+on every new pose, changes fixed clearance into a source-resume anchor,
+requires `0.20 m` signed source progress plus live clearance and the
+existing `1.10 m` outward/taper completion, holds affine weight at `0.50`
+until source progress is acquired, and preserves liveness/source direction
+through one bounded recenter while excluding recenter translation.
+Duration exhaustion remains a finite typed release to ordinary search, not
+a new failsafe.
+
+No-Gazebo test evidence:
+
+```text
+targeted M4.7:
+  15 passed, 275 deselected in 1.29 s
+  /tmp/phase08_7_m4_7_targeted.xml
+  0998bfad6e7666943772e61e27c4ea2e6d36eeea5cde4d83386cb26731808f29
+
+focused:
+  405 passed, 1 skipped in 53.98 s
+  /tmp/phase08_7_m4_7_focused.xml
+  33b08592d7ea9c2cf63570e715f3d871e2dfbf5976763653cf4ebd948145a914
+
+broad ROS-independent:
+  684 passed, 3 skipped, 1 deselected in 117.25 s
+  /tmp/phase08_7_m4_7_broad_functional.xml
+  8252faa82e50669c9c144da4de11449e1def6345940575cfb197541adb79ae70
+```
+
+Fatal changed-file lint, Python compilation, YAML/schema expansion, launch
+XML parsing, `git diff --check`, and
+`validate_phase_context.sh 08 implement` pass.
+
+The fresh isolated three-package build at
+`/tmp/phase08_7_m4_7_qual` passed in `12.0 s`. Source/install byte parity
+passes for the helper/node, schema/runner, both fresh scenarios, Gazebo
+launch, control launch, and controller-spawner helper. Installed defaults
+resolve resume false, resume distance `0.20`, continuity false, threshold
+`-0.90`, recovery false, and maximum one fill. Both installed controller
+branches resolve exactly as before.
+
+Installed dry-runs resolve one visible and eight headless cases with zero
+unsupported cases:
+
+```text
+/tmp/phase08_7_m4_7_visible_installed_dry_run.yaml
+f7c439366e5fefab3b16ed82e130be17de4bb623a51e71fe105f55dae9e3363d
+
+/tmp/phase08_7_m4_7_suite_installed_dry_run.yaml
+b48fc12cb96ef52f289b939a971e8c58760c3a9181552f232b7253e925d4c2e9
+```
+
+Every case preserves one local/global, maximum one fill, staged
+`480+120<=600 s`, the primary `1.20 m` operator-equivalent stop, non-gating
+`1.00 m` diagnostic, collision false, final zero, and cleanup. Normalized
+M4.7 cases differ from M4.6 only by fresh identity/seed and the two explicit
+resume fields.
+
+The immutable M4.6 report, summary, completeness, scenario result, bag,
+analysis, resolved scenario, and installed scenario hashes all match.
+Read-only SQLite `PRAGMA quick_check` remains `ok` for `579958` messages
+and `34` topics. M4.6, M4.5, M4.4, M4.3, V6, shifted/historical worlds,
+historical scenarios, cost sign/units, canonical topics, sole `/cmd_vel`
+ownership, recorder/validator ownership, and retained evidence remain
+unchanged.
+
+The durable qualification report is:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m4_7_no_gazebo_qualification.md
+SHA-256
+bb802b789020ae6756f67d9253c0a7d993092073a50852e1f6c1553802d4c089
+```
+
+Both M4.7 production evidence roots remain absent. No Gazebo, scenario
+runner, recorder, rosbag, analyzer, or matching ROS process is active. No
+Gazebo, suite, three-light, Phase 09, physical, or hardware action occurred.
+
+## Current milestone
+
+**Phase 08.7 M4.7 — IMPLEMENTED / NO-GAZEBO QUALIFICATION PASS /
+READY TO CHECKPOINT AND COMMIT / GAZEBO NOT STARTED.**
+
+### Next criterion
+
+Checkpoint and commit this independently qualified no-Gazebo boundary.
+After that commit, record and checkpoint the exact fixed visible paired
+dispatch command before starting Gazebo. Run only:
+
+```text
+suite: phase08_v7_m4_7_visible_probe
+case:  v7_m4_7_probe_r2p0_a45_h25_18508
+seed:  18508
+root:  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_7_probe
+```
+
+The fixed eight-case headless suite remains closed unless that one visible
+attempt passes every declared predicate. The optional three-light probe,
+Phase 09, and physical hardware remain unauthorized.

@@ -158,6 +158,8 @@ LAUNCH_OVERRIDES = {
     'post_recovery_source_led_handoff_enabled',
     'post_recovery_source_continuity_enabled',
     'post_recovery_source_continuity_min_displacement_m',
+    'post_recovery_source_resume_enabled',
+    'post_recovery_source_resume_min_progress_m',
     'post_recovery_source_reversal_dot_threshold',
     'post_recovery_source_bypass_clearance_m',
     'controller_spawner_load_recovery_enabled',
@@ -376,6 +378,8 @@ SCHEMA_V7_LAUNCH_OVERRIDES = {
     'post_recovery_source_led_handoff_enabled',
     'post_recovery_source_continuity_enabled',
     'post_recovery_source_continuity_min_displacement_m',
+    'post_recovery_source_resume_enabled',
+    'post_recovery_source_resume_min_progress_m',
     'post_recovery_source_reversal_dot_threshold',
     'post_recovery_source_bypass_clearance_m',
     'controller_spawner_load_recovery_enabled',
@@ -481,6 +485,12 @@ def _validate_correction_overrides(overrides, ablations, location):
         source_continuity_enabled = _boolean(
             overrides['post_recovery_source_continuity_enabled'],
             f'{location}.post_recovery_source_continuity_enabled',
+        )
+    source_resume_enabled = False
+    if 'post_recovery_source_resume_enabled' in overrides:
+        source_resume_enabled = _boolean(
+            overrides['post_recovery_source_resume_enabled'],
+            f'{location}.post_recovery_source_resume_enabled',
         )
     if 'controller_spawner_load_recovery_enabled' in overrides:
         _boolean(
@@ -597,6 +607,7 @@ def _validate_correction_overrides(overrides, ablations, location):
         'post_recovery_liveness_window_sec',
         'post_recovery_liveness_min_path_length_m',
         'post_recovery_source_continuity_min_displacement_m',
+        'post_recovery_source_resume_min_progress_m',
         'post_recovery_source_bypass_clearance_m',
     ):
         if name in overrides:
@@ -747,6 +758,27 @@ def _validate_correction_overrides(overrides, ablations, location):
             raise ValueError(
                 f'{location}.post_recovery_source_continuity_enabled '
                 'requires post_recovery_source_led_handoff_enabled'
+            )
+    if source_resume_enabled:
+        if not source_continuity_enabled:
+            raise ValueError(
+                f'{location}.post_recovery_source_resume_enabled '
+                'requires post_recovery_source_continuity_enabled'
+            )
+        if 'post_recovery_source_resume_min_progress_m' not in overrides:
+            raise ValueError(
+                f'{location}.post_recovery_source_resume_enabled requires '
+                'post_recovery_source_resume_min_progress_m'
+            )
+        if not progress_enabled:
+            raise ValueError(
+                f'{location}.post_recovery_source_resume_enabled requires '
+                'post_recovery_progress_enabled'
+            )
+        if not overrides.get('recoverable_navigation_enabled', False):
+            raise ValueError(
+                f'{location}.post_recovery_source_resume_enabled requires '
+                'recoverable_navigation_enabled'
             )
 
 

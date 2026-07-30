@@ -751,6 +751,64 @@ def select_safe_direction(
     return max(selections, key=score)
 
 
+def select_source_continuity_direction(
+    position,
+    preferred,
+    fills: Sequence[FillAvoidance],
+    config=None,
+    bounds: Optional[OperatingBounds] = None,
+):
+    """Select the most source-aligned hard-safe forward candidate."""
+
+    config = config or DirectionConfig()
+    preferred = _unit(preferred, "preferred direction")
+    selections = []
+    for index, rotation, direction in _direction_candidates(
+        preferred, config
+    ):
+        safe, clearance = evaluate_direction(
+            position,
+            direction,
+            preferred,
+            fills,
+            config,
+            bounds,
+        )
+        if not safe:
+            continue
+        selections.append(
+            DirectionSelection(
+                x=float(direction[0]),
+                y=float(direction[1]),
+                clearance_m=clearance,
+                rotation_rad=float(rotation),
+                candidate_index=index,
+            )
+        )
+    if not selections:
+        return None
+
+    def score(selection):
+        alignment = float(np.dot(selection.direction, preferred))
+        return (
+            round(alignment, 12),
+            round(selection.clearance_m, 12),
+            -round(abs(selection.rotation_rad), 12),
+            -selection.candidate_index,
+        )
+
+    return max(selections, key=score)
+
+
+def projected_direction_progress(anchor_position, current_position, direction):
+    """Return finite signed displacement along a finite direction."""
+
+    anchor = _finite_vector(anchor_position, "progress anchor")
+    current = _finite_vector(current_position, "progress position")
+    preferred = _unit(direction, "progress direction")
+    return float(np.dot(current - anchor, preferred))
+
+
 def select_post_recovery_direction(
     position,
     preferred,

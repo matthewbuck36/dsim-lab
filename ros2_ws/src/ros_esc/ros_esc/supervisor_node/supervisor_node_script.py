@@ -43,10 +43,12 @@ from ros_esc.supervisor_node.escape_recenter import (
     RecenterControlConfig,
     RecenterHoldTracker,
     RecenterRoutePlanner,
+    projected_direction_progress,
     select_post_recovery_direction,
     select_recenter_direction,
     select_safe_direction,
     select_safe_recenter_target,
+    select_source_continuity_direction,
     source_continuity_evidence,
 )
 from ros_esc.supervisor_node.state_machine import (
@@ -187,6 +189,11 @@ class SupervisorNode(Node):
         self.post_recovery_source_continuity_enabled = bool(
             self.get_parameter(
                 'post_recovery_source_continuity_enabled'
+            ).value
+        )
+        self.post_recovery_source_resume_enabled = bool(
+            self.get_parameter(
+                'post_recovery_source_resume_enabled'
             ).value
         )
         self.bounded_mode = bool(
@@ -331,6 +338,11 @@ class SupervisorNode(Node):
                 'post_recovery_source_continuity_min_displacement_m'
             )
         )
+        self.post_recovery_source_resume_min_progress_m = (
+            self._positive_float(
+                'post_recovery_source_resume_min_progress_m'
+            )
+        )
         self.post_recovery_source_reversal_dot_threshold = self._float(
             'post_recovery_source_reversal_dot_threshold'
         )
@@ -385,6 +397,21 @@ class SupervisorNode(Node):
                 raise ValueError(
                     'post-recovery source bypass clearance must be positive'
                 )
+        if self.post_recovery_source_resume_enabled:
+            if not self.post_recovery_source_continuity_enabled:
+                raise ValueError(
+                    'post-recovery source resume requires source continuity'
+                )
+            if not self.post_recovery_progress_enabled:
+                raise ValueError(
+                    'post-recovery source resume requires post-recovery '
+                    'progress'
+                )
+            if not self.recoverable_navigation_enabled:
+                raise ValueError(
+                    'post-recovery source resume requires recoverable '
+                    'navigation'
+                )
         self.run_id = uuid.uuid4().hex
         self.latest_pose_receipt_sec = None
         self.latest_pose_valid = False
@@ -424,6 +451,9 @@ class SupervisorNode(Node):
         self.post_recovery_source_led_active = False
         self.post_recovery_source_continuity = None
         self.post_recovery_source_bypass_active = False
+        self.post_recovery_source_resume_active = False
+        self.post_recovery_source_resume_anchor = None
+        self.post_recovery_source_progress_acquired = False
         self.recenter_route_unavailable_reported = False
         self.current_supervisor_command = Twist()
         self.configuration_published = False
@@ -522,6 +552,8 @@ class SupervisorNode(Node):
             'post_recovery_source_led_handoff_enabled': False,
             'post_recovery_source_continuity_enabled': False,
             'post_recovery_source_continuity_min_displacement_m': 0.05,
+            'post_recovery_source_resume_enabled': False,
+            'post_recovery_source_resume_min_progress_m': 0.20,
             'post_recovery_source_reversal_dot_threshold': -0.90,
             'post_recovery_source_bypass_clearance_m': 0.10,
             "room_bounds_x_min_m": -2.0,
@@ -1042,6 +1074,7 @@ class SupervisorNode(Node):
             self._clear_post_recovery_epoch(
                 preserve_source_continuity=(
                     self.post_recovery_source_bypass_active
+                    or self.post_recovery_source_resume_active
                 ),
             )
             self.safe_direction = None
@@ -1307,17 +1340,21 @@ class SupervisorNode(Node):
             return "post-recovery guidance fill has no active finite geometry"
         position = self.latest_pose.position
         preferred = position - np.asarray(record["center"], dtype=np.float64)
-        if self.post_recovery_source_bypass_active:
+        if (
+            self.post_recovery_source_bypass_active
+            or self.post_recovery_source_resume_active
+        ):
             if self.post_recovery_source_continuity is None:
                 return (
-                    'post-recovery source-continuity bypass has no '
+                    'post-recovery source-continuity corridor has no '
                     'measured direction'
                 )
             preferred = self.post_recovery_source_continuity.direction
         if float(np.linalg.norm(preferred)) <= 1e-12:
             return "post-recovery guidance direction is undefined at fill center"
         fills = self._active_fill_avoidances()
-        if self.safe_direction is not None:
+        corridor_active = self._source_resume_corridor_active()
+        if self.safe_direction is not None and not corridor_active:
             if self.recoverable_navigation_enabled:
                 safe, clearance = evaluate_direction_safety(
                     position,
@@ -1344,7 +1381,16 @@ class SupervisorNode(Node):
                     self.safe_direction.candidate_index,
                 )
                 return None
-        if self.post_recovery_source_bypass_active:
+        previous = self.safe_direction
+        if corridor_active:
+            selected = select_source_continuity_direction(
+                position,
+                preferred,
+                fills,
+                self.direction_config,
+                self.bounds,
+            )
+        elif self.post_recovery_source_bypass_active:
             selected = select_safe_direction(
                 position,
                 preferred,
@@ -1371,7 +1417,23 @@ class SupervisorNode(Node):
         if selected is None:
             return 'no safe post-recovery direction candidate'
         self.safe_direction = selected
-        self.safe_direction_revision += 1
+        changed = bool(
+            previous is None
+            or previous.candidate_index != selected.candidate_index
+            or not np.allclose(
+                previous.direction,
+                selected.direction,
+                rtol=0.0,
+                atol=1e-12,
+            )
+        )
+        if changed:
+            self.safe_direction_revision += 1
+            if corridor_active and previous is not None:
+                self._publish_source_resume_event(
+                    self._now_sec(),
+                    'post-recovery source-continuity direction changed',
+                )
         return None
 
     def _start_post_recovery_epoch(
@@ -1403,6 +1465,19 @@ class SupervisorNode(Node):
             self.current_supervisor_command = Twist()
             self.post_recovery_source_continuity = None
             self.post_recovery_source_bypass_active = False
+            self.post_recovery_source_resume_active = False
+            self.post_recovery_source_resume_anchor = None
+            self.post_recovery_source_progress_acquired = False
+        elif (
+            self.post_recovery_source_resume_active
+            and self.post_recovery_recenter_attempted
+        ):
+            self.post_recovery_source_resume_anchor = np.array(
+                self.latest_pose.position,
+                dtype=np.float64,
+                copy=True,
+            )
+            self.post_recovery_source_progress_acquired = False
         if not self.post_recovery_source_led_active:
             failure = self._ensure_post_recovery_direction()
             if failure is not None:
@@ -1451,10 +1526,21 @@ class SupervisorNode(Node):
             and now_sec - guidance_started_sec
             >= self.machine.config.post_recovery_guidance_max_sec
         ):
-            self._release_post_recovery_guidance(
-                now_sec,
-                'post-recovery guidance maximum duration elapsed',
-            )
+            if self._source_resume_corridor_active():
+                self._publish_source_resume_event(
+                    now_sec,
+                    'post-recovery source-resume corridor exhausted',
+                )
+                self._release_post_recovery_guidance(
+                    now_sec,
+                    'post-recovery source-resume corridor exhausted',
+                    publish_event=False,
+                )
+            else:
+                self._release_post_recovery_guidance(
+                    now_sec,
+                    'post-recovery guidance maximum duration elapsed',
+                )
             return None
         if self.post_recovery_progress_tracker is None:
             failure = self._start_post_recovery_epoch(now_sec)
@@ -1507,6 +1593,13 @@ class SupervisorNode(Node):
             self.post_recovery_progress_tracker.reset_liveness_window()
             progress = self.post_recovery_progress_tracker.latest
 
+        if self._source_resume_corridor_active():
+            failure = self._ensure_post_recovery_direction()
+            if failure is not None:
+                return self._recover_post_recovery_direction_failure(
+                    now_sec, failure
+                )
+
         if self.post_recovery_source_bypass_active:
             clearance_target = self._source_bypass_clearance_target()
             if clearance_target is None:
@@ -1516,13 +1609,63 @@ class SupervisorNode(Node):
                     'fill clearance',
                 )
             if progress.fill_distance_m >= clearance_target:
+                if self.post_recovery_source_resume_enabled:
+                    self.post_recovery_source_bypass_active = False
+                    self.post_recovery_source_resume_active = True
+                    self.post_recovery_source_resume_anchor = np.array(
+                        self.latest_pose.position,
+                        dtype=np.float64,
+                        copy=True,
+                    )
+                    self.post_recovery_source_progress_acquired = False
+                    self._publish_source_resume_event(
+                        now_sec,
+                        'post-recovery source-bypass clearance acquired',
+                    )
+                else:
+                    self._release_post_recovery_guidance(
+                        now_sec,
+                        'post-recovery source-continuity bypass completed',
+                    )
+                    return None
+
+        if self.post_recovery_source_resume_active:
+            clearance_target = self._source_bypass_clearance_target()
+            source_progress = self._source_resume_progress()
+            if clearance_target is None or not math.isfinite(source_progress):
+                return self._recover_post_recovery_direction_failure(
+                    now_sec,
+                    'post-recovery source-resume geometry unavailable',
+                )
+            if (
+                self._source_resume_progress_complete(source_progress)
+                and not self.post_recovery_source_progress_acquired
+            ):
+                self.post_recovery_source_progress_acquired = True
+                self._publish_source_resume_event(
+                    now_sec,
+                    'post-recovery source progress acquired',
+                )
+            if (
+                self._source_resume_progress_complete(source_progress)
+                and progress.fill_distance_m >= clearance_target
+                and progress.outward_progress_m >= release_progress
+            ):
+                self._publish_source_resume_event(
+                    now_sec,
+                    'post-recovery source-resume corridor completed',
+                )
                 self._release_post_recovery_guidance(
                     now_sec,
-                    'post-recovery source-continuity bypass completed',
+                    'post-recovery source-resume corridor completed',
+                    publish_event=False,
                 )
                 return None
 
-        if progress.outward_progress_m >= release_progress:
+        if (
+            not self._source_resume_corridor_active()
+            and progress.outward_progress_m >= release_progress
+        ):
             self._release_post_recovery_guidance(
                 now_sec, 'post-recovery outward progress completed'
             )
@@ -1530,18 +1673,29 @@ class SupervisorNode(Node):
 
         if progress.stalled:
             if self.post_recovery_recenter_attempted:
-                self._publish_post_recovery_liveness_event(
-                    now_sec,
-                    'post-recovery liveness released guidance to ordinary search',
-                    progress,
-                )
-                self._release_post_recovery_guidance(
-                    now_sec,
-                    'post-recovery liveness recovery exhausted; '
-                    'continue ordinary search',
-                    publish_event=False,
-                )
-                return None
+                if self._source_resume_corridor_active():
+                    self._publish_post_recovery_liveness_event(
+                        now_sec,
+                        'post-recovery source-resume liveness persists '
+                        'after recenter',
+                        progress,
+                    )
+                    self.post_recovery_progress_tracker.reset_liveness_window()
+                    progress = self.post_recovery_progress_tracker.latest
+                else:
+                    self._publish_post_recovery_liveness_event(
+                        now_sec,
+                        'post-recovery liveness released guidance to '
+                        'ordinary search',
+                        progress,
+                    )
+                    self._release_post_recovery_guidance(
+                        now_sec,
+                        'post-recovery liveness recovery exhausted; '
+                        'continue ordinary search',
+                        publish_event=False,
+                    )
+                    return None
             if (
                 self.post_recovery_direction_refresh_count
                 < self.post_recovery_direction_refresh_limit
@@ -1576,18 +1730,35 @@ class SupervisorNode(Node):
             return self._recover_post_recovery_direction_failure(
                 now_sec, failure
             )
+        source_gate_incomplete = bool(
+            self._source_resume_corridor_active()
+            and not self.post_recovery_source_progress_acquired
+        )
         if (
-            progress.outward_progress_m
+            not source_gate_incomplete
+            and progress.outward_progress_m
             >= self.post_recovery_guidance_min_progress_m
         ):
             self.current_supervisor_command = Twist()
             return None
 
-        remaining = max(
-            0.0,
-            self.post_recovery_guidance_min_progress_m
-            - progress.outward_progress_m,
-        )
+        if source_gate_incomplete:
+            source_progress = (
+                self._source_resume_progress()
+                if self.post_recovery_source_resume_active
+                else 0.0
+            )
+            remaining = max(
+                0.0,
+                self.post_recovery_source_resume_min_progress_m
+                - max(0.0, source_progress),
+            )
+        else:
+            remaining = max(
+                0.0,
+                self.post_recovery_guidance_min_progress_m
+                - progress.outward_progress_m,
+            )
         linear, angular = recenter_command(
             self.safe_direction.direction,
             self.latest_pose.yaw,
@@ -1640,6 +1811,9 @@ class SupervisorNode(Node):
             return
         self.post_recovery_source_continuity = evidence
         self.post_recovery_source_bypass_active = True
+        self.post_recovery_source_resume_active = False
+        self.post_recovery_source_resume_anchor = None
+        self.post_recovery_source_progress_acquired = False
         self._publish_event(
             AlgorithmEvent.EVENT_CONFIGURATION,
             now_sec,
@@ -1661,6 +1835,11 @@ class SupervisorNode(Node):
                 float(clearance_target),
             ],
         )
+        if self.post_recovery_source_resume_enabled:
+            self._publish_source_resume_event(
+                now_sec,
+                'post-recovery source-resume corridor armed',
+            )
 
     def _source_bypass_clearance_target(self):
         """Return the active avoidance radius plus the fixed bypass margin."""
@@ -1674,6 +1853,146 @@ class SupervisorNode(Node):
             support_radius
             + self.fill_avoidance_margin_m
             + self.post_recovery_source_bypass_clearance_m
+        )
+
+    def _source_resume_corridor_active(self):
+        return bool(
+            self.post_recovery_source_resume_enabled
+            and self.post_recovery_source_continuity is not None
+            and (
+                self.post_recovery_source_bypass_active
+                or self.post_recovery_source_resume_active
+            )
+        )
+
+    def _source_resume_progress(self):
+        if (
+            not self.post_recovery_source_resume_active
+            or self.post_recovery_source_resume_anchor is None
+            or self.post_recovery_source_continuity is None
+            or self.latest_pose is None
+            or not self.latest_pose_valid
+        ):
+            return float('nan')
+        try:
+            return projected_direction_progress(
+                self.post_recovery_source_resume_anchor,
+                self.latest_pose.position,
+                self.post_recovery_source_continuity.direction,
+            )
+        except ValueError:
+            return float('nan')
+
+    def _source_resume_progress_complete(self, source_progress):
+        return bool(
+            math.isfinite(float(source_progress))
+            and float(source_progress)
+            >= self.post_recovery_source_resume_min_progress_m - 1e-12
+        )
+
+    def _publish_source_resume_event(self, now_sec, detail):
+        progress = (
+            self.post_recovery_progress_tracker.latest
+            if self.post_recovery_progress_tracker is not None
+            else None
+        )
+        source_progress = self._source_resume_progress()
+        source_progress_valid = math.isfinite(source_progress)
+        clearance_target = self._source_bypass_clearance_target()
+        clearance_target_valid = bool(
+            clearance_target is not None
+            and math.isfinite(float(clearance_target))
+        )
+        direction_valid = bool(
+            self.safe_direction is not None
+            and self.post_recovery_source_continuity is not None
+        )
+        source_alignment = (
+            float(
+                np.dot(
+                    self.safe_direction.direction,
+                    self.post_recovery_source_continuity.direction,
+                )
+            )
+            if direction_valid
+            else 0.0
+        )
+        guidance_started_sec = (
+            self.machine.post_recovery_guidance_started_sec
+        )
+        guidance_elapsed_sec = (
+            max(0.0, float(now_sec) - float(guidance_started_sec))
+            if guidance_started_sec is not None
+            else 0.0
+        )
+        self._publish_event(
+            AlgorithmEvent.EVENT_CONFIGURATION,
+            now_sec,
+            detail,
+            [
+                'source_bypass_active',
+                'source_resume_active',
+                'source_progress_acquired',
+                'source_progress_m',
+                'source_progress_valid',
+                'source_progress_threshold_m',
+                'fill_distance_m',
+                'fill_clearance_target_m',
+                'fill_clearance_target_valid',
+                'outward_progress_m',
+                'outward_release_progress_m',
+                'safe_direction_x',
+                'safe_direction_y',
+                'safe_direction_valid',
+                'safe_direction_revision',
+                'safe_direction_clearance_m',
+                'source_alignment',
+                'affine_weight',
+                'recenter_attempted',
+                'guidance_elapsed_sec',
+                'guidance_max_sec',
+            ],
+            [
+                1.0 if self.post_recovery_source_bypass_active else 0.0,
+                1.0 if self.post_recovery_source_resume_active else 0.0,
+                (
+                    1.0
+                    if self.post_recovery_source_progress_acquired
+                    else 0.0
+                ),
+                source_progress if source_progress_valid else 0.0,
+                1.0 if source_progress_valid else 0.0,
+                self.post_recovery_source_resume_min_progress_m,
+                progress.fill_distance_m if progress is not None else 0.0,
+                (
+                    float(clearance_target)
+                    if clearance_target_valid
+                    else 0.0
+                ),
+                1.0 if clearance_target_valid else 0.0,
+                progress.outward_progress_m if progress is not None else 0.0,
+                (
+                    self.post_recovery_guidance_min_progress_m
+                    + self.post_recovery_affine_taper_distance_m
+                ),
+                self.safe_direction.x if direction_valid else 0.0,
+                self.safe_direction.y if direction_valid else 0.0,
+                1.0 if direction_valid else 0.0,
+                float(self.safe_direction_revision),
+                (
+                    self.safe_direction.clearance_m
+                    if direction_valid
+                    else 0.0
+                ),
+                source_alignment,
+                (
+                    self.post_recovery_affine_weight
+                    * self._post_recovery_affine_taper()
+                ),
+                1.0 if self.post_recovery_recenter_attempted else 0.0,
+                guidance_elapsed_sec,
+                self.machine.config.post_recovery_guidance_max_sec,
+            ],
         )
 
     def _recover_post_recovery_direction_failure(self, now_sec, failure):
@@ -1794,6 +2113,9 @@ class SupervisorNode(Node):
         if not preserve_source_continuity:
             self.post_recovery_source_continuity = None
             self.post_recovery_source_bypass_active = False
+            self.post_recovery_source_resume_active = False
+            self.post_recovery_source_resume_anchor = None
+            self.post_recovery_source_progress_acquired = False
         if not preserve_recenter_attempt:
             self.post_recovery_recenter_attempted = False
 
@@ -2072,6 +2394,8 @@ class SupervisorNode(Node):
             'post_recovery_source_led_handoff_enabled',
             'post_recovery_source_continuity_enabled',
             'post_recovery_source_continuity_min_displacement_m',
+            'post_recovery_source_resume_enabled',
+            'post_recovery_source_resume_min_progress_m',
             'post_recovery_source_reversal_dot_threshold',
             'post_recovery_source_bypass_clearance_m',
         ]
@@ -2146,6 +2470,12 @@ class SupervisorNode(Node):
                 else 0.0
             ),
             self.post_recovery_source_continuity_min_displacement_m,
+            (
+                1.0
+                if self.post_recovery_source_resume_enabled
+                else 0.0
+            ),
+            self.post_recovery_source_resume_min_progress_m,
             self.post_recovery_source_reversal_dot_threshold,
             self.post_recovery_source_bypass_clearance_m,
         ]
@@ -2302,6 +2632,11 @@ class SupervisorNode(Node):
         """Return the bounded spatial affine scale for post-recovery SEARCH."""
         if self.post_recovery_source_led_active:
             return 0.0
+        if (
+            self._source_resume_corridor_active()
+            and not self.post_recovery_source_progress_acquired
+        ):
+            return 1.0
         if (
             self.post_recovery_progress_enabled
             and self.post_recovery_progress_tracker is not None

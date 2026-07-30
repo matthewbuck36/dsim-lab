@@ -18,6 +18,7 @@ from ros_esc.supervisor_node.escape_recenter import (
     FillAvoidance,
     OperatingBounds,
     Pose2D,
+    SourceContinuityEvidence,
     recenter_command,
     select_safe_direction,
     source_continuity_evidence,
@@ -1236,6 +1237,426 @@ def test_m4_5_source_bypass_releases_at_exact_clearance_boundary():
             == 'post-recovery source-continuity bypass completed'
             for event in events.messages
         ) == 1
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_7_clearance_transitions_to_resume_without_releasing_guidance():
+    rclpy.init()
+    node = _m4_2_progress_node(
+        post_recovery_liveness_window_sec=12.0,
+        post_recovery_source_led_handoff_enabled=True,
+        post_recovery_source_continuity_enabled=True,
+        post_recovery_source_resume_enabled=True,
+        post_recovery_source_resume_min_progress_m=0.20,
+    )
+    events = Recorder()
+    states = Recorder()
+    node.event_publisher = events
+    node.state_publisher = states
+    try:
+        anchor, current, fill_center = (
+            _activate_m4_5_retained_radius_two(node)
+        )
+        _feed_m4_5_retained_source_window(node, anchor, current)
+        target = node._source_bypass_clearance_target()
+        radial = (current - fill_center) / np.linalg.norm(
+            current - fill_center
+        )
+        clearance_pose = fill_center + target * radial
+
+        node.latest_pose = Pose2D(12.2, *clearance_pose, 0.0)
+        node.latest_pose_sequence += 1
+        assert node._update_post_recovery_guidance(12.2) is None
+        node._publish_state_and_command(12.2)
+
+        assert node.machine.post_recovery_guidance_active is True
+        assert node.post_recovery_source_bypass_active is False
+        assert node.post_recovery_source_resume_active is True
+        assert node.post_recovery_source_resume_anchor == pytest.approx(
+            clearance_pose
+        )
+        assert node.post_recovery_source_continuity is not None
+        assert node.safe_direction is not None
+        assert states.messages[-1].affine_weight == pytest.approx(0.50)
+        assert sum(
+            event.detail
+            == 'post-recovery source-bypass clearance acquired'
+            for event in events.messages
+        ) == 1
+        assert sum(
+            event.detail == 'post-recovery source-resume corridor armed'
+            for event in events.messages
+        ) == 1
+        assert all(
+            event.detail
+            != 'post-recovery source-continuity bypass completed'
+            for event in events.messages
+        )
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def _activate_m4_7_resume_corridor(node):
+    _activate_m4_2_guidance(
+        node,
+        pose_value=Pose2D(0.0, 0.50, 0.0, 0.0),
+    )
+    node.active_fill_records[1]['center'] = [0.0, 0.0]
+    node.post_recovery_progress_tracker = (
+        supervisor_node_script.PostRecoveryProgressTracker(
+            node.latest_pose,
+            [0.0, 0.0],
+            node.post_recovery_progress_config,
+        )
+    )
+    node.post_recovery_pose_sequence = node.latest_pose_sequence
+    node.post_recovery_source_continuity = SourceContinuityEvidence(
+        direction_x=1.0,
+        direction_y=0.0,
+        displacement_m=0.10,
+        radial_alignment=-1.0,
+    )
+    node.post_recovery_source_bypass_active = False
+    node.post_recovery_source_resume_active = True
+    node.post_recovery_source_resume_anchor = np.array([0.50, 0.0])
+    node.post_recovery_source_progress_acquired = False
+    node.safe_direction = None
+    assert node._ensure_post_recovery_direction() is None
+
+
+def test_m4_7_source_progress_and_existing_taper_both_gate_release():
+    rclpy.init()
+    node = _m4_2_progress_node(
+        post_recovery_source_led_handoff_enabled=True,
+        post_recovery_source_continuity_enabled=True,
+        post_recovery_source_resume_enabled=True,
+        post_recovery_source_resume_min_progress_m=0.20,
+    )
+    events = Recorder()
+    states = Recorder()
+    commands = Recorder()
+    node.event_publisher = events
+    node.state_publisher = states
+    node.command_publisher = commands
+    try:
+        _activate_m4_7_resume_corridor(node)
+
+        def update(stamp, x):
+            node.latest_pose = Pose2D(stamp, x, 0.0, 0.0)
+            node.latest_pose_sequence += 1
+            assert node._update_post_recovery_guidance(stamp) is None
+            node._publish_state_and_command(stamp)
+
+        update(1.0, 0.50 + 0.20 - 1e-6)
+        assert node.post_recovery_source_progress_acquired is False
+        assert node.machine.post_recovery_guidance_active is True
+        assert states.messages[-1].affine_weight == pytest.approx(0.50)
+        assert commands.messages[-1].linear.x > 0.0
+
+        update(2.0, 0.70)
+        assert node.post_recovery_source_progress_acquired is True
+        assert node.machine.post_recovery_guidance_active is True
+        assert states.messages[-1].affine_weight == pytest.approx(0.50)
+
+        update(3.0, 1.10)
+        assert node.machine.post_recovery_guidance_active is True
+        assert states.messages[-1].affine_weight == pytest.approx(0.50)
+        assert commands.messages[-1].linear.x == 0.0
+
+        update(4.0, 1.35)
+        assert node.machine.post_recovery_guidance_active is True
+        assert states.messages[-1].affine_weight == pytest.approx(0.25)
+
+        update(5.0, 1.60)
+        assert node.machine.post_recovery_guidance_active is False
+        assert node.post_recovery_source_continuity is None
+        assert node.post_recovery_source_resume_active is False
+        assert node.safe_direction is None
+        assert sum(
+            event.detail == 'post-recovery source progress acquired'
+            for event in events.messages
+        ) == 1
+        assert sum(
+            event.detail
+            == 'post-recovery source-resume corridor completed'
+            for event in events.messages
+        ) == 1
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_7_resume_recomputation_uses_source_not_radial_preference():
+    rclpy.init()
+    node = _m4_2_progress_node(
+        post_recovery_source_led_handoff_enabled=True,
+        post_recovery_source_continuity_enabled=True,
+        post_recovery_source_resume_enabled=True,
+        post_recovery_source_resume_min_progress_m=0.20,
+    )
+    try:
+        _activate_m4_7_resume_corridor(node)
+        node.latest_pose = Pose2D(0.0, 1.0, 1.0, 0.0)
+        node.latest_pose_sequence += 1
+        node.active_fill_records[1]['center'] = [1.0, 0.0]
+        node.post_recovery_progress_tracker = (
+            supervisor_node_script.PostRecoveryProgressTracker(
+                node.latest_pose,
+                [1.0, 0.0],
+                node.post_recovery_progress_config,
+            )
+        )
+        node.post_recovery_source_continuity = SourceContinuityEvidence(
+            direction_x=1.0,
+            direction_y=0.0,
+            displacement_m=0.10,
+            radial_alignment=0.0,
+        )
+        node.post_recovery_source_bypass_active = False
+        node.post_recovery_source_resume_active = True
+        node.post_recovery_source_resume_anchor = np.array([1.0, 1.0])
+        node.safe_direction = None
+
+        assert node._ensure_post_recovery_direction() is None
+        assert node.safe_direction.direction == pytest.approx([1.0, 0.0])
+        assert float(
+            np.dot(
+                node.safe_direction.direction,
+                node.post_recovery_source_continuity.direction,
+            )
+        ) == pytest.approx(1.0)
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_7_dynamic_upgrade_does_not_consume_liveness_refresh():
+    rclpy.init()
+    node = _m4_2_progress_node(
+        post_recovery_source_led_handoff_enabled=True,
+        post_recovery_source_continuity_enabled=True,
+        post_recovery_source_resume_enabled=True,
+        post_recovery_source_resume_min_progress_m=0.20,
+    )
+    events = Recorder()
+    node.event_publisher = events
+    try:
+        source = np.array([0.9909899820, 0.1339360130])
+        source /= np.linalg.norm(source)
+        anchor = np.array([1.2274432561, 1.4964333762])
+        arm = anchor + 0.1147496923 * source
+        fill_center = np.array([1.8189935808, 1.7649913445])
+        tangent = np.array([source[1], -source[0]])
+        node.latest_pose = Pose2D(0.0, *arm, 0.0)
+        node.latest_pose_valid = True
+        node.latest_pose_sequence += 1
+        node.active_fill_records = {
+            1: {
+                'fill_id': 4,
+                'revision': 1,
+                'center': fill_center,
+                'support_radius': 0.5086747487,
+                'exit_radius': 0.4238956239,
+            }
+        }
+        node.machine.state = State.SEARCH
+        node.machine.active_fill_count = 1
+        node.machine.post_recovery_fill_id = 4
+        node.machine.active_escape_fill_id = 4
+        node.machine.post_recovery_guidance_active = True
+        node.machine.post_recovery_guidance_started_sec = 0.0
+        node.post_recovery_source_continuity = SourceContinuityEvidence(
+            direction_x=source[0],
+            direction_y=source[1],
+            displacement_m=0.1147496923,
+            radial_alignment=-0.9383691118,
+        )
+        node.post_recovery_source_bypass_active = True
+        node.post_recovery_progress_tracker = (
+            supervisor_node_script.PostRecoveryProgressTracker(
+                node.latest_pose,
+                fill_center,
+                node.post_recovery_progress_config,
+            )
+        )
+        node.post_recovery_pose_sequence = node.latest_pose_sequence
+
+        assert node._ensure_post_recovery_direction() is None
+        assert math.degrees(
+            node.safe_direction.rotation_rad
+        ) == pytest.approx(-90.0)
+        initial_revision = node.safe_direction_revision
+
+        node.latest_pose = Pose2D(0.1, *(arm + 0.20 * tangent), 0.0)
+        node.latest_pose_sequence += 1
+        assert node._update_post_recovery_guidance(0.1) is None
+
+        assert math.degrees(
+            node.safe_direction.rotation_rad
+        ) == pytest.approx(-45.0)
+        assert node.safe_direction_revision == initial_revision + 1
+        assert node.post_recovery_direction_refresh_count == 0
+        assert sum(
+            event.detail
+            == 'post-recovery source-continuity direction changed'
+            for event in events.messages
+        ) == 1
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_7_recenter_resets_resume_anchor_and_excludes_its_motion():
+    rclpy.init()
+    node = _m4_2_progress_node(
+        post_recovery_source_led_handoff_enabled=True,
+        post_recovery_source_continuity_enabled=True,
+        post_recovery_source_resume_enabled=True,
+        post_recovery_source_resume_min_progress_m=0.20,
+    )
+    try:
+        _activate_m4_7_resume_corridor(node)
+        node.post_recovery_recenter_attempted = True
+        node.latest_pose = Pose2D(10.0, 1.50, 0.0, 0.0)
+        node.latest_pose_sequence += 1
+
+        assert node._start_post_recovery_epoch(
+            10.0,
+            source_led_handoff=True,
+        ) is None
+
+        assert node.post_recovery_source_resume_active is True
+        assert node.post_recovery_source_resume_anchor == pytest.approx(
+            [1.50, 0.0]
+        )
+        assert node._source_resume_progress() == pytest.approx(0.0)
+        assert node.post_recovery_source_progress_acquired is False
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_7_post_recenter_liveness_keeps_corridor_nonterminal():
+    rclpy.init()
+    node = _m4_2_progress_node(
+        post_recovery_source_led_handoff_enabled=True,
+        post_recovery_source_continuity_enabled=True,
+        post_recovery_source_resume_enabled=True,
+        post_recovery_source_resume_min_progress_m=0.20,
+    )
+    events = Recorder()
+    node.event_publisher = events
+    try:
+        _activate_m4_7_resume_corridor(node)
+        node.post_recovery_recenter_attempted = True
+        node.post_recovery_direction_refresh_count = (
+            node.post_recovery_direction_refresh_limit
+        )
+        for stamp, offset in (
+            (1.0, (0.0, 0.20)),
+            (2.0, (-0.20, 0.20)),
+            (3.0, (-0.20, 0.0)),
+            (4.0, (0.0, 0.0)),
+        ):
+            node.latest_pose = Pose2D(
+                stamp,
+                0.50 + offset[0],
+                offset[1],
+                0.0,
+            )
+            node.latest_pose_sequence += 1
+            assert node._update_post_recovery_guidance(stamp) is None
+
+        assert node.machine.post_recovery_guidance_active is True
+        assert node.machine.state == State.SEARCH
+        assert node.machine.state != State.FAILSAFE
+        assert node.post_recovery_source_resume_active is True
+        assert node.recenter_recovery_requested is False
+        assert any(
+            event.detail
+            == 'post-recovery source-resume liveness persists after recenter'
+            for event in events.messages
+        )
+        assert (
+            node.post_recovery_progress_tracker.latest.window_valid
+            is False
+        )
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_7_corridor_duration_exhaustion_releases_nonterminal():
+    rclpy.init()
+    node = _m4_2_progress_node(
+        post_recovery_source_led_handoff_enabled=True,
+        post_recovery_source_continuity_enabled=True,
+        post_recovery_source_resume_enabled=True,
+        post_recovery_source_resume_min_progress_m=0.20,
+    )
+    events = Recorder()
+    node.event_publisher = events
+    try:
+        _activate_m4_7_resume_corridor(node)
+        started = node.machine.post_recovery_guidance_started_sec
+
+        assert node._update_post_recovery_guidance(started + 90.0) is None
+
+        assert node.machine.post_recovery_guidance_active is False
+        assert node.machine.active_escape_fill_id is None
+        assert node.machine.state == State.SEARCH
+        assert node.machine.state != State.FAILSAFE
+        assert node.post_recovery_source_continuity is None
+        assert node.post_recovery_source_resume_active is False
+        report = next(
+            event
+            for event in events.messages
+            if event.detail
+            == 'post-recovery source-resume corridor exhausted'
+        )
+        assert all(math.isfinite(value) for value in report.values)
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_7_no_safe_corridor_candidate_requests_bounded_recenter(
+    monkeypatch,
+):
+    rclpy.init()
+    node = _m4_2_progress_node(
+        post_recovery_source_led_handoff_enabled=True,
+        post_recovery_source_continuity_enabled=True,
+        post_recovery_source_resume_enabled=True,
+        post_recovery_source_resume_min_progress_m=0.20,
+    )
+    events = Recorder()
+    node.event_publisher = events
+    try:
+        _activate_m4_7_resume_corridor(node)
+        monkeypatch.setattr(
+            supervisor_node_script,
+            'select_source_continuity_direction',
+            lambda *args, **kwargs: None,
+        )
+        node.safe_direction = None
+        node.latest_pose_sequence += 1
+
+        assert node._update_post_recovery_guidance(1.0) is None
+
+        assert node.machine.post_recovery_guidance_active is True
+        assert node.machine.state == State.SEARCH
+        assert node.machine.state != State.FAILSAFE
+        assert node.recenter_recovery_requested is True
+        assert node.post_recovery_recenter_attempted is True
+        assert any(
+            event.detail
+            == 'post-recovery direction unavailable; recover by recenter'
+            for event in events.messages
+        )
     finally:
         node.destroy_node()
         rclpy.shutdown()

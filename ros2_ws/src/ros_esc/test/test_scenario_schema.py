@@ -122,6 +122,16 @@ M4_6_TWO_LIGHT_SUITE = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v7_m4_6_two_light_suite.yaml'
 )
+M4_7_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m4_7_visible_probe.yaml'
+)
+M4_7_TWO_LIGHT_SUITE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m4_7_two_light_suite.yaml'
+)
 M4_TWO_LIGHT_SUITE = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/'
@@ -1332,6 +1342,88 @@ def test_m4_5_controls_and_complete_staged_budget_are_strict(tmp_path):
     ] = 480.001
     with pytest.raises(ValueError, match='must not exceed'):
         _load(tmp_path, unreserved)
+
+
+def test_m4_7_source_resume_controls_are_default_off_and_strict(tmp_path):
+    document = _v7_document()
+    overrides = document['cases'][0]['algorithm']['launch_overrides']
+    overrides.update({
+        'post_recovery_source_led_handoff_enabled': True,
+        'post_recovery_source_continuity_enabled': True,
+        'post_recovery_source_continuity_min_displacement_m': 0.05,
+        'post_recovery_source_reversal_dot_threshold': -0.80,
+        'post_recovery_source_bypass_clearance_m': 0.10,
+        'post_recovery_source_resume_enabled': True,
+        'post_recovery_source_resume_min_progress_m': 0.20,
+    })
+
+    run = expand_suite(_load(tmp_path, document))[0][0]
+    normalized = run['algorithm']['launch_overrides']
+    assert normalized['post_recovery_source_resume_enabled'] is True
+    assert normalized['post_recovery_source_resume_min_progress_m'] == 0.20
+
+    default_off = _v7_document()
+    default_run = expand_suite(_load(tmp_path, default_off))[0][0]
+    default_overrides = default_run['algorithm']['launch_overrides']
+    assert 'post_recovery_source_resume_enabled' not in default_overrides
+    assert (
+        'post_recovery_source_resume_min_progress_m'
+        not in default_overrides
+    )
+
+    invalid_boolean = deepcopy(document)
+    invalid_boolean['cases'][0]['algorithm']['launch_overrides'][
+        'post_recovery_source_resume_enabled'
+    ] = 1
+    with pytest.raises(ValueError, match='must be true or false'):
+        _load(tmp_path, invalid_boolean)
+
+    missing_progress_distance = deepcopy(document)
+    del missing_progress_distance['cases'][0]['algorithm'][
+        'launch_overrides'
+    ]['post_recovery_source_resume_min_progress_m']
+    with pytest.raises(
+        ValueError,
+        match='requires post_recovery_source_resume_min_progress_m',
+    ):
+        _load(tmp_path, missing_progress_distance)
+
+    zero_progress_distance = deepcopy(document)
+    zero_progress_distance['cases'][0]['algorithm']['launch_overrides'][
+        'post_recovery_source_resume_min_progress_m'
+    ] = 0.0
+    with pytest.raises(ValueError, match='must be positive'):
+        _load(tmp_path, zero_progress_distance)
+
+    no_continuity = deepcopy(document)
+    no_continuity['cases'][0]['algorithm']['launch_overrides'][
+        'post_recovery_source_continuity_enabled'
+    ] = False
+    with pytest.raises(
+        ValueError,
+        match='requires post_recovery_source_continuity_enabled',
+    ):
+        _load(tmp_path, no_continuity)
+
+    no_progress = deepcopy(document)
+    no_progress['cases'][0]['algorithm']['launch_overrides'][
+        'post_recovery_progress_enabled'
+    ] = False
+    with pytest.raises(
+        ValueError,
+        match='requires post_recovery_progress_enabled',
+    ):
+        _load(tmp_path, no_progress)
+
+    no_recoverable_navigation = deepcopy(document)
+    no_recoverable_navigation['cases'][0]['algorithm'][
+        'launch_overrides'
+    ]['recoverable_navigation_enabled'] = False
+    with pytest.raises(
+        ValueError,
+        match='requires recoverable_navigation_enabled',
+    ):
+        _load(tmp_path, no_recoverable_navigation)
 
 
 def test_schema_v6_supports_two_declared_traps_for_optional_three_light(
@@ -2557,6 +2649,180 @@ def test_m4_6_preserves_m4_5_m4_4_m4_3_v6_and_world_hashes():
         ),
         M4_3_TWO_LIGHT_SUITE: (
             '37c1f7f2d81132be46adee576a1b603093fd03dd5488c5465d53d8876b9d50cc'
+        ),
+        V6_HUE_SWEEP: (
+            '3be130581b88c986fd845aef0c33c9db94ceb02ecfe2a6361926b0317ef8e655'
+        ),
+        CORNER_ORIGIN_WORLD: (
+            '88b10b39aa24a6430f6f031c750334ed34e6835e54c84de8d36f4cc6a26444bf'
+        ),
+    }
+
+    assert {
+        path: hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in expected
+    } == expected
+
+
+def test_m4_7_fixed_inputs_add_only_source_resume_corridor():
+    m4_6_visible, m4_6_visible_unsupported = expand_suite(
+        load_suite(M4_6_VISIBLE_PROBE)
+    )
+    m4_6_runs, m4_6_unsupported = expand_suite(
+        load_suite(M4_6_TWO_LIGHT_SUITE)
+    )
+    m4_7_visible_suite = load_suite(M4_7_VISIBLE_PROBE)
+    m4_7_visible, m4_7_visible_unsupported = expand_suite(
+        m4_7_visible_suite
+    )
+    m4_7_suite = load_suite(M4_7_TWO_LIGHT_SUITE)
+    m4_7_runs, m4_7_unsupported = expand_suite(m4_7_suite)
+
+    assert (
+        m4_6_visible_unsupported
+        == m4_6_unsupported
+        == m4_7_visible_unsupported
+        == m4_7_unsupported
+        == []
+    )
+    assert [
+        (run['case_id'], run['seed'], run['case_key'])
+        for run in m4_7_visible
+    ] == [(
+        'v7_m4_7_probe_r2p0_a45_h25_18508',
+        18508,
+        'e48c200b54a7a9d9049b5965ef9c773b166e6672df155f0d9ccff459da83f3e8',
+    )]
+    assert [
+        (run['case_id'], run['seed'], run['case_key'])
+        for run in m4_7_runs
+    ] == [
+        (
+            'v7_m4_7_r1p0_a45_h25_18709',
+            18709,
+            'd6b696af48a722e6427bca42ac04a862d50a6fa6689134b16278382326eca48b',
+        ),
+        (
+            'v7_m4_7_r1p5_a22p5_h25_18709',
+            18709,
+            'bbbddb2f326b455b30db9fa90d5d1ca8cd8cc75d1b9d86c1a95fce581dfbcc87',
+        ),
+        (
+            'v7_m4_7_r1p5_a45_h25_18709',
+            18709,
+            '382a4903d6128d43293ae583df072bd5f446f51fd0dc8ec76a7157f0fae9ef6b',
+        ),
+        (
+            'v7_m4_7_r1p5_a67p5_h25_18709',
+            18709,
+            '1c225b8cf109a134d41818c2044ee7c6843bce69f4530bd8e821b0836fb4283a',
+        ),
+        (
+            'v7_m4_7_r2p0_a45_h25_18709',
+            18709,
+            '8d98c2754cd8496fde985ac28a1f31178989e734c1021f1edfe20559df751c6d',
+        ),
+        (
+            'v7_m4_7_repeat_r1p5_a45_h25_18710',
+            18710,
+            '386f6ccd6d1ddad5ad530e9cfe7a4083e66f3d9756d7f8e5fe97e8fe6fbfade6',
+        ),
+        (
+            'v7_m4_7_repeat_r1p5_a45_h25_18711',
+            18711,
+            '65b61f3c8070f7cfb973424ed5aaf26e434c1dbe9761b3d7ad40d7f26b324781',
+        ),
+        (
+            'v7_m4_7_repeat_r1p5_a45_h25_18712',
+            18712,
+            '593ecd33bb05cb90b065b2896707b3c1c3c2c2b858347a67cffb4c0503e9b33c',
+        ),
+    ]
+
+    def without_fresh_identity(run):
+        result = deepcopy(run)
+        for field in (
+            'case_id',
+            'case_key',
+            'description',
+            'seed',
+            'suite_id',
+        ):
+            result.pop(field)
+        result['success']['controller']['contract_id'] = (
+            '<fresh-identity>'
+        )
+        if result['repeat_reference'] is not None:
+            result['repeat_reference']['case_key'] = (
+                '<fresh-central-case>'
+            )
+        return result
+
+    def without_m4_7_delta(run):
+        result = without_fresh_identity(run)
+        overrides = result['algorithm']['launch_overrides']
+        enabled = overrides.pop('post_recovery_source_resume_enabled')
+        progress = overrides.pop(
+            'post_recovery_source_resume_min_progress_m'
+        )
+        assert enabled is True
+        assert progress == 0.20
+        return result
+
+    assert without_m4_7_delta(
+        m4_7_visible[0]
+    ) == without_fresh_identity(m4_6_visible[0])
+    assert [
+        without_m4_7_delta(run)
+        for run in m4_7_runs
+    ] == [
+        without_fresh_identity(run)
+        for run in m4_6_runs
+    ]
+    assert {
+        run['repeat_reference']['case_key']
+        for run in m4_7_runs
+        if run['acceptance_partition'] == 'reproducibility'
+    } == {m4_7_runs[2]['case_key']}
+
+    for run in m4_7_visible + m4_7_runs:
+        overrides = run['algorithm']['launch_overrides']
+        assert overrides['post_recovery_source_resume_enabled'] is True
+        assert (
+            overrides['post_recovery_source_resume_min_progress_m']
+            == 0.20
+        )
+        assert (
+            overrides['post_recovery_source_reversal_dot_threshold']
+            == -0.80
+        )
+
+    assert m4_7_visible_suite['execution']['gazebo_gui'] is True
+    assert m4_7_suite['execution']['gazebo_gui'] is False
+    assert m4_7_visible_suite['execution']['runs_root'].endswith(
+        '/phase08_v7_m4_7_probe'
+    )
+    assert m4_7_suite['execution']['runs_root'].endswith(
+        '/phase08_v7_m4_7'
+    )
+    for suite in (m4_7_visible_suite, m4_7_suite):
+        assert suite['execution']['run_timeout_sec'] == 600.0
+        assert suite['execution']['wall_timeout_sec'] == 780.0
+
+
+def test_m4_7_preserves_m4_6_m4_5_v6_and_world_hashes():
+    expected = {
+        M4_6_VISIBLE_PROBE: (
+            'deb08439f285a1bcff7e7b5fe763acbf095e7175d995367c626f9d83d7b30e11'
+        ),
+        M4_6_TWO_LIGHT_SUITE: (
+            'c005e2c921f588b1363c231df9c0562591ea9c42671a0c8a1470dcf233a537cf'
+        ),
+        M4_5_VISIBLE_PROBE: (
+            '3653a46c5a0ee4cf866cd257c6df2d9c18c745335f93b4fac400d0d51a313f97'
+        ),
+        M4_5_TWO_LIGHT_SUITE: (
+            '0eecc1337371ba75d8a6ae80e766415f8bdabe2a925d0034eaa2c6f2af34e384'
         ),
         V6_HUE_SWEEP: (
             '3be130581b88c986fd845aef0c33c9db94ceb02ecfe2a6361926b0317ef8e655'

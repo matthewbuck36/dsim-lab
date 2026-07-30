@@ -15,6 +15,7 @@ from ros_esc.supervisor_node.escape_recenter import (
     Pose2D,
     PostRecoveryProgressConfig,
     PostRecoveryProgressTracker,
+    projected_direction_progress,
     RecenterControlConfig,
     RecenterHoldTracker,
     RecenterRoutePlanner,
@@ -28,6 +29,7 @@ from ros_esc.supervisor_node.escape_recenter import (
     select_recenter_direction,
     select_safe_recenter_target,
     select_safe_direction,
+    select_source_continuity_direction,
     source_continuity_evidence,
     wrap_angle,
 )
@@ -249,6 +251,125 @@ def test_m4_5_retained_radius_two_rejects_exact_radial_reversal():
         bounds,
     )
     assert safe is True
+
+
+def test_m4_7_live_geometry_reacquires_source_aligned_safe_candidates():
+    anchor = np.array([1.2274432561, 1.4964333762])
+    source_direction = np.array([0.9909899820, 0.1339360130])
+    source_direction /= np.linalg.norm(source_direction)
+    arm = anchor + 0.1147496923 * source_direction
+    fill_center = np.array([1.8189935808, 1.7649913445])
+    fills = [
+        FillAvoidance(
+            4,
+            1,
+            fill_center[0],
+            fill_center[1],
+            0.6086747487,
+        )
+    ]
+    bounds = OperatingBounds(
+        x_min=-0.25,
+        x_max=3.75,
+        y_min=-0.25,
+        y_max=3.75,
+        center_x=1.75,
+        center_y=1.75,
+        wall_margin=0.20,
+    )
+    config = DirectionConfig(
+        lookahead_m=0.50,
+        candidate_step_rad=math.pi / 4.0,
+    )
+    tangent = np.array([
+        source_direction[1],
+        -source_direction[0],
+    ])
+
+    initial = select_source_continuity_direction(
+        arm,
+        source_direction,
+        fills,
+        config,
+        bounds,
+    )
+    assert initial is not None
+    assert math.degrees(initial.rotation_rad) == pytest.approx(-90.0)
+    assert initial.direction == pytest.approx(tangent)
+
+    after_point_two = arm + 0.200 * tangent
+    upgraded = select_source_continuity_direction(
+        after_point_two,
+        source_direction,
+        fills,
+        config,
+        bounds,
+    )
+    generic = select_safe_direction(
+        after_point_two,
+        source_direction,
+        fills,
+        config,
+        bounds,
+    )
+    assert upgraded is not None
+    assert generic is not None
+    assert math.degrees(upgraded.rotation_rad) == pytest.approx(-45.0)
+    assert np.dot(
+        upgraded.direction,
+        source_direction,
+    ) == pytest.approx(math.sqrt(0.5))
+    assert math.degrees(generic.rotation_rad) == pytest.approx(-90.0)
+
+    after_point_four_two_five = arm + 0.425 * tangent
+    direct = select_source_continuity_direction(
+        after_point_four_two_five,
+        source_direction,
+        fills,
+        config,
+        bounds,
+    )
+    generic = select_safe_direction(
+        after_point_four_two_five,
+        source_direction,
+        fills,
+        config,
+        bounds,
+    )
+    assert direct is not None
+    assert generic is not None
+    assert math.degrees(direct.rotation_rad) == pytest.approx(0.0)
+    assert np.dot(
+        direct.direction,
+        source_direction,
+    ) == pytest.approx(1.0)
+    assert math.degrees(generic.rotation_rad) == pytest.approx(-90.0)
+
+
+def test_m4_7_projected_source_progress_is_signed_and_exact():
+    direction = [3.0, 4.0]
+    anchor = [1.0, 2.0]
+    unit = np.array(direction) / 5.0
+
+    assert projected_direction_progress(
+        anchor,
+        np.array(anchor) + 0.20 * unit,
+        direction,
+    ) == pytest.approx(0.20)
+    assert projected_direction_progress(
+        anchor,
+        np.array(anchor) - 0.05 * unit,
+        direction,
+    ) == pytest.approx(-0.05)
+
+    with pytest.raises(ValueError, match='two finite values'):
+        projected_direction_progress(
+            anchor,
+            [math.nan, 2.0],
+            direction,
+        )
+    with pytest.raises(ValueError, match='nonzero'):
+        projected_direction_progress(anchor, anchor, [0.0, 0.0])
 
 
 def test_m4_5_retained_repeat_18412_does_not_trigger_source_continuity():

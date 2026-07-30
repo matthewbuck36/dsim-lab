@@ -172,6 +172,8 @@
     <arg name="post_recovery_source_led_handoff_enabled" default="False"/>
     <arg name="post_recovery_source_continuity_enabled" default="False"/>
     <arg name="post_recovery_source_continuity_min_displacement_m" default="0.05"/>
+    <arg name="post_recovery_source_resume_enabled" default="False"/>
+    <arg name="post_recovery_source_resume_min_progress_m" default="0.20"/>
     <arg name="post_recovery_source_reversal_dot_threshold" default="-0.90"/>
     <arg name="post_recovery_source_bypass_clearance_m" default="0.10"/>
     <arg name="robust_search_epoch_reset_enabled" default="False"/>
@@ -853,6 +855,8 @@
             -p post_recovery_source_led_handoff_enabled:=$(var post_recovery_source_led_handoff_enabled)
             -p post_recovery_source_continuity_enabled:=$(var post_recovery_source_continuity_enabled)
             -p post_recovery_source_continuity_min_displacement_m:=$(var post_recovery_source_continuity_min_displacement_m)
+            -p post_recovery_source_resume_enabled:=$(var post_recovery_source_resume_enabled)
+            -p post_recovery_source_resume_min_progress_m:=$(var post_recovery_source_resume_min_progress_m)
             -p post_recovery_source_reversal_dot_threshold:=$(var post_recovery_source_reversal_dot_threshold)
             -p post_recovery_source_bypass_clearance_m:=$(var post_recovery_source_bypass_clearance_m)
             -p room_bounds_x_min_m:=$(var room_bounds_x_min_m)

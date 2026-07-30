@@ -423,6 +423,8 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         'post_recovery_source_continuity_min_displacement_m': '0.05',
         'post_recovery_source_reversal_dot_threshold': '-0.90',
         'post_recovery_source_bypass_clearance_m': '0.10',
+        'post_recovery_source_resume_enabled': 'False',
+        'post_recovery_source_resume_min_progress_m': '0.20',
         "robust_search_epoch_reset_enabled": "False",
         'controller_spawner_load_recovery_enabled': 'False',
         "gaussian_fill_pose_topic": "/odom",
@@ -516,6 +518,8 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         'post_recovery_source_continuity_min_displacement_m',
         'post_recovery_source_reversal_dot_threshold',
         'post_recovery_source_bypass_clearance_m',
+        'post_recovery_source_resume_enabled',
+        'post_recovery_source_resume_min_progress_m',
         'adaptive_recenter_lookahead_enabled',
     ):
         assert (
