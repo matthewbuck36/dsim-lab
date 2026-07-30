@@ -6473,3 +6473,61 @@ qualification PASS; material-boundary checkpoint PASS; commit pending.**
 Commit this exact qualified boundary, record its full commit identity,
 reconfirm a clean tree plus absent evidence root and inactive process set,
 and only then dispatch the single authorized visible M4.1 probe.
+
+## Phase 08.7 M4.1 committed dispatch boundary
+
+The exact qualified evidence correction, tests, documentation, and fresh
+scenario were committed at:
+
+```text
+7068a5f27a30918e38829548a359e7a66ae25df5
+phase 08.7: qualify M4.1 timestamp evidence
+```
+
+The post-commit worktree is clean. Source and isolated-install probe bytes are
+identical:
+
+```text
+2d881faa180c18c0b423671f12f91868e2b12d484a533909f607fef8372ca313
+```
+
+The fresh evidence root remains absent. The Gazebo, scenario-runner,
+recorder, and matching ROS launch process set is inactive. Exactly one visible
+attempt is predeclared on ROS domain `159`:
+
+```text
+source /opt/ros/humble/setup.bash
+source /tmp/phase08_7_m4_1_qual/install/setup.bash
+ROS_DOMAIN_ID=159
+ROS_LOG_DIR=/tmp/phase08_7_m4_1_probe_ros_logs
+MPLCONFIGDIR=/tmp/phase08_7_m4_1_probe_mpl
+TURTLEBOT3_MODEL=burger
+DISPLAY=:0
+timeout --signal=INT --kill-after=90s 660s \
+  ros2 run ros_esc run_scenario \
+  /tmp/phase08_7_m4_1_qual/install/ros_esc/share/ros_esc/\
+scenario_runner/scenarios/phase08_v7_m4_1_visible_probe.yaml \
+  --operator phase08_7_m4_1 \
+  --case-id v7_m4_1_probe_r1p5_a45_h25_18207 \
+  --runs-root \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_1_probe \
+  --summary-output \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_1_probe/\
+phase08_v7_m4_1_visible_probe_summary.yaml \
+  --gui
+```
+
+The attempt will be retained without retry or in-run value changes. The fixed
+eight-case suite and optional three-light probe remain prohibited under this
+authorization.
+
+## Current milestone
+
+**Phase 08.7 M4.1 — qualified input committed; one fixed visible two-light
+probe predeclared.**
+
+### Next criterion
+
+Refresh the Phase 08 checkpoint against commit `7068a5f`, commit this dispatch
+record, reconfirm the process/evidence boundary, and execute only the bounded
+visible M4.1 probe.
