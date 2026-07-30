@@ -4,7 +4,9 @@
 
 **M1 IMPLEMENTED AND QUALIFIED; M2, M2.1, AND M2.2 EXECUTED AND
 RETAINED AS FAILED; M2.3 EXECUTED AND RETAINED AS PASSED; M3 EXECUTED
-AND RETAINED AS FAILED AT 1/5; M4 PLAN AND EXECUTION AUTHORIZED.**
+AND RETAINED AS FAILED AT 1/5; M4 RETAINED AS EVIDENCE FAIL;
+M4.1 EVIDENCE CORRECTION PASSED AND VISIBLE PROBE RETAINED AS STAGE B
+FAIL.**
 
 The user approved the geometry in this Plan on 2026-07-29. M1 was implemented,
 qualified without Gazebo execution, checkpointed, and committed at `7c87e5a`.
@@ -22,6 +24,12 @@ failed and immutable. The single M2.3 development probe passed Stage A, Stage
 B at the committed `1.20 m` operator-equivalent boundary, exact one-fill
 cardinality, collision, recording, completeness, and cleanup predicates. It
 establishes the prerequisite for, but does not authorize, M3.
+
+M4 later passed every behavioral predicate but remains a formal evidence
+failure. M4.1 corrected that evidence model without relabelling M4: its fresh
+probe passed all evidence, Stage A, fill, collision, and cleanup gates but
+failed Stage B after looping near the recenter region. No M4 suite or
+three-light run was executed.
 
 The user resolved the V6 acceptance-window ambiguity on 2026-07-29. Each run
 must report local-recovery success separately from post-recovery global

@@ -6629,3 +6629,31 @@ as formal Stage B / combined FAIL; result checkpoint PASS; commit pending.**
 Commit the retained result. Any further implementation requires a fresh,
 explicitly authorized version that corrects post-recovery liveness without
 weakening proximity, evidence, collision, or cleanup gates.
+
+## Phase 08.7 M4.1 retained-result commit boundary
+
+The retained result, exact analysis, live status, and validation report were
+committed at:
+
+```text
+0f66c59e597f4e2416ca2120d0a45f68ed79385a
+phase 08.7: retain M4.1 visible probe result
+```
+
+The post-commit worktree is clean. The Gazebo, scenario-runner, recorder, and
+matching launch process set is inactive. The retained M4 completeness hash
+remains unchanged at
+`4acc311734e63896faf33c07439b7c1c81e9ebdcd6902b0514bf9c9ce0846e88`;
+the M4.1 completeness hash remains
+`afd4cbd707004e2a8b6965ea08f1db1329a08ff816ff0965b821d95f28a0fcc0`.
+
+## Current milestone
+
+**Phase 08.7 M4.1 — CLOSED / FORMAL FAIL on Stage B and combined behavior;
+evidence correction independently PASS and retained for future versions.**
+
+### Next criterion
+
+Stop. No suite, three-light, physical, or additional Gazebo execution is
+authorized. A post-recovery liveness correction requires a fresh Plan and
+explicit user approval.

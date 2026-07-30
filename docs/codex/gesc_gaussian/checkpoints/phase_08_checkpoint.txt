@@ -1,43 +1,44 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-30T06:55:38+00:00
-Base HEAD: a8a0cb596fbd80405d57295704ec95437e7719c1
+Generated: 2026-07-30T06:56:33+00:00
+Base HEAD: 0f66c59e597f4e2416ca2120d0a45f68ed79385a
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 8e43caae9e37c2e4c91fe2fd1e8aa046d328776bd260571daaf7f3fa4abbf8ba
+Status sha256: f129276541f63c23092e1939753e29bda145edc323f5c4c4c4a18c0b4a1b182d
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
-Active subphase plan sha256: 206afca01731af6804817ac6ecbd3e16246d8a57f7b0d043a3b710852471ca02
-Unstaged diff sha256: acbf440a6f6b6792325e93bcbb40098023efce33354612ff5f10bb9680d4256a
+Active subphase plan sha256: 2c3cdf9053aeca0c1bcbbaa3d4e41534454048b0b9a19eafbf81c4d4179cf0b9
+Unstaged diff sha256: 47fd49b10c3990fbbcddbe9c7968217d064a9ecd11076147c3db170e6c764126
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 69]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 70]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
+ M docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
-?? docs/codex/gesc_gaussian/validation/phase_08_7_m4_1_visible_probe_report.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 30 ++-----
- docs/codex/gesc_gaussian/status/phase_08_status.md | 98 ++++++++++++++++++++++
- 2 files changed, 104 insertions(+), 24 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 33 +++++-----------------
+ docs/codex/gesc_gaussian/plans/phase_08_7_plan.md  | 10 ++++++-
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 28 ++++++++++++++++++
+ 3 files changed, 44 insertions(+), 27 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**Phase 08.7 M4.1 — evidence correction PASS; fixed visible probe retained
-as formal Stage B / combined FAIL; result checkpoint PASS; commit pending.**
+**Phase 08.7 M4.1 — CLOSED / FORMAL FAIL on Stage B and combined behavior;
+evidence correction independently PASS and retained for future versions.**
 
 ### Next criterion
 
-Commit the retained result. Any further implementation requires a fresh,
-explicitly authorized version that corrects post-recovery liveness without
-weakening proximity, evidence, collision, or cleanup gates.
+Stop. No suite, three-light, physical, or additional Gazebo execution is
+authorized. A post-recovery liveness correction requires a fresh Plan and
+explicit user approval.
 
 
 This file describes the base HEAD and diff before the next commit; it is
