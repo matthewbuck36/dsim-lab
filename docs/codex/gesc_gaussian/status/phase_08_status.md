@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-30T01:06:06-07:00`
-Status: `PHASE 08.7 M4.2 NO-GAZEBO QUALIFICATION PASS; QUALIFIED COMMIT PENDING`
+Last verified: `2026-07-30T01:09:28-07:00`
+Status: `PHASE 08.7 M4.2 QUALIFIED AND COMMITTED; VISIBLE DISPATCH RECORD PENDING`
 
 ## Objective
 
@@ -6988,3 +6988,65 @@ Inspect the complete implementation/status/checkpoint diff and commit the
 qualified implementation plus fixed fresh inputs. Only after that clean
 committed boundary may the single authorized visible two-light probe be
 dispatched.
+
+## Phase 08.7 M4.2 committed dispatch boundary
+
+The exact qualified M4.2 implementation, tests, fresh fixed inputs, live
+status, and precommit checkpoint were committed at:
+
+```text
+a1f58fb8b706181823877de35ff029fa812402bb
+phase 08.7: qualify M4.2 post-recovery liveness
+```
+
+The post-commit worktree is clean and the implementation context validator
+passes. Source and isolated-install probe bytes are identical:
+
+```text
+e6ec6120df271afab3ae71192b601c4bcf866105a8cdaa13a10dcd94b7632973
+```
+
+The fresh probe and suite evidence roots remain absent. The Gazebo,
+scenario-runner, recorder, and matching launch process set is inactive.
+`DISPLAY=:0` passes `xdpyinfo`, `316 GiB` is free on the evidence filesystem,
+and ROS domain `160` has no discovered nodes with the CLI daemon disabled.
+
+Exactly one visible attempt is predeclared:
+
+```text
+source /opt/ros/humble/setup.bash
+source /tmp/phase08_7_m4_2_qual/install/setup.bash
+ROS_DOMAIN_ID=160
+ROS_LOG_DIR=/tmp/phase08_7_m4_2_probe_ros_logs
+MPLCONFIGDIR=/tmp/phase08_7_m4_2_probe_mpl
+TURTLEBOT3_MODEL=burger
+DISPLAY=:0
+timeout --signal=INT --kill-after=90s 660s \
+  ros2 run ros_esc run_scenario \
+  /tmp/phase08_7_m4_2_qual/install/ros_esc/share/ros_esc/\
+scenario_runner/scenarios/phase08_v7_m4_2_visible_probe.yaml \
+  --operator phase08_7_m4_2 \
+  --case-id v7_m4_2_probe_r1p5_a45_h25_18208 \
+  --runs-root \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_2_probe \
+  --summary-output \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_2_probe/\
+phase08_v7_m4_2_visible_probe_summary.yaml \
+  --gui
+```
+
+This attempt will be retained without retry or in-run value changes. The
+fixed eight-case suite remains conditional on a complete visible-probe pass;
+the optional three-light probe remains conditional on the complete two-light
+gate.
+
+## Current milestone
+
+**Phase 08.7 M4.2 — qualified implementation committed; one fixed visible
+two-light probe predeclared.**
+
+### Next criterion
+
+Refresh the Phase 08 checkpoint against commit `a1f58fb`, commit this dispatch
+record, reconfirm the clean process/evidence boundary, and execute only the
+bounded visible probe.
