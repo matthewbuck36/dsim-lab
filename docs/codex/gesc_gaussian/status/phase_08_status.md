@@ -4883,3 +4883,155 @@ checkpoint and commit.**
 Checkpoint and commit the exact M2.2 scenario, Plan, tests, and status. Verify
 the clean commit and unchanged installed hash, then run exactly one bounded
 visible probe without automatic retry.
+
+## Phase 08.7 M2.2 committed dispatch boundary
+
+The qualified M2.2 material was committed cleanly at:
+
+```text
+4fdc43fede08e0abdb69e799e1273329ed01129f
+phase 08.7: qualify M2.2 detector calibration
+```
+
+The source and isolated installed scenario remain identical at SHA-256
+`1f11448b37ef8fbfb146124a0141d91d3404ee614d6d33e3a30f58aa0a179439`.
+The fresh root is absent and no ROS/Gazebo process is running.
+
+Exactly one visible attempt is predeclared on ROS domain `92`:
+
+```text
+source /opt/ros/humble/setup.bash
+source /tmp/phase08_7_m2_2_qual/install/setup.bash
+ROS_DOMAIN_ID=92
+ROS_LOG_DIR=/tmp/phase08_7_m2_2_probe_ros_logs
+MPLCONFIGDIR=/tmp/phase08_7_m2_2_probe_mpl
+TURTLEBOT3_MODEL=burger
+DISPLAY=:0
+timeout --signal=INT --kill-after=60s 660s \
+  ros2 run ros_esc run_scenario \
+  /tmp/phase08_7_m2_2_qual/install/ros_esc/share/ros_esc/\
+scenario_runner/scenarios/phase08_v7_m2_2_efficiency_correction_probe.yaml \
+  --operator phase08_7_m2_2 \
+  --case-id v7_m2_2_diagonal_r1p5_h25_18001 \
+  --runs-root \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m2_2 \
+  --summary-output \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m2_2/\
+phase08_v7_m2_2_efficiency_correction_probe_summary.yaml \
+  --gui
+```
+
+The result will be retained without automatic retry. M3, physical hardware,
+parameter changes, and readiness claims remain outside this dispatch.
+
+## Phase 08.7 M2.2 execution and retained failure
+
+Exactly one bounded visible-Gazebo M2.2 attempt was executed:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m2_2/
+  2026-07-30/
+  20260730T001458667712Z_simulation_phase08_v7_m2_2_
+  efficiency_correction_probe-v7_m2_2_diagonal_r1p5_h25_18001-
+  robu_bfd6b97a
+```
+
+The runner returned `1` for failed behavioral classification. The recorder
+returned `0`, did not time out, retained a complete bag, and passed cleanup.
+`validate_run` passed with no failures or warnings, sqlite
+`PRAGMA quick_check` returned `ok`, and standard analysis completed with eight
+plots, eleven tables, and no analysis failures.
+
+### Detector, topology, and local mechanism
+
+The `0.50` detector cap worked. SEARCH-only candidates occurred at source
+times `193.7`, `216.9`, and `238.4 s`; the third produced
+`CONVERGENCE_CONFIRMED` at the intended local. The convergence point was
+`(1.3856016612, 1.1866239560) m`, `0.3485022905 m` from the local and
+`3.1340690892 m` from the global.
+
+Exactly one unique fill cluster was created. The first fill and its later
+merged revision both have cluster identity `1`, so exact cardinality passes.
+The observed path was:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_ASSIST
+-> RECENTER
+-> SEARCH
+-> FAILSAFE
+```
+
+The assisted escape and recenter mechanism completed, with
+`RECENTER_COMPLETE` at source time `275.2 s`. The formal Stage A reporter
+nevertheless returned zero episodes because it only recognizes the direct
+path without the legal redesign plus `ESCAPE_ASSIST` branch. The singular
+controller `required_state_path` fails for the same reason, and the live
+global monitor therefore never armed.
+
+### Affine guidance and global stop
+
+Affine assistance was active after recenter: resumed `SEARCH` retained the
+accepted fill and reported `(raw, Gaussian, affine) = (1, 1, 1)`. The safe
+direction began near `(0.776196, 0.630491)`, later changed near
+`(-0.420, 0.907)`, and moved the robot toward the global corner.
+
+The frozen `0.60 m` stop was too strict for that safe approach. The first
+post-recenter noninterpolated sample within `1.20 m` occurred at ROS time
+`306.030 s`, pose `(3.369462640, 2.308150068) m`, distance
+`1.198977173 m`. It remained `0.180537360 m` inside the east controller
+inset. The wall-margin failsafe followed `4.77 s` later and first east-wall
+contact approximately `5.85 s` later. There was no `0.60 m` sample; the
+closest recorded distance was about `0.780 m` after failsafe/inertial motion.
+
+```text
+infrastructure/recording/cleanup:       PASS
+detector local confirmation:            PASS
+exact unique fill cardinality:          PASS
+local escape/recenter mechanism:        OBSERVED
+formal Stage A reporter:                FAIL
+formal Stage B global proximity:        FAIL
+collision expectation:                  FAIL
+combined behavioral result:             FAIL
+```
+
+Full commands, causal evidence, hashes, and the bounded counterfactual are
+retained in:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m2_2_efficiency_correction_probe_report.md
+```
+
+Immutable evidence SHA-256:
+
+```text
+3638818042255b508d441b6222e16c91b2d85614d22776589385f2d6f3dd2052  suite summary
+27648c8344318c43883f9296a450f9ed4a350c915e626cd4405f7a8b3b7ef264  scenario_result.yaml
+bf72611b9a9b006401ae1b2070eb6ddba880a753ae3d61e8a0f35354ed7b6b8e  completeness.json
+17c57b1e0247b1ea079b0a8e1ef0aff6a750cf301e4bd3ab21dfaccb53255527  bag/bag_0.db3
+c5bbe0a306cfa17f5d41268aeb400b1104ca99f09a392d07e4f2622ac48bef34  analysis/summary_metrics.json
+b4cfeaebf17a1c0fe8946353ad4438f2603147c9c8bca289bd0d26b3d014ed1c  analysis/analysis_completeness.json
+```
+
+M2.2 is closed and will not be retried or relabeled. A fresh M2.3 may preserve
+all M2.2 algorithm values while (1) accepting the direct or legal assisted
+recovery path in the reporter/controller predicate and (2) setting both
+post-recovery proximity boundaries to the evidence-backed `1.20 m`
+operator-equivalent stop. M3 remains unauthorized.
+
+## Current milestone
+
+**Phase 08.7 M2.2 — retained FAIL. The detector, one-fill topology, assisted
+local escape, recenter, and affine guidance worked; the recovery-path reporter
+and overly strict stop boundary prevented the combined result.**
+
+### Next criterion
+
+Checkpoint and commit the immutable M2.2 result. Implement a separately
+versioned M2.3 contract correction, fully qualify it without Gazebo, and
+checkpoint/commit its frozen input before any new visible probe.
