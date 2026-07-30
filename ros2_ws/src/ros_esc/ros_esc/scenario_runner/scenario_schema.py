@@ -156,6 +156,11 @@ LAUNCH_OVERRIDES = {
     'post_recovery_liveness_max_displacement_m',
     'post_recovery_direction_refresh_limit',
     'post_recovery_source_led_handoff_enabled',
+    'post_recovery_source_continuity_enabled',
+    'post_recovery_source_continuity_min_displacement_m',
+    'post_recovery_source_reversal_dot_threshold',
+    'post_recovery_source_bypass_clearance_m',
+    'controller_spawner_load_recovery_enabled',
     'robust_search_epoch_reset_enabled',
     'post_recovery_retry_limit',
     'recenter_angular_gain',
@@ -228,6 +233,7 @@ STAGED_RECOVERY_KEYS = {
     'global_approach_radius_m',
     'global_closer_radius_m',
     'local_association_mode',
+    'stage_a_timeout_sec',
     'post_stage_a_timeout_sec',
 }
 KNOWN_TOPOLOGY_KEYS = {
@@ -368,6 +374,11 @@ SCHEMA_V7_LAUNCH_OVERRIDES = {
     'post_recovery_liveness_window_sec',
     'post_recovery_progress_enabled',
     'post_recovery_source_led_handoff_enabled',
+    'post_recovery_source_continuity_enabled',
+    'post_recovery_source_continuity_min_displacement_m',
+    'post_recovery_source_reversal_dot_threshold',
+    'post_recovery_source_bypass_clearance_m',
+    'controller_spawner_load_recovery_enabled',
     'robust_search_epoch_reset_enabled',
 }
 DIRECT_STAGED_RECOVERY_STATE_PATH = (
@@ -464,6 +475,17 @@ def _validate_correction_overrides(overrides, ablations, location):
         source_led_handoff_enabled = _boolean(
             overrides['post_recovery_source_led_handoff_enabled'],
             f'{location}.post_recovery_source_led_handoff_enabled',
+        )
+    source_continuity_enabled = False
+    if 'post_recovery_source_continuity_enabled' in overrides:
+        source_continuity_enabled = _boolean(
+            overrides['post_recovery_source_continuity_enabled'],
+            f'{location}.post_recovery_source_continuity_enabled',
+        )
+    if 'controller_spawner_load_recovery_enabled' in overrides:
+        _boolean(
+            overrides['controller_spawner_load_recovery_enabled'],
+            f'{location}.controller_spawner_load_recovery_enabled',
         )
     gate_name = 'convergence_state_gating_enabled'
     if gate_name in overrides:
@@ -574,6 +596,8 @@ def _validate_correction_overrides(overrides, ablations, location):
         'post_recovery_guidance_min_progress_m',
         'post_recovery_liveness_window_sec',
         'post_recovery_liveness_min_path_length_m',
+        'post_recovery_source_continuity_min_displacement_m',
+        'post_recovery_source_bypass_clearance_m',
     ):
         if name in overrides:
             _number(overrides[name], f'{location}.{name}', positive=True)
@@ -583,6 +607,16 @@ def _validate_correction_overrides(overrides, ablations, location):
             f'{location}.post_recovery_liveness_max_displacement_m',
             minimum=0.0,
         )
+    if 'post_recovery_source_reversal_dot_threshold' in overrides:
+        threshold = _number(
+            overrides['post_recovery_source_reversal_dot_threshold'],
+            f'{location}.post_recovery_source_reversal_dot_threshold',
+        )
+        if threshold < -1.0 or threshold >= 0.0:
+            raise ValueError(
+                f'{location}.post_recovery_source_reversal_dot_threshold '
+                'must be in [-1, 0)'
+            )
     if 'post_recovery_direction_refresh_limit' in overrides:
         _positive_integer(
             overrides['post_recovery_direction_refresh_limit'],
@@ -696,6 +730,23 @@ def _validate_correction_overrides(overrides, ablations, location):
             raise ValueError(
                 f'{location}.post_recovery_source_led_handoff_enabled '
                 'requires post_recovery_progress_enabled'
+            )
+    if source_continuity_enabled:
+        required_continuity = {
+            'post_recovery_source_bypass_clearance_m',
+            'post_recovery_source_continuity_min_displacement_m',
+            'post_recovery_source_reversal_dot_threshold',
+        }
+        missing = sorted(required_continuity - set(overrides))
+        if missing:
+            raise ValueError(
+                f'{location}.post_recovery_source_continuity_enabled '
+                'requires: ' + ', '.join(missing)
+            )
+        if not source_led_handoff_enabled:
+            raise ValueError(
+                f'{location}.post_recovery_source_continuity_enabled '
+                'requires post_recovery_source_led_handoff_enabled'
             )
 
 
@@ -1503,7 +1554,13 @@ def load_suite(path):
                 )
             ) or (
                 isinstance(raw_staged, dict)
-                and 'post_stage_a_timeout_sec' in raw_staged
+                and bool(
+                    {
+                        'post_stage_a_timeout_sec',
+                        'stage_a_timeout_sec',
+                    }
+                    & set(raw_staged)
+                )
             )
             if uses_schema_v7_fields:
                 break
@@ -2577,6 +2634,24 @@ def load_suite(path):
                 normalized_staged_recovery[
                     'post_stage_a_timeout_sec'
                 ] = post_stage_a_timeout
+                if 'stage_a_timeout_sec' in staged_recovery:
+                    stage_a_timeout = _number(
+                        staged_recovery.get('stage_a_timeout_sec'),
+                        f'{staged_location}.stage_a_timeout_sec',
+                        positive=True,
+                    )
+                    if (
+                        stage_a_timeout + post_stage_a_timeout
+                        > execution['run_timeout_sec']
+                    ):
+                        raise ValueError(
+                            f'{staged_location}.stage_a_timeout_sec plus '
+                            'post_stage_a_timeout_sec must not exceed '
+                            'execution.run_timeout_sec'
+                        )
+                    normalized_staged_recovery[
+                        'stage_a_timeout_sec'
+                    ] = stage_a_timeout
             staged_recovery = normalized_staged_recovery
             if (
                 len(local_source_ids)

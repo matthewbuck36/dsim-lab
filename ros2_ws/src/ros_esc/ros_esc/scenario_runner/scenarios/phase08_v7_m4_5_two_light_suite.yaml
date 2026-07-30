@@ -1,0 +1,280 @@
+schema_version: 7
+suite_id: phase08_v7_m4_5_two_light_suite
+description: Five fixed spatial cases and three central repeats for the Phase 08.7 M4.5 two-light gate.
+mode: simulation
+execution:
+  max_parallel_runs: 1
+  gazebo_gui: false
+  runs_root: /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_5
+  preflight_timeout_sec: 150.0
+  run_timeout_sec: 600.0
+  wall_timeout_sec: 780.0
+  shutdown_grace_sec: 45.0
+  stop_on_run_failure: false
+  stop_on_cleanup_failure: true
+metadata:
+  experiment_version: phase08-v7-m4-5
+  operator_notes: One fresh source-continuity, full-budget, and idempotent-load serial attempt per fixed case after the M4.5 visible gate; no retry or outcome-selected change is permitted.
+level_map: {}
+defaults:
+  bounds_m: [-0.25, 3.75, -0.25, 3.75]
+  room_center_m: [1.75, 1.75]
+  validation_world: true
+  simulation_contacts_enabled: true
+  geometry_profile: corner_origin_diagonal_sector_v1
+  disturbances:
+    sensor_noise: {model: none, bound: 0.0}
+    sensor_delay_sec: 0.0
+    pose_delay_sec: 0.0
+cases:
+  - &base_case
+    case_id: v7_m4_5_r1p0_a45_h25_18509
+    family: corner_origin
+    acceptance_family: corner_origin_diagonal_sector
+    acceptance_partition: validation
+    description: Fixed radial minimum on the direct 45 degree diagonal.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [18509]
+    known_topology: &known_topology
+      expected_local_minima: 1
+      expected_global_minima: 1
+    metric_applicability: &metric_applicability
+      escape_attempt: true
+      escape_duration: true
+      orbit_count: true
+      revisit: false
+      delay: false
+      saturation: false
+    starts: &corner_start
+      - {id: corner_start, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - id: local
+        x_m: 0.7071067811865476
+        y_m: 0.7071067811865475
+        relative_lumen_input: 400.0
+        evaluation_role: local_minimum
+      - &global_source
+        id: global
+        x_m: 3.5
+        y_m: 3.5
+        relative_lumen_input: 1600.0
+        evaluation_role: goal
+    algorithm: &m4_5_algorithm
+      ablations:
+        gaussian_fill_enabled: true
+        affine_assist_enabled: true
+        recenter_enabled: true
+      launch_overrides:
+        convergence_min_fill_periods: 2.0
+        convergence_state_gating_enabled: true
+        convergence_minimum_path_length_m: 0.20
+        convergence_maximum_path_efficiency: 0.50
+        gaussian_fill_covariance_scale: 2.5
+        gaussian_fill_amplitude_depth_scale: 1.5
+        gaussian_fill_exit_sigma: 2.5
+        gaussian_fill_max_fills: 1
+        gaussian_fill_minimum_valid_samples: 40
+        gaussian_fill_reuse_retained_samples_on_redesign: true
+        post_recovery_guidance_enabled: true
+        post_recovery_guidance_max_sec: 90.0
+        post_recovery_retry_limit: 3
+        modified_cost_affine_gain: 0.5
+        modified_cost_affine_decay_rate: 0.05
+        modified_cost_affine_max_age: 20.0
+        post_recovery_affine_weight: 0.50
+        post_recovery_affine_taper_distance_m: 0.50
+        post_recovery_progress_enabled: true
+        post_recovery_guidance_min_progress_m: 0.60
+        post_recovery_liveness_window_sec: 12.0
+        post_recovery_liveness_min_path_length_m: 0.60
+        post_recovery_liveness_max_displacement_m: 0.20
+        post_recovery_direction_refresh_limit: 1
+        post_recovery_source_led_handoff_enabled: true
+        post_recovery_source_continuity_enabled: true
+        post_recovery_source_continuity_min_displacement_m: 0.05
+        post_recovery_source_reversal_dot_threshold: -0.90
+        post_recovery_source_bypass_clearance_m: 0.10
+        controller_spawner_load_recovery_enabled: true
+        robust_search_epoch_reset_enabled: true
+        recoverable_navigation_enabled: true
+        recovery_retry_limit: 3
+        boundary_recovery_trigger_clearance_m: 0.025
+        boundary_recovery_release_clearance_m: 0.10
+        recenter_target_fill_clearance_m: 0.05
+        adaptive_recenter_lookahead_enabled: true
+        stall_window_sec: 3.0
+        minimum_radial_progress_m: 0.05
+        goal_score_threshold: 0.95
+        goal_score_rotation_period_sec: 3.0
+        goal_score_required_rotations: 2
+        goal_hold_sec: 3.0
+        undesired_score_hold_sec: 3.0
+        verification_max_sec: 12.0
+        fill_design_timeout_sec: 5.0
+        escape_max_sec: 20.0
+        escape_exit_hold_sec: 1.0
+        recenter_max_sec: 60.0
+        recenter_tolerance_m: 0.15
+        recenter_hold_sec: 1.0
+        direction_lookahead_m: 0.5
+        direction_candidate_step_rad: 0.7853981633974483
+        wall_margin_m: 0.20
+        fill_avoidance_margin_m: 0.1
+        approach_history_window_sec: 0.5
+    success: &base_success
+      all_of: &all_of
+        - recording_complete
+        - cleanup_complete
+        - required_state_path
+        - required_events
+        - no_forbidden_states
+        - no_forbidden_events
+        - collision_expectation
+        - local_recovery_stage
+        - post_recovery_global_proximity
+        - fill_cardinality
+      controller: &base_controller
+        contract_id: v7_m4_5_r1p0_a45_h25_18509
+        expected_verification_outcome: below_target_extremum
+        reachability_argument: A verified below-target trap must create exactly one fill, complete a direct or one-redesign recovery, and translate toward the stronger global without collision or terminal safety evidence.
+        required_state_path: &direct_recovery
+          - SEARCH
+          - VERIFY_EXTREMUM
+          - DESIGN_OR_MERGE_FILL
+          - ESCAPE_REPULSE
+          - RECENTER
+          - SEARCH
+        required_state_paths: &required_recovery_paths
+          - *direct_recovery
+          - - SEARCH
+            - VERIFY_EXTREMUM
+            - DESIGN_OR_MERGE_FILL
+            - ESCAPE_REPULSE
+            - DESIGN_OR_MERGE_FILL
+            - ESCAPE_ASSIST
+            - RECENTER
+            - SEARCH
+        required_events: &required_recovery_events
+          - CONVERGENCE_CONFIRMED
+          - FILL_CREATED
+          - ESCAPE_STARTED
+          - RECENTER_STARTED
+          - RECENTER_COMPLETE
+        forbidden_states: &forbidden_states [FAILSAFE]
+        forbidden_events: &forbidden_events [TIMEOUT, FAILSAFE]
+      ground_truth: &m4_5_ground_truth
+        method: declared_global_proximity
+        global_source_id: global
+        proximity_radius_m: 1.20
+      staged_recovery: &m4_5_staged_recovery
+        local_source_ids: [local]
+        global_source_id: global
+        convergence_to_local_max_m: 0.60
+        convergence_to_global_min_m: 0.75
+        fill_to_convergence_max_m: 0.50
+        global_proximity_radius_m: 1.20
+        global_closer_radius_m: 1.00
+        local_association_mode: verified_trap
+        stage_a_timeout_sec: 480.0
+        post_stage_a_timeout_sec: 120.0
+      collision_expected: false
+      result_scopes:
+        full_lifecycle:
+          anchor_state: SEARCH
+          boundary_state: null
+          graceful_stop: false
+          all_of: *all_of
+
+  - <<: *base_case
+    case_id: v7_m4_5_r1p5_a22p5_h25_18509
+    description: Fixed 1.5 m local below the direct diagonal at 22.5 degrees.
+    sources:
+      - {id: local, x_m: 1.38581929876693, y_m: 0.5740251485476346, relative_lumen_input: 400.0, evaluation_role: local_minimum}
+      - *global_source
+    success:
+      <<: *base_success
+      controller:
+        <<: *base_controller
+        contract_id: v7_m4_5_r1p5_a22p5_h25_18509
+
+  - <<: *base_case
+    case_id: v7_m4_5_r1p5_a45_h25_18509
+    description: Fixed 1.5 m local on the direct 45 degree diagonal.
+    sources: &central_sources
+      - {id: local, x_m: 1.0606601717798214, y_m: 1.0606601717798212, relative_lumen_input: 400.0, evaluation_role: local_minimum}
+      - *global_source
+    success:
+      <<: *base_success
+      controller:
+        <<: *base_controller
+        contract_id: v7_m4_5_r1p5_a45_h25_18509
+
+  - <<: *base_case
+    case_id: v7_m4_5_r1p5_a67p5_h25_18509
+    description: Fixed 1.5 m local above the direct diagonal at 67.5 degrees.
+    sources:
+      - {id: local, x_m: 0.5740251485476348, y_m: 1.38581929876693, relative_lumen_input: 400.0, evaluation_role: local_minimum}
+      - *global_source
+    success:
+      <<: *base_success
+      controller:
+        <<: *base_controller
+        contract_id: v7_m4_5_r1p5_a67p5_h25_18509
+
+  - <<: *base_case
+    case_id: v7_m4_5_r2p0_a45_h25_18509
+    description: Fixed radial maximum on the direct 45 degree diagonal.
+    sources:
+      - {id: local, x_m: 1.4142135623730951, y_m: 1.414213562373095, relative_lumen_input: 400.0, evaluation_role: local_minimum}
+      - *global_source
+    success:
+      <<: *base_success
+      controller:
+        <<: *base_controller
+        contract_id: v7_m4_5_r2p0_a45_h25_18509
+
+  - <<: *base_case
+    case_id: v7_m4_5_repeat_r1p5_a45_h25_18510
+    acceptance_partition: reproducibility
+    repeat_reference:
+      partition: validation
+      case_key: 78fc949728c62ed94eb5a4c298f1f7548c0f41b78a595a97ca0200270e88f2a5
+    description: First independent seed repeat of the central diagonal case.
+    seeds: [18510]
+    sources: *central_sources
+    success:
+      <<: *base_success
+      controller:
+        <<: *base_controller
+        contract_id: v7_m4_5_repeat_r1p5_a45_h25_18510
+
+  - <<: *base_case
+    case_id: v7_m4_5_repeat_r1p5_a45_h25_18511
+    acceptance_partition: reproducibility
+    repeat_reference:
+      partition: validation
+      case_key: 78fc949728c62ed94eb5a4c298f1f7548c0f41b78a595a97ca0200270e88f2a5
+    description: Second independent seed repeat of the central diagonal case.
+    seeds: [18511]
+    sources: *central_sources
+    success:
+      <<: *base_success
+      controller:
+        <<: *base_controller
+        contract_id: v7_m4_5_repeat_r1p5_a45_h25_18511
+
+  - <<: *base_case
+    case_id: v7_m4_5_repeat_r1p5_a45_h25_18512
+    acceptance_partition: reproducibility
+    repeat_reference:
+      partition: validation
+      case_key: 78fc949728c62ed94eb5a4c298f1f7548c0f41b78a595a97ca0200270e88f2a5
+    description: Third independent seed repeat of the central diagonal case.
+    seeds: [18512]
+    sources: *central_sources
+    success:
+      <<: *base_success
+      controller:
+        <<: *base_controller
+        contract_id: v7_m4_5_repeat_r1p5_a45_h25_18512

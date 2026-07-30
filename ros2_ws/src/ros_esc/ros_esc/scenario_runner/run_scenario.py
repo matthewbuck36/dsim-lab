@@ -903,6 +903,10 @@ def _run_record_to_global_proximity(
         'fill_cardinality': False,
         'stage_a_evidence': None,
         'stage_error': None,
+        'stage_a_monitor_started_sim_sec': None,
+        'stage_a_latest_sim_sec': None,
+        'stage_a_timeout': False,
+        'stage_a_timeout_sample': None,
         'global_approach': False,
         'global_approach_sample': None,
         'global_closer': False,
@@ -955,19 +959,6 @@ def _run_record_to_global_proximity(
     def odometry_callback(message):
         sample_sequence = next_sequence()
         refresh_stage_a()
-        if (
-            not observed['stage_a']
-            or not observed['fill_cardinality']
-        ):
-            return
-        completion_sequence = observed['stage_a_evidence'].get(
-            'stage_a_completion_stamp'
-        )
-        if (
-            completion_sequence is None
-            or sample_sequence <= completion_sequence
-        ):
-            return
         try:
             x_value = float(message.pose.pose.position.x)
             y_value = float(message.pose.pose.position.y)
@@ -980,6 +971,44 @@ def _run_record_to_global_proximity(
         if not all(
             math.isfinite(value)
             for value in (x_value, y_value, sample_sim_sec)
+        ):
+            return
+        if observed['stage_a_monitor_started_sim_sec'] is None:
+            observed['stage_a_monitor_started_sim_sec'] = sample_sim_sec
+        if (
+            not observed['stage_a']
+            or not observed['fill_cardinality']
+        ):
+            observed['stage_a_latest_sim_sec'] = sample_sim_sec
+            stage_a_timeout = staged_contract.get('stage_a_timeout_sec')
+            if stage_a_timeout is not None:
+                elapsed = max(
+                    0.0,
+                    sample_sim_sec
+                    - observed['stage_a_monitor_started_sim_sec'],
+                )
+                if elapsed >= stage_a_timeout:
+                    observed['stage_a_timeout'] = True
+                    observed['stage_a_timeout_sample'] = {
+                        'callback_sequence': sample_sequence,
+                        'position': {'x_m': x_value, 'y_m': y_value},
+                        'sample_sim_sec': sample_sim_sec,
+                        'started_sim_sec': observed[
+                            'stage_a_monitor_started_sim_sec'
+                        ],
+                        'elapsed_sim_sec': elapsed,
+                        'timeout_sec': stage_a_timeout,
+                        'interpolation_used': False,
+                    }
+            return
+        if observed['post_stage_a_started_sim_sec'] is None:
+            observed['stage_a_latest_sim_sec'] = sample_sim_sec
+        completion_sequence = observed['stage_a_evidence'].get(
+            'stage_a_completion_stamp'
+        )
+        if (
+            completion_sequence is None
+            or sample_sequence <= completion_sequence
         ):
             return
         if observed['post_stage_a_started_sim_sec'] is None:
@@ -1057,6 +1086,7 @@ def _run_record_to_global_proximity(
                 }
 
     timed_out = False
+    stage_a_timeout_stop = False
     proximity_stop = False
     post_stage_a_timeout_stop = False
     try:
@@ -1108,15 +1138,27 @@ def _run_record_to_global_proximity(
                     timed_out = True
                     break
                 executor.spin_once(timeout_sec=min(0.1, remaining))
+                if observed['stage_a_timeout']:
+                    stage_a_timeout_stop = True
+                    break
                 if observed['global_proximity']:
                     proximity_stop = True
                     break
                 if observed['post_stage_a_timeout']:
                     post_stage_a_timeout_stop = True
                     break
-            if proximity_stop or post_stage_a_timeout_stop or timed_out:
+            if (
+                stage_a_timeout_stop
+                or proximity_stop
+                or post_stage_a_timeout_stop
+                or timed_out
+            ):
                 cancellation_grace_sec = shutdown_grace_sec
-                if proximity_stop or post_stage_a_timeout_stop:
+                if (
+                    stage_a_timeout_stop
+                    or proximity_stop
+                    or post_stage_a_timeout_stop
+                ):
                     cancellation_grace_sec += (
                         BOUNDARY_RECORD_FINALIZATION_GRACE_SEC
                     )
@@ -1178,12 +1220,20 @@ def _run_record_to_global_proximity(
         'boundary_observed': False,
         'boundary_required_events': [],
         'boundary_required_events_observed': [],
+        'graceful_stage_a_timeout_stop': stage_a_timeout_stop,
         'graceful_global_proximity_stop': proximity_stop,
         'graceful_post_stage_a_timeout_stop': (
             post_stage_a_timeout_stop
         ),
         'stage_a_observed_live': observed['stage_a'],
         'fill_cardinality_observed_live': observed['fill_cardinality'],
+        'stage_a_monitor_started_sim_sec_live': observed[
+            'stage_a_monitor_started_sim_sec'
+        ],
+        'stage_a_latest_sim_sec_live': observed['stage_a_latest_sim_sec'],
+        'stage_a_timeout_sample_live': observed[
+            'stage_a_timeout_sample'
+        ],
         'global_proximity_observed_live': observed['global_proximity'],
         'global_proximity_sample_live': observed['global_sample'],
         'post_stage_a_started_sim_sec_live': observed[
@@ -2960,6 +3010,23 @@ def classify_result(
                 ),
                 'evidence': process_result.get(
                     'post_stage_a_timeout_sample_live'
+                ),
+                'gating': True,
+            }
+        if 'stage_a_timeout_sec' in staged_recovery:
+            staged_results['stage_a_time_budget'] = {
+                'timeout_sec': staged_recovery['stage_a_timeout_sec'],
+                'expired': process_result.get(
+                    'graceful_stage_a_timeout_stop'
+                ),
+                'started_sim_sec': process_result.get(
+                    'stage_a_monitor_started_sim_sec_live'
+                ),
+                'latest_sim_sec': process_result.get(
+                    'stage_a_latest_sim_sec_live'
+                ),
+                'evidence': process_result.get(
+                    'stage_a_timeout_sample_live'
                 ),
                 'gating': True,
             }

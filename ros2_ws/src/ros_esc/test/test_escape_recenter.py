@@ -28,6 +28,7 @@ from ros_esc.supervisor_node.escape_recenter import (
     select_recenter_direction,
     select_safe_recenter_target,
     select_safe_direction,
+    source_continuity_evidence,
     wrap_angle,
 )
 
@@ -177,6 +178,124 @@ def test_post_recovery_tracker_ignores_duplicate_and_rejects_backward_time():
     assert duplicate.net_displacement_m == pytest.approx(0.1)
     with pytest.raises(ValueError, match="timestamps must increase"):
         tracker.update(pose(1.5, 1.2, 0.0))
+
+
+def test_m4_5_retained_radius_two_rejects_exact_radial_reversal():
+    anchor = np.array([1.2320122160, 1.4710422281])
+    current = np.array([1.3775, 1.5451])
+    fill_center = np.array([1.8278297781, 1.7700514862])
+    fill = FillAvoidance(
+        1,
+        1,
+        fill_center[0],
+        fill_center[1],
+        0.6086747487,
+    )
+    bounds = OperatingBounds(
+        x_min=-0.25,
+        x_max=3.75,
+        y_min=-0.25,
+        y_max=3.75,
+        center_x=1.75,
+        center_y=1.75,
+        wall_margin=0.20,
+    )
+    config = DirectionConfig(lookahead_m=0.50)
+
+    evidence = source_continuity_evidence(
+        anchor,
+        current,
+        fill_center,
+        minimum_displacement_m=0.05,
+        reversal_dot_threshold=-0.90,
+    )
+    assert evidence is not None
+    assert evidence.displacement_m == pytest.approx(0.1632521022)
+    assert evidence.radial_alignment == pytest.approx(-0.9999712891)
+
+    unchanged_fallback = select_post_recovery_direction(
+        current,
+        current - fill_center,
+        [fill],
+        config,
+        bounds,
+    )
+    assert unchanged_fallback is not None
+    assert unchanged_fallback.direction == pytest.approx(
+        [-0.8945966998, -0.4468744173]
+    )
+    assert (
+        np.dot(unchanged_fallback.direction, evidence.direction)
+        < -0.999
+    )
+
+    selected = select_safe_direction(
+        current,
+        evidence.direction,
+        [fill],
+        config,
+        bounds,
+    )
+    assert selected is not None
+    assert selected.direction == pytest.approx(
+        [-0.4536405406, 0.8911847507]
+    )
+    assert np.dot(selected.direction, evidence.direction) >= -1e-12
+    safe, unused_clearance = evaluate_direction_safety(
+        current,
+        selected.direction,
+        [fill],
+        config,
+        bounds,
+    )
+    assert safe is True
+
+
+def test_m4_5_retained_repeat_18412_does_not_trigger_source_continuity():
+    evidence = source_continuity_evidence(
+        [1.611808451194171, 1.7397204167873679],
+        [1.450235452155, 1.780275516562],
+        [1.0851493296583232, 1.004903555591676],
+        minimum_displacement_m=0.05,
+        reversal_dot_threshold=-0.90,
+    )
+
+    assert evidence is None
+
+
+def test_source_continuity_requires_finite_meaningful_reversal_geometry():
+    assert source_continuity_evidence(
+        [0.0, 0.0],
+        [0.049, 0.0],
+        [1.0, 0.0],
+        minimum_displacement_m=0.05,
+        reversal_dot_threshold=-0.90,
+    ) is None
+
+    with pytest.raises(ValueError, match='two finite values'):
+        source_continuity_evidence(
+            [0.0, 0.0],
+            [math.nan, 0.0],
+            [1.0, 0.0],
+            minimum_displacement_m=0.05,
+            reversal_dot_threshold=-0.90,
+        )
+    with pytest.raises(ValueError, match='undefined at fill center'):
+        source_continuity_evidence(
+            [0.0, 0.0],
+            [1.0, 0.0],
+            [1.0, 0.0],
+            minimum_displacement_m=0.05,
+            reversal_dot_threshold=-0.90,
+        )
+    with pytest.raises(ValueError, match=r'\[-1, 0\)'):
+        source_continuity_evidence(
+            [0.0, 0.0],
+            [1.0, 0.0],
+            [2.0, 0.0],
+            minimum_displacement_m=0.05,
+            reversal_dot_threshold=0.0,
+        )
 
 
 def test_recent_approach_interpolates_and_unbounded_policy_reverses_it():

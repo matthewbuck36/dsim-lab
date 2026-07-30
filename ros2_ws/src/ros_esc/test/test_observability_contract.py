@@ -32,6 +32,11 @@ CONTROL_LAUNCH_FILE = (
     REPOSITORY_ROOT
     / "ros2_ws/src/turtlebot3_rotating_sensor/launch/control.launch.py"
 )
+CONTROLLER_SPAWNER_RECOVERY = (
+    REPOSITORY_ROOT
+    / 'ros2_ws/src/turtlebot3_rotating_sensor/scripts/'
+    'idempotent_controller_spawner.py'
+)
 COST_CONFIG = (
     REPOSITORY_ROOT
     / "ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC"
@@ -414,7 +419,12 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         "post_recovery_liveness_max_displacement_m": "0.20",
         "post_recovery_direction_refresh_limit": "0",
         "post_recovery_source_led_handoff_enabled": "False",
+        'post_recovery_source_continuity_enabled': 'False',
+        'post_recovery_source_continuity_min_displacement_m': '0.05',
+        'post_recovery_source_reversal_dot_threshold': '-0.90',
+        'post_recovery_source_bypass_clearance_m': '0.10',
         "robust_search_epoch_reset_enabled": "False",
+        'controller_spawner_load_recovery_enabled': 'False',
         "gaussian_fill_pose_topic": "/odom",
         "gaussian_fill_estimation_channel_index": "0",
         "gaussian_fill_sample_sync_tolerance_sec": "0.05",
@@ -502,6 +512,10 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         'post_recovery_liveness_max_displacement_m',
         'post_recovery_direction_refresh_limit',
         'post_recovery_source_led_handoff_enabled',
+        'post_recovery_source_continuity_enabled',
+        'post_recovery_source_continuity_min_displacement_m',
+        'post_recovery_source_reversal_dot_threshold',
+        'post_recovery_source_bypass_clearance_m',
         'adaptive_recenter_lookahead_enabled',
     ):
         assert (
@@ -562,6 +576,32 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
 
 def test_controller_spawners_allow_bounded_gazebo_startup_latency():
     source = CONTROL_LAUNCH_FILE.read_text(encoding="utf-8")
+    helper = CONTROLLER_SPAWNER_RECOVERY.read_text(encoding='utf-8')
 
-    assert source.count("'--service-call-timeout'") == 2
-    assert source.count("'30.0'") == 2
+    assert source.count("'--service-call-timeout'") == 3
+    assert source.count("'30.0'") == 3
+    assert source.count("package='controller_manager'") == 2
+    assert source.count("executable='spawner'") == 2
+    assert "default_value='False'" in source
+    assert "executable='idempotent_controller_spawner.py'" in source
+    assert source.index("'joint_state_broadcaster'") < source.index(
+        "'velocity_controller'"
+    )
+    assert 'max_attempts=1' in helper
+    assert '_confirmed_loaded' in helper
+
+    root = ET.parse(LAUNCH_FILE).getroot()
+    controller_include = next(
+        element
+        for element in root.findall('include')
+        if 'control.launch.py' in element.attrib.get('file', '')
+    )
+    forwarded = {
+        element.attrib['name']: element.attrib['value']
+        for element in controller_include.findall('arg')
+    }
+    assert forwarded == {
+        'controller_spawner_load_recovery_enabled': (
+            '$(var controller_spawner_load_recovery_enabled)'
+        )
+    }

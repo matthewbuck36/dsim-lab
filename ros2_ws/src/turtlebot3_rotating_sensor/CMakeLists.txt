@@ -43,4 +43,11 @@ install(
     share/${PROJECT_NAME}
 )
 
+install(
+  PROGRAMS
+    scripts/idempotent_controller_spawner.py
+  DESTINATION
+    lib/${PROJECT_NAME}
+)
+
 ament_package()

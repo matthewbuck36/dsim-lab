@@ -1,46 +1,76 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-30T12:09:54+00:00
-Base HEAD: 55b017bde404553f35c13dbb9bcbd841493e82ac
+Generated: 2026-07-30T12:46:06+00:00
+Base HEAD: fc9b3b1cc4c6c75bba5b02cd0a5b873439392652
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 7dbf351ac768dcf513d938a5b49d9bdb7c3dba4a118f92fa957d3550d40dea86
+Status sha256: 7ccf68080cb69b8015dd238b0d48b4ad02e05b0e9fbf629c44835f740cb7e154
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
 Active subphase plan sha256: 96baca678644dd42e8f6994e28ef75fae220d8ce4048968b3b2948b61f067ca3
-Unstaged diff sha256: eec5224298e25fa7ecc4ee386429d8372b71371314eeee5fe261f435ebb39e42
+Unstaged diff sha256: 8683b544993ab26611fe528f1262a9562d4d5307dd564365dc08928f094b8596
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 85]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 86]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
- M docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py
+ M ros2_ws/src/ros_esc/ros_esc/supervisor_node/escape_recenter.py
+ M ros2_ws/src/ros_esc/ros_esc/supervisor_node/supervisor_node_script.py
+ M ros2_ws/src/ros_esc/test/test_escape_recenter.py
+ M ros2_ws/src/ros_esc/test/test_experiment_recording.py
+ M ros2_ws/src/ros_esc/test/test_observability_contract.py
+ M ros2_ws/src/ros_esc/test/test_scenario_runner.py
+ M ros2_ws/src/ros_esc/test/test_scenario_schema.py
+ M ros2_ws/src/ros_esc/test/test_supervisor_integration.py
+ M ros2_ws/src/turtlebot3_rotating_sensor/CMakeLists.txt
+ M ros2_ws/src/turtlebot3_rotating_sensor/launch/control.launch.py
+ M ros2_ws/src/turtlebot3_rotating_sensor/launch/gazebo.launch.xml
+ M ros2_ws/src/turtlebot3_rotating_sensor/package.xml
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m4_5_two_light_suite.yaml
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m4_5_visible_probe.yaml
+?? ros2_ws/src/ros_esc/test/test_controller_spawner_recovery.py
+?? ros2_ws/src/turtlebot3_rotating_sensor/scripts/
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  44 +--
- docs/codex/gesc_gaussian/plans/phase_08_7_plan.md  | 382 +++++++++++++++++++++
- docs/codex/gesc_gaussian/status/phase_08_status.md |  72 ++++
- 3 files changed, 461 insertions(+), 37 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  52 ++---
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 219 ++++++++++++++++++
+ .../ros_esc/scenario_runner/run_scenario.py        |  97 ++++++--
+ .../ros_esc/scenario_runner/scenario_schema.py     |  77 ++++++-
+ .../ros_esc/supervisor_node/escape_recenter.py     |  72 ++++++
+ .../supervisor_node/supervisor_node_script.py      | 178 ++++++++++++++-
+ ros2_ws/src/ros_esc/test/test_escape_recenter.py   | 119 ++++++++++
+ .../src/ros_esc/test/test_experiment_recording.py  |  12 +
+ .../ros_esc/test/test_observability_contract.py    |  44 +++-
+ ros2_ws/src/ros_esc/test/test_scenario_runner.py   | 213 +++++++++++++++++
+ ros2_ws/src/ros_esc/test/test_scenario_schema.py   | 253 +++++++++++++++++++++
+ .../ros_esc/test/test_supervisor_integration.py    | 232 +++++++++++++++++++
+ .../src/turtlebot3_rotating_sensor/CMakeLists.txt  |   7 +
+ .../launch/control.launch.py                       |  44 +++-
+ .../launch/gazebo.launch.xml                       |  13 +-
+ ros2_ws/src/turtlebot3_rotating_sensor/package.xml |   2 +
+ 16 files changed, 1576 insertions(+), 58 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**Phase 08.7 M4.5 — USER-AUTHORIZED PLAN AMENDMENT SAVED; IMPLEMENTATION
-HAS NOT STARTED.**
+**Phase 08.7 M4.5 — IMPLEMENTED / NO-GAZEBO QUALIFICATION PASS / FRESH
+VISIBLE AND SUITE INPUTS FIXED / NO SIMULATION DISPATCHED.**
 
 ### Next criterion
 
-Validate, checkpoint, and commit the M4.5 amendment. Then implement only the
-default-off source-continuity, full staged-budget, and controller-load
-recovery corrections plus fresh fixed inputs. Complete every no-Gazebo gate
-and commit the exact dispatch boundary before any fresh simulation. The
-optional three-light probe, Phase 09, and physical hardware remain
+Checkpoint and commit this independently qualified implementation boundary.
+Then record, checkpoint, and commit the exact fixed visible command; reconfirm
+the clean evidence/process/domain boundary; and execute only the one visible
+radius-2.0 probe. The headless suite remains gated on a complete visible pass.
+The optional three-light probe, Phase 09, and physical hardware remain
 unauthorized.
 
 

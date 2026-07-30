@@ -8449,3 +8449,222 @@ recovery corrections plus fresh fixed inputs. Complete every no-Gazebo gate
 and commit the exact dispatch boundary before any fresh simulation. The
 optional three-light probe, Phase 09, and physical hardware remain
 unauthorized.
+
+## Phase 08.7 M4.5 implementation and no-Gazebo qualification
+
+M4.5 was implemented from Plan commit `fc9b3b1` without starting Gazebo.
+The bounded edit extends the existing supervisor, central launch, rotating
+sensor control launch, scenario schema/runner, and focused tests. It adds no
+persistent node, controller, `/cmd_vel` publisher, recorder, validator,
+message, topic, cost source, algorithm profile, or simulation/physical fork.
+
+The source-continuity correction is default-off. When enabled, it records the
+source-led displacement and rejects the existing radial fallback only when the
+finite displacement is at least `0.05 m` and the radial/source dot product is
+at most `-0.90`. It selects from the unchanged hard-safe candidate geometry
+in the measured source-forward half-plane, preserves the constraint across
+the one existing recoverable recenter, and releases supervisor plus affine
+assistance at the active fill avoidance radius plus `0.10 m`. The correction
+receives no global coordinate, source role, or simulation ground truth.
+
+The staged runner now accepts optional `stage_a_timeout_sec`. It anchors Stage
+A at the first finite odometry sample, lets an observed Stage A completion win
+at the exact boundary, reports a live Stage A timeout sample, and reserves the
+independent Stage B window. Historical scenarios that omit the field retain
+their prior runner behavior. Fresh M4.5 cases use exactly:
+
+```text
+Stage A:       480.0 s
+Stage B:       120.0 s
+recording:     600.0 s
+wall timeout:  780.0 s
+```
+
+The controller-startup correction is also default-off. When enabled, the
+control launch substitutes one transient package helper for the original two
+concurrent Humble spawners. The helper processes
+`joint_state_broadcaster`, then `velocity_controller`, issues at most one
+load request for an observed-unloaded controller, confirms loaded state after
+a missing or negative response, and otherwise fails nonzero. Configuration,
+activation, readiness, and controller ownership remain upstream and
+unchanged.
+
+Fresh fixed source hashes are:
+
+```text
+3653a46c5a0ee4cf866cd257c6df2d9c18c745335f93b4fac400d0d51a313f97
+  phase08_v7_m4_5_visible_probe.yaml
+0eecc1337371ba75d8a6ae80e766415f8bdabe2a925d0034eaa2c6f2af34e384
+  phase08_v7_m4_5_two_light_suite.yaml
+```
+
+### No-Gazebo validation evidence
+
+Focused supervisor geometry/integration, schema, runner, recording, launch,
+and controller-recovery tests:
+
+```text
+timeout --signal=INT --kill-after=20s 300s python3 -m pytest -q \
+  test_escape_recenter.py test_state_machine.py \
+  test_supervisor_integration.py test_scenario_schema.py \
+  test_scenario_runner.py test_observability_contract.py \
+  test_experiment_recording.py test_controller_spawner_recovery.py \
+  --junitxml=/tmp/phase08_7_m4_5_focused.xml
+
+376 passed, 1 skipped in 56.55 s
+JUnit:
+9dd900e898ade48db9ab8b54ab329b7d0d897826fff78cc5b4761c12c98aa30e
+```
+
+The retained radius-2 geometry proves a radial/source alignment of
+`-0.9999689709`; default-off preserves the old radial fallback, while enabled
+selection is finite, hard-safe, and nonreversing. The repeat-18412 retained
+alignment of `-0.192921` does not trigger. The tests also cover exact bypass
+release, one-recenter persistence, no forward-safe candidate, sub-threshold
+displacement, nonfinite/stale geometry, room/collision/ownership faults,
+exhausted recovery, Stage A and Stage B exact-boundary precedence, graceful
+Stage A timeout, historical omission, lost controller response, confirmed
+loaded state, and no duplicate load.
+
+Broad ROS-independent functional regression:
+
+```text
+timeout --signal=INT --kill-after=20s 300s python3 -m pytest -q \
+  ros2_ws/src/ros_esc/test \
+  --ignore=test_flake8.py --ignore=test_pep257.py \
+  -k 'not v4_population_adoption_is_exact_and_unused' \
+  --junitxml=/tmp/phase08_7_m4_5_broad_functional.xml
+
+655 passed, 3 skipped, 1 deselected in 116.91 s
+JUnit:
+ccaaad247e3521cba86ad35c9c882a14bc7b3d21aadc2b1c99238fef5beee720
+```
+
+The deselected test is the already documented retired V4 population-adoption
+assertion. The three skips and one focused skip are existing conditional
+environment cases; there are no failures or errors.
+
+Fatal changed-file lint (`E9,F63,F7,F82`), modified-Python compilation,
+fresh-scenario YAML parsing, launch XML parsing, and `git diff --check` all
+pass. Exploratory repository-root `ament_flake8 .` and `ament_pep257 .`
+remain failed inherited baselines, not M4.5 gates: the former reports
+`16115` errors while recursively including generated `ros2_ws/build` copies,
+and the latter reports `2551` errors across the repository. Their retained
+logs are:
+
+```text
+/tmp/phase08_7_m4_5_repo_ament_flake8.log
+SHA-256 aaf9dbf125ea9b2fc00722be51b97618c3f4e295fec76d7055bb02b96c2b2da1
+/tmp/phase08_7_m4_5_repo_ament_pep257.log
+SHA-256 26f5ac699b28fd0efc6c0f1aad5045b7f2b5ba0ab74977fa42dc1a5beea62d8a
+```
+
+The fresh isolated build command:
+
+```text
+colcon --log-base /tmp/phase08_7_m4_5_qual/log build \
+  --base-paths ros2_ws/src \
+  --build-base /tmp/phase08_7_m4_5_qual/build \
+  --install-base /tmp/phase08_7_m4_5_qual/install \
+  --packages-select ros_esc_interfaces ros_esc \
+    turtlebot3_rotating_sensor \
+  --event-handlers console_direct+
+```
+
+passed all three packages in `12.5 s`. The transient helper is installed
+executable at:
+
+```text
+/tmp/phase08_7_m4_5_qual/install/turtlebot3_rotating_sensor/lib/
+  turtlebot3_rotating_sensor/idempotent_controller_spawner.py
+```
+
+Byte parity passes for the installed supervisor helper/node, schema/runner,
+both fresh scenarios, central Gazebo launch, control launch, and transient
+spawner helper. Nonexecuting installed launch descriptions are retained at:
+
+```text
+/tmp/phase08_7_m4_5_installed_launch_description.txt
+SHA-256 66b9e378c53bf6f688b0f2a0f064cc6a893efc4bd56eeba59ee3b7b2cde14ea2
+/tmp/phase08_7_m4_5_installed_control_description.txt
+SHA-256 7c90634210025eeb5315c7e3dc17ed46a52f87facdf656f658859ac7e877d7f3
+```
+
+Direct installed `OpaqueFunction` resolution proves:
+
+```text
+recovery false:
+  controller_manager/spawner joint_state_broadcaster, 30.0 s
+  controller_manager/spawner velocity_controller, 30.0 s
+recovery true:
+  turtlebot3_rotating_sensor/idempotent_controller_spawner.py
+  joint_state_broadcaster, velocity_controller, 30.0 s
+```
+
+Installed dry-runs resolve one visible and eight headless cases with zero
+unsupported cases. Every case has source-continuity and controller recovery
+enabled, `480 + 120 <= 600 s`, `780 s` wall bound, exactly one declared local
+and one global, maximum one fill, unchanged `1.20 m` primary proximity, and
+unchanged non-gating `1.00 m` diagnostic. Retained dry-run summaries:
+
+```text
+/tmp/phase08_7_m4_5_visible_installed_dry_run_final.yaml
+SHA-256 15e62bb04e1b4ac64293ddb6a56d4d2c3a7dd9b43508e71984a50b96840bae75
+/tmp/phase08_7_m4_5_suite_installed_dry_run_final.yaml
+SHA-256 17323344d29d51ddf289aef5a93910198b388bc778f76ec2a80300afd566f234
+```
+
+The case keys are fixed as:
+
+```text
+4058b99c8e404cdc9eea12e3ecabef5a6befc3085dc9f541faaec204745ec1d2
+55c2915ad5505f91655732677bcf27a8a00ec5541131f1cc2e402eee9243a9a0
+5e65ee0056c18f709a7ffa98aeadd98b76895ffca4fc7651ffda3ebf3017b2a5
+78fc949728c62ed94eb5a4c298f1f7548c0f41b78a595a97ca0200270e88f2a5
+83f022dbfa5a686b80d6802ae1e573ccb5e13fb3dc0377939c085a50a05decb9
+d1091f0c7dc2341c7383e37f31e8973b40075c62d761407377cb656e38627c5c
+c75b44f23fc62ff1b7b96e1525c0eeb0a05cc3b26a3ac5ca831f7f59acb38ef2
+be5caf65d545c0a11544db51e845f22094ced94441aaa100a4ef50d15176db86
+fb97070aa6f6fe5fde17a1a1356cfde46fc3b4dfb23966aa640763c93f363161
+```
+
+Historical hash regression passes. In particular:
+
+```text
+1559ee2ab0a7d2fa26834bc0bfd226aaa2b8d6d7dad62dcdac85ca2e83293eb4
+  M4.4 visible scenario
+78be277362ac060c7cb77c5d2215836cb914a95bd81a5ed9221f0db4bc62a188
+  M4.4 two-light scenario
+3b9badc92cf63739f65662158999e3c2aab71761f790e3f360be9a52e6f38688
+  V6 selected repeats
+8ecc1a231efec24401d74fef3cd5139d48c6029f88e71d044cefdf2fd14c5bef
+  historical centered validation world
+88b10b39aa24a6430f6f031c750334ed34e6835e54c84de8d36f4cc6a26444bf
+  shifted corner-origin validation world
+```
+
+The Phase 08 historical immutability manifest, all historical normalized
+scenario keys/hashes, M4.3, M4.4, and V6 regressions pass. The Phase 05
+`record_run.py` and `validate_run.py` are byte-unchanged from `HEAD`.
+Canonical topics, cost sign/units, sole custom-controller `/cmd_vel`
+ownership, physical-room faces, wall margin, collision rules, exact one-fill
+cardinality, and final-zero/cleanup remain unchanged.
+
+`validate_phase_context.sh 08 implement` passes. Fresh evidence roots do not
+exist. No Gazebo, scenario runner, recorder, or rosbag process is active. ROS
+domain `165` is empty with the daemon disabled, and display `:0` is
+available. No physical, Phase 09, three-light, or M4.5 Gazebo action occurred.
+
+## Current milestone
+
+**Phase 08.7 M4.5 — IMPLEMENTED / NO-GAZEBO QUALIFICATION PASS / FRESH
+VISIBLE AND SUITE INPUTS FIXED / NO SIMULATION DISPATCHED.**
+
+### Next criterion
+
+Checkpoint and commit this independently qualified implementation boundary.
+Then record, checkpoint, and commit the exact fixed visible command; reconfirm
+the clean evidence/process/domain boundary; and execute only the one visible
+radius-2.0 probe. The headless suite remains gated on a complete visible pass.
+The optional three-light probe, Phase 09, and physical hardware remain
+unauthorized.

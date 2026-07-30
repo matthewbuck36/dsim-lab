@@ -339,6 +339,78 @@ class PostRecoveryProgress:
     stalled: bool
 
 
+@dataclass(frozen=True)
+class SourceContinuityEvidence:
+    """Measured source-led direction and its alignment with fill clearance."""
+
+    direction_x: float
+    direction_y: float
+    displacement_m: float
+    radial_alignment: float
+
+    @property
+    def direction(self):
+        return np.array(
+            [self.direction_x, self.direction_y],
+            dtype=np.float64,
+        )
+
+
+def source_continuity_evidence(
+    anchor_position,
+    current_position,
+    fill_center,
+    minimum_displacement_m,
+    reversal_dot_threshold,
+):
+    """Return evidence only when radial clearance would reverse source motion."""
+    anchor = _finite_vector(anchor_position, 'source-led anchor')
+    current = _finite_vector(current_position, 'source-led position')
+    center = _finite_vector(fill_center, 'source-led fill center')
+    if (
+        not math.isfinite(float(minimum_displacement_m))
+        or minimum_displacement_m <= 0.0
+    ):
+        raise ValueError(
+            'source-continuity minimum displacement must be positive'
+        )
+    if (
+        not math.isfinite(float(reversal_dot_threshold))
+        or reversal_dot_threshold < -1.0
+        or reversal_dot_threshold >= 0.0
+    ):
+        raise ValueError(
+            'source-continuity reversal threshold must be in [-1, 0)'
+        )
+
+    displacement = current - anchor
+    displacement_m = float(np.linalg.norm(displacement))
+    if displacement_m < minimum_displacement_m:
+        return None
+    radial_outward = current - center
+    radial_norm = float(np.linalg.norm(radial_outward))
+    if radial_norm <= _EPSILON:
+        raise ValueError(
+            'source-continuity radial direction is undefined at fill center'
+        )
+    direction = displacement / displacement_m
+    radial_alignment = float(
+        np.clip(
+            np.dot(direction, radial_outward / radial_norm),
+            -1.0,
+            1.0,
+        )
+    )
+    if radial_alignment > reversal_dot_threshold:
+        return None
+    return SourceContinuityEvidence(
+        direction_x=float(direction[0]),
+        direction_y=float(direction[1]),
+        displacement_m=displacement_m,
+        radial_alignment=radial_alignment,
+    )
+
+
 class PostRecoveryProgressTracker:
     """Track outward epoch progress and exact-window translation liveness."""
 

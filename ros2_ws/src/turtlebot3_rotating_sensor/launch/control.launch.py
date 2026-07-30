@@ -19,11 +19,36 @@ following command in a separate terminal: ros2 control list_controllers
 """
 
 from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, OpaqueFunction
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
-def generate_launch_description():
-    """Generate a launch description for the two controllers."""
+def _enabled(value):
+    return str(value).strip().lower() in ('1', 'true', 'yes', 'on')
+
+
+def _controller_spawners(context):
+    recovery_enabled = _enabled(
+        LaunchConfiguration(
+            'controller_spawner_load_recovery_enabled'
+        ).perform(context)
+    )
+    if recovery_enabled:
+        return [
+            Node(
+                package='turtlebot3_rotating_sensor',
+                executable='idempotent_controller_spawner.py',
+                arguments=[
+                    'joint_state_broadcaster',
+                    'velocity_controller',
+                    '--service-call-timeout',
+                    '30.0',
+                ],
+                output='screen',
+            )
+        ]
+
     spawn_joint_state_broadcaster = Node(
         package='controller_manager',
         executable='spawner',
@@ -45,11 +70,20 @@ def generate_launch_description():
         ],
         output='screen',
     )
+    return [
+        spawn_joint_state_broadcaster,
+        spawn_velocity_controller,
+    ]
 
-    # Create and return launch description object
+
+def generate_launch_description():
+    """Generate a launch description for the two controllers."""
     return LaunchDescription(
         [
-            spawn_joint_state_broadcaster,
-            spawn_velocity_controller,
+            DeclareLaunchArgument(
+                'controller_spawner_load_recovery_enabled',
+                default_value='False',
+            ),
+            OpaqueFunction(function=_controller_spawners),
         ]
     )

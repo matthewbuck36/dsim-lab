@@ -6,6 +6,7 @@ import time
 
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
+import numpy as np
 import pytest
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
@@ -15,6 +16,7 @@ from ros_esc.supervisor_node import supervisor_node_script
 from ros_esc.supervisor_node.escape_recenter import Pose2D, recenter_command
 from ros_esc.supervisor_node.state_machine import (
     State,
+    Transition,
     TransitionInputs,
 )
 from ros_esc.supervisor_node.supervisor_node_script import SupervisorNode
@@ -951,6 +953,7 @@ def test_m4_4_source_led_threshold_arms_exactly_one_existing_fallback():
         assert node.post_recovery_source_led_active is False
         assert node.machine.post_recovery_guidance_active is True
         assert node.safe_direction is not None
+        assert node.post_recovery_source_bypass_active is False
         assert node.post_recovery_progress_tracker.latest.window_valid is False
         assert states.messages[-1].affine_weight == pytest.approx(0.50)
         detail = (
@@ -965,6 +968,235 @@ def test_m4_4_source_led_threshold_arms_exactly_one_existing_fallback():
         assert sum(
             event.detail == detail for event in events.messages
         ) == 1
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def _activate_m4_5_retained_radius_two(node):
+    anchor = np.array([1.2320122160, 1.4710422281])
+    current = np.array([1.3775, 1.5451])
+    fill_center = np.array([1.8278297781, 1.7700514862])
+    node.latest_pose = Pose2D(0.0, *anchor, 0.0)
+    node.latest_pose_valid = True
+    node.latest_pose_sequence += 1
+    node.active_fill_records = {
+        1: {
+            'fill_id': 4,
+            'revision': 1,
+            'center': fill_center,
+            'support_radius': 0.5086747487,
+            'exit_radius': 0.4238956239,
+        }
+    }
+    node.machine.state = State.SEARCH
+    node.machine.active_fill_count = 1
+    node.machine.post_recovery_fill_id = 4
+    node.machine.active_escape_fill_id = 4
+    node.machine.post_recovery_guidance_active = True
+    node.machine.post_recovery_guidance_started_sec = 0.0
+    assert node._start_post_recovery_epoch(
+        0.0,
+        source_led_handoff=True,
+    ) is None
+    return anchor, current, fill_center
+
+
+def _feed_m4_5_retained_source_window(node, anchor, current):
+    samples = (
+        (3.0, anchor + [0.20, 0.0]),
+        (6.0, anchor + [0.20, 0.20]),
+        (9.0, anchor + [0.0, 0.20]),
+        (12.0, current),
+    )
+    for stamp, position in samples:
+        node.latest_pose = Pose2D(stamp, *position, 0.0)
+        node.latest_pose_sequence += 1
+        assert node._update_post_recovery_guidance(stamp) is None
+
+
+def test_m4_5_retained_radius_two_arms_nonreversing_safe_bypass():
+    rclpy.init()
+    node = _m4_2_progress_node(
+        post_recovery_liveness_window_sec=12.0,
+        post_recovery_source_led_handoff_enabled=True,
+        post_recovery_source_continuity_enabled=True,
+    )
+    events = Recorder()
+    states = Recorder()
+    node.event_publisher = events
+    node.state_publisher = states
+    try:
+        anchor, current, unused_fill = (
+            _activate_m4_5_retained_radius_two(node)
+        )
+        _feed_m4_5_retained_source_window(node, anchor, current)
+        node._publish_state_and_command(12.0)
+
+        assert node.post_recovery_source_led_active is False
+        assert node.post_recovery_source_bypass_active is True
+        assert node.post_recovery_source_continuity is not None
+        assert node.safe_direction is not None
+        assert (
+            np.dot(
+                node.safe_direction.direction,
+                node.post_recovery_source_continuity.direction,
+            )
+            >= -1e-12
+        )
+        assert node.safe_direction.direction == pytest.approx(
+            [-0.4536405406, 0.8911847507]
+        )
+        assert states.messages[-1].affine_weight == pytest.approx(0.50)
+        assert sum(
+            event.detail
+            == 'post-recovery source-continuity bypass armed'
+            for event in events.messages
+        ) == 1
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_5_source_bypass_releases_at_exact_clearance_boundary():
+    rclpy.init()
+    node = _m4_2_progress_node(
+        post_recovery_liveness_window_sec=12.0,
+        post_recovery_source_led_handoff_enabled=True,
+        post_recovery_source_continuity_enabled=True,
+    )
+    events = Recorder()
+    node.event_publisher = events
+    try:
+        anchor, current, fill_center = (
+            _activate_m4_5_retained_radius_two(node)
+        )
+        _feed_m4_5_retained_source_window(node, anchor, current)
+        target = node._source_bypass_clearance_target()
+        assert target == pytest.approx(0.7086747487)
+        radial = (current - fill_center) / np.linalg.norm(
+            current - fill_center
+        )
+
+        node.latest_pose = Pose2D(
+            12.1,
+            *(fill_center + (target - 1e-6) * radial),
+            0.0,
+        )
+        node.latest_pose_sequence += 1
+        assert node._update_post_recovery_guidance(12.1) is None
+        assert node.post_recovery_source_bypass_active is True
+
+        node.latest_pose = Pose2D(
+            12.2,
+            *(fill_center + target * radial),
+            0.0,
+        )
+        node.latest_pose_sequence += 1
+        assert node._update_post_recovery_guidance(12.2) is None
+
+        assert node.machine.post_recovery_guidance_active is False
+        assert node.post_recovery_source_bypass_active is False
+        assert node.post_recovery_source_continuity is None
+        assert node.safe_direction is None
+        assert sum(
+            event.detail
+            == 'post-recovery source-continuity bypass completed'
+            for event in events.messages
+        ) == 1
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_5_source_constraint_survives_one_recoverable_recenter():
+    rclpy.init()
+    node = _m4_2_progress_node(
+        post_recovery_liveness_window_sec=12.0,
+        post_recovery_source_led_handoff_enabled=True,
+        post_recovery_source_continuity_enabled=True,
+    )
+    events = Recorder()
+    node.event_publisher = events
+    try:
+        anchor, current, unused_fill = (
+            _activate_m4_5_retained_radius_two(node)
+        )
+        _feed_m4_5_retained_source_window(node, anchor, current)
+        retained_direction = (
+            node.post_recovery_source_continuity.direction.copy()
+        )
+        node.post_recovery_recenter_attempted = True
+
+        node.machine.state = State.RECENTER
+        node._handle_transition(
+            Transition(
+                State.SEARCH,
+                State.RECENTER,
+                'post-recovery liveness recovery requested',
+            ),
+            12.1,
+        )
+        assert node.post_recovery_source_bypass_active is True
+        assert node.post_recovery_source_continuity.direction == (
+            pytest.approx(retained_direction)
+        )
+
+        node.recenter_distance = 0.0
+        node.machine.state = State.SEARCH
+        node._handle_transition(
+            Transition(
+                State.RECENTER,
+                State.SEARCH,
+                'recenter tolerance dwell satisfied',
+            ),
+            12.2,
+        )
+
+        assert node.post_recovery_source_led_active is False
+        assert node.post_recovery_source_bypass_active is True
+        assert node.safe_direction is not None
+        assert np.dot(
+            node.safe_direction.direction,
+            retained_direction,
+        ) >= -1e-12
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_5_no_forward_safe_candidate_requests_bounded_recenter(
+    monkeypatch,
+):
+    rclpy.init()
+    node = _m4_2_progress_node(
+        post_recovery_liveness_window_sec=12.0,
+        post_recovery_source_led_handoff_enabled=True,
+        post_recovery_source_continuity_enabled=True,
+    )
+    events = Recorder()
+    node.event_publisher = events
+    try:
+        anchor, current, unused_fill = (
+            _activate_m4_5_retained_radius_two(node)
+        )
+        monkeypatch.setattr(
+            supervisor_node_script,
+            'select_safe_direction',
+            lambda *args, **kwargs: None,
+        )
+        _feed_m4_5_retained_source_window(node, anchor, current)
+
+        assert node.post_recovery_source_bypass_active is True
+        assert node.safe_direction is None
+        assert node.recenter_recovery_requested is True
+        assert node.post_recovery_recenter_attempted is True
+        assert node.machine.post_recovery_guidance_active is True
+        assert any(
+            event.detail
+            == 'post-recovery direction unavailable; recover by recenter'
+            for event in events.messages
+        )
     finally:
         node.destroy_node()
         rclpy.shutdown()

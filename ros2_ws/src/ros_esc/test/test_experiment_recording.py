@@ -2230,6 +2230,18 @@ def test_algorithm_event_timestamp_domains_are_strict_and_separate():
         ),
         (
             1,
+            'post-recovery source-continuity bypass armed',
+            0,
+            'supervisor',
+        ),
+        (
+            1,
+            'post-recovery source-continuity bypass completed',
+            0,
+            'supervisor',
+        ),
+        (
+            1,
             (
                 'measured escape: recenter route temporarily unavailable; '
                 'bounded recovery continues'
