@@ -6152,3 +6152,120 @@ probe predeclared.**
 Refresh the Phase 08 checkpoint against commit `19d413c`, commit this dispatch
 record, reconfirm the process/evidence boundary, and execute only the bounded
 visible probe.
+
+## Phase 08.7 M4 retained visible-probe result
+
+Exactly one bounded visible-Gazebo attempt ran on ROS domain `153` from the
+committed scenario SHA-256
+`37ba6e1e9adc842691328cc0a1c66e5fd04034db59c6fcdb0c05f6f6c4b769a1`.
+The runner returned `1` without outer or recorder timeout. The run is retained
+at:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_probe/
+  2026-07-30/
+  20260730T054527662523Z_simulation_phase08_v7_m4_visible_probe-
+  v7_m4_probe_r1p5_a45_h25_18201-robust_gaussian_v1-a7_e99d857b
+```
+
+The result is a formal **FAIL: recording evidence invalid**, even though every
+declared behavioral and safety predicate passed:
+
+```text
+Stage A verified-trap recovery:       PASS
+exact fill cardinality 1/1:           PASS
+Stage B primary 1.20 m proximity:     PASS
+collision expectation false:          PASS
+forbidden state/event absence:        PASS
+cleanup and final zero:                PASS
+recording completeness:               FAIL
+combined result:                       FAIL
+```
+
+The in-readiness path was:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> RECENTER
+-> SEARCH
+```
+
+One convergence was confirmed at source time `248.5 s`. Cluster `1` was
+created at `(1.1108335595, 1.3813284464) m`, `0.1865943066 m` from its
+convergence point and `0.3953410337 m` from the declared local. Escape
+completed successfully in `8.775931438 s`; recenter started and completed;
+there was no redesign escalation, timeout, collision, or in-readiness
+`FAILSAFE`.
+
+The live global stop triggered on the first qualifying noninterpolated sample:
+
+```text
+position:                (3.1291616104, 2.3595487198) m
+distance to global:      1.1992290164 m
+primary radius:          1.20 m
+valid post-A samples:    1710
+invalid post-A samples:  0
+```
+
+The final classified distance was `1.1926238875 m`. The `1.00 m` closer
+diagnostic was false and non-gating.
+
+### Evidence-validator root cause
+
+The sole completeness failure was one `/joint_states` header-stamp regression
+from `271.747 s` to `271.522 s`, exceeding the fixed `0.150 s` tolerance by
+`0.075 s`.
+
+The live graph and retained resolved manifest show two intentional publishers:
+
+```text
+/joint_state_broadcaster
+/turtlebot3_joint_state
+```
+
+Read-only bag deserialization found one `225 ms` rollback only in the merged
+receipt order. The `33,181` effort-present and `9,769` effort-empty message
+signatures independently had zero backward stamps. The three older
+effort-empty messages arrived approximately `1.30 ms` after a newer
+effort-present message. Simulation `/clock` was monotonic, every typed stamp
+remained inside the `/clock` range, and all other timestamp, lifecycle,
+final-zero, topic, parameter, collision, console, and cleanup checks passed.
+
+The passing M2.3 bag contains the same two publishers and ten merged-order
+rollbacks whose maximum happened to be only `1 ms`. The validator therefore
+models a deliberately multi-publisher stream as one source-time sequence and
+can turn GUI scheduling into a false recording failure. This is not a robot
+clock reversal or a wall-margin, recenter, affine, collision, or navigation
+failure.
+
+Read-only sqlite `PRAGMA quick_check` returned `ok`. Standard analysis returned
+`0`, wrote eight plots and eleven tables, and honestly reports
+`analysis_status: partial` because the retained completeness document failed.
+Exact commands, values, hashes, and the bounded fresh-correction requirement
+are recorded in:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m4_visible_probe_report.md
+```
+
+The fixed eight-case two-light suite and optional three-light probe were not
+run. This failed fixed M4 attempt will not be retried, overwritten, or
+relabelled.
+
+## Current milestone
+
+**Phase 08.7 M4 — visible behavior passed, but the formal probe and M4 gate
+are closed FAIL on a multi-publisher timestamp-validation defect.**
+
+### Next criterion
+
+Checkpoint and commit the retained M4 result. A fresh version requires
+explicit authorization to correct the shared evidence contract: preserve
+strict clock/range and singleton-stream checks, declare the exact two
+`/joint_states` publishers, avoid a merged-order monotonicity claim that
+cannot identify producers, qualify without Gazebo, and dispatch one new
+visible probe under a new evidence root before any suite.
