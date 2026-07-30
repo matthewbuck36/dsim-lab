@@ -13,8 +13,8 @@ from ros_esc.scenario_runner import aggregate_field_truth
 import yaml
 
 
-SCHEMA_VERSION = 6
-SUPPORTED_SCHEMA_VERSIONS = {1, 2, 3, 4, 5, 6}
+SCHEMA_VERSION = 7
+SUPPORTED_SCHEMA_VERSIONS = {1, 2, 3, 4, 5, 6, 7}
 PROFILES = {'legacy', 'robust_gaussian_v1'}
 STATUSES = {'executable_unverified', 'unsupported'}
 FAMILIES = {
@@ -148,6 +148,13 @@ LAUNCH_OVERRIDES = {
     'post_recovery_guidance_max_sec',
     'post_recovery_affine_taper_distance_m',
     'post_recovery_affine_weight',
+    'post_recovery_progress_enabled',
+    'post_recovery_guidance_min_progress_m',
+    'post_recovery_liveness_window_sec',
+    'post_recovery_liveness_min_path_length_m',
+    'post_recovery_liveness_max_displacement_m',
+    'post_recovery_direction_refresh_limit',
+    'robust_search_epoch_reset_enabled',
     'post_recovery_retry_limit',
     'recenter_angular_gain',
     'recenter_hold_sec',
@@ -219,6 +226,7 @@ STAGED_RECOVERY_KEYS = {
     'global_approach_radius_m',
     'global_closer_radius_m',
     'local_association_mode',
+    'post_stage_a_timeout_sec',
 }
 KNOWN_TOPOLOGY_KEYS = {
     'expected_local_minima',
@@ -348,6 +356,15 @@ SCHEMA_V6_LAUNCH_OVERRIDES = {
     'recenter_target_fill_clearance_m',
     'recoverable_navigation_enabled',
     'recovery_retry_limit',
+}
+SCHEMA_V7_LAUNCH_OVERRIDES = {
+    'post_recovery_direction_refresh_limit',
+    'post_recovery_guidance_min_progress_m',
+    'post_recovery_liveness_max_displacement_m',
+    'post_recovery_liveness_min_path_length_m',
+    'post_recovery_liveness_window_sec',
+    'post_recovery_progress_enabled',
+    'robust_search_epoch_reset_enabled',
 }
 DIRECT_STAGED_RECOVERY_STATE_PATH = (
     'SEARCH',
@@ -526,6 +543,50 @@ def _validate_correction_overrides(overrides, ablations, location):
             f'{location}.post_recovery_affine_taper_distance_m',
             positive=True,
         )
+    progress_enabled = False
+    if 'post_recovery_progress_enabled' in overrides:
+        progress_enabled = _boolean(
+            overrides['post_recovery_progress_enabled'],
+            f'{location}.post_recovery_progress_enabled',
+        )
+    if 'robust_search_epoch_reset_enabled' in overrides:
+        _boolean(
+            overrides['robust_search_epoch_reset_enabled'],
+            f'{location}.robust_search_epoch_reset_enabled',
+        )
+    for name in (
+        'post_recovery_guidance_min_progress_m',
+        'post_recovery_liveness_window_sec',
+        'post_recovery_liveness_min_path_length_m',
+    ):
+        if name in overrides:
+            _number(overrides[name], f'{location}.{name}', positive=True)
+    if 'post_recovery_liveness_max_displacement_m' in overrides:
+        _number(
+            overrides['post_recovery_liveness_max_displacement_m'],
+            f'{location}.post_recovery_liveness_max_displacement_m',
+            minimum=0.0,
+        )
+    if 'post_recovery_direction_refresh_limit' in overrides:
+        _positive_integer(
+            overrides['post_recovery_direction_refresh_limit'],
+            f'{location}.post_recovery_direction_refresh_limit',
+        )
+    minimum_path = overrides.get(
+        'post_recovery_liveness_min_path_length_m'
+    )
+    maximum_displacement = overrides.get(
+        'post_recovery_liveness_max_displacement_m'
+    )
+    if (
+        minimum_path is not None
+        and maximum_displacement is not None
+        and float(maximum_displacement) >= float(minimum_path)
+    ):
+        raise ValueError(
+            f'{location}.post_recovery_liveness_max_displacement_m '
+            'must be below post_recovery_liveness_min_path_length_m'
+        )
     trigger = overrides.get('boundary_recovery_trigger_clearance_m')
     release = overrides.get('boundary_recovery_release_clearance_m')
     if (
@@ -567,6 +628,36 @@ def _validate_correction_overrides(overrides, ablations, location):
             raise ValueError(
                 f'{location}.post_recovery_guidance_enabled requires '
                 'post_recovery_retry_limit'
+            )
+    if progress_enabled:
+        required_progress = {
+            'post_recovery_direction_refresh_limit',
+            'post_recovery_guidance_min_progress_m',
+            'post_recovery_liveness_max_displacement_m',
+            'post_recovery_liveness_min_path_length_m',
+            'post_recovery_liveness_window_sec',
+            'robust_search_epoch_reset_enabled',
+        }
+        missing = sorted(required_progress - set(overrides))
+        if missing:
+            raise ValueError(
+                f'{location}.post_recovery_progress_enabled requires: '
+                + ', '.join(missing)
+            )
+        if not guidance_enabled:
+            raise ValueError(
+                f'{location}.post_recovery_progress_enabled requires '
+                'post_recovery_guidance_enabled'
+            )
+        if not overrides.get('recoverable_navigation_enabled', False):
+            raise ValueError(
+                f'{location}.post_recovery_progress_enabled requires '
+                'recoverable_navigation_enabled'
+            )
+        if not overrides.get('robust_search_epoch_reset_enabled', False):
+            raise ValueError(
+                f'{location}.post_recovery_progress_enabled requires '
+                'robust_search_epoch_reset_enabled'
             )
 
 
@@ -1347,6 +1438,41 @@ def load_suite(path):
         raise ValueError(
             'schema version 6 is required for recoverable-navigation fields'
         )
+    uses_schema_v7_fields = bool(
+        isinstance(raw_frozen_overrides, dict)
+        and SCHEMA_V7_LAUNCH_OVERRIDES & set(raw_frozen_overrides)
+    )
+    if isinstance(raw_cases, list):
+        for case in raw_cases:
+            if not isinstance(case, dict):
+                continue
+            raw_algorithm = case.get('algorithm', {})
+            raw_overrides = (
+                raw_algorithm.get('launch_overrides', {})
+                if isinstance(raw_algorithm, dict)
+                else {}
+            )
+            raw_success = case.get('success', {})
+            raw_staged = (
+                raw_success.get('staged_recovery', {})
+                if isinstance(raw_success, dict)
+                else {}
+            )
+            uses_schema_v7_fields = uses_schema_v7_fields or (
+                isinstance(raw_overrides, dict)
+                and bool(
+                    SCHEMA_V7_LAUNCH_OVERRIDES & set(raw_overrides)
+                )
+            ) or (
+                isinstance(raw_staged, dict)
+                and 'post_stage_a_timeout_sec' in raw_staged
+            )
+            if uses_schema_v7_fields:
+                break
+    if schema_version < 7 and uses_schema_v7_fields:
+        raise ValueError(
+            'schema version 7 is required for progress-guidance fields'
+        )
     suite_id = _identifier(document.get('suite_id'), 'suite_id')
     if document.get('mode') != 'simulation':
         raise ValueError('mode must be simulation')
@@ -1706,6 +1832,20 @@ def load_suite(path):
             ablations,
             f'{location}.algorithm.launch_overrides',
         )
+        if (
+            (
+                overrides.get('post_recovery_progress_enabled') is True
+                or overrides.get(
+                    'robust_search_epoch_reset_enabled'
+                ) is True
+            )
+            and profiles != ['robust_gaussian_v1']
+        ):
+            raise ValueError(
+                f'{location}.algorithm.launch_overrides progress guidance '
+                'and robust search-epoch reset require the singleton '
+                'robust_gaussian_v1 profile'
+            )
 
         success = case.get('success', {})
         _unknown(success, SUCCESS_KEYS, f'{location}.success')
@@ -2379,6 +2519,20 @@ def load_suite(path):
                     normalized_staged_recovery[
                         'global_closer_radius_m'
                     ] = closer_radius
+            if schema_version >= 7:
+                post_stage_a_timeout = _number(
+                    staged_recovery.get('post_stage_a_timeout_sec'),
+                    f'{staged_location}.post_stage_a_timeout_sec',
+                    positive=True,
+                )
+                if post_stage_a_timeout >= execution['run_timeout_sec']:
+                    raise ValueError(
+                        f'{staged_location}.post_stage_a_timeout_sec '
+                        'must be below execution.run_timeout_sec'
+                    )
+                normalized_staged_recovery[
+                    'post_stage_a_timeout_sec'
+                ] = post_stage_a_timeout
             staged_recovery = normalized_staged_recovery
             if (
                 len(local_source_ids)

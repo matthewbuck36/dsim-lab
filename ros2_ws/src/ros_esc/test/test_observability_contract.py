@@ -406,6 +406,13 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         "recenter_max_linear_velocity_mps": "0.10",
         "recenter_max_angular_velocity_rps": "0.40",
         "recenter_rotate_in_place_angle_rad": "1.0471975511965976",
+        "post_recovery_progress_enabled": "False",
+        "post_recovery_guidance_min_progress_m": "0.60",
+        "post_recovery_liveness_window_sec": "12.0",
+        "post_recovery_liveness_min_path_length_m": "0.60",
+        "post_recovery_liveness_max_displacement_m": "0.20",
+        "post_recovery_direction_refresh_limit": "0",
+        "robust_search_epoch_reset_enabled": "False",
         "gaussian_fill_pose_topic": "/odom",
         "gaussian_fill_estimation_channel_index": "0",
         "gaussian_fill_sample_sync_tolerance_sec": "0.05",
@@ -482,6 +489,43 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         '-p supervisor_command_stale_sec:=$(var supervisor_command_stale_sec)'
         in supervisor_commands[0].attrib['cmd']
     )
+    for name in (
+        'post_recovery_progress_enabled',
+        'post_recovery_guidance_min_progress_m',
+        'post_recovery_liveness_window_sec',
+        'post_recovery_liveness_min_path_length_m',
+        'post_recovery_liveness_max_displacement_m',
+        'post_recovery_direction_refresh_limit',
+    ):
+        assert (
+            f'-p {name}:=$(var {name})'
+            in supervisor_commands[0].attrib['cmd']
+        )
+    pde_history_commands = [
+        element
+        for element in root.findall('executable')
+        if 'ros2 run ros_esc pde_history_node'
+        in element.attrib.get('cmd', '')
+    ]
+    pde_cost_history_commands = [
+        element
+        for element in root.findall('executable')
+        if 'ros2 run ros_esc pde_cost_history_node'
+        in element.attrib.get('cmd', '')
+    ]
+    assert len(pde_history_commands) == 1
+    assert len(pde_cost_history_commands) == 1
+    for element in pde_history_commands + pde_cost_history_commands:
+        command = element.attrib['cmd']
+        assert '-p algorithm_profile:=$(var algorithm_profile)' in command
+        assert (
+            '-p robust_search_epoch_reset_enabled:='
+            '$(var robust_search_epoch_reset_enabled)'
+        ) in command
+        assert (
+            '-p algorithm_state_topic:=$(var algorithm_state_topic)'
+            in command
+        )
     gaussian_commands = [
         element
         for element in root.findall("executable")

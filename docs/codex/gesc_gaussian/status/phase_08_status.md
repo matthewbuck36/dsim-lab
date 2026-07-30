@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-29T20:53:20-07:00`
-Status: `PHASE 08.7 M3 EXECUTED — 1/5 COMBINED PASS; RETAINED FAIL`
+Last verified: `2026-07-30T01:06:06-07:00`
+Status: `PHASE 08.7 M4.2 NO-GAZEBO QUALIFICATION PASS; QUALIFIED COMMIT PENDING`
 
 ## Objective
 
@@ -6717,3 +6717,274 @@ status, the active subphase Plan, and the generated Phase 08 checkpoint.
 Refresh the checkpoint for this exact status and commit the Plan-only
 boundary. Then implement and qualify the complete M4.2 correction without
 Gazebo.
+
+## Phase 08.7 M4.2 Plan commit boundary
+
+The exact authorized amendment, live-status planning record, and refreshed
+checkpoint were committed before implementation at:
+
+```text
+99aa6bd
+phase 08.7: plan M4.2 post-recovery liveness
+```
+
+M4.1 and every earlier scenario/result remain closed and immutable.
+
+## Phase 08.7 M4.2 implementation and no-Gazebo qualification
+
+M4.2 extends only the existing robust supervisor, paired PDE-history owners,
+convergence detector epoch gate, custom-controller command path, central
+launch, schema, and scenario runner. It adds no node, recorder, validator,
+launch graph, simulation/physical fork, message, or `/cmd_vel` publisher.
+Every new runtime control is robust-only, opt-in, and default off.
+
+### Implemented post-recovery behavior
+
+- `RECENTER -> SEARCH` now creates one fresh progress/direction epoch anchored
+  at the next accepted local-recovery boundary. It discards the escape-era
+  direction, recomputes a hard-safe direction, and increments the existing
+  typed direction revision.
+- The supervisor publishes only its existing
+  `/gesc_gaussian/supervisor_command` contribution. The existing custom
+  controller remains the sole `/cmd_vel` owner and combines/saturates that
+  contribution with GESC.
+- Safe direct translation remains active until `0.60 m` measured outward
+  progress. The affine contribution remains at full configured post-recovery
+  weight through `0.60 m`, tapers over the next `0.50 m`, and releases after
+  `1.10 m` outward progress or the fixed `90.0 s` maximum. Negative or zero
+  outward progress does not consume this distance budget.
+- The exact-window liveness tracker uses `12.0 s`, `0.60 m` path, and
+  `0.20 m` maximum displacement. Duplicate stamps are ignored, backward time
+  is rejected, and the exact window boundary is interpolated. The first loop
+  refreshes direction once; the next requests one recoverable recenter; a
+  recurrence after that recenter releases the extra guidance and continues
+  ordinary SEARCH without entering `FAILSAFE`.
+- Every translation still passes the existing wall/fill/persistence command
+  sweep. An unsafe translation becomes zero while safe angular
+  alignment/replanning continues. Physical-room violation, invalid/stale
+  data, hard controller faults, explicit stop, nonfinite data, and exhausted
+  hard-navigation recovery remain terminal zero-output failures.
+- The existing position and cost PDE-history owners share a typed
+  `SearchEpochGate`. With
+  `robust_search_epoch_reset_enabled:=True`, each new SEARCH boundary arms one
+  paired reset, and each owner waits for its next finite pose/cost sample.
+  Default-off and legacy behavior are unchanged; the accepted fill registry
+  remains intact.
+- Schema v7 requires the progress/history dependencies and a positive
+  `post_stage_a_timeout_sec` below the run timeout. The live runner starts the
+  `120.0 s` simulation-time budget only after Stage A and exact fill
+  cardinality are both observed. A qualifying global sample wins immediately,
+  including at the same timestamp as budget expiry; expiry is a graceful
+  behavioral failure rather than an infrastructure wall timeout.
+
+The fixed M4.2 inputs are:
+
+```text
+phase08_v7_m4_2_visible_probe.yaml       1 visible GUI case, seed 18208
+phase08_v7_m4_2_two_light_suite.yaml     5 spatial + 3 repeat headless cases
+```
+
+The visible case key is
+`d4aaa0d2d7e4af20c7721d2912620fe2a0a2f9f16004c462a0299e235f2866c8`.
+The eight suite keys, in fixed execution order, are:
+
+```text
+8cf1f923bfb6a876e7d43fbc23ece7d455b7c5f902d7e183a898c8525e9515cd
+cc18feff229376ba27b2a476a03ec6221e29fc1ac0ac0d461df33b1df3cfe8e5
+45c7f2d178557c65713246cfbc8580a2bc1f8841d4fe3e74bc877b95448008fa
+0f999a6cbeef8742327fe6fa82037ab33d58f2e424f519fe7bcbbb190e1d76db
+803bdde8526d72574eb2e70eb93244a88f26c472e1f5e61bde5739877d6338f2
+4d789ca92b889348b46b628e14c5f2e6717403ca0fc57b173d1d8f6060f22e3e
+79c628f86d0f65010a2a4137fe89653d39e107a9a661bea6f316f581d9fdae97
+24594df685cfad8f5295f8ca8bdaf557c9feb234f306cda683a0360cd1c80446
+```
+
+All three reproducibility cases bind the central validation key
+`45c7f2d178557c65713246cfbc8580a2bc1f8841d4fe3e74bc877b95448008fa`.
+
+### No-Gazebo source-test evidence
+
+Focused correction envelopes passed:
+
+```text
+11 passed, 118 deselected   exact-window progress/liveness plus schema
+10 passed, 12 deselected    paired histories plus supervisor integration
+4 passed, 77 deselected     live runner budget plus launch contract
+18 passed, 41 deselected    final typed reporting/recovery regression
+10 passed                  final schema-v7 negative/compatibility regression
+```
+
+The final broad functional command was bounded and produced:
+
+```text
+timeout --signal=INT --kill-after=20s 300s \
+  python3 -m pytest -q ros2_ws/src/ros_esc/test \
+  --ignore=ros2_ws/src/ros_esc/test/test_flake8.py \
+  --ignore=ros2_ws/src/ros_esc/test/test_pep257.py \
+  -k 'not v4_population_adoption_is_exact_and_unused' \
+  --junitxml=/tmp/phase08_7_m4_2_broad_functional_final.xml
+
+609 passed, 3 skipped, 1 deselected in 115.26 s
+```
+
+JUnit SHA-256:
+
+```text
+f4e6958f06b27a3667674068ea97c6450e9bb18b385ba0e0b2a82bd0215d0aaa
+```
+
+The three skips are exact existing opt-ins:
+
+- generated-source copyright header is absent;
+- `DSIM_RUN_GAZEBO_RECORDING_TEST=1` was not set;
+- `RUN_GESC_PHASE06_GAZEBO_E2E=1` was not set.
+
+The single deselection is the sealed stale
+`test_v4_population_adoption_is_exact_and_unused`, which treats later fixed
+V6/V7 additions as drift. M4.2 changes none of its immutable V4 inputs. A
+nonfatal rclpy destroyable warning printed after the passing process result;
+the command exited zero and JUnit has zero errors/failures.
+
+Fatal `E9/F63/F7/F82` checking across every changed Python source/test file,
+Python compilation, `git diff --check`, source and installed `xmllint`, and:
+
+```text
+bash DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh 08 implement
+```
+
+all pass.
+
+The passing tests directly cover:
+
+- exact-window interpolation, progress, liveness, duplicate stamps, backward
+  time, and invalid parameter relations;
+- new SEARCH anchoring/direction revision, safe command, progress release,
+  affine hold/taper, one refresh, one recenter, maximum-time release, and
+  nonterminal fallback;
+- wall/fill command-sweep suppression plus retained physical-room and
+  hard-fault `FAILSAFE` latching;
+- paired finite-sample history reset and legacy/default-off preservation;
+- schema-v1-through-v6 compatibility, schema-v7 dependencies, fixed case keys,
+  topology/fill cardinality, and historical byte hashes;
+- live Stage A/cardinality start, global-stop precedence, graceful budget
+  failure, and independent infrastructure wall-timeout classification;
+- retained M4/M4.1 evidence, geometry, direction, wall, command, ownership,
+  timestamp, topic, cost-sign, and unit regressions.
+
+### Isolated build and installed qualification
+
+The fresh isolated three-package build passed:
+
+```text
+source /opt/ros/humble/setup.bash
+timeout --signal=INT --kill-after=20s 180s \
+  colcon --log-base /tmp/phase08_7_m4_2_qual/log build \
+  --base-paths ros2_ws/src \
+  --build-base /tmp/phase08_7_m4_2_qual/build \
+  --install-base /tmp/phase08_7_m4_2_qual/install \
+  --packages-select ros_esc_interfaces ros_esc turtlebot3_rotating_sensor \
+  --event-handlers console_direct+
+
+Summary: 3 packages finished in 12.3 s
+```
+
+Installed-executable dry-runs passed:
+
+```text
+/tmp/phase08_7_m4_2_visible_installed_dry_run.yaml
+  resolved_run_count: 1
+  unsupported_count: 0
+  gazebo_gui: True
+
+/tmp/phase08_7_m4_2_suite_installed_dry_run.yaml
+  resolved_run_count: 8
+  unsupported_count: 0
+  gazebo_gui: False for all eight
+```
+
+Each installed case resolves schema v7, `post_stage_a_timeout_sec: 120.0`,
+the progress/liveness controls, paired history reset, fixed two-light
+geometry, exact known topology, one-fill limit, `1.20 m` primary stop, and
+`1.00 m` closer diagnostic. The summary hashes are:
+
+```text
+2024600c86723135c7b19f97e668804d6782cb0798616805d17ee62c343b4031  visible
+35a10229a1c5265a278b53630f04a2ce2c3b72b775b0ded3602515a8b595ec4c  suite
+```
+
+Nonexecuting installed `ros2 launch -p` expansion of the exact visible
+`launch_argv` passed with `92` supplied launch arguments and retained its
+`270`-line description at:
+
+```text
+/tmp/phase08_7_m4_2_installed_launch_description.txt
+05f213dd2b0f317a55d5b75f42bae17e9cbb34e2c9207998080de8163cdc11e1
+```
+
+It binds the new parameters into the existing supervisor and paired
+PDE-history processes. The central launch contains exactly one `/cmd_vel`
+argument, owned by `controller_node`; the supervisor retains only
+`/gesc_gaussian/supervisor_command`.
+
+Production Python, both new scenarios, and the central launch are
+byte-identical between source and the isolated install. Source hashes are:
+
+```text
+b3af244b14adc42e8efc315d5544dd7109380b4e98d6c1a69d7cfe347e64dc05  convergence detector
+9f29dd9c9e0534a4e28515c404409ef3e69004916af7f3777696a7704432b1c0  cost PDE history
+b8fb551adbd9a0ccfcfddb9830e8a7cc5b9e30ad60ee09f7cb5763acf83f212e  pose PDE history
+55d32f36dcbbdf24b7a6f3af9a3670e6c1941b3af9794a6c5a8feb04e8713906  scenario runner
+57f797fc106c0246e4d1b12599b45f7e7fd67c35cc8545f68848294169fed8e7  scenario schema
+50128f2c98ee909b8c564cba855fecc0fa9d926609e9086d9a2ca6e5d2c7b458  SEARCH epoch gate
+ff643987f2f874207dc23d083390fcaa854bdd12b16147272a5a09e42704f1a2  recenter/progress helpers
+ffd55910474d6cae7b5af85c3b8a3b8362c0aee1ebe55fecbae3f89d677a7ab2  supervisor
+e6ec6120df271afab3ae71192b601c4bcf866105a8cdaa13a10dcd94b7632973  visible input
+8d56eb4872aafc485103f8ddd2e03a7105101fd97b8b26b532e880a9d7c84219  suite input
+4e8b9a187362abac31a21e70fbb1d4df220686c6ee37a9f94a3426e8d7de2f1f  central launch
+```
+
+### Historical and evidence immutability
+
+Historical source anchors remain:
+
+```text
+3be130581b88c986fd845aef0c33c9db94ceb02ecfe2a6361926b0317ef8e655  V6 hue sweep
+3b9badc92cf63739f65662158999e3c2aab71761f790e3f360be9a52e6f38688  V6 repeats
+1221d8cb9d7235218d4f3da710f10d41284632a93712bd89d763d938a0437dae  M3 suite
+37ba6e1e9adc842691328cc0a1c66e5fd04034db59c6fcdb0c05f6f6c4b769a1  M4 visible
+2d881faa180c18c0b423671f12f91868e2b12d484a533909f607fef8372ca313  M4.1 visible
+6e67e657b11f080a545abe6b87a8730112c350163e47f85ec6ac83ab32abb937  M4 two-light
+1a9ac4774094d43822b7d33f5eba24566e15cf745b9481ce8f25720a8e42c721  M4 three-light
+88b10b39aa24a6430f6f031c750334ed34e6835e54c84de8d36f4cc6a26444bf  shifted world
+8ecc1a231efec24401d74fef3cd5139d48c6029f88e71d044cefdf2fd14c5bef  historical world
+```
+
+Read-only hashing of the actual retained evidence confirms:
+
+```text
+4acc311734e63896faf33c07439b7c1c81e9ebdcd6902b0514bf9c9ce0846e88  M4 completeness
+afd4cbd707004e2a8b6965ea08f1db1329a08ff816ff0965b821d95f28a0fcc0  M4.1 completeness
+```
+
+The fresh probe and suite evidence roots remain absent. The Gazebo,
+scenario-runner, recorder, and matching launch process set is inactive. No
+Gazebo or physical process was started during M4.2 implementation or
+qualification.
+
+The bounded material-boundary checkpoint command passed and refreshed
+`docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt` against base
+HEAD `99aa6bd85783d1c017b49306b85d32c1a7eb46bf`. The checkpoint is refreshed
+again after this status update so it snapshots the exact qualified precommit
+boundary whose only next action is the authorized commit.
+
+## Current milestone
+
+**Phase 08.7 M4.2 — implementation and all required no-Gazebo qualification
+criteria PASS; material-boundary checkpoint PASS; qualified commit pending.**
+
+### Next criterion
+
+Inspect the complete implementation/status/checkpoint diff and commit the
+qualified implementation plus fixed fresh inputs. Only after that clean
+committed boundary may the single authorized visible two-light probe be
+dispatched.

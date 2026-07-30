@@ -13,6 +13,8 @@ from ros_esc.supervisor_node.escape_recenter import (
     FillAvoidance,
     OperatingBounds,
     Pose2D,
+    PostRecoveryProgressConfig,
+    PostRecoveryProgressTracker,
     RecenterControlConfig,
     RecenterHoldTracker,
     RecenterRoutePlanner,
@@ -112,6 +114,69 @@ def test_frozen_geometry_is_not_changed_by_a_replacement_fill():
     assert tracker.geometry.initial_fill_id == 7
     assert tracker.geometry.center.tolist() == [1.0, 2.0]
     assert tracker.geometry.exit_radius == 0.8
+
+
+def test_post_recovery_progress_uses_exact_window_interpolation():
+    tracker = PostRecoveryProgressTracker(
+        pose(0.0, 1.0, 0.0),
+        [0.0, 0.0],
+        PostRecoveryProgressConfig(
+            window_sec=3.0,
+            minimum_path_length_m=0.60,
+            maximum_displacement_m=0.20,
+        ),
+    )
+    tracker.update(pose(2.0, 1.4, 0.0))
+    current = tracker.update(pose(4.0, 1.8, 0.0))
+
+    assert current.fill_distance_m == pytest.approx(1.8)
+    assert current.outward_progress_m == pytest.approx(0.8)
+    assert current.net_displacement_m == pytest.approx(0.8)
+    assert current.path_length_m == pytest.approx(0.8)
+    assert current.window_valid is True
+    assert current.window_path_length_m == pytest.approx(0.6)
+    assert current.window_displacement_m == pytest.approx(0.6)
+    assert current.stalled is False
+
+
+def test_post_recovery_liveness_detects_path_without_translation():
+    tracker = PostRecoveryProgressTracker(
+        pose(0.0, 1.0, 0.0),
+        [0.0, 0.0],
+        PostRecoveryProgressConfig(
+            window_sec=4.0,
+            minimum_path_length_m=0.60,
+            maximum_displacement_m=0.20,
+        ),
+    )
+    tracker.update(pose(1.0, 1.2, 0.0))
+    tracker.update(pose(2.0, 1.2, 0.2))
+    tracker.update(pose(3.0, 1.0, 0.2))
+    loop = tracker.update(pose(4.0, 1.0, 0.0))
+
+    assert loop.window_valid is True
+    assert loop.window_path_length_m == pytest.approx(0.8)
+    assert loop.window_displacement_m == pytest.approx(0.0)
+    assert loop.stalled is True
+
+    reset = tracker.reset_liveness_window()
+    assert reset.window_valid is False
+    assert reset.path_length_m == pytest.approx(0.8)
+    assert reset.outward_progress_m == pytest.approx(0.0)
+
+
+def test_post_recovery_tracker_ignores_duplicate_and_rejects_backward_time():
+    tracker = PostRecoveryProgressTracker(
+        pose(1.0, 1.0, 0.0),
+        [0.0, 0.0],
+    )
+    first = tracker.update(pose(2.0, 1.1, 0.0))
+    duplicate = tracker.update(pose(2.0, 99.0, 99.0))
+
+    assert duplicate is first
+    assert duplicate.net_displacement_m == pytest.approx(0.1)
+    with pytest.raises(ValueError, match="timestamps must increase"):
+        tracker.update(pose(1.5, 1.2, 0.0))
 
 
 def test_recent_approach_interpolates_and_unbounded_policy_reverses_it():
@@ -600,6 +665,11 @@ def test_retained_m6_recenter_geometry_completes_safely_with_margin():
         lambda: OperatingBounds(wall_margin=2.0),
         lambda: OperatingBounds(center_x=1.9),
         lambda: EscapeProgressConfig(stall_window_sec=0.0),
+        lambda: PostRecoveryProgressConfig(window_sec=0.0),
+        lambda: PostRecoveryProgressConfig(
+            minimum_path_length_m=0.20,
+            maximum_displacement_m=0.20,
+        ),
         lambda: DirectionConfig(lookahead_m=math.nan),
         lambda: RecenterControlConfig(max_linear_velocity_mps=0.0),
         lambda: pose(0.0, math.nan, 0.0),

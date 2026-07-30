@@ -163,6 +163,13 @@
     <arg name="recenter_target_fill_clearance_m" default="0.05"/>
     <arg name="post_recovery_affine_weight" default="1.0"/>
     <arg name="post_recovery_affine_taper_distance_m" default="0.50"/>
+    <arg name="post_recovery_progress_enabled" default="False"/>
+    <arg name="post_recovery_guidance_min_progress_m" default="0.60"/>
+    <arg name="post_recovery_liveness_window_sec" default="12.0"/>
+    <arg name="post_recovery_liveness_min_path_length_m" default="0.60"/>
+    <arg name="post_recovery_liveness_max_displacement_m" default="0.20"/>
+    <arg name="post_recovery_direction_refresh_limit" default="0"/>
+    <arg name="robust_search_epoch_reset_enabled" default="False"/>
     <arg name="room_bounds_x_min_m" default="-2.0"/>
     <arg name="room_bounds_x_max_m" default="2.0"/>
     <arg name="room_bounds_y_min_m" default="-2.0"/>
@@ -682,6 +689,9 @@
             ros2 run ros_esc pde_history_node
             --ros-args
             -p omega:=$(var pde_omega)
+            -p algorithm_profile:=$(var algorithm_profile)
+            -p robust_search_epoch_reset_enabled:=$(var robust_search_epoch_reset_enabled)
+            -p algorithm_state_topic:=$(var algorithm_state_topic)
             -r /odom:=$(var algorithm_pose_topic)
         "
     />
@@ -693,6 +703,9 @@
             --ros-args
             -p omega:=$(var pde_omega)
             -p cost_topic:=$(var pde_cost_history_topic)
+            -p algorithm_profile:=$(var algorithm_profile)
+            -p robust_search_epoch_reset_enabled:=$(var robust_search_epoch_reset_enabled)
+            -p algorithm_state_topic:=$(var algorithm_state_topic)
         "
     />
 
@@ -822,6 +835,12 @@
             -p recenter_target_fill_clearance_m:=$(var recenter_target_fill_clearance_m)
             -p post_recovery_affine_weight:=$(var post_recovery_affine_weight)
             -p post_recovery_affine_taper_distance_m:=$(var post_recovery_affine_taper_distance_m)
+            -p post_recovery_progress_enabled:=$(var post_recovery_progress_enabled)
+            -p post_recovery_guidance_min_progress_m:=$(var post_recovery_guidance_min_progress_m)
+            -p post_recovery_liveness_window_sec:=$(var post_recovery_liveness_window_sec)
+            -p post_recovery_liveness_min_path_length_m:=$(var post_recovery_liveness_min_path_length_m)
+            -p post_recovery_liveness_max_displacement_m:=$(var post_recovery_liveness_max_displacement_m)
+            -p post_recovery_direction_refresh_limit:=$(var post_recovery_direction_refresh_limit)
             -p room_bounds_x_min_m:=$(var room_bounds_x_min_m)
             -p room_bounds_x_max_m:=$(var room_bounds_x_max_m)
             -p room_bounds_y_min_m:=$(var room_bounds_y_min_m)

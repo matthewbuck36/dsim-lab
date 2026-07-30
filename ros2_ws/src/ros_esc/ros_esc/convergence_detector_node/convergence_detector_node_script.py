@@ -4,6 +4,7 @@ import rclpy
 from rclpy.node import Node
 import rclpy.parameter
 from ros_esc.supervisor_node.state_machine import ROBUST_PROFILE, VALID_PROFILES
+from ros_esc.search_epoch import SearchEpochGate
 from ros_esc_interfaces.msg import (
     AlgorithmEvent,
     AlgorithmState,
@@ -49,37 +50,6 @@ def motion_qualified(
         path_length >= minimum_path_length
         and path_efficiency <= maximum_path_efficiency
     )
-
-
-class SearchEpochGate:
-    """Track valid typed SEARCH epochs without changing legacy behavior."""
-
-    ENTERED = "entered"
-    LEFT = "left"
-
-    def __init__(self, enabled):
-        self.enabled = bool(enabled)
-        self.active = not self.enabled
-        self.run_id = None
-
-    def update(self, state):
-        if not self.enabled:
-            return None
-        valid_search = bool(
-            state.state_valid and int(state.state) == AlgorithmState.STATE_SEARCH
-        )
-        run_id = str(state.run_id) if state.run_id_valid else None
-        if valid_search:
-            entered = not self.active or run_id != self.run_id
-            self.active = True
-            self.run_id = run_id
-            return self.ENTERED if entered else None
-        if self.active:
-            self.active = False
-            self.run_id = run_id
-            return self.LEFT
-        self.run_id = run_id
-        return None
 
 
 class ConvergenceDetector(Node):

@@ -4,7 +4,12 @@ import numpy as np
 from rclpy.node import Node
 import rclpy.parameter
 from nav_msgs.msg import Odometry
-from ros_esc_interfaces.msg import StampedFloat64MultiArray
+from ros_esc.search_epoch import SearchEpochGate
+from ros_esc.supervisor_node.state_machine import (
+    ROBUST_PROFILE,
+    VALID_PROFILES,
+)
+from ros_esc_interfaces.msg import AlgorithmState, StampedFloat64MultiArray
 
 
 class PDEHistory(Node):
@@ -20,8 +25,11 @@ class PDEHistory(Node):
     Publishes flattened buffer: [x0,y0,x1,y1,...]
     """
 
-    def __init__(self):
-        super().__init__("pde_history")
+    def __init__(self, parameter_overrides=None):
+        super().__init__(
+            "pde_history",
+            parameter_overrides=parameter_overrides,
+        )
 
         # Use Gazebo simulation time
         self.set_parameters([
@@ -40,11 +48,38 @@ class PDEHistory(Node):
         self.declare_parameter("k_periods", 20)
         self.declare_parameter("omega", 5.0)
         self.declare_parameter("cfl", 0.9)  # < 1 for stability
+        self.declare_parameter("algorithm_profile", "legacy")
+        self.declare_parameter(
+            "robust_search_epoch_reset_enabled", False
+        )
+        self.declare_parameter(
+            "algorithm_state_topic",
+            "/gesc_gaussian/algorithm_state",
+        )
 
         self.N = int(self.get_parameter("n_buffer").value)
         self.k = int(self.get_parameter("k_periods").value)
         self.omega = float(self.get_parameter("omega").value)
         self.cfl = float(self.get_parameter("cfl").value)
+        self.algorithm_profile = str(
+            self.get_parameter("algorithm_profile").value
+        ).strip()
+        if self.algorithm_profile not in VALID_PROFILES:
+            raise ValueError(
+                f"algorithm_profile must be one of {VALID_PROFILES}"
+            )
+        self.search_epoch_reset_enabled = bool(
+            self.get_parameter(
+                "robust_search_epoch_reset_enabled"
+            ).value
+        )
+        if (
+            self.search_epoch_reset_enabled
+            and self.algorithm_profile != ROBUST_PROFILE
+        ):
+            raise ValueError(
+                "robust search-epoch reset requires robust_gaussian_v1"
+            )
 
         # Derived
         self.T = 2.0 * np.pi / self.omega
@@ -57,6 +92,10 @@ class PDEHistory(Node):
 
         self.last_stamp = None
         self.initialized = False
+        self.search_epoch_gate = SearchEpochGate(
+            self.search_epoch_reset_enabled
+        )
+        self.search_epoch_reset_pending = False
 
         # Sub odom
         self.sub = self.create_subscription(
@@ -65,6 +104,14 @@ class PDEHistory(Node):
             self.cb,
             10
         )
+        self.algorithm_state_subscriber = None
+        if self.search_epoch_reset_enabled:
+            self.algorithm_state_subscriber = self.create_subscription(
+                AlgorithmState,
+                str(self.get_parameter("algorithm_state_topic").value),
+                self.algorithm_state_cb,
+                10,
+            )
 
         # Pub history
         self.pub = self.create_publisher(
@@ -75,8 +122,15 @@ class PDEHistory(Node):
 
         self.get_logger().info(
             f"PDEHistory: N={self.N}, k={self.k}, omega={self.omega:.3f}, "
-            f"lambda={self.lambda_transport:.3f}, dt_node={self.dt_node:.6f}"
+            f"lambda={self.lambda_transport:.3f}, dt_node={self.dt_node:.6f}, "
+            f"search_epoch_reset={self.search_epoch_reset_enabled}"
         )
+
+    def algorithm_state_cb(self, msg):
+        """Arm one reset for the next finite pose on each SEARCH entry."""
+        boundary = self.search_epoch_gate.update(msg)
+        if boundary == SearchEpochGate.ENTERED:
+            self.search_epoch_reset_pending = True
 
     def cb(self, msg: Odometry):
         # Current position boundary input p=[x,y]
@@ -88,6 +142,20 @@ class PDEHistory(Node):
         # Use sim time for dt (preferred)
         # If /clock not active, this still works once sim starts.
         now = self.get_clock().now().nanoseconds * 1e-9
+
+        if (
+            self.search_epoch_reset_pending
+            and not np.all(np.isfinite(p))
+        ):
+            return
+
+        if self.search_epoch_reset_pending:
+            self.U[:, :] = p
+            self.last_stamp = now
+            self.initialized = True
+            self.search_epoch_reset_pending = False
+            self.publish_history(now)
+            return
 
         if self.last_stamp is None:
             self.U[:, :] = p
@@ -119,10 +187,13 @@ class PDEHistory(Node):
             self.get_logger().warn("PDE buffer non-finite -> reset to current pose.")
             self.U[:, :] = p
 
-        # Publish flattened buffer
+        self.publish_history(now)
+
+    def publish_history(self, stamp_sec):
+        """Publish the current finite position buffer after an epoch reset."""
         out = StampedFloat64MultiArray()
         out.header = "PDE History (x,y)"
-        out.timestamp = float(now)  # keep consistent float seconds
+        out.timestamp = float(stamp_sec)
         out.data = self.U.reshape(-1).tolist()
         self.pub.publish(out)
 

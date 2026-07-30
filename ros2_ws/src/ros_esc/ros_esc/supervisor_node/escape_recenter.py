@@ -295,6 +295,194 @@ class EscapeProgressTracker:
         return self._distances[-1][1]
 
 
+@dataclass(frozen=True)
+class PostRecoveryProgressConfig:
+    """Exact-window translation-liveness settings for guided SEARCH."""
+
+    window_sec: float = 12.0
+    minimum_path_length_m: float = 0.60
+    maximum_displacement_m: float = 0.20
+
+    def __post_init__(self):
+        values = (
+            self.window_sec,
+            self.minimum_path_length_m,
+            self.maximum_displacement_m,
+        )
+        if not all(math.isfinite(float(value)) for value in values):
+            raise ValueError("post-recovery progress settings must be finite")
+        if self.window_sec <= 0.0 or self.minimum_path_length_m <= 0.0:
+            raise ValueError(
+                "post-recovery window and minimum path must be positive"
+            )
+        if self.maximum_displacement_m < 0.0:
+            raise ValueError(
+                "post-recovery maximum displacement must be nonnegative"
+            )
+        if self.maximum_displacement_m >= self.minimum_path_length_m:
+            raise ValueError(
+                "post-recovery maximum displacement must be below minimum path"
+            )
+
+
+@dataclass(frozen=True)
+class PostRecoveryProgress:
+    """One measured result from the current post-recovery epoch."""
+
+    fill_distance_m: float
+    outward_progress_m: float
+    net_displacement_m: float
+    path_length_m: float
+    window_path_length_m: float
+    window_displacement_m: float
+    window_valid: bool
+    stalled: bool
+
+
+class PostRecoveryProgressTracker:
+    """Track outward epoch progress and exact-window translation liveness."""
+
+    def __init__(
+        self,
+        anchor_pose: Pose2D,
+        fill_center,
+        config=None,
+    ):
+        self.config = config or PostRecoveryProgressConfig()
+        self.anchor_pose = anchor_pose
+        self.fill_center = _finite_vector(
+            fill_center, "post-recovery fill center"
+        )
+        self.anchor_fill_distance_m = float(
+            np.linalg.norm(anchor_pose.position - self.fill_center)
+        )
+        self._last_pose = anchor_pose
+        self._path_length_m = 0.0
+        self._window_samples = deque(
+            [(anchor_pose.stamp_sec, anchor_pose.position, 0.0)]
+        )
+        self.latest = self._result(
+            anchor_pose,
+            window_path=float("nan"),
+            window_displacement=float("nan"),
+            window_valid=False,
+        )
+
+    def update(self, pose: Pose2D):
+        """Add one strictly newer pose, ignoring an exact duplicate stamp."""
+        if pose.stamp_sec <= self._last_pose.stamp_sec:
+            if pose.stamp_sec == self._last_pose.stamp_sec:
+                return self.latest
+            raise ValueError("post-recovery pose timestamps must increase")
+        self._path_length_m += float(
+            np.linalg.norm(pose.position - self._last_pose.position)
+        )
+        self._last_pose = pose
+        self._window_samples.append(
+            (pose.stamp_sec, pose.position, self._path_length_m)
+        )
+        boundary = pose.stamp_sec - self.config.window_sec
+        while (
+            len(self._window_samples) >= 3
+            and self._window_samples[1][0] <= boundary
+        ):
+            self._window_samples.popleft()
+
+        boundary_sample = self._interpolated_window_sample(boundary)
+        if boundary_sample is None:
+            window_path = float("nan")
+            window_displacement = float("nan")
+            window_valid = False
+        else:
+            boundary_position, boundary_path = boundary_sample
+            window_path = self._path_length_m - boundary_path
+            window_displacement = float(
+                np.linalg.norm(pose.position - boundary_position)
+            )
+            window_valid = True
+        self.latest = self._result(
+            pose,
+            window_path=window_path,
+            window_displacement=window_displacement,
+            window_valid=window_valid,
+        )
+        return self.latest
+
+    def reset_liveness_window(self):
+        """Reset only the rolling window while retaining epoch progress."""
+        pose = self._last_pose
+        self._window_samples.clear()
+        self._window_samples.append(
+            (pose.stamp_sec, pose.position, self._path_length_m)
+        )
+        self.latest = self._result(
+            pose,
+            window_path=float("nan"),
+            window_displacement=float("nan"),
+            window_valid=False,
+        )
+        return self.latest
+
+    def _result(
+        self,
+        pose,
+        window_path,
+        window_displacement,
+        window_valid,
+    ):
+        fill_distance = float(
+            np.linalg.norm(pose.position - self.fill_center)
+        )
+        outward_progress = fill_distance - self.anchor_fill_distance_m
+        net_displacement = float(
+            np.linalg.norm(pose.position - self.anchor_pose.position)
+        )
+        stalled = bool(
+            window_valid
+            and window_path >= self.config.minimum_path_length_m
+            and window_displacement
+            <= self.config.maximum_displacement_m
+        )
+        return PostRecoveryProgress(
+            fill_distance_m=fill_distance,
+            outward_progress_m=outward_progress,
+            net_displacement_m=net_displacement,
+            path_length_m=self._path_length_m,
+            window_path_length_m=window_path,
+            window_displacement_m=window_displacement,
+            window_valid=window_valid,
+            stalled=stalled,
+        )
+
+    def _interpolated_window_sample(self, stamp_sec):
+        if (
+            not self._window_samples
+            or self._window_samples[0][0] > stamp_sec
+        ):
+            return None
+        for index, (right_stamp, right_position, right_path) in enumerate(
+            self._window_samples
+        ):
+            if right_stamp == stamp_sec:
+                return right_position, right_path
+            if right_stamp > stamp_sec:
+                left_stamp, left_position, left_path = (
+                    self._window_samples[index - 1]
+                )
+                fraction = (stamp_sec - left_stamp) / (
+                    right_stamp - left_stamp
+                )
+                position = left_position + fraction * (
+                    right_position - left_position
+                )
+                path = left_path + fraction * (right_path - left_path)
+                return position, path
+        stamp, position, path = self._window_samples[-1]
+        if stamp == stamp_sec:
+            return position, path
+        return None
+
+
 def recent_approach(history: Sequence[Pose2D], window_sec: float):
     """Return displacement over a complete recent window, or a zero vector."""
 

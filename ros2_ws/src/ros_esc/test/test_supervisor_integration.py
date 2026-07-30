@@ -6,6 +6,7 @@ import time
 
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
+import pytest
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
@@ -483,6 +484,311 @@ def test_m4_post_recovery_affine_weight_tapers_after_fill_support():
         assert node.active_fill_records
     finally:
         node.destroy_node()
+        rclpy.shutdown()
+
+
+def _m4_2_progress_node(**overrides):
+    values = {
+        'max_fill_clusters': 1,
+        'post_recovery_guidance_enabled': True,
+        'post_recovery_guidance_max_sec': 90.0,
+        'post_recovery_retry_limit': 3,
+        'recoverable_navigation_enabled': True,
+        'recovery_retry_limit': 3,
+        'post_recovery_affine_weight': 0.50,
+        'post_recovery_affine_taper_distance_m': 0.50,
+        'post_recovery_progress_enabled': True,
+        'post_recovery_guidance_min_progress_m': 0.60,
+        'post_recovery_liveness_window_sec': 4.0,
+        'post_recovery_liveness_min_path_length_m': 0.60,
+        'post_recovery_liveness_max_displacement_m': 0.20,
+        'post_recovery_direction_refresh_limit': 1,
+        'room_bounds_x_min_m': -0.25,
+        'room_bounds_x_max_m': 3.75,
+        'room_bounds_y_min_m': -0.25,
+        'room_bounds_y_max_m': 3.75,
+        'room_center_x_m': 1.75,
+        'room_center_y_m': 1.75,
+        'wall_margin_m': 0.20,
+        'recenter_tolerance_m': 0.15,
+    }
+    values.update(overrides)
+    return SupervisorNode(
+        parameter_overrides=[
+            Parameter(name, value=value)
+            for name, value in values.items()
+        ]
+    )
+
+
+def _activate_m4_2_guidance(node, pose_value=None):
+    pose_value = pose_value or Pose2D(10.0, 1.75, 1.75, 0.0)
+    node.latest_pose = pose_value
+    node.latest_pose_valid = True
+    node.latest_pose_sequence += 1
+    node.active_fill_records = {
+        1: {
+            'fill_id': 4,
+            'revision': 1,
+            'center': [1.0, 1.0],
+            'support_radius': 0.30,
+            'exit_radius': 0.25,
+        }
+    }
+    node.machine.state = State.SEARCH
+    node.machine.active_fill_count = 1
+    node.machine.post_recovery_fill_id = 4
+    node.machine.active_escape_fill_id = 4
+    node.machine.post_recovery_guidance_active = True
+    node.machine.post_recovery_guidance_started_sec = node._now_sec()
+    assert node._start_post_recovery_epoch(node._now_sec()) is None
+
+
+def test_m4_2_progress_epoch_commands_then_holds_and_tapers_affine():
+    rclpy.init()
+    node = _m4_2_progress_node()
+    states = Recorder()
+    commands = Recorder()
+    node.state_publisher = states
+    node.command_publisher = commands
+    try:
+        _activate_m4_2_guidance(node)
+        first_revision = node.safe_direction_revision
+        direction = node.safe_direction.direction
+        node.latest_pose = Pose2D(
+            10.1,
+            node.latest_pose.x,
+            node.latest_pose.y,
+            math.atan2(direction[1], direction[0]),
+        )
+        node.latest_pose_sequence += 1
+        assert node._update_post_recovery_guidance(node._now_sec()) is None
+        node._publish_state_and_command(node._now_sec())
+
+        assert first_revision > 0
+        assert commands.messages[-1].linear.x > 0.0
+        assert states.messages[-1].affine_weight == 0.50
+
+        anchor = node.post_recovery_progress_tracker.anchor_pose.position
+        node.latest_pose = Pose2D(
+            11.0,
+            *(anchor + 0.60 * direction),
+            node.latest_pose.yaw,
+        )
+        node.latest_pose_sequence += 1
+        assert node._update_post_recovery_guidance(node._now_sec()) is None
+        node._publish_state_and_command(node._now_sec())
+        assert commands.messages[-1].linear.x == 0.0
+        assert states.messages[-1].affine_weight == pytest.approx(0.50)
+
+        node.latest_pose = Pose2D(
+            12.0,
+            *(anchor + 0.85 * direction),
+            node.latest_pose.yaw,
+        )
+        node.latest_pose_sequence += 1
+        assert node._update_post_recovery_guidance(node._now_sec()) is None
+        node._publish_state_and_command(node._now_sec())
+        assert states.messages[-1].affine_weight == pytest.approx(0.25)
+
+        node.latest_pose = Pose2D(
+            13.0,
+            *(anchor + 1.10 * direction),
+            node.latest_pose.yaw,
+        )
+        node.latest_pose_sequence += 1
+        assert node._update_post_recovery_guidance(node._now_sec()) is None
+        assert node.machine.post_recovery_guidance_active is False
+        assert node.machine.active_escape_fill_id is None
+        assert node.active_fill_records
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_2_liveness_refreshes_recenters_then_falls_back_nonterminal():
+    rclpy.init()
+    node = _m4_2_progress_node()
+    node.event_publisher = Recorder()
+    try:
+        _activate_m4_2_guidance(node)
+        anchor = node.latest_pose.position.copy()
+
+        def feed_loop(first_stamp):
+            offsets = (
+                (0.2, 0.0),
+                (0.2, 0.2),
+                (0.0, 0.2),
+                (0.0, 0.0),
+            )
+            for index, offset in enumerate(offsets):
+                node.latest_pose = Pose2D(
+                    first_stamp + index,
+                    anchor[0] + offset[0],
+                    anchor[1] + offset[1],
+                    0.0,
+                )
+                node.latest_pose_sequence += 1
+                assert (
+                    node._update_post_recovery_guidance(node._now_sec())
+                    is None
+                )
+
+        initial_revision = node.safe_direction_revision
+        feed_loop(11.0)
+        assert node.post_recovery_direction_refresh_count == 1
+        assert node.safe_direction_revision > initial_revision
+        assert node.recenter_recovery_requested is False
+
+        feed_loop(15.0)
+        assert node.recenter_recovery_requested is True
+        assert node.post_recovery_recenter_attempted is True
+        transition = node.machine.step(
+            node._now_sec(),
+            TransitionInputs(recenter_recovery_requested=True),
+        )
+        assert transition.current == State.RECENTER
+        node._handle_transition(transition, node._now_sec())
+
+        transition = node.machine.step(
+            node._now_sec(),
+            TransitionInputs(recenter_complete=True),
+        )
+        assert transition.current == State.SEARCH
+        node._handle_transition(transition, node._now_sec())
+        assert node.post_recovery_recenter_attempted is True
+        anchor[:] = node.latest_pose.position
+
+        feed_loop(19.0)
+        assert node.machine.state == State.SEARCH
+        assert node.machine.post_recovery_guidance_active is False
+        assert node.machine.state != State.FAILSAFE
+        details = [
+            event.detail for event in node.event_publisher.messages
+        ]
+        assert sum('direction refreshed' in detail for detail in details) == 1
+        assert any('requested recoverable recenter' in detail for detail in details)
+        assert any('ordinary search' in detail for detail in details)
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_2_guidance_sweep_suppresses_unsafe_translation(monkeypatch):
+    rclpy.init()
+    node = _m4_2_progress_node()
+    checked = []
+
+    def reject_sweep(
+        position,
+        yaw,
+        linear,
+        horizon,
+        fills,
+        bounds,
+        **kwargs,
+    ):
+        checked.append({
+            'position': tuple(position),
+            'yaw': yaw,
+            'linear': linear,
+            'horizon': horizon,
+            'fills': tuple(fills),
+            'bounds': bounds,
+            'kwargs': kwargs,
+        })
+        return False
+
+    monkeypatch.setattr(
+        supervisor_node_script,
+        'command_sweep_is_safe',
+        reject_sweep,
+    )
+    try:
+        _activate_m4_2_guidance(node)
+        direction = node.safe_direction.direction
+        node.latest_pose = Pose2D(
+            10.1,
+            node.latest_pose.x,
+            node.latest_pose.y,
+            math.atan2(direction[1], direction[0]),
+        )
+        node.latest_pose_sequence += 1
+
+        assert node._update_post_recovery_guidance(0.1) is None
+        assert checked
+        assert checked[-1]['linear'] > 0.0
+        assert checked[-1]['fills']
+        assert checked[-1]['bounds'] is node.bounds
+        assert checked[-1]['kwargs']['allow_inward_from_margin'] is True
+        assert node.current_supervisor_command.linear.x == 0.0
+        assert node.machine.state == State.SEARCH
+        assert node.machine.state != State.FAILSAFE
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_2_maximum_duration_releases_with_typed_report():
+    rclpy.init()
+    node = _m4_2_progress_node()
+    node.event_publisher = Recorder()
+    try:
+        _activate_m4_2_guidance(node)
+        started = node.machine.post_recovery_guidance_started_sec
+
+        assert node._update_post_recovery_guidance(started + 90.0) is None
+        assert node.machine.post_recovery_guidance_active is False
+        assert node.machine.active_escape_fill_id is None
+        assert node.current_supervisor_command.linear.x == 0.0
+        report = next(
+            event
+            for event in node.event_publisher.messages
+            if 'maximum duration elapsed' in event.detail
+        )
+        assert all(math.isfinite(value) for value in report.values)
+        diagnostics = dict(zip(report.value_names, report.values))
+        assert diagnostics['window_valid'] == 0.0
+        assert diagnostics['window_sec'] == 4.0
+        assert diagnostics['minimum_window_path_m'] == 0.60
+        assert diagnostics['maximum_window_displacement_m'] == 0.20
+        assert diagnostics['post_recovery_retry_count'] == 0.0
+        assert diagnostics['recovery_retry_count'] == 0.0
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_2_direction_failure_after_recenter_does_not_recenter_twice():
+    rclpy.init()
+    node = _m4_2_progress_node()
+    node.event_publisher = Recorder()
+    try:
+        _activate_m4_2_guidance(node)
+        node.post_recovery_recenter_attempted = True
+
+        assert node._recover_post_recovery_direction_failure(
+            20.0,
+            'no safe post-recovery direction candidate',
+        ) is None
+        assert node.recenter_recovery_requested is False
+        assert node.machine.post_recovery_guidance_active is False
+        assert node.machine.active_escape_fill_id is None
+        assert node.machine.state == State.SEARCH
+        assert node.machine.state != State.FAILSAFE
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_2_progress_configuration_requires_refresh_capacity():
+    rclpy.init()
+    try:
+        with pytest.raises(ValueError, match='positive direction refresh'):
+            _m4_2_progress_node(
+                post_recovery_direction_refresh_limit=0,
+            )
+    finally:
         rclpy.shutdown()
 
 

@@ -64,6 +64,11 @@ M3_SPATIAL_SUITE = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v7_m3_spatial_suite.yaml'
 )
+M4_2_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m4_2_visible_probe.yaml'
+)
 
 
 def test_observed_local_recovery_binds_fill_to_local_convergence():
@@ -403,8 +408,13 @@ def _fill_message(fill_id=7, cluster_id=42, center=(1.05, 1.05)):
     )
 
 
-def _odom_message(x_m, y_m):
+def _odom_message(x_m, y_m, stamp_sec=0.0):
+    seconds = int(stamp_sec)
+    nanoseconds = int(round((float(stamp_sec) - seconds) * 1e9))
     return SimpleNamespace(
+        header=SimpleNamespace(
+            stamp=SimpleNamespace(sec=seconds, nanosec=nanoseconds),
+        ),
         pose=SimpleNamespace(
             pose=SimpleNamespace(
                 position=SimpleNamespace(x=x_m, y=y_m),
@@ -705,6 +715,34 @@ def test_m3_changes_only_position_seed_gui_and_reporting_contract():
         staged = resolved['success']['staged_recovery']
         assert staged['global_proximity_radius_m'] == 1.00
         assert staged['global_approach_radius_m'] == 1.20
+
+
+def test_m4_2_launch_binds_progress_history_and_staged_budget():
+    suite = load_suite(M4_2_VISIBLE_PROBE)
+    runs, unsupported = expand_suite(suite)
+    resolved = runs[0]
+    launch = build_launch_command(resolved, gui=True)
+
+    assert unsupported == []
+    for expected in (
+        'gazebo_gui:=True',
+        'post_recovery_progress_enabled:=True',
+        'post_recovery_guidance_min_progress_m:=0.6',
+        'post_recovery_liveness_window_sec:=12.0',
+        'post_recovery_liveness_min_path_length_m:=0.6',
+        'post_recovery_liveness_max_displacement_m:=0.2',
+        'post_recovery_direction_refresh_limit:=1',
+        'robust_search_epoch_reset_enabled:=True',
+        'recenter_tolerance_m:=0.15',
+        'post_recovery_guidance_max_sec:=90.0',
+    ):
+        assert expected in launch
+    assert resolved['success']['staged_recovery'][
+        'post_stage_a_timeout_sec'
+    ] == 120.0
+    assert suite['execution']['run_timeout_sec'] == 480.0
+    assert suite['execution']['wall_timeout_sec'] == 660.0
+    assert suite['execution']['shutdown_grace_sec'] == 45.0
 
 
 def test_staged_recovery_reports_stage_a_cardinality_and_global_sample():
@@ -2607,6 +2645,180 @@ def test_live_global_stop_waits_for_stage_a_cardinality_and_near_odom(
         assert 'global_approach_sample_live' not in result
     assert result['stdout'] == 'global proximity test\n'
     assert executor_events == ['created', 'added', 'removed', 'shutdown']
+
+
+@pytest.mark.parametrize(
+    ('final_position', 'expect_proximity'),
+    [
+        ((2.1, 2.0), False),
+        ((3.3, 3.3), True),
+    ],
+    ids=['budget_expires', 'global_wins_at_budget_boundary'],
+)
+def test_schema_v7_live_post_stage_a_budget_and_proximity_precedence(
+    monkeypatch,
+    final_position,
+    expect_proximity,
+):
+    """Make global proximity win at the exact Stage B budget boundary."""
+    callbacks = {}
+    signals = []
+    wait_timeouts = []
+    executor_events = []
+    private_context = object()
+    resolved = _v6_staged_resolved()
+    resolved['schema_version'] = 7
+    resolved['success']['staged_recovery'][
+        'post_stage_a_timeout_sec'
+    ] = 120.0
+
+    class FakeNode:
+        def create_subscription(
+            self, unused_type, topic, callback, unused_depth
+        ):
+            callbacks[topic] = callback
+            return object()
+
+        def destroy_node(self):
+            return None
+
+    node = FakeNode()
+
+    class FakeProcess:
+        def __init__(self, command, stdout, **unused_kwargs):
+            del command
+            self.stdout = stdout
+            self.pid = 8123
+            self.returncode = None
+            stdout.write('post-stage-a timeout test\n')
+
+        def poll(self):
+            return self.returncode
+
+        def wait(self, timeout=None):
+            wait_timeouts.append(timeout)
+            self.returncode = 0
+            return 0
+
+    states, events, fills = _staged_records()
+    timed_messages = [
+        (stamp, '/gesc_gaussian/algorithm_state', message)
+        for stamp, message in states
+    ]
+    timed_messages.extend(
+        (stamp, '/gesc_gaussian/algorithm_events', message)
+        for stamp, message in events
+    )
+    timed_messages.extend(
+        (stamp, '/gesc_gaussian/gaussian_fills', message)
+        for stamp, message in fills
+    )
+    sequence = [
+        (topic, message)
+        for unused_stamp, topic, message in sorted(timed_messages)
+    ]
+    sequence.extend([
+        ('/odom', _odom_message(2.0, 2.0, stamp_sec=300.0)),
+        (
+            '/odom',
+            _odom_message(
+                final_position[0],
+                final_position[1],
+                stamp_sec=420.0,
+            ),
+        ),
+    ])
+
+    def spin_once(timeout_sec):
+        del timeout_sec
+        topic, message = sequence.pop(0)
+        callbacks[topic](message)
+
+    monkeypatch.setattr(
+        runner.rclpy.context, 'Context', lambda: private_context
+    )
+    monkeypatch.setattr(runner.rclpy, 'init', lambda context: None)
+    monkeypatch.setattr(runner.rclpy, 'shutdown', lambda context: None)
+    monkeypatch.setattr(
+        runner.rclpy, 'create_node', lambda *args, **kwargs: node
+    )
+    _install_boundary_executor(
+        monkeypatch,
+        private_context,
+        node,
+        spin_once,
+        executor_events,
+    )
+    monkeypatch.setattr(runner.subprocess, 'Popen', FakeProcess)
+    monkeypatch.setattr(
+        runner.os,
+        'killpg',
+        lambda pid, signum: signals.append((pid, signum)),
+    )
+
+    result = runner.run_record_process(
+        ['record'],
+        5.0,
+        1.0,
+        staged_recovery=resolved,
+    )
+
+    assert sequence == []
+    assert signals == [(8123, runner.signal.SIGINT)]
+    assert wait_timeouts == [
+        1.0 + runner.BOUNDARY_RECORD_FINALIZATION_GRACE_SEC
+    ]
+    assert result['timed_out'] is False
+    assert (
+        result['graceful_global_proximity_stop'] is expect_proximity
+    )
+    assert (
+        result['graceful_post_stage_a_timeout_stop']
+        is (not expect_proximity)
+    )
+    if expect_proximity:
+        assert result['global_proximity_sample_live'][
+            'sample_sim_sec'
+        ] == pytest.approx(420.0)
+        assert result['post_stage_a_timeout_sample_live'] is None
+        assert executor_events == [
+            'created', 'added', 'removed', 'shutdown'
+        ]
+        return
+
+    sample = result['post_stage_a_timeout_sample_live']
+    assert sample['started_sim_sec'] == pytest.approx(300.0)
+    assert sample['elapsed_sim_sec'] == pytest.approx(120.0)
+    assert sample['timeout_sec'] == pytest.approx(120.0)
+    assert executor_events == ['created', 'added', 'removed', 'shutdown']
+
+    outcomes = runner._unavailable_outcomes('unused')
+    outcomes.update({
+        'readiness_interval_available': True,
+        'local_recovery_stage_passed': True,
+        'local_recovery_stage': {'completed_episode_count': 1},
+        'fill_cardinality_passed': True,
+        'post_recovery_global_proximity_passed': False,
+        'post_recovery_global_proximity': {
+            'reason': 'post-Stage-A budget elapsed',
+        },
+        'collision_expectation_passed': True,
+        'outcome_error': None,
+    })
+    classification = classify_result(
+        resolved,
+        {'passed': True},
+        {'passed': True},
+        outcomes,
+        result,
+        metadata={},
+        run_directory_available=True,
+    )
+    assert classification['infrastructure_status'] == 'completed'
+    assert classification['passed'] is False
+    assert classification['staged_results'][
+        'stage_b_time_budget'
+    ]['expired'] is True
 
 
 def test_scope_includes_causal_event_and_clips_pre_anchor_state():

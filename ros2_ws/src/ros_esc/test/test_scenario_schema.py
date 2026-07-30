@@ -72,6 +72,16 @@ M4_1_VISIBLE_PROBE = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v7_m4_1_visible_probe.yaml'
 )
+M4_2_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m4_2_visible_probe.yaml'
+)
+M4_2_TWO_LIGHT_SUITE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m4_2_two_light_suite.yaml'
+)
 M4_TWO_LIGHT_SUITE = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/'
@@ -418,6 +428,31 @@ def _v6_document():
     return document
 
 
+def _v7_document():
+    document = _v6_document()
+    document['schema_version'] = 7
+    document['execution'].update({
+        'run_timeout_sec': 480.0,
+        'wall_timeout_sec': 660.0,
+    })
+    case = document['cases'][0]
+    case['algorithm']['launch_overrides'].update({
+        'post_recovery_guidance_max_sec': 90.0,
+        'post_recovery_progress_enabled': True,
+        'post_recovery_guidance_min_progress_m': 0.60,
+        'post_recovery_liveness_window_sec': 12.0,
+        'post_recovery_liveness_min_path_length_m': 0.60,
+        'post_recovery_liveness_max_displacement_m': 0.20,
+        'post_recovery_direction_refresh_limit': 1,
+        'robust_search_epoch_reset_enabled': True,
+        'recenter_tolerance_m': 0.15,
+    })
+    case['success']['staged_recovery'][
+        'post_stage_a_timeout_sec'
+    ] = 120.0
+    return document
+
+
 @lru_cache(maxsize=1)
 def _v4_production_truth():
     return aggregate_field_truth.derive_aggregate_field_truth(
@@ -484,7 +519,7 @@ def test_checked_in_suites_validate_and_catalog_marks_gaps():
 @pytest.mark.parametrize(
     ('mutation', 'match'),
     [
-        (lambda doc: doc.update({'schema_version': 7}), 'schema_version'),
+        (lambda doc: doc.update({'schema_version': 8}), 'schema_version'),
         (
             lambda doc: doc.update({'mode': 'physical'}),
             'mode must be simulation',
@@ -1077,6 +1112,77 @@ def test_schema_v6_resolves_recovery_controls_and_non_gating_closer_radius(
     assert deterministic_case_key(run) == run['case_key']
 
 
+def test_schema_v7_resolves_progress_guidance_and_post_stage_a_budget(
+    tmp_path,
+):
+    run = expand_suite(_load(tmp_path, _v7_document()))[0][0]
+    overrides = run['algorithm']['launch_overrides']
+    staged = run['success']['staged_recovery']
+
+    assert run['schema_version'] == 7
+    assert overrides['post_recovery_progress_enabled'] is True
+    assert overrides['post_recovery_guidance_min_progress_m'] == 0.60
+    assert overrides['post_recovery_liveness_window_sec'] == 12.0
+    assert overrides[
+        'post_recovery_liveness_min_path_length_m'
+    ] == 0.60
+    assert overrides[
+        'post_recovery_liveness_max_displacement_m'
+    ] == 0.20
+    assert overrides['post_recovery_direction_refresh_limit'] == 1
+    assert overrides['robust_search_epoch_reset_enabled'] is True
+    assert overrides['recenter_tolerance_m'] == 0.15
+    assert staged['post_stage_a_timeout_sec'] == 120.0
+
+
+def test_schema_v7_fields_require_v7_and_complete_dependencies(tmp_path):
+    document = _v7_document()
+    document['schema_version'] = 6
+    with pytest.raises(ValueError, match='schema version 7'):
+        _load(tmp_path, document)
+
+    document = _v7_document()
+    del document['cases'][0]['success']['staged_recovery'][
+        'post_stage_a_timeout_sec'
+    ]
+    with pytest.raises(ValueError, match='post_stage_a_timeout_sec'):
+        _load(tmp_path, document)
+
+    document = _v7_document()
+    del document['cases'][0]['algorithm']['launch_overrides'][
+        'robust_search_epoch_reset_enabled'
+    ]
+    with pytest.raises(
+        ValueError, match='post_recovery_progress_enabled requires'
+    ):
+        _load(tmp_path, document)
+
+    document = _v7_document()
+    document['cases'][0]['profiles'] = ['legacy']
+    with pytest.raises(ValueError, match='robust_gaussian_v1'):
+        _load(tmp_path, document)
+
+
+def test_schema_v7_rejects_non_liveness_window_and_unbounded_budget(
+    tmp_path,
+):
+    document = _v7_document()
+    document['cases'][0]['algorithm']['launch_overrides'][
+        'post_recovery_liveness_max_displacement_m'
+    ] = 0.60
+    with pytest.raises(ValueError, match='must be below'):
+        _load(tmp_path, document)
+
+    document = _v7_document()
+    document['cases'][0]['success']['staged_recovery'][
+        'post_stage_a_timeout_sec'
+    ] = 480.0
+    with pytest.raises(
+        ValueError, match='below execution.run_timeout_sec'
+    ):
+        _load(tmp_path, document)
+
+
 def test_schema_v6_supports_two_declared_traps_for_optional_three_light(
     tmp_path,
 ):
@@ -1546,6 +1652,172 @@ def test_m4_1_is_fresh_identity_with_exact_m4_behavior_values():
             run.pop(field)
         run['success']['controller']['contract_id'] = '<fresh-identity>'
     assert m4_1 == m4
+
+
+def test_m4_2_freezes_progress_guidance_probe_and_two_light_gate():
+    visible_suite = load_suite(M4_2_VISIBLE_PROBE)
+    visible, visible_unsupported = expand_suite(visible_suite)
+    two_suite = load_suite(M4_2_TWO_LIGHT_SUITE)
+    two_light, two_unsupported = expand_suite(two_suite)
+
+    assert visible_unsupported == two_unsupported == []
+    assert visible_suite['schema_version'] == 7
+    assert visible_suite['execution'] == {
+        'max_parallel_runs': 1,
+        'gazebo_gui': True,
+        'runs_root': (
+            '/home/mattb/Experiments/GESC-Gaussian/runs/'
+            'phase08_v7_m4_2_probe'
+        ),
+        'preflight_timeout_sec': 150.0,
+        'run_timeout_sec': 480.0,
+        'wall_timeout_sec': 660.0,
+        'shutdown_grace_sec': 45.0,
+        'stop_on_run_failure': False,
+        'stop_on_cleanup_failure': True,
+    }
+    assert [
+        (run['case_id'], run['seed'], run['case_key'])
+        for run in visible
+    ] == [(
+        'v7_m4_2_probe_r1p5_a45_h25_18208',
+        18208,
+        'd4aaa0d2d7e4af20c7721d2912620fe2a0a2f9f16004c462a0299e235f2866c8',
+    )]
+
+    expected = [
+        (
+            'v7_m4_2_r1p0_a45_h25_18209',
+            18209,
+            (0.7071067811865476, 0.7071067811865475),
+        ),
+        (
+            'v7_m4_2_r1p5_a22p5_h25_18209',
+            18209,
+            (1.38581929876693, 0.5740251485476346),
+        ),
+        (
+            'v7_m4_2_r1p5_a45_h25_18209',
+            18209,
+            (1.0606601717798214, 1.0606601717798212),
+        ),
+        (
+            'v7_m4_2_r1p5_a67p5_h25_18209',
+            18209,
+            (0.5740251485476348, 1.38581929876693),
+        ),
+        (
+            'v7_m4_2_r2p0_a45_h25_18209',
+            18209,
+            (1.4142135623730951, 1.414213562373095),
+        ),
+        (
+            'v7_m4_2_repeat_r1p5_a45_h25_18210',
+            18210,
+            (1.0606601717798214, 1.0606601717798212),
+        ),
+        (
+            'v7_m4_2_repeat_r1p5_a45_h25_18211',
+            18211,
+            (1.0606601717798214, 1.0606601717798212),
+        ),
+        (
+            'v7_m4_2_repeat_r1p5_a45_h25_18212',
+            18212,
+            (1.0606601717798214, 1.0606601717798212),
+        ),
+    ]
+    assert two_suite['execution']['gazebo_gui'] is False
+    assert two_suite['execution']['runs_root'].endswith(
+        '/phase08_v7_m4_2'
+    )
+    assert len(two_light) == len(expected)
+    for run, (case_id, seed, local_position) in zip(two_light, expected):
+        assert (run['case_id'], run['seed']) == (case_id, seed)
+        local, global_source = run['sources']
+        assert (local['x_m'], local['y_m']) == local_position
+        assert local['relative_lumen_input'] == 400.0
+        assert (
+            global_source['x_m'],
+            global_source['y_m'],
+            global_source['relative_lumen_input'],
+        ) == (3.5, 3.5, 1600.0)
+        assert deterministic_case_key(run) == run['case_key']
+
+    central = two_light[2]
+    repeats = [
+        run for run in two_light
+        if run['acceptance_partition'] == 'reproducibility'
+    ]
+    assert len(repeats) == 3
+    assert {
+        run['repeat_reference']['case_key'] for run in repeats
+    } == {central['case_key']}
+    assert all(
+        run['repeat_reference']['partition'] == 'validation'
+        for run in repeats
+    )
+
+    for run in visible + two_light:
+        overrides = run['algorithm']['launch_overrides']
+        staged = run['success']['staged_recovery']
+        assert overrides['post_recovery_progress_enabled'] is True
+        assert overrides[
+            'post_recovery_guidance_min_progress_m'
+        ] == 0.60
+        assert overrides['post_recovery_liveness_window_sec'] == 12.0
+        assert overrides[
+            'post_recovery_liveness_min_path_length_m'
+        ] == 0.60
+        assert overrides[
+            'post_recovery_liveness_max_displacement_m'
+        ] == 0.20
+        assert overrides['post_recovery_direction_refresh_limit'] == 1
+        assert overrides['robust_search_epoch_reset_enabled'] is True
+        assert overrides['recenter_tolerance_m'] == 0.15
+        assert overrides['post_recovery_guidance_max_sec'] == 90.0
+        assert staged['post_stage_a_timeout_sec'] == 120.0
+        assert staged['global_proximity_radius_m'] == 1.20
+        assert staged['global_closer_radius_m'] == 1.00
+
+
+def test_m4_2_preserves_m4_m4_1_v6_m3_and_world_source_hashes():
+    expected = {
+        M4_VISIBLE_PROBE: (
+            '37ba6e1e9adc842691328cc0a1c66e5fd04034db59c6fcdb0c05f6f6c4b769a1'
+        ),
+        M4_1_VISIBLE_PROBE: (
+            '2d881faa180c18c0b423671f12f91868e2b12d484a533909f607fef8372ca313'
+        ),
+        M4_TWO_LIGHT_SUITE: (
+            '6e67e657b11f080a545abe6b87a8730112c350163e47f85ec6ac83ab32abb937'
+        ),
+        M4_THREE_LIGHT_PROBE: (
+            '1a9ac4774094d43822b7d33f5eba24566e15cf745b9481ce8f25720a8e42c721'
+        ),
+        V6_HUE_SWEEP: (
+            '3be130581b88c986fd845aef0c33c9db94ceb02ecfe2a6361926b0317ef8e655'
+        ),
+        M3_SPATIAL_SUITE: (
+            '1221d8cb9d7235218d4f3da710f10d41284632a93712bd89d763d938a0437dae'
+        ),
+        CORNER_ORIGIN_WORLD: (
+            '88b10b39aa24a6430f6f031c750334ed34e6835e54c84de8d36f4cc6a26444bf'
+        ),
+    }
+    repeat_suite = (
+        PACKAGE_ROOT
+        / 'ros_esc/scenario_runner/scenarios/'
+        'phase08_v6_selected_repeats.yaml'
+    )
+    expected[repeat_suite] = (
+        '3b9badc92cf63739f65662158999e3c2aab71761f790e3f360be9a52e6f38688'
+    )
+
+    assert {
+        path: hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in expected
+    } == expected
 
 
 @pytest.mark.parametrize(

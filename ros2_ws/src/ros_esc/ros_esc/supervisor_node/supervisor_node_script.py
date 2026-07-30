@@ -35,6 +35,8 @@ from ros_esc.supervisor_node.escape_recenter import (
     FillAvoidance,
     OperatingBounds,
     Pose2D,
+    PostRecoveryProgressConfig,
+    PostRecoveryProgressTracker,
     preferred_escape_direction,
     recent_approach,
     recenter_command,
@@ -265,6 +267,40 @@ class SupervisorNode(Node):
         self.post_recovery_affine_taper_distance_m = self._positive_float(
             'post_recovery_affine_taper_distance_m'
         )
+        self.post_recovery_progress_enabled = bool(
+            self.get_parameter('post_recovery_progress_enabled').value
+        )
+        self.post_recovery_guidance_min_progress_m = self._positive_float(
+            'post_recovery_guidance_min_progress_m'
+        )
+        self.post_recovery_progress_config = PostRecoveryProgressConfig(
+            window_sec=self._positive_float(
+                'post_recovery_liveness_window_sec'
+            ),
+            minimum_path_length_m=self._positive_float(
+                'post_recovery_liveness_min_path_length_m'
+            ),
+            maximum_displacement_m=self._nonnegative_float(
+                'post_recovery_liveness_max_displacement_m'
+            ),
+        )
+        self.post_recovery_direction_refresh_limit = self._nonnegative_int(
+            'post_recovery_direction_refresh_limit'
+        )
+        if self.post_recovery_progress_enabled:
+            if not self.machine.config.post_recovery_guidance_enabled:
+                raise ValueError(
+                    'post-recovery progress requires post-recovery guidance'
+                )
+            if not self.recoverable_navigation_enabled:
+                raise ValueError(
+                    'post-recovery progress requires recoverable navigation'
+                )
+            if self.post_recovery_direction_refresh_limit <= 0:
+                raise ValueError(
+                    'post-recovery progress requires a positive direction '
+                    'refresh limit'
+                )
         self.run_id = uuid.uuid4().hex
         self.latest_pose_receipt_sec = None
         self.latest_pose_valid = False
@@ -296,6 +332,11 @@ class SupervisorNode(Node):
         self.recenter_recovery_requested = False
         self.boundary_recovery_active = False
         self.post_recovery_direction_recovery_attempted = False
+        self.post_recovery_progress_tracker = None
+        self.post_recovery_pose_sequence = 0
+        self.post_recovery_direction_refresh_count = 0
+        self.post_recovery_recenter_attempted = False
+        self.post_recovery_guidance_release_reported = False
         self.current_supervisor_command = Twist()
         self.configuration_published = False
         self.stall_event_published = False
@@ -383,6 +424,12 @@ class SupervisorNode(Node):
             'recenter_target_fill_clearance_m': 0.05,
             'post_recovery_affine_weight': 1.0,
             'post_recovery_affine_taper_distance_m': 0.50,
+            'post_recovery_progress_enabled': False,
+            'post_recovery_guidance_min_progress_m': 0.60,
+            'post_recovery_liveness_window_sec': 12.0,
+            'post_recovery_liveness_min_path_length_m': 0.60,
+            'post_recovery_liveness_max_displacement_m': 0.20,
+            'post_recovery_direction_refresh_limit': 0,
             "room_bounds_x_min_m": -2.0,
             "room_bounds_x_max_m": 2.0,
             "room_bounds_y_min_m": -2.0,
@@ -735,6 +782,8 @@ class SupervisorNode(Node):
             self.machine.state == State.SEARCH
             and self.machine.post_recovery_guidance_active
         ):
+            if self.post_recovery_progress_enabled:
+                return self._update_post_recovery_guidance(now_sec)
             failure = self._ensure_post_recovery_direction()
             if failure is None:
                 return None
@@ -747,6 +796,8 @@ class SupervisorNode(Node):
             self.machine.deactivate_post_recovery_guidance()
             self.safe_direction = None
             return None
+        if self.post_recovery_progress_tracker is not None:
+            self._clear_post_recovery_epoch()
         return None
 
     def _transition_inputs(self, now_sec):
@@ -894,6 +945,7 @@ class SupervisorNode(Node):
             and transition.previous != State.RECENTER
         ):
             self.current_supervisor_command = Twist()
+            self._clear_post_recovery_epoch()
             self.safe_direction = None
             self.recenter_route_planner.reset()
             fills = self._active_fill_avoidances()
@@ -982,7 +1034,13 @@ class SupervisorNode(Node):
             )
             if self.machine.post_recovery_guidance_active:
                 self.safe_direction_revision = previous_revision
-                if not self.recoverable_navigation_enabled:
+                if self.post_recovery_progress_enabled:
+                    failure = self._start_post_recovery_epoch(now_sec)
+                    if failure is not None:
+                        self._recover_post_recovery_direction_failure(
+                            now_sec, failure
+                        )
+                elif not self.recoverable_navigation_enabled:
                     failure = self._ensure_post_recovery_direction()
                     if failure is not None:
                         self._force_failsafe(now_sec, failure)
@@ -1003,6 +1061,8 @@ class SupervisorNode(Node):
     def _begin_escape(self, now_sec):
         if self.latest_pose is None or not self.latest_pose_valid:
             return "escape start requires a valid pose"
+        self._clear_post_recovery_epoch(preserve_recenter_attempt=False)
+        self.post_recovery_direction_recovery_attempted = False
         record = self._record_for_fill(self.machine.active_escape_fill_id)
         if record is None:
             return "escape start fill has no active finite geometry"
@@ -1189,6 +1249,292 @@ class SupervisorNode(Node):
         self.safe_direction_revision += 1
         return None
 
+    def _start_post_recovery_epoch(self, now_sec):
+        """Anchor progress and recompute direction at a guided SEARCH boundary."""
+        if self.latest_pose is None or not self.latest_pose_valid:
+            return 'post-recovery epoch requires a valid pose'
+        record = self._record_for_fill(self.machine.active_escape_fill_id)
+        if record is None:
+            return 'post-recovery epoch fill has no active finite geometry'
+        self.post_recovery_progress_tracker = PostRecoveryProgressTracker(
+            self.latest_pose,
+            record['center'],
+            self.post_recovery_progress_config,
+        )
+        self.post_recovery_pose_sequence = self.latest_pose_sequence
+        self.post_recovery_direction_refresh_count = 0
+        self.post_recovery_guidance_release_reported = False
+        self.safe_direction = None
+        failure = self._ensure_post_recovery_direction()
+        if failure is not None:
+            return failure
+        progress = self.post_recovery_progress_tracker.latest
+        self._publish_event(
+            AlgorithmEvent.EVENT_CONFIGURATION,
+            now_sec,
+            'post-recovery guidance epoch started',
+            [
+                'anchor_x_m',
+                'anchor_y_m',
+                'fill_center_x_m',
+                'fill_center_y_m',
+                'anchor_fill_distance_m',
+                'guidance_min_progress_m',
+                'affine_taper_progress_m',
+                'direction_revision',
+                'recenter_attempted',
+            ],
+            [
+                self.latest_pose.x,
+                self.latest_pose.y,
+                float(record['center'][0]),
+                float(record['center'][1]),
+                progress.fill_distance_m,
+                self.post_recovery_guidance_min_progress_m,
+                self.post_recovery_affine_taper_distance_m,
+                float(self.safe_direction_revision),
+                1.0 if self.post_recovery_recenter_attempted else 0.0,
+            ],
+        )
+        return None
+
+    def _update_post_recovery_guidance(self, now_sec):
+        """Update measured progress, recover loops, and publish a safe command."""
+        guidance_started_sec = (
+            self.machine.post_recovery_guidance_started_sec
+        )
+        if (
+            guidance_started_sec is not None
+            and now_sec - guidance_started_sec
+            >= self.machine.config.post_recovery_guidance_max_sec
+        ):
+            self._release_post_recovery_guidance(
+                now_sec,
+                'post-recovery guidance maximum duration elapsed',
+            )
+            return None
+        if self.post_recovery_progress_tracker is None:
+            failure = self._start_post_recovery_epoch(now_sec)
+            if failure is not None:
+                return self._recover_post_recovery_direction_failure(
+                    now_sec, failure
+                )
+        if (
+            self.latest_pose is not None
+            and self.latest_pose_valid
+            and self.latest_pose_sequence
+            != self.post_recovery_pose_sequence
+        ):
+            self.post_recovery_progress_tracker.update(self.latest_pose)
+            self.post_recovery_pose_sequence = self.latest_pose_sequence
+
+        progress = self.post_recovery_progress_tracker.latest
+        release_progress = (
+            self.post_recovery_guidance_min_progress_m
+            + self.post_recovery_affine_taper_distance_m
+        )
+        if progress.outward_progress_m >= release_progress:
+            self._release_post_recovery_guidance(
+                now_sec, 'post-recovery outward progress completed'
+            )
+            return None
+
+        if progress.stalled:
+            if self.post_recovery_recenter_attempted:
+                self._publish_post_recovery_liveness_event(
+                    now_sec,
+                    'post-recovery liveness released guidance to ordinary search',
+                    progress,
+                )
+                self._release_post_recovery_guidance(
+                    now_sec,
+                    'post-recovery liveness recovery exhausted; '
+                    'continue ordinary search',
+                    publish_event=False,
+                )
+                return None
+            if (
+                self.post_recovery_direction_refresh_count
+                < self.post_recovery_direction_refresh_limit
+            ):
+                self.post_recovery_direction_refresh_count += 1
+                self.safe_direction = None
+                failure = self._ensure_post_recovery_direction()
+                if failure is not None:
+                    return self._recover_post_recovery_direction_failure(
+                        now_sec, failure
+                    )
+                self._publish_post_recovery_liveness_event(
+                    now_sec,
+                    'post-recovery liveness direction refreshed',
+                    progress,
+                )
+                self.post_recovery_progress_tracker.reset_liveness_window()
+                progress = self.post_recovery_progress_tracker.latest
+            elif not self.post_recovery_recenter_attempted:
+                self.post_recovery_recenter_attempted = True
+                self.recenter_recovery_requested = True
+                self._publish_post_recovery_liveness_event(
+                    now_sec,
+                    'post-recovery liveness requested recoverable recenter',
+                    progress,
+                )
+                self.post_recovery_progress_tracker.reset_liveness_window()
+                return None
+
+        failure = self._ensure_post_recovery_direction()
+        if failure is not None:
+            return self._recover_post_recovery_direction_failure(
+                now_sec, failure
+            )
+        if (
+            progress.outward_progress_m
+            >= self.post_recovery_guidance_min_progress_m
+        ):
+            self.current_supervisor_command = Twist()
+            return None
+
+        remaining = max(
+            0.0,
+            self.post_recovery_guidance_min_progress_m
+            - progress.outward_progress_m,
+        )
+        linear, angular = recenter_command(
+            self.safe_direction.direction,
+            self.latest_pose.yaw,
+            remaining + self.recenter_config.tolerance_m,
+            self.recenter_config,
+        )
+        if not command_sweep_is_safe(
+            self.latest_pose.position,
+            self.latest_pose.yaw,
+            linear,
+            self.supervisor_command_stale_sec,
+            self._active_fill_avoidances(),
+            self.bounds,
+            allow_inward_from_margin=True,
+            boundary_trigger_clearance_m=(
+                self.boundary_recovery_trigger_clearance_m
+            ),
+        ):
+            linear = 0.0
+        command = Twist()
+        command.linear.x = linear
+        command.angular.z = angular
+        self.current_supervisor_command = command
+        return None
+
+    def _recover_post_recovery_direction_failure(self, now_sec, failure):
+        if (
+            not self.post_recovery_direction_recovery_attempted
+            and not self.post_recovery_recenter_attempted
+        ):
+            self.post_recovery_direction_recovery_attempted = True
+            self.post_recovery_recenter_attempted = True
+            self.recenter_recovery_requested = True
+            self._publish_event(
+                AlgorithmEvent.EVENT_CONFIGURATION,
+                now_sec,
+                'post-recovery direction unavailable; recover by recenter',
+                ['direction_revision'],
+                [float(self.safe_direction_revision)],
+            )
+            return None
+        self._release_post_recovery_guidance(
+            now_sec,
+            f'{failure}; continue ordinary search',
+        )
+        return None
+
+    def _publish_post_recovery_liveness_event(
+        self, now_sec, detail, progress
+    ):
+        names, values = self._post_recovery_report(progress)
+        self._publish_event(
+            AlgorithmEvent.EVENT_CONFIGURATION,
+            now_sec,
+            detail,
+            names,
+            values,
+        )
+
+    def _post_recovery_report(self, progress):
+        window_valid = bool(progress.window_valid)
+        return (
+            [
+                'path_length_m',
+                'net_displacement_m',
+                'outward_progress_m',
+                'window_path_length_m',
+                'window_displacement_m',
+                'window_valid',
+                'window_sec',
+                'minimum_window_path_m',
+                'maximum_window_displacement_m',
+                'direction_revision',
+                'direction_refresh_count',
+                'recenter_attempted',
+                'post_recovery_retry_count',
+                'recovery_retry_count',
+            ],
+            [
+                progress.path_length_m,
+                progress.net_displacement_m,
+                progress.outward_progress_m,
+                (
+                    progress.window_path_length_m
+                    if window_valid
+                    else 0.0
+                ),
+                (
+                    progress.window_displacement_m
+                    if window_valid
+                    else 0.0
+                ),
+                1.0 if window_valid else 0.0,
+                self.post_recovery_progress_config.window_sec,
+                self.post_recovery_progress_config.minimum_path_length_m,
+                self.post_recovery_progress_config.maximum_displacement_m,
+                float(self.safe_direction_revision),
+                float(self.post_recovery_direction_refresh_count),
+                1.0 if self.post_recovery_recenter_attempted else 0.0,
+                float(self.machine.post_recovery_retry_count),
+                float(self.machine.recovery_retry_count),
+            ],
+        )
+
+    def _release_post_recovery_guidance(
+        self, now_sec, detail, publish_event=True
+    ):
+        tracker = self.post_recovery_progress_tracker
+        if (
+            publish_event
+            and not self.post_recovery_guidance_release_reported
+            and tracker is not None
+        ):
+            self.post_recovery_guidance_release_reported = True
+            progress = tracker.latest
+            names, values = self._post_recovery_report(progress)
+            self._publish_event(
+                AlgorithmEvent.EVENT_CONFIGURATION,
+                now_sec,
+                detail,
+                names,
+                values,
+            )
+        self.machine.deactivate_post_recovery_guidance()
+        self.current_supervisor_command = Twist()
+        self.safe_direction = None
+        self._clear_post_recovery_epoch()
+
+    def _clear_post_recovery_epoch(self, preserve_recenter_attempt=True):
+        self.post_recovery_progress_tracker = None
+        self.post_recovery_pose_sequence = 0
+        self.post_recovery_direction_refresh_count = 0
+        self.post_recovery_guidance_release_reported = False
+        if not preserve_recenter_attempt:
+            self.post_recovery_recenter_attempted = False
+
     def _update_recenter(self, now_sec):
         if self.bounds is None:
             return "RECENTER requires configured bounded indoor mode"
@@ -1291,6 +1637,9 @@ class SupervisorNode(Node):
         self.recenter_recovery_requested = False
         if not preserve_post_recovery_recovery:
             self.post_recovery_direction_recovery_attempted = False
+        self._clear_post_recovery_epoch(
+            preserve_recenter_attempt=preserve_post_recovery_recovery
+        )
         self.stall_event_published = False
         self.current_supervisor_command = Twist()
 
@@ -1405,6 +1754,12 @@ class SupervisorNode(Node):
             'recenter_target_fill_clearance_m',
             'post_recovery_affine_weight',
             'post_recovery_affine_taper_distance_m',
+            'post_recovery_progress_enabled',
+            'post_recovery_guidance_min_progress_m',
+            'post_recovery_liveness_window_sec',
+            'post_recovery_liveness_min_path_length_m',
+            'post_recovery_liveness_max_displacement_m',
+            'post_recovery_direction_refresh_limit',
         ]
         values = [
             1.0 if self.bounded_mode else 0.0,
@@ -1454,6 +1809,12 @@ class SupervisorNode(Node):
             self.recenter_target_fill_clearance_m,
             self.post_recovery_affine_weight,
             self.post_recovery_affine_taper_distance_m,
+            1.0 if self.post_recovery_progress_enabled else 0.0,
+            self.post_recovery_guidance_min_progress_m,
+            self.post_recovery_progress_config.window_sec,
+            self.post_recovery_progress_config.minimum_path_length_m,
+            self.post_recovery_progress_config.maximum_displacement_m,
+            float(self.post_recovery_direction_refresh_limit),
         ]
         self._publish_event(
             AlgorithmEvent.EVENT_CONFIGURATION,
@@ -1574,7 +1935,14 @@ class SupervisorNode(Node):
         self.state_publisher.publish(state)
         command = (
             self.current_supervisor_command
-            if self.machine.state == State.RECENTER
+            if (
+                self.machine.state == State.RECENTER
+                or (
+                    self.post_recovery_progress_enabled
+                    and self.machine.state == State.SEARCH
+                    and self.machine.post_recovery_guidance_active
+                )
+            )
             else Twist()
         )
         values = np.array(
@@ -1592,6 +1960,26 @@ class SupervisorNode(Node):
 
     def _post_recovery_affine_taper(self):
         """Return the bounded spatial affine scale for post-recovery SEARCH."""
+        if (
+            self.post_recovery_progress_enabled
+            and self.post_recovery_progress_tracker is not None
+        ):
+            outward = (
+                self.post_recovery_progress_tracker.latest.outward_progress_m
+            )
+            excess = max(
+                0.0,
+                outward - self.post_recovery_guidance_min_progress_m,
+            )
+            return float(
+                np.clip(
+                    1.0
+                    - excess
+                    / self.post_recovery_affine_taper_distance_m,
+                    0.0,
+                    1.0,
+                )
+            )
         if self.latest_pose is None or not self.latest_pose_valid:
             return 0.0
         record = self._record_for_fill(self.machine.active_escape_fill_id)
