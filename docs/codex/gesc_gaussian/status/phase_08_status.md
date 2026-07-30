@@ -6531,3 +6531,101 @@ probe predeclared.**
 Refresh the Phase 08 checkpoint against commit `7068a5f`, commit this dispatch
 record, reconfirm the process/evidence boundary, and execute only the bounded
 visible M4.1 probe.
+
+## Phase 08.7 M4.1 retained visible-probe result
+
+Exactly one visible-Gazebo attempt ran on ROS domain `159` from committed
+scenario SHA-256
+`2d881faa180c18c0b423671f12f91868e2b12d484a533909f607fef8372ca313`.
+The recorder returned `0` without timeout; the runner returned `1` because
+the combined behavioral contract failed. The run is retained at:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_1_probe/
+  2026-07-30/
+  20260730T063749069795Z_simulation_phase08_v7_m4_1_visible_probe-
+  v7_m4_1_probe_r1p5_a45_h25_18207-robust_gaussian_v_a3af59ef
+```
+
+A first combined shell guard stopped before launch after matching its own
+later `run_scenario` text. It created no evidence root and started no Gazebo
+process. The guard and command were separated before the single actual
+attempt.
+
+The M4.1 evidence correction passed completely, while the fixed fresh
+behavior exposed a genuine Stage B failure:
+
+```text
+recording completeness:                   PASS
+exact /joint_states owners:               PASS
+multi-publisher timestamp scope:          PASS
+all typed stamps inside /clock:           PASS
+singleton/event timestamp nonregression:  PASS
+Stage A local recovery:                   PASS
+exact fill cardinality 1/1:               PASS
+Stage B primary 1.20 m proximity:         FAIL
+collision expectation false:              PASS
+forbidden in-readiness states/events:      PASS
+final zero/readiness/cleanup:              PASS
+combined result:                           FAIL
+```
+
+All `48` completeness checks passed. `/joint_states` resolved exactly
+`/joint_state_broadcaster` and `/turtlebot3_joint_state`; the ordering scope,
+monotonic `/clock`, unchanged `0.150 s` within-clock tolerance, singleton
+nonregression, per-producer event nonregression, final commands, final
+readiness, sqlite integrity, and cleanup all passed. Read-only
+`PRAGMA quick_check` returned `ok` for `768,138` messages.
+
+Stage A completed the direct path and resumed `SEARCH` at simulation time
+`311.0 s`. Convergence at source time `279.9 s` was `0.0654552587 m` from
+the declared local. Fill/cluster `1` was centered at
+`(1.1169995189, 1.0055016861) m`, `0.1276227945 m` from convergence.
+
+The remaining `49.606 s` contained `1,460` valid and zero invalid post-A
+odometry samples. The first, best, and final global distances were:
+
+```text
+first: 2.7053139770 m
+best:  2.3996759290 m
+final: 2.4331356924 m
+```
+
+The robot traveled `3.3343982367 m` after Stage A but displaced only
+`0.2826786800 m`, looping near the recenter region. There was no collision,
+wall stop, safety failsafe, evidence defect, or extra/missing fill. Compared
+with retained M4 over the same post-A duration, path length was similar but
+global-distance gain was `0.3056380480 m` instead of `0.9439522646 m`;
+duration alone is not the full cause.
+
+The retained evidence supports a post-recovery liveness defect: recenter
+completed `0.3412297750 m` from its target at the edge of the `0.35 m`
+tolerance; the correctly localized fill was farther from that endpoint; the
+fill-centered affine taper resumed around weight `0.23` rather than M4's
+approximately `0.36` and faded with distance; and no supervisor progress
+monitor detects substantial path length with low net translation in guided
+`SEARCH`.
+
+Standard analysis returned `0` with `analysis_status: complete`, eight plots,
+eleven tables, and no analysis or recording failure. Exact execution,
+comparison, diagnosis, retained hashes, and a bounded fresh-version
+recommendation are recorded in:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m4_1_visible_probe_report.md
+```
+
+The fixed eight-case suite and optional three-light probe were not run. M4.1
+will not be retried, extended, overwritten, or retuned in place.
+
+## Current milestone
+
+**Phase 08.7 M4.1 — evidence correction PASS; fixed visible probe retained
+as formal Stage B / combined FAIL; result checkpoint PASS; commit pending.**
+
+### Next criterion
+
+Commit the retained result. Any further implementation requires a fresh,
+explicitly authorized version that corrects post-recovery liveness without
+weakening proximity, evidence, collision, or cleanup gates.

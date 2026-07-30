@@ -1,42 +1,43 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-30T06:36:52+00:00
-Base HEAD: 7068a5f27a30918e38829548a359e7a66ae25df5
+Generated: 2026-07-30T06:55:38+00:00
+Base HEAD: a8a0cb596fbd80405d57295704ec95437e7719c1
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 9907996793ebe2693854f1e0a63dd91f32bce39b8d45b1ec7e6526d85e7e0391
+Status sha256: 8e43caae9e37c2e4c91fe2fd1e8aa046d328776bd260571daaf7f3fa4abbf8ba
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
 Active subphase plan sha256: 206afca01731af6804817ac6ecbd3e16246d8a57f7b0d043a3b710852471ca02
-Unstaged diff sha256: ff72764fc0d0fbd3a6ee0aaca31e4f6fb54db27ce190587bb7f0f91528d6994f
+Unstaged diff sha256: acbf440a6f6b6792325e93bcbb40098023efce33354612ff5f10bb9680d4256a
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 68]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 69]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
+?? docs/codex/gesc_gaussian/validation/phase_08_7_m4_1_visible_probe_report.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 42 ++--------------
- docs/codex/gesc_gaussian/status/phase_08_status.md | 58 ++++++++++++++++++++++
- 2 files changed, 63 insertions(+), 37 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 30 ++-----
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 98 ++++++++++++++++++++++
+ 2 files changed, 104 insertions(+), 24 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**Phase 08.7 M4.1 — qualified input committed; one fixed visible two-light
-probe predeclared.**
+**Phase 08.7 M4.1 — evidence correction PASS; fixed visible probe retained
+as formal Stage B / combined FAIL; result checkpoint PASS; commit pending.**
 
 ### Next criterion
 
-Refresh the Phase 08 checkpoint against commit `7068a5f`, commit this dispatch
-record, reconfirm the process/evidence boundary, and execute only the bounded
-visible M4.1 probe.
+Commit the retained result. Any further implementation requires a fresh,
+explicitly authorized version that corrects post-recovery liveness without
+weakening proximity, evidence, collision, or cleanup gates.
 
 
 This file describes the base HEAD and diff before the next commit; it is
