@@ -5035,3 +5035,182 @@ and overly strict stop boundary prevented the combined result.**
 Checkpoint and commit the immutable M2.2 result. Implement a separately
 versioned M2.3 contract correction, fully qualify it without Gazebo, and
 checkpoint/commit its frozen input before any new visible probe.
+
+## Phase 08.7 M2.3 correction boundary
+
+The immutable M2.2 result, report, live status, and Phase 08 checkpoint were
+committed at:
+
+```text
+ccb9a52d01a57474db784a24cca097a999a8c1b4
+phase 08.7: retain M2.2 recovery contract failure
+```
+
+The post-commit worktree was clean. Under the user's standing authorization to
+execute the complete bounded correction, the fresh M2.3 amendment is now
+durable in `plans/phase_08_7_plan.md`. M2.3 does not reopen, retry, or relabel
+M2.2.
+
+M2.3 preserves every M2.2 algorithm and launch value. It:
+
+- adds schema-v5-only `required_state_paths` while retaining the singular
+  `required_state_path` as the first alternative;
+- recognizes both the direct recovery path and the existing legal
+  one-redesign `ESCAPE_ASSIST` path in Stage A, live-stop, controller, and
+  scoped reporting;
+- retains exact one-cluster cardinality and every causal-event requirement;
+- permits only the opt-in post-recovery profile to declare a radius from
+  `0.60` through `1.20 m`;
+- fixes both M2.3 global-proximity declarations at the empirically safe
+  `1.20 m` operator-equivalent boundary.
+
+Absent alternatives, existing schema-v5 normalization remains unchanged.
+Schema-v1 through schema-v4 reject the new field. Guidance-disabled geometry
+retains the exact historical `0.35 m` boundary. M2.1 and M2.2 remain exact
+`0.60 m` inputs.
+
+The fresh exact input is:
+
+```text
+suite:    phase08_v7_m2_3_assisted_recovery_stop_probe
+case:     v7_m2_3_diagonal_r1p5_h25_18001
+case key: 13cf3a091db9f9e72fff3abc0c1885b4e64033766f5317ee628490e468e10cbd
+scenario: f03db4462527620321eb299656d9f56fe32e10362664e595f7d3850fc3f53eca
+root:     /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m2_3
+```
+
+Initial no-Gazebo checks pass:
+
+- the four changed Python files compile;
+- `ament_flake8 --linelength 99` and `ament_pep257` pass on all four;
+- ten new/affected contract tests pass (`114` deselected);
+- the direct and assisted live monitors both wait for Stage A plus exact
+  cardinality and then stop on the first near odometry sample;
+- the source dry-run resolves one run, zero unsupported cases, the frozen key,
+  both legal paths, both `1.20 m` declarations, and the unchanged `75` launch
+  arguments;
+- strict source tests prove M2.3's launch command equals M2.2's command.
+
+The source dry-run is retained at
+`/tmp/phase08_7_m2_3_source_dry_run.yaml`. The fresh external evidence root is
+absent, and no Gazebo, runner, recorder, bag recorder, or physical-hardware
+process is running.
+
+## Current milestone
+
+**Phase 08.7 M2.3 — complete no-Gazebo qualification in progress.**
+
+### Next criterion
+
+Run the full declared functional regressions, isolated build, installed
+dry-run, and nonexecuting launch instantiation. Verify historical identities,
+source/install hash equality, context, diff, and process/root absence; then
+checkpoint and commit before any Gazebo execution.
+
+## Phase 08.7 M2.3 no-Gazebo qualification result
+
+M2.3 passes its complete pre-execution boundary.
+
+### Functional and compatibility evidence
+
+The final clean bounded functional run used fresh ROS domain `98`, explicitly
+disabled every Gazebo integration gate, and produced:
+
+```text
+546 passed, 2 skipped, 1 deselected in 110.19s
+JUnit: /tmp/phase08_7_m2_3_functional_clean.xml
+errors=0, failures=0, skipped=2, tests=548
+```
+
+This is the same broad envelope used for M2.2 plus the new M2.3 tests. It
+covers aggregate truth, bag analysis, convergence policy, deferred shutdown,
+escape/recenter, recording, legacy, observability, Phase 08 validation, robust
+Gaussian behavior, schema/runner, disturbances, state machine, and supervisor
+integration. The two skips are explicit runtime integrations. The one
+deselection is the recorded historical V4 adoption assertion that treats
+later fixed scenario files as an error.
+
+An orchestration wrapper yielded before its first broad shell finished and
+accidentally allowed a duplicate broad run to overlap it. The duplicate JUnit
+record retained `545` passes, two expected skips, and one supervisor
+integration wait failure. That exact failing test passed alone on fresh ROS
+domain `97` (`1 passed in 0.96s`), and the clean nonoverlapping full run above
+then passed it as part of all `548` executed tests. The overlap result is
+retained as a qualification-process artifact, not hidden or represented as an
+algorithm failure, and no Gazebo or experiment evidence was involved.
+
+The final contract-focused selection passes:
+
+```text
+14 passed, 114 deselected in 1.01s
+```
+
+It proves:
+
+- schema-v1 through schema-v4 reject `required_state_paths`;
+- empty, duplicate, unreachable, misclassified, and singular-inconsistent
+  alternatives are rejected;
+- both direct and assisted recovery paths satisfy Stage A and the live monitor;
+- radii below `0.60 m`, above `1.20 m`, or inconsistent between staged and
+  ground truth are rejected;
+- the M2.3 launch command is exactly equal to M2.2's launch command;
+- M2.1 and M2.2 case keys and stop contracts remain unchanged.
+
+All four changed Python source/test files pass `ament_flake8 --linelength 99`,
+`ament_pep257`, compilation, and fatal Python checks. `git diff --check`
+passes. The full historical immutability test, including all sealed
+schema-v1-through-schema-v4 identities, passed inside the broad suite.
+
+### Isolated build and installed resolution
+
+The fresh isolated source build passed:
+
+```text
+build base:   /tmp/phase08_7_m2_3_qual/build
+install base: /tmp/phase08_7_m2_3_qual/install
+log base:     /tmp/phase08_7_m2_3_qual/log
+Summary: 3 packages finished in 11.6s
+```
+
+The installed dry-run resolved one run, zero unsupported cases, the exact case
+key, both legal state paths, exact one-fill topology, the `0.50` detector cap,
+three retries, affine gain/age, and both `1.20 m` boundaries. Its launch argv
+contains four ROS launch-owner entries plus the same `75` launch arguments as
+M2.2. The summary is `/tmp/phase08_7_m2_3_dry_run.yaml`.
+
+Nonexecuting installed central-launch instantiation passed and produced the
+expected `254`-line description at
+`/tmp/phase08_7_m2_3_launch_description.txt`. It binds the detector,
+modified-cost node, fill owner, and supervisor through the existing central
+launch owner. It did not start Gazebo.
+
+Source and isolated-install identities match:
+
+```text
+f03db4462527620321eb299656d9f56fe32e10362664e595f7d3850fc3f53eca  M2.3 scenario
+8ea18406346af0e7c0b7f2a23c895ff67e48232e37f7510268a926b92c76a1f8  scenario schema
+b2a0085f184f4f46113b58dd2e76a1cc7195ceab9214628ee4b556db79f5b0b1  scenario runner
+9277b63743c7672268721c50b414020fc5951d719f358fd053d5f86d0b06e49c  central launch
+88b10b39aa24a6430f6f031c750334ed34e6835e54c84de8d36f4cc6a26444bf  shifted world
+1f11448b37ef8fbfb146124a0141d91d3404ee614d6d33e3a30f58aa0a179439  immutable M2.2 scenario
+541194d6152a8384c469f5bcc8573aef9afdb295bde6e148e5a82a692b8e4c8b  immutable M2.1 scenario
+```
+
+The Phase 08 context validator passes with the active Phase 08.7 plan.
+`DISPLAY=:0` passes `xdpyinfo`, approximately `319 GiB` is free, the fresh
+M2.3 evidence root remains absent, and no Gazebo, runner, recorder, bag
+recorder, or physical-hardware process is running. No V6 file, historical
+scenario/world/evidence, controller, supervisor algorithm, fill algorithm,
+interface, topic, cost sign/unit, or `/cmd_vel` owner changed.
+
+## Current milestone
+
+**Phase 08.7 M2.3 — no-Gazebo qualification PASS; exact input ready for
+checkpoint and commit.**
+
+### Next criterion
+
+Checkpoint and commit the exact M2.3 runtime changes, scenario, tests, Plan,
+and status. Verify a clean commit, unchanged installed scenario hash, absent
+evidence root, and inactive ROS/Gazebo process set before dispatching exactly
+one bounded visible probe without automatic retry.

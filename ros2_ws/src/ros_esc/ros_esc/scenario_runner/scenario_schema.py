@@ -218,7 +218,7 @@ CONTROLLER_KEYS = {
     'reachability_argument',
     'expected_terminal_state', 'required_state_sequence', 'required_events',
     'forbidden_events', 'required_state_path', 'required_event_sequence',
-    'forbidden_states',
+    'required_state_paths', 'forbidden_states',
 }
 GROUND_TRUTH_KEYS = {'goal_source_ids', 'final_position_tolerance_m'}
 AGGREGATE_GROUND_TRUTH_KEYS = {
@@ -323,6 +323,30 @@ DEFAULTS = {
 }
 
 CORNER_ORIGIN_GEOMETRY_PROFILE = 'corner_origin_diagonal_sector_v1'
+CORRECTED_GLOBAL_PROXIMITY_MIN_M = 0.60
+CORRECTED_GLOBAL_PROXIMITY_MAX_M = 1.20
+DIRECT_STAGED_RECOVERY_STATE_PATH = (
+    'SEARCH',
+    'VERIFY_EXTREMUM',
+    'DESIGN_OR_MERGE_FILL',
+    'ESCAPE_REPULSE',
+    'RECENTER',
+    'SEARCH',
+)
+ASSISTED_STAGED_RECOVERY_STATE_PATH = (
+    'SEARCH',
+    'VERIFY_EXTREMUM',
+    'DESIGN_OR_MERGE_FILL',
+    'ESCAPE_REPULSE',
+    'DESIGN_OR_MERGE_FILL',
+    'ESCAPE_ASSIST',
+    'RECENTER',
+    'SEARCH',
+)
+STAGED_RECOVERY_STATE_PATHS = (
+    DIRECT_STAGED_RECOVERY_STATE_PATH,
+    ASSISTED_STAGED_RECOVERY_STATE_PATH,
+)
 GEOMETRY_PROFILES = {
     CORNER_ORIGIN_GEOMETRY_PROFILE: {
         'world_file': 'gesc_gaussian_corner_origin_validation.world',
@@ -384,7 +408,6 @@ def _positive_integer(value, location):
 
 def _validate_correction_overrides(overrides, ablations, location):
     """Validate optional Phase 08.7 robust correction controls."""
-
     gate_name = 'convergence_state_gating_enabled'
     if gate_name in overrides:
         _boolean(overrides[gate_name], f'{location}.{gate_name}')
@@ -614,19 +637,30 @@ def _resolve_geometry_profile(
     corrected_stop = bool(
         launch_overrides.get('post_recovery_guidance_enabled', False)
     )
-    expected_global_proximity = (
-        0.60 if corrected_stop else profile['global_proximity_radius_m']
-    )
-    if not math.isclose(
-        staged_recovery['global_proximity_radius_m'],
-        expected_global_proximity,
+    global_proximity = staged_recovery['global_proximity_radius_m']
+    if corrected_stop:
+        if not (
+            CORRECTED_GLOBAL_PROXIMITY_MIN_M
+            <= global_proximity
+            <= CORRECTED_GLOBAL_PROXIMITY_MAX_M
+        ):
+            raise ValueError(
+                f'{location}.success.staged_recovery.'
+                'global_proximity_radius_m must be between '
+                f'{CORRECTED_GLOBAL_PROXIMITY_MIN_M:.2f} and '
+                f'{CORRECTED_GLOBAL_PROXIMITY_MAX_M:.2f} when '
+                'post-recovery guidance is enabled'
+            )
+    elif not math.isclose(
+        global_proximity,
+        profile['global_proximity_radius_m'],
         rel_tol=0.0,
         abs_tol=1e-12,
     ):
         raise ValueError(
             f'{location}.success.staged_recovery.'
             'global_proximity_radius_m must equal '
-            f'{expected_global_proximity:.2f}'
+            f'{profile["global_proximity_radius_m"]:.2f}'
         )
 
     allowed_x_min = bounds[0] + profile['wall_margin_m']
@@ -1519,6 +1553,14 @@ def load_suite(path):
             )
         controller = success.get('controller', {})
         _unknown(controller, CONTROLLER_KEYS, f'{location}.success.controller')
+        if (
+            'required_state_paths' in controller
+            and schema_version < 5
+        ):
+            raise ValueError(
+                f'{location}.success.controller.required_state_paths '
+                'requires schema version 5 or newer'
+            )
         normalized_controller = {
             'expected_terminal_state': controller.get(
                 'expected_terminal_state'
@@ -1591,6 +1633,53 @@ def load_suite(path):
                 required_path,
                 f'{controller_location}.required_state_path',
             )
+            required_state_paths = None
+            raw_required_state_paths = controller.get(
+                'required_state_paths'
+            )
+            if raw_required_state_paths is not None:
+                if (
+                    not isinstance(raw_required_state_paths, list)
+                    or not raw_required_state_paths
+                ):
+                    raise ValueError(
+                        f'{controller_location}.required_state_paths '
+                        'must be a non-empty list'
+                    )
+                required_state_paths = []
+                for path_index, raw_path in enumerate(
+                    raw_required_state_paths
+                ):
+                    path_location = (
+                        f'{controller_location}.required_state_paths'
+                        f'[{path_index}]'
+                    )
+                    normalized_path = _contract_names(
+                        raw_path,
+                        ALGORITHM_STATES,
+                        'STATE_',
+                        path_location,
+                        unique=False,
+                    )
+                    if not normalized_path:
+                        raise ValueError(
+                            f'{path_location} must be non-empty'
+                        )
+                    _validate_state_path(normalized_path, path_location)
+                    required_state_paths.append(normalized_path)
+                path_identities = [
+                    tuple(path) for path in required_state_paths
+                ]
+                if len(path_identities) != len(set(path_identities)):
+                    raise ValueError(
+                        f'{controller_location}.required_state_paths '
+                        'must not contain duplicate paths'
+                    )
+                if required_state_paths[0] != required_path:
+                    raise ValueError(
+                        f'{controller_location}.required_state_paths[0] '
+                        'must equal required_state_path'
+                    )
             forbidden_states = _contract_names(
                 controller.get('forbidden_states', []),
                 ALGORITHM_STATES,
@@ -1621,7 +1710,12 @@ def load_suite(path):
                 'EVENT_',
                 f'{controller_location}.forbidden_events',
             )
-            required_state_set = set(required_states) | set(required_path)
+            effective_state_paths = (
+                required_state_paths or [required_path]
+            )
+            required_state_set = set(required_states)
+            for state_path in effective_state_paths:
+                required_state_set.update(state_path)
             state_overlap = sorted(
                 required_state_set & set(forbidden_states)
             )
@@ -1646,22 +1740,30 @@ def load_suite(path):
                     f'{controller_location}.expected_terminal_state '
                     'is forbidden'
                 )
-            verify_index = required_path.index('VERIFY_EXTREMUM')
-            next_state = (
-                required_path[verify_index + 1]
-                if verify_index + 1 < len(required_path)
-                else None
-            )
             required_next = {
                 'goal': 'GOAL_HOLD',
                 'below_target_extremum': 'DESIGN_OR_MERGE_FILL',
                 'safe_timeout': 'FAILSAFE',
             }[outcome]
-            if next_state != required_next:
-                raise ValueError(
-                    f'{controller_location}.required_state_path must '
-                    f'classify first verification as {required_next}'
+            for path_index, state_path in enumerate(
+                effective_state_paths
+            ):
+                verify_index = state_path.index('VERIFY_EXTREMUM')
+                next_state = (
+                    state_path[verify_index + 1]
+                    if verify_index + 1 < len(state_path)
+                    else None
                 )
+                if next_state != required_next:
+                    suffix = (
+                        '.required_state_path'
+                        if required_state_paths is None
+                        else f'.required_state_paths[{path_index}]'
+                    )
+                    raise ValueError(
+                        f'{controller_location}{suffix} must classify '
+                        f'first verification as {required_next}'
+                    )
             if outcome == 'goal':
                 if expected_terminal != 'GOAL_HOLD':
                     raise ValueError(
@@ -1730,6 +1832,10 @@ def load_suite(path):
                 'forbidden_states': forbidden_states,
                 'forbidden_events': forbidden_events,
             }
+            if required_state_paths is not None:
+                normalized_controller[
+                    'required_state_paths'
+                ] = required_state_paths
             if (
                 schema_version == 4
                 and acceptance_partition in {
@@ -1788,22 +1894,36 @@ def load_suite(path):
                 f'{ground_truth_location}.proximity_radius_m',
                 positive=True,
             )
-            expected_tolerance = (
-                0.60
-                if overrides.get(
+            corrected_stop = bool(
+                overrides.get(
                     'post_recovery_guidance_enabled', False
                 )
-                else 0.35
             )
-            if not math.isclose(
+            historical_proximity = GEOMETRY_PROFILES[
+                CORNER_ORIGIN_GEOMETRY_PROFILE
+            ]['global_proximity_radius_m']
+            if corrected_stop:
+                if not (
+                    CORRECTED_GLOBAL_PROXIMITY_MIN_M
+                    <= tolerance
+                    <= CORRECTED_GLOBAL_PROXIMITY_MAX_M
+                ):
+                    raise ValueError(
+                        f'{ground_truth_location}.proximity_radius_m must '
+                        'be between '
+                        f'{CORRECTED_GLOBAL_PROXIMITY_MIN_M:.2f} and '
+                        f'{CORRECTED_GLOBAL_PROXIMITY_MAX_M:.2f} when '
+                        'post-recovery guidance is enabled'
+                    )
+            elif not math.isclose(
                 tolerance,
-                expected_tolerance,
+                historical_proximity,
                 rel_tol=0.0,
                 abs_tol=1e-12,
             ):
                 raise ValueError(
                     f'{ground_truth_location}.proximity_radius_m must '
-                    f'equal {expected_tolerance:.2f}'
+                    f'equal {historical_proximity:.2f}'
                 )
             normalized_ground_truth = {
                 'method': 'declared_global_proximity',
@@ -2182,23 +2302,24 @@ def load_suite(path):
                     f'{location}.success staged contract omits: '
                     + ', '.join(missing_core)
                 )
-            expected_path = [
-                'SEARCH',
-                'VERIFY_EXTREMUM',
-                'DESIGN_OR_MERGE_FILL',
-                'ESCAPE_REPULSE',
-                'RECENTER',
-                'SEARCH',
-            ]
+            expected_paths = {
+                tuple(path) for path in STAGED_RECOVERY_STATE_PATHS
+            }
+            controller_paths = normalized_controller.get(
+                'required_state_paths',
+                [normalized_controller['required_state_path']],
+            )
             if (
                 normalized_controller['expected_verification_outcome']
                 != 'below_target_extremum'
-                or normalized_controller['required_state_path']
-                != expected_path
+                or any(
+                    tuple(path) not in expected_paths
+                    for path in controller_paths
+                )
             ):
                 raise ValueError(
                     f'{controller_location} staged contract must bind the '
-                    'complete local recovery path'
+                    'complete direct or assisted local recovery path'
                 )
             required_staged_events = {
                 'CONVERGENCE_CONFIRMED',

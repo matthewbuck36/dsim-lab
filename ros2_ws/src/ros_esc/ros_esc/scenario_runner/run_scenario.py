@@ -44,7 +44,11 @@ from std_msgs.msg import Bool
 
 import yaml
 
-from .scenario_schema import expand_suite, load_suite
+from .scenario_schema import (
+    expand_suite,
+    load_suite,
+    STAGED_RECOVERY_STATE_PATHS,
+)
 
 
 def _repository_root():
@@ -1285,6 +1289,16 @@ def _controller_evidence(expectations, observed_states, observed_events):
         str(name).removeprefix('STATE_')
         for name in expectations.get('required_state_path', [])
     ]
+    required_state_paths = [
+        [
+            str(name).removeprefix('STATE_')
+            for name in path
+        ]
+        for path in expectations.get(
+            'required_state_paths',
+            [required_state_path],
+        )
+    ]
     required_events = [
         str(name).removeprefix('EVENT_')
         for name in expectations.get('required_events', [])
@@ -1302,9 +1316,9 @@ def _controller_evidence(expectations, observed_states, observed_events):
         for name in expectations.get('forbidden_events', [])
     ]
     return {
-        'required_state_path': _first_verification_path(
-            required_state_path,
-            observed_states,
+        'required_state_path': any(
+            _first_verification_path(path, observed_states)
+            for path in required_state_paths
         ),
         'required_state_sequence': _subsequence(
             required_states,
@@ -1405,6 +1419,17 @@ def _scope_controller_expectations(scope, expectations):
         ]
         if anchor in normalized:
             scoped[field] = values[normalized.index(anchor):]
+    if 'required_state_paths' in scoped:
+        clipped_paths = []
+        for path in scoped['required_state_paths']:
+            values = list(path)
+            normalized = [
+                str(name).removeprefix('STATE_') for name in values
+            ]
+            if anchor in normalized:
+                values = values[normalized.index(anchor):]
+            clipped_paths.append(values)
+        scoped['required_state_paths'] = clipped_paths
     return scoped
 
 
@@ -1638,34 +1663,36 @@ def _event_value_map(message):
 
 
 def _recovery_episodes(state_records, expected_count):
-    pattern = [
-        'SEARCH',
-        'VERIFY_EXTREMUM',
-        'DESIGN_OR_MERGE_FILL',
-        'ESCAPE_REPULSE',
-        'RECENTER',
-        'SEARCH',
+    patterns = [
+        list(path) for path in STAGED_RECOVERY_STATE_PATHS
     ]
     episodes = []
     cursor = 0
-    while cursor + len(pattern) <= len(state_records):
-        match = next(
-            (
-                index
-                for index in range(
-                    cursor,
-                    len(state_records) - len(pattern) + 1,
-                )
-                if [
+    while cursor < len(state_records):
+        matches = []
+        for pattern_index, pattern in enumerate(patterns):
+            for record_index in range(
+                cursor,
+                len(state_records) - len(pattern) + 1,
+            ):
+                observed_path = [
                     name
                     for unused_stamp, name
-                    in state_records[index:index + len(pattern)]
-                ] == pattern
-            ),
-            None,
-        )
-        if match is None:
+                    in state_records[
+                        record_index:record_index + len(pattern)
+                    ]
+                ]
+                if observed_path == pattern:
+                    matches.append(
+                        (record_index, pattern_index, pattern)
+                    )
+                    break
+        if not matches:
             break
+        match, unused_pattern_index, pattern = min(
+            matches,
+            key=lambda item: (item[0], item[1]),
+        )
         end = match + len(pattern) - 1
         episodes.append({
             'start_stamp': state_records[match][0],
@@ -1982,13 +2009,11 @@ def _staged_recovery_evidence(
     }
     evidence = {
         'expected_local_minima': expected_count,
-        'required_state_path': [
-            'SEARCH',
-            'VERIFY_EXTREMUM',
-            'DESIGN_OR_MERGE_FILL',
-            'ESCAPE_REPULSE',
-            'RECENTER',
-            'SEARCH',
+        'required_state_path': list(
+            STAGED_RECOVERY_STATE_PATHS[0]
+        ),
+        'accepted_state_paths': [
+            list(path) for path in STAGED_RECOVERY_STATE_PATHS
         ],
         'completed_episode_count': len(episodes),
         'episodes': episodes,

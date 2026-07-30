@@ -1,44 +1,54 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-30T00:32:42+00:00
-Base HEAD: 4fdc43fede08e0abdb69e799e1273329ed01129f
+Generated: 2026-07-30T00:53:30+00:00
+Base HEAD: ccb9a52d01a57474db784a24cca097a999a8c1b4
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 95c599bdc507742338b6deb020804b33564b0f5a03199db2ba82c6d4786fbb87
+Status sha256: c2735405521a648e8092eef957f40517de6a9c29b05be6808259517b66081cfc
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
-Active subphase plan sha256: f3774749889b963d3c1adf69f90e2645ff2281eaf4c7829a8bb3c02819d41a60
-Unstaged diff sha256: 0b709386d5aa76f1ae92d61dba1476a8df29050536ffab4e8c40d5e2a2e806d4
+Active subphase plan sha256: 154d811a73badfd43dfd32e3cb0ffaf6839230c6fc2964fffa09f29bf15a0591
+Unstaged diff sha256: 9218007e39d071776fa45930ffd39a31ee30b3183b8dcf98b4693d6e7c3912bd
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 56]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 57]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
+ M docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
-?? docs/codex/gesc_gaussian/validation/phase_08_7_m2_2_efficiency_correction_probe_report.md
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py
+ M ros2_ws/src/ros_esc/test/test_scenario_runner.py
+ M ros2_ws/src/ros_esc/test/test_scenario_schema.py
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m2_3_assisted_recovery_stop_probe.yaml
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  37 +----
- docs/codex/gesc_gaussian/status/phase_08_status.md | 152 +++++++++++++++++++++
- 2 files changed, 158 insertions(+), 31 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  39 ++--
+ docs/codex/gesc_gaussian/plans/phase_08_7_plan.md  | 141 ++++++++++++++-
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 179 ++++++++++++++++++
+ .../ros_esc/scenario_runner/run_scenario.py        |  91 ++++++----
+ .../ros_esc/scenario_runner/scenario_schema.py     | 199 +++++++++++++++++----
+ ros2_ws/src/ros_esc/test/test_scenario_runner.py   | 158 ++++++++++++++--
+ ros2_ws/src/ros_esc/test/test_scenario_schema.py   | 174 ++++++++++++++++++
+ 7 files changed, 865 insertions(+), 116 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**Phase 08.7 M2.2 — retained FAIL. The detector, one-fill topology, assisted
-local escape, recenter, and affine guidance worked; the recovery-path reporter
-and overly strict stop boundary prevented the combined result.**
+**Phase 08.7 M2.3 — no-Gazebo qualification PASS; exact input ready for
+checkpoint and commit.**
 
 ### Next criterion
 
-Checkpoint and commit the immutable M2.2 result. Implement a separately
-versioned M2.3 contract correction, fully qualify it without Gazebo, and
-checkpoint/commit its frozen input before any new visible probe.
+Checkpoint and commit the exact M2.3 runtime changes, scenario, tests, Plan,
+and status. Verify a clean commit, unchanged installed scenario hash, absent
+evidence root, and inactive ROS/Gazebo process set before dispatching exactly
+one bounded visible probe without automatic retry.
 
 
 This file describes the base HEAD and diff before the next commit; it is

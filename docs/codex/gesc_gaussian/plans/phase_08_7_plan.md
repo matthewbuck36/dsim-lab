@@ -2,8 +2,9 @@
 
 ## Status and authority
 
-**M1 IMPLEMENTED AND QUALIFIED; M2 EXECUTED AND RETAINED;
-M3 AND LATER EXECUTION NOT AUTHORIZED.**
+**M1 IMPLEMENTED AND QUALIFIED; M2, M2.1, AND M2.2 EXECUTED AND
+RETAINED; M2.3 CORRECTION AND ONE PROBE AUTHORIZED; M3 AND LATER EXECUTION
+NOT AUTHORIZED.**
 
 The user approved the geometry in this Plan on 2026-07-29. M1 was implemented,
 qualified without Gazebo execution, checkpointed, and committed at `7c87e5a`.
@@ -637,6 +638,135 @@ phase08_v7_m2_2_efficiency_correction_probe.yaml`, SHA-256
 `1f11448b37ef8fbfb146124a0141d91d3404ee614d6d33e3a30f58aa0a179439`.
 Any byte change requires a new hash and repetition of the no-Gazebo boundary.
 
+## M2.3 assisted-recovery and operator-stop amendment
+
+M2.2 is closed and immutable as failed. It empirically passed the corrected
+detector, exact one-cluster topology, local convergence association, assisted
+escape, recenter, and post-recovery affine activation. It failed the formal
+combined result for two independent evidence-contract reasons:
+
+1. the Stage A reporter and singular controller path accepted only the direct
+   `ESCAPE_REPULSE -> RECENTER` topology, although the supervisor legally
+   executed its existing one-redesign
+   `ESCAPE_REPULSE -> DESIGN_OR_MERGE_FILL -> ESCAPE_ASSIST -> RECENTER`
+   branch;
+2. the fixed `0.60 m` stop remained unobserved before the controller's
+   wall-margin failsafe and later east-wall contact.
+
+The retained M2.2 run proves the bounded stop correction. After assisted
+recovery and recenter, the first noninterpolated odometry sample within
+`1.20 m` of the global occurred at ROS time `306.030 s`, pose
+`(3.369462640, 2.308150068) m`, actual distance `1.198977173 m`. At that
+sample the robot remained `0.180537360 m` inside the east controller inset.
+The wall-margin failsafe followed `4.77 s` later and first east-wall contact
+approximately `5.85 s` later.
+
+M2.3 is a fresh development version, not an M2.2 retry or relabel. It preserves
+every M2.2 algorithm and launch value while making only these two corrections:
+
+- schema-v5 scenarios may add `controller.required_state_paths`, whose first
+  path must equal the existing singular `required_state_path`; the declared
+  paths must be nonempty, unique, transition-valid, and classify the first
+  verification identically;
+- the Phase 08.7 staged reporter, live monitor, controller predicate, and
+  scoped result evaluation accept either of the two exact legal paths:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> RECENTER
+-> SEARCH
+```
+
+or:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_ASSIST
+-> RECENTER
+-> SEARCH
+```
+
+- the opt-in post-recovery-guidance profile permits a prospectively declared
+  proximity from `0.60 m` through the evidence-backed `1.20 m` ceiling;
+- staged and ground-truth proximity declarations must remain identical;
+- M2.3 fixes both declarations at exactly `1.20 m`.
+
+Absent `required_state_paths`, schema-v5 normalization and singular-path
+evaluation remain unchanged. Schema-v1 through schema-v4 reject the new field.
+Post-recovery guidance disabled retains the original exact `0.35 m` geometry
+profile boundary. M2.1 and M2.2 remain exact `0.60 m` inputs. Historical case
+keys, scenario/world bytes, V6 evidence, topics, controller ownership,
+cost signs/units, and algorithm behavior remain unchanged.
+
+Before Gazebo, M2.3 must pass:
+
+1. direct and assisted Stage A episode tests, exact fill-cardinality tests,
+   and live graceful-stop tests for both legal paths;
+2. schema rejection of empty, duplicate, unreachable, misclassified, or
+   singular-path-inconsistent alternatives;
+3. schema rejection of stop mismatches, radii below `0.60 m`, and radii above
+   `1.20 m`;
+4. strict comparison proving all M2.2 launch arguments and algorithm inputs
+   are unchanged;
+5. complete schema/runner, detector/supervisor, legacy/V6, recording,
+   final-zero, shifted-world, and Phase 08 validation regressions;
+6. isolated build, installed dry-run, nonexecuting launch instantiation,
+   source/install hash identity, context validation, diff inspection,
+   live-status update, checkpoint, and clean commit.
+
+Only after those gates pass may one bounded visible-Gazebo M2.3 attempt use:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m2_3
+```
+
+The attempt is retained without automatic retry. M3 remains unauthorized
+unless M2.3 independently passes infrastructure, Stage A, Stage B, exact
+cardinality, collision, forbidden-state/event, and combined predicates.
+
+The M2.3 input is frozen as:
+
+```text
+suite:              phase08_v7_m2_3_assisted_recovery_stop_probe
+experiment version: phase08-v7-m2.3
+case:               v7_m2_3_diagonal_r1p5_h25_18001
+case key:           13cf3a091db9f9e72fff3abc0c1885b4e64033766f5317ee628490e468e10cbd
+partition:          development
+run count:          1
+Gazebo presentation: visible GUI
+seed:               18001
+start:              (0.0, 0.0), yaw 0
+local:              (1.0606601717798212, 1.0606601717798212)
+local input:        400.0 nominal relative lumens
+global:             (3.5, 3.5)
+global input:       1600.0 nominal relative lumens
+known topology:     1 local, 1 global
+maximum fills:      1
+detector gate:      SEARCH-only, 0.20 m path, 0.50 efficiency
+recovery paths:     direct or one-redesign assisted
+affine guidance:    enabled, 60.0 s maximum age
+recovery retries:   3
+wall margin:        0.20 m
+global proximity:   1.20 m
+run timeout:        360 s
+wall timeout:       540 s
+shutdown grace:     45 s
+```
+
+The exact scenario is
+`ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/
+phase08_v7_m2_3_assisted_recovery_stop_probe.yaml`, SHA-256
+`f03db4462527620321eb299656d9f56fe32e10362664e595f7d3850fc3f53eca`.
+Any byte change requires a new hash and repetition of the complete no-Gazebo
+boundary.
+
 ## Milestones
 
 ### M0 — geometry contract
@@ -665,6 +795,13 @@ After explicit correction approval, implement and qualify the opt-in detector,
 topology, affine-guidance, and relaxed-stop amendment above. Preserve and
 replay M2's failure evidence, checkpoint and commit the qualified correction,
 then run exactly one fresh bounded visible probe.
+
+### M2.3 — assisted-path and operator-stop correction
+
+Preserve the fixed failures through M2.2. Add only the schema-v5 alternative
+recovery-path evidence contract and the evidence-backed `1.20 m`
+post-recovery operator stop. Qualify and commit the exact fresh input before
+one bounded visible probe with no automatic retry.
 
 ### M3 — fixed spatial suite
 

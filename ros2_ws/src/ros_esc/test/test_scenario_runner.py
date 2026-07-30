@@ -54,6 +54,11 @@ M2_2_CORRECTION = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v7_m2_2_efficiency_correction_probe.yaml'
 )
+M2_3_CORRECTION = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m2_3_assisted_recovery_stop_probe.yaml'
+)
 
 
 def test_observed_local_recovery_binds_fill_to_local_convergence():
@@ -425,6 +430,43 @@ def _staged_records():
     return states, events, fills
 
 
+def _assisted_staged_records():
+    states = [
+        (1, _state_message('SEARCH')),
+        (2, _state_message('VERIFY_EXTREMUM')),
+        (4, _state_message('DESIGN_OR_MERGE_FILL')),
+        (7, _state_message('ESCAPE_REPULSE')),
+        (9, _state_message('DESIGN_OR_MERGE_FILL')),
+        (11, _state_message('ESCAPE_ASSIST')),
+        (13, _state_message('RECENTER')),
+        (16, _state_message('SEARCH')),
+    ]
+    events = [
+        (3, _event_message(
+            'CONVERGENCE_CONFIRMED',
+            source_timestamp=10.0,
+            source_timestamp_valid=True,
+            value_names=['fill_center_x_m', 'fill_center_y_m'],
+            values=[1.04, 1.04],
+        )),
+        (6, _event_message(
+            'FILL_CREATED',
+            source_timestamp=11.007,
+            source_timestamp_valid=True,
+            fill_id=7,
+            fill_id_valid=True,
+            value_names=['cluster_id', 'revision'],
+            values=[42.0, 1.0],
+        )),
+        (8, _event_message('ESCAPE_STARTED')),
+        (10, _event_message('ESCAPE_STALLED')),
+        (14, _event_message('RECENTER_STARTED')),
+        (15, _event_message('RECENTER_COMPLETE')),
+    ]
+    fills = [(5, _fill_message())]
+    return states, events, fills
+
+
 def test_route_blocker_encounter_matches_first_active_typed_fill():
     """Require the first accepted fill to belong to the route blocker."""
     resolved = {
@@ -600,6 +642,25 @@ def test_m2_2_launch_changes_only_motion_efficiency_cap():
     assert normalized_m2_1 == launch_m2_2
 
 
+def test_m2_3_preserves_launch_and_binds_evidence_stop():
+    """Keep algorithm launch bytes while correcting the runner contract."""
+    m2_2 = expand_suite(load_suite(M2_2_CORRECTION))[0][0]
+    m2_3 = expand_suite(load_suite(M2_3_CORRECTION))[0][0]
+
+    assert build_launch_command(m2_3, gui=True) == (
+        build_launch_command(m2_2, gui=True)
+    )
+    assert m2_3['success']['ground_truth'][
+        'proximity_radius_m'
+    ] == 1.20
+    assert m2_3['success']['staged_recovery'][
+        'global_proximity_radius_m'
+    ] == 1.20
+    assert len(
+        m2_3['success']['controller']['required_state_paths']
+    ) == 2
+
+
 def test_staged_recovery_reports_stage_a_cardinality_and_global_sample():
     """Separate local recovery, exact clusters, and post-recovery arrival."""
     resolved = _v5_staged_resolved()
@@ -666,6 +727,53 @@ def test_staged_recovery_reports_stage_a_cardinality_and_global_sample():
     assert stage_a is True
     assert cardinality is False
     assert evidence['unassigned_cluster_ids'] == [43]
+
+
+def test_staged_recovery_accepts_legal_assisted_path():
+    """Count the redesign-assisted topology as one completed recovery."""
+    resolved = _v5_staged_resolved()
+    states, events, fills = _assisted_staged_records()
+
+    stage_a, cardinality, evidence, error = (
+        runner._staged_recovery_evidence(
+            resolved,
+            states,
+            events,
+            fills,
+        )
+    )
+
+    assert error is None
+    assert stage_a is True
+    assert cardinality is True
+    assert evidence['completed_episode_count'] == 1
+    assert evidence['episodes'][0]['state_path'] == [
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'DESIGN_OR_MERGE_FILL',
+        'ESCAPE_REPULSE',
+        'DESIGN_OR_MERGE_FILL',
+        'ESCAPE_ASSIST',
+        'RECENTER',
+        'SEARCH',
+    ]
+    assert evidence['episodes'][0]['state_path'] in (
+        evidence['accepted_state_paths']
+    )
+
+    expectations = {
+        'required_state_path': evidence['accepted_state_paths'][0],
+        'required_state_paths': evidence['accepted_state_paths'],
+    }
+    observed_states = [
+        message.state_name for unused_stamp, message in states
+    ]
+    controller = runner._controller_evidence(
+        expectations,
+        observed_states,
+        [],
+    )
+    assert controller['required_state_path'] is True
 
 
 def test_staged_classification_retains_stage_a_when_global_stop_fails():
@@ -1961,10 +2069,12 @@ def test_live_boundary_stop_waits_for_state_and_required_event(monkeypatch):
     assert executor_events == ['created', 'added', 'removed', 'shutdown']
 
 
+@pytest.mark.parametrize('assisted', [False, True])
 def test_live_global_stop_waits_for_stage_a_cardinality_and_near_odom(
     monkeypatch,
+    assisted,
 ):
-    """Do not signal until local recovery and a post-recovery sample pass."""
+    """Stop after either legal recovery path and a near odometry sample."""
     callbacks = {}
     dispatched = []
     executor_events = []
@@ -2005,23 +2115,41 @@ def test_live_global_stop_waits_for_stage_a_cardinality_and_near_odom(
             self.returncode = 0
             return 0
 
-    states, events, fills = _staged_records()
+    states, events, fills = (
+        _assisted_staged_records() if assisted else _staged_records()
+    )
+    timed_messages = [
+        (
+            stamp,
+            '/gesc_gaussian/algorithm_state',
+            message,
+        )
+        for stamp, message in states
+    ]
+    timed_messages.extend(
+        (
+            stamp,
+            '/gesc_gaussian/algorithm_events',
+            message,
+        )
+        for stamp, message in events
+    )
+    timed_messages.extend(
+        (
+            stamp,
+            '/gesc_gaussian/gaussian_fills',
+            message,
+        )
+        for stamp, message in fills
+    )
     sequence = [
-        ('/gesc_gaussian/algorithm_state', states[0][1]),
-        ('/gesc_gaussian/algorithm_state', states[1][1]),
-        ('/gesc_gaussian/algorithm_events', events[0][1]),
-        ('/gesc_gaussian/algorithm_state', states[2][1]),
-        ('/gesc_gaussian/gaussian_fills', fills[0][1]),
-        ('/gesc_gaussian/algorithm_events', events[1][1]),
-        ('/gesc_gaussian/algorithm_state', states[3][1]),
-        ('/gesc_gaussian/algorithm_events', events[2][1]),
-        ('/gesc_gaussian/algorithm_state', states[4][1]),
-        ('/gesc_gaussian/algorithm_events', events[3][1]),
-        ('/gesc_gaussian/algorithm_events', events[4][1]),
-        ('/gesc_gaussian/algorithm_state', states[5][1]),
+        (topic, message)
+        for unused_stamp, topic, message in sorted(timed_messages)
+    ]
+    sequence.extend([
         ('/odom', _odom_message(2.5, 2.5)),
         ('/odom', _odom_message(3.30, 3.30)),
-    ]
+    ])
 
     def spin_once(timeout_sec):
         del timeout_sec

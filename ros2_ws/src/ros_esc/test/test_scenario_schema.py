@@ -52,6 +52,11 @@ M2_2_CORRECTION = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v7_m2_2_efficiency_correction_probe.yaml'
 )
+M2_3_CORRECTION = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m2_3_assisted_recovery_stop_probe.yaml'
+)
 HISTORICAL_V2_ACTIVATION = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml'
@@ -673,6 +678,18 @@ def test_schema_v3_rejects_decorative_or_unreachable_contracts(
         _load(tmp_path, document)
 
 
+def test_required_state_path_alternatives_are_schema_v5_only(tmp_path):
+    """Keep schema-v1 through schema-v4 controller contracts unchanged."""
+    document = _v3_document()
+    controller = document['cases'][0]['success']['controller']
+    controller['required_state_paths'] = [
+        list(controller['required_state_path'])
+    ]
+
+    with pytest.raises(ValueError, match='requires schema version 5'):
+        _load(tmp_path, document)
+
+
 def test_schema_v3_allows_only_explicit_timing_insufficient_safe_timeout(
     tmp_path,
 ):
@@ -1037,6 +1054,163 @@ def test_m2_2_changes_only_evidence_calibrated_efficiency_contract():
     m2_2_comparable['success']['controller']['contract_id'] = 'normalized'
     assert m2_2_comparable == m2_1_comparable
     assert deterministic_case_key(m2_2) == m2_2['case_key']
+
+
+def test_m2_3_changes_only_recovery_paths_and_operator_stop():
+    """Bind the two evidence-backed M2.3 contract corrections."""
+    m2_2 = expand_suite(load_suite(M2_2_CORRECTION))[0][0]
+    m2_3 = expand_suite(load_suite(M2_3_CORRECTION))[0][0]
+
+    direct_path = m2_2['success']['controller'][
+        'required_state_path'
+    ]
+    assisted_path = [
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'DESIGN_OR_MERGE_FILL',
+        'ESCAPE_REPULSE',
+        'DESIGN_OR_MERGE_FILL',
+        'ESCAPE_ASSIST',
+        'RECENTER',
+        'SEARCH',
+    ]
+    assert m2_3['success']['controller']['required_state_paths'] == [
+        direct_path,
+        assisted_path,
+    ]
+    assert m2_3['success']['ground_truth'][
+        'proximity_radius_m'
+    ] == 1.20
+    assert m2_3['success']['staged_recovery'][
+        'global_proximity_radius_m'
+    ] == 1.20
+
+    ignored = {
+        'case_id',
+        'case_key',
+        'description',
+        'experiment_version',
+        'scenario_sha256',
+        'suite_id',
+    }
+    m2_2_comparable = {
+        key: deepcopy(value)
+        for key, value in m2_2.items()
+        if key not in ignored
+    }
+    m2_3_comparable = {
+        key: deepcopy(value)
+        for key, value in m2_3.items()
+        if key not in ignored
+    }
+    expected_success = m2_2_comparable['success']
+    expected_controller = expected_success['controller']
+    expected_controller['contract_id'] = 'normalized'
+    expected_controller['reachability_argument'] = (
+        m2_3_comparable['success']['controller'][
+            'reachability_argument'
+        ]
+    )
+    expected_controller['required_state_paths'] = [
+        list(direct_path),
+        assisted_path,
+    ]
+    expected_success['ground_truth']['proximity_radius_m'] = 1.20
+    expected_success['staged_recovery'][
+        'global_proximity_radius_m'
+    ] = 1.20
+    m2_3_comparable['success']['controller'][
+        'contract_id'
+    ] = 'normalized'
+
+    assert m2_3_comparable == m2_2_comparable
+    assert deterministic_case_key(m2_3) == m2_3['case_key']
+
+
+@pytest.mark.parametrize(
+    ('mutation', 'match'),
+    [
+        (
+            lambda doc: doc['cases'][0]['success']['controller'].update(
+                {'required_state_paths': []}
+            ),
+            'must be a non-empty list',
+        ),
+        (
+            lambda doc: doc['cases'][0]['success']['controller'][
+                'required_state_paths'
+            ].append(
+                deepcopy(
+                    doc['cases'][0]['success']['controller'][
+                        'required_state_path'
+                    ]
+                )
+            ),
+            'must not contain duplicate paths',
+        ),
+        (
+            lambda doc: doc['cases'][0]['success']['controller'][
+                'required_state_paths'
+            ].reverse(),
+            'required_state_paths\\[0\\] must equal required_state_path',
+        ),
+        (
+            lambda doc: doc['cases'][0]['success']['controller'][
+                'required_state_paths'
+            ][1].remove('DESIGN_OR_MERGE_FILL'),
+            'unreachable transition',
+        ),
+        (
+            lambda doc: doc['cases'][0]['success']['controller'][
+                'required_state_paths'
+            ].__setitem__(
+                1,
+                ['SEARCH', 'VERIFY_EXTREMUM', 'GOAL_HOLD'],
+            ),
+            'must classify first verification as DESIGN_OR_MERGE_FILL',
+        ),
+        (
+            lambda doc: (
+                doc['cases'][0]['success']['ground_truth'].update(
+                    {'proximity_radius_m': 0.59}
+                ),
+                doc['cases'][0]['success']['staged_recovery'].update(
+                    {'global_proximity_radius_m': 0.59}
+                ),
+            ),
+            'must be between 0.60 and 1.20',
+        ),
+        (
+            lambda doc: (
+                doc['cases'][0]['success']['ground_truth'].update(
+                    {'proximity_radius_m': 1.21}
+                ),
+                doc['cases'][0]['success']['staged_recovery'].update(
+                    {'global_proximity_radius_m': 1.21}
+                ),
+            ),
+            'must be between 0.60 and 1.20',
+        ),
+        (
+            lambda doc: doc['cases'][0]['success']['ground_truth'].update(
+                {'proximity_radius_m': 1.19}
+            ),
+            'must declare the same global proximity boundary',
+        ),
+    ],
+)
+def test_m2_3_rejects_path_or_stop_contract_drift(
+    tmp_path,
+    mutation,
+    match,
+):
+    """Reject ambiguous paths and radii outside the retained evidence."""
+    document = yaml.safe_load(
+        M2_3_CORRECTION.read_text(encoding='utf-8')
+    )
+    mutation(document)
+    with pytest.raises(ValueError, match=match):
+        _load(tmp_path, document)
 
 
 @pytest.mark.parametrize(
