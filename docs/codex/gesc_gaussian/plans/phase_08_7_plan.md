@@ -2240,3 +2240,385 @@ only the adaptive recenter and source-led handoff controls plus fresh fixed
 inputs without Gazebo. Checkpoint and commit the exact dispatch boundary,
 then execute only the one fixed visible probe and its passing-gated serial
 two-light suite.
+
+## M4.5 source-continuity, full-budget, and startup-recovery amendment
+
+M4.4 is immutable and closed with five complete suite passes, two complete
+behavioral failures, and one infrastructure-invalid startup attempt. Its
+retained report is:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m4_4_two_light_suite_report.md
+
+SHA-256
+7a36bf8a81e018d7cf007a6478d41df3e8d1b7236d53d4cfe49856df5c35636c
+```
+
+M4.4 proved that adaptive recenter corrected the retained wall/fill corner
+failure. None of its seven behavioral attempts entered `FAILSAFE`, collided,
+or violated a physical room face. The remaining M4.4 failures instead
+establish three independent defects:
+
+1. in the radius-2.0 case, the first fill-clearance fallback direction had
+   dot product approximately `-1.000` with the measured source-led
+   displacement and exactly reversed evidence that had reduced global
+   distance;
+2. a late Stage A completion left only `29.104 s` before a fixed `480 s`
+   recording ended, so the declared `120 s` Stage B budget was not reserved;
+3. Humble's controller spawner lost a successful load response, retried the
+   non-idempotent load, then failed because the controller was already
+   loaded.
+
+M4.5 is the fresh Level B correction for only those retained defects. It does
+not reopen, retry, overwrite, relabel, or count M4.4, M4.3, M4.2, M4.1, M4,
+M3, M2.3, V6, or any historical attempt.
+
+### Compatibility and ownership
+
+M4.5 extends only:
+
+- the existing supervisor and pure safe-direction helper ownership;
+- the existing central Gazebo launch and rotating-sensor controller-spawner
+  launch;
+- the existing scenario schema/runner and live staged monitor;
+- focused regression tests and fresh fixed M4.5 scenarios.
+
+It adds no controller, persistent node, `/cmd_vel` publisher, recorder,
+validator, algorithm profile, launch graph, cost source, message, or
+simulation/physical algorithm fork. The custom controller remains the sole
+`/cmd_vel` publisher. The supervisor continues to publish only
+`/gesc_gaussian/supervisor_command`.
+
+The behavior correction is controlled by:
+
+```text
+post_recovery_source_continuity_enabled = false
+```
+
+The infrastructure correction is controlled by:
+
+```text
+controller_spawner_load_recovery_enabled = false
+```
+
+Both default `false`. M4.4, M4.3, V6, legacy, and every historical scenario
+that omits them preserve their normalized algorithm values and launch
+behavior. The following inert numeric defaults are used only when source
+continuity is enabled:
+
+```text
+post_recovery_source_continuity_min_displacement_m = 0.05
+post_recovery_source_reversal_dot_threshold        = -0.90
+post_recovery_source_bypass_clearance_m             = 0.10
+```
+
+The primary Stage B radius remains `1.20 m`; the closer `1.00 m` diagnostic
+remains non-gating. Physical room faces, non-ground collision, stale or
+nonfinite required data, graph/controller ownership, explicit stop, final
+zero, and exhausted bounded recovery remain hard gates. M4.5 does not relax
+the wall margin, collision rules, room bounds, stop radius, or cost
+sign/units.
+
+### Evidence-led anti-reversal bypass
+
+The source-led window remains exactly the M4.4 raw/Gaussian-only window:
+
+```text
+raw sensor weight:       1.0
+Gaussian fill weight:    1.0
+affine weight:           0.0
+supervisor translation:  0.0
+safe direction:          unavailable
+window:                  12.0 s
+```
+
+At an at-most-`0.20 m` stalled handoff, the supervisor computes only from its
+recorded pose history and active fill:
+
+```text
+source displacement =
+  current pose - source-led anchor pose
+
+radial outward direction =
+  current pose - active fill center
+```
+
+If source displacement is at least `0.05 m` and the normalized dot product
+between those vectors is at most `-0.90`, the radial fallback would strongly
+reverse measured source-led motion. With source continuity enabled, that
+direction is forbidden.
+
+The supervisor then evaluates the unchanged ordered hard-safe candidate set
+relative to the measured source-led direction and admits only its forward
+half-plane. This naturally selects a tangential/outward bypass when the
+direct source-led direction intersects the known fill. Every candidate must
+still pass the complete fill-segment, wall-inset, physical-room, finite
+geometry, and command-persistence sweep checks. Candidate order and
+differential-drive command limits remain deterministic.
+
+The bypass retains bounded supervisor and affine assistance only until:
+
+```text
+current fill distance >=
+  active fill avoidance radius + 0.10 m
+```
+
+It then releases both assistance paths and returns to ordinary
+raw-plus-Gaussian SEARCH. Direction refresh retains the same measured
+source-continuity half-plane. If a recoverable recenter is required, the
+continuity constraint survives that one recenter and cannot silently fall
+back to the forbidden radial reversal. Existing retry, release, and terminal
+hard-fault bounds remain finite.
+
+When the source displacement is below `0.05 m`, or the dot product is greater
+than `-0.90`, the unchanged M4.4 fallback executes. This preserves the
+passing M4.4 cases, including repeat `18412`, whose retained dot product was
+only `-0.192921`.
+
+The exact retained radius-2.0 regression is:
+
+```text
+source-led anchor:       (1.2320122160, 1.4710422281) m
+source-led end:          approximately (1.3775, 1.5451) m
+fill center:             (1.8278297781, 1.7700514862) m
+fill avoidance radius:   0.6086747487 m
+source/radial dot:       -0.9999689709
+old fallback:            (-0.8943280105, -0.4474119016)
+old fallback/source dot: approximately -1.000
+```
+
+The old fallback must remain the default-off result. With source continuity
+enabled, the old fallback must be rejected and a finite hard-safe candidate
+with nonnegative source-direction alignment must be selected. No global
+coordinate, global bearing, source role, or simulation ground truth may
+enter this decision.
+
+Typed events report:
+
+```text
+post-recovery source-continuity bypass armed
+post-recovery source-continuity bypass completed
+```
+
+They use the already accepted `post-recovery ` producer family and do not
+change the Phase 05 recorder/validator.
+
+### Full staged-budget reservation
+
+M4.5 adds an optional staged-recovery field:
+
+```text
+stage_a_timeout_sec
+```
+
+Historical scenarios that omit it retain their exact schema and runner
+behavior. When present, schema validation requires:
+
+```text
+stage_a_timeout_sec > 0
+post_stage_a_timeout_sec > 0
+stage_a_timeout_sec + post_stage_a_timeout_sec
+  <= execution.run_timeout_sec
+```
+
+The live monitor anchors the Stage A budget at its first finite odometry
+sample. If Stage A and exact fill cardinality have not completed when that
+budget expires, the runner requests the same graceful stop and reports an
+explicit Stage A timeout sample. If Stage A completes at the boundary, Stage
+A takes precedence and the complete independent Stage B budget remains
+available. The existing rule that a qualifying global sample wins at the
+exact Stage B boundary is unchanged.
+
+Every M4.5 case uses:
+
+```text
+stage_a_timeout_sec:       480.0
+post_stage_a_timeout_sec:  120.0
+run_timeout_sec:           600.0
+wall_timeout_sec:          780.0
+```
+
+This is not an unbounded timeout increase. It converts the previous
+ambiguous total duration into a fixed `480 + 120 s` staged contract. A run
+that has not completed Stage A by `480 s` stops and fails rather than
+consuming the Stage B reserve.
+
+### Idempotent controller-load recovery
+
+With `controller_spawner_load_recovery_enabled=true`, the existing
+rotating-sensor control launch substitutes one transient, package-owned
+spawner executable for the two concurrent upstream spawner processes. It
+loads, configures, and activates the same two controllers in fixed order:
+
+```text
+joint_state_broadcaster
+velocity_controller
+```
+
+The executable reuses Humble's controller-manager APIs and the same
+`30.0 s` service-call bound. Its load operation issues at most one
+`/load_controller` request per observed unloaded state. If that response is
+missing or reports failure, it queries `/list_controllers` before any further
+load. A controller confirmed loaded is treated idempotently and proceeds to
+the unchanged configure/activate operations. If it is not confirmed loaded,
+the executable exits nonzero and the existing preflight hard failure
+remains.
+
+This correction prevents the exact retained sequence:
+
+```text
+successful load
+-> lost response
+-> duplicate load
+-> "already loaded"
+-> fatal spawner exit
+```
+
+Operational readiness still requires both controllers active, exact topic
+and publisher ownership, readiness true, and clean console evidence. The
+helper is transient and does not publish commands or alter controller
+behavior.
+
+### Fixed values and acceptance
+
+All M4.5 attempts preserve the M4.4 geometry, behavior, and acceptance values
+except for the declared anti-reversal control and staged duration
+reservation:
+
+```text
+room bounds:                       [-0.25, 3.75] x [-0.25, 3.75] m
+room center:                       (1.75, 1.75) m
+start:                             (0.0, 0.0), yaw 0
+global:                            (3.5, 3.5), input 1600.0
+local input:                       400.0
+known topology:                    1 local, 1 global
+maximum fill clusters:             1
+detector path / efficiency gate:   0.20 m / 0.50
+wall margin:                       0.20 m
+fill minimum valid samples:        40
+recenter maximum / tolerance:       60.0 s / 0.15 m
+post-recovery liveness:             12.0 s, 0.60 m path, 0.20 m net
+primary Stage B:                    1.20 m
+closer diagnostic:                 1.00 m
+Stage A budget:                     480.0 s
+post-Stage-A budget:                120.0 s
+collision expected:                false
+```
+
+The operator-equivalent stop remains the first valid, recorded,
+noninterpolated post-Stage-A odometry sample within `1.20 m` of the global,
+followed by graceful stop, final zero, readiness false, completeness
+validation, and cleanup.
+
+### No-Gazebo qualification
+
+Before any M4.5 Gazebo process starts:
+
+1. replay the exact retained M4.4 radius-2.0 anchor/end/fill geometry;
+   prove the old radial direction is an at-most-`-0.90` reversal, the
+   default-off result is unchanged, and enabled selection returns a finite
+   hard-safe nonreversing candidate;
+2. prove the retained repeat-18412 geometry does not trigger the correction
+   and preserves its existing fallback;
+3. prove bypass assistance releases at the exact avoidance-radius-plus-
+   `0.10 m` boundary, persists across at most one recoverable recenter, and
+   cannot reauthorize the forbidden reversal;
+4. prove source displacement below `0.05 m`, no safe candidate, nonfinite
+   geometry, stale pose/source, physical-room violation, collision/graph/
+   controller fault, and exhausted recovery retain their declared bounded
+   outcomes;
+5. prove no global coordinate, source role, or simulation truth is passed to
+   the supervisor, modified-cost node, or controller;
+6. prove `stage_a_timeout_sec + post_stage_a_timeout_sec <=
+   run_timeout_sec`, exact boundary precedence, graceful Stage A timeout,
+   full Stage B reservation, and historical omission behavior;
+7. prove the idempotent spawner performs no duplicate load after a lost
+   response, accepts only a confirmed loaded state, preserves both active
+   controller requirements, and remains default-off;
+8. prove M4.4, M4.3, V6, shifted/historical worlds, all historical normalized
+   scenarios and hashes, topics, cost sign/units, sole `/cmd_vel` ownership,
+   recorder, and validator are unchanged;
+9. run focused supervisor geometry/integration, launch, schema, runner,
+   recording, and historical regression tests;
+10. run broad ROS-independent functional tests, fatal lint, Python
+    compilation, isolated three-package build, installed dry-runs,
+    nonexecuting launch instantiation, source/install parity, context
+    validation, and retained-evidence hash checks;
+11. update live status, checkpoint Phase 08, and commit the exact source plus
+    fixed fresh inputs.
+
+### Fixed M4.5 visible probe
+
+Only after every no-Gazebo gate passes may one fresh visible radius-2.0 probe
+run:
+
+```text
+suite:       phase08_v7_m4_5_visible_probe
+version:     phase08-v7-m4-5-probe
+case:        v7_m4_5_probe_r2p0_a45_h25_18508
+local:       (1.4142135623730951, 1.4142135623730950)
+seed:        18508
+evidence:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_5_probe
+```
+
+It must use visible Gazebo and pass `48/48` recording, active controller
+preflight, Stage A, exact one-fill cardinality, primary noninterpolated
+`1.20 m` Stage B, complete staged budgets, collision, forbidden
+state/event, final-zero, cleanup, and combined predicates. It is retained
+without retry or in-run tuning.
+
+### Conditional M4.5 two-light qualification
+
+Only after the fixed visible M4.5 probe passes every formal and behavioral
+predicate may this serial headless suite run:
+
+| Case | Local position | Seed | Role |
+|---|---|---:|---|
+| `v7_m4_5_r1p0_a45_h25_18509` | `(0.7071067811865476, 0.7071067811865475)` | 18509 | spatial |
+| `v7_m4_5_r1p5_a22p5_h25_18509` | `(1.38581929876693, 0.5740251485476346)` | 18509 | spatial |
+| `v7_m4_5_r1p5_a45_h25_18509` | `(1.0606601717798214, 1.0606601717798212)` | 18509 | spatial |
+| `v7_m4_5_r1p5_a67p5_h25_18509` | `(0.5740251485476348, 1.38581929876693)` | 18509 | spatial |
+| `v7_m4_5_r2p0_a45_h25_18509` | `(1.4142135623730951, 1.4142135623730950)` | 18509 | spatial |
+| `v7_m4_5_repeat_r1p5_a45_h25_18510` | `(1.0606601717798214, 1.0606601717798212)` | 18510 | repeat |
+| `v7_m4_5_repeat_r1p5_a45_h25_18511` | `(1.0606601717798214, 1.0606601717798212)` | 18511 | repeat |
+| `v7_m4_5_repeat_r1p5_a45_h25_18512` | `(1.0606601717798214, 1.0606601717798212)` | 18512 | repeat |
+
+The suite uses:
+
+```text
+suite:       phase08_v7_m4_5_two_light_suite
+version:     phase08-v7-m4-5
+evidence:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_5
+```
+
+The two-light readiness gate requires the visible probe plus all five spatial
+and all three repeat cases to pass every unchanged predicate. Every attempt
+is retained. A behavioral, formal, infrastructure, or cleanup failure is not
+retried inside M4.5. Cleanup failure stops later dispatch.
+
+### Scope and stop conditions
+
+M4.5 authorizes only the fixed visible probe and its passing-gated serial
+two-light suite after the exact implementation and fresh inputs pass every
+no-Gazebo gate, are checkpointed, and are committed.
+
+Stop before Gazebo on any M4.4/M4.3/V6/historical artifact drift,
+source/install mismatch, ownership change, recorder/validator change, failed
+compatibility or safety regression, existing fresh evidence root, active
+ROS/Gazebo process, or incomplete no-Gazebo gate.
+
+The optional three-light probe remains unauthorized and requires a complete
+M4.5 two-light gate plus separate user authorization. Phase 09 and every
+physical hardware command remain unauthorized.
+
+### M4.5 milestone
+
+Save, validate, checkpoint, and commit this amendment. Implement and qualify
+only the source-continuity anti-reversal bypass, full staged-budget
+reservation, idempotent controller-load recovery, and fresh fixed inputs
+without Gazebo. Checkpoint and commit the exact dispatch boundary, then
+execute only the fixed visible probe and its passing-gated serial two-light
+suite.

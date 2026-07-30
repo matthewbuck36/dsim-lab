@@ -8377,3 +8377,75 @@ controller loaded/response-lost startup state. It must qualify without
 Gazebo and be checkpointed/committed before any fresh simulation. The
 optional three-light probe, Phase 09, and physical hardware remain
 unauthorized.
+
+## Phase 08.7 M4.5 authorization and Plan boundary
+
+The immutable M4.4 suite result was committed at `55b017b`
+(`phase 08.7: retain M4.4 two-light suite result`). The active
+user-authorized goal remains a reliable two-light local escape followed by
+global convergence. M4.5 is the fresh bounded correction for the three
+independently retained M4.4 defects.
+
+The append-only M4.5 Plan amendment declares:
+
+```text
+post_recovery_source_continuity_enabled = false
+controller_spawner_load_recovery_enabled = false
+```
+
+Both controls default off. The source-continuity policy triggers only when a
+finite source-led displacement of at least `0.05 m` would be reversed by a
+radial fill-clearance direction with dot product at most `-0.90`. It then
+uses the measured source-led forward half-plane to select a hard-safe
+tangential/outward bypass and releases at the active avoidance radius plus
+`0.10 m`. It receives no global coordinate or source role.
+
+The staged runner adds an optional `stage_a_timeout_sec`. Fresh M4.5 cases
+use a fixed `480 s` Stage A budget plus the unchanged `120 s` Stage B budget
+inside a `600 s` recording. The live monitor stops a Stage A miss at its
+explicit boundary, guaranteeing that any accepted Stage A retains the full
+Stage B opportunity.
+
+The transient controller-spawner recovery substitutes the existing two
+concurrent spawner processes only when enabled. It processes the same
+controllers in fixed order, issues no duplicate load after a missing
+response, confirms loaded state through `/list_controllers`, and retains the
+existing active-controller readiness gate.
+
+Fresh fixed identities are:
+
+```text
+visible suite/version:  phase08_v7_m4_5_visible_probe
+                        phase08-v7-m4-5-probe
+visible case/seed:      v7_m4_5_probe_r2p0_a45_h25_18508 / 18508
+visible evidence root:  /home/mattb/Experiments/GESC-Gaussian/runs/
+                        phase08_v7_m4_5_probe
+headless suite/version: phase08_v7_m4_5_two_light_suite
+                        phase08-v7-m4-5
+headless seeds:         18509, 18510, 18511, 18512
+headless evidence root: /home/mattb/Experiments/GESC-Gaussian/runs/
+                        phase08_v7_m4_5
+```
+
+The `1.20 m` Stage B stop, `1.00 m` diagnostic, wall margin, collision
+contract, physical room, exact one-fill topology, cost sign/units, canonical
+topics, sole `/cmd_vel` publisher, M4.4/M4.3/V6 scenarios, and every retained
+historical result remain unchanged.
+
+No M4.5 source, scenario, checkpoint, or Gazebo action has started. The Plan
+amendment must pass context validation, checkpointing, and a bounded commit
+before implementation.
+
+## Current milestone
+
+**Phase 08.7 M4.5 — USER-AUTHORIZED PLAN AMENDMENT SAVED; IMPLEMENTATION
+HAS NOT STARTED.**
+
+### Next criterion
+
+Validate, checkpoint, and commit the M4.5 amendment. Then implement only the
+default-off source-continuity, full staged-budget, and controller-load
+recovery corrections plus fresh fixed inputs. Complete every no-Gazebo gate
+and commit the exact dispatch boundary before any fresh simulation. The
+optional three-light probe, Phase 09, and physical hardware remain
+unauthorized.
