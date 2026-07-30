@@ -2876,3 +2876,451 @@ calibration and its regressions. Checkpoint and commit the no-Gazebo
 boundary, then checkpoint and commit the exact paired visible dispatch. Run
 the paired visible attempt once; run the fixed serial headless suite only if
 that visible gate passes completely.
+
+## M4.7 dynamic source-resume corridor amendment
+
+M4.6 is immutable and closed. Its one fixed visible attempt passed
+controller startup/readiness, recording, fresh validation, cleanup,
+collision, forbidden-evidence, final-zero, Stage A, exact one-fill
+cardinality, the `480 s` Stage A bound, and the complete independent
+`120 s` Stage B opportunity. It failed Stage B: the best post-Stage-A
+distance was `2.6173470005 m`, so the conditional M4.6 headless suite did
+not run.
+
+The retained report is:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m4_6_visible_probe_report.md
+
+SHA-256
+4a2f6b25c0098476f50e6eefe09f070805c77dc28c7c719707c5cf6b623b8836
+```
+
+M4.6 proves the evidence-calibrated detector arms. The downstream
+source-continuity topology is incomplete:
+
+- the generic safe selector ranks excess clearance before source alignment;
+- an already-safe tangent is retained instead of being reconsidered as the
+  robot moves;
+- fixed fill clearance deactivates all guidance immediately;
+- release requires neither projected source progress nor completion of the
+  existing affine taper;
+- post-recovery liveness and affine assistance end at that premature release.
+
+The retained Stage B path stayed at least `1.2944790512 m` from every
+physical wall face and at least `1.0944790512 m` inside the configured wall
+inset. No collision, algorithm `TIMEOUT`, in-readiness `FAILSAFE`, or
+room-boundary event occurred. M4.7 therefore does not relax wall, collision,
+room, or global-proximity gates.
+
+M4.7 is Plan-only until reviewed and explicitly approved. It does not
+authorize a source edit, build, checkpoint beyond this Plan boundary,
+Gazebo process, suite, three-light case, Phase 09 action, physical action,
+or hardware action merely by existing.
+
+### New default-off compatibility boundary
+
+Add one Boolean and one finite positive distance:
+
+```text
+post_recovery_source_resume_enabled: false
+post_recovery_source_resume_min_progress_m: 0.20
+```
+
+Both launch and supervisor defaults are exactly the values above. The new
+mode is valid only when source-led handoff, source continuity, post-recovery
+progress, recoverable navigation, and post-recovery guidance are enabled.
+
+M4.5, M4.6, M4.4, M4.3, V6, legacy, and every historical scenario omit the
+new Boolean. Omission must preserve the exact pre-M4.7 selector, fixed
+clearance release, affine taper, liveness, event sequence, normalized
+behavior, and defaults. Historical scenario bytes and retained evidence
+remain immutable. Fresh M4.7 scenarios alone explicitly set:
+
+```text
+post_recovery_source_resume_enabled: true
+post_recovery_source_resume_min_progress_m: 0.20
+post_recovery_source_reversal_dot_threshold: -0.80
+```
+
+No global coordinate, declared source role, light identity, simulation
+ground truth, future pose, or outcome is supplied to the supervisor. The
+retained source direction remains derived only from the measured
+source-led displacement already used by M4.5/M4.6.
+
+### Source-continuity-specific hard-safe selector
+
+Add a pure deterministic selector used only while the fresh corridor is
+active. It enumerates the unchanged fixed candidates:
+
+```text
+0, +45, -45, +90, -90, +135, -135, 180 degrees
+```
+
+Every candidate first passes the unchanged finite geometry, physical-room
+inset, active-fill segment, and forward source-half-plane checks. No unsafe
+candidate may be rescued by scoring.
+
+Among eligible candidates, rank lexicographically by:
+
+1. greatest dot product with the retained measured source direction;
+2. greatest hard-safe clearance;
+3. smallest absolute rotation;
+4. existing deterministic candidate order.
+
+This is intentionally different from the generic M4.6 selector, which ranks
+clearance first. The corridor selector must be recomputed on every new valid
+pose. Retaining a previously safe candidate is insufficient. The published
+safe-direction revision changes only when the selected candidate changes,
+not on every callback.
+
+At the retained M4.6 arm geometry:
+
+```text
+source-led anchor:          (1.2274432561, 1.4964333762) m
+arm position:               (1.3411590516, 1.5118024925) m
+fill center:                (1.8189935808, 1.7649913445) m
+fill avoidance radius:       0.6086747487 m
+source direction:           (0.9909899820, 0.1339360130)
+```
+
+the only initially eligible candidate remains the necessary `-90 degree`
+tangent `(0.1339360130, -0.9909899820)`. This preserves hard safety rather
+than pretending a direct route already exists.
+
+Exact pure-geometry regressions must then prove:
+
+```text
+after 0.200 m on the initial tangent:
+  -45 degree candidate: hard-safe
+  source alignment:     0.7071067812
+  corridor selection:   -45 degrees
+  generic M4.6 choice:  -90 degrees
+
+after 0.425 m on the initial tangent:
+  direct candidate:     hard-safe
+  source alignment:     1.0
+  corridor selection:   0 degrees
+  generic M4.6 choice:  -90 degrees
+```
+
+These points establish candidate ordering and dynamic reacquisition; they
+are not simulated waypoints and are never supplied to the live algorithm.
+
+### Two-stage continuity corridor
+
+When the existing M4.6 detector arms and the fresh resume mode is enabled,
+the existing source-led anchor and measured source direction become an
+immutable corridor record. The corridor has two internal stages while the
+public supervisor state remains `SEARCH`.
+
+#### Contour/reacquisition stage
+
+The initial tangent is allowed only while it is the best hard-safe
+source-half-plane candidate. The selector is recomputed for every new pose,
+so a `-45 degree` or direct candidate replaces the tangent immediately when
+it becomes hard-safe.
+
+The unchanged clearance target remains:
+
+```text
+active support radius
++ fill avoidance margin
++ post_recovery_source_bypass_clearance_m
+```
+
+For the retained M4.6 fill this is `0.7086747487 m`. Reaching it no longer
+deactivates guidance. It emits a bounded configuration event, transitions
+to the source-resume stage, and records the current finite pose as the
+source-resume anchor.
+
+#### Source-resume stage
+
+Define signed source progress from live odometry only:
+
+```text
+dot(current_position - source_resume_anchor, retained_source_direction)
+```
+
+Normal corridor completion requires:
+
+```text
+signed source progress >= 0.20 m
+and live fill distance >= the fixed clearance target
+and existing total outward progress
+    >= post_recovery_guidance_min_progress_m
+       + post_recovery_affine_taper_distance_m
+```
+
+With the frozen M4.7 values, the final conjunct remains the existing
+`0.60 + 0.50 = 1.10 m` outward/taper boundary. Thus `0.20 m` is a minimum
+source-resumption proof, not a replacement for the existing spatial
+guidance completion.
+
+At `0.20 m` signed source progress, the corridor records that source motion
+has resumed but does not release early if the existing outward/taper
+boundary is incomplete. The source-specific selector, hard-safe command
+sweep, affine support, and liveness monitoring remain active until all
+normal completion predicates hold. The runner's valid global-proximity stop
+may preempt the corridor at any time after Stage A, as before.
+
+If a recoverable recenter occurs during contour/reacquisition, preserve the
+measured source direction and corridor stage. If it occurs during
+source-resume, reset the resume anchor on the subsequent `RECENTER ->
+SEARCH` boundary so recenter translation cannot be miscounted as source
+progress. Only one bounded post-recovery recenter remains available under
+the unchanged recovery limits.
+
+### Affine, command, and liveness behavior
+
+While contour/reacquisition or source-resume has not yet proved `0.20 m`
+signed source progress:
+
+- publish the configured `0.50` affine weight with no spatial taper;
+- bind that affine term to the current hard-safe corridor direction;
+- compute supervisor translation remaining from the missing signed source
+  progress rather than fill-radial progress;
+- retain the unchanged command-sweep, stale-data, room, fill, and finite-data
+  checks.
+
+After source progress is proved, retain the existing spatial taper from
+`0.50` toward zero as outward progress moves from `0.60 m` through
+`1.10 m`. Normal guidance release therefore occurs with the affine term
+already at zero rather than dropping it at fixed clearance.
+
+The existing liveness window remains:
+
+```text
+12.0 s
+0.60 m minimum path
+0.20 m maximum net displacement
+```
+
+Dynamic direction reacquisition does not consume the one historical
+direction-refresh count merely because a better candidate becomes safe.
+If the corridor stalls, retain the existing bounded recoverable-recenter
+path. After that one recenter, another stall keeps the hard-safe corridor
+active until normal completion or the unchanged total
+`post_recovery_guidance_max_sec=90.0` boundary; it does not silently drop
+affine/liveness at the first post-recenter window. Duration exhaustion still
+publishes explicit evidence, zeros the supervisor command and affine term,
+and continues ordinary GESC search rather than introducing a new failsafe.
+
+No corridor condition suppresses a non-ground collision, invalid/stale
+required input, controller/graph ownership fault, explicit stop, physical
+room-face violation, final-zero requirement, or cleanup failure.
+
+### Required observability
+
+The existing supervisor producer emits finite configuration events for:
+
+```text
+post-recovery source-resume corridor armed
+post-recovery source-continuity direction changed
+post-recovery source-bypass clearance acquired
+post-recovery source progress acquired
+post-recovery source-resume corridor completed
+post-recovery source-resume corridor exhausted
+```
+
+Events report only measured or configured values, including the selected
+direction and revision, source alignment, hard-safe clearance, fill
+distance/target, signed source progress/threshold, outward progress/release
+boundary, affine weight, liveness state, recenter state, and guidance
+elapsed/maximum duration.
+
+Do not add a new node, topic, message, recorder, validator, analyzer,
+controller, launch graph, or producer namespace. Extend the existing
+supervisor and current evidence-prefix attribution. The Phase 05 recorder
+and validator remain the sole recorder/validator owners.
+
+### Preserved acceptance and safety contract
+
+M4.7 retains:
+
+```text
+room bounds:                       [-0.25, 3.75] x [-0.25, 3.75] m
+room center:                       (1.75, 1.75) m
+start:                             (0.0, 0.0), yaw 0
+global:                            (3.5, 3.5), input 1600.0
+local input:                       400.0
+known topology:                    1 local, 1 global
+maximum fill clusters:             1
+detector path / efficiency gate:   0.20 m / 0.50
+wall margin:                       0.20 m
+fill minimum valid samples:        40
+recenter maximum / tolerance:       60.0 s / 0.15 m
+source-led window:                  12.0 s
+post-recovery liveness:             0.60 m path / 0.20 m net
+continuity reversal threshold:     -0.80
+bypass clearance:                  avoidance radius + 0.10 m
+source-resume minimum progress:     0.20 m
+primary Stage B:                    1.20 m
+closer diagnostic:                 1.00 m, non-gating
+Stage A / Stage B budgets:          480.0 s / 120.0 s
+run / wall timeout:                 600.0 s / 780.0 s
+collision expected:                false
+```
+
+The first valid post-Stage-A noninterpolated odometry sample at or inside
+`1.20 m` still triggers the operator-equivalent graceful stop. No
+`GOAL_HOLD`, dwell, post-arrival stability, or closer-than-`1.20 m`
+requirement is added.
+
+### Intended implementation files
+
+Extend only the existing owners:
+
+```text
+ros2_ws/src/ros_esc/ros_esc/supervisor_node/escape_recenter.py
+ros2_ws/src/ros_esc/ros_esc/supervisor_node/supervisor_node_script.py
+ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py
+ros2_ws/src/turtlebot3_rotating_sensor/launch/gazebo.launch.xml
+```
+
+Modify focused contract/regression tests as required:
+
+```text
+ros2_ws/src/ros_esc/test/test_escape_recenter.py
+ros2_ws/src/ros_esc/test/test_supervisor_integration.py
+ros2_ws/src/ros_esc/test/test_scenario_schema.py
+ros2_ws/src/ros_esc/test/test_scenario_runner.py
+ros2_ws/src/ros_esc/test/test_observability_contract.py
+```
+
+Create fresh fixed inputs:
+
+```text
+ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/
+  phase08_v7_m4_7_visible_probe.yaml
+  phase08_v7_m4_7_two_light_suite.yaml
+```
+
+Update the live status, Phase 08 checkpoint, and fresh M4.7 validation
+records only at their declared boundaries. Do not modify the Phase 05
+recorder/validator, robust or legacy controller, modified-cost node, central
+algorithm graph, controller-spawner helper, world files, M4.6 inputs, or any
+historical artifact.
+
+### No-Gazebo qualification
+
+Before any M4.7 Gazebo process starts:
+
+1. seal the M4.6 report, summary, completeness, scenario result, bag,
+   analysis, resolved-scenario, and installed-scenario hashes;
+2. prove M4.6's generic selector and exact fixed-clearance release remain
+   unchanged when the new mode is false;
+3. replay the exact M4.6 live arm/fill/source geometry and prove the
+   initial `-90`, later `-45`, and later direct source-specific selections
+   above;
+4. prove every corridor selection is finite, hard-safe, inside the room
+   inset, outside forbidden fill segments, and in the nonnegative measured
+   source half-plane;
+5. prove clearance transitions into source-resume without clearing the
+   retained direction, safe direction, affine term, liveness tracker, or
+   general guidance;
+6. prove `0.20 m` signed source progress has exact boundary behavior,
+   excludes recenter displacement, and cannot release without live
+   clearance plus the existing `1.10 m` outward/taper completion;
+7. prove affine remains `0.50` before the source gate, then follows the
+   existing taper to zero; prove supervisor translation uses the missing
+   source progress and every nonzero command passes the unchanged sweep;
+8. prove dynamic candidate upgrades do not spend the historical refresh
+   budget, while stall, one recoverable recenter, post-recenter persistence,
+   duration exhaustion, no-candidate, stale/nonfinite geometry, and
+   explicit-stop paths remain bounded and observable;
+9. prove the mode dependencies, Boolean and positive-double schema,
+   DOUBLE launch value `0.20`, configuration evidence, producer attribution,
+   scenario pass-through, and source/install parity;
+10. prove M4.6, M4.5, M4.4, M4.3, V6, shifted/historical worlds, all
+    historical normalized case keys, scenario files, retained summaries,
+    cost sign/units, canonical topics, and sole `/cmd_vel` ownership remain
+    unchanged;
+11. prove every fresh normalized M4.7 case differs from its M4.6 counterpart
+    only by fresh identity/seed plus the two explicit resume fields; preserve
+    `480 + 120 <= 600 s`, one local/global, maximum one fill, the primary
+    `1.20 m` stop, the non-gating `1.00 m` diagnostic, final zero, and cleanup;
+12. run focused helper, supervisor, state-machine, schema, runner,
+    observability, recording, and controller-startup regressions;
+13. run broad ROS-independent functional tests, fatal changed-file lint,
+    Python compilation, XML/YAML parsing, isolated three-package build,
+    installed dry-runs, nonexecuting launch instantiation, source/install
+    parity, context validation, and historical/evidence hash checks;
+14. update live status and a fresh no-Gazebo validation report, checkpoint
+    Phase 08, inspect the exact diff, and commit the qualified boundary
+    before recording a simulation dispatch.
+
+Stop before Gazebo on any failed regression, M4.6/historical drift,
+source/install mismatch, ownership change, recorder/validator change,
+existing fresh evidence root, active ROS/Gazebo process, or incomplete
+qualification.
+
+### Fixed M4.7 paired visible probe
+
+Only after explicit M4.7 approval, complete no-Gazebo qualification, a
+material checkpoint, and a bounded commit may one fresh-version paired probe
+reuse the failed M4.6 seed to isolate the topology correction:
+
+```text
+suite:       phase08_v7_m4_7_visible_probe
+version:     phase08-v7-m4-7-probe
+case:        v7_m4_7_probe_r2p0_a45_h25_18508
+local:       (1.4142135623730951, 1.4142135623730950)
+seed:        18508
+evidence:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_7_probe
+```
+
+Reusing the seed is a declared paired correction test, not an M4.6 retry:
+the experiment version, case identity, input bytes, and evidence root are
+fresh. The resume mode is the only behavioral delta from M4.6.
+
+The attempt must use visible Gazebo and pass active-controller preflight,
+`48/48` recording, Stage A, exact one-fill cardinality, the primary
+noninterpolated `1.20 m` Stage B gate, both complete staged budgets,
+collision, forbidden state/event, final-zero, cleanup, and combined
+predicates. It is retained without retry or in-run tuning.
+
+### Conditional M4.7 two-light qualification
+
+Only after the paired visible probe passes every declared predicate may this
+fresh serial headless suite run:
+
+| Case | Local position | Seed | Role |
+|---|---|---:|---|
+| `v7_m4_7_r1p0_a45_h25_18709` | `(0.7071067811865476, 0.7071067811865475)` | 18709 | spatial |
+| `v7_m4_7_r1p5_a22p5_h25_18709` | `(1.38581929876693, 0.5740251485476346)` | 18709 | spatial |
+| `v7_m4_7_r1p5_a45_h25_18709` | `(1.0606601717798214, 1.0606601717798212)` | 18709 | spatial |
+| `v7_m4_7_r1p5_a67p5_h25_18709` | `(0.5740251485476348, 1.38581929876693)` | 18709 | spatial |
+| `v7_m4_7_r2p0_a45_h25_18709` | `(1.4142135623730951, 1.4142135623730950)` | 18709 | spatial |
+| `v7_m4_7_repeat_r1p5_a45_h25_18710` | `(1.0606601717798214, 1.0606601717798212)` | 18710 | repeat |
+| `v7_m4_7_repeat_r1p5_a45_h25_18711` | `(1.0606601717798214, 1.0606601717798212)` | 18711 | repeat |
+| `v7_m4_7_repeat_r1p5_a45_h25_18712` | `(1.0606601717798214, 1.0606601717798212)` | 18712 | repeat |
+
+The suite uses:
+
+```text
+suite:       phase08_v7_m4_7_two_light_suite
+version:     phase08-v7-m4-7
+evidence:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_7
+```
+
+Two-light readiness requires the paired visible pass plus all five spatial
+and all three repeat cases to pass every unchanged predicate. Every attempt
+is retained. A behavioral, formal, infrastructure, or cleanup failure is not
+retried inside M4.7. Cleanup failure stops later dispatch.
+
+### M4.7 scope and milestone
+
+M4.7 authorizes no three-light, Phase 09, physical, or hardware action. The
+optional three-light probe remains separately user-authorized only after a
+complete M4.7 two-light gate.
+
+After explicit approval, implement and qualify only the default-off dynamic
+source-resume corridor, regression coverage, and fresh fixed inputs without
+Gazebo. Checkpoint and commit the exact no-Gazebo boundary. Only then record
+and checkpoint the paired visible dispatch. Run the paired visible attempt
+once; run the fixed serial headless suite only if that visible gate passes
+completely.

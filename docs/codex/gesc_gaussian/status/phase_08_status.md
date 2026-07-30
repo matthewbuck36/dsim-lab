@@ -9230,3 +9230,85 @@ qualification, and a committed dispatch boundary. The evidence supports a
 dynamic source-reacquisition and source-resume corridor; it does not support
 relaxing wall, collision, room, or global-proximity gates. The optional
 three-light probe, Phase 09, and physical hardware remain unauthorized.
+
+## Phase 08.7 M4.7 Plan-only dynamic source-resume boundary
+
+The immutable M4.6 failure report, live status, and Phase 08 checkpoint were
+committed at:
+
+```text
+75f8f2373f70e19661d8106622da0ea2e53c9a84
+phase 08.7: retain M4.6 visible failure
+```
+
+The conditional M4.6 headless suite remains not run and its evidence root
+remains absent. M4.6 cannot be retried, changed, relabelled, or counted in a
+future denominator.
+
+A fresh append-only M4.7 amendment is saved for review in:
+
+```text
+docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
+SHA-256
+94027653dbd4f4fad158da5612bbdd2d3dad8c5dec4c5b420ff45906d0770236
+```
+
+The Plan introduces one fresh default-off corridor switch and one positive
+distance:
+
+```text
+post_recovery_source_resume_enabled: false
+post_recovery_source_resume_min_progress_m: 0.20
+```
+
+Fresh M4.7 inputs alone would enable the switch while retaining M4.6's
+explicit `-0.80` detector threshold. Historical omission preserves the exact
+M4.6/M4.5 fixed-clearance behavior, selector ordering, events, affine
+behavior, and scenario bytes.
+
+When enabled, the corridor uses a hard-safe source-half-plane selector that
+ranks measured source alignment before excess clearance and recomputes on
+every new pose. Fixed fill clearance becomes a transition to a
+source-resume stage rather than guidance release. Normal release requires:
+
+```text
+signed measured-source progress: at least 0.20 m
+live fill distance:              at least the fixed clearance target
+existing outward/taper progress: at least 0.60 + 0.50 = 1.10 m
+```
+
+Affine support remains `0.50` until source progress is proved, then uses the
+existing taper to zero. Liveness remains active through the corridor and one
+bounded recoverable recenter; recenter displacement cannot count as source
+progress. The algorithm receives no global coordinate or declared source
+role.
+
+M4.7 preserves the `0.20 m` wall margin, collision and physical-room hard
+checks, exact one-fill topology, staged `480 + 120 <= 600 s` budgets, the
+primary `1.20 m` operator-equivalent stop, non-gating `1.00 m` diagnostic,
+final zero, cleanup, cost sign/units, canonical topics, and sole `/cmd_vel`
+ownership.
+
+The Plan predeclares a fresh paired visible identity at radius `2.0 m`,
+angle `45 degrees`, and seed `18508`, followed only on a complete visible
+pass by a fresh eight-case headless suite using seeds `18709..18712`.
+Neither simulation stage is authorized by this Plan-only boundary.
+
+`validate_phase_context.sh 08 plan` passes. The only post-M4.6 checkout
+changes are the Plan amendment and this live-status record. No M4.7 source,
+test, scenario, build, no-Gazebo qualification, runtime, Gazebo, suite,
+three-light, Phase 09, physical, or hardware action has started.
+
+## Current milestone
+
+**Phase 08.7 M4.7 — PLAN-ONLY DEFAULT-OFF DYNAMIC SOURCE-RESUME CORRIDOR
+SAVED / NOT APPROVED / IMPLEMENTATION AND SIMULATION NOT STARTED.**
+
+### Next criterion
+
+Checkpoint and commit this Plan-only boundary for review. Do not implement,
+build, or run M4.7 until the user explicitly approves the fresh amendment.
+After approval, implementation must pass every no-Gazebo gate and be
+checkpointed and committed before a visible Gazebo process may start. The
+conditional suite remains passing-gated; the optional three-light probe,
+Phase 09, and physical hardware remain unauthorized.
