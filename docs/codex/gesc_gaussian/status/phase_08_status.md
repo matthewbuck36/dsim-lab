@@ -9437,3 +9437,77 @@ root:  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_7_probe
 The fixed eight-case headless suite remains closed unless that one visible
 attempt passes every declared predicate. The optional three-light probe,
 Phase 09, and physical hardware remain unauthorized.
+
+## Phase 08.7 M4.7 committed visible-dispatch boundary
+
+The default-off source-resume implementation, fresh fixed inputs, complete
+no-Gazebo qualification, durable report, live status, and Phase 08
+precommit checkpoint were committed at:
+
+```text
+22877724bb2e31d444f2af7c09df5f108688a6c0
+phase 08.7: qualify M4.7 source-resume corridor
+```
+
+The post-commit worktree is clean,
+`validate_phase_context.sh 08 implement` passes, the isolated qualified
+install remains available, both M4.7 production evidence roots are absent,
+the visible display socket is available, and no Gazebo, runner, recorder,
+rosbag, analyzer, or matching ROS process is active.
+
+The one allowed visible dispatch is fixed to:
+
+```text
+suite:       phase08_v7_m4_7_visible_probe
+version:     phase08-v7-m4-7-probe
+case:        v7_m4_7_probe_r2p0_a45_h25_18508
+case key:    e48c200b54a7a9d9049b5965ef9c773b166e6672df155f0d9ccff459da83f3e8
+local:       (1.4142135623730951, 1.4142135623730950)
+global:      (3.5, 3.5)
+seed:        18508
+ROS domain:  167
+evidence:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_7_probe
+```
+
+The exact bounded dispatch command is:
+
+```bash
+source /opt/ros/humble/setup.bash
+source /tmp/phase08_7_m4_7_qual/install/setup.bash
+export ROS_DOMAIN_ID=167
+export ROS_LOG_DIR=/tmp/phase08_7_m4_7_probe_ros_logs
+export MPLCONFIGDIR=/tmp/phase08_7_m4_7_probe_mpl
+export TURTLEBOT3_MODEL=burger
+export DISPLAY=:0
+timeout --signal=INT --kill-after=90s 900s \
+  ros2 run ros_esc run_scenario \
+  /tmp/phase08_7_m4_7_qual/install/ros_esc/share/ros_esc/\
+scenario_runner/scenarios/phase08_v7_m4_7_visible_probe.yaml \
+  --operator Codex \
+  --case-id v7_m4_7_probe_r2p0_a45_h25_18508 \
+  --runs-root \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_7_probe \
+  --summary-output \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_7_probe/\
+phase08_v7_m4_7_visible_probe_summary.yaml \
+  --gui
+```
+
+The scenario owns the declared `780 s` wall bound; the outer `900 s`
+envelope exists only to retain a bounded cleanup opportunity. This command
+may run once without parameter changes or retry. Any result is retained.
+The fixed headless suite remains closed unless this visible attempt passes
+all infrastructure, behavioral, staged, safety, final-zero, and cleanup
+predicates.
+
+## Current milestone
+
+**Phase 08.7 M4.7 — QUALIFIED IMPLEMENTATION COMMITTED / ONE FIXED VISIBLE
+TWO-LIGHT PROBE PREDECLARED / NO M4.7 SIMULATION YET.**
+
+### Next criterion
+
+Checkpoint and commit this exact dispatch boundary, then execute the command
+once. Preserve the attempt and stop on any failure. Do not dispatch the
+headless suite unless the visible combined result passes every predicate.
