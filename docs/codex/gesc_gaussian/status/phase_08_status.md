@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-30T03:42:03-07:00`
-Status: `PHASE 08.7 M4.4 IMPLEMENTED AND NO-GAZEBO QUALIFIED; CHECKPOINT AND COMMIT PENDING`
+Last verified: `2026-07-30T03:44:35-07:00`
+Status: `PHASE 08.7 M4.4 QUALIFIED IMPLEMENTATION COMMITTED; VISIBLE PROBE DISPATCH PENDING`
 
 ## Objective
 
@@ -8057,3 +8057,66 @@ implementation plus fixed inputs, then reconfirm the clean dispatch boundary.
 Only then may the one fixed visible M4.4 probe run. The eight-case suite
 remains conditional on a complete visible pass; the optional three-light
 probe, Phase 09, and physical hardware remain unauthorized.
+
+## Phase 08.7 M4.4 committed dispatch boundary
+
+The exact qualified behavior correction, regression tests, fresh scenario
+inputs, status, and precommit checkpoint were committed at:
+
+```text
+516fccde11c5961226558b0aa26d7b13f672331d
+phase 08.7: qualify M4.4 source-led recovery
+```
+
+The post-commit worktree is clean and the implementation-context validator
+passes. The source scenarios and installed resources remain byte-identical at:
+
+```text
+1559ee2ab0a7d2fa26834bc0bfd226aaa2b8d6d7dad62dcdac85ca2e83293eb4  visible scenario
+78be277362ac060c7cb77c5d2215836cb914a95bd81a5ed9221f0db4bc62a188  suite scenario
+```
+
+The fresh visible and suite roots remain absent. `gzserver`, `gzclient`,
+`run_scenario`, `record_run`, and matching launch processes are inactive.
+ROS domain `163` has no discovered nodes with the CLI daemon disabled.
+`DISPLAY=:0` passes `xdpyinfo`, and the evidence filesystem has `313 GiB`
+available.
+
+Exactly one fresh visible attempt is predeclared:
+
+```text
+source /opt/ros/humble/setup.bash
+source /tmp/phase08_7_m4_4_qual/install/setup.bash
+export ROS_DOMAIN_ID=163
+export ROS_LOG_DIR=/tmp/phase08_7_m4_4_probe_ros_logs
+export MPLCONFIGDIR=/tmp/phase08_7_m4_4_probe_mpl
+export TURTLEBOT3_MODEL=burger
+export DISPLAY=:0
+timeout --signal=INT --kill-after=90s 660s \
+  ros2 run ros_esc run_scenario \
+  /tmp/phase08_7_m4_4_qual/install/ros_esc/share/ros_esc/\
+scenario_runner/scenarios/phase08_v7_m4_4_visible_probe.yaml \
+  --operator Codex \
+  --case-id v7_m4_4_probe_r1p5_a45_h25_18408 \
+  --runs-root \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_4_probe \
+  --summary-output \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_4_probe/\
+phase08_v7_m4_4_visible_probe_summary.yaml \
+  --gui
+```
+
+The attempt will be retained without retry or in-run changes. The fixed
+eight-case suite remains passing-gated; the optional three-light probe,
+Phase 09, and physical hardware remain unauthorized.
+
+## Current milestone
+
+**Phase 08.7 M4.4 — qualified implementation committed; one fixed visible
+two-light probe predeclared.**
+
+### Next criterion
+
+Refresh the Phase 08 checkpoint against `516fccd`, commit this exact dispatch
+record, reconfirm the clean process/evidence boundary, and execute only the
+bounded visible probe.
