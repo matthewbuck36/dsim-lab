@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-30T03:44:35-07:00`
-Status: `PHASE 08.7 M4.4 QUALIFIED IMPLEMENTATION COMMITTED; VISIBLE PROBE DISPATCH PENDING`
+Last verified: `2026-07-30T03:54:09-07:00`
+Status: `PHASE 08.7 M4.4 VISIBLE PROBE PASS; CONDITIONAL EIGHT-CASE SUITE DISPATCH PENDING`
 
 ## Objective
 
@@ -8120,3 +8120,136 @@ two-light probe predeclared.**
 Refresh the Phase 08 checkpoint against `516fccd`, commit this exact dispatch
 record, reconfirm the clean process/evidence boundary, and execute only the
 bounded visible probe.
+
+## Phase 08.7 M4.4 retained visible-probe pass
+
+The one committed visible attempt ran on ROS domain `163` from
+`2026-07-30T10:45:55.781756Z` through
+`2026-07-30T10:50:56.989440Z`. The outer timeout did not fire, the record
+process returned `0`, and the runner returned `0`.
+
+Retained run:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_4_probe/
+  2026-07-30/
+  20260730T104556725279Z_simulation_phase08_v7_m4_4_visible_probe-
+  v7_m4_4_probe_r1p5_a45_h25_18408-robust_gaussian_v_86533a18
+```
+
+The fixed visible gate passes every formal and behavioral predicate:
+
+```text
+recording completeness:           PASS, 48/48
+cleanup:                          PASS
+collision expectation:            PASS, no collision
+forbidden states/events:           PASS, none
+Stage A local recovery:            PASS, 1 episode
+unique fill cardinality:           PASS, exactly 1
+Stage B global proximity:          PASS
+combined result:                   PASS
+post-Stage-A time budget:          PASS, not expired
+```
+
+The accepted path was:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_ASSIST
+-> RECENTER
+-> SEARCH
+```
+
+The single accepted cluster was associated with the declared local:
+
+```text
+convergence point:              (1.3636727905, 1.2805420264) m
+fill center:                    (1.2519110241, 1.3952389305) m
+convergence-to-local:           0.3743857330 m
+convergence-to-global:          3.0805661238 m
+fill-to-convergence:            0.1601439110 m
+```
+
+At the post-recovery boundary, the M4.4 source-led policy executed exactly as
+declared. It started at simulation time `210.2 s` with no affine/supervisor
+direction. At the first complete window it had traveled `0.767347 m` but
+translated only `0.145095 m`, so it reported one stalled handoff and armed
+the existing fallback. The fallback released at `242.2 s` after
+`1.106318 m` outward progress. No recenter-route-unavailable event or
+`FAILSAFE` occurred in this central case.
+
+Stage A completed at `210.315 s`. The runner then stopped gracefully on the
+first valid, recorded, noninterpolated sample inside the primary boundary:
+
+```text
+sample simulation time:         246.491 s
+post-Stage-A elapsed:             36.176 s
+position:                       (3.0227022094, 2.4004886344) m
+distance to global:              1.1986402396 m
+primary radius:                  1.20 m
+```
+
+The `1.00 m` closer diagnostic did not pass and remains non-gating. The
+controller's source-score `GOAL_HOLD` classification also did not occur and
+is not the Stage B contract; recorded physical proximity is the declared
+operator-equivalent stop.
+
+Read-only SQLite `PRAGMA quick_check` returned `ok`. The standard analyzer
+ran exactly once into the run-local `analysis/phase07` directory and returned
+`analysis_status: complete` with no failures, eight plots, and eleven tables.
+Retained hashes are:
+
+```text
+c85afd4cc024bec5742e3a178c801ac857399ca4e4439807a34e5f1061635879  visible summary
+217c498441a09b2a1247aab6da94236342cf8d726d03608924ffbb63f32a5208  completeness
+28066a9f28561c59676396946a36c3d87108ce1aa907fa67cdd0d0bf647de967  scenario result
+8c37934e356aceb29a76130904ec7f08f4a2d75341fb9543ff2be50683cfe132  bag
+03ba002c25245eb9de7050fcceea6ec57a6a921bd292acd883a78904e355eabf  analysis completeness
+ecc46ca10ed6d0349cf9b3cef2d2e400db08af1784af79fdcf907924bbec430b  analysis metrics
+```
+
+Cleanup reconfirmed no Gazebo, runner, recorder, analyzer, or matching launch
+process, and ROS domain `163` is empty with the CLI daemon disabled. No retry
+or in-run change occurred.
+
+The complete visible pass opens the Plan's one conditional serial headless
+suite. Its exact predeclared command is:
+
+```text
+source /opt/ros/humble/setup.bash
+source /tmp/phase08_7_m4_4_qual/install/setup.bash
+export ROS_DOMAIN_ID=164
+export ROS_LOG_DIR=/tmp/phase08_7_m4_4_suite_ros_logs
+export MPLCONFIGDIR=/tmp/phase08_7_m4_4_suite_mpl
+export TURTLEBOT3_MODEL=burger
+timeout --signal=INT --kill-after=90s 5400s \
+  ros2 run ros_esc run_scenario \
+  /tmp/phase08_7_m4_4_qual/install/ros_esc/share/ros_esc/\
+scenario_runner/scenarios/phase08_v7_m4_4_two_light_suite.yaml \
+  --operator Codex \
+  --runs-root \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_4 \
+  --summary-output \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_4/\
+phase08_v7_m4_4_two_light_suite_summary.yaml
+```
+
+All eight committed cases will run exactly once in fixed order. Any formal,
+behavioral, or cleanup failure is retained and is not retried; a cleanup
+failure stops later dispatch. The optional three-light probe, Phase 09, and
+physical hardware remain unauthorized.
+
+## Current milestone
+
+**Phase 08.7 M4.4 — fixed visible probe PASS with complete evidence; exact
+conditional eight-case two-light suite predeclared.**
+
+### Next criterion
+
+Checkpoint and commit the retained visible result plus exact suite dispatch
+record. Then reconfirm the clean domain/evidence/process boundary and execute
+only the fixed serial headless suite.

@@ -1,20 +1,20 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-30T10:45:05+00:00
-Base HEAD: 516fccde11c5961226558b0aa26d7b13f672331d
+Generated: 2026-07-30T10:54:49+00:00
+Base HEAD: 0df0dc207b935cb10cd54ed513ba261396233b8e
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 47699ea10de703ac2616043bb9c1c919f7360f5868a67ecb9936845c59360179
+Status sha256: 3693a82b54bc70a871d055ed295cb9251e8f27d09e73ea83a7902a72b39a351c
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
 Active subphase plan sha256: ac1985b4160ff11c352ab062cb6cec94799b8d539fcef2c9937a0723e77ac83b
-Unstaged diff sha256: 0f820147a738f30926854d69c7a3c62ecfe9ba85205684eaca58048b621a0d27
+Unstaged diff sha256: 0d6ac5b2108754f58eb6dc42c3d84e19949ff6a383854e698755f95e72169f87
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 82]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 83]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
 
@@ -22,21 +22,21 @@ Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 53 ++---------------
- docs/codex/gesc_gaussian/status/phase_08_status.md | 67 +++++++++++++++++++++-
- 2 files changed, 70 insertions(+), 50 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  29 +----
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 137 ++++++++++++++++++++-
+ 2 files changed, 140 insertions(+), 26 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**Phase 08.7 M4.4 — qualified implementation committed; one fixed visible
-two-light probe predeclared.**
+**Phase 08.7 M4.4 — fixed visible probe PASS with complete evidence; exact
+conditional eight-case two-light suite predeclared.**
 
 ### Next criterion
 
-Refresh the Phase 08 checkpoint against `516fccd`, commit this exact dispatch
-record, reconfirm the clean process/evidence boundary, and execute only the
-bounded visible probe.
+Checkpoint and commit the retained visible result plus exact suite dispatch
+record. Then reconfirm the clean domain/evidence/process boundary and execute
+only the fixed serial headless suite.
 
 
 This file describes the base HEAD and diff before the next commit; it is
