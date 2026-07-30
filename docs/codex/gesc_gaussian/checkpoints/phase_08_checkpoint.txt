@@ -1,71 +1,42 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-30T05:40:45+00:00
-Base HEAD: 3b1edd4356e73675550f9928ca767621397692b2
+Generated: 2026-07-30T05:44:34+00:00
+Base HEAD: 19d413c9c129bcda9cf953741c95ed42c5913bc4
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 118ef9285adf5141ae1a4fc0ed6430e93209a2c349e486e02d35158726464907
+Status sha256: 8eb6ee199185082ea3036f6236f142c870d05b564ee29ba1e05bb301872460bb
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
 Active subphase plan sha256: 716490c3e0bda5e9a9d6936845802acf5799fd2314f9cc6bfa05a5a1de4df8bd
-Unstaged diff sha256: e6249ae653879fe5b60e5c3813d7b81f0361001b1c3764036a3725d3920be510
+Unstaged diff sha256: 66388c1b1e65e0fdf857caea706ebbf854052e7827c0a587c19ac11c88f23f38
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 63]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 64]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
- M ros2_ws/src/ros_esc/ros_esc/gaussian_fill_node/gaussian_fill_script.py
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py
- M ros2_ws/src/ros_esc/ros_esc/supervisor_node/escape_recenter.py
- M ros2_ws/src/ros_esc/ros_esc/supervisor_node/state_machine.py
- M ros2_ws/src/ros_esc/ros_esc/supervisor_node/supervisor_node_script.py
- M ros2_ws/src/ros_esc/test/test_escape_recenter.py
- M ros2_ws/src/ros_esc/test/test_robust_gaussian_algorithm.py
- M ros2_ws/src/ros_esc/test/test_scenario_runner.py
- M ros2_ws/src/ros_esc/test/test_scenario_schema.py
- M ros2_ws/src/ros_esc/test/test_state_machine.py
- M ros2_ws/src/ros_esc/test/test_supervisor_integration.py
- M ros2_ws/src/turtlebot3_rotating_sensor/launch/gazebo.launch.xml
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m4_three_light_probe.yaml
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m4_two_light_suite.yaml
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m4_visible_probe.yaml
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  49 ++-
- docs/codex/gesc_gaussian/status/phase_08_status.md | 201 +++++++++++
- .../gaussian_fill_node/gaussian_fill_script.py     |  52 +++
- .../ros_esc/scenario_runner/run_scenario.py        | 108 +++++-
- .../ros_esc/scenario_runner/scenario_schema.py     | 284 ++++++++++++---
- .../ros_esc/supervisor_node/escape_recenter.py     | 294 +++++++++++++++-
- .../ros_esc/supervisor_node/state_machine.py       | 113 ++++++
- .../supervisor_node/supervisor_node_script.py      | 383 ++++++++++++++++++---
- ros2_ws/src/ros_esc/test/test_escape_recenter.py   | 189 ++++++++++
- .../ros_esc/test/test_robust_gaussian_algorithm.py |  45 +++
- ros2_ws/src/ros_esc/test/test_scenario_runner.py   | 135 ++++++++
- ros2_ws/src/ros_esc/test/test_scenario_schema.py   | 293 +++++++++++++++-
- ros2_ws/src/ros_esc/test/test_state_machine.py     | 129 +++++++
- .../ros_esc/test/test_supervisor_integration.py    | 178 +++++++++-
- .../launch/gazebo.launch.xml                       |  16 +
- 15 files changed, 2334 insertions(+), 135 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 58 ++------------------
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 64 ++++++++++++++++++++++
+ 2 files changed, 69 insertions(+), 53 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**Phase 08.7 M4 — implementation and no-Gazebo qualification PASS;
-checkpointed; qualified commit pending.**
+**Phase 08.7 M4 — qualified input committed; one fixed visible two-light
+probe predeclared.**
 
 ### Next criterion
 
-Commit the exact qualified source, tests, launch wiring, scenarios, status,
-and checkpoint. Reconfirm an inactive process set plus absent probe root, then
-dispatch only the one fixed visible two-light probe.
+Refresh the Phase 08 checkpoint against commit `19d413c`, commit this dispatch
+record, reconfirm the process/evidence boundary, and execute only the bounded
+visible probe.
 
 
 This file describes the base HEAD and diff before the next commit; it is

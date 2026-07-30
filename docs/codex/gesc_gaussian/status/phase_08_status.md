@@ -6088,3 +6088,67 @@ checkpointed; qualified commit pending.**
 Commit the exact qualified source, tests, launch wiring, scenarios, status,
 and checkpoint. Reconfirm an inactive process set plus absent probe root, then
 dispatch only the one fixed visible two-light probe.
+
+## Phase 08.7 M4 committed dispatch boundary
+
+The qualified M4 implementation, tests, launch wiring, and exact three
+scenario inputs were committed at:
+
+```text
+19d413c9c129bcda9cf953741c95ed42c5913bc4
+phase 08.7: qualify M4 recoverable navigation
+```
+
+The post-commit worktree is clean. Source and isolated-install scenario bytes
+remain identical:
+
+```text
+37ba6e1e9adc842691328cc0a1c66e5fd04034db59c6fcdb0c05f6f6c4b769a1  visible probe
+6e67e657b11f080a545abe6b87a8730112c350163e47f85ec6ac83ab32abb937  two-light suite
+1a9ac4774094d43822b7d33f5eba24566e15cf745b9481ce8f25720a8e42c721  optional three-light probe
+```
+
+All three fresh evidence roots remain absent. The Gazebo, scenario-runner,
+recorder, and matching ROS launch process set is inactive.
+
+Exactly one visible two-light attempt is predeclared on ROS domain `153`:
+
+```text
+source /opt/ros/humble/setup.bash
+source /tmp/phase08_7_m4_qual/install/setup.bash
+ROS_DOMAIN_ID=153
+ROS_LOG_DIR=/tmp/phase08_7_m4_probe_ros_logs
+MPLCONFIGDIR=/tmp/phase08_7_m4_probe_mpl
+TURTLEBOT3_MODEL=burger
+DISPLAY=:0
+timeout --signal=INT --kill-after=90s 660s \
+  ros2 run ros_esc run_scenario \
+  /tmp/phase08_7_m4_qual/install/ros_esc/share/ros_esc/\
+scenario_runner/scenarios/phase08_v7_m4_visible_probe.yaml \
+  --operator phase08_7_m4 \
+  --case-id v7_m4_probe_r1p5_a45_h25_18201 \
+  --runs-root \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_probe \
+  --summary-output \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_probe/\
+phase08_v7_m4_visible_probe_summary.yaml \
+  --gui
+```
+
+The attempt is retained without automatic retry or in-run parameter changes.
+The fixed eight-case suite is prohibited unless this probe passes
+infrastructure, Stage A, exact fill cardinality, primary `1.20 m` Stage B,
+collision, forbidden-state/event, and combined predicates. The optional
+three-light attempt remains prohibited unless the visible probe and all eight
+fixed two-light suite cases pass.
+
+## Current milestone
+
+**Phase 08.7 M4 — qualified input committed; one fixed visible two-light
+probe predeclared.**
+
+### Next criterion
+
+Refresh the Phase 08 checkpoint against commit `19d413c`, commit this dispatch
+record, reconfirm the process/evidence boundary, and execute only the bounded
+visible probe.
