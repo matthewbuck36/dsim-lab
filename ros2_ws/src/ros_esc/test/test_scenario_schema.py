@@ -112,6 +112,16 @@ M4_5_TWO_LIGHT_SUITE = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v7_m4_5_two_light_suite.yaml'
 )
+M4_6_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m4_6_visible_probe.yaml'
+)
+M4_6_TWO_LIGHT_SUITE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m4_6_two_light_suite.yaml'
+)
 M4_TWO_LIGHT_SUITE = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/'
@@ -2366,6 +2376,176 @@ def test_m4_5_fixed_inputs_add_only_declared_controls_and_budgets():
 
 def test_m4_5_preserves_m4_4_m4_3_v6_and_world_source_hashes():
     expected = {
+        M4_4_VISIBLE_PROBE: (
+            '1559ee2ab0a7d2fa26834bc0bfd226aaa2b8d6d7dad62dcdac85ca2e83293eb4'
+        ),
+        M4_4_TWO_LIGHT_SUITE: (
+            '78be277362ac060c7cb77c5d2215836cb914a95bd81a5ed9221f0db4bc62a188'
+        ),
+        M4_3_VISIBLE_PROBE: (
+            'cacbdafbc9aa289f178e684503519283bdf4b5496cbdd2dfb8c61ff69ebf1658'
+        ),
+        M4_3_TWO_LIGHT_SUITE: (
+            '37c1f7f2d81132be46adee576a1b603093fd03dd5488c5465d53d8876b9d50cc'
+        ),
+        V6_HUE_SWEEP: (
+            '3be130581b88c986fd845aef0c33c9db94ceb02ecfe2a6361926b0317ef8e655'
+        ),
+        CORNER_ORIGIN_WORLD: (
+            '88b10b39aa24a6430f6f031c750334ed34e6835e54c84de8d36f4cc6a26444bf'
+        ),
+    }
+
+    assert {
+        path: hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in expected
+    } == expected
+
+
+def test_m4_6_fixed_inputs_change_only_identity_seed_and_threshold():
+    m4_5_visible, m4_5_visible_unsupported = expand_suite(
+        load_suite(M4_5_VISIBLE_PROBE)
+    )
+    m4_5_runs, m4_5_unsupported = expand_suite(
+        load_suite(M4_5_TWO_LIGHT_SUITE)
+    )
+    m4_6_visible_suite = load_suite(M4_6_VISIBLE_PROBE)
+    m4_6_visible, m4_6_visible_unsupported = expand_suite(
+        m4_6_visible_suite
+    )
+    m4_6_suite = load_suite(M4_6_TWO_LIGHT_SUITE)
+    m4_6_runs, m4_6_unsupported = expand_suite(m4_6_suite)
+
+    assert (
+        m4_5_visible_unsupported
+        == m4_5_unsupported
+        == m4_6_visible_unsupported
+        == m4_6_unsupported
+        == []
+    )
+    assert [
+        (run['case_id'], run['seed'], run['case_key'])
+        for run in m4_6_visible
+    ] == [(
+        'v7_m4_6_probe_r2p0_a45_h25_18508',
+        18508,
+        '0adae0a552ae5f715240dcc22d1478e710711e8e82429e6752daa7c45f6045a4',
+    )]
+    assert [
+        (run['case_id'], run['seed'], run['case_key'])
+        for run in m4_6_runs
+    ] == [
+        (
+            'v7_m4_6_r1p0_a45_h25_18609',
+            18609,
+            '62fa7a7915cedc4dd3081c3a3e5764e22e1880e971e32c70a744d2afdbbe4d54',
+        ),
+        (
+            'v7_m4_6_r1p5_a22p5_h25_18609',
+            18609,
+            '06764d07ea8620a20278594a03fcab28d14f90d6259a9290a658c1bbb2e8b5b5',
+        ),
+        (
+            'v7_m4_6_r1p5_a45_h25_18609',
+            18609,
+            '2a66c20df5b62dcde548ec5e3a824fc435459f30f403851c2027f2dcf1d0ff35',
+        ),
+        (
+            'v7_m4_6_r1p5_a67p5_h25_18609',
+            18609,
+            '89a1676db7d053a044d4a2e93c753a0d16ed598dd4870caa75beaee84209cdb6',
+        ),
+        (
+            'v7_m4_6_r2p0_a45_h25_18609',
+            18609,
+            'd220251e34434435b41fa16cd63fb7c78508e331b4de71dac5c48f209927a906',
+        ),
+        (
+            'v7_m4_6_repeat_r1p5_a45_h25_18610',
+            18610,
+            'de71b4594bd24790fd216cb7ceee74cb08ef5a4275f8a3acc49d26c94137251e',
+        ),
+        (
+            'v7_m4_6_repeat_r1p5_a45_h25_18611',
+            18611,
+            'bd7613efe4ece2a6f44602aa15fee0d8187aaae167966a7c9c61941690dd836e',
+        ),
+        (
+            'v7_m4_6_repeat_r1p5_a45_h25_18612',
+            18612,
+            '27dc48ef6bf727776b89d519bb41794e3eedaaf0271ad788ba3938643884c09b',
+        ),
+    ]
+
+    def without_fresh_delta(run, expected_threshold):
+        result = deepcopy(run)
+        for field in (
+            'case_id',
+            'case_key',
+            'description',
+            'seed',
+            'suite_id',
+        ):
+            result.pop(field)
+        result['success']['controller']['contract_id'] = (
+            '<fresh-identity>'
+        )
+        if result['repeat_reference'] is not None:
+            result['repeat_reference']['case_key'] = (
+                '<fresh-central-case>'
+            )
+        threshold = result['algorithm']['launch_overrides'].pop(
+            'post_recovery_source_reversal_dot_threshold'
+        )
+        assert threshold == expected_threshold
+        return result
+
+    assert without_fresh_delta(
+        m4_6_visible[0], -0.80
+    ) == without_fresh_delta(m4_5_visible[0], -0.90)
+    assert [
+        without_fresh_delta(run, -0.80)
+        for run in m4_6_runs
+    ] == [
+        without_fresh_delta(run, -0.90)
+        for run in m4_5_runs
+    ]
+    assert {
+        run['repeat_reference']['case_key']
+        for run in m4_6_runs
+        if run['acceptance_partition'] == 'reproducibility'
+    } == {m4_6_runs[2]['case_key']}
+
+    for run in m4_6_visible + m4_6_runs:
+        overrides = run['algorithm']['launch_overrides']
+        staged = run['success']['staged_recovery']
+        assert overrides[
+            'post_recovery_source_reversal_dot_threshold'
+        ] == -0.80
+        assert overrides['post_recovery_source_continuity_enabled'] is True
+        assert overrides['controller_spawner_load_recovery_enabled'] is True
+        assert staged['stage_a_timeout_sec'] == 480.0
+        assert staged['post_stage_a_timeout_sec'] == 120.0
+        assert staged['global_proximity_radius_m'] == 1.20
+        assert staged['global_closer_radius_m'] == 1.00
+    assert m4_6_visible_suite['execution']['gazebo_gui'] is True
+    assert m4_6_suite['execution']['gazebo_gui'] is False
+    assert m4_6_visible_suite['execution']['runs_root'].endswith(
+        '/phase08_v7_m4_6_probe'
+    )
+    assert m4_6_suite['execution']['runs_root'].endswith(
+        '/phase08_v7_m4_6'
+    )
+
+
+def test_m4_6_preserves_m4_5_m4_4_m4_3_v6_and_world_hashes():
+    expected = {
+        M4_5_VISIBLE_PROBE: (
+            '3653a46c5a0ee4cf866cd257c6df2d9c18c745335f93b4fac400d0d51a313f97'
+        ),
+        M4_5_TWO_LIGHT_SUITE: (
+            '0eecc1337371ba75d8a6ae80e766415f8bdabe2a925d0034eaa2c6f2af34e384'
+        ),
         M4_4_VISIBLE_PROBE: (
             '1559ee2ab0a7d2fa26834bc0bfd226aaa2b8d6d7dad62dcdac85ca2e83293eb4'
         ),

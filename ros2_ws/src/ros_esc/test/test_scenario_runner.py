@@ -94,6 +94,16 @@ M4_5_TWO_LIGHT_SUITE = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v7_m4_5_two_light_suite.yaml'
 )
+M4_6_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m4_6_visible_probe.yaml'
+)
+M4_6_TWO_LIGHT_SUITE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m4_6_two_light_suite.yaml'
+)
 
 
 def test_observed_local_recovery_binds_fill_to_local_convergence():
@@ -825,6 +835,47 @@ def test_m4_5_launch_binds_only_declared_recovery_controls(
             'controller_spawner_load_recovery_enabled:=True',
         ):
             assert expected in launch
+        assert not any(
+            token.startswith('global_source_')
+            or token.startswith('source_role_')
+            or token.startswith('simulation_truth_')
+            for token in launch
+        )
+        staged = resolved['success']['staged_recovery']
+        assert staged['stage_a_timeout_sec'] == 480.0
+        assert staged['post_stage_a_timeout_sec'] == 120.0
+    assert suite['execution']['run_timeout_sec'] == 600.0
+    assert suite['execution']['wall_timeout_sec'] == 780.0
+
+
+@pytest.mark.parametrize(
+    'scenario_path',
+    [M4_6_VISIBLE_PROBE, M4_6_TWO_LIGHT_SUITE],
+)
+def test_m4_6_launch_changes_only_explicit_continuity_threshold(
+    scenario_path,
+):
+    suite = load_suite(scenario_path)
+    runs, unsupported = expand_suite(suite)
+
+    assert unsupported == []
+    for resolved in runs:
+        launch = build_launch_command(
+            resolved,
+            gui=suite['execution']['gazebo_gui'],
+        )
+        for expected in (
+            'post_recovery_source_continuity_enabled:=True',
+            'post_recovery_source_continuity_min_displacement_m:=0.05',
+            'post_recovery_source_reversal_dot_threshold:=-0.8',
+            'post_recovery_source_bypass_clearance_m:=0.1',
+            'controller_spawner_load_recovery_enabled:=True',
+        ):
+            assert expected in launch
+        assert (
+            'post_recovery_source_reversal_dot_threshold:=-0.9'
+            not in launch
+        )
         assert not any(
             token.startswith('global_source_')
             or token.startswith('source_role_')

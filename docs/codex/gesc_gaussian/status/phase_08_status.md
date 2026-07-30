@@ -8902,3 +8902,120 @@ NOT APPROVED / IMPLEMENTATION AND SIMULATION NOT STARTED.**
 Checkpoint and commit this Plan-only boundary for review. Do not implement or
 run M4.6 until the user explicitly approves the fresh amendment. The optional
 three-light probe, Phase 09, and physical hardware remain unauthorized.
+
+## Phase 08.7 M4.6 authorization and no-Gazebo qualification
+
+The user explicitly approved M4.6 implementation. The approved correction
+has been implemented without production-source drift. Two fresh fixed inputs
+were added:
+
+```text
+ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/
+  phase08_v7_m4_6_visible_probe.yaml
+  phase08_v7_m4_6_two_light_suite.yaml
+```
+
+Only those fresh scenarios explicitly select:
+
+```text
+post_recovery_source_reversal_dot_threshold: -0.80
+```
+
+The launch/supervisor default remains `-0.90`; the feature remains
+default-off. M4.5 and every historical scenario remain byte-identical. No
+production source, central launch, world, recorder, validator, controller,
+modified-cost node, or spawner helper changed.
+
+Exact retained M4.5 replay proves `-0.90` does not trigger at
+`-0.8412123475`, while `-0.80` selects the declared finite hard-safe
+direction `(-0.1814078764, -0.9834079430)`, with zero source reversal,
+`0.5407048977` radial outward alignment, and a `0.8707616102 m` lookahead
+fill distance beyond the `0.7086747487 m` release radius. The full retained
+M4.4/M4.5 alignment table proves only the two observed radius-2 reversals
+trigger; every retained pass remains outside the trigger.
+
+No-Gazebo test evidence:
+
+```text
+targeted M4.6:
+  14 passed in 1.10 s
+  /tmp/phase08_7_m4_6_targeted.xml
+  e974aa5ec9461b488de4d4c60b043bfb572a5c51fd9d099c69eb630e4b594581
+
+focused:
+  390 passed, 1 skipped in 54.99 s
+  /tmp/phase08_7_m4_6_focused.xml
+  de8fc93abeb31be8487957660bba7e7b3ce1c8670fa61f92e5ab582fd72195e5
+
+broad ROS-independent:
+  669 passed, 3 skipped, 1 deselected in 116.43 s
+  /tmp/phase08_7_m4_6_broad_functional.xml
+  a87e9078549f9f66e1148c79526d340579650a012838c8f894a56601f7d5aa03
+```
+
+The skips are unchanged environment-conditional cases; the deselection is
+the documented retired V4 population-adoption assertion. There were no
+failures or errors. Fatal changed-file lint, modified-Python compilation,
+fresh YAML parsing, launch XML/Python parsing, `git diff --check`, and
+`validate_phase_context.sh 08 implement` pass.
+
+The fresh isolated three-package build at
+`/tmp/phase08_7_m4_6_qual` passed in `11.8 s`. Source/install byte parity
+passes for the supervisor helper/node, schema/runner, both fresh scenarios,
+Gazebo launch, control launch, and idempotent spawner. Direct installed
+`OpaqueFunction` resolution proves the legacy two-spawner path when recovery
+is false and the one idempotent helper path when true. Installed launch
+defaults still resolve continuity false, reversal threshold `-0.90`,
+controller recovery false, and maximum one fill.
+
+Installed dry-runs resolve one visible and eight headless cases with zero
+unsupported cases:
+
+```text
+/tmp/phase08_7_m4_6_visible_installed_dry_run.yaml
+4a33eada6b084435c0d44b3215fb5807b86af58783ff793631571c8109653d33
+/tmp/phase08_7_m4_6_suite_installed_dry_run.yaml
+4344ba59098cb96bae870a6a9b21806950134ca0852c57ab01b4d0537f0935ee
+```
+
+Every case preserves `480 + 120 <= 600 s`, the `780 s` wall timeout,
+exactly one declared local and global, maximum one fill, the primary
+`1.20 m` global proximity, and the non-gating `1.00 m` closer diagnostic.
+The paired visible case key is
+`0adae0a552ae5f715240dcc22d1478e710711e8e82429e6752daa7c45f6045a4`.
+
+All sealed M4.5 summary, completeness, scenario-result, bag, analysis, and
+report hashes match. Read-only SQLite `PRAGMA quick_check` remains `ok` for
+`582137` messages and `34` topics. The full evidence record is:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m4_6_no_gazebo_qualification.md
+SHA-256
+a3c649ba1ec3187b7d4918e1a937835ae0c5cdd7b3d47e13c22d33c31150eaee
+```
+
+No Gazebo or ROS runtime process started. Both M4.6 evidence roots remain
+absent. No suite, three-light, Phase 09, physical, or hardware action
+occurred.
+
+## Current milestone
+
+**Phase 08.7 M4.6 — IMPLEMENTED / NO-GAZEBO QUALIFICATION PASS /
+READY TO CHECKPOINT AND COMMIT / GAZEBO NOT STARTED.**
+
+### Next criterion
+
+Checkpoint and commit this independently qualified no-Gazebo boundary.
+After that commit, record and checkpoint the exact visible paired dispatch
+command, then run only:
+
+```text
+suite: phase08_v7_m4_6_visible_probe
+case:  v7_m4_6_probe_r2p0_a45_h25_18508
+seed:  18508
+root:  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_6_probe
+```
+
+The fixed eight-case headless suite remains closed unless that one visible
+attempt passes every declared gate.

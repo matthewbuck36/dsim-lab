@@ -13,7 +13,15 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from rclpy.parameter import Parameter
 from ros_esc.supervisor_node import supervisor_node_script
-from ros_esc.supervisor_node.escape_recenter import Pose2D, recenter_command
+from ros_esc.supervisor_node.escape_recenter import (
+    DirectionConfig,
+    FillAvoidance,
+    OperatingBounds,
+    Pose2D,
+    recenter_command,
+    select_safe_direction,
+    source_continuity_evidence,
+)
 from ros_esc.supervisor_node.state_machine import (
     State,
     Transition,
@@ -1013,6 +1021,130 @@ def _feed_m4_5_retained_source_window(node, anchor, current):
         node.latest_pose = Pose2D(stamp, *position, 0.0)
         node.latest_pose_sequence += 1
         assert node._update_post_recovery_guidance(stamp) is None
+
+
+def test_m4_6_exact_failed_geometry_uses_only_calibrated_threshold():
+    anchor = np.array([1.1809160175, 1.5969815630])
+    current = np.array([1.3563818523, 1.5646136279])
+    fill_center = np.array([1.8117325336, 1.7511796132])
+
+    assert source_continuity_evidence(
+        anchor,
+        current,
+        fill_center,
+        0.05,
+        -0.90,
+    ) is None
+    evidence = source_continuity_evidence(
+        anchor,
+        current,
+        fill_center,
+        0.05,
+        -0.80,
+    )
+
+    assert evidence is not None
+    assert evidence.displacement_m == pytest.approx(0.1784262940)
+    assert evidence.radial_alignment == pytest.approx(-0.8412123478)
+    assert evidence.direction == pytest.approx(
+        [0.9834079430, -0.1814078764]
+    )
+
+    avoidance_radius = 0.6086747487
+    selected = select_safe_direction(
+        current,
+        evidence.direction,
+        [
+            FillAvoidance(
+                4,
+                1,
+                fill_center[0],
+                fill_center[1],
+                avoidance_radius,
+            )
+        ],
+        DirectionConfig(
+            lookahead_m=0.50,
+            candidate_step_rad=0.7853981633974483,
+        ),
+        OperatingBounds(
+            x_min=-0.25,
+            x_max=3.75,
+            y_min=-0.25,
+            y_max=3.75,
+            center_x=1.75,
+            center_y=1.75,
+            wall_margin=0.20,
+        ),
+    )
+
+    assert selected is not None
+    assert selected.direction == pytest.approx(
+        [-0.1814078760, -0.9834079431]
+    )
+    assert np.dot(
+        selected.direction,
+        evidence.direction,
+    ) == pytest.approx(0.0, abs=1e-12)
+    radial_outward = (
+        (current - fill_center)
+        / np.linalg.norm(current - fill_center)
+    )
+    assert np.dot(
+        selected.direction,
+        radial_outward,
+    ) == pytest.approx(0.5407048973)
+    endpoint = current + 0.50 * selected.direction
+    assert np.linalg.norm(
+        endpoint - fill_center
+    ) == pytest.approx(0.8707616100)
+    assert (
+        np.linalg.norm(endpoint - fill_center)
+        > avoidance_radius + 0.10
+    )
+
+
+@pytest.mark.parametrize(
+    ('case_id', 'radial_alignment', 'should_trigger'),
+    [
+        ('m4_4_visible_central', -0.336356, False),
+        ('m4_4_radius_1p0', 0.885685, False),
+        ('m4_4_radius_1p5_a45', 0.201668, False),
+        ('m4_4_radius_1p5_a67p5', 0.787593, False),
+        ('m4_4_radius_2p0', -0.9999689709, True),
+        ('m4_4_repeat_18410', 0.413417, False),
+        ('m4_4_repeat_18411', 0.953112, False),
+        ('m4_4_repeat_18412', -0.192921, False),
+        ('m4_5_radius_2p0', -0.8412123478, True),
+    ],
+)
+def test_m4_6_calibration_replays_retained_alignment_table(
+    case_id,
+    radial_alignment,
+    should_trigger,
+):
+    direction = np.array([1.0, 0.0])
+    current = np.array([1.0, 1.0])
+    anchor = current - 0.20 * direction
+    radial_outward = np.array([
+        radial_alignment,
+        math.sqrt(max(0.0, 1.0 - radial_alignment ** 2)),
+    ])
+    fill_center = current - radial_outward
+
+    evidence = source_continuity_evidence(
+        anchor,
+        current,
+        fill_center,
+        0.05,
+        -0.80,
+    )
+
+    assert (evidence is not None) is should_trigger, case_id
+    if evidence is not None:
+        assert evidence.radial_alignment == pytest.approx(
+            radial_alignment
+        )
 
 
 def test_m4_5_retained_radius_two_arms_nonreversing_safe_bypass():
