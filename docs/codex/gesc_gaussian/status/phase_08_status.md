@@ -4775,3 +4775,111 @@ may preserve every qualified implementation, geometry, topology, affine, and
 stop value while changing only the empirically contradicted maximum path
 efficiency from `0.35` to `0.50`, with a fresh hash, key, evidence root,
 qualification, checkpoint, and commit. M3 remains unauthorized.
+
+## Phase 08.7 M2.2 correction boundary
+
+M2.1 and its evidence were checkpointed and committed unchanged at:
+
+```text
+c231647
+phase 08.7: retain M2.1 detector failure
+```
+
+Under the user's standing authorization to execute the complete bounded
+correction, the evidence-supported M2.2 amendment is now durable in
+`plans/phase_08_7_plan.md`. M2.2 is a fresh experiment version and changes
+only the detector's maximum path efficiency from `0.35` to `0.50`. It does
+not reopen or retry M2.1.
+
+The exact new input is:
+
+```text
+suite:    phase08_v7_m2_2_efficiency_correction_probe
+case:     v7_m2_2_diagonal_r1p5_h25_18001
+case key: 5078f6eff97d05419af1c59452fba15fb31b34c496e80f5ab3063ac091520e90
+scenario: 1f11448b37ef8fbfb146124a0141d91d3404ee614d6d33e3a30f58aa0a179439
+root:     /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m2_2
+```
+
+The strict source-level comparison and launch-binding tests pass:
+`2 passed in 0.68s`. The first two discovery invocations accidentally replaced
+the ROS `PYTHONPATH` and failed import before collection; the corrected
+overlay-preserving invocation produced the reported pass. No Gazebo, runner,
+recorder, or evidence-root process was started.
+
+**Current milestone: Phase 08.7 M2.2 no-Gazebo qualification.**
+
+No M2.2 Gazebo run is permitted until the complete Plan gates pass and the
+fresh scenario, Plan, tests, status, and checkpoint are committed.
+
+## Phase 08.7 M2.2 no-Gazebo qualification result
+
+M2.2 passes its complete pre-execution boundary.
+
+The source-level and central-launch comparisons prove that the only
+behavioral input change from immutable M2.1 is:
+
+```text
+convergence_maximum_path_efficiency: 0.35 -> 0.50
+```
+
+The full bounded no-Gazebo functional set passed:
+
+```text
+536 passed, 2 skipped, 1 deselected in 112.29s
+```
+
+This set covers aggregate truth, bag analysis, convergence policy, shutdown,
+escape/recenter, recording, legacy, observability, Phase 08 validation, robust
+Gaussian behavior, scenario schema/runner, disturbances, state machine, and
+supervisor integration. The two skips are explicit runtime integrations. The
+one deselection is the recorded historical V4 adoption assertion that treats
+later versioned scenario files as an error. No required behavioral test
+failed.
+
+Both changed test files pass `ament_flake8`, `ament_pep257`, and fatal Python
+checks `E9,F63,F7,F82`. `git diff --check` passes.
+
+The fresh isolated build passed:
+
+```text
+build base:   /tmp/phase08_7_m2_2_qual/build
+install base: /tmp/phase08_7_m2_2_qual/install
+log base:     /tmp/phase08_7_m2_2_qual/log
+Summary: 3 packages finished in 11.7s
+```
+
+The installed dry-run resolved one run, zero unsupported cases, the frozen
+case key, `75` launch arguments, and the exact `0.50` detector cap. It retained
+the M2.1 geometry, one-fill limit, affine gain/age, three retries, visible GUI,
+and both `0.60 m` stop boundaries. The dry-run summary is
+`/tmp/phase08_7_m2_2_dry_run.yaml`.
+
+Nonexecuting central-launch instantiation produced the expected `254`-line
+description at `/tmp/phase08_7_m2_2_launch_description.txt` and binds the
+detector, modified-cost, and supervisor through the existing owners.
+
+Source/install hashes match:
+
+```text
+1f11448b37ef8fbfb146124a0141d91d3404ee614d6d33e3a30f58aa0a179439  M2.2 scenario
+541194d6152a8384c469f5bcc8573aef9afdb295bde6e148e5a82a692b8e4c8b  immutable M2.1 scenario
+9277b63743c7672268721c50b414020fc5951d719f358fd053d5f86d0b06e49c  central launch
+```
+
+The Phase 08 context validator passes with the active Phase 08.7 plan.
+`DISPLAY=:0` is available. The fresh M2.2 evidence root remains absent, and
+no Gazebo, runner, recorder, bag recorder, or physical-hardware process is
+running. No V6, historical scenario/world/evidence, algorithm implementation,
+interface, topic, cost sign/unit, or controller owner changed.
+
+## Current milestone
+
+**Phase 08.7 M2.2 — no-Gazebo qualification PASS; exact input ready for
+checkpoint and commit.**
+
+### Next criterion
+
+Checkpoint and commit the exact M2.2 scenario, Plan, tests, and status. Verify
+the clean commit and unchanged installed hash, then run exactly one bounded
+visible probe without automatic retry.

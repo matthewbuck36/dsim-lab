@@ -47,6 +47,11 @@ M2_1_CORRECTION = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v7_m2_1_correction_probe.yaml'
 )
+M2_2_CORRECTION = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m2_2_efficiency_correction_probe.yaml'
+)
 HISTORICAL_V2_ACTIVATION = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml'
@@ -995,6 +1000,43 @@ def test_m2_1_resolves_opt_in_correction_and_relaxed_stop():
     ] == 0.60
     assert run['success']['ground_truth']['proximity_radius_m'] == 0.60
     assert deterministic_case_key(run) == run['case_key']
+
+
+def test_m2_2_changes_only_evidence_calibrated_efficiency_contract():
+    """Preserve M2.1 inputs except its empirically contradicted cap."""
+    m2_1 = expand_suite(load_suite(M2_1_CORRECTION))[0][0]
+    m2_2 = expand_suite(load_suite(M2_2_CORRECTION))[0][0]
+
+    assert m2_2['algorithm']['launch_overrides'][
+        'convergence_maximum_path_efficiency'
+    ] == 0.50
+    ignored = {
+        'case_id',
+        'case_key',
+        'description',
+        'experiment_version',
+        'scenario_sha256',
+        'suite_id',
+    }
+    m2_1_comparable = {
+        key: value for key, value in m2_1.items() if key not in ignored
+    }
+    m2_2_comparable = {
+        key: value for key, value in m2_2.items() if key not in ignored
+    }
+    m2_1_comparable['algorithm'] = deepcopy(m2_1_comparable['algorithm'])
+    m2_1_comparable['algorithm']['launch_overrides'] = dict(
+        m2_1_comparable['algorithm']['launch_overrides']
+    )
+    m2_1_comparable['algorithm']['launch_overrides'][
+        'convergence_maximum_path_efficiency'
+    ] = 0.50
+    m2_1_comparable['success'] = deepcopy(m2_1_comparable['success'])
+    m2_2_comparable['success'] = deepcopy(m2_2_comparable['success'])
+    m2_1_comparable['success']['controller']['contract_id'] = 'normalized'
+    m2_2_comparable['success']['controller']['contract_id'] = 'normalized'
+    assert m2_2_comparable == m2_1_comparable
+    assert deterministic_case_key(m2_2) == m2_2['case_key']
 
 
 @pytest.mark.parametrize(

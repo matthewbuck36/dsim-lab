@@ -49,6 +49,11 @@ M2_1_CORRECTION = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v7_m2_1_correction_probe.yaml'
 )
+M2_2_CORRECTION = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m2_2_efficiency_correction_probe.yaml'
+)
 
 
 def test_observed_local_recovery_binds_fill_to_local_convergence():
@@ -574,6 +579,25 @@ def test_m2_1_launch_binds_detector_topology_affine_and_relaxed_stop():
     assert resolved['success']['staged_recovery'][
         'global_proximity_radius_m'
     ] == 0.60
+
+
+def test_m2_2_launch_changes_only_motion_efficiency_cap():
+    """Bind the evidence-calibrated cap without changing other controls."""
+    m2_1 = expand_suite(load_suite(M2_1_CORRECTION))[0][0]
+    m2_2 = expand_suite(load_suite(M2_2_CORRECTION))[0][0]
+    launch_m2_1 = build_launch_command(m2_1, gui=True)
+    launch_m2_2 = build_launch_command(m2_2, gui=True)
+
+    assert 'convergence_maximum_path_efficiency:=0.35' in launch_m2_1
+    assert 'convergence_maximum_path_efficiency:=0.5' in launch_m2_2
+    normalized_m2_1 = [
+        item.replace(
+            'convergence_maximum_path_efficiency:=0.35',
+            'convergence_maximum_path_efficiency:=0.5',
+        )
+        for item in launch_m2_1
+    ]
+    assert normalized_m2_1 == launch_m2_2
 
 
 def test_staged_recovery_reports_stage_a_cardinality_and_global_sample():

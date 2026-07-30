@@ -543,6 +543,100 @@ Any subsequent byte change requires recomputing this hash, repeating the full
 no-Gazebo qualification, updating this amendment, and committing before
 dispatch.
 
+## M2.2 evidence-calibrated detector amendment
+
+The fixed M2.1 experiment is closed and immutable as failed. Its
+infrastructure passed, but it remained in `SEARCH` for the full run because
+the frozen `0.35` maximum path efficiency prevented any convergence candidate.
+M2.2 is a fresh development version, not an M2.1 retry or relabel.
+
+Read-only replay establishes the bounded correction:
+
+- the three retained M2 candidates that successfully identified the intended
+  local had efficiencies `0.3639431494`, `0.4434453791`, and `0.3605826563`,
+  all above the M2.1 cap;
+- M2.1 reached within `0.0539395645 m` of the intended local and traveled
+  `22.0617045159 m`, but its qualified windows fragmented, its minimum metric
+  remained `+0.0657099110`, and its counter remained `3`;
+- replay of the exact M2.1 PDE path with a `0.50` cap yields three candidates
+  at `172.9`, `198.9`, and `220.7 s`, whose recent-window means are `0.19395`,
+  `0.35529`, and `0.04452 m` from the local;
+- the replay yields no candidate before `172.9 s`, and `0.50` remains
+  materially below straight-line efficiency `1.0`.
+
+M2.2 therefore changes only
+`convergence_maximum_path_efficiency: 0.35 -> 0.50`. It retains byte-for-byte
+implementation behavior and every other M2.1 scenario value:
+
+- SEARCH-only typed state gating and fresh-history reset;
+- minimum analyzed path `0.20 m`;
+- shifted world, bounds, start, sources, hue ratio, and seed;
+- exact one-fill known topology;
+- three topology-exhausted retries;
+- bounded `60.0 s` post-recovery affine guidance with gain `0.5`;
+- `0.60 m` first-sample operator-equivalent global stop;
+- visible GUI and the existing run, wall, and shutdown bounds.
+
+No controller, state owner, recorder, validator, topic, interface, launch
+owner, cost sign/unit, global-coordinate algorithm input, historical scenario,
+V6 artifact, or physical fork changes.
+
+Before Gazebo, M2.2 must pass:
+
+1. a strict scenario comparison proving that the efficiency cap is the only
+   behavioral difference from M2.1;
+2. launch resolution proving the exact `0.50` binding while all topology,
+   affine, geometry, and stop controls remain unchanged;
+3. the complete schema/runner, detector/supervisor, legacy/V6, recording,
+   final-zero, and shifted-world regression sets already required for M2.1;
+4. installed dry-run and nonexecuting launch instantiation;
+5. source/install hash identity, Phase 08 context validation, diff inspection,
+   live-status update, checkpoint, and clean commit.
+
+Only then may one bounded visible-Gazebo M2.2 attempt use the fresh root:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m2_2
+```
+
+The attempt is retained without automatic retry. M3 remains unauthorized
+unless M2.2 independently passes infrastructure, Stage A, Stage B, exact
+cardinality, collision, forbidden-state/event, and combined predicates.
+
+The M2.2 input is frozen as:
+
+```text
+suite:              phase08_v7_m2_2_efficiency_correction_probe
+experiment version: phase08-v7-m2.2
+case:               v7_m2_2_diagonal_r1p5_h25_18001
+case key:           5078f6eff97d05419af1c59452fba15fb31b34c496e80f5ab3063ac091520e90
+partition:          development
+run count:          1
+Gazebo presentation: visible GUI
+seed:               18001
+start:              (0.0, 0.0), yaw 0
+local:              (1.0606601717798212, 1.0606601717798212)
+local input:        400.0 nominal relative lumens
+global:             (3.5, 3.5)
+global input:       1600.0 nominal relative lumens
+known topology:     1 local, 1 global
+maximum fills:      1
+detector gate:      SEARCH-only, 0.20 m path, 0.50 efficiency
+affine guidance:    enabled, 60.0 s maximum age
+recovery retries:   3
+wall margin:        0.20 m
+global proximity:   0.60 m
+run timeout:        360 s
+wall timeout:       540 s
+shutdown grace:     45 s
+```
+
+The exact scenario is
+`ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/
+phase08_v7_m2_2_efficiency_correction_probe.yaml`, SHA-256
+`1f11448b37ef8fbfb146124a0141d91d3404ee614d6d33e3a30f58aa0a179439`.
+Any byte change requires a new hash and repetition of the no-Gazebo boundary.
+
 ## Milestones
 
 ### M0 — geometry contract

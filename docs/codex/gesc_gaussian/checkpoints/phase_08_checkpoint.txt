@@ -1,45 +1,49 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-30T00:06:43+00:00
-Base HEAD: 46a06c665fafb19edcd6d3ef7553907f1656b05e
+Generated: 2026-07-30T00:14:02+00:00
+Base HEAD: c2316474dae3c69a1d3193227143194ddd42e941
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 571c56a2c4cd4e57b25655bc4b8d93dcda87bd813c88329185ddec2da2c03095
+Status sha256: 0bc1e62086f273623aaa7b590a8a66dc3824dfef6cbc8db6d09d09e95f3c0822
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
-Active subphase plan sha256: 00b4530604761fe0854bc24ef054872e9360b3c15d6519c08b3c10ad6026b881
-Unstaged diff sha256: 0751068d770c27d733d90bed9283bda852938486e754a5c0a90dd2dcdd460fa1
+Active subphase plan sha256: f3774749889b963d3c1adf69f90e2645ff2281eaf4c7829a8bb3c02819d41a60
+Unstaged diff sha256: 96a5de7eb728588b8c67d855980c62b8e4f157775b8eecb4f3fd6094e0e23b67
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 54]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 55]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
+ M docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
-?? docs/codex/gesc_gaussian/validation/phase_08_7_m2_1_correction_probe_report.md
+ M ros2_ws/src/ros_esc/test/test_scenario_runner.py
+ M ros2_ws/src/ros_esc/test/test_scenario_schema.py
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m2_2_efficiency_correction_probe.yaml
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  56 +-------
- docs/codex/gesc_gaussian/status/phase_08_status.md | 149 +++++++++++++++++++++
- 2 files changed, 155 insertions(+), 50 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  38 ++------
+ docs/codex/gesc_gaussian/plans/phase_08_7_plan.md  |  94 ++++++++++++++++++
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 108 +++++++++++++++++++++
+ ros2_ws/src/ros_esc/test/test_scenario_runner.py   |  24 +++++
+ ros2_ws/src/ros_esc/test/test_scenario_schema.py   |  42 ++++++++
+ 5 files changed, 278 insertions(+), 28 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**Phase 08.7 M2.1 — retained FAIL. Infrastructure passed; the uncalibrated
-`0.35` detector compactness cap prevented Stage A.**
+**Phase 08.7 M2.2 — no-Gazebo qualification PASS; exact input ready for
+checkpoint and commit.**
 
 ### Next criterion
 
-Checkpoint and commit the immutable M2.1 result. A separately versioned M2.2
-may preserve every qualified implementation, geometry, topology, affine, and
-stop value while changing only the empirically contradicted maximum path
-efficiency from `0.35` to `0.50`, with a fresh hash, key, evidence root,
-qualification, checkpoint, and commit. M3 remains unauthorized.
+Checkpoint and commit the exact M2.2 scenario, Plan, tests, and status. Verify
+the clean commit and unchanged installed hash, then run exactly one bounded
+visible probe without automatic retry.
 
 
 This file describes the base HEAD and diff before the next commit; it is
