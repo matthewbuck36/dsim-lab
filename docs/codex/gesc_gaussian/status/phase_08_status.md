@@ -8253,3 +8253,127 @@ conditional eight-case two-light suite predeclared.**
 Checkpoint and commit the retained visible result plus exact suite dispatch
 record. Then reconfirm the clean domain/evidence/process boundary and execute
 only the fixed serial headless suite.
+
+## Phase 08.7 M4.4 retained two-light suite result
+
+The committed eight-case suite ran exactly once in fixed order on ROS domain
+`164` from `2026-07-30T10:55:19.930174Z` through
+`2026-07-30T11:38:21.719708Z`. The outer `5400 s` timeout did not fire.
+The suite returned `1` because the all-case readiness gate failed.
+
+Retained summary:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_4/
+  phase08_v7_m4_4_two_light_suite_summary.yaml
+
+SHA-256
+d5ab58ad26c8329c20e08b4954697daca6a5f01bd4a821856202fc16761d2897
+```
+
+The immutable result is:
+
+```text
+fixed visible probe:               1/1 PASS
+spatial suite cases:               3/5 PASS
+repeat suite cases:                2/3 PASS
+all suite cases:                   5/8 PASS
+visible plus suite:                6/9 PASS
+Stage A local recovery:            7/8 PASS, one unavailable
+exact unique fill cardinality:     7/8 PASS, one unavailable
+Stage B global proximity:          5/8 PASS, two fail, one unavailable
+complete recording:                7/8 PASS, each 48/48
+cleanup:                           8/8 PASS
+collision and forbidden evidence:  7/7 behavioral attempts PASS
+combined two-light readiness:      FAIL
+```
+
+Per-case outcomes:
+
+- `v7_m4_4_r1p0_a45_h25_18409`: **PASS**. The former M4.3 corner
+  recenter failure now completes Stage A and reaches Stage B at
+  `1.1981386677 m`, proving the adaptive-recenter correction.
+- `v7_m4_4_r1p5_a22p5_h25_18409`: **infrastructure invalid**. The
+  controller manager loaded `velocity_controller`, its first load response
+  was lost, and the Humble spawner's non-idempotent retry failed on
+  “already loaded.” Cleanup and SQLite integrity passed; Stage A/B are
+  unavailable.
+- `v7_m4_4_r1p5_a45_h25_18409`: **PASS**, Stage B
+  `1.1990207307 m`.
+- `v7_m4_4_r1p5_a67p5_h25_18409`: **PASS**, Stage B
+  `1.1997246446 m`.
+- `v7_m4_4_r2p0_a45_h25_18409`: **FAIL**, with complete `48/48`
+  evidence. Stage A and exact one-fill cardinality pass, but the full
+  `120.020 s` Stage B budget expires at `3.3300033703 m`.
+- `v7_m4_4_repeat_r1p5_a45_h25_18410`: **FAIL**, with complete
+  `48/48` evidence. Stage A occurs at `452.022 s`, leaving only
+  `29.104 s` before the fixed `480 s` recording ends; the declared
+  `120 s` Stage B opportunity was not reserved.
+- `v7_m4_4_repeat_r1p5_a45_h25_18411`: **PASS**, Stage B
+  `1.1969963924 m`.
+- `v7_m4_4_repeat_r1p5_a45_h25_18412`: **PASS**, Stage B
+  `1.1986026674 m`.
+
+No behavioral case entered `FAILSAFE`, collided, emitted a forbidden
+in-readiness state/event, or failed cleanup/final-zero. The wall-margin and
+collision gates are therefore not the cause of the remaining behavioral
+failure.
+
+The radius-2.0 trace isolates the supervisor defect. The source-led window
+moved `0.163114 m` in a northeast direction that reduced global distance
+from `3.043 m` to `2.886 m`. The fallback then selected
+`(-0.894328, -0.447412)`, whose dot product with the observed source-led
+direction is approximately `-1.000`. It was an exact reversal chosen because
+fill-clearance remained the primary score. The fallback and its refresh
+moved the robot away to `3.828 m`; recenter recovered some distance, but
+the second fill-clearance epoch moved away again. Ordinary SEARCH resumed
+too late to meet the budget.
+
+All seven behavioral first source-led windows ended at net displacement at
+most `0.20 m`; none directly completed the M4.4 source-led handoff.
+Consequently, M4.4 withheld premature affine/supervisor authority but did
+not use the observed source-led displacement to constrain the fallback.
+
+The repeat-18410 result exposes a separate runner defect: schema v7 checks
+only `post_stage_a_timeout_sec < run_timeout_sec`, not that a complete Stage
+B budget remains after a late Stage A. The startup-invalid attempt exposes a
+third independent defect in Humble controller-spawner load idempotency.
+
+The standard analyzer ran exactly once per attempt. Six behavioral analyses
+are `complete`; the corner pass is `partial` only because one
+`0.358869 s` AlgorithmState gap invalidated derived state durations, while
+all critical inputs, `48/48` completeness, eight plots, and eleven tables
+remain present. The infrastructure-invalid bag correctly produced no
+analysis artifact. Read-only SQLite `PRAGMA quick_check` is `ok` for all
+eight bags.
+
+Full report:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m4_4_two_light_suite_report.md
+```
+
+No optional three-light run occurred.
+
+## Current milestone
+
+**Phase 08.7 M4.4 — CLOSED / TWO-LIGHT QUALIFICATION FAIL /
+5 PASS, 2 BEHAVIORAL FAIL, 1 INFRASTRUCTURE INVALID /
+NOT SIMULATION-READY.**
+
+### Next criterion
+
+Checkpoint and commit the immutable M4.4 suite result. Any further correction
+must use a fresh planned version. It must preserve M4.4, M4.3, V6, all
+historical scenarios/evidence, the `1.20 m` primary Stage B boundary,
+physical-room/collision hard gates, exact one-fill cardinality, sole
+`/cmd_vel` ownership, and simulation/physical algorithm parity.
+
+A fresh bounded correction should prevent an evidence-backed source-led
+direction from being reversed by the radial fill-clearance fallback, reserve
+the complete post-Stage-A budget, and recover idempotently from the observed
+controller loaded/response-lost startup state. It must qualify without
+Gazebo and be checkpointed/committed before any fresh simulation. The
+optional three-light probe, Phase 09, and physical hardware remain
+unauthorized.
