@@ -5214,3 +5214,194 @@ Checkpoint and commit the exact M2.3 runtime changes, scenario, tests, Plan,
 and status. Verify a clean commit, unchanged installed scenario hash, absent
 evidence root, and inactive ROS/Gazebo process set before dispatching exactly
 one bounded visible probe without automatic retry.
+
+## Phase 08.7 M2.3 committed dispatch boundary
+
+The qualified M2.3 material was committed cleanly at:
+
+```text
+9a2612beb0e987c4d328d04660529f77a2f089af
+phase 08.7: qualify M2.3 recovery contract
+```
+
+The source and isolated installed scenario remain identical at SHA-256
+`f03db4462527620321eb299656d9f56fe32e10362664e595f7d3850fc3f53eca`.
+The fresh evidence root is absent and no ROS/Gazebo scenario process is
+running.
+
+Exactly one visible attempt is predeclared on ROS domain `101`:
+
+```text
+source /opt/ros/humble/setup.bash
+source /tmp/phase08_7_m2_3_qual/install/setup.bash
+ROS_DOMAIN_ID=101
+ROS_LOG_DIR=/tmp/phase08_7_m2_3_probe_ros_logs
+MPLCONFIGDIR=/tmp/phase08_7_m2_3_probe_mpl
+TURTLEBOT3_MODEL=burger
+DISPLAY=:0
+timeout --signal=INT --kill-after=60s 660s \
+  ros2 run ros_esc run_scenario \
+  /tmp/phase08_7_m2_3_qual/install/ros_esc/share/ros_esc/\
+scenario_runner/scenarios/phase08_v7_m2_3_assisted_recovery_stop_probe.yaml \
+  --operator phase08_7_m2_3 \
+  --case-id v7_m2_3_diagonal_r1p5_h25_18001 \
+  --runs-root \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m2_3 \
+  --summary-output \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m2_3/\
+phase08_v7_m2_3_assisted_recovery_stop_probe_summary.yaml \
+  --gui
+```
+
+The result will be retained without automatic retry. M3, physical hardware,
+parameter changes, a second M2.3 attempt, and readiness claims remain outside
+this dispatch.
+
+## Phase 08.7 M2.3 execution and retained pass
+
+Exactly one bounded visible-Gazebo M2.3 attempt was executed on ROS domain
+`101`. The runner returned `0`:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m2_3/
+  2026-07-30/
+  20260730T005434366368Z_simulation_phase08_v7_m2_3_
+  assisted_recovery_stop_probe-v7_m2_3_diagonal_r1p5_h25_18001-
+  rob_fe3286c1
+```
+
+The result is retained as **PASS**:
+
+```text
+infrastructure/recording/cleanup:       PASS
+detector local confirmation:            PASS
+exact unique fill cardinality:          PASS
+Stage A local recovery:                 PASS
+Stage B post-recovery global proximity: PASS
+collision expectation:                  PASS
+combined behavioral result:             PASS
+```
+
+### Local detection, fill, and recovery
+
+SEARCH-only convergence candidates occurred at source times `131.8`, `153.8`,
+and `175.9 s`, with path efficiencies `0.2852566130`, `0.3430636994`, and
+`0.3616799274`. The last candidate produced `CONVERGENCE_CONFIRMED`.
+
+The convergence point was `(1.3938876873, 1.1160647584) m`,
+`0.3378020801 m` from the declared local and `3.1810149811 m` from the
+global. Exactly one typed fill cluster was created: cluster/fill identity
+`1`, center `(1.3945263243, 1.2521809924) m`, and
+`0.1361177322 m` fill-to-convergence distance.
+
+The in-readiness path was:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> RECENTER
+-> SEARCH
+```
+
+Repulse began at `185.2 s`, reached its stable exit and entered recenter at
+`194.6 s`, and returned to `SEARCH` at `208.0 s`. All required causal events
+were present. The direct path passed in this attempt; the alternative legal
+redesign-assisted path remains qualified by the pre-run contract tests.
+
+### Affine assistance and global operator stop
+
+Post-recovery affine guidance was enabled and active. Immediately after
+recenter the recorded weights were
+`(sensor, Gaussian, affine) = (1, 1, 1)`.
+
+After Stage A and exact one-fill cardinality passed, the live monitor stopped
+on the first qualifying noninterpolated odometry sample:
+
+```text
+bag timestamp:        1785373119246261619
+sample index:         6940
+position:             (3.4433011933, 2.3021489031) m
+distance to global:   1.1991922303 m
+committed radius:     1.20 m
+valid post-A samples: 905
+invalid post-A:       0
+interpolation used:   false
+```
+
+No collision, in-readiness `FAILSAFE`, `TIMEOUT`, forbidden event, or
+evidence-integrity failure preceded the stop. The explicit-stop `FAILSAFE`
+samples emitted during shutdown occur after readiness is false and do not
+alter the behavioral result. This is the committed simulation equivalent of
+the user's allowed physical `Ctrl+C` once the robot is observably close enough
+to the global minimum.
+
+The controller-goal diagnostic is false because there is intentionally no
+`GOAL_REACHED`/`GOAL_HOLD` requirement. Independent simulation ground truth,
+Stage B, and combined classification pass.
+
+### Infrastructure and retained evidence
+
+The recorder returned `0`, did not time out, and completed final-zero and
+final-readiness-false. Cleanup passed with no remaining new nodes or session
+processes. `validate_run` returned `0`, `passed=true`, with no failures or
+warnings. Read-only sqlite `PRAGMA quick_check` returned `ok`.
+
+Standard analysis completed at `<run>/analysis/phase07` with eight plots,
+eleven tables, and no analysis failures. It reports
+`236.992702246 s` readiness, `14.9839405545 m` path length, one successful
+escape attempt, one active/created fill, no in-readiness failsafe or timeout,
+no collision, and terminal `SEARCH`.
+
+Immutable evidence SHA-256:
+
+```text
+b607f577f261f1b133d730abbe51fe372c3141804fe48406bc2f6b66d33bfd1f  suite summary
+9a85e950a341a6c4c1f69aefbbcb3d87d469deea068d0923ad3530766d010819  scenario_result.yaml
+337be8d933be644cc37d3b0b1b93ed052336d0997f64bc7e231d67c7829fcb81  completeness.json
+b14cb52d1d2eaa5e24f2bb50e4d84a95934678f7e6f3c86ad85b8d788340b9f3  bag/bag_0.db3
+16e5136fa7a4b4715054ce50320bb0e7720dd83d20b0cda0e09b7083a3d5ee0b  analysis/phase07/summary_metrics.json
+3d9497adda29ca8ef255473c6a55b248810b9382a8798a88489e91cdf43e99dd  analysis/phase07/analysis_completeness.json
+```
+
+Full commands, causal evidence, classification, and limitations are retained
+in:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m2_3_assisted_recovery_stop_probe_report.md
+```
+
+M2.3 is closed and will not be retried or relabeled. It establishes the
+declared prerequisite for a separately authorized M3 spatial suite, but one
+development pass is not repeatability or simulation-readiness evidence.
+M3, physical hardware, a second M2.3 attempt, and readiness claims remain
+unauthorized.
+
+### Result checkpoint
+
+The bounded material-boundary command passed:
+
+```text
+timeout 180s \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/\
+checkpoint_phase.sh 08
+```
+
+It wrote
+`docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt` against base
+HEAD `9a2612beb0e987c4d328d04660529f77a2f089af`. `git diff --check` and the
+Phase 08 implementation-context validator pass, the qualified source/install
+scenario hashes remain identical, and the ROS/Gazebo scenario process set is
+inactive.
+
+## Current milestone
+
+**Phase 08.7 M2.3 — retained PASS. Stage A, Stage B, exact fill cardinality,
+collision, infrastructure, validation, and combined predicates all passed.**
+
+### Next criterion
+
+Commit the immutable M2.3 result and verify a clean worktree. Stop before M3
+unless the user separately authorizes its frozen multi-position suite.

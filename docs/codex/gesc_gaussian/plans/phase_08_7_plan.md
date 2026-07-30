@@ -3,8 +3,8 @@
 ## Status and authority
 
 **M1 IMPLEMENTED AND QUALIFIED; M2, M2.1, AND M2.2 EXECUTED AND
-RETAINED; M2.3 CORRECTION AND ONE PROBE AUTHORIZED; M3 AND LATER EXECUTION
-NOT AUTHORIZED.**
+RETAINED AS FAILED; M2.3 EXECUTED AND RETAINED AS PASSED; M3 AND LATER
+EXECUTION NOT AUTHORIZED.**
 
 The user approved the geometry in this Plan on 2026-07-29. M1 was implemented,
 qualified without Gazebo execution, checkpointed, and committed at `7c87e5a`.
@@ -15,6 +15,13 @@ failed. It was not retried. This authority does not extend to M3, physical
 hardware, a 120-run campaign, Phase 09, or a simulation-readiness claim, and
 it does not modify the sealed Phase 08.6 scenarios, world, evidence, results,
 or handoff.
+
+The bounded M2.1, M2.2, and M2.3 corrections were subsequently authorized and
+executed as separately versioned fixed experiments. M2.1 and M2.2 remain
+failed and immutable. The single M2.3 development probe passed Stage A, Stage
+B at the committed `1.20 m` operator-equivalent boundary, exact one-fill
+cardinality, collision, recording, completeness, and cleanup predicates. It
+establishes the prerequisite for, but does not authorize, M3.
 
 The user resolved the V6 acceptance-window ambiguity on 2026-07-29. Each run
 must report local-recovery success separately from post-recovery global
@@ -766,6 +773,43 @@ phase08_v7_m2_3_assisted_recovery_stop_probe.yaml`, SHA-256
 `f03db4462527620321eb299656d9f56fe32e10362664e595f7d3850fc3f53eca`.
 Any byte change requires a new hash and repetition of the complete no-Gazebo
 boundary.
+
+## M2.3 execution result
+
+The one predeclared visible-Gazebo M2.3 attempt passed. It confirmed the
+intended local at `(1.3938876873, 1.1160647584) m`, created exactly one typed
+fill cluster centered at `(1.3945263243, 1.2521809924) m`, completed the
+direct legal escape/recenter path, and returned to `SEARCH`. The staged
+reporter correctly retained Stage A.
+
+Post-recovery affine guidance was active with
+`(sensor, Gaussian, affine) = (1, 1, 1)`. After Stage A and exact-cardinality
+completion, the live monitor stopped on the first noninterpolated sample
+within `1.20 m` of the declared global:
+
+```text
+position:           (3.4433011933, 2.3021489031) m
+distance to global: 1.1991922303 m
+interpolation used: false
+collision observed: false
+```
+
+Recording, final-zero, final-readiness-false, validation, sqlite integrity,
+analysis, and cleanup all passed. The runner exited `0`, all declared
+classification predicates are true, and the combined result is **PASS**.
+The controller-goal diagnostic remains false because the operator-equivalent
+boundary intentionally does not require `GOAL_REACHED` or `GOAL_HOLD`.
+
+The immutable evidence and full report are retained at:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m2_3/
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m2_3_assisted_recovery_stop_probe_report.md
+```
+
+This is one development result, not repeatability or readiness evidence. M3
+remains unauthorized.
 
 ## Milestones
 
