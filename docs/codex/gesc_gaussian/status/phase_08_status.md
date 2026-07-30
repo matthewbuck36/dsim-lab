@@ -9511,3 +9511,86 @@ TWO-LIGHT PROBE PREDECLARED / NO M4.7 SIMULATION YET.**
 Checkpoint and commit this exact dispatch boundary, then execute the command
 once. Preserve the attempt and stop on any failure. Do not dispatch the
 headless suite unless the visible combined result passes every predicate.
+
+## Phase 08.7 M4.7 retained visible-probe failure
+
+The exact visible-dispatch boundary was checkpointed and committed before
+execution at:
+
+```text
+e7fb0832f1367f25720da78ef42ecc1a96c87da7
+phase 08.7: checkpoint M4.7 visible dispatch
+```
+
+The one predeclared visible attempt then ran exactly once on ROS domain
+`167`. It is retained at:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_7_probe/
+  2026-07-30/
+  20260730T192901277523Z_simulation_phase08_v7_m4_7_visible_probe-
+  v7_m4_7_probe_r2p0_a45_h25_18508-robust_gaussian_v_97a8eeda
+```
+
+The outer timeout did not fire. Recording returned `0`; the runner returned
+`1` because the combined behavioral gate failed. Infrastructure,
+readiness, cleanup, no collision, forbidden-state/event absence, final
+zero/readiness false, the required recovery path/events, Stage A, exactly
+one created/typed/active fill, and the complete `120.020 s` Stage B
+opportunity all pass.
+
+Stage B fails. Its timeout sample was
+`(1.5263398997, 1.3052441668) m`, `2.9516584082 m` from the global.
+There were `3534` valid post-Stage-A noninterpolated odometry samples, zero
+invalid samples, and none within the primary `1.20 m` or diagnostic
+`1.00 m` radius. The reconstructed best post-Stage-A distance was
+`2.7448591895 m`.
+
+M4.7's new source-resume corridor did not arm. The live source-led handoff
+started at `157.500 s` and stalled at `169.500 s`. At that stall boundary,
+the reconstructed radial/source dot was `+0.0141931043`, correctly outside
+the explicit `-0.80` reversal detector. The measured source-led direction
+was global-opposing with global-direction alignment `-0.5248527808`.
+There is no source-continuity bypass, source-resume corridor,
+direction-change, clearance, projected-progress, corridor completion, or
+corridor exhaustion event. The retained generic fallback instead refreshed
+direction, requested one recoverable recenter, then released to ordinary
+search.
+
+This was not a wall, collision, failsafe, room-boundary, staged-budget, or
+global-stop failure. Minimum physical-wall clearance during Stage B was
+`0.7866039955 m`; no collision, algorithm `TIMEOUT`, in-readiness
+`FAILSAFE`, or room-boundary event occurred. The stop was the planned
+post-Stage-A boundary.
+
+The standard analyzer ran exactly once and completed with zero failures,
+eight plots, and eleven tables. Fresh Phase 05 and standalone installed
+validation pass. Read-only SQLite validation returns `quick_check=ok` for
+`587675` messages and `34` topics. The bag hash remained unchanged.
+
+The durable report is:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m4_7_visible_probe_report.md
+SHA-256
+35c5c0efb896e9864c48c8957a495f696e3c40f96a86f20a12ad60f67f563684
+```
+
+No retry or parameter change occurred. The fixed headless suite did not run
+and its evidence root remains absent. No three-light, Phase 09, physical, or
+hardware action occurred.
+
+## Current milestone
+
+**Phase 08.7 M4.7 — CLOSED / VISIBLE GATE BEHAVIORAL FAIL /
+INFRASTRUCTURE, STAGE A, ONE-FILL, SAFETY, FULL-BUDGET PASS /
+STAGE B FAIL / CORRIDOR NOT ARMED / SUITE NOT RUN /
+NOT SIMULATION-READY.**
+
+### Next criterion
+
+Finalize the report hash, checkpoint this retained failed boundary, and
+commit it. Any further correction requires a fresh reviewed version, fresh
+identities, complete no-Gazebo qualification, checkpoint, and commit before
+another simulation. Do not retry M4.7 or dispatch its headless suite.
