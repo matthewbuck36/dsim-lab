@@ -903,6 +903,8 @@ def _run_record_to_global_proximity(
         'fill_cardinality': False,
         'stage_a_evidence': None,
         'stage_error': None,
+        'global_approach': False,
+        'global_approach_sample': None,
         'global_proximity': False,
         'global_sample': None,
     }
@@ -947,10 +949,7 @@ def _run_record_to_global_proximity(
     def odometry_callback(message):
         sample_sequence = next_sequence()
         refresh_stage_a()
-        if (
-            not observed['stage_a']
-            or not observed['fill_cardinality']
-        ):
+        if not observed['stage_a']:
             return
         completion_sequence = observed['stage_a_evidence'].get(
             'stage_a_completion_stamp'
@@ -971,6 +970,22 @@ def _run_record_to_global_proximity(
             x_value - global_source['x_m'],
             y_value - global_source['y_m'],
         )
+        approach_radius = staged_contract.get('global_approach_radius_m')
+        if (
+            approach_radius is not None
+            and not observed['global_approach']
+            and distance <= approach_radius
+        ):
+            observed['global_approach'] = True
+            observed['global_approach_sample'] = {
+                'callback_sequence': sample_sequence,
+                'position': {'x_m': x_value, 'y_m': y_value},
+                'distance_m': distance,
+                'proximity_radius_m': approach_radius,
+                'interpolation_used': False,
+            }
+        if not observed['fill_cardinality']:
+            return
         if distance <= staged_contract['global_proximity_radius_m']:
             observed['global_proximity'] = True
             observed['global_sample'] = {
@@ -1090,7 +1105,7 @@ def _run_record_to_global_proximity(
                     cleanup_error = exc
         if primary_error is None and cleanup_error is not None:
             raise cleanup_error
-    return {
+    result = {
         'return_code': process.returncode,
         'timed_out': timed_out,
         'stdout': stdout,
@@ -1108,6 +1123,14 @@ def _run_record_to_global_proximity(
         'global_proximity_sample_live': observed['global_sample'],
         'staged_monitor_error': observed['stage_error'],
     }
+    if 'global_approach_radius_m' in staged_contract:
+        result.update({
+            'global_approach_observed_live': observed['global_approach'],
+            'global_approach_sample_live': observed[
+                'global_approach_sample'
+            ],
+        })
+    return result
 
 
 def run_record_process(
@@ -2039,10 +2062,13 @@ def _post_recovery_global_proximity(
     stage_a_passed,
     stage_a_evidence,
     odometry_records,
+    radius_key='global_proximity_radius_m',
 ):
     """Find the first finite, noninterpolated post-Stage-A global sample."""
     contract = resolved.get('success', {}).get('staged_recovery')
     if contract is None:
+        return None, None, None
+    if radius_key not in contract:
         return None, None, None
     if not stage_a_passed or not stage_a_evidence:
         return False, {'reason': 'Stage A did not complete'}, None
@@ -2051,6 +2077,7 @@ def _post_recovery_global_proximity(
         return None, None, 'Stage A completion stamp is unavailable'
     sources = {source['id']: source for source in resolved['sources']}
     global_source = sources[contract['global_source_id']]
+    radius = contract[radius_key]
     invalid_samples = 0
     valid_samples = 0
     for sample_index, (bag_stamp, message) in enumerate(odometry_records):
@@ -2070,16 +2097,14 @@ def _post_recovery_global_proximity(
             x_value - global_source['x_m'],
             y_value - global_source['y_m'],
         )
-        if distance <= contract['global_proximity_radius_m']:
+        if distance <= radius:
             return True, {
                 'global_source_id': contract['global_source_id'],
                 'global_point': {
                     'x_m': global_source['x_m'],
                     'y_m': global_source['y_m'],
                 },
-                'proximity_radius_m': contract[
-                    'global_proximity_radius_m'
-                ],
+                'proximity_radius_m': radius,
                 'sample_bag_stamp': bag_stamp,
                 'sample_index': sample_index,
                 'position': {'x_m': x_value, 'y_m': y_value},
@@ -2091,7 +2116,7 @@ def _post_recovery_global_proximity(
     return False, {
         'reason': 'no qualifying post-Stage-A odometry sample',
         'global_source_id': contract['global_source_id'],
-        'proximity_radius_m': contract['global_proximity_radius_m'],
+        'proximity_radius_m': radius,
         'post_stage_a_valid_sample_count': valid_samples,
         'post_stage_a_invalid_sample_count': invalid_samples,
         'interpolation_used': False,
@@ -2106,6 +2131,20 @@ def _non_ground_collision(message):
             'ground_plane' not in state.collision1_name
             and 'ground_plane' not in state.collision2_name
         )
+    )
+
+
+def _collision_before_sample(contact_records, sample_evidence):
+    """Return whether a non-ground contact precedes an evidence sample."""
+    if not sample_evidence:
+        return False
+    sample_stamp = sample_evidence.get('sample_bag_stamp')
+    if sample_stamp is None:
+        return False
+    return any(
+        _non_ground_collision(message)
+        for stamp, message in contact_records
+        if stamp <= sample_stamp
     )
 
 
@@ -2282,6 +2321,39 @@ def _bag_outcomes(run_directory, resolved):
             **global_proximity_evidence,
             'reason': 'fill cardinality was not complete at proximity',
         }
+    approach_radius_declared = (
+        'global_approach_radius_m'
+        in resolved.get('success', {}).get('staged_recovery', {})
+    )
+    global_approach_passed = None
+    global_approach_evidence = None
+    if approach_radius_declared:
+        (
+            global_approach_passed,
+            global_approach_evidence,
+            approach_error,
+        ) = _post_recovery_global_proximity(
+            resolved,
+            stage_a_passed,
+            stage_a_evidence,
+            odometry_records,
+            radius_key='global_approach_radius_m',
+        )
+        outcome_error = outcome_error or approach_error
+        if global_approach_passed and global_approach_evidence:
+            collision_before_approach = _collision_before_sample(
+                contact_records,
+                global_approach_evidence,
+            )
+            if collision_before_approach:
+                global_approach_passed = False
+                global_approach_evidence = {
+                    **global_approach_evidence,
+                    'reason': (
+                        'non-ground collision occurred before approach'
+                    ),
+                    'collision_before_approach': True,
+                }
     collision_scope_end = None
     if (
         resolved.get('schema_version', 1) >= 5
@@ -2408,7 +2480,7 @@ def _bag_outcomes(run_directory, resolved):
             observations['observed_events'],
         )
         scope_results[scope_name] = observations
-    return {
+    outcomes = {
         'readiness_interval_available': first_true is not None,
         'observed_state_sequence': observed_states,
         'observed_terminal_state': (
@@ -2465,6 +2537,14 @@ def _bag_outcomes(run_directory, resolved):
         'result_scopes': scope_results,
         'outcome_error': outcome_error,
     }
+    if approach_radius_declared:
+        outcomes.update({
+            'post_recovery_global_approach_passed': (
+                global_approach_passed
+            ),
+            'post_recovery_global_approach': global_approach_evidence,
+        })
+    return outcomes
 
 
 def classify_result(
@@ -2695,6 +2775,21 @@ def classify_result(
                 'infrastructure_status': infrastructure_status,
             },
         }
+        staged_recovery = resolved.get('success', {}).get(
+            'staged_recovery', {}
+        )
+        if 'global_approach_radius_m' in staged_recovery:
+            staged_results['global_region_approach'] = {
+                'passed': outcomes.get(
+                    'post_recovery_global_approach_passed'
+                ),
+                'observed_live': process_result.get(
+                    'global_approach_observed_live'
+                ),
+                'evidence': outcomes.get(
+                    'post_recovery_global_approach'
+                ),
+            }
     classification = {
         'passed': passed,
         'status': status,

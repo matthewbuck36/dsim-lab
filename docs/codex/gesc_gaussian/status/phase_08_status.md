@@ -5482,3 +5482,161 @@ commit.**
 Implement the optional non-gating approach diagnostic and exact five-case
 suite. Qualify the complete source/install boundary, checkpoint, and commit it
 before creating the fresh evidence root or launching Gazebo.
+
+## Phase 08.7 M3 implementation and no-Gazebo qualification
+
+M3's additive reporter and exact spatial suite are implemented without
+changing the controller, detector, supervisor, fill owner, central launch
+graph, recorder, validator, analyzer, shifted world, M2.3 algorithm values, or
+historical scenarios.
+
+The optional schema-v5
+`success.staged_recovery.global_approach_radius_m`:
+
+- is present in normalized output only when declared;
+- requires post-recovery guidance;
+- must be strictly greater than the primary radius and no greater than
+  `1.20 m`;
+- records the first finite noninterpolated post-Stage-A odometry sample;
+- is invalidated by a non-ground collision before that sample;
+- is retained live without stopping the recorder before the primary radius;
+- appears as `staged_results.global_region_approach` and is absent from every
+  required predicate and combined-success calculation.
+
+Absent the field, M2.3 normalization, live result shape, classification shape,
+and its case key remain unchanged. Schema-v1 through schema-v4 and the sealed
+historical identities remain unchanged.
+
+### Exact qualified input
+
+```text
+suite:
+  phase08_v7_m3_spatial_suite
+scenario:
+  1221d8cb9d7235218d4f3da710f10d41284632a93712bd89d763d938a0437dae
+resolved runs: 5
+unsupported:   0
+seed:          18101 for every case
+execution:     serial, headless
+primary:       1.00 m
+diagnostic:    1.20 m
+root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m3
+
+v7_m3_r1p0_a45_h25_18101
+  75d0c27b3cf3b0a88aff539723a907d7bd48c26f218eee2baae89487364b1712
+v7_m3_r1p5_a22p5_h25_18101
+  67d7c6d4959f5656e81394a31509a4a66a516d4fe3cc4625b91b31e2dbba1d0a
+v7_m3_r1p5_a45_h25_18101
+  0bbd09a8898e7bfaafa6fe75b4cd813c286c9d0a378d90df11685393b5100115
+v7_m3_r1p5_a67p5_h25_18101
+  474302bb0c69f67e0efe875bc9031a38dc33f4cd89506d615b7a6e3b1804acf1
+v7_m3_r2p0_a45_h25_18101
+  94deae52e7c35eb428663e4eb099d8078d23f5dda8561b357998a71d46b43614
+```
+
+The source dry-run is retained at
+`/tmp/phase08_7_m3_source_dry_run.yaml`. An initial attempt to invoke the
+source through the old M2.3 installed console wrapper stopped before runner
+entry with `StopIteration` because source `PYTHONPATH` does not carry the old
+distribution entry-point metadata. The direct source-module invocation then
+resolved all five runs and zero unsupported cases. No Gazebo or recorder
+process was started by either command.
+
+### Functional and compatibility evidence
+
+The focused M3/M2.3 contract selection passed:
+
+```text
+24 passed, 116 deselected in 1.42 s
+```
+
+It covers the exact five positions and case identities, primary/diagnostic
+radius validation, M2.3 absence-shape compatibility, distinct first approach
+and primary samples, collision scoping before the approach sample, live
+continuation past `1.20 m`, and proof that the diagnostic cannot rescue or
+fail combined success.
+
+The final clean declared functional envelope used fresh ROS domain `104`,
+explicitly disabled all Gazebo integration opt-ins, and produced:
+
+```text
+556 passed, 2 skipped, 1 deselected in 105.56 s
+JUnit: /tmp/phase08_7_m3_functional_clean.xml
+```
+
+The skips are the explicit recording/Gazebo runtime integrations. The
+deselection is the recorded historical V4 adoption assertion that treats
+later fixed scenarios as an error. The run covers aggregate truth, bag
+analysis, convergence policy, deferred shutdown, escape/recenter, recording,
+legacy behavior, observability, Phase 08 validation, robust Gaussian behavior,
+schema/runner, disturbances, state machine, and supervisor integration.
+
+A broader whole-package superset was also retained at
+`/tmp/phase08_7_m3_functional.xml`. Its functional tests produced
+`561 passed, 3 skipped, 1 deselected`; only the generic whole-tree
+`test_flake8.py` and `test_pep257.py` wrappers failed on `5,209` flake8 and
+`589` pep257 findings in pre-existing historical files. Direct
+`ament_flake8 --linelength 99`,
+`ament_pep257`, compilation, and `git diff --check` all pass on the four
+changed Python files.
+
+The fresh isolated build passed:
+
+```text
+build base:   /tmp/phase08_7_m3_qual/build
+install base: /tmp/phase08_7_m3_qual/install
+log base:     /tmp/phase08_7_m3_qual/log
+Summary: 3 packages finished in 11.5 s
+```
+
+The installed dry-run at
+`/tmp/phase08_7_m3_installed_dry_run.yaml` resolves the same five case keys,
+zero unsupported cases, exact topology, both legal recovery paths, primary
+`1.00 m`, diagnostic `1.20 m`, and the unchanged M2.3 algorithm controls.
+Nonexecuting installed central-launch description generation produced the
+expected `254` lines at
+`/tmp/phase08_7_m3_launch_description.txt` and bound the existing modified
+cost, detector, fill, supervisor, and controller owners without launching
+Gazebo.
+
+Source and isolated-install identities match:
+
+```text
+1221d8cb9d7235218d4f3da710f10d41284632a93712bd89d763d938a0437dae  M3 suite
+342710fd87fb138c44e1edeca8821bb2e9cb0c646da8ca7a38e3b488c2761085  scenario schema
+7d9947de4e46abb9b21adad52768b55d02654bf7f561f6d32ffdf6ee474ec9b6  scenario runner
+9277b63743c7672268721c50b414020fc5951d719f358fd053d5f86d0b06e49c  central launch
+88b10b39aa24a6430f6f031c750334ed34e6835e54c84de8d36f4cc6a26444bf  shifted world
+f03db4462527620321eb299656d9f56fe32e10362664e595f7d3850fc3f53eca  immutable M2.3 suite
+1f11448b37ef8fbfb146124a0141d91d3404ee614d6d33e3a30f58aa0a179439  immutable M2.2 suite
+541194d6152a8384c469f5bcc8573aef9afdb295bde6e148e5a82a692b8e4c8b  immutable M2.1 suite
+```
+
+The Phase 08 implementation-context validator passes, approximately `318 GiB`
+is free, the fresh M3 evidence root remains absent, and the
+Gazebo/runner/recorder process set is inactive.
+
+The bounded material-boundary command passed:
+
+```text
+timeout 180s \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/\
+checkpoint_phase.sh 08
+```
+
+It wrote
+`docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt` against base
+HEAD `888692ece7440f45dc310359116b51f9e1b0972d`.
+
+## Current milestone
+
+**Phase 08.7 M3 — additive reporting and exact five-case input qualified
+without Gazebo; checkpoint and pre-dispatch commit pending.**
+
+### Next criterion
+
+Checkpoint and commit the exact implementation, tests, scenario, Plan, and
+status. Verify a clean commit, identical installed suite hash, absent evidence
+root, and inactive process set before dispatching the five serial headless
+attempts.

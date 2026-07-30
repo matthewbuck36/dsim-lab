@@ -924,6 +924,25 @@ evidence root:
   /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m3
 ```
 
+The qualified pre-dispatch identities are:
+
+```text
+scenario SHA-256:
+  1221d8cb9d7235218d4f3da710f10d41284632a93712bd89d763d938a0437dae
+
+case keys:
+  v7_m3_r1p0_a45_h25_18101
+    75d0c27b3cf3b0a88aff539723a907d7bd48c26f218eee2baae89487364b1712
+  v7_m3_r1p5_a22p5_h25_18101
+    67d7c6d4959f5656e81394a31509a4a66a516d4fe3cc4625b91b31e2dbba1d0a
+  v7_m3_r1p5_a45_h25_18101
+    0bbd09a8898e7bfaafa6fe75b4cd813c286c9d0a378d90df11685393b5100115
+  v7_m3_r1p5_a67p5_h25_18101
+    474302bb0c69f67e0efe875bc9031a38dc33f4cd89506d615b7a6e3b1804acf1
+  v7_m3_r2p0_a45_h25_18101
+    94deae52e7c35eb428663e4eb099d8078d23f5dda8561b357998a71d46b43614
+```
+
 Before Gazebo, implementation must pass focused schema/runner tests for the
 non-gating approach diagnostic, all five exact geometry/case identities,
 M2.3 launch-value preservation, historical normalization/case-key
@@ -931,6 +950,16 @@ immutability, the complete M2.3 functional regression envelope, isolated
 build, installed dry-run, source/install identity, nonexecuting launch
 instantiation, context validation, diff inspection, checkpoint, and a clean
 commit of the exact suite.
+
+The implementation passes that no-Gazebo qualification boundary. The declared
+functional envelope produced `556 passed, 2 skipped, 1 deselected`; the
+focused M3/M2.3 contract selection produced `24 passed, 116 deselected`.
+Direct compilation, flake8, and pep257 checks pass on all four changed Python
+files. A fresh isolated build completed all three packages, the installed
+suite resolved the same five case keys with zero unsupported cases, source and
+install hashes match, and nonexecuting central-launch description generation
+completed without starting Gazebo. The evidence root remained absent and the
+Gazebo/runner/recorder process set remained inactive through qualification.
 
 M3 establishes bounded five-position spatial evidence only. It does not
 authorize parameter tuning, automatic retries, multi-seed repeatability, the

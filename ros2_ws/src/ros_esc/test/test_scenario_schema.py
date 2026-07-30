@@ -57,6 +57,11 @@ M2_3_CORRECTION = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v7_m2_3_assisted_recovery_stop_probe.yaml'
 )
+M3_SPATIAL_SUITE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m3_spatial_suite.yaml'
+)
 HISTORICAL_V2_ACTIVATION = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml'
@@ -1084,6 +1089,9 @@ def test_m2_3_changes_only_recovery_paths_and_operator_stop():
     assert m2_3['success']['staged_recovery'][
         'global_proximity_radius_m'
     ] == 1.20
+    assert 'global_approach_radius_m' not in (
+        m2_3['success']['staged_recovery']
+    )
 
     ignored = {
         'case_id',
@@ -1125,6 +1133,114 @@ def test_m2_3_changes_only_recovery_paths_and_operator_stop():
 
     assert m2_3_comparable == m2_2_comparable
     assert deterministic_case_key(m2_3) == m2_3['case_key']
+
+
+def test_m3_freezes_five_position_cross_and_stricter_stop():
+    """Resolve the exact prospective spatial cross without tuning inputs."""
+    suite = load_suite(M3_SPATIAL_SUITE)
+    runs, unsupported = expand_suite(suite)
+    expected = [
+        (
+            'v7_m3_r1p0_a45_h25_18101',
+            0.7071067811865476,
+            0.7071067811865475,
+            1.0,
+            45.0,
+        ),
+        (
+            'v7_m3_r1p5_a22p5_h25_18101',
+            1.38581929876693,
+            0.5740251485476346,
+            1.5,
+            22.5,
+        ),
+        (
+            'v7_m3_r1p5_a45_h25_18101',
+            1.0606601717798214,
+            1.0606601717798212,
+            1.5,
+            45.0,
+        ),
+        (
+            'v7_m3_r1p5_a67p5_h25_18101',
+            0.5740251485476348,
+            1.38581929876693,
+            1.5,
+            67.5,
+        ),
+        (
+            'v7_m3_r2p0_a45_h25_18101',
+            1.4142135623730951,
+            1.414213562373095,
+            2.0,
+            45.0,
+        ),
+    ]
+
+    assert suite['execution']['max_parallel_runs'] == 1
+    assert suite['execution']['gazebo_gui'] is False
+    assert suite['execution']['stop_on_run_failure'] is False
+    assert suite['execution']['stop_on_cleanup_failure'] is True
+    assert unsupported == []
+    assert len(runs) == 5
+    for run, (case_id, x_m, y_m, radius_m, angle_deg) in zip(
+        runs, expected
+    ):
+        assert run['case_id'] == case_id
+        assert run['acceptance_partition'] == 'validation'
+        assert run['seed'] == 18101
+        local = next(
+            source for source in run['sources']
+            if source['evaluation_role'] == 'local_minimum'
+        )
+        assert (local['x_m'], local['y_m']) == (x_m, y_m)
+        placement = run['geometry']['local_placements'][0]
+        assert placement['radius_m'] == pytest.approx(radius_m)
+        assert placement['angle_deg'] == pytest.approx(angle_deg)
+        staged = run['success']['staged_recovery']
+        assert staged['global_proximity_radius_m'] == 1.00
+        assert staged['global_approach_radius_m'] == 1.20
+        assert run['success']['ground_truth'][
+            'proximity_radius_m'
+        ] == 1.00
+        assert deterministic_case_key(run) == run['case_key']
+
+
+@pytest.mark.parametrize(
+    ('approach_radius_m', 'match'),
+    [
+        (1.00, 'must be strictly greater'),
+        (0.99, 'must be strictly greater'),
+        (1.21, 'no greater than 1.20'),
+    ],
+)
+def test_m3_rejects_invalid_approach_diagnostic_radius(
+    tmp_path,
+    approach_radius_m,
+    match,
+):
+    """Keep the optional diagnostic outside the primary acceptance gate."""
+    document = yaml.safe_load(
+        M3_SPATIAL_SUITE.read_text(encoding='utf-8')
+    )
+    document['cases'][0]['success']['staged_recovery'][
+        'global_approach_radius_m'
+    ] = approach_radius_m
+    with pytest.raises(ValueError, match=match):
+        _load(tmp_path, document)
+
+
+def test_global_approach_requires_post_recovery_guidance(tmp_path):
+    """Reject the optional approach report for the historical profile."""
+    document = _v5_document()
+    document['cases'][0]['success']['staged_recovery'][
+        'global_approach_radius_m'
+    ] = 1.20
+    with pytest.raises(
+        ValueError,
+        match='requires post-recovery guidance',
+    ):
+        _load(tmp_path, document)
 
 
 @pytest.mark.parametrize(

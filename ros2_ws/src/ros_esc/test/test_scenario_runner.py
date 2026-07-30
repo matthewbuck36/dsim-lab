@@ -59,6 +59,11 @@ M2_3_CORRECTION = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v7_m2_3_assisted_recovery_stop_probe.yaml'
 )
+M3_SPATIAL_SUITE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m3_spatial_suite.yaml'
+)
 
 
 def test_observed_local_recovery_binds_fill_to_local_convergence():
@@ -661,6 +666,35 @@ def test_m2_3_preserves_launch_and_binds_evidence_stop():
     ) == 2
 
 
+def test_m3_changes_only_position_seed_gui_and_reporting_contract():
+    """Keep every M2.3 algorithm launch value across the fixed M3 cross."""
+    m2_3 = expand_suite(load_suite(M2_3_CORRECTION))[0][0]
+    suite = load_suite(M3_SPATIAL_SUITE)
+    runs, unsupported = expand_suite(suite)
+    ignored_launch_prefixes = (
+        'gazebo_gui:=',
+        'gazebo_random_seed:=',
+        'light_1_x:=',
+        'light_1_y:=',
+    )
+
+    def fixed_launch_values(resolved, gui):
+        return [
+            item for item in build_launch_command(resolved, gui=gui)
+            if not item.startswith(ignored_launch_prefixes)
+        ]
+
+    expected_launch = fixed_launch_values(m2_3, gui=True)
+    assert unsupported == []
+    assert len(runs) == 5
+    for resolved in runs:
+        assert resolved['algorithm'] == m2_3['algorithm']
+        assert fixed_launch_values(resolved, gui=False) == expected_launch
+        staged = resolved['success']['staged_recovery']
+        assert staged['global_proximity_radius_m'] == 1.00
+        assert staged['global_approach_radius_m'] == 1.20
+
+
 def test_staged_recovery_reports_stage_a_cardinality_and_global_sample():
     """Separate local recovery, exact clusters, and post-recovery arrival."""
     resolved = _v5_staged_resolved()
@@ -727,6 +761,68 @@ def test_staged_recovery_reports_stage_a_cardinality_and_global_sample():
     assert stage_a is True
     assert cardinality is False
     assert evidence['unassigned_cluster_ids'] == [43]
+
+
+def test_m3_approach_and_primary_select_distinct_first_samples():
+    """Report approach first while retaining the stricter primary sample."""
+    resolved = expand_suite(load_suite(M3_SPATIAL_SUITE))[0][0]
+    stage_a_evidence = {'stage_a_completion_stamp': 10}
+    odometry = [
+        (9, _odom_message(3.5, 3.5)),
+        (11, _odom_message(3.5, 2.35)),
+        (12, _odom_message(3.5, 2.55)),
+    ]
+
+    approach = runner._post_recovery_global_proximity(
+        resolved,
+        True,
+        stage_a_evidence,
+        odometry,
+        radius_key='global_approach_radius_m',
+    )
+    primary = runner._post_recovery_global_proximity(
+        resolved,
+        True,
+        stage_a_evidence,
+        odometry,
+    )
+
+    assert approach[0] is True
+    assert approach[2] is None
+    assert approach[1]['sample_bag_stamp'] == 11
+    assert approach[1]['distance_m'] == pytest.approx(1.15)
+    assert approach[1]['proximity_radius_m'] == 1.20
+    assert primary[0] is True
+    assert primary[2] is None
+    assert primary[1]['sample_bag_stamp'] == 12
+    assert primary[1]['distance_m'] == pytest.approx(0.95)
+    assert primary[1]['proximity_radius_m'] == 1.00
+
+
+def test_m3_approach_rejects_collision_before_sample():
+    """Scope the diagnostic to collision-free evidence before its sample."""
+    ground = SimpleNamespace(
+        states=[SimpleNamespace(
+            collision1_name='ground_plane::link::collision',
+            collision2_name='burger::base_footprint::collision',
+        )],
+    )
+    wall = SimpleNamespace(
+        states=[SimpleNamespace(
+            collision1_name='east_wall::link::collision',
+            collision2_name='burger::base_footprint::collision',
+        )],
+    )
+    evidence = {'sample_bag_stamp': 12}
+
+    assert runner._collision_before_sample(
+        [(10, ground), (13, wall)],
+        evidence,
+    ) is False
+    assert runner._collision_before_sample(
+        [(10, ground), (11, wall)],
+        evidence,
+    ) is True
 
 
 def test_staged_recovery_accepts_legal_assisted_path():
@@ -827,6 +923,64 @@ def test_staged_classification_retains_stage_a_when_global_stop_fails():
         'stage_b_post_recovery_global_proximity'
     ]['passed'] is True
     assert stopped['staged_results']['combined']['passed'] is True
+    assert 'global_region_approach' not in stopped['staged_results']
+
+
+def test_m3_approach_diagnostic_cannot_rescue_or_fail_combined_result():
+    """Keep the 1.20 m observation outside all primary predicates."""
+    resolved = expand_suite(load_suite(M3_SPATIAL_SUITE))[0][0]
+    outcomes = runner._unavailable_outcomes('unused')
+    outcomes.update({
+        'readiness_interval_available': True,
+        'required_state_path_passed': True,
+        'required_events_passed': True,
+        'forbidden_states_absent': True,
+        'forbidden_events_absent': True,
+        'local_recovery_stage_passed': True,
+        'local_recovery_stage': {'completed_episode_count': 1},
+        'fill_cardinality_passed': True,
+        'post_recovery_global_proximity_passed': True,
+        'post_recovery_global_proximity': {'distance_m': 0.95},
+        'post_recovery_global_approach_passed': False,
+        'post_recovery_global_approach': {
+            'reason': 'collision before approach',
+        },
+        'collision_expectation_passed': True,
+        'result_scopes': {
+            'full_lifecycle': {
+                'anchor_observed': True,
+                'boundary_observed': None,
+                'predicate_results': {},
+            },
+        },
+        'outcome_error': None,
+    })
+    process_result = {
+        'timed_out': False,
+        'return_code': 0,
+        'graceful_global_proximity_stop': True,
+        'global_approach_observed_live': True,
+    }
+
+    classification = classify_result(
+        resolved,
+        {'passed': True},
+        {'passed': True},
+        outcomes,
+        process_result,
+        metadata={},
+        run_directory_available=True,
+    )
+
+    assert classification['passed'] is True
+    diagnostic = classification['staged_results'][
+        'global_region_approach'
+    ]
+    assert diagnostic['passed'] is False
+    assert diagnostic['observed_live'] is True
+    assert 'post_recovery_global_approach' not in (
+        classification['required_predicates']
+    )
 
 
 def test_metadata_and_launch_share_inputs(tmp_path):
@@ -1075,6 +1229,93 @@ def test_bag_without_true_readiness_marks_behavior_unavailable(
     assert outcomes['forbidden_states_absent'] is None
     assert outcomes['forbidden_events_absent'] is None
     assert outcomes['collision_observed'] is None
+
+
+@pytest.mark.parametrize(
+    ('collision_stamp', 'approach_passed'),
+    [(12.5, False), (13.5, True)],
+)
+def test_m3_bag_report_scopes_collision_to_approach_sample(
+    monkeypatch,
+    tmp_path,
+    collision_stamp,
+    approach_passed,
+):
+    """Reject only a diagnostic whose first sample follows a collision."""
+    states, events, fills = _staged_records()
+    records = [
+        (
+            '/gesc_gaussian/recording_ready',
+            SimpleNamespace(data=True),
+            0,
+        ),
+    ]
+    records.extend(
+        ('/gesc_gaussian/algorithm_state', message, stamp)
+        for stamp, message in states
+    )
+    records.extend(
+        ('/gesc_gaussian/algorithm_events', message, stamp)
+        for stamp, message in events
+    )
+    records.extend(
+        ('/gesc_gaussian/gaussian_fills', message, stamp)
+        for stamp, message in fills
+    )
+    records.extend([
+        (
+            '/gesc_gaussian/simulation/contacts',
+            SimpleNamespace(states=[SimpleNamespace(
+                collision1_name='east_wall::link::collision',
+                collision2_name='burger::base_footprint::collision',
+            )]),
+            collision_stamp,
+        ),
+        ('/odom', _odom_message(3.5, 2.35), 13),
+        ('/odom', _odom_message(3.5, 2.55), 14),
+        (
+            '/gesc_gaussian/recording_ready',
+            SimpleNamespace(data=False),
+            15,
+        ),
+    ])
+
+    class FakeReader:
+        def __init__(self):
+            self.records = sorted(records, key=lambda item: item[2])
+
+        def open(self, *_args):  # noqa: A003 - matches rosbag reader API.
+            return None
+
+        def has_next(self):
+            return bool(self.records)
+
+        def read_next(self):
+            return self.records.pop(0)
+
+    monkeypatch.setattr(runner.rosbag2_py, 'SequentialReader', FakeReader)
+    monkeypatch.setattr(
+        runner,
+        'deserialize_message',
+        lambda serialized, _message_type: serialized,
+    )
+    resolved = expand_suite(load_suite(M3_SPATIAL_SUITE))[0][0]
+
+    outcomes = runner._bag_outcomes(tmp_path, resolved)
+
+    assert outcomes['local_recovery_stage_passed'] is True
+    assert outcomes[
+        'post_recovery_global_approach_passed'
+    ] is approach_passed
+    assert outcomes['post_recovery_global_proximity_passed'] is False
+    if approach_passed:
+        assert outcomes['post_recovery_global_approach'][
+            'sample_bag_stamp'
+        ] == 13
+    else:
+        assert outcomes['post_recovery_global_approach'][
+            'collision_before_approach'
+        ] is True
 
 
 def test_bag_outcomes_evaluate_schema_v3_path_event_and_forbidden_evidence(
@@ -2069,10 +2310,14 @@ def test_live_boundary_stop_waits_for_state_and_required_event(monkeypatch):
     assert executor_events == ['created', 'added', 'removed', 'shutdown']
 
 
-@pytest.mark.parametrize('assisted', [False, True])
+@pytest.mark.parametrize(
+    ('assisted', 'approach_diagnostic'),
+    [(False, False), (True, False), (False, True)],
+)
 def test_live_global_stop_waits_for_stage_a_cardinality_and_near_odom(
     monkeypatch,
     assisted,
+    approach_diagnostic,
 ):
     """Stop after either legal recovery path and a near odometry sample."""
     callbacks = {}
@@ -2082,6 +2327,11 @@ def test_live_global_stop_waits_for_stage_a_cardinality_and_near_odom(
     wait_timeouts = []
     private_context = object()
     resolved = _v5_staged_resolved()
+    if approach_diagnostic:
+        resolved['success']['staged_recovery'].update({
+            'global_proximity_radius_m': 1.00,
+            'global_approach_radius_m': 1.20,
+        })
 
     class FakeNode:
         def create_subscription(
@@ -2146,10 +2396,16 @@ def test_live_global_stop_waits_for_stage_a_cardinality_and_near_odom(
         (topic, message)
         for unused_stamp, topic, message in sorted(timed_messages)
     ]
-    sequence.extend([
-        ('/odom', _odom_message(2.5, 2.5)),
-        ('/odom', _odom_message(3.30, 3.30)),
-    ])
+    if approach_diagnostic:
+        sequence.extend([
+            ('/odom', _odom_message(3.5, 2.35)),
+            ('/odom', _odom_message(3.5, 2.55)),
+        ])
+    else:
+        sequence.extend([
+            ('/odom', _odom_message(2.5, 2.5)),
+            ('/odom', _odom_message(3.30, 3.30)),
+        ])
 
     def spin_once(timeout_sec):
         del timeout_sec
@@ -2199,9 +2455,21 @@ def test_live_global_stop_waits_for_stage_a_cardinality_and_near_odom(
     assert result['stage_a_observed_live'] is True
     assert result['fill_cardinality_observed_live'] is True
     assert result['graceful_global_proximity_stop'] is True
-    assert result['global_proximity_sample_live']['distance_m'] == (
-        pytest.approx(runner.math.hypot(0.20, 0.20))
+    expected_primary_distance = (
+        0.95 if approach_diagnostic
+        else runner.math.hypot(0.20, 0.20)
     )
+    assert result['global_proximity_sample_live'][
+        'distance_m'
+    ] == pytest.approx(expected_primary_distance)
+    if approach_diagnostic:
+        assert result['global_approach_observed_live'] is True
+        assert result['global_approach_sample_live'][
+            'distance_m'
+        ] == pytest.approx(1.15)
+    else:
+        assert 'global_approach_observed_live' not in result
+        assert 'global_approach_sample_live' not in result
     assert result['stdout'] == 'global proximity test\n'
     assert executor_events == ['created', 'added', 'removed', 'shutdown']
 

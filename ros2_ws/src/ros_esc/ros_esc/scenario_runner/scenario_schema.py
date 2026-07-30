@@ -207,6 +207,7 @@ STAGED_RECOVERY_KEYS = {
     'convergence_to_global_min_m',
     'fill_to_convergence_max_m',
     'global_proximity_radius_m',
+    'global_approach_radius_m',
 }
 KNOWN_TOPOLOGY_KEYS = {
     'expected_local_minima',
@@ -662,6 +663,23 @@ def _resolve_geometry_profile(
             'global_proximity_radius_m must equal '
             f'{profile["global_proximity_radius_m"]:.2f}'
         )
+    global_approach = staged_recovery.get('global_approach_radius_m')
+    if global_approach is not None:
+        if not corrected_stop:
+            raise ValueError(
+                f'{location}.success.staged_recovery.'
+                'global_approach_radius_m requires post-recovery guidance'
+            )
+        if not (
+            global_proximity < global_approach
+            <= CORRECTED_GLOBAL_PROXIMITY_MAX_M
+        ):
+            raise ValueError(
+                f'{location}.success.staged_recovery.'
+                'global_approach_radius_m must be strictly greater than '
+                'global_proximity_radius_m and no greater than '
+                f'{CORRECTED_GLOBAL_PROXIMITY_MAX_M:.2f}'
+            )
 
     allowed_x_min = bounds[0] + profile['wall_margin_m']
     allowed_x_max = bounds[1] - profile['wall_margin_m']
@@ -2136,7 +2154,7 @@ def load_suite(path):
                     f'{staged_location} sources must have local_minimum '
                     'and goal roles'
                 )
-            staged_recovery = {
+            normalized_staged_recovery = {
                 'local_source_ids': local_source_ids,
                 'global_source_id': global_source_id,
                 'convergence_to_local_max_m': _number(
@@ -2160,6 +2178,15 @@ def load_suite(path):
                     positive=True,
                 ),
             }
+            if 'global_approach_radius_m' in staged_recovery:
+                normalized_staged_recovery[
+                    'global_approach_radius_m'
+                ] = _number(
+                    staged_recovery.get('global_approach_radius_m'),
+                    f'{staged_location}.global_approach_radius_m',
+                    positive=True,
+                )
+            staged_recovery = normalized_staged_recovery
             if (
                 len(local_source_ids)
                 != known_topology['expected_local_minima']
