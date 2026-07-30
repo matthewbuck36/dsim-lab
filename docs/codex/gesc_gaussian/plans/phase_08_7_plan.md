@@ -1954,3 +1954,289 @@ Save, validate, checkpoint, and commit this amendment. Implement and qualify
 the exact evidence correction plus fixed fresh inputs without Gazebo,
 checkpoint and commit the dispatch boundary, then execute only the fixed
 visible probe and its passing-gated serial two-light suite.
+
+## M4.4 adaptive-recenter and source-led-handoff amendment
+
+The active user goal is to fix the two-light behavior fully. M4.3 is closed
+at `6/8` with complete evidence and cannot be retried or changed. M4.4 is the
+fresh Level B behavior-correction version for the two defects established by
+the retained M4.3 suite:
+
+1. a physically valid robot in the southwest wall/fill pinch received an
+   immediate `FAILSAFE` because the recenter selector required a full fixed
+   `0.50 m` candidate horizon;
+2. after a successful local recovery, maximum fill clearance selected a
+   westward direction and gave both supervisor translation and affine bias
+   authority before ordinary source-driven GESC could establish motion.
+
+M4.4 does not reopen, retry, overwrite, relabel, or count M4.3, M4.2, M4.1,
+M4, M3, M2.3, V6, or any historical attempt. It changes no source geometry,
+light value, start pose, fill estimator, detector threshold, local topology,
+Stage A path, Stage B radius, collision contract, cost sign/unit, canonical
+topic, controller ownership, or physical-hardware path.
+
+### Compatibility and ownership
+
+M4.4 extends only the existing supervisor, recenter geometry helper, central
+launch graph, scenario schema/runner binding, tests, and fresh fixed scenario
+inputs. It adds no node, controller, `/cmd_vel` publisher, recorder,
+validator, launch graph, algorithm profile, or simulation/physical fork.
+
+The custom controller remains the sole `/cmd_vel` publisher. The supervisor
+continues to publish only `/gesc_gaussian/supervisor_command`, and the
+controller retains the existing bounded combination and saturation.
+
+Two new controls default `false`:
+
+```text
+adaptive_recenter_lookahead_enabled
+post_recovery_source_led_handoff_enabled
+```
+
+The `legacy` profile and every scenario that omits these controls retain
+byte-for-byte normalized behavior. M4.3 and all earlier scenarios remain
+immutable. Enabling either control outside robust recoverable navigation is
+invalid.
+
+Hard stops remain unchanged:
+
+- nonfinite or stale pose/source data;
+- controller, graph, ownership, or explicit-stop fault;
+- a robot-center pose outside the physical room faces;
+- non-ground collision;
+- nonfinite target, fill, command, or geometry;
+- exhausted bounded recovery after a genuinely unavailable route.
+
+Wall-margin pressure while the robot remains inside the physical room and a
+temporarily empty finite-horizon route are recoverable navigation conditions,
+not immediate safety violations.
+
+### Adaptive recenter lookahead
+
+With `adaptive_recenter_lookahead_enabled=true`, the existing deterministic
+recenter route planner first evaluates the unchanged configured
+`direction_lookahead_m = 0.50 m`. If no candidate exists, it retries the same
+ordered direction set at successively halved finite horizons down to one
+supervisor-command persistence distance:
+
+```text
+minimum horizon =
+  recenter_max_linear_velocity_mps * supervisor_command_stale_sec
+  = 0.10 m/s * 0.50 s
+  = 0.05 m
+```
+
+The fixed evaluation sequence is therefore:
+
+```text
+0.50, 0.25, 0.125, 0.0625, 0.05 m
+```
+
+Full-horizon behavior remains preferred. Candidate order, fill radius,
+fill-avoidance margin, wall-margin inset, frozen target, obstacle-side lock,
+target-progress score, differential-drive command bounds, and command sweep
+remain unchanged. A shorter candidate changes only the finite planning
+resolution; the actual command is still checked over its complete persistence
+horizon before publication.
+
+If every adaptive horizon is empty while the robot center remains physically
+valid, the supervisor publishes zero translation, retains angular
+replanning, and lets the existing finite recenter timeout/retry budget
+continue. It emits one typed configuration event for that episode instead of
+immediately entering `FAILSAFE`. A later valid candidate clears the held
+condition. Exhausting the existing bounded recenter recovery still enters
+`FAILSAFE`.
+
+The retained M4.3 failure pose must be an exact regression:
+
+```text
+pose:             (0.3963, 0.2401) m
+fill center:      (0.5447780037, 0.8569669278) m
+avoidance radius: 0.6086747487 m
+target:           (1.75, 1.75) m
+```
+
+At this geometry, the fixed `0.50 m` selector returns no candidate and the
+adaptive selector must return a finite hard-safe `0.25 m` candidate without
+crossing the physical room, inset, or fill.
+
+### Source-led post-recovery handoff
+
+With `post_recovery_source_led_handoff_enabled=true`, every accepted
+`RECENTER -> SEARCH` boundary after the known local-fill budget is exhausted
+starts the existing post-recovery progress epoch but initially with:
+
+```text
+raw sensor weight:       1.0
+Gaussian fill weight:    1.0
+affine weight:           0.0
+supervisor translation:  0.0
+safe direction:          unavailable
+```
+
+This is not an open-loop pause. Ordinary GESC plus the accepted Gaussian fill
+owns motion during the handoff, using the same rotating sensor, costs,
+controller, PDE histories, and physical/simulation parity. The paired
+position/cost histories are reset at the typed SEARCH boundary as already
+implemented by M4.2. No global coordinates, global bearing, source role, or
+simulation ground truth enters the algorithm.
+
+M4.4 reuses the already fixed liveness values:
+
+```text
+handoff window:                    12.0 s
+qualifying net displacement:       greater than 0.20 m
+```
+
+At the first complete `12.0 s` window:
+
+- if net displacement is greater than `0.20 m`, the source-led handoff has
+  demonstrated translation; extra post-recovery guidance is released and
+  ordinary raw-plus-Gaussian SEARCH continues;
+- if net displacement is at most `0.20 m`, the handoff is classified as
+  stalled and the existing hard-safe fill-escape guidance becomes eligible;
+  the liveness window resets before that fallback begins.
+
+Reaching the existing `1.10 m` outward release boundary during the handoff
+also releases guidance. The existing fallback may still refresh one
+direction, request one recoverable recenter, and then release to ordinary
+search. It cannot command during the source-led window.
+
+Typed configuration events report:
+
+```text
+post-recovery source-led handoff started
+post-recovery source-led handoff completed
+post-recovery source-led handoff stalled; fallback guidance armed
+recenter route temporarily unavailable; bounded recovery continues
+```
+
+They use the already corrected M4.3 `post-recovery ` or existing supervisor
+producer families and require no recording-validator change.
+
+### Fixed values and acceptance
+
+All M4.4 attempts retain every M4.3 behavioral value:
+
+```text
+room bounds:                       [-0.25, 3.75] x [-0.25, 3.75] m
+room center:                       (1.75, 1.75) m
+start:                             (0.0, 0.0), yaw 0
+global:                            (3.5, 3.5), input 1600.0
+local input:                       400.0
+known topology:                    1 local, 1 global
+maximum fill clusters:             1
+detector path / efficiency gate:   0.20 m / 0.50
+wall margin:                       0.20 m
+fill minimum valid samples:        40
+recenter maximum / tolerance:       60.0 s / 0.15 m
+post-recovery liveness:             12.0 s, 0.60 m path, 0.20 m net
+primary Stage B:                    1.20 m
+closer diagnostic:                 1.00 m
+post-Stage-A budget:                120.0 s
+collision expected:                false
+```
+
+The operator-equivalent stop remains the first valid, recorded,
+noninterpolated post-Stage-A odometry sample within `1.20 m` of the global.
+The runner then requests the same graceful stop, final zero, readiness false,
+completeness validation, and cleanup. The `1.00 m` closer diagnostic remains
+non-gating. A longer timeout or larger stop radius is not part of M4.4.
+
+### No-Gazebo qualification
+
+Before any M4.4 Gazebo process starts:
+
+1. replay the exact M4.3 corner pose and its complete preceding route-side
+   sequence; prove full-horizon failure, adaptive finite selection,
+   hard-safe command sweep, and no immediate `FAILSAFE`;
+2. prove a physically invalid pose, collision/graph/controller fault,
+   nonfinite geometry, and exhausted bounded recovery remain terminal;
+3. prove source-led handoff publishes zero supervisor command, zero affine
+   weight, and no safe direction for a complete initial window;
+4. prove greater-than-`0.20 m` source-led displacement releases to ordinary
+   SEARCH without affine, while at-most-`0.20 m` displacement arms exactly
+   one existing fallback path;
+5. prove no global coordinate or source role is passed to the supervisor,
+   modified-cost node, or controller;
+6. prove both controls default off and M4.3, V6, and historical normalized
+   cases, hashes, topics, cost sign/units, and sole `/cmd_vel` ownership are
+   unchanged;
+7. run focused supervisor geometry/integration, launch, schema, runner,
+   recording, and M4.3 regression tests;
+8. run broad ROS-independent functional tests, fatal lint, Python
+   compilation, an isolated three-package build, installed dry-runs,
+   nonexecuting launch instantiation, source/install parity, context
+   validation, and immutable retained-evidence hash checks;
+9. update live status, checkpoint Phase 08, and commit the exact source plus
+   fixed fresh inputs.
+
+### Fixed M4.4 visible probe
+
+Only after every no-Gazebo gate passes may one fresh visible probe run:
+
+```text
+suite:       phase08_v7_m4_4_visible_probe
+version:     phase08-v7-m4-4-probe
+case:        v7_m4_4_probe_r1p5_a45_h25_18408
+local:       (1.0606601717798214, 1.0606601717798212)
+seed:        18408
+evidence:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_4_probe
+```
+
+It must use visible Gazebo and pass all `48/48` recording checks, Stage A,
+exact one-fill cardinality, primary noninterpolated `1.20 m` Stage B,
+collision, forbidden state/event, final-zero, cleanup, and combined
+predicates. It is retained without retry or in-run tuning.
+
+### Conditional M4.4 two-light qualification
+
+Only after the fixed visible probe passes every formal and behavioral
+predicate may this serial headless suite run:
+
+| Case | Local position | Seed | Role |
+|---|---|---:|---|
+| `v7_m4_4_r1p0_a45_h25_18409` | `(0.7071067811865476, 0.7071067811865475)` | 18409 | spatial |
+| `v7_m4_4_r1p5_a22p5_h25_18409` | `(1.38581929876693, 0.5740251485476346)` | 18409 | spatial |
+| `v7_m4_4_r1p5_a45_h25_18409` | `(1.0606601717798214, 1.0606601717798212)` | 18409 | spatial |
+| `v7_m4_4_r1p5_a67p5_h25_18409` | `(0.5740251485476348, 1.38581929876693)` | 18409 | spatial |
+| `v7_m4_4_r2p0_a45_h25_18409` | `(1.4142135623730951, 1.414213562373095)` | 18409 | spatial |
+| `v7_m4_4_repeat_r1p5_a45_h25_18410` | `(1.0606601717798214, 1.0606601717798212)` | 18410 | repeat |
+| `v7_m4_4_repeat_r1p5_a45_h25_18411` | `(1.0606601717798214, 1.0606601717798212)` | 18411 | repeat |
+| `v7_m4_4_repeat_r1p5_a45_h25_18412` | `(1.0606601717798214, 1.0606601717798212)` | 18412 | repeat |
+
+The suite uses:
+
+```text
+suite:       phase08_v7_m4_4_two_light_suite
+version:     phase08-v7-m4-4
+evidence:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_4
+```
+
+The two-light readiness gate requires the visible probe plus all five spatial
+and all three repeat cases to pass every unchanged predicate. Every attempt
+is retained. A behavioral or formal failure is not retried inside M4.4.
+Cleanup failure stops later dispatch.
+
+### Scope and stop conditions
+
+M4.4 authorizes only the conditional two-light simulation sequence above,
+after its exact implementation and inputs are qualified, checkpointed, and
+committed. The optional three-light probe remains unauthorized and requires
+a complete M4.4 two-light gate plus separate user authorization. Phase 09 and
+every physical hardware command remain unauthorized.
+
+Stop before Gazebo on any M4.3/V6/historical artifact drift, source/install
+mismatch, ownership change, failed compatibility or safety regression,
+existing fresh evidence root, active ROS/Gazebo process, or incomplete
+no-Gazebo gate.
+
+### M4.4 milestone
+
+Save, validate, checkpoint, and commit this amendment. Implement and qualify
+only the adaptive recenter and source-led handoff controls plus fresh fixed
+inputs without Gazebo. Checkpoint and commit the exact dispatch boundary,
+then execute only the one fixed visible probe and its passing-gated serial
+two-light suite.

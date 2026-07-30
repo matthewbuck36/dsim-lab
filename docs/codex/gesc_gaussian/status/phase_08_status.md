@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-30T03:01:26-07:00`
-Status: `PHASE 08.7 M4.3 CLOSED / TWO-LIGHT GATE FAIL 6/8; EVIDENCE CLEAN`
+Last verified: `2026-07-30T03:07:14-07:00`
+Status: `PHASE 08.7 M4.4 AUTHORIZED AND PLANNED; IMPLEMENTATION PENDING`
 
 ## Objective
 
@@ -7778,3 +7778,75 @@ change must use a fresh planned version, preserve all M4.3/V6/historical
 inputs and evidence, qualify without Gazebo, and commit its exact dispatch
 boundary before a new fixed simulation. The optional three-light probe,
 Phase 09, and physical hardware remain unauthorized.
+
+## Phase 08.7 M4.4 authorization and Plan boundary
+
+The immutable M4.3 suite result was committed at `e28fc3c`
+(`phase 08.7: retain M4.3 two-light suite result`). The active user goal is
+to fix the two-light behavior fully. M4.4 is the fresh bounded continuation
+for the two retained M4.3 defects; it does not reopen or relabel M4.3.
+
+The append-only M4.4 Plan amendment declares two default-off robust controls:
+
+```text
+adaptive_recenter_lookahead_enabled
+post_recovery_source_led_handoff_enabled
+```
+
+Adaptive recenter preserves the configured `0.50 m` candidate as the first
+choice, then tries `0.25`, `0.125`, `0.0625`, and `0.05 m` only if the longer
+horizons are empty. The `0.05 m` minimum is the complete
+`0.10 m/s * 0.50 s` supervisor-command persistence distance. A physically
+valid empty set holds zero translation under the existing bounded
+recenter-retry budget rather than latching immediately.
+
+The source-led handoff gives raw-plus-Gaussian GESC sole motion authority for
+the first complete `12.0 s` post-recovery window:
+
+```text
+affine weight:           0.0
+supervisor translation:  0.0
+safe direction:          unavailable
+```
+
+Net displacement greater than `0.20 m` releases the extra guidance and keeps
+ordinary SEARCH. Net displacement at most `0.20 m` arms the existing
+hard-safe fallback and resets its liveness window. The algorithm receives no
+global coordinate, source role, or simulation ground truth.
+
+Fresh fixed identities are:
+
+```text
+visible suite/version:  phase08_v7_m4_4_visible_probe
+                        phase08-v7-m4-4-probe
+visible case/seed:      v7_m4_4_probe_r1p5_a45_h25_18408 / 18408
+visible evidence root:  /home/mattb/Experiments/GESC-Gaussian/runs/
+                        phase08_v7_m4_4_probe
+headless suite/version: phase08_v7_m4_4_two_light_suite
+                        phase08-v7-m4-4
+headless seeds:         18409, 18410, 18411, 18412
+headless evidence root: /home/mattb/Experiments/GESC-Gaussian/runs/
+                        phase08_v7_m4_4
+```
+
+Every M4.3 algorithm value and acceptance threshold remains fixed, including
+the primary `1.20 m` global-proximity stop, `1.00 m` non-gating diagnostic,
+`120.0 s` post-Stage-A budget, exact one-fill cardinality, collision false,
+physical-room hard boundary, final zero, and cleanup.
+
+No M4.4 source, scenario, or Gazebo action has started. The amendment must
+pass context validation, checkpointing, and a bounded Plan commit before
+implementation.
+
+## Current milestone
+
+**Phase 08.7 M4.4 — USER-AUTHORIZED PLAN AMENDMENT SAVED; IMPLEMENTATION
+HAS NOT STARTED.**
+
+### Next criterion
+
+Validate, checkpoint, and commit the M4.4 amendment. Then implement only the
+default-off adaptive-recenter and source-led-handoff controls, regression
+coverage, and fresh fixed identities. Complete every no-Gazebo gate and
+commit the exact dispatch boundary before any fresh simulation. The
+three-light probe, Phase 09, and physical hardware remain unauthorized.

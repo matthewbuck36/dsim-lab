@@ -1,47 +1,46 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-30T10:03:22+00:00
-Base HEAD: 9cf92bb9cdb19b599b3aa822a7a7b1bfc668ff10
+Generated: 2026-07-30T10:09:08+00:00
+Base HEAD: e28fc3c965f6f3b9ca812ac3b3035100e8730ed7
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: ca469c13cae82d2a067ec7781794ed6be5e197bafd47d75fd905f5d06515a5c1
+Status sha256: c19cb84182a0307fc585347c1767e813f2f19fedf9e8bc04d4222638b9dc1341
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
-Active subphase plan sha256: 30ad4556c26fe6eb84c16ab9aaaf940cce8666682936edf27692fca10df31b41
-Unstaged diff sha256: 88d750c800c496978954d1cffecaa229ec348caaace08278ed1713cf9becc4e7
+Active subphase plan sha256: ac1985b4160ff11c352ab062cb6cec94799b8d539fcef2c9937a0723e77ac83b
+Unstaged diff sha256: 4435ad2e76b22411166b20e6158320ea87bafa6e2062344c1e0e9aaaab1c7f15
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 79]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 80]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
-?? docs/codex/gesc_gaussian/validation/phase_08_7_m4_3_two_light_suite_report.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  34 ++----
- docs/codex/gesc_gaussian/plans/phase_08_7_plan.md  |  14 ++-
- docs/codex/gesc_gaussian/status/phase_08_status.md | 127 ++++++++++++++++++++-
- 3 files changed, 145 insertions(+), 30 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  35 +--
+ docs/codex/gesc_gaussian/plans/phase_08_7_plan.md  | 286 +++++++++++++++++++++
+ docs/codex/gesc_gaussian/status/phase_08_status.md |  76 +++++-
+ 3 files changed, 366 insertions(+), 31 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**Phase 08.7 M4.3 — CLOSED / TWO-LIGHT QUALIFICATION FAIL AT 6/8 /
-COMPLETE EVIDENCE / NOT SIMULATION-READY.**
+**Phase 08.7 M4.4 — USER-AUTHORIZED PLAN AMENDMENT SAVED; IMPLEMENTATION
+HAS NOT STARTED.**
 
 ### Next criterion
 
-Checkpoint and commit the immutable M4.3 suite result. Any further behavior
-change must use a fresh planned version, preserve all M4.3/V6/historical
-inputs and evidence, qualify without Gazebo, and commit its exact dispatch
-boundary before a new fixed simulation. The optional three-light probe,
-Phase 09, and physical hardware remain unauthorized.
+Validate, checkpoint, and commit the M4.4 amendment. Then implement only the
+default-off adaptive-recenter and source-led-handoff controls, regression
+coverage, and fresh fixed identities. Complete every no-Gazebo gate and
+commit the exact dispatch boundary before any fresh simulation. The
+three-light probe, Phase 09, and physical hardware remain unauthorized.
 
 
 This file describes the base HEAD and diff before the next commit; it is
