@@ -1339,3 +1339,139 @@ Stop before Gazebo if:
 - a second controller, launch graph, recorder, validator, or algorithm fork
   would be required;
 - required contacts or cleanup evidence are unavailable.
+
+## M4.1 multi-publisher timestamp-evidence amendment
+
+On 2026-07-29 the user explicitly authorized the correction identified by the
+retained M4 visible-probe result. M4.1 is a fresh, versioned Level B
+evidence-contract correction. It does not reopen, retry, relabel, overwrite,
+or count the formally failed M4 attempt, and it does not change any M4
+navigation, detector, fill, affine, recenter, wall, collision, stop, geometry,
+light, or runtime value.
+
+The retained M4 bag established:
+
+- simulation `/clock` was monotonic;
+- all typed stamps stayed inside the recorded `/clock` range;
+- `/joint_states` had exactly two resolved publishers,
+  `/joint_state_broadcaster` and `/turtlebot3_joint_state`;
+- its merged bag receipt order had one apparent `225 ms` rollback;
+- its `33,181` effort-present and `9,769` effort-empty message signatures were
+  independently monotonic;
+- every Stage A, exact cardinality, Stage B, collision, forbidden-state/event,
+  final-zero, and cleanup predicate passed.
+
+The existing validator treats every non-`AlgorithmEvent` topic as one
+source-time stream. That assumption is invalid for a deliberate
+multi-publisher topic because rosbag messages do not retain a usable publisher
+identity. Raising the global `0.150 s` tolerance is forbidden; it would weaken
+every singleton algorithm and control stream while leaving the structural
+model defect intact.
+
+### Exact evidence contract
+
+The existing Phase 05 manifest and recorder/validator owners are extended
+additively. No recorder, validator, launch graph, or algorithm fork is added.
+
+Topic entries may declare:
+
+```yaml
+expected_publishers:
+  - /publisher_a
+  - /publisher_b
+timestamp_ordering: multi_publisher_within_clock
+```
+
+The default when `timestamp_ordering` is absent remains `single_stream`.
+Schema version and historical entries remain valid.
+
+`expected_publishers` must be a nonempty, unique list of absolute ROS node
+names. Preflight and offline completeness both require the resolved publisher
+multiset to match it exactly. A missing, duplicate, or unexpected endpoint is
+an infrastructure failure.
+
+`multi_publisher_within_clock` is legal only when:
+
+- the topic is simulation-only;
+- at least two exact expected publishers are declared;
+- `singleton_publisher` is false;
+- the topic remains required and typed.
+
+For that mode the validator:
+
+- does not claim that the merged receipt sequence is a source-time sequence;
+- excludes only that merged sequence from per-stream nonregression;
+- still requires every typed message stamp to lie inside monotonic simulation
+  `/clock` within the unchanged `0.150 s` tolerance;
+- reports the exact expected and resolved owners plus the ordering scope;
+- keeps strict nonregression for every default singleton/per-topic stream;
+- keeps the existing independently identified per-producer
+  `AlgorithmEvent` nonregression check.
+
+The canonical `/joint_states` entry alone adopts this mode with:
+
+```yaml
+expected_publishers:
+  - /joint_state_broadcaster
+  - /turtlebot3_joint_state
+timestamp_ordering: multi_publisher_within_clock
+```
+
+It remains required and recorded. The correction does not delete either
+publisher, change the controller graph, or ignore `/joint_states`.
+
+### Qualification boundary
+
+Before any M4.1 Gazebo process starts:
+
+1. prove manifest rejection of malformed owners, unknown ordering modes,
+   singleton conflicts, and an underdeclared multi-publisher contract;
+2. prove preflight accepts exactly the two declared owners and rejects a
+   missing, duplicate, or unexpected endpoint;
+3. prove a delayed merged multi-publisher sequence passes nonregression scope
+   while every message remains within `/clock`;
+4. prove an unexpected resolved owner, a singleton-stream rollback, an
+   `AlgorithmEvent` producer rollback, and an out-of-clock multi-publisher
+   stamp still fail;
+5. replay the retained M4 run read-only and prove its immutable original
+   contract/result remain failed rather than being retroactively relabeled;
+6. run the recording/scenario focused tests and relevant broad regressions;
+7. run an isolated three-package build and installed executable dry-run;
+8. preserve historical worlds, scenarios, case keys, topics, cost sign/units,
+   sole `/cmd_vel` ownership, and all M4 behavior inputs;
+9. update live status, checkpoint, and commit the exact correction plus fresh
+   scenario before dispatch.
+
+### Fixed M4.1 visible probe
+
+Exactly one new visible two-light attempt is authorized after qualification:
+
+```text
+suite:       phase08_v7_m4_1_visible_probe
+version:     phase08-v7-m4-1-probe
+case:        v7_m4_1_probe_r1p5_a45_h25_18207
+local:       (1.0606601717798214, 1.0606601717798212)
+seed:        18207
+evidence:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_1_probe
+```
+
+Every M4 geometry and behavior value remains byte-for-byte equivalent after
+identity, seed, suite, version, and evidence-root fields are excluded. The new
+attempt is not an M4 retry.
+
+The probe must pass recording completeness, exact publisher ownership,
+Stage A, exact one-fill cardinality, primary `1.20 m` Stage B, collision,
+forbidden state/event, final-zero, cleanup, and combined predicates. It is
+retained without automatic retry or in-run value changes.
+
+The fixed eight-case suite and optional three-light probe are outside this
+authorization. A passing M4.1 probe establishes only the corrected visible
+prerequisite. Phase 09 and every physical command remain unauthorized.
+
+### M4.1 milestone
+
+Save, validate, checkpoint, and commit this amendment. Then implement and
+qualify the shared evidence correction plus exact fresh scenario without
+Gazebo, checkpoint and commit the dispatch boundary, and run only the one
+fixed visible probe.

@@ -6269,3 +6269,44 @@ strict clock/range and singleton-stream checks, declare the exact two
 `/joint_states` publishers, avoid a merged-order monotonicity claim that
 cannot identify producers, qualify without Gazebo, and dispatch one new
 visible probe under a new evidence root before any suite.
+
+## Phase 08.7 M4.1 authorization and planning boundary
+
+On 2026-07-29 the user explicitly authorized the bounded correction identified
+by M4. M4 remains an immutable formal failure. M4.1 does not change or retry
+its case, seed, root, bag, completeness document, analysis, classification, or
+scenario.
+
+The saved M4.1 amendment extends only the existing Phase 05 manifest,
+recorder, and validator owners. It freezes:
+
+- exact `/joint_states` owners `/joint_state_broadcaster` and
+  `/turtlebot3_joint_state`;
+- additive `expected_publishers` and
+  `timestamp_ordering: multi_publisher_within_clock` evidence fields;
+- unchanged `0.150 s` tolerance;
+- strict singleton/per-topic and per-producer `AlgorithmEvent`
+  nonregression;
+- monotonic `/clock` plus within-clock checks for every multi-publisher typed
+  message;
+- no navigation, wall, recenter, fill, affine, detector, collision, stop,
+  geometry, light, or runtime-value change;
+- one new visible case `v7_m4_1_probe_r1p5_a45_h25_18207`, seed `18207`,
+  under the absent root
+  `/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_1_probe`.
+
+The worktree was clean at retained-result commit `2d95deb`, the three M4
+planning/implementation/result commits are intact, the M4.1 evidence root was
+absent, and no Gazebo process was active. Phase 08 implementation-context
+validation passed.
+
+## Current milestone
+
+**Phase 08.7 M4.1 — evidence correction authorized and saved; implementation
+has not started.**
+
+### Next criterion
+
+Validate, checkpoint, and commit the Plan-only M4.1 boundary. Then implement
+the exact publisher and timestamp-ordering contract, qualify it without
+Gazebo, and commit the fresh visible input before any simulator process starts.

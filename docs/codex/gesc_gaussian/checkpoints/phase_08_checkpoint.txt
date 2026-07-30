@@ -1,49 +1,44 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-30T06:00:28+00:00
-Base HEAD: 6165cd95bd0bb3880f5d469f582aa74460ef6ef3
+Generated: 2026-07-30T06:09:05+00:00
+Base HEAD: 2d95deb555497b49283b19a7f7d5336ebb3cf9a2
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 4e104529dd744f3d3d5bca68ab9c0036c2ede46a5f6f37145fc16c99e27feb9e
+Status sha256: 363c1c78646694c0de8921049e5662137bba2fb80ba8e2c161d9ee1f8de86aa6
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
-Active subphase plan sha256: 716490c3e0bda5e9a9d6936845802acf5799fd2314f9cc6bfa05a5a1de4df8bd
-Unstaged diff sha256: bf02bcc99c76e78969981842d4e2c650e7009695bbaa8209db0aae888787cfcd
-Staged diff sha256: 7b46f2538ce4e49738104a93b1544ef5ef968042ea0dbcff946c3d3fa05d18b3
+Active subphase plan sha256: 206afca01731af6804817ac6ecbd3e16246d8a57f7b0d043a3b710852471ca02
+Unstaged diff sha256: c661bbbff913fcf4ad78cbda01825d2c22080f7a05594cfcf4c94570acadec6c
+Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 65]
-MM docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
-M  docs/codex/gesc_gaussian/status/phase_08_status.md
-A  docs/codex/gesc_gaussian/validation/phase_08_7_m4_visible_probe_report.md
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 66]
+ M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
+ M docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
+ M docs/codex/gesc_gaussian/status/phase_08_status.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 36 +++++-----------------
- 1 file changed, 7 insertions(+), 29 deletions(-)
- .../checkpoints/phase_08_checkpoint.txt            |  30 +--
- docs/codex/gesc_gaussian/status/phase_08_status.md | 117 ++++++++++++
- .../phase_08_7_m4_visible_probe_report.md          | 203 +++++++++++++++++++++
- 3 files changed, 337 insertions(+), 13 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  45 ++-----
+ docs/codex/gesc_gaussian/plans/phase_08_7_plan.md  | 136 +++++++++++++++++++++
+ docs/codex/gesc_gaussian/status/phase_08_status.md |  41 +++++++
+ 3 files changed, 187 insertions(+), 35 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**Phase 08.7 M4 — visible behavior passed, but the formal probe and M4 gate
-are closed FAIL on a multi-publisher timestamp-validation defect.**
+**Phase 08.7 M4.1 — evidence correction authorized and saved; implementation
+has not started.**
 
 ### Next criterion
 
-Checkpoint and commit the retained M4 result. A fresh version requires
-explicit authorization to correct the shared evidence contract: preserve
-strict clock/range and singleton-stream checks, declare the exact two
-`/joint_states` publishers, avoid a merged-order monotonicity claim that
-cannot identify producers, qualify without Gazebo, and dispatch one new
-visible probe under a new evidence root before any suite.
+Validate, checkpoint, and commit the Plan-only M4.1 boundary. Then implement
+the exact publisher and timestamp-ordering contract, qualify it without
+Gazebo, and commit the fresh visible input before any simulator process starts.
 
 
 This file describes the base HEAD and diff before the next commit; it is
