@@ -9594,3 +9594,54 @@ Finalize the report hash, checkpoint this retained failed boundary, and
 commit it. Any further correction requires a fresh reviewed version, fresh
 identities, complete no-Gazebo qualification, checkpoint, and commit before
 another simulation. Do not retry M4.7 or dispatch its headless suite.
+
+## Phase 08.7 M4.8 retained-success reproduction authority
+
+On 2026-07-30 the user authorized fresh reproduction attempts for all `17`
+retained Phase 08.7 runs whose robot behavior previously passed Stage A,
+exact fill cardinality, Stage B, collision, and forbidden-state/event gates.
+The durable campaign amendment is appended to
+`plans/phase_08_7_plan.md`, SHA-256:
+
+```text
+355f8b76e187997c65332f7079e2a5377d43ca8dce5b663c02ab0912a8e4c1a5
+```
+
+M4.8 changes no algorithm or scenario. It will re-execute the exact sealed
+case definitions and seeds under fresh run IDs, summary paths, ROS domains,
+logs, and the absent campaign root:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_v7_success_reproduction_1
+```
+
+The selected population contains one M2.3 case, one M3 case, the M4, M4.2,
+M4.3, and M4.4 visible cases, six passing M4.3 suite cases, and five passing
+M4.4 suite cases. The original five visible contexts remain visible; the
+suite cases remain headless. All use the original `400/1600` relative-lumen
+inputs. M3 retains its `1.00 m` primary Stage B boundary; the other sixteen
+retain `1.20 m`.
+
+Every repeat will be retained without parameter changes or retry. Behavioral,
+formal, or infrastructure failure does not rewrite the original successful
+result. Cleanup failure stops later dispatch. At least `9/17` fresh formal
+combined passes is reported as the user's literal “most pass again”
+observation, not as broad spatial robustness or retroactive repair of a
+failed suite.
+
+No Gazebo process has started for M4.8. The campaign root is absent and the
+worktree contained no pre-existing change before this Plan amendment.
+
+## Current milestone
+
+**Phase 08.7 M4.8 — USER-AUTHORIZED REPRODUCTION CAMPAIGN PLANNED /
+17 EXACT HISTORICAL SUCCESS DEFINITIONS SELECTED / NO GAZEBO /
+NO-GAZEBO QUALIFICATION PENDING.**
+
+### Next criterion
+
+Checkpoint and commit the M4.8 Plan boundary. Then construct the exact
+machine-readable dispatch manifest, qualify all `17` selected expansions
+and the current installed graph without Gazebo, and checkpoint/commit the
+qualified dispatch before starting any reproduction attempt.

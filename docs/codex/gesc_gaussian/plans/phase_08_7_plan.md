@@ -3324,3 +3324,210 @@ Gazebo. Checkpoint and commit the exact no-Gazebo boundary. Only then record
 and checkpoint the paired visible dispatch. Run the paired visible attempt
 once; run the fixed serial headless suite only if that visible gate passes
 completely.
+
+## M4.8 retained-success reproduction campaign
+
+On 2026-07-30 the user explicitly authorized a fresh reproduction attempt
+for every one of the `17` retained Phase 08.7 executions whose robot behavior
+passed Stage A, exact fill cardinality, Stage B, collision, and forbidden
+state/event predicates. The purpose is to measure whether those historically
+successful operating points reproduce on the current checkout before a
+separate whole-Phase-08 report is requested.
+
+M4.8 is a reproduction campaign, not another navigation correction. It:
+
+- changes no algorithm, launch, scenario, world, recorder, validator,
+  analyzer, topic, cost sign/unit, controller owner, or physical path;
+- does not retry, overwrite, relabel, or change any original run or result;
+- executes the exact sealed historical scenario case and seed again, under a
+  fresh run ID, campaign evidence root, suite-summary path, ROS domain, and
+  ROS log directory;
+- preserves the original GUI/headless presentation, run/wall bounds,
+  Stage A/Stage B contract, stop radius, and every case predicate;
+- retains every repeat outcome without parameter changes or automatic retry.
+
+The user-authorized campaign supersedes only the earlier instruction not to
+re-execute these successful case definitions. It does not reopen a failed
+experiment version, add a repeat to an earlier acceptance denominator, or
+alter any immutable evidence.
+
+### Evidence-selected population
+
+The selection is intentionally retrospective: these are exactly the
+historically successful behaviors the user asked to reproduce. Consequently,
+the reproduction pass rate describes persistence of known-successful
+conditions only. It cannot establish unbiased spatial robustness or rescue
+the failed M3, M4.3, M4.4, M4.5, M4.6, or M4.7 suite gates.
+
+All selected cases retain:
+
+```text
+start:                 (0.0, 0.0), yaw 0
+global:                (3.5, 3.5)
+local/global inputs:   400.0 / 1600.0 nominal relative lumens
+known topology:        1 local, 1 global
+maximum active fills:  1
+collision expected:    false
+physical hardware:     prohibited
+```
+
+The exact `17` case definitions are:
+
+| Historical suite | Case | Seed | Local geometry | Original disposition |
+|---|---|---:|---|---|
+| M2.3 visible | `v7_m2_3_diagonal_r1p5_h25_18001` | 18001 | `r=1.5, 45 deg` | formal pass |
+| M3 suite | `v7_m3_r1p0_a45_h25_18101` | 18101 | `r=1.0, 45 deg` | formal pass at `1.00 m` |
+| M4 visible | `v7_m4_probe_r1p5_a45_h25_18201` | 18201 | `r=1.5, 45 deg` | behavioral pass; evidence fail |
+| M4.2 visible | `v7_m4_2_probe_r1p5_a45_h25_18208` | 18208 | `r=1.5, 45 deg` | behavioral pass; evidence fail |
+| M4.3 visible | `v7_m4_3_probe_r1p5_a45_h25_18308` | 18308 | `r=1.5, 45 deg` | formal pass |
+| M4.3 suite | `v7_m4_3_r1p5_a45_h25_18309` | 18309 | `r=1.5, 45 deg` | formal pass |
+| M4.3 suite | `v7_m4_3_r1p5_a67p5_h25_18309` | 18309 | `r=1.5, 67.5 deg` | formal pass |
+| M4.3 suite | `v7_m4_3_r2p0_a45_h25_18309` | 18309 | `r=2.0, 45 deg` | formal pass |
+| M4.3 suite | `v7_m4_3_repeat_r1p5_a45_h25_18310` | 18310 | `r=1.5, 45 deg` | formal pass |
+| M4.3 suite | `v7_m4_3_repeat_r1p5_a45_h25_18311` | 18311 | `r=1.5, 45 deg` | formal pass |
+| M4.3 suite | `v7_m4_3_repeat_r1p5_a45_h25_18312` | 18312 | `r=1.5, 45 deg` | formal pass |
+| M4.4 visible | `v7_m4_4_probe_r1p5_a45_h25_18408` | 18408 | `r=1.5, 45 deg` | formal pass |
+| M4.4 suite | `v7_m4_4_r1p0_a45_h25_18409` | 18409 | `r=1.0, 45 deg` | formal pass |
+| M4.4 suite | `v7_m4_4_r1p5_a45_h25_18409` | 18409 | `r=1.5, 45 deg` | formal pass |
+| M4.4 suite | `v7_m4_4_r1p5_a67p5_h25_18409` | 18409 | `r=1.5, 67.5 deg` | formal pass |
+| M4.4 suite | `v7_m4_4_repeat_r1p5_a45_h25_18411` | 18411 | `r=1.5, 45 deg` | formal pass |
+| M4.4 suite | `v7_m4_4_repeat_r1p5_a45_h25_18412` | 18412 | `r=1.5, 45 deg` | formal pass |
+
+The original M4 and M4.2 formal evidence failures remain failed. Their fresh
+reproductions use the current shared validator but do not retroactively
+modify their original completeness files.
+
+### Sealed source inputs
+
+No fresh scenario file is created. The campaign invokes these existing
+source files from one fresh isolated install:
+
+```text
+f03db4462527620321eb299656d9f56fe32e10362664e595f7d3850fc3f53eca
+  phase08_v7_m2_3_assisted_recovery_stop_probe.yaml
+1221d8cb9d7235218d4f3da710f10d41284632a93712bd89d763d938a0437dae
+  phase08_v7_m3_spatial_suite.yaml
+37ba6e1e9adc842691328cc0a1c66e5fd04034db59c6fcdb0c05f6f6c4b769a1
+  phase08_v7_m4_visible_probe.yaml
+e6ec6120df271afab3ae71192b601c4bcf866105a8cdaa13a10dcd94b7632973
+  phase08_v7_m4_2_visible_probe.yaml
+cacbdafbc9aa289f178e684503519283bdf4b5496cbdd2dfb8c61ff69ebf1658
+  phase08_v7_m4_3_visible_probe.yaml
+37c1f7f2d81132be46adee576a1b603093fd03dd5488c5465d53d8876b9d50cc
+  phase08_v7_m4_3_two_light_suite.yaml
+1559ee2ab0a7d2fa26834bc0bfd226aaa2b8d6d7dad62dcdac85ca2e83293eb4
+  phase08_v7_m4_4_visible_probe.yaml
+78be277362ac060c7cb77c5d2215836cb914a95bd81a5ed9221f0db4bc62a188
+  phase08_v7_m4_4_two_light_suite.yaml
+```
+
+The deterministic case keys recorded in the original suite summaries must
+match fresh installed dry-run expansion before Gazebo. Re-execution retains
+the same case key because the scientific input is deliberately identical;
+the new run ID and evidence root distinguish the observation.
+
+### Fresh campaign boundary
+
+The sole campaign root is:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_v7_success_reproduction_1
+```
+
+Each source suite writes below a distinct child:
+
+```text
+m2_3
+m3
+m4
+m4_2
+m4_3_probe
+m4_3_suite
+m4_4_probe
+m4_4_suite
+```
+
+The eight bounded runner invocations use ROS domains `168` through `175`
+respectively and unique `/tmp` ROS-log/MPL directories. The five original
+visible probes remain visible. M3, the selected M4.3 suite cases, and the
+selected M4.4 suite cases remain headless. Every invocation is serial; only
+one Gazebo instance may exist at a time.
+
+The M4.3 invocation selects its six listed passing cases with repeated
+`--case-id` arguments. The M4.4 invocation similarly selects its five listed
+passing cases. All other invocations select one case. Fresh summary outputs
+are stored in the corresponding child root and never overwrite an original
+summary.
+
+### No-Gazebo qualification
+
+Before dispatch:
+
+1. verify all eight scenario hashes, all `17` deterministic case keys, and
+   the original retained summary/run references;
+2. verify the campaign root and every child root are absent;
+3. run strict scenario/schema expansion proving exactly `17` supported
+   selected runs, the original seeds, positions, ratios, algorithm values,
+   GUI/headless modes, success contracts, and bounded timings;
+4. prove dry-run commands resolve only the selected cases and point at the
+   fresh campaign children;
+5. run focused scenario-schema/runner, supervisor/state-machine,
+   recorder/validator, final-zero, shifted-world, V6, legacy, and historical
+   immutability regressions;
+6. run the broad ROS-independent functional envelope, fatal changed-file
+   lint, Python compilation, YAML/XML parsing, and `git diff --check`;
+7. build `ros_esc_interfaces`, `ros_esc`, and
+   `turtlebot3_rotating_sensor` into
+   `/tmp/phase08_7_success_reproduction_qual`;
+8. prove source/install byte parity for all eight scenarios and required
+   launch/runtime owners, then repeat the selected dry-runs from the install;
+9. verify the original evidence hashes and every historical scenario/world
+   remain unchanged;
+10. update status and a durable no-Gazebo qualification report, checkpoint
+    Phase 08, inspect the exact diff, and commit before Gazebo.
+
+Stop before Gazebo on any input/key drift, failed regression,
+source/install mismatch, active ROS/Gazebo process, existing campaign root,
+or incomplete dispatch record.
+
+### Execution and stop conditions
+
+Execute all `17` repeats once in the order listed above. A behavioral,
+formal, or infrastructure failure is retained and does not authorize a
+retry. Continue to the next invocation only when cleanup proves no leaked
+process or node. A cleanup failure, corrupted bag, unbounded command, source
+drift, or active conflicting ROS/Gazebo graph stops later dispatch.
+
+Each case is judged against its own unchanged historical contract. In
+particular, the M3 radius-1.0 case retains its stricter `1.00 m` Stage B
+boundary; every other selected case retains `1.20 m`. The global-proximity
+stop is simulation-only and does not authorize or specify a physical
+automatic stop.
+
+The user's requested “most pass again” observation is reported literally as
+at least `9/17` fresh formal combined passes. It is not silently upgraded
+into broad simulation readiness. Independently report:
+
+- infrastructure-complete count;
+- formal combined-pass count;
+- Stage A, fill-cardinality, Stage B, collision, final-zero, and cleanup
+  counts;
+- original-pass versus reproduction agreement for each case;
+- direct versus redesign-assisted recovery paths;
+- visible versus headless outcomes;
+- geometry/profile/seed groupings;
+- any evidence-only or budget-limited outcome.
+
+Run the sole standard validator and analyzer against every complete fresh
+bag, retain their outputs below each run, perform read-only SQLite integrity
+checks, and write:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m4_8_success_reproduction_report.md
+```
+
+Checkpoint and commit the complete retained result. No three-light, Phase 09
+implementation, physical command, hardware command, or whole-Phase-08 final
+report is part of M4.8.

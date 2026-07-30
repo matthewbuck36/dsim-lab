@@ -1,46 +1,46 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-30T19:41:59+00:00
-Base HEAD: e7fb0832f1367f25720da78ef42ecc1a96c87da7
+Generated: 2026-07-30T20:06:54+00:00
+Base HEAD: 1efbf3c83446a62d1470aadbfeb76447979d9ae7
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: f1dcc71462dd8410d5a3449a93e3cbb1da9b74e0fbc3a8f1d801626a2d592492
+Status sha256: 0645285a947ee03529d743ab9827a37a618f66d46daeb9af97cdfb1c57611e3c
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
-Active subphase plan sha256: 94027653dbd4f4fad158da5612bbdd2d3dad8c5dec4c5b420ff45906d0770236
-Unstaged diff sha256: 8ee44c9eac7a8d4243ddff779ca62452ac68963ec64ee20f919f41f9d331d3fb
+Active subphase plan sha256: 355f8b76e187997c65332f7079e2a5377d43ca8dce5b663c02ab0912a8e4c1a5
+Unstaged diff sha256: 34ea18d6576555f97f752f8f9c12f7d2fe6d07dc9b0acb29ff2b417320bbbaff
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 96]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 97]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
+ M docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
-?? docs/codex/gesc_gaussian/validation/phase_08_7_m4_7_visible_probe_report.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 30 ++------
- docs/codex/gesc_gaussian/status/phase_08_status.md | 83 ++++++++++++++++++++++
- 2 files changed, 89 insertions(+), 24 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  36 +---
+ docs/codex/gesc_gaussian/plans/phase_08_7_plan.md  | 207 +++++++++++++++++++++
+ docs/codex/gesc_gaussian/status/phase_08_status.md |  51 +++++
+ 3 files changed, 265 insertions(+), 29 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**Phase 08.7 M4.7 — CLOSED / VISIBLE GATE BEHAVIORAL FAIL /
-INFRASTRUCTURE, STAGE A, ONE-FILL, SAFETY, FULL-BUDGET PASS /
-STAGE B FAIL / CORRIDOR NOT ARMED / SUITE NOT RUN /
-NOT SIMULATION-READY.**
+**Phase 08.7 M4.8 — USER-AUTHORIZED REPRODUCTION CAMPAIGN PLANNED /
+17 EXACT HISTORICAL SUCCESS DEFINITIONS SELECTED / NO GAZEBO /
+NO-GAZEBO QUALIFICATION PENDING.**
 
 ### Next criterion
 
-Finalize the report hash, checkpoint this retained failed boundary, and
-commit it. Any further correction requires a fresh reviewed version, fresh
-identities, complete no-Gazebo qualification, checkpoint, and commit before
-another simulation. Do not retry M4.7 or dispatch its headless suite.
+Checkpoint and commit the M4.8 Plan boundary. Then construct the exact
+machine-readable dispatch manifest, qualify all `17` selected expansions
+and the current installed graph without Gazebo, and checkpoint/commit the
+qualified dispatch before starting any reproduction attempt.
 
 
 This file describes the base HEAD and diff before the next commit; it is
