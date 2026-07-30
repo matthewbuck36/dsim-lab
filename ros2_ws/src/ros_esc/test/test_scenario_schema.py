@@ -62,6 +62,21 @@ M3_SPATIAL_SUITE = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v7_m3_spatial_suite.yaml'
 )
+M4_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m4_visible_probe.yaml'
+)
+M4_TWO_LIGHT_SUITE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m4_two_light_suite.yaml'
+)
+M4_THREE_LIGHT_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m4_three_light_probe.yaml'
+)
 HISTORICAL_V2_ACTIVATION = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml'
@@ -364,6 +379,40 @@ def _v5_document():
     return document
 
 
+def _v6_document():
+    document = _v5_document()
+    document['schema_version'] = 6
+    case = document['cases'][0]
+    case['algorithm']['launch_overrides'].update({
+        'convergence_state_gating_enabled': True,
+        'convergence_minimum_path_length_m': 0.20,
+        'convergence_maximum_path_efficiency': 0.50,
+        'post_recovery_guidance_enabled': True,
+        'post_recovery_guidance_max_sec': 60.0,
+        'post_recovery_retry_limit': 3,
+        'modified_cost_affine_gain': 0.50,
+        'modified_cost_affine_decay_rate': 0.05,
+        'modified_cost_affine_max_age': 20.0,
+        'gaussian_fill_reuse_retained_samples_on_redesign': True,
+        'recoverable_navigation_enabled': True,
+        'recovery_retry_limit': 3,
+        'boundary_recovery_trigger_clearance_m': 0.025,
+        'boundary_recovery_release_clearance_m': 0.10,
+        'recenter_target_fill_clearance_m': 0.05,
+        'recenter_max_sec': 60.0,
+        'recenter_tolerance_m': 0.35,
+        'post_recovery_affine_weight': 0.50,
+        'post_recovery_affine_taper_distance_m': 0.50,
+    })
+    case['success']['ground_truth']['proximity_radius_m'] = 1.20
+    case['success']['staged_recovery'].update({
+        'local_association_mode': 'verified_trap',
+        'global_proximity_radius_m': 1.20,
+        'global_closer_radius_m': 1.00,
+    })
+    return document
+
+
 @lru_cache(maxsize=1)
 def _v4_production_truth():
     return aggregate_field_truth.derive_aggregate_field_truth(
@@ -430,7 +479,7 @@ def test_checked_in_suites_validate_and_catalog_marks_gaps():
 @pytest.mark.parametrize(
     ('mutation', 'match'),
     [
-        (lambda doc: doc.update({'schema_version': 6}), 'schema_version'),
+        (lambda doc: doc.update({'schema_version': 7}), 'schema_version'),
         (
             lambda doc: doc.update({'mode': 'physical'}),
             'mode must be simulation',
@@ -1000,6 +1049,120 @@ def test_schema_v5_resolves_corner_geometry_and_known_topology(tmp_path):
     assert deterministic_case_key(run) == run['case_key']
 
 
+def test_schema_v6_resolves_recovery_controls_and_non_gating_closer_radius(
+    tmp_path,
+):
+    suite = _load(tmp_path, _v6_document())
+    run = expand_suite(suite)[0][0]
+    staged = run['success']['staged_recovery']
+    overrides = run['algorithm']['launch_overrides']
+
+    assert run['schema_version'] == 6
+    assert staged['local_association_mode'] == 'verified_trap'
+    assert staged['global_proximity_radius_m'] == 1.20
+    assert staged['global_closer_radius_m'] == 1.00
+    assert run['success']['ground_truth']['proximity_radius_m'] == 1.20
+    assert overrides['recoverable_navigation_enabled'] is True
+    assert overrides['recovery_retry_limit'] == 3
+    assert overrides[
+        'gaussian_fill_reuse_retained_samples_on_redesign'
+    ] is True
+    assert overrides['modified_cost_affine_decay_rate'] == 0.05
+    assert overrides['post_recovery_affine_weight'] == 0.50
+    assert deterministic_case_key(run) == run['case_key']
+
+
+def test_schema_v6_supports_two_declared_traps_for_optional_three_light(
+    tmp_path,
+):
+    document = _v6_document()
+    case = document['cases'][0]
+    case['sources'].insert(1, {
+        'id': 'local_2',
+        'x_m': 0.6888301782571618,
+        'y_m': 1.662983158520316,
+        'relative_lumen_input': 400.0,
+        'evaluation_role': 'local_minimum',
+    })
+    case['sources'][0].update({
+        'x_m': 1.1086554390135441,
+        'y_m': 0.4592201188381077,
+    })
+    case['known_topology']['expected_local_minima'] = 2
+    case['algorithm']['launch_overrides']['gaussian_fill_max_fills'] = 2
+    case['success']['staged_recovery']['local_source_ids'] = [
+        'local',
+        'local_2',
+    ]
+
+    run = expand_suite(_load(tmp_path, document))[0][0]
+
+    assert run['known_topology']['expected_local_minima'] == 2
+    assert [
+        placement['source_id']
+        for placement in run['geometry']['local_placements']
+    ] == ['local', 'local_2']
+    assert run['algorithm']['launch_overrides'][
+        'gaussian_fill_max_fills'
+    ] == 2
+
+
+@pytest.mark.parametrize(
+    ('mutation', 'match'),
+    [
+        (
+            lambda doc: doc['cases'][0]['success']['staged_recovery'].update({
+                'local_association_mode': 'invented',
+            }),
+            'local_association_mode',
+        ),
+        (
+            lambda doc: doc['cases'][0]['success']['staged_recovery'].update({
+                'global_closer_radius_m': 1.20,
+            }),
+            'strictly smaller',
+        ),
+        (
+            lambda doc: doc['cases'][0]['algorithm'][
+                'launch_overrides'
+            ].update({
+                'boundary_recovery_release_clearance_m': 0.025,
+            }),
+            'must exceed',
+        ),
+    ],
+)
+def test_schema_v6_rejects_recovery_contract_drift(
+    tmp_path,
+    mutation,
+    match,
+):
+    document = _v6_document()
+    mutation(document)
+    with pytest.raises(ValueError, match=match):
+        _load(tmp_path, document)
+
+
+def test_schema_v5_rejects_schema_v6_fields_without_changing_v5_output(
+    tmp_path,
+):
+    baseline = expand_suite(_load(tmp_path, _v5_document()))[0][0]
+    document = _v5_document()
+    document['cases'][0]['success']['staged_recovery'][
+        'local_association_mode'
+    ] = 'verified_trap'
+
+    with pytest.raises(ValueError, match='schema version 6'):
+        _load(tmp_path, document)
+
+    assert 'local_association_mode' not in (
+        baseline['success']['staged_recovery']
+    )
+    assert 'global_closer_radius_m' not in (
+        baseline['success']['staged_recovery']
+    )
+
+
 def test_m2_1_resolves_opt_in_correction_and_relaxed_stop():
     """Freeze the fresh detector/topology/affine correction contract."""
     runs, unsupported = expand_suite(load_suite(M2_1_CORRECTION))
@@ -1204,6 +1367,134 @@ def test_m3_freezes_five_position_cross_and_stricter_stop():
             'proximity_radius_m'
         ] == 1.00
         assert deterministic_case_key(run) == run['case_key']
+
+
+def test_m4_freezes_visible_two_light_and_optional_three_light_inputs():
+    visible_suite = load_suite(M4_VISIBLE_PROBE)
+    visible, visible_unsupported = expand_suite(visible_suite)
+    two_suite = load_suite(M4_TWO_LIGHT_SUITE)
+    two_light, two_unsupported = expand_suite(two_suite)
+    three_suite = load_suite(M4_THREE_LIGHT_PROBE)
+    three_light, three_unsupported = expand_suite(three_suite)
+
+    assert visible_unsupported == two_unsupported == three_unsupported == []
+    assert visible_suite['execution']['gazebo_gui'] is True
+    assert visible_suite['execution']['runs_root'].endswith(
+        '/phase08_v7_m4_probe'
+    )
+    assert [
+        (run['case_id'], run['seed'])
+        for run in visible
+    ] == [('v7_m4_probe_r1p5_a45_h25_18201', 18201)]
+    assert [
+        (
+            source['x_m'],
+            source['y_m'],
+            source['relative_lumen_input'],
+        )
+        for source in visible[0]['sources']
+    ] == [
+        (1.0606601717798214, 1.0606601717798212, 400.0),
+        (3.5, 3.5, 1600.0),
+    ]
+
+    assert two_suite['execution']['gazebo_gui'] is False
+    assert two_suite['execution']['runs_root'].endswith('/phase08_v7_m4')
+    assert [
+        (run['case_id'], run['seed'])
+        for run in two_light
+    ] == [
+        ('v7_m4_r1p0_a45_h25_18202', 18202),
+        ('v7_m4_r1p5_a22p5_h25_18202', 18202),
+        ('v7_m4_r1p5_a45_h25_18202', 18202),
+        ('v7_m4_r1p5_a67p5_h25_18202', 18202),
+        ('v7_m4_r2p0_a45_h25_18202', 18202),
+        ('v7_m4_repeat_r1p5_a45_h25_18203', 18203),
+        ('v7_m4_repeat_r1p5_a45_h25_18204', 18204),
+        ('v7_m4_repeat_r1p5_a45_h25_18205', 18205),
+    ]
+    expected_local_positions = [
+        (0.7071067811865476, 0.7071067811865475),
+        (1.38581929876693, 0.5740251485476346),
+        (1.0606601717798214, 1.0606601717798212),
+        (0.5740251485476348, 1.38581929876693),
+        (1.4142135623730951, 1.414213562373095),
+        (1.0606601717798214, 1.0606601717798212),
+        (1.0606601717798214, 1.0606601717798212),
+        (1.0606601717798214, 1.0606601717798212),
+    ]
+    for run, expected_local in zip(two_light, expected_local_positions):
+        local, global_source = run['sources']
+        assert (local['x_m'], local['y_m']) == expected_local
+        assert local['relative_lumen_input'] == 400.0
+        assert (
+            global_source['x_m'],
+            global_source['y_m'],
+            global_source['relative_lumen_input'],
+        ) == (3.5, 3.5, 1600.0)
+        assert (
+            run['start']['x_m'],
+            run['start']['y_m'],
+            run['start']['yaw_rad'],
+        ) == (0.0, 0.0, 0.0)
+    central = next(
+        run for run in two_light
+        if run['case_id'] == 'v7_m4_r1p5_a45_h25_18202'
+    )
+    repeats = [
+        run for run in two_light
+        if run['acceptance_partition'] == 'reproducibility'
+    ]
+    assert len(repeats) == 3
+    assert {
+        run['repeat_reference']['case_key'] for run in repeats
+    } == {central['case_key']}
+    for run in visible + two_light:
+        overrides = run['algorithm']['launch_overrides']
+        staged = run['success']['staged_recovery']
+        assert overrides['wall_margin_m'] == 0.20
+        assert overrides['recoverable_navigation_enabled'] is True
+        assert overrides['recovery_retry_limit'] == 3
+        assert overrides['recenter_max_sec'] == 60.0
+        assert overrides['recenter_tolerance_m'] == 0.35
+        assert overrides['modified_cost_affine_decay_rate'] == 0.05
+        assert overrides['modified_cost_affine_max_age'] == 20.0
+        assert overrides['post_recovery_affine_weight'] == 0.50
+        assert overrides[
+            'gaussian_fill_reuse_retained_samples_on_redesign'
+        ] is True
+        assert staged['local_association_mode'] == 'verified_trap'
+        assert staged['global_proximity_radius_m'] == 1.20
+        assert staged['global_closer_radius_m'] == 1.00
+        assert deterministic_case_key(run) == run['case_key']
+
+    assert three_suite['execution']['gazebo_gui'] is True
+    assert len(three_light) == 1
+    three = three_light[0]
+    assert three['case_id'] == 'v7_m4_three_light_sequential_18206'
+    assert three['seed'] == 18206
+    assert three['known_topology'] == {
+        'expected_global_minima': 1,
+        'expected_local_minima': 2,
+    }
+    assert [
+        source['id'] for source in three['sources']
+    ] == ['local_1', 'local_2', 'global']
+    assert [
+        (
+            source['x_m'],
+            source['y_m'],
+            source['relative_lumen_input'],
+        )
+        for source in three['sources']
+    ] == [
+        (1.1086554390135441, 0.4592201188381077, 400.0),
+        (0.6888301782571618, 1.662983158520316, 400.0),
+        (3.5, 3.5, 1600.0),
+    ]
+    assert three['algorithm']['launch_overrides'][
+        'gaussian_fill_max_fills'
+    ] == 2
 
 
 @pytest.mark.parametrize(

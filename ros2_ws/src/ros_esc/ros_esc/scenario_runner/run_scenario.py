@@ -905,6 +905,8 @@ def _run_record_to_global_proximity(
         'stage_error': None,
         'global_approach': False,
         'global_approach_sample': None,
+        'global_closer': False,
+        'global_closer_sample': None,
         'global_proximity': False,
         'global_sample': None,
     }
@@ -982,6 +984,20 @@ def _run_record_to_global_proximity(
                 'position': {'x_m': x_value, 'y_m': y_value},
                 'distance_m': distance,
                 'proximity_radius_m': approach_radius,
+                'interpolation_used': False,
+            }
+        closer_radius = staged_contract.get('global_closer_radius_m')
+        if (
+            closer_radius is not None
+            and not observed['global_closer']
+            and distance <= closer_radius
+        ):
+            observed['global_closer'] = True
+            observed['global_closer_sample'] = {
+                'callback_sequence': sample_sequence,
+                'position': {'x_m': x_value, 'y_m': y_value},
+                'distance_m': distance,
+                'proximity_radius_m': closer_radius,
                 'interpolation_used': False,
             }
         if not observed['fill_cardinality']:
@@ -1129,6 +1145,11 @@ def _run_record_to_global_proximity(
             'global_approach_sample_live': observed[
                 'global_approach_sample'
             ],
+        })
+    if 'global_closer_radius_m' in staged_contract:
+        result.update({
+            'global_closer_observed_live': observed['global_closer'],
+            'global_closer_sample_live': observed['global_closer_sample'],
         })
     return result
 
@@ -1949,6 +1970,10 @@ def _staged_recovery_evidence(
     sources = {source['id']: source for source in resolved['sources']}
     global_source = sources[contract['global_source_id']]
     local_ids = list(contract['local_source_ids'])
+    association_mode = contract.get(
+        'local_association_mode',
+        'declared_source',
+    )
     best_assignment = None
     best_distance = math.inf
     if len(candidates) >= len(local_ids):
@@ -1973,9 +1998,30 @@ def _staged_recovery_evidence(
                     convergence['x_m'] - global_source['x_m'],
                     convergence['y_m'] - global_source['y_m'],
                 )
-                valid = valid and (
+                nearest_local_id, nearest_local_distance = min(
+                    (
+                        (
+                            candidate_local_id,
+                            math.hypot(
+                                convergence['x_m']
+                                - sources[candidate_local_id]['x_m'],
+                                convergence['y_m']
+                                - sources[candidate_local_id]['y_m'],
+                            ),
+                        )
+                        for candidate_local_id in local_ids
+                    ),
+                    key=lambda item: (item[1], item[0]),
+                )
+                declared_local_valid = (
                     local_distance
                     <= contract['convergence_to_local_max_m']
+                )
+                valid = valid and (
+                    (
+                        association_mode == 'verified_trap'
+                        or declared_local_valid
+                    )
                     and global_distance
                     >= contract['convergence_to_global_min_m']
                     and candidate['fill_to_convergence_m']
@@ -1986,6 +2032,14 @@ def _staged_recovery_evidence(
                     'local_source_id': local_id,
                     'convergence_to_local_m': local_distance,
                     'convergence_to_global_m': global_distance,
+                    'declared_local_distance_gate_applied': (
+                        association_mode == 'declared_source'
+                    ),
+                    'declared_local_distance_gate_passed': (
+                        declared_local_valid
+                    ),
+                    'nearest_declared_local_source_id': nearest_local_id,
+                    'nearest_declared_local_m': nearest_local_distance,
                 })
                 total_distance += local_distance
             if valid and total_distance < best_distance:
@@ -2013,11 +2067,6 @@ def _staged_recovery_evidence(
         count >= expected_count
         for count in required_event_counts.values()
     )
-    stage_a_passed = (
-        len(episodes) >= expected_count
-        and best_assignment is not None
-        and lifecycle_events_passed
-    )
     fill_cardinality_passed = (
         len(clusters['created_cluster_ids']) == expected_count
         and clusters['created_cluster_ids'] == clusters['typed_cluster_ids']
@@ -2027,11 +2076,21 @@ def _staged_recovery_evidence(
             item['cluster_id'] for item in best_assignment
         } == clusters['created_cluster_ids']
     )
+    stage_a_passed = (
+        len(episodes) >= expected_count
+        and best_assignment is not None
+        and lifecycle_events_passed
+        and (
+            association_mode != 'verified_trap'
+            or fill_cardinality_passed
+        )
+    )
     assigned_cluster_ids = {
         item['cluster_id'] for item in (best_assignment or [])
     }
     evidence = {
         'expected_local_minima': expected_count,
+        'local_association_mode': association_mode,
         'required_state_path': list(
             STAGED_RECOVERY_STATE_PATHS[0]
         ),
@@ -2354,6 +2413,25 @@ def _bag_outcomes(run_directory, resolved):
                     ),
                     'collision_before_approach': True,
                 }
+    closer_radius_declared = (
+        'global_closer_radius_m'
+        in resolved.get('success', {}).get('staged_recovery', {})
+    )
+    global_closer_passed = None
+    global_closer_evidence = None
+    if closer_radius_declared:
+        (
+            global_closer_passed,
+            global_closer_evidence,
+            closer_error,
+        ) = _post_recovery_global_proximity(
+            resolved,
+            stage_a_passed,
+            stage_a_evidence,
+            odometry_records,
+            radius_key='global_closer_radius_m',
+        )
+        outcome_error = outcome_error or closer_error
     collision_scope_end = None
     if (
         resolved.get('schema_version', 1) >= 5
@@ -2543,6 +2621,11 @@ def _bag_outcomes(run_directory, resolved):
                 global_approach_passed
             ),
             'post_recovery_global_approach': global_approach_evidence,
+        })
+    if closer_radius_declared:
+        outcomes.update({
+            'post_recovery_global_closer_passed': global_closer_passed,
+            'post_recovery_global_closer': global_closer_evidence,
         })
     return outcomes
 
@@ -2789,6 +2872,19 @@ def classify_result(
                 'evidence': outcomes.get(
                     'post_recovery_global_approach'
                 ),
+            }
+        if 'global_closer_radius_m' in staged_recovery:
+            staged_results['global_closer_diagnostic'] = {
+                'passed': outcomes.get(
+                    'post_recovery_global_closer_passed'
+                ),
+                'observed_live': process_result.get(
+                    'global_closer_observed_live'
+                ),
+                'evidence': outcomes.get(
+                    'post_recovery_global_closer'
+                ),
+                'gating': False,
             }
     classification = {
         'passed': passed,

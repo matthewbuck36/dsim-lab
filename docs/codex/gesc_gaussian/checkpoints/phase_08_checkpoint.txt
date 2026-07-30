@@ -1,46 +1,71 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-30T04:35:45+00:00
-Base HEAD: a95290979669ab7a5e99cdffb5eaf9dbba415ef3
+Generated: 2026-07-30T05:40:45+00:00
+Base HEAD: 3b1edd4356e73675550f9928ca767621397692b2
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 0e27793cc1f1ba0f07eb470f0f9925167ab16d7f1680b14a1a054dada9d88c86
+Status sha256: 118ef9285adf5141ae1a4fc0ed6430e93209a2c349e486e02d35158726464907
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
 Active subphase plan sha256: 716490c3e0bda5e9a9d6936845802acf5799fd2314f9cc6bfa05a5a1de4df8bd
-Unstaged diff sha256: 6ce2fd2dad96051b25923a7feb4ddcfd5965c0914fce004da000172b4d34ec44
+Unstaged diff sha256: e6249ae653879fe5b60e5c3813d7b81f0361001b1c3764036a3725d3920be510
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 62]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 63]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
- M docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
+ M ros2_ws/src/ros_esc/ros_esc/gaussian_fill_node/gaussian_fill_script.py
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py
+ M ros2_ws/src/ros_esc/ros_esc/supervisor_node/escape_recenter.py
+ M ros2_ws/src/ros_esc/ros_esc/supervisor_node/state_machine.py
+ M ros2_ws/src/ros_esc/ros_esc/supervisor_node/supervisor_node_script.py
+ M ros2_ws/src/ros_esc/test/test_escape_recenter.py
+ M ros2_ws/src/ros_esc/test/test_robust_gaussian_algorithm.py
+ M ros2_ws/src/ros_esc/test/test_scenario_runner.py
+ M ros2_ws/src/ros_esc/test/test_scenario_schema.py
+ M ros2_ws/src/ros_esc/test/test_state_machine.py
+ M ros2_ws/src/ros_esc/test/test_supervisor_integration.py
+ M ros2_ws/src/turtlebot3_rotating_sensor/launch/gazebo.launch.xml
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m4_three_light_probe.yaml
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m4_two_light_suite.yaml
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m4_visible_probe.yaml
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  40 +--
- docs/codex/gesc_gaussian/plans/phase_08_7_plan.md  | 294 ++++++++++++++++++++-
- docs/codex/gesc_gaussian/status/phase_08_status.md |  58 ++++
- 3 files changed, 360 insertions(+), 32 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  49 ++-
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 201 +++++++++++
+ .../gaussian_fill_node/gaussian_fill_script.py     |  52 +++
+ .../ros_esc/scenario_runner/run_scenario.py        | 108 +++++-
+ .../ros_esc/scenario_runner/scenario_schema.py     | 284 ++++++++++++---
+ .../ros_esc/supervisor_node/escape_recenter.py     | 294 +++++++++++++++-
+ .../ros_esc/supervisor_node/state_machine.py       | 113 ++++++
+ .../supervisor_node/supervisor_node_script.py      | 383 ++++++++++++++++++---
+ ros2_ws/src/ros_esc/test/test_escape_recenter.py   | 189 ++++++++++
+ .../ros_esc/test/test_robust_gaussian_algorithm.py |  45 +++
+ ros2_ws/src/ros_esc/test/test_scenario_runner.py   | 135 ++++++++
+ ros2_ws/src/ros_esc/test/test_scenario_schema.py   | 293 +++++++++++++++-
+ ros2_ws/src/ros_esc/test/test_state_machine.py     | 129 +++++++
+ .../ros_esc/test/test_supervisor_integration.py    | 178 +++++++++-
+ .../launch/gazebo.launch.xml                       |  16 +
+ 15 files changed, 2334 insertions(+), 135 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**Phase 08.7 M4 — amendment authorized and saved; implementation has not
-started.**
+**Phase 08.7 M4 — implementation and no-Gazebo qualification PASS;
+checkpointed; qualified commit pending.**
 
 ### Next criterion
 
-Validate and checkpoint the M4 Plan boundary, commit it, then implement the
-opt-in runtime and schema changes. Do not start Gazebo until source tests,
-replays, regressions, isolated build, installed dry-run, launch
-instantiation, historical immutability, checkpoint, and a clean qualified
-commit all pass.
+Commit the exact qualified source, tests, launch wiring, scenarios, status,
+and checkpoint. Reconfirm an inactive process set plus absent probe root, then
+dispatch only the one fixed visible two-light probe.
 
 
 This file describes the base HEAD and diff before the next commit; it is

@@ -5887,3 +5887,204 @@ opt-in runtime and schema changes. Do not start Gazebo until source tests,
 replays, regressions, isolated build, installed dry-run, launch
 instantiation, historical immutability, checkpoint, and a clean qualified
 commit all pass.
+
+## Phase 08.7 M4 implementation and no-Gazebo qualification
+
+The Plan-only M4 boundary was committed as `3b1edd4`. Implementation then
+extended the existing robust owners without adding a controller, launch graph,
+recorder, validator, simulation fork, or physical path.
+
+### Implemented runtime correction
+
+- The supervisor now distinguishes the physical room faces from the retained
+  `0.20 m` wall-margin inset. Physical-room violations, invalid/stale data,
+  explicit stop, controller/watchdog faults, clock reversal, invalid geometry,
+  and exhausted recovery still latch zero-output `FAILSAFE`.
+- Opt-in boundary pressure at `0.025 m` enters `RECENTER`. Motion from outside
+  the inset must remain inside the physical room and strictly improve inset
+  clearance. Motion from inside cannot cross outward, and motion already in
+  the trigger band cannot reduce clearance. Interior fill-circumnavigation is
+  not incorrectly frozen by a wall-clearance comparison.
+- Recenter prefers room center, but selects a deterministic in-bounds proxy
+  outside every active fill plus `0.05 m` when center is infeasible. The
+  target is frozen for the episode, and a route planner retains one
+  circumnavigation side until direct line-of-sight clears. Completion also
+  requires the pose to be outside every active fill.
+- Finite recenter timeouts retain the same target and route for only the
+  remaining bounded recovery budget. They do not synthesize a recenter
+  completion. Exhaustion remains terminal.
+- Post-recovery direction selection now applies hard wall/fill segment safety
+  without the old blanket backward-half-plane rejection. One empty candidate
+  set requests recenter; if it is still empty after recenter, affine authority
+  is cleared while the accepted Gaussian remains active.
+- Post-recovery `SEARCH` reports affine weight `0.50`, tapers it to zero over
+  `0.50 m` beyond active-fill support, and retains the fixed modified-cost
+  decay `0.05 s^-1` and age `20.0 s`. `ESCAPE_ASSIST` retains full affine
+  authority, while wall recovery and `RECENTER` override it.
+- Targeted redesign can opt into the accepted cluster's immutable retained
+  samples. Initial creation still requires `40` valid synchronized samples;
+  the retained redesign also keeps the `40`-sample floor. Only an initial
+  reason-`30` insufficient-sample rejection is retryable through fresh
+  search/verification. Missing targets, malformed geometry, estimator/design
+  failure, and invalid results remain terminal.
+
+### Implemented evidence and fixed inputs
+
+Schema version 6 adds only opt-in recovery controls,
+`local_association_mode: verified_trap`, and
+`global_closer_radius_m`. Schema versions 1 through 5 retain their normalized
+shape and reject these fields.
+
+`verified_trap` keeps the verified below-threshold controller decision,
+unique convergence-to-fill association, fill-center tolerance, global
+exclusion, accepted direct/one-redesign lifecycle, complete events, and exact
+known-topology cardinality. Declared-local distance remains reported, but is
+diagnostic. The new `1.00 m` closer result is non-gating; the primary
+operator-equivalent Stage B and live stop remain `1.20 m`.
+
+The committed-input candidates are:
+
+```text
+phase08_v7_m4_visible_probe.yaml       1 visible two-light case
+phase08_v7_m4_two_light_suite.yaml     5 spatial + 3 repeat cases
+phase08_v7_m4_three_light_probe.yaml   1 optional visible three-light case
+```
+
+The visible case key is
+`a7d115b9893ee9b4ee0885a477820125ad68e21c93da689d858f69dc9aca9c32`.
+The two-light central validation key is
+`8b9b0605e83528496a25b78bb88bbd18af8ef43eb2da078e14a444ddd0a03057`;
+all three repeat references bind that exact key. The optional three-light key
+is `d4c7fe02cf52e3fab2c1cfd9e1d319305e0d22d546753633743fab5dfbb3a41a`.
+
+### No-Gazebo test evidence
+
+The final focused source envelope, in fresh ROS domain `148`, passed:
+
+```text
+256 passed, 1 skipped in 54.07 s
+```
+
+It covers the retained `39/40` boundary and same-cluster replacement,
+boundary inward/outward sweeps, the exact M3 infeasible-center geometry and
+persistent route, backward-safe post-recovery selection, empty-candidate
+recenter/fallback, finite bounded retry exhaustion, hard-fault latching,
+affine taper, verified-trap Stage A, exact cardinality, the non-gating closer
+diagnostic, fixed M4 inputs, and M1 historical immutability. The skip is the
+explicitly gated Gazebo integration.
+
+The clean broad functional split passed:
+
+```text
+570 passed, 3 skipped, 1 deselected in 107.78 s
+JUnit: /tmp/phase08_7_m4_functional_nonintegration.xml
+
+12 passed in 3.26 s
+JUnit: /tmp/phase08_7_m4_supervisor_integration.xml
+```
+
+The three skips are explicit runtime/Gazebo opt-ins. The one deselection is
+the already-recorded stale
+`test_v4_population_adoption_is_exact_and_unused`, whose immutable V4 hash
+inventory treats later fixed V6 and V7 scenarios as drift. The V4 source and
+adoption artifacts were not changed.
+
+One combined long-process run produced
+`581 passed, 3 skipped, 1 deselected, 1 failed`: the unchanged M2 topology
+integration assertion missed a transient `SEARCH` state. That test passed
+immediately alone, passed in the final 12-test integration file, and the full
+focused envelope passed. A prior whole-tree invocation from repository root
+also made the generic flake8/pep257 wrappers scan historical non-package
+trees; those two wrapper failures and the same stale V4 assertion are
+non-authoritative and did not launch ROS or Gazebo.
+
+Same-configuration lint comparison across all 12 changed Python source/test
+files is:
+
+```text
+HEAD:    930 findings = D 31, I 13, Q 886
+current: 922 findings = D 31, I 13, Q 878
+```
+
+M4 adds no flake8 finding and removes eight. `ament_pep257` is unchanged at
+`31/31`. Fatal `E9/F63/F7/F82`, Python compilation, `git diff --check`,
+launch/world `xmllint`, and
+`validate_phase_context.sh 08 implement` all pass.
+
+### Build, installed dry-run, and launch evidence
+
+The fresh isolated build passed:
+
+```text
+build base:   /tmp/phase08_7_m4_qual/build
+install base: /tmp/phase08_7_m4_qual/install
+log base:     /tmp/phase08_7_m4_qual/log
+Summary: 3 packages finished in 11.6 s
+```
+
+Installed-executable dry-runs of the installed scenario definitions passed
+with `[1, 8, 1]` resolved cases and zero unsupported cases:
+
+```text
+/tmp/phase08_7_m4_visible_installed_dry_run.yaml
+/tmp/phase08_7_m4_two_light_installed_dry_run.yaml
+/tmp/phase08_7_m4_three_light_installed_dry_run.yaml
+```
+
+They resolve exactly two, two, and three lights respectively; the fixed
+start/global/local coordinates; exact topology/fill limits; `0.20 m` wall
+margin; retained-sample redesign; bounded recovery; affine decay/age/weight;
+`60.0 s` recenter; `1.20 m` primary Stage B; and `1.00 m` non-gating closer
+diagnostic.
+
+Nonexecuting installed central-launch expansion passed and retained a
+`262`-line description at:
+
+```text
+/tmp/phase08_7_m4_launch_description.txt
+```
+
+It binds the new arguments into the existing modified-cost, Gaussian-fill,
+and supervisor owners while retaining the existing controller graph.
+Source and isolated-install bytes match:
+
+```text
+58eebc21f21561713a8cdf04d9a534f34efd5fc4f7ee4c0cf36e73be288af14e  Gaussian node
+350857cbd930ea3c9df9ddae9706897e705418fe3075562d55861ae8c0bd4dc1  scenario runner
+ed35836fc26228acfb91f5c74b562252a42d2b33ce9dee951cd1ed224219d904  scenario schema
+4e7662dcbd74c792711138ed43ac4201c8543651e525b23eacbf9dcb300b543d  recenter helpers
+1b61c3a6b056bc9a46d0cd44de08c88c28d71c85f1a804380abaf0c442baaba3  state machine
+73f6c98957b2ee34d419b8aea37e8ad6e4c08a1d32d8fa76ce97860ec7b17b24  supervisor node
+b402144a6d78999435e5470bd591d60c0518786f92527c8b78dd1cd8330e4e24  central launch
+37ba6e1e9adc842691328cc0a1c66e5fd04034db59c6fcdb0c05f6f6c4b769a1  visible input
+6e67e657b11f080a545abe6b87a8730112c350163e47f85ec6ac83ab32abb937  two-light input
+1a9ac4774094d43822b7d33f5eba24566e15cf745b9481ce8f25720a8e42c721  three-light input
+```
+
+Historical anchors remain:
+
+```text
+88b10b39aa24a6430f6f031c750334ed34e6835e54c84de8d36f4cc6a26444bf  shifted world
+3be130581b88c986fd845aef0c33c9db94ceb02ecfe2a6361926b0317ef8e655  V6 hue sweep
+3b9badc92cf63739f65662158999e3c2aab71761f790e3f360be9a52e6f38688  V6 repeats
+1221d8cb9d7235218d4f3da710f10d41284632a93712bd89d763d938a0437dae  M3 suite
+34f20a3bd66893be295c44f860e85645f6c9c182d82a658ee47bc785f3b42dba  M1 immutability manifest
+```
+
+All three M4 evidence roots remain absent and the Gazebo/runner/recorder
+process set is inactive.
+
+The bounded material-boundary checkpoint command passed and refreshed
+`docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt` against base
+HEAD `3b1edd4356e73675550f9928ca767621397692b2`.
+
+## Current milestone
+
+**Phase 08.7 M4 — implementation and no-Gazebo qualification PASS;
+checkpointed; qualified commit pending.**
+
+### Next criterion
+
+Commit the exact qualified source, tests, launch wiring, scenarios, status,
+and checkpoint. Reconfirm an inactive process set plus absent probe root, then
+dispatch only the one fixed visible two-light probe.

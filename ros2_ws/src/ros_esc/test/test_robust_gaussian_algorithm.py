@@ -37,6 +37,9 @@ from ros_esc.gaussian_fill_node.fill_registry import (
     associate_candidate,
     retain_cluster_samples,
 )
+from ros_esc.gaussian_fill_node.gaussian_fill_script import (
+    retained_redesign_window,
+)
 
 
 def sample(stamp, x, y, cost, state=1):
@@ -438,6 +441,48 @@ def test_targeted_redesign_resolves_old_id_and_requires_hard_overlap():
     assert overlap.merge is True
     assert distant.merge is False
     assert registry.associate_target(999, np.zeros(2), 0.3) is None
+
+
+def test_redesign_reuses_accepted_forty_samples_when_live_tail_has_39():
+    retained = tuple(
+        sample(
+            1.0 + index * 0.01,
+            0.2 * math.cos(index * 2.0 * math.pi / 40.0),
+            0.2 * math.sin(index * 2.0 * math.pi / 40.0),
+            0.01 * index,
+        )
+        for index in range(40)
+    )
+    registry = FillRegistry()
+    unused_old, first = registry.commit_new(
+        version_values((0.0, 0.0), 1.0, 0.3),
+        retained,
+    )
+    live_tail = retained[-39:]
+
+    window = retained_redesign_window(registry, first.fill_id)
+
+    assert len(live_tail) == 39
+    assert window.valid_count == 40
+    assert window.samples == retained
+    superseded, replacement = registry.commit_revision(
+        first.cluster_id,
+        version_values(
+            (0.02, 0.0),
+            1.2,
+            0.35,
+            source_timestamp=2.0,
+        ),
+        window.samples,
+    )
+    assert superseded.fill_id == first.fill_id
+    assert replacement.revision == 2
+    assert registry.active_cluster_for_fill(
+        first.fill_id
+    ).active_fill.fill_id == replacement.fill_id
+    assert len(
+        registry.active_cluster_for_fill(replacement.fill_id).samples
+    ) == 40
 
 
 def test_fill_gradient_descent_direction_points_outward_for_minimization():

@@ -10,8 +10,12 @@ import rclpy
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from rclpy.parameter import Parameter
+from ros_esc.supervisor_node import supervisor_node_script
 from ros_esc.supervisor_node.escape_recenter import Pose2D, recenter_command
-from ros_esc.supervisor_node.state_machine import State
+from ros_esc.supervisor_node.state_machine import (
+    State,
+    TransitionInputs,
+)
 from ros_esc.supervisor_node.supervisor_node_script import SupervisorNode
 from ros_esc_interfaces.msg import (
     AlgorithmEvent,
@@ -426,6 +430,134 @@ def test_post_recovery_search_publishes_safe_affine_authorization():
         rclpy.shutdown()
 
 
+def test_m4_post_recovery_affine_weight_tapers_after_fill_support():
+    rclpy.init()
+    node = SupervisorNode(
+        parameter_overrides=[
+            Parameter('max_fill_clusters', value=1),
+            Parameter('post_recovery_guidance_enabled', value=True),
+            Parameter('post_recovery_guidance_max_sec', value=60.0),
+            Parameter('post_recovery_retry_limit', value=3),
+            Parameter('recoverable_navigation_enabled', value=True),
+            Parameter('recovery_retry_limit', value=3),
+            Parameter('post_recovery_affine_weight', value=0.50),
+            Parameter(
+                'post_recovery_affine_taper_distance_m',
+                value=0.50,
+            ),
+        ]
+    )
+    recorder = Recorder()
+    node.state_publisher = recorder
+    try:
+        node.active_fill_records = {
+            1: {
+                'fill_id': 4,
+                'revision': 1,
+                'center': [0.0, 0.0],
+                'support_radius': 0.50,
+                'exit_radius': 0.40,
+            }
+        }
+        node.machine.state = State.SEARCH
+        node.machine.active_fill_count = 1
+        node.machine.post_recovery_fill_id = 4
+        node.machine.active_escape_fill_id = 4
+        node.machine.post_recovery_guidance_active = True
+        node.machine.post_recovery_guidance_started_sec = node._now_sec()
+
+        node.latest_pose = Pose2D(10.0, 0.50, 0.0, 0.0)
+        node.latest_pose_valid = True
+        assert node._ensure_post_recovery_direction() is None
+        node._publish_state_and_command(node._now_sec())
+        assert recorder.messages[-1].affine_weight == 0.50
+
+        node.latest_pose = Pose2D(10.1, 0.75, 0.0, 0.0)
+        node._publish_state_and_command(node._now_sec())
+        assert recorder.messages[-1].affine_weight == 0.25
+
+        node.latest_pose = Pose2D(10.2, 1.00, 0.0, 0.0)
+        node._publish_state_and_command(node._now_sec())
+        assert recorder.messages[-1].affine_weight == 0.0
+        assert node.machine.post_recovery_guidance_active is True
+        assert node.active_fill_records
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_m4_empty_post_recovery_direction_recenters_then_clears_affine(
+    monkeypatch,
+):
+    rclpy.init()
+    node = SupervisorNode(
+        parameter_overrides=[
+            Parameter('max_fill_clusters', value=1),
+            Parameter('post_recovery_guidance_enabled', value=True),
+            Parameter('post_recovery_guidance_max_sec', value=60.0),
+            Parameter('post_recovery_retry_limit', value=3),
+            Parameter('recoverable_navigation_enabled', value=True),
+            Parameter('recovery_retry_limit', value=3),
+            Parameter('room_bounds_x_min_m', value=-0.25),
+            Parameter('room_bounds_x_max_m', value=3.75),
+            Parameter('room_bounds_y_min_m', value=-0.25),
+            Parameter('room_bounds_y_max_m', value=3.75),
+            Parameter('room_center_x_m', value=1.75),
+            Parameter('room_center_y_m', value=1.75),
+            Parameter('wall_margin_m', value=0.20),
+        ]
+    )
+    try:
+        node.latest_pose = Pose2D(10.0, 3.50, 3.50, 0.0)
+        node.latest_pose_valid = True
+        node.active_fill_records = {
+            1: {
+                'fill_id': 4,
+                'revision': 1,
+                'center': [1.75, 1.75],
+                'support_radius': 0.50,
+                'exit_radius': 0.40,
+            }
+        }
+        node.machine.state = State.SEARCH
+        node.machine.active_fill_count = 1
+        node.machine.post_recovery_fill_id = 4
+        node.machine.active_escape_fill_id = 4
+        node.machine.post_recovery_guidance_active = True
+        node.machine.post_recovery_guidance_started_sec = node._now_sec()
+        monkeypatch.setattr(
+            supervisor_node_script,
+            'select_post_recovery_direction',
+            lambda *args, **kwargs: None,
+        )
+
+        assert node._prepare_geometry(node._now_sec()) is None
+        assert node.recenter_recovery_requested is True
+        transition = node.machine.step(
+            node._now_sec(),
+            TransitionInputs(recenter_recovery_requested=True),
+        )
+        assert transition.current == State.RECENTER
+        node._handle_transition(transition, node._now_sec())
+
+        transition = node.machine.step(
+            node._now_sec(),
+            TransitionInputs(recenter_complete=True),
+        )
+        assert transition.current == State.SEARCH
+        node._handle_transition(transition, node._now_sec())
+        assert node.post_recovery_direction_recovery_attempted is True
+
+        assert node._prepare_geometry(node._now_sec()) is None
+        assert node.machine.state == State.SEARCH
+        assert node.machine.post_recovery_guidance_active is False
+        assert node.machine.active_escape_fill_id is None
+        assert node.active_fill_records
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
 def test_m2_low_score_replay_does_not_publish_a_second_fill_request():
     rclpy.init()
     harness = SupervisorHarness(
@@ -650,6 +782,50 @@ def test_bounds_violation_fails_safe_and_publishes_only_zero():
             command.linear.x == 0.0 and command.angular.z == 0.0
             for command in harness.commands
         )
+    finally:
+        harness.close()
+        rclpy.shutdown()
+
+
+def test_m4_wall_margin_pressure_recenters_but_physical_violation_fails():
+    rclpy.init()
+    harness = SupervisorHarness(
+        overrides=[
+            Parameter('recoverable_navigation_enabled', value=True),
+            Parameter('recovery_retry_limit', value=3),
+            Parameter(
+                'boundary_recovery_trigger_clearance_m',
+                value=0.025,
+            ),
+            Parameter(
+                'boundary_recovery_release_clearance_m',
+                value=0.10,
+            ),
+        ],
+        name='phase08_m4_boundary_recovery_peer',
+    )
+    try:
+        harness.publish_inputs(_pose(1.64), duration=0.08)
+        assert _wait_for(
+            lambda: harness.supervisor.machine.state == State.RECENTER
+        )
+        assert not any(
+            event.event_type == AlgorithmEvent.EVENT_FAILSAFE
+            for event in harness.events
+        )
+
+        harness.publish_inputs(_pose(2.01), duration=0.08)
+        assert _wait_for(
+            lambda: harness.supervisor.machine.state == State.FAILSAFE
+        )
+        assert any(
+            event.event_type == AlgorithmEvent.EVENT_FAILSAFE
+            and 'physical room bounds' in event.detail
+            for event in harness.events
+        )
+        assert harness.commands
+        assert harness.commands[-1].linear.x == 0.0
+        assert harness.commands[-1].angular.z == 0.0
     finally:
         harness.close()
         rclpy.shutdown()

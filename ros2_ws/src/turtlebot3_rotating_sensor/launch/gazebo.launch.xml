@@ -112,6 +112,7 @@
     <arg name="gaussian_fill_merge_radius_scale" default="2.0"/>
     <arg name="gaussian_fill_minimum_merge_probability" default="0.60"/>
     <arg name="gaussian_fill_low_confidence_threshold" default="0.60"/>
+    <arg name="gaussian_fill_reuse_retained_samples_on_redesign" default="False"/>
     <arg name="pde_cost_history_topic" default="/turtlebot3/cost_value_chatter"/>
     <arg name="modified_cost_enable_affine_bias" default="True"/>
     <arg name="modified_cost_affine_gain" default="0.5"/>
@@ -155,6 +156,13 @@
     <arg name="post_recovery_guidance_enabled" default="False"/>
     <arg name="post_recovery_guidance_max_sec" default="0.0"/>
     <arg name="post_recovery_retry_limit" default="0"/>
+    <arg name="recoverable_navigation_enabled" default="False"/>
+    <arg name="recovery_retry_limit" default="0"/>
+    <arg name="boundary_recovery_trigger_clearance_m" default="0.025"/>
+    <arg name="boundary_recovery_release_clearance_m" default="0.10"/>
+    <arg name="recenter_target_fill_clearance_m" default="0.05"/>
+    <arg name="post_recovery_affine_weight" default="1.0"/>
+    <arg name="post_recovery_affine_taper_distance_m" default="0.50"/>
     <arg name="room_bounds_x_min_m" default="-2.0"/>
     <arg name="room_bounds_x_max_m" default="2.0"/>
     <arg name="room_bounds_y_min_m" default="-2.0"/>
@@ -770,6 +778,7 @@
             -p merge_radius_scale:=$(var gaussian_fill_merge_radius_scale)
             -p minimum_merge_probability:=$(var gaussian_fill_minimum_merge_probability)
             -p low_confidence_threshold:=$(var gaussian_fill_low_confidence_threshold)
+            -p reuse_retained_samples_on_redesign:=$(var gaussian_fill_reuse_retained_samples_on_redesign)
             -p gaussian_fill_diagnostics_topic:=$(var gaussian_fill_diagnostics_topic)
             -p algorithm_event_topic:=$(var algorithm_event_topic)
         "
@@ -806,6 +815,13 @@
             -p post_recovery_guidance_enabled:=$(var post_recovery_guidance_enabled)
             -p post_recovery_guidance_max_sec:=$(var post_recovery_guidance_max_sec)
             -p post_recovery_retry_limit:=$(var post_recovery_retry_limit)
+            -p recoverable_navigation_enabled:=$(var recoverable_navigation_enabled)
+            -p recovery_retry_limit:=$(var recovery_retry_limit)
+            -p boundary_recovery_trigger_clearance_m:=$(var boundary_recovery_trigger_clearance_m)
+            -p boundary_recovery_release_clearance_m:=$(var boundary_recovery_release_clearance_m)
+            -p recenter_target_fill_clearance_m:=$(var recenter_target_fill_clearance_m)
+            -p post_recovery_affine_weight:=$(var post_recovery_affine_weight)
+            -p post_recovery_affine_taper_distance_m:=$(var post_recovery_affine_taper_distance_m)
             -p room_bounds_x_min_m:=$(var room_bounds_x_min_m)
             -p room_bounds_x_max_m:=$(var room_bounds_x_max_m)
             -p room_bounds_y_min_m:=$(var room_bounds_y_min_m)

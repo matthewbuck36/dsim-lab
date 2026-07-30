@@ -355,6 +355,18 @@ def _v5_staged_resolved():
     return resolved
 
 
+def _v6_staged_resolved():
+    resolved = _v5_staged_resolved()
+    resolved['schema_version'] = 6
+    resolved['success']['ground_truth']['proximity_radius_m'] = 1.20
+    resolved['success']['staged_recovery'].update({
+        'local_association_mode': 'verified_trap',
+        'global_proximity_radius_m': 1.20,
+        'global_closer_radius_m': 1.00,
+    })
+    return resolved
+
+
 def _state_message(name):
     return SimpleNamespace(
         state=getattr(runner.AlgorithmState, f'STATE_{name}'),
@@ -763,6 +775,79 @@ def test_staged_recovery_reports_stage_a_cardinality_and_global_sample():
     assert evidence['unassigned_cluster_ids'] == [43]
 
 
+def test_verified_trap_stage_a_reports_but_does_not_gate_local_distance():
+    states, events, fills = _staged_records()
+    events[0][1].values = [1.70, 1.80]
+    fills[0][1].center_x = 1.72
+    fills[0][1].center_y = 1.82
+
+    legacy_stage, legacy_cardinality, unused_evidence, error = (
+        runner._staged_recovery_evidence(
+            _v5_staged_resolved(),
+            states,
+            events,
+            fills,
+        )
+    )
+    trap_stage, trap_cardinality, evidence, trap_error = (
+        runner._staged_recovery_evidence(
+            _v6_staged_resolved(),
+            states,
+            events,
+            fills,
+        )
+    )
+
+    assert error is None
+    assert legacy_stage is False
+    assert legacy_cardinality is False
+    assert trap_error is None
+    assert trap_stage is True
+    assert trap_cardinality is True
+    assignment = evidence['assignments'][0]
+    assert evidence['local_association_mode'] == 'verified_trap'
+    assert assignment['convergence_to_local_m'] > 0.60
+    assert assignment['declared_local_distance_gate_applied'] is False
+    assert assignment['declared_local_distance_gate_passed'] is False
+    assert assignment['nearest_declared_local_source_id'] == 'local'
+    assert assignment['nearest_declared_local_m'] == pytest.approx(
+        assignment['convergence_to_local_m']
+    )
+
+
+def test_verified_trap_stage_a_requires_exact_cluster_cardinality():
+    resolved = _v6_staged_resolved()
+    states, events, fills = _staged_records()
+    extra_fill = _fill_message(
+        fill_id=8,
+        cluster_id=43,
+        center=(2.0, 2.0),
+    )
+    extra_event = _event_message(
+        'FILL_CREATED',
+        source_timestamp=extra_fill.source_timestamp,
+        source_timestamp_valid=True,
+        fill_id=8,
+        fill_id_valid=True,
+        value_names=['cluster_id', 'revision'],
+        values=[43.0, 1.0],
+    )
+
+    stage_a, cardinality, evidence, error = (
+        runner._staged_recovery_evidence(
+            resolved,
+            states,
+            events + [(13, extra_event)],
+            fills + [(13, extra_fill)],
+        )
+    )
+
+    assert error is None
+    assert cardinality is False
+    assert stage_a is False
+    assert evidence['unassigned_cluster_ids'] == [43]
+
+
 def test_m3_approach_and_primary_select_distinct_first_samples():
     """Report approach first while retaining the stricter primary sample."""
     resolved = expand_suite(load_suite(M3_SPATIAL_SUITE))[0][0]
@@ -979,6 +1064,56 @@ def test_m3_approach_diagnostic_cannot_rescue_or_fail_combined_result():
     assert diagnostic['passed'] is False
     assert diagnostic['observed_live'] is True
     assert 'post_recovery_global_approach' not in (
+        classification['required_predicates']
+    )
+
+
+def test_schema_v6_closer_diagnostic_cannot_fail_primary_stage_b():
+    resolved = _v6_staged_resolved()
+    outcomes = runner._unavailable_outcomes('unused')
+    outcomes.update({
+        'readiness_interval_available': True,
+        'local_recovery_stage_passed': True,
+        'local_recovery_stage': {'completed_episode_count': 1},
+        'fill_cardinality_passed': True,
+        'post_recovery_global_proximity_passed': True,
+        'post_recovery_global_proximity': {'distance_m': 1.10},
+        'post_recovery_global_closer_passed': False,
+        'post_recovery_global_closer': {
+            'reason': 'no post-Stage-A sample reached 1.00 m',
+        },
+        'collision_expectation_passed': True,
+        'outcome_error': None,
+    })
+
+    classification = classify_result(
+        resolved,
+        {'passed': True},
+        {'passed': True},
+        outcomes,
+        {
+            'timed_out': False,
+            'return_code': 0,
+            'graceful_global_proximity_stop': True,
+            'global_closer_observed_live': False,
+        },
+        metadata={},
+        run_directory_available=True,
+    )
+
+    assert classification['passed'] is True
+    diagnostic = classification['staged_results'][
+        'global_closer_diagnostic'
+    ]
+    assert diagnostic == {
+        'passed': False,
+        'observed_live': False,
+        'evidence': {
+            'reason': 'no post-Stage-A sample reached 1.00 m',
+        },
+        'gating': False,
+    }
+    assert 'post_recovery_global_closer' not in (
         classification['required_predicates']
     )
 

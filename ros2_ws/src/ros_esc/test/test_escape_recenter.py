@@ -15,13 +15,16 @@ from ros_esc.supervisor_node.escape_recenter import (
     Pose2D,
     RecenterControlConfig,
     RecenterHoldTracker,
+    RecenterRoutePlanner,
     command_sweep_is_safe,
     evaluate_direction,
     evaluate_direction_safety,
     preferred_escape_direction,
     recent_approach,
     recenter_command,
+    select_post_recovery_direction,
     select_recenter_direction,
+    select_safe_recenter_target,
     select_safe_direction,
     wrap_angle,
 )
@@ -279,6 +282,192 @@ def test_command_sweep_blocks_inward_reentry_and_wall_crossing():
     assert command_sweep_is_safe(
         [0.2, 0.0], math.pi, 0.0, 0.5, [fill]
     ) is True
+
+
+def test_boundary_recovery_allows_only_physical_safe_inward_motion():
+    bounds = OperatingBounds(
+        x_min=-0.25,
+        x_max=3.75,
+        y_min=-0.25,
+        y_max=3.75,
+        center_x=1.75,
+        center_y=1.75,
+        wall_margin=0.20,
+    )
+    position = [3.56, 1.75]
+
+    assert bounds.contains(position) is False
+    assert bounds.contains_physical(position) is True
+    assert command_sweep_is_safe(
+        position,
+        math.pi,
+        0.10,
+        0.50,
+        [],
+        bounds,
+        allow_inward_from_margin=True,
+    ) is True
+    assert command_sweep_is_safe(
+        position,
+        0.0,
+        0.10,
+        0.50,
+        [],
+        bounds,
+        allow_inward_from_margin=True,
+    ) is False
+    assert command_sweep_is_safe(
+        [3.53, 1.75],
+        0.0,
+        0.02,
+        0.50,
+        [],
+        bounds,
+        allow_inward_from_margin=True,
+        boundary_trigger_clearance_m=0.025,
+    ) is False
+    assert command_sweep_is_safe(
+        [3.54, 1.75],
+        0.0,
+        0.10,
+        0.50,
+        [],
+        bounds,
+        allow_inward_from_margin=True,
+    ) is False
+    assert command_sweep_is_safe(
+        [3.76, 1.75],
+        math.pi,
+        0.10,
+        0.50,
+        [],
+        bounds,
+        allow_inward_from_margin=True,
+    ) is False
+
+
+def test_post_recovery_selector_can_reverse_safely_at_corner():
+    bounds = OperatingBounds(
+        x_min=-0.25,
+        x_max=3.75,
+        y_min=-0.25,
+        y_max=3.75,
+        center_x=1.75,
+        center_y=1.75,
+        wall_margin=0.20,
+    )
+    position = np.array([3.50, 3.50])
+    preferred = position - bounds.center
+    config = DirectionConfig(lookahead_m=0.50)
+
+    assert select_safe_direction(
+        position, preferred, [], config, bounds
+    ) is None
+    selected = select_post_recovery_direction(
+        position, preferred, [], config, bounds
+    )
+
+    assert selected is not None
+    assert np.dot(selected.direction, preferred) < 0.0
+    safe, unused_clearance = evaluate_direction_safety(
+        position, selected.direction, [], config, bounds
+    )
+    assert safe is True
+
+
+def test_m3_infeasible_center_gets_safe_proxy_and_persistent_route():
+    position = np.array(
+        [1.5791701368124422, 2.2524772001799636],
+        dtype=np.float64,
+    )
+    yaw = 0.0
+    fill = FillAvoidance(
+        1,
+        1,
+        1.7022778813575337,
+        1.8159857225368554,
+        0.6086747487,
+    )
+    bounds = OperatingBounds(
+        x_min=-0.25,
+        x_max=3.75,
+        y_min=-0.25,
+        y_max=3.75,
+        center_x=1.75,
+        center_y=1.75,
+        wall_margin=0.20,
+    )
+    direction_config = DirectionConfig(lookahead_m=0.50)
+    control_config = RecenterControlConfig(tolerance_m=0.35)
+    target = select_safe_recenter_target(
+        position,
+        bounds.center,
+        [fill],
+        bounds,
+        clearance_m=0.05,
+    )
+
+    assert np.linalg.norm(bounds.center - fill.center) < fill.radius
+    assert target is not None
+    assert bounds.contains(target)
+    assert np.linalg.norm(target - fill.center) > fill.radius + 0.05
+
+    planner = RecenterRoutePlanner()
+    hold = RecenterHoldTracker(control_config)
+    locked_sides = []
+    dt = 0.05
+    completed_at = None
+    for step in range(1201):
+        now_sec = step * dt
+        target_distance = float(np.linalg.norm(target - position))
+        outside_fill = float(np.linalg.norm(position - fill.center)) > fill.radius
+        completion_distance = (
+            target_distance
+            if outside_fill
+            else control_config.tolerance_m + 1.0
+        )
+        if hold.update(now_sec, completion_distance):
+            completed_at = now_sec
+            break
+        if outside_fill and target_distance <= control_config.tolerance_m:
+            linear = 0.0
+            angular = 0.0
+        else:
+            selection = planner.select(
+                position,
+                target,
+                [fill],
+                direction_config,
+                bounds,
+            )
+            assert selection is not None
+            if planner.side:
+                locked_sides.append(planner.side)
+            linear, angular = recenter_command(
+                selection.direction,
+                yaw,
+                completion_distance,
+                control_config,
+            )
+            if not command_sweep_is_safe(
+                position,
+                yaw,
+                linear,
+                0.50,
+                [fill],
+                bounds,
+                allow_inward_from_margin=True,
+            ):
+                linear = 0.0
+        position = position + linear * dt * np.array(
+            [math.cos(yaw), math.sin(yaw)]
+        )
+        yaw = wrap_angle(yaw + angular * dt)
+
+    assert completed_at is not None
+    assert completed_at < 60.0
+    assert set(locked_sides) == {-1}
+    assert np.linalg.norm(position - fill.center) > fill.radius
 
 
 @pytest.mark.parametrize(

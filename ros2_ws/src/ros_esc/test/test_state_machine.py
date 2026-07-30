@@ -350,6 +350,135 @@ def test_recenter_timeout():
     assert machine.step(8.0, TransitionInputs()).current == State.FAILSAFE
 
 
+def test_recoverable_boundary_request_enters_recenter_but_hard_faults_latch():
+    machine = SupervisorStateMachine(
+        config=config(
+            recoverable_navigation_enabled=True,
+            recovery_retry_limit=3,
+        )
+    )
+
+    transition = machine.step(
+        0.1,
+        TransitionInputs(recenter_recovery_requested=True),
+    )
+    assert transition.current == State.RECENTER
+    assert transition.reason == 'recoverable navigation requested'
+    assert machine.recovery_retry_count == 1
+
+    transition = machine.step(0.2, TransitionInputs(pose_valid=False))
+    assert transition.current == State.FAILSAFE
+    assert transition.reason == 'pose invalid or stale'
+
+
+def test_insufficient_fill_samples_reacquire_then_exhaust_bounded_retry():
+    machine = SupervisorStateMachine(
+        config=config(
+            recoverable_navigation_enabled=True,
+            recovery_retry_limit=1,
+        )
+    )
+    enter_design(machine)
+    transition = machine.step(
+        5.1,
+        TransitionInputs(
+            fill_result='retryable_rejected',
+            fill_source_timestamp=11.0,
+        ),
+    )
+    assert transition.current == State.SEARCH
+    assert machine.recovery_retry_count == 1
+
+    machine.step(6.0, TransitionInputs(convergence_confirmed=True))
+    machine.step(
+        6.1,
+        TransitionInputs(source_score=0.2, source_score_valid=True),
+    )
+    transition = machine.step(
+        9.1,
+        TransitionInputs(source_score=0.2, source_score_valid=True),
+    )
+    assert transition.current == State.DESIGN_OR_MERGE_FILL
+    machine.register_fill_request(12.0)
+    transition = machine.step(
+        9.2,
+        TransitionInputs(
+            fill_result='retryable_rejected',
+            fill_source_timestamp=12.0,
+        ),
+    )
+    assert transition.current == State.FAILSAFE
+    assert transition.reason == 'recoverable navigation retry limit reached'
+
+
+def test_escape_timeout_recovers_to_recenter_with_accepted_fill():
+    machine = SupervisorStateMachine(
+        config=config(
+            escape_max_sec=1.0,
+            recoverable_navigation_enabled=True,
+            recovery_retry_limit=3,
+        )
+    )
+    enter_repulse(machine)
+
+    transition = machine.step(
+        machine.escape_started_sec + 1.0,
+        TransitionInputs(),
+    )
+
+    assert transition.current == State.RECENTER
+    assert 'recover by recenter' in transition.reason
+    assert 'timeout' not in transition.reason
+
+
+def test_recenter_finite_geometry_extensions_are_bounded_and_reset_on_completion():
+    machine = SupervisorStateMachine(
+        config=config(
+            recenter_max_sec=2.0,
+            recoverable_navigation_enabled=True,
+            recovery_retry_limit=2,
+        )
+    )
+    enter_repulse(machine)
+    machine.step(6.0, TransitionInputs(stable_exit=True))
+
+    first = machine.step(
+        8.0,
+        TransitionInputs(recenter_recovery_allowed=True),
+    )
+    second = machine.step(
+        10.0,
+        TransitionInputs(recenter_recovery_allowed=True),
+    )
+    exhausted = machine.step(
+        12.0,
+        TransitionInputs(recenter_recovery_allowed=True),
+    )
+
+    assert first.current == State.RECENTER
+    assert second.current == State.RECENTER
+    assert exhausted.current == State.FAILSAFE
+    assert exhausted.reason == 'recenter timeout'
+
+    completed = SupervisorStateMachine(
+        config=config(
+            recoverable_navigation_enabled=True,
+            recovery_retry_limit=2,
+        )
+    )
+    transition = completed.step(
+        0.1,
+        TransitionInputs(recenter_recovery_requested=True),
+    )
+    assert transition.current == State.RECENTER
+    transition = completed.step(
+        0.2,
+        TransitionInputs(recenter_complete=True),
+    )
+    assert transition.current == State.SEARCH
+    assert completed.recovery_retry_count == 0
+
+
 def _completed_local_recovery_with_post_guidance():
     machine = SupervisorStateMachine(
         config=config(

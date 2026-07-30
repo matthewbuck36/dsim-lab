@@ -54,6 +54,8 @@ class StateMachineConfig:
     post_recovery_guidance_enabled: bool = False
     post_recovery_guidance_max_sec: float = 0.0
     post_recovery_retry_limit: int = 0
+    recoverable_navigation_enabled: bool = False
+    recovery_retry_limit: int = 0
 
     def __post_init__(self):
         durations = (
@@ -82,6 +84,19 @@ class StateMachineConfig:
         ):
             raise ValueError(
                 "post_recovery_retry_limit must be a nonnegative integer"
+            )
+        if (
+            isinstance(self.recovery_retry_limit, bool)
+            or not isinstance(self.recovery_retry_limit, int)
+            or self.recovery_retry_limit < 0
+        ):
+            raise ValueError('recovery_retry_limit must be a nonnegative integer')
+        if (
+            self.recoverable_navigation_enabled
+            and self.recovery_retry_limit <= 0
+        ):
+            raise ValueError(
+                'recoverable navigation requires a positive recovery retry limit'
             )
         if self.post_recovery_guidance_enabled:
             if self.max_fill_clusters <= 0:
@@ -122,6 +137,8 @@ class TransitionInputs:
     stable_exit: bool = False
     stalled: bool = False
     recenter_complete: bool = False
+    recenter_recovery_requested: bool = False
+    recenter_recovery_allowed: bool = False
 
 
 @dataclass(frozen=True)
@@ -234,6 +251,7 @@ class SupervisorStateMachine:
         self.post_recovery_guidance_active = False
         self.post_recovery_guidance_started_sec = None
         self.post_recovery_retry_count = 0
+        self.recovery_retry_count = 0
 
     @staticmethod
     def _require_time(now_sec):
@@ -292,6 +310,23 @@ class SupervisorStateMachine:
             return self._transition(State.FAILSAFE, now_sec, "source sample invalid or stale")
 
         self._expire_post_recovery_guidance(now_sec)
+        if (
+            self.config.recoverable_navigation_enabled
+            and inputs.recenter_recovery_requested
+            and self.state != State.RECENTER
+        ):
+            if self.recovery_retry_count >= self.config.recovery_retry_limit:
+                return self._transition(
+                    State.FAILSAFE,
+                    now_sec,
+                    'recoverable navigation retry limit reached',
+                )
+            self.recovery_retry_count += 1
+            return self._transition(
+                State.RECENTER,
+                now_sec,
+                'recoverable navigation requested',
+            )
         if self.state == State.GOAL_HOLD:
             return None
         if self.state == State.SEARCH:
@@ -332,12 +367,22 @@ class SupervisorStateMachine:
         score = inputs.source_score
         if not inputs.source_score_observed:
             if self.elapsed(now_sec) >= self.config.verification_max_sec:
+                if self.config.recoverable_navigation_enabled:
+                    return self._recover_to_search(
+                        now_sec,
+                        'verification evidence window exhausted; resume search',
+                    )
                 return self._transition(State.FAILSAFE, now_sec, "verification timeout")
             return None
         if not inputs.source_score_valid:
             return self._transition(State.FAILSAFE, now_sec, "source score invalid")
         if not inputs.source_score_ready:
             if self.elapsed(now_sec) >= self.config.verification_max_sec:
+                if self.config.recoverable_navigation_enabled:
+                    return self._recover_to_search(
+                        now_sec,
+                        'verification evidence window exhausted; resume search',
+                    )
                 return self._transition(State.FAILSAFE, now_sec, "verification timeout")
             return None
         if score is None or not math.isfinite(float(score)):
@@ -390,6 +435,11 @@ class SupervisorStateMachine:
                 )
 
         if self.elapsed(now_sec) >= self.config.verification_max_sec:
+            if self.config.recoverable_navigation_enabled:
+                return self._recover_to_search(
+                    now_sec,
+                    'verification classification window exhausted; resume search',
+                )
             return self._transition(State.FAILSAFE, now_sec, "verification timeout")
         return None
 
@@ -420,6 +470,13 @@ class SupervisorStateMachine:
                 return self._transition(destination, now_sec, "matching fill design accepted")
             if inputs.fill_result == "rejected":
                 return self._transition(State.FAILSAFE, now_sec, "fill design rejected")
+            if (
+                inputs.fill_result == 'retryable_rejected'
+                and self.config.recoverable_navigation_enabled
+            ):
+                return self._recover_to_search(
+                    now_sec, 'insufficient fill samples; reacquire search'
+                )
             return self._transition(State.FAILSAFE, now_sec, "invalid fill result")
 
         if self.elapsed(now_sec) >= self.config.fill_design_timeout_sec:
@@ -428,12 +485,23 @@ class SupervisorStateMachine:
 
     def _step_repulse(self, now_sec, inputs):
         if self._escape_timed_out(now_sec):
+            if (
+                self.config.recoverable_navigation_enabled
+                and self.active_escape_fill_id is not None
+            ):
+                return self._recover_to_recenter(
+                    now_sec, 'escape duration exhausted; recover by recenter'
+                )
             return self._transition(State.FAILSAFE, now_sec, "escape timeout")
         if inputs.stable_exit:
             destination = State.RECENTER if self.config.recenter_after_escape else State.SEARCH
             return self._transition(destination, now_sec, "stable escape exit")
         if inputs.stalled:
             if self.redesign_attempted:
+                if self.config.recoverable_navigation_enabled:
+                    return self._recover_to_recenter(
+                        now_sec, 'redesigned escape stalled; recover by recenter'
+                    )
                 return self._transition(State.FAILSAFE, now_sec, "escape stalled after redesign")
             self.redesign_attempted = True
             self.design_returns_to_assist = True
@@ -446,6 +514,10 @@ class SupervisorStateMachine:
 
     def _step_assist(self, now_sec, inputs):
         if self._escape_timed_out(now_sec):
+            if self.config.recoverable_navigation_enabled:
+                return self._recover_to_recenter(
+                    now_sec, 'assisted escape duration exhausted; recover by recenter'
+                )
             return self._transition(State.FAILSAFE, now_sec, "assisted escape timeout")
         if inputs.stable_exit:
             destination = State.RECENTER if self.config.recenter_after_escape else State.SEARCH
@@ -454,6 +526,7 @@ class SupervisorStateMachine:
 
     def _step_recenter(self, now_sec, inputs):
         if inputs.recenter_complete:
+            self.recovery_retry_count = 0
             if self._fill_budget_exhausted():
                 if not self._activate_post_recovery_guidance(now_sec):
                     return self._transition(
@@ -463,8 +536,48 @@ class SupervisorStateMachine:
                     )
             return self._transition(State.SEARCH, now_sec, "recenter complete")
         if self.elapsed(now_sec) >= self.config.recenter_max_sec:
+            if (
+                self.config.recoverable_navigation_enabled
+                and inputs.recenter_recovery_allowed
+                and self.recovery_retry_count < self.config.recovery_retry_limit
+            ):
+                self.recovery_retry_count += 1
+                previous = self.state
+                self.state_entered_sec = float(now_sec)
+                self.transition_reason = 'bounded recenter recovery extension'
+                return Transition(
+                    previous,
+                    State.RECENTER,
+                    self.transition_reason,
+                )
             return self._transition(State.FAILSAFE, now_sec, "recenter timeout")
         return None
+
+    def _recover_to_search(self, now_sec, reason):
+        if self.recovery_retry_count >= self.config.recovery_retry_limit:
+            return self._transition(
+                State.FAILSAFE,
+                now_sec,
+                'recoverable navigation retry limit reached',
+            )
+        self.recovery_retry_count += 1
+        return self._transition(State.SEARCH, now_sec, reason)
+
+    def _recover_to_recenter(self, now_sec, reason):
+        if self.recovery_retry_count >= self.config.recovery_retry_limit:
+            return self._transition(
+                State.FAILSAFE,
+                now_sec,
+                'recoverable navigation retry limit reached',
+            )
+        self.recovery_retry_count += 1
+        return self._transition(State.RECENTER, now_sec, reason)
+
+    def deactivate_post_recovery_guidance(self):
+        """Clear affine authorization while retaining accepted Gaussian fills."""
+        self.post_recovery_guidance_active = False
+        self.post_recovery_guidance_started_sec = None
+        self.active_escape_fill_id = None
 
     def _matching_fill_result(self, source_timestamp):
         if self.fill_request_timestamp is None or source_timestamp is None:

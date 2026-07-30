@@ -1,0 +1,174 @@
+schema_version: 6
+suite_id: phase08_v7_m4_three_light_probe
+description: Optional visible two-trap and one-global development probe, eligible only after the complete M4 two-light gate passes.
+mode: simulation
+execution:
+  max_parallel_runs: 1
+  gazebo_gui: true
+  runs_root: /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_three_light_probe
+  preflight_timeout_sec: 150.0
+  run_timeout_sec: 360.0
+  wall_timeout_sec: 540.0
+  shutdown_grace_sec: 45.0
+  stop_on_run_failure: false
+  stop_on_cleanup_failure: true
+metadata:
+  experiment_version: phase08-v7-m4-three-light
+  operator_notes: One optional development attempt only after all nine required two-light attempts pass; this cannot establish three-light repeatability.
+level_map: {}
+defaults:
+  bounds_m: [-0.25, 3.75, -0.25, 3.75]
+  room_center_m: [1.75, 1.75]
+  validation_world: true
+  simulation_contacts_enabled: true
+  geometry_profile: corner_origin_diagonal_sector_v1
+  disturbances:
+    sensor_noise: {model: none, bound: 0.0}
+    sensor_delay_sec: 0.0
+    pose_delay_sec: 0.0
+cases:
+  - case_id: v7_m4_three_light_sequential_18206
+    family: corner_origin
+    acceptance_family: corner_origin_diagonal_sector
+    acceptance_partition: development
+    description: Sequential recovery from two declared weaker traps before post-recovery approach to the stronger global.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [18206]
+    known_topology:
+      expected_local_minima: 2
+      expected_global_minima: 1
+    metric_applicability:
+      escape_attempt: true
+      escape_duration: true
+      orbit_count: true
+      revisit: false
+      delay: false
+      saturation: false
+    starts:
+      - {id: corner_start, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - id: local_1
+        x_m: 1.1086554390135441
+        y_m: 0.4592201188381077
+        relative_lumen_input: 400.0
+        evaluation_role: local_minimum
+      - id: local_2
+        x_m: 0.6888301782571618
+        y_m: 1.662983158520316
+        relative_lumen_input: 400.0
+        evaluation_role: local_minimum
+      - id: global
+        x_m: 3.5
+        y_m: 3.5
+        relative_lumen_input: 1600.0
+        evaluation_role: goal
+    algorithm:
+      ablations:
+        gaussian_fill_enabled: true
+        affine_assist_enabled: true
+        recenter_enabled: true
+      launch_overrides:
+        convergence_min_fill_periods: 2.0
+        convergence_state_gating_enabled: true
+        convergence_minimum_path_length_m: 0.20
+        convergence_maximum_path_efficiency: 0.50
+        gaussian_fill_covariance_scale: 2.5
+        gaussian_fill_amplitude_depth_scale: 1.5
+        gaussian_fill_exit_sigma: 2.5
+        gaussian_fill_max_fills: 2
+        gaussian_fill_minimum_valid_samples: 40
+        gaussian_fill_reuse_retained_samples_on_redesign: true
+        post_recovery_guidance_enabled: true
+        post_recovery_guidance_max_sec: 60.0
+        post_recovery_retry_limit: 3
+        modified_cost_affine_gain: 0.5
+        modified_cost_affine_decay_rate: 0.05
+        modified_cost_affine_max_age: 20.0
+        post_recovery_affine_weight: 0.50
+        post_recovery_affine_taper_distance_m: 0.50
+        recoverable_navigation_enabled: true
+        recovery_retry_limit: 3
+        boundary_recovery_trigger_clearance_m: 0.025
+        boundary_recovery_release_clearance_m: 0.10
+        recenter_target_fill_clearance_m: 0.05
+        stall_window_sec: 3.0
+        minimum_radial_progress_m: 0.05
+        goal_score_threshold: 0.95
+        goal_score_rotation_period_sec: 3.0
+        goal_score_required_rotations: 2
+        goal_hold_sec: 3.0
+        undesired_score_hold_sec: 3.0
+        verification_max_sec: 12.0
+        fill_design_timeout_sec: 5.0
+        escape_max_sec: 20.0
+        escape_exit_hold_sec: 1.0
+        recenter_max_sec: 60.0
+        recenter_tolerance_m: 0.35
+        recenter_hold_sec: 1.0
+        direction_lookahead_m: 0.5
+        direction_candidate_step_rad: 0.7853981633974483
+        wall_margin_m: 0.20
+        fill_avoidance_margin_m: 0.1
+        approach_history_window_sec: 0.5
+    success:
+      all_of: &all_of
+        - recording_complete
+        - cleanup_complete
+        - required_state_path
+        - required_events
+        - no_forbidden_states
+        - no_forbidden_events
+        - collision_expectation
+        - local_recovery_stage
+        - post_recovery_global_proximity
+        - fill_cardinality
+      controller:
+        contract_id: v7_m4_three_light_sequential_18206
+        expected_verification_outcome: below_target_extremum
+        reachability_argument: Two distinct verified below-target trap episodes must create exactly two active fill clusters before post-recovery approach to the stronger declared global.
+        required_state_path: &direct_recovery
+          - SEARCH
+          - VERIFY_EXTREMUM
+          - DESIGN_OR_MERGE_FILL
+          - ESCAPE_REPULSE
+          - RECENTER
+          - SEARCH
+        required_state_paths:
+          - *direct_recovery
+          - - SEARCH
+            - VERIFY_EXTREMUM
+            - DESIGN_OR_MERGE_FILL
+            - ESCAPE_REPULSE
+            - DESIGN_OR_MERGE_FILL
+            - ESCAPE_ASSIST
+            - RECENTER
+            - SEARCH
+        required_events:
+          - CONVERGENCE_CONFIRMED
+          - FILL_CREATED
+          - ESCAPE_STARTED
+          - RECENTER_STARTED
+          - RECENTER_COMPLETE
+        forbidden_states: [FAILSAFE]
+        forbidden_events: [TIMEOUT, FAILSAFE]
+      ground_truth:
+        method: declared_global_proximity
+        global_source_id: global
+        proximity_radius_m: 1.20
+      staged_recovery:
+        local_source_ids: [local_1, local_2]
+        global_source_id: global
+        convergence_to_local_max_m: 0.60
+        convergence_to_global_min_m: 0.75
+        fill_to_convergence_max_m: 0.50
+        global_proximity_radius_m: 1.20
+        global_closer_radius_m: 1.00
+        local_association_mode: verified_trap
+      collision_expected: false
+      result_scopes:
+        full_lifecycle:
+          anchor_state: SEARCH
+          boundary_state: null
+          graceful_stop: false
+          all_of: *all_of

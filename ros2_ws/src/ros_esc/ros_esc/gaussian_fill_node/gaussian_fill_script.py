@@ -24,6 +24,7 @@ from std_msgs.msg import Float64MultiArray
 from ros_esc.gaussian_fill_node.basin_estimator import (
     CostSnapshot,
     EstimatorConfig,
+    FilteredWindow,
     PoseSnapshot,
     estimate_basin,
     freeze_sample_window,
@@ -57,6 +58,19 @@ def robust_fill_redesign_target(header):
     except ValueError:
         return None
     return target if target > 0 else None
+
+
+def retained_redesign_window(fill_registry, fill_id):
+    """Return one immutable active-cluster sample window for redesign."""
+    cluster = fill_registry.active_cluster_for_fill(fill_id)
+    if cluster is None:
+        return None
+    samples = tuple(cluster.samples)
+    return FilteredWindow(
+        samples=samples,
+        input_count=len(samples),
+        rejected={},
+    )
 
 
 class GaussianFill(Node):
@@ -155,6 +169,7 @@ class GaussianFill(Node):
             "merge_radius_scale": 2.0,
             "minimum_merge_probability": 0.60,
             "low_confidence_threshold": 0.60,
+            'reuse_retained_samples_on_redesign': False,
         }
         for name, value in robust_defaults.items():
             self.declare_parameter(name, value)
@@ -265,6 +280,9 @@ class GaussianFill(Node):
         self.cost_snapshots = deque(maxlen=20000)
         self.robust_request_diagnostics = None
         self.latest_algorithm_state = None
+        self.reuse_retained_samples_on_redesign = bool(
+            self.get_parameter('reuse_retained_samples_on_redesign').value
+        )
         self.estimator_config = None
         self.design_config = None
         self.fill_registry = None
@@ -613,6 +631,39 @@ class GaussianFill(Node):
             request_ros_time,
             self.estimator_config,
         )
+        if (
+            redesign_fill_id is not None
+            and self.reuse_retained_samples_on_redesign
+        ):
+            retained_window = retained_redesign_window(
+                self.fill_registry,
+                redesign_fill_id
+            )
+            if retained_window is None:
+                self._publish_robust_failure(
+                    AlgorithmEvent.EVENT_FILL_REJECTED,
+                    33,
+                    'targeted redesign fill is absent or has no active replacement',
+                    request_timestamp,
+                    window,
+                    unmatched,
+                )
+                return
+            window = retained_window
+            unmatched = 0
+            self.robust_request_diagnostics[
+                'retained_redesign_sample_reuse'
+            ] = 1.0
+            if window.valid_count < self.estimator_config.minimum_valid_samples:
+                self._publish_robust_failure(
+                    AlgorithmEvent.EVENT_FILL_REJECTED,
+                    31,
+                    'retained redesign sample history is below the fixed minimum',
+                    request_timestamp,
+                    window,
+                    unmatched,
+                )
+                return
         if window.valid_count < self.estimator_config.minimum_valid_samples:
             self._publish_robust_failure(
                 AlgorithmEvent.EVENT_FILL_REJECTED,
@@ -1618,6 +1669,7 @@ class GaussianFill(Node):
                 "merge_radius_scale",
                 "minimum_merge_probability",
                 "low_confidence_threshold",
+                'reuse_retained_samples_on_redesign',
                 "max_fills",
             ]
             values = []

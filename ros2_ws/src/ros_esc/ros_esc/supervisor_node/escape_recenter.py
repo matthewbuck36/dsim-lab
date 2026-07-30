@@ -104,6 +104,14 @@ class OperatingBounds:
             and self.inset_y_min <= point[1] <= self.inset_y_max
         )
 
+    def contains_physical(self, point):
+        """Return whether a robot-center point remains inside the room faces."""
+        point = _finite_vector(point, 'point')
+        return bool(
+            self.x_min <= point[0] <= self.x_max
+            and self.y_min <= point[1] <= self.y_max
+        )
+
     def clearance(self, point):
         point = _finite_vector(point, "point")
         return float(
@@ -483,6 +491,254 @@ def select_safe_direction(
     return max(selections, key=score)
 
 
+def select_post_recovery_direction(
+    position,
+    preferred,
+    fills: Sequence[FillAvoidance],
+    config=None,
+    bounds: Optional[OperatingBounds] = None,
+):
+    """Select a hard-safe direction without forbidding the backward half-plane."""
+    config = config or DirectionConfig()
+    position = _finite_vector(position, 'position')
+    preferred = _unit(preferred, 'preferred direction')
+    selections = []
+    for index, rotation, direction in _direction_candidates(preferred, config):
+        safe, clearance = evaluate_direction_safety(
+            position, direction, fills, config, bounds
+        )
+        if not safe:
+            continue
+        endpoint = position + config.lookahead_m * direction
+        fill_progress = min(
+            (
+                float(np.linalg.norm(endpoint - fill.center))
+                - float(np.linalg.norm(position - fill.center))
+                for fill in fills
+            ),
+            default=0.0,
+        )
+        alignment = float(np.dot(direction, preferred))
+        selection = DirectionSelection(
+            x=float(direction[0]),
+            y=float(direction[1]),
+            clearance_m=clearance,
+            rotation_rad=float(rotation),
+            candidate_index=index,
+        )
+        score = (
+            round(clearance, 12),
+            round(fill_progress, 12),
+            round(alignment, 12),
+            -round(abs(rotation), 12),
+            -index,
+        )
+        selections.append((score, selection))
+    if not selections:
+        return None
+    return max(selections, key=lambda item: item[0])[1]
+
+
+def _point_outside_fills(point, fills, clearance_m=0.0):
+    point = _finite_vector(point, 'point')
+    return all(
+        float(np.linalg.norm(point - fill.center))
+        > fill.radius + clearance_m + _EPSILON
+        for fill in fills
+    )
+
+
+def select_safe_recenter_target(
+    position,
+    preferred_target,
+    fills: Sequence[FillAvoidance],
+    bounds: OperatingBounds,
+    clearance_m=0.05,
+    angular_samples=32,
+):
+    """Choose the closest in-bounds target outside all active fill regions."""
+    position = _finite_vector(position, 'position')
+    preferred_target = _finite_vector(
+        preferred_target, 'preferred recenter target'
+    )
+    if not math.isfinite(float(clearance_m)) or clearance_m < 0.0:
+        raise ValueError('recenter target clearance must be finite and nonnegative')
+    if (
+        isinstance(angular_samples, bool)
+        or not isinstance(angular_samples, int)
+        or angular_samples < 8
+    ):
+        raise ValueError('recenter target angular samples must be at least eight')
+
+    if (
+        bounds.contains(preferred_target)
+        and _point_outside_fills(preferred_target, fills, clearance_m)
+    ):
+        return np.array(preferred_target, copy=True)
+
+    candidates = []
+    ordered_fills = sorted(fills, key=lambda item: (item.cluster_id, item.fill_id))
+    for fill in ordered_fills:
+        # Place generated candidates just beyond the requested clearance
+        # boundary.  The strict comparison in _point_outside_fills prevents a
+        # point exactly on that boundary from being treated as a valid target.
+        radius = fill.radius + clearance_m + 1e-6
+        current_angle = math.atan2(
+            position[1] - fill.center_y,
+            position[0] - fill.center_x,
+        )
+        center_angle = math.atan2(
+            preferred_target[1] - fill.center_y,
+            preferred_target[0] - fill.center_x,
+        )
+        angles = [current_angle, center_angle]
+        angles.extend(
+            2.0 * math.pi * index / angular_samples
+            for index in range(angular_samples)
+        )
+        for angle in angles:
+            candidate = fill.center + radius * np.array(
+                [math.cos(angle), math.sin(angle)], dtype=np.float64
+            )
+            if not bounds.contains(candidate):
+                continue
+            if not _point_outside_fills(candidate, fills, clearance_m):
+                continue
+            candidates.append(candidate)
+
+    if not candidates:
+        return None
+
+    def score(candidate):
+        return (
+            round(float(np.linalg.norm(candidate - preferred_target)), 12),
+            round(float(np.linalg.norm(candidate - position)), 12),
+            round(float(candidate[0]), 12),
+            round(float(candidate[1]), 12),
+        )
+
+    return np.array(min(candidates, key=score), copy=True)
+
+
+def _segment_blocking_fill(position, target, fills):
+    """Return the first deterministic fill blocking a complete target segment."""
+    position = _finite_vector(position, 'position')
+    target = _finite_vector(target, 'target')
+    segment = target - position
+    length_squared = float(np.dot(segment, segment))
+    blockers = []
+    for fill in sorted(fills, key=lambda item: (item.cluster_id, item.fill_id)):
+        start_distance = float(np.linalg.norm(position - fill.center))
+        if start_distance <= fill.radius + _EPSILON:
+            fraction = 0.0
+        elif length_squared <= _EPSILON:
+            continue
+        else:
+            fraction = float(
+                np.dot(fill.center - position, segment) / length_squared
+            )
+            if fraction < 0.0 or fraction > 1.0:
+                continue
+        clearance = _segment_clearance(position, target, fill.center)
+        if clearance <= fill.radius + _EPSILON:
+            blockers.append((round(fraction, 12), fill.cluster_id, fill.fill_id, fill))
+    return min(blockers, default=(None, None, None, None))[-1]
+
+
+class RecenterRoutePlanner:
+    """Select safe recenter directions while retaining one obstacle side."""
+
+    def __init__(self):
+        self.blocking_cluster_id = None
+        self.side = 0
+
+    def reset(self):
+        self.blocking_cluster_id = None
+        self.side = 0
+
+    def select(
+        self,
+        position,
+        target,
+        fills: Sequence[FillAvoidance],
+        config=None,
+        bounds: Optional[OperatingBounds] = None,
+    ):
+        """Return a deterministic hard-safe direction toward a frozen target."""
+        config = config or DirectionConfig()
+        position = _finite_vector(position, 'position')
+        target = _finite_vector(target, 'recenter target')
+        preferred_vector = target - position
+        if float(np.linalg.norm(preferred_vector)) <= _EPSILON:
+            self.reset()
+            return None
+        preferred = _unit(preferred_vector, 'preferred direction')
+        blocker = _segment_blocking_fill(position, target, fills)
+        if blocker is None:
+            self.reset()
+            return select_recenter_direction(
+                position, target, fills, config, bounds
+            )
+
+        if self.blocking_cluster_id != blocker.cluster_id:
+            self.blocking_cluster_id = blocker.cluster_id
+            self.side = 0
+
+        current_distance = float(np.linalg.norm(preferred_vector))
+        candidates = []
+        for index, rotation, direction in _direction_candidates(preferred, config):
+            safe, clearance = evaluate_direction_safety(
+                position, direction, fills, config, bounds
+            )
+            if not safe:
+                continue
+            radial = position - blocker.center
+            cross = float(
+                radial[0] * direction[1] - radial[1] * direction[0]
+            )
+            candidate_side = 0
+            if cross > _EPSILON:
+                candidate_side = 1
+            elif cross < -_EPSILON:
+                candidate_side = -1
+            if (
+                self.side != 0
+                and candidate_side != 0
+                and candidate_side != self.side
+            ):
+                continue
+            endpoint = position + config.lookahead_m * direction
+            progress = current_distance - float(np.linalg.norm(target - endpoint))
+            outward = float(np.dot(direction, radial))
+            selection = DirectionSelection(
+                x=float(direction[0]),
+                y=float(direction[1]),
+                clearance_m=clearance,
+                rotation_rad=float(rotation),
+                candidate_index=index,
+            )
+            score = (
+                round(progress, 12),
+                round(outward, 12),
+                round(clearance, 12),
+                -round(abs(rotation), 12),
+                -index,
+            )
+            candidates.append((score, candidate_side, selection))
+
+        if not candidates and self.side != 0:
+            self.side = 0
+            return self.select(position, target, fills, config, bounds)
+        if not candidates:
+            return None
+        unused_score, selected_side, selection = max(
+            candidates, key=lambda item: item[0]
+        )
+        if self.side == 0 and selected_side != 0:
+            self.side = selected_side
+        return selection
+
+
 def select_recenter_direction(
     position,
     target,
@@ -536,6 +792,8 @@ def command_sweep_is_safe(
     horizon_sec,
     fills: Sequence[FillAvoidance],
     bounds: Optional[OperatingBounds] = None,
+    allow_inward_from_margin=False,
+    boundary_trigger_clearance_m=None,
 ):
     """Check the current-yaw forward sweep for the command persistence horizon."""
     position = _finite_vector(position, 'position')
@@ -546,13 +804,41 @@ def command_sweep_is_safe(
         raise ValueError('command sweep values must be finite')
     if linear_velocity_mps < 0.0 or horizon_sec < 0.0:
         raise ValueError('command sweep velocity and horizon must be nonnegative')
+    if (
+        boundary_trigger_clearance_m is not None
+        and (
+            not math.isfinite(float(boundary_trigger_clearance_m))
+            or float(boundary_trigger_clearance_m) < 0.0
+        )
+    ):
+        raise ValueError('boundary trigger clearance must be finite and nonnegative')
 
     heading = np.array([math.cos(float(yaw)), math.sin(float(yaw))])
     endpoint = position + float(linear_velocity_mps * horizon_sec) * heading
-    if bounds is not None and (
-        not bounds.contains(position) or not bounds.contains(endpoint)
-    ):
-        return False
+    if bounds is not None:
+        if not allow_inward_from_margin:
+            if not bounds.contains(position) or not bounds.contains(endpoint):
+                return False
+        elif (
+            not bounds.contains_physical(position)
+            or not bounds.contains_physical(endpoint)
+        ):
+            return False
+        else:
+            start_clearance = bounds.clearance(position)
+            endpoint_clearance = bounds.clearance(endpoint)
+            if bounds.contains(position):
+                if not bounds.contains(endpoint):
+                    return False
+                if (
+                    boundary_trigger_clearance_m is not None
+                    and start_clearance
+                    <= float(boundary_trigger_clearance_m) + _EPSILON
+                    and endpoint_clearance < start_clearance - _EPSILON
+                ):
+                    return False
+            elif endpoint_clearance <= start_clearance + _EPSILON:
+                return False
 
     translating = linear_velocity_mps > _EPSILON and horizon_sec > _EPSILON
     for fill in sorted(fills, key=lambda item: (item.cluster_id, item.fill_id)):

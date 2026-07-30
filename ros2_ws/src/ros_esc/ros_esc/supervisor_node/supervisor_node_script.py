@@ -31,6 +31,7 @@ from ros_esc.supervisor_node.escape_recenter import (
     EscapeProgressConfig,
     EscapeProgressTracker,
     evaluate_direction,
+    evaluate_direction_safety,
     FillAvoidance,
     OperatingBounds,
     Pose2D,
@@ -39,8 +40,11 @@ from ros_esc.supervisor_node.escape_recenter import (
     recenter_command,
     RecenterControlConfig,
     RecenterHoldTracker,
+    RecenterRoutePlanner,
+    select_post_recovery_direction,
     select_recenter_direction,
     select_safe_direction,
+    select_safe_recenter_target,
 )
 from ros_esc.supervisor_node.state_machine import (
     ROBUST_PROFILE,
@@ -154,7 +158,18 @@ class SupervisorNode(Node):
                 post_recovery_retry_limit=self._nonnegative_int(
                     "post_recovery_retry_limit"
                 ),
+                recoverable_navigation_enabled=bool(
+                    self.get_parameter(
+                        'recoverable_navigation_enabled'
+                    ).value
+                ),
+                recovery_retry_limit=self._nonnegative_int(
+                    'recovery_retry_limit'
+                ),
             ),
+        )
+        self.recoverable_navigation_enabled = (
+            self.machine.config.recoverable_navigation_enabled
         )
         self.bounded_mode = bool(
             self.get_parameter("recenter_after_escape").value
@@ -226,6 +241,30 @@ class SupervisorNode(Node):
         self.supervisor_command_stale_sec = self._nonnegative_float(
             'supervisor_command_stale_sec'
         )
+        self.boundary_recovery_trigger_clearance_m = self._nonnegative_float(
+            'boundary_recovery_trigger_clearance_m'
+        )
+        self.boundary_recovery_release_clearance_m = self._nonnegative_float(
+            'boundary_recovery_release_clearance_m'
+        )
+        if (
+            self.boundary_recovery_release_clearance_m
+            <= self.boundary_recovery_trigger_clearance_m
+        ):
+            raise ValueError(
+                'boundary recovery release clearance must exceed its trigger'
+            )
+        self.recenter_target_fill_clearance_m = self._nonnegative_float(
+            'recenter_target_fill_clearance_m'
+        )
+        self.post_recovery_affine_weight = self._nonnegative_float(
+            'post_recovery_affine_weight'
+        )
+        if self.post_recovery_affine_weight > 1.0:
+            raise ValueError('post-recovery affine weight must be at most one')
+        self.post_recovery_affine_taper_distance_m = self._positive_float(
+            'post_recovery_affine_taper_distance_m'
+        )
         self.run_id = uuid.uuid4().hex
         self.latest_pose_receipt_sec = None
         self.latest_pose_valid = False
@@ -247,8 +286,16 @@ class SupervisorNode(Node):
         self.safe_direction = None
         self.safe_direction_revision = 0
         self.recenter_hold_tracker = None
+        self.recenter_route_planner = RecenterRoutePlanner()
+        self.recenter_target = None
         self.recenter_distance = float("nan")
         self.recenter_complete = False
+        self.recenter_started_distance = float('nan')
+        self.recenter_best_distance = float('nan')
+        self.recenter_recovery_allowed = False
+        self.recenter_recovery_requested = False
+        self.boundary_recovery_active = False
+        self.post_recovery_direction_recovery_attempted = False
         self.current_supervisor_command = Twist()
         self.configuration_published = False
         self.stall_event_published = False
@@ -329,6 +376,13 @@ class SupervisorNode(Node):
             "post_recovery_guidance_enabled": False,
             "post_recovery_guidance_max_sec": 0.0,
             "post_recovery_retry_limit": 0,
+            'recoverable_navigation_enabled': False,
+            'recovery_retry_limit': 0,
+            'boundary_recovery_trigger_clearance_m': 0.025,
+            'boundary_recovery_release_clearance_m': 0.10,
+            'recenter_target_fill_clearance_m': 0.05,
+            'post_recovery_affine_weight': 1.0,
+            'post_recovery_affine_taper_distance_m': 0.50,
             "room_bounds_x_min_m": -2.0,
             "room_bounds_x_max_m": 2.0,
             "room_bounds_y_min_m": -2.0,
@@ -579,7 +633,16 @@ class SupervisorNode(Node):
             and msg.source_timestamp_valid
         ):
             self.pending_fill_result = (
-                "rejected",
+                (
+                    'retryable_rejected'
+                    if (
+                        self.recoverable_navigation_enabled
+                        and msg.event_type
+                        == AlgorithmEvent.EVENT_FILL_REJECTED
+                        and int(msg.reason_code) == 30
+                    )
+                    else 'rejected'
+                ),
                 float(msg.source_timestamp),
                 None,
                 len(self.active_fill_records),
@@ -622,13 +685,32 @@ class SupervisorNode(Node):
         self._publish_state_and_command(now_sec)
 
     def _prepare_geometry(self, now_sec):
+        self.recenter_recovery_requested = False
         if (
             self.bounds is not None
             and self.latest_pose_valid
             and self.latest_pose is not None
-            and not self.bounds.contains(self.latest_pose.position)
         ):
-            return "pose outside wall-margin-inset operating bounds"
+            position = self.latest_pose.position
+            if self.recoverable_navigation_enabled:
+                if not self.bounds.contains_physical(position):
+                    return 'pose outside physical room bounds'
+                inset_clearance = self.bounds.clearance(position)
+                if self.machine.state != State.RECENTER:
+                    if self.boundary_recovery_active:
+                        self.boundary_recovery_active = bool(
+                            inset_clearance
+                            < self.boundary_recovery_release_clearance_m
+                        )
+                    elif (
+                        inset_clearance
+                        <= self.boundary_recovery_trigger_clearance_m
+                    ):
+                        self.boundary_recovery_active = True
+                    if self.boundary_recovery_active:
+                        self.recenter_recovery_requested = True
+            elif not self.bounds.contains(position):
+                return 'pose outside wall-margin-inset operating bounds'
 
         if (
             self.escape_tracker is not None
@@ -653,7 +735,18 @@ class SupervisorNode(Node):
             self.machine.state == State.SEARCH
             and self.machine.post_recovery_guidance_active
         ):
-            return self._ensure_post_recovery_direction()
+            failure = self._ensure_post_recovery_direction()
+            if failure is None:
+                return None
+            if not self.recoverable_navigation_enabled:
+                return failure
+            if not self.post_recovery_direction_recovery_attempted:
+                self.post_recovery_direction_recovery_attempted = True
+                self.recenter_recovery_requested = True
+                return None
+            self.machine.deactivate_post_recovery_guidance()
+            self.safe_direction = None
+            return None
         return None
 
     def _transition_inputs(self, now_sec):
@@ -707,6 +800,14 @@ class SupervisorNode(Node):
             recenter_complete=bool(
                 self.machine.state == State.RECENTER
                 and self.recenter_complete
+            ),
+            recenter_recovery_requested=bool(
+                self.recoverable_navigation_enabled
+                and self.recenter_recovery_requested
+            ),
+            recenter_recovery_allowed=bool(
+                self.recoverable_navigation_enabled
+                and self.recenter_recovery_allowed
             ),
         )
 
@@ -788,23 +889,67 @@ class SupervisorNode(Node):
             if failure is not None:
                 self._force_failsafe(now_sec, failure)
                 return
-        if transition.current == State.RECENTER:
+        if (
+            transition.current == State.RECENTER
+            and transition.previous != State.RECENTER
+        ):
             self.current_supervisor_command = Twist()
             self.safe_direction = None
+            self.recenter_route_planner.reset()
+            fills = self._active_fill_avoidances()
+            if self.recoverable_navigation_enabled:
+                self.recenter_target = select_safe_recenter_target(
+                    self.latest_pose.position,
+                    self.bounds.center,
+                    fills,
+                    self.bounds,
+                    self.recenter_target_fill_clearance_m,
+                )
+            else:
+                self.recenter_target = np.array(
+                    self.bounds.center, dtype=np.float64, copy=True
+                )
+            if self.recenter_target is None:
+                self._force_failsafe(
+                    now_sec, 'no finite safe recenter target'
+                )
+                return
             self.recenter_hold_tracker = RecenterHoldTracker(
                 self.recenter_config
             )
-            self.recenter_distance = float("nan")
+            self.recenter_distance = float(
+                np.linalg.norm(
+                    self.recenter_target - self.latest_pose.position
+                )
+            )
+            self.recenter_started_distance = self.recenter_distance
+            self.recenter_best_distance = self.recenter_distance
+            self.recenter_recovery_allowed = False
             self.recenter_complete = False
             self._publish_event(
                 AlgorithmEvent.EVENT_RECENTER_STARTED,
                 now_sec,
-                "bounded center-return controller started",
-                ["target_x_m", "target_y_m", "active_fill_count"],
+                'bounded center-return controller started',
                 [
-                    self.bounds.center_x,
-                    self.bounds.center_y,
+                    'target_x_m',
+                    'target_y_m',
+                    'active_fill_count',
+                    'safe_proxy_target',
+                ],
+                [
+                    float(self.recenter_target[0]),
+                    float(self.recenter_target[1]),
                     float(len(self.active_fill_records)),
+                    (
+                        1.0
+                        if not np.allclose(
+                            self.recenter_target,
+                            self.bounds.center,
+                            rtol=0.0,
+                            atol=1e-12,
+                        )
+                        else 0.0
+                    ),
                 ],
             )
         if transition.previous == State.RECENTER and transition.current == State.SEARCH:
@@ -814,11 +959,12 @@ class SupervisorNode(Node):
                 "recenter tolerance dwell satisfied",
                 ["target_x_m", "target_y_m", "recenter_distance_m"],
                 [
-                    self.bounds.center_x,
-                    self.bounds.center_y,
+                    float(self.recenter_target[0]),
+                    float(self.recenter_target[1]),
                     self.recenter_distance,
                 ],
             )
+            self.boundary_recovery_active = False
         if "timeout" in transition.reason:
             self._publish_event(
                 AlgorithmEvent.EVENT_TIMEOUT, now_sec, transition.reason
@@ -829,13 +975,18 @@ class SupervisorNode(Node):
             self._reset_escape_attempt()
         if transition.current == State.SEARCH:
             previous_revision = self.safe_direction_revision
-            self._reset_escape_attempt()
+            self._reset_escape_attempt(
+                preserve_post_recovery_recovery=(
+                    transition.previous == State.RECENTER
+                )
+            )
             if self.machine.post_recovery_guidance_active:
                 self.safe_direction_revision = previous_revision
-                failure = self._ensure_post_recovery_direction()
-                if failure is not None:
-                    self._force_failsafe(now_sec, failure)
-                    return
+                if not self.recoverable_navigation_enabled:
+                    failure = self._ensure_post_recovery_direction()
+                    if failure is not None:
+                        self._force_failsafe(now_sec, failure)
+                        return
 
     def _force_failsafe(self, now_sec, reason):
         self.current_supervisor_command = Twist()
@@ -907,7 +1058,12 @@ class SupervisorNode(Node):
             return "safe-direction selection requires a valid pose"
         position = self.latest_pose.position
         if recenter:
-            preferred = self.bounds.center - position
+            target = (
+                self.recenter_target
+                if self.recenter_target is not None
+                else self.bounds.center
+            )
+            preferred = target - position
             if float(np.linalg.norm(preferred)) <= 1e-12:
                 return None
         else:
@@ -920,13 +1076,22 @@ class SupervisorNode(Node):
             )
         fills = self._active_fill_avoidances()
         if recenter:
-            selected = select_recenter_direction(
-                position,
-                self.bounds.center,
-                fills,
-                self.direction_config,
-                self.bounds,
-            )
+            if self.recoverable_navigation_enabled:
+                selected = self.recenter_route_planner.select(
+                    position,
+                    target,
+                    fills,
+                    self.direction_config,
+                    self.bounds,
+                )
+            else:
+                selected = select_recenter_direction(
+                    position,
+                    target,
+                    fills,
+                    self.direction_config,
+                    self.bounds,
+                )
             if selected is None:
                 return 'no safe recenter direction candidate'
             self.safe_direction = selected
@@ -976,14 +1141,23 @@ class SupervisorNode(Node):
             return "post-recovery guidance direction is undefined at fill center"
         fills = self._active_fill_avoidances()
         if self.safe_direction is not None:
-            safe, clearance = evaluate_direction(
-                position,
-                self.safe_direction.direction,
-                preferred,
-                fills,
-                self.direction_config,
-                self.bounds,
-            )
+            if self.recoverable_navigation_enabled:
+                safe, clearance = evaluate_direction_safety(
+                    position,
+                    self.safe_direction.direction,
+                    fills,
+                    self.direction_config,
+                    self.bounds,
+                )
+            else:
+                safe, clearance = evaluate_direction(
+                    position,
+                    self.safe_direction.direction,
+                    preferred,
+                    fills,
+                    self.direction_config,
+                    self.bounds,
+                )
             if safe:
                 self.safe_direction = DirectionSelection(
                     self.safe_direction.x,
@@ -993,15 +1167,24 @@ class SupervisorNode(Node):
                     self.safe_direction.candidate_index,
                 )
                 return None
-        selected = select_safe_direction(
-            position,
-            preferred,
-            fills,
-            self.direction_config,
-            self.bounds,
-        )
+        if self.recoverable_navigation_enabled:
+            selected = select_post_recovery_direction(
+                position,
+                preferred,
+                fills,
+                self.direction_config,
+                self.bounds,
+            )
+        else:
+            selected = select_safe_direction(
+                position,
+                preferred,
+                fills,
+                self.direction_config,
+                self.bounds,
+            )
         if selected is None:
-            return "no safe post-recovery direction candidate"
+            return 'no safe post-recovery direction candidate'
         self.safe_direction = selected
         self.safe_direction_revision += 1
         return None
@@ -1011,17 +1194,54 @@ class SupervisorNode(Node):
             return "RECENTER requires configured bounded indoor mode"
         if self.latest_pose is None or not self.latest_pose_valid:
             return "recenter requires a valid pose"
+        target = (
+            self.recenter_target
+            if self.recenter_target is not None
+            else self.bounds.center
+        )
         self.recenter_distance = float(
-            np.linalg.norm(self.bounds.center - self.latest_pose.position)
+            np.linalg.norm(target - self.latest_pose.position)
+        )
+        if not math.isfinite(self.recenter_best_distance):
+            self.recenter_best_distance = self.recenter_distance
+        else:
+            self.recenter_best_distance = min(
+                self.recenter_best_distance, self.recenter_distance
+            )
+        self.recenter_recovery_allowed = bool(
+            self.bounds.contains_physical(self.latest_pose.position)
+            and self.recenter_target is not None
+            and np.all(np.isfinite(self.recenter_target))
+            and math.isfinite(self.recenter_distance)
+            and math.isfinite(self.recenter_started_distance)
+            and math.isfinite(self.recenter_best_distance)
         )
         if self.recenter_hold_tracker is None:
             self.recenter_hold_tracker = RecenterHoldTracker(
                 self.recenter_config
             )
-        self.recenter_complete = self.recenter_hold_tracker.update(
-            now_sec, self.recenter_distance
+        fills = self._active_fill_avoidances()
+        outside_fills = all(
+            float(
+                np.linalg.norm(
+                    self.latest_pose.position - fill.center
+                )
+            )
+            > fill.radius
+            for fill in fills
         )
-        if self.recenter_distance <= self.recenter_config.tolerance_m:
+        completion_distance = (
+            self.recenter_distance
+            if outside_fills
+            else self.recenter_config.tolerance_m + 1.0
+        )
+        self.recenter_complete = self.recenter_hold_tracker.update(
+            now_sec, completion_distance
+        )
+        if (
+            outside_fills
+            and self.recenter_distance <= self.recenter_config.tolerance_m
+        ):
             self.current_supervisor_command = Twist()
             self.safe_direction = None
             return None
@@ -1031,7 +1251,7 @@ class SupervisorNode(Node):
         linear, angular = recenter_command(
             self.safe_direction.direction,
             self.latest_pose.yaw,
-            self.recenter_distance,
+            completion_distance,
             self.recenter_config,
         )
         if not command_sweep_is_safe(
@@ -1039,8 +1259,14 @@ class SupervisorNode(Node):
             self.latest_pose.yaw,
             linear,
             self.supervisor_command_stale_sec,
-            self._active_fill_avoidances(),
+            fills,
             self.bounds,
+            allow_inward_from_margin=self.recoverable_navigation_enabled,
+            boundary_trigger_clearance_m=(
+                self.boundary_recovery_trigger_clearance_m
+                if self.recoverable_navigation_enabled
+                else None
+            ),
         ):
             linear = 0.0
         command = Twist()
@@ -1049,14 +1275,22 @@ class SupervisorNode(Node):
         self.current_supervisor_command = command
         return None
 
-    def _reset_escape_attempt(self):
+    def _reset_escape_attempt(self, preserve_post_recovery_recovery=False):
         self.escape_tracker = None
         self.escape_pose_sequence = 0
         self.safe_direction = None
         self.safe_direction_revision = 0
         self.recenter_hold_tracker = None
+        self.recenter_route_planner.reset()
+        self.recenter_target = None
         self.recenter_distance = float("nan")
         self.recenter_complete = False
+        self.recenter_started_distance = float('nan')
+        self.recenter_best_distance = float('nan')
+        self.recenter_recovery_allowed = False
+        self.recenter_recovery_requested = False
+        if not preserve_post_recovery_recovery:
+            self.post_recovery_direction_recovery_attempted = False
         self.stall_event_published = False
         self.current_supervisor_command = Twist()
 
@@ -1164,6 +1398,13 @@ class SupervisorNode(Node):
             "post_recovery_guidance_enabled",
             "post_recovery_guidance_max_sec",
             "post_recovery_retry_limit",
+            'recoverable_navigation_enabled',
+            'recovery_retry_limit',
+            'boundary_recovery_trigger_clearance_m',
+            'boundary_recovery_release_clearance_m',
+            'recenter_target_fill_clearance_m',
+            'post_recovery_affine_weight',
+            'post_recovery_affine_taper_distance_m',
         ]
         values = [
             1.0 if self.bounded_mode else 0.0,
@@ -1206,6 +1447,13 @@ class SupervisorNode(Node):
             ),
             self.machine.config.post_recovery_guidance_max_sec,
             float(self.machine.config.post_recovery_retry_limit),
+            1.0 if self.recoverable_navigation_enabled else 0.0,
+            float(self.machine.config.recovery_retry_limit),
+            self.boundary_recovery_trigger_clearance_m,
+            self.boundary_recovery_release_clearance_m,
+            self.recenter_target_fill_clearance_m,
+            self.post_recovery_affine_weight,
+            self.post_recovery_affine_taper_distance_m,
         ]
         self._publish_event(
             AlgorithmEvent.EVENT_CONFIGURATION,
@@ -1299,12 +1547,24 @@ class SupervisorNode(Node):
             state.safe_direction_revision = self.safe_direction_revision
             state.safe_direction_revision_valid = self.safe_direction_revision > 0
         if self.machine.state == State.RECENTER and self.bounds is not None:
-            state.recenter_target_x = self.bounds.center_x
-            state.recenter_target_y = self.bounds.center_y
+            target = (
+                self.recenter_target
+                if self.recenter_target is not None
+                else self.bounds.center
+            )
+            state.recenter_target_x = float(target[0])
+            state.recenter_target_y = float(target[1])
             state.recenter_target_valid = True
             state.recenter_distance = self.recenter_distance
             state.recenter_distance_valid = math.isfinite(self.recenter_distance)
-        weights = self.machine.weights
+        weights = list(self.machine.weights)
+        if (
+            self.recoverable_navigation_enabled
+            and self.machine.state == State.SEARCH
+            and self.machine.post_recovery_guidance_active
+        ):
+            taper = self._post_recovery_affine_taper()
+            weights[2] = self.post_recovery_affine_weight * taper
         state.sensor_weight = weights[0]
         state.gaussian_weight = weights[1]
         state.affine_weight = weights[2]
@@ -1329,6 +1589,29 @@ class SupervisorNode(Node):
             dtype=np.float64,
         )
         self.command_publisher.publish(command if np.all(np.isfinite(values)) else Twist())
+
+    def _post_recovery_affine_taper(self):
+        """Return the bounded spatial affine scale for post-recovery SEARCH."""
+        if self.latest_pose is None or not self.latest_pose_valid:
+            return 0.0
+        record = self._record_for_fill(self.machine.active_escape_fill_id)
+        if record is None:
+            return 0.0
+        distance = float(
+            np.linalg.norm(
+                self.latest_pose.position
+                - np.asarray(record['center'], dtype=np.float64)
+            )
+        )
+        excess = max(0.0, distance - float(record['support_radius']))
+        return float(
+            np.clip(
+                1.0
+                - excess / self.post_recovery_affine_taper_distance_m,
+                0.0,
+                1.0,
+            )
+        )
 
     def destroy_node(self):
         self.command_publisher.publish(Twist())

@@ -13,8 +13,8 @@ from ros_esc.scenario_runner import aggregate_field_truth
 import yaml
 
 
-SCHEMA_VERSION = 5
-SUPPORTED_SCHEMA_VERSIONS = {1, 2, 3, 4, 5}
+SCHEMA_VERSION = 6
+SUPPORTED_SCHEMA_VERSIONS = {1, 2, 3, 4, 5, 6}
 PROFILES = {'legacy', 'robust_gaussian_v1'}
 STATUSES = {'executable_unverified', 'unsupported'}
 FAMILIES = {
@@ -129,6 +129,7 @@ LAUNCH_OVERRIDES = {
     'gaussian_fill_minimum_merge_probability',
     'gaussian_fill_minimum_valid_samples',
     'gaussian_fill_position_kernel_bandwidth_m',
+    'gaussian_fill_reuse_retained_samples_on_redesign',
     'gaussian_fill_sigma_ceiling_m',
     'gaussian_fill_sigma_floor_m',
     'gaussian_fill_support_sigma',
@@ -138,10 +139,15 @@ LAUNCH_OVERRIDES = {
     'goal_score_rotation_period_sec',
     'goal_score_threshold',
     'minimum_radial_progress_m',
+    'modified_cost_affine_decay_rate',
     'modified_cost_affine_gain',
     'modified_cost_affine_max_age',
+    'boundary_recovery_release_clearance_m',
+    'boundary_recovery_trigger_clearance_m',
     'post_recovery_guidance_enabled',
     'post_recovery_guidance_max_sec',
+    'post_recovery_affine_taper_distance_m',
+    'post_recovery_affine_weight',
     'post_recovery_retry_limit',
     'recenter_angular_gain',
     'recenter_hold_sec',
@@ -150,7 +156,10 @@ LAUNCH_OVERRIDES = {
     'recenter_max_linear_velocity_mps',
     'recenter_max_sec',
     'recenter_rotate_in_place_angle_rad',
+    'recenter_target_fill_clearance_m',
     'recenter_tolerance_m',
+    'recoverable_navigation_enabled',
+    'recovery_retry_limit',
     'stall_window_sec',
     'startup_timeout_sec',
     'undesired_score_hold_sec',
@@ -208,6 +217,8 @@ STAGED_RECOVERY_KEYS = {
     'fill_to_convergence_max_m',
     'global_proximity_radius_m',
     'global_approach_radius_m',
+    'global_closer_radius_m',
+    'local_association_mode',
 }
 KNOWN_TOPOLOGY_KEYS = {
     'expected_local_minima',
@@ -326,6 +337,18 @@ DEFAULTS = {
 CORNER_ORIGIN_GEOMETRY_PROFILE = 'corner_origin_diagonal_sector_v1'
 CORRECTED_GLOBAL_PROXIMITY_MIN_M = 0.60
 CORRECTED_GLOBAL_PROXIMITY_MAX_M = 1.20
+LOCAL_ASSOCIATION_MODES = {'declared_source', 'verified_trap'}
+SCHEMA_V6_LAUNCH_OVERRIDES = {
+    'boundary_recovery_release_clearance_m',
+    'boundary_recovery_trigger_clearance_m',
+    'gaussian_fill_reuse_retained_samples_on_redesign',
+    'modified_cost_affine_decay_rate',
+    'post_recovery_affine_taper_distance_m',
+    'post_recovery_affine_weight',
+    'recenter_target_fill_clearance_m',
+    'recoverable_navigation_enabled',
+    'recovery_retry_limit',
+}
 DIRECT_STAGED_RECOVERY_STATE_PATH = (
     'SEARCH',
     'VERIFY_EXTREMUM',
@@ -453,12 +476,80 @@ def _validate_correction_overrides(overrides, ablations, location):
             f'{location}.modified_cost_affine_gain',
             positive=True,
         )
+    if 'modified_cost_affine_decay_rate' in overrides:
+        _number(
+            overrides['modified_cost_affine_decay_rate'],
+            f'{location}.modified_cost_affine_decay_rate',
+            positive=True,
+        )
     if 'modified_cost_affine_max_age' in overrides:
         _number(
             overrides['modified_cost_affine_max_age'],
             f'{location}.modified_cost_affine_max_age',
             positive=True,
         )
+    for name in (
+        'gaussian_fill_reuse_retained_samples_on_redesign',
+        'recoverable_navigation_enabled',
+    ):
+        if name in overrides:
+            _boolean(overrides[name], f'{location}.{name}')
+    if 'recovery_retry_limit' in overrides:
+        _positive_integer(
+            overrides['recovery_retry_limit'],
+            f'{location}.recovery_retry_limit',
+        )
+    for name in (
+        'boundary_recovery_trigger_clearance_m',
+        'boundary_recovery_release_clearance_m',
+        'recenter_target_fill_clearance_m',
+    ):
+        if name in overrides:
+            _number(
+                overrides[name],
+                f'{location}.{name}',
+                minimum=0.0,
+            )
+    if 'post_recovery_affine_weight' in overrides:
+        weight = _number(
+            overrides['post_recovery_affine_weight'],
+            f'{location}.post_recovery_affine_weight',
+            minimum=0.0,
+        )
+        if weight > 1.0:
+            raise ValueError(
+                f'{location}.post_recovery_affine_weight must be at most 1.0'
+            )
+    if 'post_recovery_affine_taper_distance_m' in overrides:
+        _number(
+            overrides['post_recovery_affine_taper_distance_m'],
+            f'{location}.post_recovery_affine_taper_distance_m',
+            positive=True,
+        )
+    trigger = overrides.get('boundary_recovery_trigger_clearance_m')
+    release = overrides.get('boundary_recovery_release_clearance_m')
+    if (
+        trigger is not None
+        and release is not None
+        and float(release) <= float(trigger)
+    ):
+        raise ValueError(
+            f'{location}.boundary_recovery_release_clearance_m must exceed '
+            'boundary_recovery_trigger_clearance_m'
+        )
+    if overrides.get('recoverable_navigation_enabled', False):
+        required_recovery = {
+            'boundary_recovery_release_clearance_m',
+            'boundary_recovery_trigger_clearance_m',
+            'recenter_target_fill_clearance_m',
+            'recovery_retry_limit',
+        }
+        missing = sorted(required_recovery - set(overrides))
+        if missing:
+            raise ValueError(
+                f'{location}.recoverable_navigation_enabled requires: '
+                + ', '.join(missing)
+            )
 
     if guidance_enabled:
         if not ablations['affine_assist_enabled']:
@@ -520,6 +611,7 @@ def _resolve_geometry_profile(
     validation,
     known_topology,
     staged_recovery,
+    schema_version,
     location,
 ):
     """Validate and expose the fixed Phase 08.7 corner-origin geometry."""
@@ -574,18 +666,33 @@ def _resolve_geometry_profile(
         source for source in sources
         if source['evaluation_role'] == 'goal'
     ]
-    if (
-        known_topology['expected_local_minima'] != 1
-        or known_topology['expected_global_minima'] != 1
-        or len(local_sources) != 1
-        or len(global_sources) != 1
-        or len(sources) != 2
-    ):
-        raise ValueError(
-            f'{location} Phase 08.7 M1 supports exactly one declared local '
-            'and one declared global source'
+    expected_local_count = known_topology['expected_local_minima']
+    if schema_version < 6:
+        valid_topology = (
+            expected_local_count == 1
+            and known_topology['expected_global_minima'] == 1
+            and len(local_sources) == 1
+            and len(global_sources) == 1
+            and len(sources) == 2
         )
-    local = local_sources[0]
+        topology_description = (
+            'Phase 08.7 M1 supports exactly one declared local and one '
+            'declared global source'
+        )
+    else:
+        valid_topology = (
+            expected_local_count in {1, 2}
+            and known_topology['expected_global_minima'] == 1
+            and len(local_sources) == expected_local_count
+            and len(global_sources) == 1
+            and len(sources) == expected_local_count + 1
+        )
+        topology_description = (
+            'schema-v6 supports one or two declared locals and exactly one '
+            'declared global source'
+        )
+    if not valid_topology:
+        raise ValueError(f'{location} {topology_description}')
     global_source = global_sources[0]
     expected_global = profile['global']
     if not _same_floats(
@@ -596,39 +703,55 @@ def _resolve_geometry_profile(
             f'{location} goal source must use the fixed global point'
         )
     if (
-        'relative_lumen_input' not in local
-        or 'relative_lumen_input' not in global_source
-        or local['relative_lumen_input']
-        >= global_source['relative_lumen_input']
+        'relative_lumen_input' not in global_source
+        or any(
+            'relative_lumen_input' not in local
+            or local['relative_lumen_input']
+            >= global_source['relative_lumen_input']
+            for local in local_sources
+        )
     ):
         raise ValueError(
-            f'{location} requires a fixed lower-output local source and '
+            f'{location} requires fixed lower-output local sources and a '
             'stronger global source'
         )
 
-    delta_x = local['x_m'] - start['x_m']
-    delta_y = local['y_m'] - start['y_m']
-    radius = math.hypot(delta_x, delta_y)
-    angle = math.atan2(delta_y, delta_x)
-    angular_offset = abs(
-        _wrap_angle(angle - profile['local_angle_center_rad'])
-    )
-    if not (
-        profile['local_radius_min_m'] - 1e-12
-        <= radius
-        <= profile['local_radius_max_m'] + 1e-12
-    ):
-        raise ValueError(
-            f'{location} local source radius is outside the geometry profile'
+    local_placements = []
+    for local in local_sources:
+        delta_x = local['x_m'] - start['x_m']
+        delta_y = local['y_m'] - start['y_m']
+        radius = math.hypot(delta_x, delta_y)
+        angle = math.atan2(delta_y, delta_x)
+        angular_offset = abs(
+            _wrap_angle(angle - profile['local_angle_center_rad'])
         )
-    if angular_offset > profile['local_angle_half_width_rad'] + 1e-12:
-        raise ValueError(
-            f'{location} local source angle is outside the geometry profile'
-        )
-    if staged_recovery['local_source_ids'] != [local['id']]:
+        if not (
+            profile['local_radius_min_m'] - 1e-12
+            <= radius
+            <= profile['local_radius_max_m'] + 1e-12
+        ):
+            raise ValueError(
+                f'{location} local source radius is outside the geometry '
+                'profile'
+            )
+        if angular_offset > profile['local_angle_half_width_rad'] + 1e-12:
+            raise ValueError(
+                f'{location} local source angle is outside the geometry '
+                'profile'
+            )
+        local_placements.append({
+            'source_id': local['id'],
+            'radius_m': radius,
+            'angle_rad': angle,
+            'angle_deg': math.degrees(angle),
+            'angular_offset_rad': angular_offset,
+        })
+    if staged_recovery['local_source_ids'] != [
+        local['id'] for local in local_sources
+    ]:
         raise ValueError(
             f'{location}.success.staged_recovery.local_source_ids must '
-            'declare the geometry-profile local source'
+            'declare every geometry-profile local source in source order'
         )
     if staged_recovery['global_source_id'] != global_source['id']:
         raise ValueError(
@@ -720,13 +843,7 @@ def _resolve_geometry_profile(
                 'local_angle_half_width_rad'
             ],
         },
-        'local_placements': [{
-            'source_id': local['id'],
-            'radius_m': radius,
-            'angle_rad': angle,
-            'angle_deg': math.degrees(angle),
-            'angular_offset_rad': angular_offset,
-        }],
+        'local_placements': local_placements,
     }
 
 
@@ -1185,6 +1302,50 @@ def load_suite(path):
     if schema_version < 5 and uses_schema_v5_fields:
         raise ValueError(
             'schema version 5 is required for staged corner-origin fields'
+        )
+    raw_frozen_profile = document.get('frozen_profile', {})
+    raw_frozen_overrides = (
+        raw_frozen_profile.get('launch_overrides', {})
+        if isinstance(raw_frozen_profile, dict)
+        else {}
+    )
+    uses_schema_v6_fields = bool(
+        isinstance(raw_frozen_overrides, dict)
+        and SCHEMA_V6_LAUNCH_OVERRIDES & set(raw_frozen_overrides)
+    )
+    if isinstance(raw_cases, list):
+        for case in raw_cases:
+            if not isinstance(case, dict):
+                continue
+            raw_algorithm = case.get('algorithm', {})
+            raw_overrides = (
+                raw_algorithm.get('launch_overrides', {})
+                if isinstance(raw_algorithm, dict)
+                else {}
+            )
+            raw_success = case.get('success', {})
+            raw_staged = (
+                raw_success.get('staged_recovery', {})
+                if isinstance(raw_success, dict)
+                else {}
+            )
+            uses_schema_v6_fields = uses_schema_v6_fields or (
+                isinstance(raw_overrides, dict)
+                and bool(
+                    SCHEMA_V6_LAUNCH_OVERRIDES & set(raw_overrides)
+                )
+            ) or (
+                isinstance(raw_staged, dict)
+                and bool(
+                    {'local_association_mode', 'global_closer_radius_m'}
+                    & set(raw_staged)
+                )
+            )
+            if uses_schema_v6_fields:
+                break
+    if schema_version < 6 and uses_schema_v6_fields:
+        raise ValueError(
+            'schema version 6 is required for recoverable-navigation fields'
         )
     suite_id = _identifier(document.get('suite_id'), 'suite_id')
     if document.get('mode') != 'simulation':
@@ -2186,6 +2347,38 @@ def load_suite(path):
                     f'{staged_location}.global_approach_radius_m',
                     positive=True,
                 )
+            if schema_version >= 6:
+                association_mode = str(
+                    staged_recovery.get(
+                        'local_association_mode',
+                        'declared_source',
+                    )
+                )
+                if association_mode not in LOCAL_ASSOCIATION_MODES:
+                    raise ValueError(
+                        f'{staged_location}.local_association_mode is '
+                        'unsupported'
+                    )
+                normalized_staged_recovery[
+                    'local_association_mode'
+                ] = association_mode
+                if 'global_closer_radius_m' in staged_recovery:
+                    closer_radius = _number(
+                        staged_recovery.get('global_closer_radius_m'),
+                        f'{staged_location}.global_closer_radius_m',
+                        positive=True,
+                    )
+                    if closer_radius >= normalized_staged_recovery[
+                        'global_proximity_radius_m'
+                    ]:
+                        raise ValueError(
+                            f'{staged_location}.global_closer_radius_m '
+                            'must be strictly smaller than '
+                            'global_proximity_radius_m'
+                        )
+                    normalized_staged_recovery[
+                        'global_closer_radius_m'
+                    ] = closer_radius
             staged_recovery = normalized_staged_recovery
             if (
                 len(local_source_ids)
@@ -2416,6 +2609,7 @@ def load_suite(path):
                 },
                 known_topology,
                 staged_recovery,
+                schema_version,
                 location,
             )
         normalized_success = {
