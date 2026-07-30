@@ -5405,3 +5405,80 @@ collision, infrastructure, validation, and combined predicates all passed.**
 
 Commit the immutable M2.3 result and verify a clean worktree. Stop before M3
 unless the user separately authorizes its frozen multi-position suite.
+
+## Phase 08.7 M3 authorization and frozen amendment
+
+The M2.3 result was committed cleanly at:
+
+```text
+e912cc086ac2290e8c0ff3be62decfc95507faa3
+phase 08.7: retain successful M2.3 probe
+```
+
+The user authorized the complete M3 amendment and execution on 2026-07-30.
+M3 tightens primary Stage B and combined success to `1.00 m` from the global.
+The earlier `1.20 m` boundary becomes a separately reported, non-gating
+post-Stage-A global-region approach diagnostic.
+
+The suite is frozen as a five-position cross using one constant fresh seed:
+
+```text
+v7_m3_r1p0_a45_h25_18101
+  r=1.0 m, angle=45 deg
+  local=(0.7071067811865476, 0.7071067811865475)
+
+v7_m3_r1p5_a22p5_h25_18101
+  r=1.5 m, angle=22.5 deg
+  local=(1.38581929876693, 0.5740251485476346)
+
+v7_m3_r1p5_a45_h25_18101
+  r=1.5 m, angle=45 deg
+  local=(1.0606601717798214, 1.0606601717798212)
+
+v7_m3_r1p5_a67p5_h25_18101
+  r=1.5 m, angle=67.5 deg
+  local=(0.5740251485476348, 1.38581929876693)
+
+v7_m3_r2p0_a45_h25_18101
+  r=2.0 m, angle=45 deg
+  local=(1.4142135623730951, 1.414213562373095)
+
+seed for every case: 18101
+local/global input: 400.0 / 1600.0 relative units
+known topology: 1 local, 1 global
+maximum fills: 1
+primary Stage B radius: 1.00 m
+approach diagnostic: 1.20 m
+```
+
+The positions were prospectively listed as examples in the approved geometry
+Plan before any corner-origin outcome. The shared seed isolates spatial
+placement rather than mixing position and seed effects.
+
+M3 will execute exactly five serial headless runs from the fresh root:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m3
+```
+
+Every attempt is retained. Behavioral failure does not stop later cases;
+cleanup failure does. M3 passes only at `5/5` combined primary successes.
+The `1.20 m` diagnostic cannot rescue a case that misses `1.00 m`.
+
+Before Gazebo, add and test only the optional schema-v5
+`global_approach_radius_m` diagnostic, freeze the exact suite, run the complete
+no-Gazebo qualification boundary, checkpoint, and commit. M2.3 and all
+historical scenarios, case keys, worlds, results, and evidence remain
+immutable.
+
+## Current milestone
+
+**Phase 08.7 M3 — amendment frozen; additive reporting and exact-suite
+implementation authorized, with no Gazebo dispatch before qualification and
+commit.**
+
+### Next criterion
+
+Implement the optional non-gating approach diagnostic and exact five-case
+suite. Qualify the complete source/install boundary, checkpoint, and commit it
+before creating the fresh evidence root or launching Gazebo.

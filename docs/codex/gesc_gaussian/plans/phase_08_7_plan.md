@@ -3,8 +3,9 @@
 ## Status and authority
 
 **M1 IMPLEMENTED AND QUALIFIED; M2, M2.1, AND M2.2 EXECUTED AND
-RETAINED AS FAILED; M2.3 EXECUTED AND RETAINED AS PASSED; M3 AND LATER
-EXECUTION NOT AUTHORIZED.**
+RETAINED AS FAILED; M2.3 EXECUTED AND RETAINED AS PASSED; M3 AMENDMENT,
+IMPLEMENTATION, AND EXECUTION AUTHORIZED; M4 AND LATER EXECUTION NOT
+AUTHORIZED.**
 
 The user approved the geometry in this Plan on 2026-07-29. M1 was implemented,
 qualified without Gazebo execution, checkpointed, and committed at `7c87e5a`.
@@ -808,8 +809,133 @@ docs/codex/gesc_gaussian/validation/
   phase_08_7_m2_3_assisted_recovery_stop_probe_report.md
 ```
 
-This is one development result, not repeatability or readiness evidence. M3
-remains unauthorized.
+This is one development result, not repeatability or readiness evidence. At
+the M2.3 closeout boundary, M3 remained unauthorized.
+
+## M3 stricter-arrival spatial-suite amendment
+
+On 2026-07-30 the user authorized the M3 amendment and its complete execution.
+The user judged the M2.3 `1.20 m` stop to be a useful safe approach result but
+visually looser than the desired global convergence. M3 therefore makes
+`1.00 m` the primary Stage B and combined-success boundary while retaining
+`1.20 m` only as a separately reported, non-gating global-region approach
+diagnostic.
+
+M3 is a fixed spatial-validation suite, not a tuning sweep. It holds the fresh
+Gazebo seed and every M2.3 algorithm, topology, world, start, source-output,
+timing, affine, retry, fill, and wall-margin value constant. Only the
+prospectively listed local-source position changes across cases. The five
+positions are the examples already recorded in this Plan before any
+corner-origin outcome:
+
+| Case | Radius | Angle | Exact local `(x, y)` | Seed |
+|---|---:|---:|---|---:|
+| `v7_m3_r1p0_a45_h25_18101` | 1.0 m | 45° | `(0.7071067811865476, 0.7071067811865475)` | 18101 |
+| `v7_m3_r1p5_a22p5_h25_18101` | 1.5 m | 22.5° | `(1.38581929876693, 0.5740251485476346)` | 18101 |
+| `v7_m3_r1p5_a45_h25_18101` | 1.5 m | 45° | `(1.0606601717798214, 1.0606601717798212)` | 18101 |
+| `v7_m3_r1p5_a67p5_h25_18101` | 1.5 m | 67.5° | `(0.5740251485476348, 1.38581929876693)` | 18101 |
+| `v7_m3_r2p0_a45_h25_18101` | 2.0 m | 45° | `(1.4142135623730951, 1.414213562373095)` | 18101 |
+
+This cross covers both approved radial endpoints, the diagonal midpoint, and
+equal angular offsets on both sides of the direct start-to-global line. Holding
+seed `18101` fixed isolates the spatial-placement question; it does not test
+multi-seed repeatability.
+
+Each case retains:
+
+```text
+start:                    (0.0, 0.0), yaw 0
+global:                   (3.5, 3.5), 1600.0 relative input
+local:                    listed point, 400.0 relative input
+known topology:           1 local, 1 global
+maximum fills:            1
+detector gate:            SEARCH-only, 0.20 m path, 0.50 efficiency
+recovery paths:           direct or one-redesign assisted
+affine guidance:          enabled, 60.0 s maximum age, gain 0.5
+recovery retries:         3
+wall margin:              0.20 m
+primary Stage B radius:   1.00 m
+approach diagnostic:      1.20 m
+run timeout:              360 s
+wall timeout:             540 s
+shutdown grace:           45 s
+```
+
+### Additive approach diagnostic
+
+Schema-v5 staged recovery may add:
+
+```yaml
+global_approach_radius_m: 1.20
+```
+
+This field is optional and non-gating. When present:
+
+- post-recovery guidance must be enabled;
+- it must be strictly greater than `global_proximity_radius_m`;
+- it must not exceed the existing corrected-profile `1.20 m` ceiling;
+- the reporter records the first finite, noninterpolated post-Stage-A odometry
+  sample inside it;
+- the reporter rejects an approach claim if a non-ground collision occurred
+  before that sample;
+- the live monitor may retain the first approach sample but must continue until
+  the primary `1.00 m` boundary, timeout, or safety termination;
+- `post_recovery_global_approach` is diagnostic only and cannot satisfy Stage B,
+  ground truth, a required predicate, or combined success.
+
+Absent the field, schema-v5 normalization and result shape remain unchanged.
+Schema-v1 through schema-v4, all historical scenarios, and every historical
+case key remain unchanged.
+
+### Per-case and suite acceptance
+
+Every fixed case receives exactly one attempt. Runs execute serially and
+headless because M3 is a batch; failures are retained and do not stop later
+cases, while cleanup failure remains a hard dispatch stop.
+
+Per-case combined success requires:
+
+```text
+Stage A local recovery = PASS
+Stage B post-recovery distance <= 1.00 m = PASS
+exact one-fill cardinality = PASS
+collision/forbidden-state/event evidence = PASS
+recording/completeness/final-zero/cleanup = PASS
+```
+
+The `1.20 m` approach diagnostic is reported independently for every case,
+including a case that approaches the global region but fails the stricter
+primary boundary.
+
+M3 passes only if all five fixed cases pass Stage A, primary Stage B, exact
+cardinality, collision, infrastructure, and combined classification. Any
+fixed-case miss makes M3 a retained failure; thresholds, positions, seeds, and
+algorithm values will not be changed or retried inside M3.
+
+The fresh suite identity is:
+
+```text
+suite:              phase08_v7_m3_spatial_suite
+experiment version: phase08-v7-m3
+partition:          validation
+resolved runs:      5
+execution:          serial, headless
+evidence root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m3
+```
+
+Before Gazebo, implementation must pass focused schema/runner tests for the
+non-gating approach diagnostic, all five exact geometry/case identities,
+M2.3 launch-value preservation, historical normalization/case-key
+immutability, the complete M2.3 functional regression envelope, isolated
+build, installed dry-run, source/install identity, nonexecuting launch
+instantiation, context validation, diff inspection, checkpoint, and a clean
+commit of the exact suite.
+
+M3 establishes bounded five-position spatial evidence only. It does not
+authorize parameter tuning, automatic retries, multi-seed repeatability, the
+120-run campaign, physical hardware, Phase 09, or a simulation-readiness
+claim.
 
 ## Milestones
 
@@ -849,9 +975,10 @@ one bounded visible probe with no automatic retry.
 
 ### M3 — fixed spatial suite
 
-Only after the current prerequisite probe passes, commit a fresh multi-position
-suite covering the approved sector. Run serially, preserve every attempt, and
-apply the prospectively approved Stage A, Stage B, and combined contracts.
+Commit and qualify the five fixed positions and the additive `1.20 m` approach
+diagnostic before Gazebo. Then run exactly one serial headless attempt per
+case. Preserve every attempt and require the stricter `1.00 m` primary Stage B
+boundary for each combined result and for the all-five suite gate.
 
 ## Stop conditions
 
