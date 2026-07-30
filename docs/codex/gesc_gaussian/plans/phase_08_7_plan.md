@@ -6,7 +6,7 @@
 RETAINED AS FAILED; M2.3 EXECUTED AND RETAINED AS PASSED; M3 EXECUTED
 AND RETAINED AS FAILED AT 1/5; M4 RETAINED AS EVIDENCE FAIL;
 M4.1 EVIDENCE CORRECTION PASSED AND VISIBLE PROBE RETAINED AS STAGE B
-FAIL.**
+FAIL; M4.2 POST-RECOVERY LIVENESS CORRECTION AUTHORIZED AND PLANNED.**
 
 The user approved the geometry in this Plan on 2026-07-29. M1 was implemented,
 qualified without Gazebo execution, checkpointed, and committed at `7c87e5a`.
@@ -29,7 +29,9 @@ M4 later passed every behavioral predicate but remains a formal evidence
 failure. M4.1 corrected that evidence model without relabelling M4: its fresh
 probe passed all evidence, Stage A, fill, collision, and cleanup gates but
 failed Stage B after looping near the recenter region. No M4 suite or
-three-light run was executed.
+three-light run was executed. On 2026-07-30 the user authorized a fresh M4.2
+correction and its conditional two-light qualification sequence. M4.2 does
+not reopen or relabel any prior attempt.
 
 The user resolved the V6 acceptance-window ambiguity on 2026-07-29. Each run
 must report local-recovery success separately from post-recovery global
@@ -1483,3 +1485,308 @@ Save, validate, checkpoint, and commit this amendment. Then implement and
 qualify the shared evidence correction plus exact fresh scenario without
 Gazebo, checkpoint and commit the dispatch boundary, and run only the one
 fixed visible probe.
+
+## M4.2 progress-coupled post-recovery amendment
+
+On 2026-07-30 the user explicitly authorized the fresh correction needed
+after the immutable M4.1 Stage B failure. M4.2 is a schema-v7, robust-only,
+opt-in Level B correction. It preserves M4.1's passing evidence model and
+does not retry, overwrite, relabel, or count M4.1, M4, M3, M2.3, V6, or any
+historical scenario or evidence.
+
+M4.2 corrects the complete observed integration defect:
+
+- recenter completion creates a new post-recovery guidance epoch;
+- safe direction, affine authorization, and bounded supervisor motion share
+  that epoch instead of relying on escape-era or fill-support distance alone;
+- measured outward progress controls assistance release;
+- a bounded translation-liveness monitor detects loops and recovers without
+  treating valid-data low progress as an immediate safety failure;
+- supervisor-owned motion is removed from the robust paired PDE search
+  histories at each typed SEARCH boundary;
+- the runner reserves a complete post-Stage-A behavioral window independent
+  of variable local-detection latency.
+
+### Compatibility and ownership
+
+M4.2 extends the existing supervisor, custom controller command path, paired
+PDE-history owners, convergence detector, launch graph, scenario schema, and
+scenario runner. It adds no node, recorder, validator, controller, `/cmd_vel`
+publisher, simulation/physical fork, or ground-truth input to the algorithm.
+
+All new launch controls default off. Schema versions 1 through 6 retain their
+existing normalized values and behavior. The `legacy` profile never
+subscribes to or applies the new reset/guidance path. Existing M4 and M4.1
+scenario bytes and case keys remain immutable.
+
+The custom controller remains the sole `/cmd_vel` publisher. The supervisor
+continues to publish only on `/gesc_gaussian/supervisor_command`; its SEARCH
+contribution is combined and saturated by the existing custom controller.
+Every positive supervisor translation is checked by the existing physical
+room, wall-inset, active-fill, and command-persistence sweep before
+publication. An unsafe translation is reduced to zero while safe angular
+alignment/replanning continues; it is not itself a `FAILSAFE`.
+
+Hard faults remain terminal:
+
+- invalid/stale pose or source data;
+- controller/graph fault or explicit stop;
+- a robot-center pose outside the physical room faces;
+- nonfinite geometry or command data;
+- exhausted existing bounded recovery for a hard navigation failure.
+
+Low post-recovery progress, wall-margin pressure while still physically
+inside the room, and a temporarily blocked translation are recoverable
+algorithmic conditions and do not directly enter `FAILSAFE`.
+
+### New post-recovery guidance epoch
+
+The new opt-in control is:
+
+```text
+post_recovery_progress_enabled: true
+```
+
+At every `RECENTER -> SEARCH` transition with an accepted active fill and
+exhausted known-local fill budget, the supervisor must:
+
+1. snapshot the current finite pose and active fill center as a fresh epoch;
+2. discard any carried safe-direction object;
+3. recompute the hard-safe post-recovery direction from that pose;
+4. increment the typed `safe_direction_revision`;
+5. start progress and liveness tracking from the same pose;
+6. publish the existing typed state/command streams without adding a
+   controller or command owner.
+
+Let:
+
+```text
+p0             = epoch start position
+c              = active fill center
+p(t)           = current position
+net(t)         = ||p(t) - p0||
+outward(t)     = ||p(t) - c|| - ||p0 - c||
+path(t)        = accumulated path length since p0
+```
+
+During SEARCH, the existing bounded differential-drive recenter gains and
+velocity caps turn and translate along the selected safe direction while:
+
+```text
+outward(t) < post_recovery_guidance_min_progress_m
+```
+
+The M4.2 fixed value is `0.60 m`. The supervisor contribution becomes zero
+after that progress is demonstrated, while ordinary GESC and Gaussian
+navigation continue.
+
+Affine weight is no longer reduced merely because a well-centered fill lies
+far from the recenter endpoint. With M4.2 enabled it remains at the configured
+post-recovery weight through `0.60 m` of measured outward progress, then
+tapers linearly over the existing
+`post_recovery_affine_taper_distance_m = 0.50 m`. The guidance epoch is
+released after `1.10 m` outward progress or its bounded maximum time,
+whichever occurs first. Negative or zero outward progress cannot consume the
+affine budget.
+
+### Translation-liveness recovery
+
+The opt-in tracker evaluates exact-window motion over:
+
+```text
+post_recovery_liveness_window_sec:             12.0 s
+post_recovery_liveness_min_path_length_m:       0.60 m
+post_recovery_liveness_max_displacement_m:      0.20 m
+post_recovery_direction_refresh_limit:          1
+```
+
+It declares a low-net-progress loop only when a complete `12.0 s` window has
+both at least `0.60 m` path length and at most `0.20 m` net displacement.
+Ordinary slow but translating motion does not qualify.
+
+The first loop invalidates and recomputes the current safe direction,
+increments its typed revision, renews the affine binding, and resets only the
+liveness window. It does not reset accumulated outward progress.
+
+If a new complete window still loops after the one refresh, M4.2 requests one
+recoverable recenter through the existing state machine. On the next
+`RECENTER_COMPLETE`, it starts a fresh epoch and recomputes direction again.
+If low-net-progress recurs after that recenter, M4.2 releases the extra
+post-recovery guidance and continues ordinary valid-data SEARCH rather than
+entering `FAILSAFE`. Existing hard-fault and physical-room gates remain
+unchanged.
+
+Each refresh, recenter request, and guidance release is reported through the
+existing typed `AlgorithmEvent` owner with measured path, displacement,
+outward progress, window, thresholds, direction revision, and retry counts.
+No new message type or event enum is required.
+
+### Robust search-history reset
+
+The new default-off control is:
+
+```text
+robust_search_epoch_reset_enabled: true
+```
+
+When enabled with `robust_gaussian_v1`, the existing position and cost
+PDE-history nodes observe the canonical typed AlgorithmState. On each new
+SEARCH epoch after supervisor-owned escape or recenter motion:
+
+- the position PDE buffer initializes from the next finite current pose;
+- the cost PDE buffer initializes from the next finite current modified-cost
+  sample;
+- their transport timestamps restart at those samples;
+- the existing convergence detector starts its already supported fresh
+  SEARCH counter/decay epoch.
+
+The fill registry and accepted Gaussian fill remain intact. Legacy behavior,
+filter equations, dither phase, cost sign/units, source score, and historical
+recording topics remain unchanged.
+
+### Recenter and time-budget correction
+
+M4.2 changes only its fresh fixed inputs:
+
+```text
+recenter_tolerance_m:          0.15 m
+recenter_hold_sec:             1.0 s
+post_recovery_guidance_max_sec: 90.0 s
+post_stage_a_timeout_sec:      120.0 s
+run_timeout_sec:               480.0 s
+wall_timeout_sec:              660.0 s
+shutdown_grace_sec:             45.0 s
+```
+
+The tighter tolerance must place the robot reliably near the selected center
+or safe proxy while keeping the existing safe route planner. It does not
+shrink the physical room or increase the `0.20 m` wall margin.
+
+Schema v7 adds the required positive staged-recovery field
+`post_stage_a_timeout_sec`. The live runner starts this clock only after Stage
+A and exact fill cardinality have been observed. It retains the existing
+operator-equivalent global stop immediately upon a valid post-Stage-A sample
+within `1.20 m`. If the complete `120.0 s` Stage B window elapses first, the
+runner performs the same scoped graceful cancellation/finalization but
+classifies Stage B and combined behavior as failed, not as an infrastructure
+wall timeout. This budget cannot weaken or substitute for the proximity gate.
+
+### Fixed M4.2 values
+
+Every M4.2 two-light attempt retains:
+
+```text
+room bounds:                         [-0.25, 3.75] x [-0.25, 3.75] m
+room center:                         (1.75, 1.75) m
+start:                               (0.0, 0.0), yaw 0
+global:                              (3.5, 3.5), input 1600.0
+local input:                         400.0
+known topology:                      1 local, 1 global
+maximum fill clusters:               1
+detector path / efficiency gate:     0.20 m / 0.50
+wall margin:                         0.20 m
+fill minimum valid samples:          40
+recenter tolerance / hold:           0.15 m / 1.0 s
+guidance outward hold / taper:       0.60 m / 0.50 m
+liveness window/path/net:            12.0 s / 0.60 m / 0.20 m
+direction refresh / recenter:        1 / 1
+primary Stage B:                     1.20 m
+closer diagnostic:                   1.00 m
+collision expected:                  false
+post-A / run / wall / shutdown:      120 / 480 / 660 / 45 s
+```
+
+### No-Gazebo qualification
+
+Before any M4.2 Gazebo process starts:
+
+1. prove exact-window progress, liveness, outward hold/taper, duplicate-stamp,
+   backward-time, and parameter validation behavior with ROS-independent
+   tests;
+2. prove `RECENTER_COMPLETE` creates a fresh anchor and a new direction
+   revision, safe SEARCH command, progress release, one refresh, one
+   recoverable recenter, and nonterminal final fallback;
+3. prove every guidance translation passes the existing command sweep and
+   wall/fill pressure yields zero/replan rather than outward motion;
+4. prove physical-room violation, invalid data, hard controller faults, and
+   explicit stop still latch zero-output `FAILSAFE`;
+5. prove paired robust PDE histories reset once per typed SEARCH boundary,
+   remain paired, and do not reset under legacy/default-off operation;
+6. prove schema-v7 requires and normalizes the new controls and positive
+   post-A budget while schema-v1 through v6 normalization and case keys remain
+   unchanged;
+7. prove live Stage A starts the independent budget, global proximity wins
+   immediately, budget expiry is a graceful behavioral failure, and the wall
+   timeout remains an infrastructure failure;
+8. replay retained M4/M4.1 geometry, direction, wall, command-sweep, evidence,
+   ownership, and timestamp regressions without changing their artifacts;
+9. run focused and broad functional tests, isolated three-package build,
+   installed dry-run, and nonexecuting launch instantiation;
+10. verify V6 and historical scenario/world hashes, topics, cost sign/units,
+    sole `/cmd_vel` ownership, and all retained evidence hashes;
+11. update live status, checkpoint, and commit the exact implementation plus
+    fixed fresh inputs before dispatch.
+
+### Fixed visible probe
+
+If and only if no-Gazebo qualification passes, run one visible two-light
+attempt:
+
+```text
+suite:       phase08_v7_m4_2_visible_probe
+version:     phase08-v7-m4-2-probe
+case:        v7_m4_2_probe_r1p5_a45_h25_18208
+local:       (1.0606601717798214, 1.0606601717798212)
+seed:        18208
+evidence:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_2_probe
+```
+
+The probe must pass recording completeness, exact publisher ownership,
+timestamp evidence, Stage A, exact one-fill cardinality, primary `1.20 m`
+Stage B, collision, forbidden state/event, final-zero, cleanup, and combined
+predicates. It is retained without retry or in-run tuning.
+
+### Conditional two-light qualification
+
+Only after the fixed visible probe passes may the serial headless M4.2
+two-light suite run:
+
+| Case | Local position | Seed | Role |
+|---|---|---:|---|
+| `v7_m4_2_r1p0_a45_h25_18209` | `(0.7071067811865476, 0.7071067811865475)` | 18209 | spatial |
+| `v7_m4_2_r1p5_a22p5_h25_18209` | `(1.38581929876693, 0.5740251485476346)` | 18209 | spatial |
+| `v7_m4_2_r1p5_a45_h25_18209` | `(1.0606601717798214, 1.0606601717798212)` | 18209 | spatial |
+| `v7_m4_2_r1p5_a67p5_h25_18209` | `(0.5740251485476348, 1.38581929876693)` | 18209 | spatial |
+| `v7_m4_2_r2p0_a45_h25_18209` | `(1.4142135623730951, 1.414213562373095)` | 18209 | spatial |
+| `v7_m4_2_repeat_r1p5_a45_h25_18210` | `(1.0606601717798214, 1.0606601717798212)` | 18210 | repeat |
+| `v7_m4_2_repeat_r1p5_a45_h25_18211` | `(1.0606601717798214, 1.0606601717798212)` | 18211 | repeat |
+| `v7_m4_2_repeat_r1p5_a45_h25_18212` | `(1.0606601717798214, 1.0606601717798212)` | 18212 | repeat |
+
+The evidence root is:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_2
+```
+
+The two-light readiness gate requires the visible probe plus all five spatial
+and all three repeat cases to pass every fixed predicate. Every attempt is
+retained. No failed case is retried or changed inside M4.2.
+
+### Optional three-light development probe
+
+Only after the complete two-light gate passes may one separately fixed visible
+three-light development probe be committed and run, using the retained M4
+three-light geometry with fresh identity and seed `18213`. It remains
+development evidence only; it cannot weaken the two-light gate or establish
+three-light repeatability.
+
+M4.2 authorizes simulation only. Phase 09 and every physical hardware command
+remain unauthorized.
+
+### M4.2 milestone
+
+Save, validate, checkpoint, and commit this amendment. Implement and qualify
+the full correction plus exact fixed inputs without Gazebo, checkpoint and
+commit the dispatch boundary, and then run only the conditional sequence
+above.

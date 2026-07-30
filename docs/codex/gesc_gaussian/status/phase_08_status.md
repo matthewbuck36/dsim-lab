@@ -6657,3 +6657,63 @@ evidence correction independently PASS and retained for future versions.**
 Stop. No suite, three-light, physical, or additional Gazebo execution is
 authorized. A post-recovery liveness correction requires a fresh Plan and
 explicit user approval.
+
+## Phase 08.7 M4.2 authorization and planning boundary
+
+On 2026-07-30 the user explicitly authorized the fresh full correction after
+reviewing the M4.1 Stage B diagnosis. The active subphase Plan now records
+M4.2 as a schema-v7, robust-only, default-off correction. M4.1 remains closed
+and immutable: its evidence correction passed, while its fixed behavior
+failed Stage B and combined success.
+
+The M4.2 contract fixes all six retained diagnosis items within existing
+owners:
+
+- a fresh direction/progress epoch at `RECENTER_COMPLETE`;
+- safe bounded supervisor translation until `0.60 m` outward progress;
+- progress-coupled affine hold and taper;
+- a `12.0 s` high-path/low-net liveness detector with one direction refresh,
+  one nonterminal recoverable recenter, and ordinary-SEARCH fallback;
+- `0.15 m` recenter tolerance plus paired robust PDE-history reset;
+- a schema-v7 `120.0 s` post-Stage-A budget inside bounded
+  `480 / 660 / 45 s` run/wall/shutdown limits.
+
+The fixed first attempt is visible case
+`v7_m4_2_probe_r1p5_a45_h25_18208`, seed `18208`, under:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_2_probe
+```
+
+That root is not yet created. No implementation, fresh scenario, Gazebo
+process, suite, three-light run, Phase 09 action, or physical command has
+started.
+
+## Current milestone
+
+**Phase 08.7 M4.2 — correction authorized and Plan amendment saved;
+Plan validation and checkpoint PASS; Plan-only commit pending.**
+
+The Plan-only boundary was checked with:
+
+```text
+bash DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh 08 plan
+Phase 08 plan context is complete.
+
+git diff --check
+PASS
+
+bash DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/checkpoint_phase.sh 08
+PASS
+```
+
+The fresh evidence root is absent. No Gazebo, scenario-runner, or recorder
+process is active; the only `pgrep` match during the guard was the guard shell
+containing its own search text. The worktree changes are limited to this
+status, the active subphase Plan, and the generated Phase 08 checkpoint.
+
+### Next criterion
+
+Refresh the checkpoint for this exact status and commit the Plan-only
+boundary. Then implement and qualify the complete M4.2 correction without
+Gazebo.

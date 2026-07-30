@@ -1,20 +1,20 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-30T06:56:33+00:00
-Base HEAD: 0f66c59e597f4e2416ca2120d0a45f68ed79385a
+Generated: 2026-07-30T07:18:17+00:00
+Base HEAD: d29b950e2d82dd636c144b76bc150309f1dcf215
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: f129276541f63c23092e1939753e29bda145edc323f5c4c4c4a18c0b4a1b182d
+Status sha256: 7dc631fc239fe9a3c086b9f6155ccda05211e15211623a5b6a4b924624f1294e
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
-Active subphase plan sha256: 2c3cdf9053aeca0c1bcbbaa3d4e41534454048b0b9a19eafbf81c4d4179cf0b9
-Unstaged diff sha256: 47fd49b10c3990fbbcddbe9c7968217d064a9ecd11076147c3db170e6c764126
+Active subphase plan sha256: 93fb81dfed16f006a538935bc6396f9c31afb2e4f16aaeea22b92d7880bcf492
+Unstaged diff sha256: 2a01dd049ab7bdb72b24d6598fbe7859fd472cb300f7cfe50bc7edc78cd09c7d
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 70]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 71]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
@@ -23,22 +23,40 @@ Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 33 +++++-----------------
- docs/codex/gesc_gaussian/plans/phase_08_7_plan.md  | 10 ++++++-
- docs/codex/gesc_gaussian/status/phase_08_status.md | 28 ++++++++++++++++++
- 3 files changed, 44 insertions(+), 27 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  32 +--
+ docs/codex/gesc_gaussian/plans/phase_08_7_plan.md  | 311 ++++++++++++++++++++-
+ docs/codex/gesc_gaussian/status/phase_08_status.md |  60 ++++
+ 3 files changed, 375 insertions(+), 28 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**Phase 08.7 M4.1 — CLOSED / FORMAL FAIL on Stage B and combined behavior;
-evidence correction independently PASS and retained for future versions.**
+**Phase 08.7 M4.2 — correction authorized and Plan amendment saved;
+Plan validation and checkpoint PASS; Plan-only commit pending.**
+
+The Plan-only boundary was checked with:
+
+```text
+bash DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh 08 plan
+Phase 08 plan context is complete.
+
+git diff --check
+PASS
+
+bash DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/checkpoint_phase.sh 08
+PASS
+```
+
+The fresh evidence root is absent. No Gazebo, scenario-runner, or recorder
+process is active; the only `pgrep` match during the guard was the guard shell
+containing its own search text. The worktree changes are limited to this
+status, the active subphase Plan, and the generated Phase 08 checkpoint.
 
 ### Next criterion
 
-Stop. No suite, three-light, physical, or additional Gazebo execution is
-authorized. A post-recovery liveness correction requires a fresh Plan and
-explicit user approval.
+Refresh the checkpoint for this exact status and commit the Plan-only
+boundary. Then implement and qualify the complete M4.2 correction without
+Gazebo.
 
 
 This file describes the base HEAD and diff before the next commit; it is
