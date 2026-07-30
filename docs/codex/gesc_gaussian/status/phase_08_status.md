@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-30T01:47:50-07:00`
-Status: `PHASE 08.7 M4.3 IMPLEMENTED AND QUALIFIED; COMMIT PENDING`
+Last verified: `2026-07-30T01:50:09-07:00`
+Status: `PHASE 08.7 M4.3 QUALIFIED AND COMMITTED; VISIBLE DISPATCH RECORD PENDING`
 
 ## Objective
 
@@ -7453,3 +7453,66 @@ implementation plus fixed inputs, then reconfirm the clean dispatch boundary.
 Only then may the one fixed visible M4.3 two-light probe run on ROS domain
 `161`. The eight-case headless suite remains conditional on a complete visible
 pass; the three-light probe remains unauthorized.
+
+## Phase 08.7 M4.3 committed dispatch boundary
+
+The exact qualified evidence correction, regression tests, fresh scenario
+inputs, status, and precommit checkpoint were committed at:
+
+```text
+85fdd6f6bfc884c16e1b79d60fd813a1b9c989a1
+phase 08.7: qualify M4.3 event attribution
+```
+
+The post-commit worktree is clean and the implementation context validator
+passes. Source and isolated-install bytes remain identical:
+
+```text
+b709c0b093f49ad5f229cb070fe10512cd5590d4abf8c11f3a7ed39b5eec6597  validator
+cacbdafbc9aa289f178e684503519283bdf4b5496cbdd2dfb8c61ff69ebf1658  visible scenario
+37c1f7f2d81132be46adee576a1b603093fd03dd5488c5465d53d8876b9d50cc  suite scenario
+```
+
+The visible and suite roots remain absent. `gzserver`, `gzclient`,
+`run_scenario`, and `record_run` are inactive. ROS domain `161` has no
+discovered nodes with the CLI daemon disabled. `DISPLAY=:0` passes
+`xdpyinfo`, and the evidence filesystem has `315 GiB` free.
+
+Exactly one fresh visible attempt is predeclared:
+
+```text
+source /opt/ros/humble/setup.bash
+source /tmp/phase08_7_m4_3_qual/install/setup.bash
+export ROS_DOMAIN_ID=161
+export ROS_LOG_DIR=/tmp/phase08_7_m4_3_probe_ros_logs
+export MPLCONFIGDIR=/tmp/phase08_7_m4_3_probe_mpl
+export TURTLEBOT3_MODEL=burger
+export DISPLAY=:0
+timeout --signal=INT --kill-after=90s 660s \
+  ros2 run ros_esc run_scenario \
+  /tmp/phase08_7_m4_3_qual/install/ros_esc/share/ros_esc/\
+scenario_runner/scenarios/phase08_v7_m4_3_visible_probe.yaml \
+  --operator Codex \
+  --case-id v7_m4_3_probe_r1p5_a45_h25_18308 \
+  --runs-root \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_3_probe \
+  --summary-output \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_3_probe/\
+phase08_v7_m4_3_visible_probe_summary.yaml \
+  --gui
+```
+
+The attempt will be retained without retry or in-run value changes. The
+fixed eight-case suite remains passing-gated; the optional three-light probe
+remains unauthorized.
+
+## Current milestone
+
+**Phase 08.7 M4.3 — qualified implementation committed; one fixed visible
+two-light probe predeclared.**
+
+### Next criterion
+
+Refresh the Phase 08 checkpoint against commit `85fdd6f`, commit this dispatch
+record, reconfirm the clean process/evidence boundary, and execute only the
+bounded visible probe.
