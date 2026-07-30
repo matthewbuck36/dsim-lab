@@ -9086,3 +9086,147 @@ Refresh the Phase 08 checkpoint against `957b7e4`, commit this exact dispatch
 record, reconfirm the clean process/evidence/domain boundary, and execute
 only the bounded visible probe. Do not dispatch the headless suite unless
 that visible attempt passes every declared predicate.
+
+## Phase 08.7 M4.6 retained visible-probe failure
+
+The one committed M4.6 visible attempt ran exactly once on ROS domain `166`
+from `2026-07-30T18:15:54.073631Z` through
+`2026-07-30T18:21:26.298012Z`. The outer timeout did not fire, the recorder
+returned `0`, and the runner returned `1` because the combined behavioral
+gate failed.
+
+Retained run:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_6_probe/
+  2026-07-30/
+  20260730T181555011761Z_simulation_phase08_v7_m4_6_visible_probe-
+  v7_m4_6_probe_r2p0_a45_h25_18508-robust_gaussian_v_0a93dbb1
+```
+
+The immutable result is:
+
+```text
+controller startup/readiness:       PASS
+recording and fresh validation:     PASS
+cleanup:                            PASS
+collision expectation:              PASS, no collision
+forbidden evidence:                 PASS
+final zero/readiness false:         PASS
+Stage A local recovery:             PASS, exactly 1 episode
+unique fill cardinality:            PASS, exactly 1
+Stage A budget:                      PASS
+complete Stage B opportunity:        PASS, 120.020 s
+Stage B primary 1.20 m proximity:    FAIL
+non-gating 1.00 m diagnostic:        FAIL
+combined result:                     FAIL
+conditional M4.6 headless suite:     NOT RUN
+```
+
+Stage A completed at simulation time `152.814 s`. All `3534` post-Stage-A
+noninterpolated odometry samples were valid. The best Stage B sample was at
+`225.336 s`, position `(1.7009517630, 1.5989658704) m`, distance
+`2.6173470005 m` from the global. At the full Stage B boundary the robot was
+`2.6388175166 m` from the global; the final recorded distance was
+`2.6359799256 m`.
+
+M4.6 did correct the M4.5 detector miss. At `164.700 s` the committed
+`-0.80` threshold armed on a measured radial/source dot of
+`-0.9383691118`. The downstream generic hard-safe selector then chose the
+only initially safe nonnegative-source-half-plane candidate:
+
+```text
+direction:        (0.1339360130, -0.9909899820)
+source alignment: approximately 0.0
+source rotation:  -90 degrees
+affine weight:     0.50
+```
+
+That tangent was safe but made no projected source progress. The bypass
+increased global distance by `0.1656946276 m` and released at fixed fill
+clearance at `172.200 s`. Release cleared the retained directions, ended
+continuity/liveness guidance, and reduced affine weight from `0.50` to
+`0.0`. Ordinary search then traveled `5.5220164059 m` with only
+`0.4954968315 m` net displacement and never approached the global.
+
+The retained geometry rules out wall and collision failsafes as the cause:
+
+```text
+Stage B x range:                    [1.1608383976, 1.8063755164] m
+Stage B y range:                    [1.0444790512, 1.7015756466] m
+minimum physical-wall clearance:    1.2944790512 m
+minimum configured-inset clearance: 1.0944790512 m
+```
+
+No collision, algorithm `TIMEOUT`, in-readiness `FAILSAFE`, or room-boundary
+event occurred. Relaxing the `1.20 m` operator-equivalent stop also cannot
+convert the retained best distance of `2.6173470005 m` into a pass.
+
+The bounded defect is downstream of the calibrated detector:
+
+```text
+detector and threshold:  PASS
+hard safety:             PASS
+continuity topology:     INCOMPLETE
+selector priority:       permits a zero-progress tangent
+release semantics:       clearance-only and premature
+post-release liveness:   absent
+affine persistence:      ends at clearance release
+```
+
+Pure reconstruction at the live arm geometry shows that the stored source
+direction becomes hard-safe after approximately `0.425 m` of the necessary
+tangential contour. A fresh correction therefore needs dynamic hard-safe
+source-direction reacquisition, a source-resume leg with positive projected
+progress before release, and continued affine/liveness assistance through
+that leg. It must preserve the room/collision hard gates, default-off
+behavior, V6 and every historical scenario, exact one-fill cardinality,
+staged budgets, the `1.20 m` primary stop, final zero, and cleanup.
+
+Standard analysis ran exactly once into `analysis/phase07`, completed with no
+failures, and retained eight plots plus eleven tables. Fresh Phase 05
+validation and the installed standalone validator pass. Read-only SQLite
+`PRAGMA quick_check` returns `ok` for `579958` messages and `34` topics.
+
+Retained hashes:
+
+```text
+b746f1083f006b20fed97e9a584ef480b615dac0126027683d21343d1cd6e93c  visible summary
+a095e8e1c6046b65cc2d1d45e9cf2ea48d864003f34a555ba4a70ad9e2c323cc  completeness
+fe3d5010c39282fdd104345a32680986cd0775d73a51c800ecb700fe7ec63aa2  scenario result
+d52be6874dec45810949689b8e0ab0635526cb334fd8f122e492d95ffea2080b  bag
+36687623660234baee372a448658965ec31d7c6cc90863ce73f0c18df7c8e79f  analysis completeness
+81e9f44683872ba64249c73a80e95e5f6ee3193fc6229f3fc0c11847c25e7268  analysis metrics
+db0a514252f83ba0b4eab379677bda237a2564fd5040f37bd3865de95589c112  resolved scenario
+deb08439f285a1bcff7e7b5fe763acbf095e7175d995367c626f9d83d7b30e11  scenario definition
+```
+
+The complete result and diagnosis are retained in:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m4_6_visible_probe_report.md
+SHA-256
+4a2f6b25c0098476f50e6eefe09f070805c77dc28c7c719707c5cf6b623b8836
+```
+
+Cleanup reconfirmed no Gazebo, runner, recorder, analyzer, rosbag, validator,
+or matching launch process, and ROS domain `166` is empty with the CLI
+daemon disabled. The conditional M4.6 suite root remains absent. No retry,
+in-run change, suite case, three-light case, Phase 09, physical, or hardware
+action occurred.
+
+## Current milestone
+
+**Phase 08.7 M4.6 — CLOSED / VISIBLE GATE BEHAVIORAL FAIL /
+INFRASTRUCTURE, STAGE A, ONE-FILL, SAFETY, AND FULL-BUDGET PASS /
+STAGE B FAIL / SUITE NOT RUN / NOT SIMULATION-READY.**
+
+### Next criterion
+
+Checkpoint and commit this immutable M4.6 result. Any further correction must
+use a fresh reviewed version, fresh identities, complete no-Gazebo
+qualification, and a committed dispatch boundary. The evidence supports a
+dynamic source-reacquisition and source-resume corridor; it does not support
+relaxing wall, collision, room, or global-proximity gates. The optional
+three-light probe, Phase 09, and physical hardware remain unauthorized.
