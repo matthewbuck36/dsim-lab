@@ -1,42 +1,48 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-30T08:09:59+00:00
-Base HEAD: a1f58fb8b706181823877de35ff029fa812402bb
+Generated: 2026-07-30T08:28:10+00:00
+Base HEAD: 232ac03d29e7513da6222b5c90e1f61c7808ca98
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 833070dfc508a54c7a6d739833065276cff1a596ecec5d754bbfad5d8f7c01c6
+Status sha256: e2d4fe0a48490c57965cdfbfef32196227c4c92533b5973d07de291a17ef77be
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
 Active subphase plan sha256: 93fb81dfed16f006a538935bc6396f9c31afb2e4f16aaeea22b92d7880bcf492
-Unstaged diff sha256: 635e0b23d96ae3e90f8cc2662bafcdc802d6e9a5a1690a6d13d7f5b6c2390cb6
+Unstaged diff sha256: 20e059e9a3239b2107bda88022459bb6b07233343b0b646399dbe02c81673859
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 73]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 74]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
+?? docs/codex/gesc_gaussian/validation/phase_08_7_m4_2_visible_probe_report.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 60 ++------------------
- docs/codex/gesc_gaussian/status/phase_08_status.md | 66 +++++++++++++++++++++-
- 2 files changed, 69 insertions(+), 57 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  30 +---
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 161 ++++++++++++++++++++-
+ 2 files changed, 165 insertions(+), 26 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**Phase 08.7 M4.2 — qualified implementation committed; one fixed visible
-two-light probe predeclared.**
+**Phase 08.7 M4.2 — CLOSED / FORMAL FAIL on recording completeness and
+combined result; Stage A, exact fill, Stage B, collision, cleanup, and the
+post-recovery behavioral correction independently PASS.**
 
 ### Next criterion
 
-Refresh the Phase 08 checkpoint against commit `a1f58fb`, commit this dispatch
-record, reconfirm the clean process/evidence boundary, and execute only the
-bounded visible probe.
+Checkpoint and commit the retained result. Any new code or simulation requires
+a fresh, explicitly authorized version. The smallest correction is to extend
+the existing AlgorithmEvent configuration-prefix map with
+`("post-recovery ", "supervisor")`, prove M4.2 read-only replay while keeping
+its failed file immutable, preserve M4/M4.1 outcomes and hashes, requalify
+without Gazebo, and use a fresh case/seed/evidence root for the next visible
+gate.
 
 
 This file describes the base HEAD and diff before the next commit; it is

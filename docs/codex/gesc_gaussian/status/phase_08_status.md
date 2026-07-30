@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-30T01:09:28-07:00`
-Status: `PHASE 08.7 M4.2 QUALIFIED AND COMMITTED; VISIBLE DISPATCH RECORD PENDING`
+Last verified: `2026-07-30T01:26:52-07:00`
+Status: `PHASE 08.7 M4.2 VISIBLE BEHAVIOR PASS; FORMAL EVIDENCE FAIL`
 
 ## Objective
 
@@ -7050,3 +7050,160 @@ two-light probe predeclared.**
 Refresh the Phase 08 checkpoint against commit `a1f58fb`, commit this dispatch
 record, reconfirm the clean process/evidence boundary, and execute only the
 bounded visible probe.
+
+## Phase 08.7 M4.2 retained visible-probe result
+
+Exactly one visible-Gazebo attempt ran on ROS domain `160` from committed
+scenario SHA-256
+`e6ec6120df271afab3ae71192b601c4bcf866105a8cdaa13a10dcd94b7632973`.
+The run is retained at:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_2_probe/
+  2026-07-30/
+  20260730T081058251159Z_simulation_phase08_v7_m4_2_visible_probe-
+  v7_m4_2_probe_r1p5_a45_h25_18208-robust_gaussian_v_56b72dfe
+```
+
+The runner started at `2026-07-30T08:10:57.281166Z`, completed at
+`2026-07-30T08:18:20.539562Z`, and returned `1`. The recorder did not time
+out; cleanup passed with no remaining new nodes or session processes. The
+Gazebo, runner, recorder, and matching launch process set is inactive.
+
+The formal result is **FAIL: recording evidence invalid**. The behavioral
+correction independently passed:
+
+```text
+recording completeness:                   FAIL (47/48)
+required state path and events:           PASS
+Stage A local recovery:                   PASS
+exact fill cardinality 1/1:               PASS
+Stage B primary 1.20 m proximity:         PASS
+post-Stage-A budget:                      PASS (not expired)
+collision expectation false:              PASS
+forbidden in-readiness states/events:      PASS
+final zero/readiness/cleanup:              PASS
+combined formal result:                    FAIL
+```
+
+The accepted path was:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> RECENTER
+-> SEARCH
+```
+
+Exactly one fill was created. Pure repulsion escaped in `8.362181527 s`, and
+recenter completed `0.1349758792 m` from its fixed safe-proxy target, inside
+the new `0.15 m` tolerance.
+
+The M4.2 post-recovery epoch started at simulation time `340.0 s`. It released
+normally at `359.1 s` after:
+
+```text
+epoch path length:            1.6420006682 m
+epoch net displacement:       1.1386958164 m
+outward progress:             1.1087168804 m
+12 s window path:             1.0305195589 m
+12 s window displacement:     0.7656182086 m
+direction refresh count:      0
+liveness recenter attempted:  false
+```
+
+The runner began Stage B at `340.022 s` and stopped on the primary global
+sample at `361.918 s`, only `21.896 s` into the independent `120.0 s` budget:
+
+```text
+pose:                      (2.9001106472, 2.4628184159) m
+distance to global:        1.1981706364 m
+valid post-A samples:      645
+invalid post-A samples:    0
+interpolation used:        false
+```
+
+The non-gating `1.00 m` closer diagnostic was not reached.
+
+### Evidence defect
+
+Only `algorithm_event_producer_identified` failed. The two unidentified
+messages are finite, fresh, nonregressing supervisor-owned
+`EVENT_CONFIGURATION` records:
+
+```text
+post-recovery guidance epoch started
+post-recovery outward progress completed
+```
+
+The shared-bus validator classifies configuration-event ownership through a
+closed prefix table. It contains the supervisor's older `measured escape`
+prefix but not the new M4.2 `post-recovery ` prefix.
+
+A read-only in-memory replay added only:
+
+```text
+EVENT_CONFIGURATION + detail.startswith("post-recovery ")
+-> supervisor
+```
+
+With `write_report=False`, that replay passed every completeness check:
+
+```text
+patched_read_only_passed:             true
+failures:                             []
+algorithm_event_producer_identified:  PASS
+typed_timestamps_nonregressing:       PASS
+algorithm_event_emission_fresh:       PASS
+```
+
+The retained M4.2 `completeness.json` remains unmodified and failed. The
+defect is evidence attribution coverage, not navigation, timestamp content,
+publisher ownership, or acceptance thresholds.
+
+Read-only Python sqlite `PRAGMA quick_check` returned `ok`; the bag contains
+`772,486` messages. Standard bounded analysis returned `0`, with no analysis
+failure, eight plots, and eleven tables under `analysis/phase07`. Its status
+is correctly `partial` only because the stored/fresh Phase 05 validation sees
+the same recording failure. Three existing assumed-fallback warnings remain
+for channel index, sync tolerance, and supervisor publish rate.
+
+Exact execution, behavior, evidence diagnosis, immutable replay, and retained
+hashes are recorded in:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m4_2_visible_probe_report.md
+```
+
+Key retained hashes are:
+
+```text
+9d296d50c203804f3938bcb22379b6b6bc6c5636d9c5880bded51ee4a75043ad  suite summary
+4abaecc2dacf8fb544de01ba198e4e26792566c5cc44c059e6d99e4802d746d0  completeness
+b7f4a57a973f79ff9e2b07c5ad7c8968f341b7ee0d3fa6b3b2c9029fd07984fe  scenario result
+7dd10ccd0231cd9e17eb8b9e1a76d8dbba5779d19d7c8fd2e1dc2f3d8093af66  sqlite bag
+414a9537a888adc30fc0b586b8c5832cb1039c6271913639c0264d0d7eb537cc  analysis completeness
+2da54701a71a5ee4befe788461af766f19f1333107b928730d286032d5d736d4  summary metrics
+```
+
+The fixed eight-case suite and optional three-light probe were not run.
+M4.2 will not be retried, overwritten, relabelled, or extended.
+
+## Current milestone
+
+**Phase 08.7 M4.2 — CLOSED / FORMAL FAIL on recording completeness and
+combined result; Stage A, exact fill, Stage B, collision, cleanup, and the
+post-recovery behavioral correction independently PASS.**
+
+### Next criterion
+
+Checkpoint and commit the retained result. Any new code or simulation requires
+a fresh, explicitly authorized version. The smallest correction is to extend
+the existing AlgorithmEvent configuration-prefix map with
+`("post-recovery ", "supervisor")`, prove M4.2 read-only replay while keeping
+its failed file immutable, preserve M4/M4.1 outcomes and hashes, requalify
+without Gazebo, and use a fresh case/seed/evidence root for the next visible
+gate.
