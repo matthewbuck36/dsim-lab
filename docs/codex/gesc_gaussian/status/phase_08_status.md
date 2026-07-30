@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-29T15:30:10-07:00`
-Status: `PHASE 08.7 M2 EXECUTED — GEOMETRY/INFRASTRUCTURE + STAGE A PASS; STAGE B/COMBINED FAIL`
+Last verified: `2026-07-29T20:53:20-07:00`
+Status: `PHASE 08.7 M3 EXECUTED — 1/5 COMBINED PASS; RETAINED FAIL`
 
 ## Objective
 
@@ -5640,3 +5640,192 @@ Checkpoint and commit the exact implementation, tests, scenario, Plan, and
 status. Verify a clean commit, identical installed suite hash, absent evidence
 root, and inactive process set before dispatching the five serial headless
 attempts.
+
+## Phase 08.7 M3 committed dispatch boundary
+
+The qualified implementation and exact five-case suite were committed at:
+
+```text
+d5d29aa2225c26d2bfa62f00a398b238b67a709b
+phase 08.7: qualify M3 spatial suite
+```
+
+The post-commit worktree was clean. Source and isolated-install suite hashes
+remain identical at
+`1221d8cb9d7235218d4f3da710f10d41284632a93712bd89d763d938a0437dae`.
+The fresh evidence root is absent and the Gazebo/runner/recorder process set is
+inactive.
+
+Exactly five serial headless attempts are predeclared on ROS domain `106`:
+
+```text
+source /opt/ros/humble/setup.bash
+source /tmp/phase08_7_m3_qual/install/setup.bash
+ROS_DOMAIN_ID=106
+ROS_LOG_DIR=/tmp/phase08_7_m3_ros_logs
+MPLCONFIGDIR=/tmp/phase08_7_m3_mpl
+TURTLEBOT3_MODEL=burger
+timeout --signal=INT --kill-after=90s 3000s \
+  ros2 run ros_esc run_scenario \
+  /tmp/phase08_7_m3_qual/install/ros_esc/share/ros_esc/\
+scenario_runner/scenarios/phase08_v7_m3_spatial_suite.yaml \
+  --operator phase08_7_m3 \
+  --runs-root \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m3 \
+  --summary-output \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m3/\
+phase08_v7_m3_spatial_suite_summary.yaml
+```
+
+There is no `--gui` override and the committed suite declares
+`gazebo_gui: false`. Every attempt is retained. A behavioral failure continues
+to the next fixed case; a cleanup failure stops dispatch. No case will be
+retried and no threshold, position, seed, or algorithm value will be changed
+inside M3.
+
+## Current milestone
+
+**Phase 08.7 M3 — qualified input committed; exact five-run headless dispatch
+predeclared.**
+
+### Next criterion
+
+Execute the one bounded serial batch, preserve all attempts, validate and
+analyze every completed run, evaluate the strict all-five gate, write the M3
+report, checkpoint, and commit the retained result.
+
+## Phase 08.7 M3 retained execution result
+
+The exact committed five-case batch ran once from qualified commit
+`d5d29aa2225c26d2bfa62f00a398b238b67a709b`. It started at
+`2026-07-30T02:53:29.648468Z`, completed at
+`2026-07-30T03:29:15.306672Z`, and retained all five cases under:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m3
+```
+
+The outer runner returned `1` because four completed cases failed required
+behavioral predicates. The 3000-second outer timeout did not fire, every
+recorder returned `0`, and no cleanup failure stopped dispatch.
+
+### Strict suite gate
+
+```text
+infrastructure / recording / cleanup: 5 / 5
+formal Stage A local recovery:         2 / 5
+exact associated fill cardinality:    4 / 5
+non-gating 1.20 m approach:            2 / 5
+primary 1.00 m Stage B:                1 / 5
+collision expectation:                 4 / 5
+combined success:                       1 / 5
+required M3 gate:                       5 / 5
+```
+
+M3 is therefore **FAIL** and closed without retry or tuning.
+
+### Per-case causal result
+
+- `v7_m3_r1p0_a45_h25_18101`: **PASS**. The direct Stage A path and exact
+  fill assignment passed; first approach distance was `1.1974712642 m`, first
+  primary distance was `0.9987060992 m`, and no collision occurred.
+- `v7_m3_r1p5_a22p5_h25_18101`: **FAIL**. The local and one fill associated
+  correctly, but repulsive escape stalled. The one permitted redesign retained
+  `39` valid synchronized samples against the unchanged `40` minimum, emitted
+  `FILL_REJECTED`, and entered `FAILSAFE` before recenter.
+- `v7_m3_r1p5_a45_h25_18101`: **FAIL**. The redesign-assisted Stage A path,
+  exact cluster cardinality, and `1.20 m` diagnostic passed at
+  `1.1976898679 m`. It never entered `1.00 m`; the minimum anywhere in the
+  complete post-Stage-A in-readiness trace was `1.0981376815 m`. The run also
+  retained wall-margin-inset failsafe and collision evidence.
+- `v7_m3_r1p5_a67p5_h25_18101`: **FAIL**. The mechanical lifecycle returned
+  to `SEARCH`, but convergence was `0.7491931004 m` from the declared local,
+  outside the `0.60 m` tolerance, so the cluster remained unassigned and
+  formal Stage A/cardinality failed. It later entered `FAILSAFE` with
+  `no safe post-recovery direction candidate`.
+- `v7_m3_r2p0_a45_h25_18101`: **FAIL**. Local association and exact
+  cardinality passed, but recenter emitted `TIMEOUT` after about `30.10 s` and
+  entered `FAILSAFE`; Stage A did not complete.
+
+### Evidence integrity
+
+All five independent `validate_run` invocations returned `0`, `passed=true`,
+with empty failure and warning lists. Read-only sqlite `PRAGMA quick_check`
+returned `ok` for each bag. All five `analyze_run` invocations returned `0`
+and status `complete`, with fresh Phase 05 validation true, eight plots,
+eleven tables, and empty recording/analysis failure lists.
+
+The `sqlite3 -readonly` CLI audit could not start because the executable is
+unavailable. The approved Python standard-library fallback opened every bag
+with `file:...?mode=ro`; all five `PRAGMA quick_check` results were
+`[('ok',)]`.
+
+A shell bookkeeping loop around validation exited `1` despite printing five
+child return codes of `0`. The retained logs independently prove five passing
+validators; this wrapper anomaly is recorded but is not a run-validation
+failure:
+
+```text
+/tmp/phase08_7_m3_validate_*.log
+/tmp/phase08_7_m3_analyze_*.log
+```
+
+A read-only immutable-evidence assertion reloaded the suite summary, every
+scenario result, run metadata, and analysis completeness file. It passed the
+expected aggregate vector:
+
+```text
+[infrastructure, Stage A, fill, approach, Stage B, collision gate, combined]
+[5,              2,       4,    2,        1,       4,              1]
+```
+
+Every metadata file identifies qualified commit `d5d29aa`. The source and
+isolated-install M3 suite remain byte-identical at
+`1221d8cb9d7235218d4f3da710f10d41284632a93712bd89d763d938a0437dae`.
+The immutable M2.3, M2.2, and M2.1 suite hashes remain respectively
+`f03db4462527620321eb299656d9f56fe32e10362664e595f7d3850fc3f53eca`,
+`1f11448b37ef8fbfb146124a0141d91d3404ee614d6d33e3a30f58aa0a179439`,
+and
+`541194d6152a8384c469f5bcc8573aef9afdb295bde6e148e5a82a692b8e4c8b`.
+
+Suite-summary SHA-256:
+
+```text
+0fe3d63b9223aac22ffe442cd78d7732f94f118504aee5463eab09d506610fe9
+```
+
+The full run IDs, causal measurements, per-artifact hashes, and validation
+record are in:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m3_spatial_suite_report.md
+```
+
+M2.3 remains a successful one-case development result. V6 and all historical
+scenarios, worlds, case keys, results, and evidence remain immutable.
+
+### Closeout checkpoint
+
+The bounded material-boundary command passed:
+
+```text
+timeout 180s \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/\
+checkpoint_phase.sh 08
+```
+
+It wrote
+`docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt` against base
+HEAD `d5d29aa2225c26d2bfa62f00a398b238b67a709b`. The retained-result commit
+follows this precommit snapshot.
+
+## Current milestone
+
+**Phase 08.7 M3 — executed once, retained as FAIL at 1/5, and closed.**
+
+### Next criterion
+
+The retained-result checkpoint and commit close M3. No replacement suite,
+retry, tuning, M4, readiness claim, Phase 09 action, or physical command is
+authorized; await an explicit, separately planned next step.

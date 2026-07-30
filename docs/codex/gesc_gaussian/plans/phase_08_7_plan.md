@@ -3,9 +3,8 @@
 ## Status and authority
 
 **M1 IMPLEMENTED AND QUALIFIED; M2, M2.1, AND M2.2 EXECUTED AND
-RETAINED AS FAILED; M2.3 EXECUTED AND RETAINED AS PASSED; M3 AMENDMENT,
-IMPLEMENTATION, AND EXECUTION AUTHORIZED; M4 AND LATER EXECUTION NOT
-AUTHORIZED.**
+RETAINED AS FAILED; M2.3 EXECUTED AND RETAINED AS PASSED; M3 EXECUTED
+AND RETAINED AS FAILED AT 1/5; M4 AND LATER EXECUTION NOT AUTHORIZED.**
 
 The user approved the geometry in this Plan on 2026-07-29. M1 was implemented,
 qualified without Gazebo execution, checkpointed, and committed at `7c87e5a`.
@@ -960,6 +959,32 @@ suite resolved the same five case keys with zero unsupported cases, source and
 install hashes match, and nonexecuting central-launch description generation
 completed without starting Gazebo. The evidence root remained absent and the
 Gazebo/runner/recorder process set remained inactive through qualification.
+
+### Retained execution result
+
+The qualified five-case batch executed once and is retained as **FAIL**:
+
+```text
+infrastructure / recording / cleanup: 5 / 5
+formal Stage A local recovery:         2 / 5
+exact associated fill cardinality:    4 / 5
+non-gating 1.20 m approach:            2 / 5
+primary 1.00 m Stage B:                1 / 5
+collision expectation:                 4 / 5
+combined success:                       1 / 5
+required M3 gate:                       5 / 5
+```
+
+The radius-1.0 diagonal case passed end to end. The other cases respectively
+failed during a one-sample-short redesign, after passing Stage A and the
+`1.20 m` diagnostic but missing `1.00 m` before wall/collision evidence,
+after completing a lifecycle outside the declared-local association
+tolerance, and during recenter timeout.
+
+All five runs are infrastructure-complete and independently validate and
+analyze successfully. No retry or in-suite correction occurred. The immutable
+report is
+`docs/codex/gesc_gaussian/validation/phase_08_7_m3_spatial_suite_report.md`.
 
 M3 establishes bounded five-position spatial evidence only. It does not
 authorize parameter tuning, automatic retries, multi-seed repeatability, the
