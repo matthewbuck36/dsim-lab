@@ -2622,3 +2622,257 @@ reservation, idempotent controller-load recovery, and fresh fixed inputs
 without Gazebo. Checkpoint and commit the exact dispatch boundary, then
 execute only the fixed visible probe and its passing-gated serial two-light
 suite.
+
+## M4.6 evidence-calibrated continuity-trigger amendment
+
+M4.5 is immutable and closed. Its one fixed visible attempt passed
+controller startup/readiness, `48/48` recording, cleanup, collision,
+forbidden-evidence, final-zero, Stage A, exact one-fill cardinality, the
+`480 s` Stage A bound, and the complete independent `120 s` Stage B
+opportunity. It failed Stage B at `3.6282729279 m` from the global, so its
+conditional headless suite did not run.
+
+The retained M4.5 report is:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m4_5_visible_probe_report.md
+
+SHA-256
+cd8c96e30cfe56e748147f2b5c28bc29af9b2cb50b7760b07f0c496e350f71b5
+```
+
+M4.5 proves all three implemented mechanisms execute as declared. The
+remaining failure is narrower: the fresh radius-2 source-led displacement
+reduced global distance by `0.1118906407 m`, but its radial/source dot was
+`-0.8412123478`, outside the fixed `-0.90` trigger. The bypass therefore did
+not arm, and the unchanged radial fallback reversed the useful displacement.
+This is an evidence-calibration miss, not a selector, staged-budget,
+controller-startup, wall, collision, room-boundary, or failsafe defect.
+
+M4.6 is Plan-only until reviewed and approved. It does not authorize an edit,
+build, checkpoint beyond the Plan boundary, or simulation merely by existing.
+
+### Exact bounded correction
+
+M4.6 changes only the explicit enabled value in fresh M4.6 scenarios:
+
+```text
+post_recovery_source_reversal_dot_threshold: -0.80
+```
+
+The launch and supervisor numeric default remains `-0.90`, and
+`post_recovery_source_continuity_enabled` remains default `false`.
+M4.5 scenarios remain byte-identical and retain `-0.90`. M4.4, M4.3, V6,
+legacy, and every historical scenario therefore preserve their exact
+normalized behavior.
+
+No production algorithm-source change is intended. The existing pure
+evidence function, hard-safe forward-half-plane selector, bypass-release
+radius, one-recenter persistence, affine/supervisor bounds, staged runner,
+and idempotent spawner are reused unchanged. If implementation reveals that
+a production change is required, stop as a Plan contradiction rather than
+expanding M4.6 silently.
+
+The evidence basis is the complete retained set:
+
+| Retained case | Result | radial/source dot |
+|---|---:|---:|
+| M4.4 visible central | PASS | `-0.336356` |
+| M4.4 radius 1.0 | PASS | `0.885685` |
+| M4.4 radius 1.5, 45 deg | PASS | `0.201668` |
+| M4.4 radius 1.5, 67.5 deg | PASS | `0.787593` |
+| M4.4 radius 2.0 | FAIL | `-0.999969` |
+| M4.4 repeat 18410 | budget-invalid formal FAIL | `0.413417` |
+| M4.4 repeat 18411 | PASS | `0.953112` |
+| M4.4 repeat 18412 | PASS | `-0.192921` |
+| M4.5 radius 2.0 | FAIL | `-0.841212` |
+
+`-0.80` catches both observed radius-2 reversals with `0.0412` margin on
+the fresh failure. It leaves every retained passing M4.4 case outside the
+trigger; the closest passing negative value is `-0.336356`. No threshold is
+inferred from global coordinates at runtime. The runtime decision still
+receives only measured poses and the active fill.
+
+At the exact retained M4.5 geometry, pure replay at `-0.80` must return:
+
+```text
+anchor:                          (1.1809160175, 1.5969815630) m
+source-led end:                  (1.3563818523, 1.5646136279) m
+fill center:                     (1.8117325336, 1.7511796132) m
+fill avoidance radius:           0.6086747487 m
+source/radial dot:              -0.8412123478
+selected direction:             (-0.1814078760, -0.9834079431)
+source alignment:                approximately 0.0
+radial outward alignment:        0.5407048973
+lookahead endpoint fill distance: 0.8707616100 m
+bypass release radius:           0.7086747487 m
+```
+
+The same geometry at `-0.90` must remain the immutable M4.5 non-trigger.
+Default-off must retain the old radial fallback. The exact M4.4 radius-2
+geometry must trigger at both `-0.90` and `-0.80`; repeat `18412` and every
+retained passing window must not trigger at `-0.80`.
+
+### Preserved acceptance and safety contract
+
+M4.6 preserves all M4.5 values and gates other than the explicit enabled
+threshold:
+
+```text
+room bounds:                       [-0.25, 3.75] x [-0.25, 3.75] m
+room center:                       (1.75, 1.75) m
+start:                             (0.0, 0.0), yaw 0
+global:                            (3.5, 3.5), input 1600.0
+local input:                       400.0
+known topology:                    1 local, 1 global
+maximum fill clusters:             1
+detector path / efficiency gate:   0.20 m / 0.50
+wall margin:                       0.20 m
+fill minimum valid samples:        40
+recenter maximum / tolerance:       60.0 s / 0.15 m
+source-led window:                  12.0 s
+post-recovery liveness:             0.60 m path / 0.20 m net
+bypass clearance:                   avoidance radius + 0.10 m
+primary Stage B:                    1.20 m
+closer diagnostic:                 1.00 m, non-gating
+Stage A / Stage B budgets:          480.0 s / 120.0 s
+run / wall timeout:                 600.0 s / 780.0 s
+collision expected:                false
+```
+
+Physical room faces, non-ground collision, stale/nonfinite required data,
+graph/controller ownership, explicit stop, final zero, exhausted bounded
+recovery, and cleanup remain hard gates. M4.6 does not relax wall margin,
+collision, room bounds, the operator-equivalent `1.20 m` stop, cost
+sign/units, exact one-fill cardinality, or sole `/cmd_vel` ownership.
+
+### Intended implementation files
+
+No production source file is intended to change.
+
+Modify only focused regression/contract tests as required:
+
+```text
+ros2_ws/src/ros_esc/test/test_supervisor_integration.py
+ros2_ws/src/ros_esc/test/test_scenario_schema.py
+ros2_ws/src/ros_esc/test/test_scenario_runner.py
+ros2_ws/src/ros_esc/test/test_observability_contract.py
+```
+
+Create fresh fixed inputs:
+
+```text
+ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/
+  phase08_v7_m4_6_visible_probe.yaml
+  phase08_v7_m4_6_two_light_suite.yaml
+```
+
+Update the live status, Phase 08 checkpoint, and a fresh M4.6 validation
+report only at their declared evidence boundaries. Do not modify the Phase
+05 recorder/validator, controller, modified-cost node, supervisor production
+source, central launch, controller-spawner helper, world files, M4.5 inputs,
+or any historical artifact.
+
+### No-Gazebo qualification
+
+Before any M4.6 Gazebo process starts:
+
+1. seal the M4.5 report, summary, completeness, scenario result, bag, and
+   analysis hashes;
+2. replay the exact M4.5 anchor/end/fill geometry and prove `-0.90` does not
+   trigger while `-0.80` returns the exact finite hard-safe candidate above;
+3. prove exact bypass release at avoidance radius plus `0.10 m`, direction
+   refresh in the retained source half-plane, and persistence through at
+   most one recoverable recenter;
+4. replay the full M4.4 dot table and prove both radius-2 failures trigger
+   while every retained pass, especially repeat `18412`, does not;
+5. prove default-off, historical omission, nonfinite/stale geometry,
+   sub-`0.05 m` displacement, no safe candidate, room/collision/ownership
+   fault, and exhausted recovery retain their bounded outcomes;
+6. prove every fresh normalized M4.6 case differs from its M4.5 counterpart
+   only by fresh experiment identity/seed and the explicit `-0.80` value;
+7. prove `480 + 120 <= 600 s`, exact Stage A/Stage B boundary precedence,
+   active-controller readiness, one load request, one-fill topology,
+   primary `1.20 m` proximity, and final-zero/cleanup contracts remain
+   unchanged;
+8. run focused supervisor, schema, runner, observability, recording, and
+   controller-startup regressions;
+9. run broad ROS-independent functional tests, fatal lint, Python
+   compilation, isolated three-package build, installed dry-runs,
+   nonexecuting launch instantiation, source/install parity, context
+   validation, and historical/evidence hash checks;
+10. update live status, checkpoint Phase 08, and commit the exact tests plus
+    fresh fixed inputs before recording a dispatch command.
+
+Stop before Gazebo on any failed regression, production-source drift,
+M4.5/historical drift, source/install mismatch, ownership change,
+recorder/validator change, existing fresh evidence root, active ROS/Gazebo
+process, or incomplete qualification.
+
+### Fixed M4.6 paired visible probe
+
+Only after every no-Gazebo gate passes may one fresh-version paired probe
+reuse the failed M4.5 seed to isolate the threshold correction:
+
+```text
+suite:       phase08_v7_m4_6_visible_probe
+version:     phase08-v7-m4-6-probe
+case:        v7_m4_6_probe_r2p0_a45_h25_18508
+local:       (1.4142135623730951, 1.4142135623730950)
+seed:        18508
+evidence:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_6_probe
+```
+
+Reusing the seed is a declared paired correction test, not an M4.5 retry:
+the experiment version, case identity, input bytes, and evidence root are
+fresh, and the only behavioral parameter delta is `-0.90 -> -0.80`.
+
+The attempt must use visible Gazebo and pass active-controller preflight,
+`48/48` recording, Stage A, exact one-fill cardinality, the primary
+noninterpolated `1.20 m` Stage B gate, both complete staged budgets,
+collision, forbidden state/event, final-zero, cleanup, and combined
+predicates. It is retained without retry or in-run tuning.
+
+### Conditional M4.6 two-light qualification
+
+Only after the paired visible probe passes every declared predicate may this
+fresh serial headless suite run:
+
+| Case | Local position | Seed | Role |
+|---|---|---:|---|
+| `v7_m4_6_r1p0_a45_h25_18609` | `(0.7071067811865476, 0.7071067811865475)` | 18609 | spatial |
+| `v7_m4_6_r1p5_a22p5_h25_18609` | `(1.38581929876693, 0.5740251485476346)` | 18609 | spatial |
+| `v7_m4_6_r1p5_a45_h25_18609` | `(1.0606601717798214, 1.0606601717798212)` | 18609 | spatial |
+| `v7_m4_6_r1p5_a67p5_h25_18609` | `(0.5740251485476348, 1.38581929876693)` | 18609 | spatial |
+| `v7_m4_6_r2p0_a45_h25_18609` | `(1.4142135623730951, 1.4142135623730950)` | 18609 | spatial |
+| `v7_m4_6_repeat_r1p5_a45_h25_18610` | `(1.0606601717798214, 1.0606601717798212)` | 18610 | repeat |
+| `v7_m4_6_repeat_r1p5_a45_h25_18611` | `(1.0606601717798214, 1.0606601717798212)` | 18611 | repeat |
+| `v7_m4_6_repeat_r1p5_a45_h25_18612` | `(1.0606601717798214, 1.0606601717798212)` | 18612 | repeat |
+
+The suite uses:
+
+```text
+suite:       phase08_v7_m4_6_two_light_suite
+version:     phase08-v7-m4-6
+evidence:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m4_6
+```
+
+Two-light readiness requires the paired visible pass plus all five spatial
+and all three repeat cases to pass every unchanged predicate. Every attempt
+is retained. A behavioral, formal, infrastructure, or cleanup failure is not
+retried inside M4.6. Cleanup failure stops later dispatch.
+
+### M4.6 scope and milestone
+
+M4.6 authorizes no three-light, Phase 09, physical, or hardware action. The
+optional three-light probe remains separately user-authorized only after a
+complete M4.6 two-light gate.
+
+After approval, implement and qualify only the explicit `-0.80` fresh-input
+calibration and its regressions. Checkpoint and commit the no-Gazebo
+boundary, then checkpoint and commit the exact paired visible dispatch. Run
+the paired visible attempt once; run the fixed serial headless suite only if
+that visible gate passes completely.

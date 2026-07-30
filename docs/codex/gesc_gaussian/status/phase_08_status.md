@@ -8855,3 +8855,50 @@ the enabled reversal threshold from `-0.90` to `-0.80`, add the exact
 M4.5 geometry regression, qualify without Gazebo, and checkpoint/commit
 before one fresh visible attempt. The optional three-light probe, Phase 09,
 and physical hardware remain unauthorized.
+
+## Phase 08.7 M4.6 Plan-only threshold boundary
+
+The immutable M4.5 failure report/status/checkpoint were committed at:
+
+```text
+e86b5476313397d1bca5dd78524fdde9ccc5a6ad
+phase 08.7: retain M4.5 visible failure
+```
+
+A fresh append-only M4.6 amendment is saved for review in:
+
+```text
+docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
+SHA-256
+ddcc67c77c644f916dd3486c5ca71448f0224e84ba4d643015ad673bf9032dff
+```
+
+The Plan preserves all M4.5 production code and gates. It proposes no
+production-source change: only fresh M4.6 scenarios explicitly select
+`post_recovery_source_reversal_dot_threshold=-0.80`, while the default
+remains `-0.90`, the feature remains default-off, and M4.5/historical inputs
+remain byte-identical. Focused tests must bind the exact M4.5 geometry,
+full M4.4 cross-case dot table, bypass release/persistence, normalized
+scenario delta, staged budgets, startup recovery, and historical hashes.
+
+After no-Gazebo qualification and commits, the fresh paired visible probe
+would reuse seed `18508` under a new M4.6 identity/root so the threshold is
+the only behavioral delta. A passing visible gate would conditionally open
+one fresh eight-case headless suite using seeds `18609..18612`. Neither
+stage is authorized merely by saving this Plan.
+
+`validate_phase_context.sh 08 plan` passes. The only post-M4.5 checkout
+change is this Plan amendment. No M4.6 source, test, scenario, build,
+checkpoint beyond the Plan boundary, Gazebo, suite, three-light, Phase 09,
+physical, or hardware action has started.
+
+## Current milestone
+
+**Phase 08.7 M4.6 — PLAN-ONLY EVIDENCE-CALIBRATED `-0.80` AMENDMENT SAVED /
+NOT APPROVED / IMPLEMENTATION AND SIMULATION NOT STARTED.**
+
+### Next criterion
+
+Checkpoint and commit this Plan-only boundary for review. Do not implement or
+run M4.6 until the user explicitly approves the fresh amendment. The optional
+three-light probe, Phase 09, and physical hardware remain unauthorized.
