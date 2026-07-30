@@ -67,6 +67,11 @@ M4_VISIBLE_PROBE = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v7_m4_visible_probe.yaml'
 )
+M4_1_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v7_m4_1_visible_probe.yaml'
+)
 M4_TWO_LIGHT_SUITE = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/'
@@ -1495,6 +1500,52 @@ def test_m4_freezes_visible_two_light_and_optional_three_light_inputs():
     assert three['algorithm']['launch_overrides'][
         'gaussian_fill_max_fills'
     ] == 2
+
+
+def test_m4_1_is_fresh_identity_with_exact_m4_behavior_values():
+    m4_suite = load_suite(M4_VISIBLE_PROBE)
+    m4_runs, m4_unsupported = expand_suite(m4_suite)
+    m4_1_suite = load_suite(M4_1_VISIBLE_PROBE)
+    m4_1_runs, m4_1_unsupported = expand_suite(m4_1_suite)
+
+    assert m4_unsupported == m4_1_unsupported == []
+    assert len(m4_runs) == len(m4_1_runs) == 1
+    m4 = deepcopy(m4_runs[0])
+    m4_1 = deepcopy(m4_1_runs[0])
+    assert m4_1_suite['execution']['runs_root'].endswith(
+        '/phase08_v7_m4_1_probe'
+    )
+    assert m4_1_suite['metadata']['experiment_version'] == (
+        'phase08-v7-m4-1-probe'
+    )
+    assert (
+        m4_1['case_id'],
+        m4_1['seed'],
+    ) == (
+        'v7_m4_1_probe_r1p5_a45_h25_18207',
+        18207,
+    )
+    assert m4_1['case_key'] == (
+        'b5ac3146c6bb6b91c3d374031b3531d34c4a7506f03728c3688ae73cb7159400'
+    )
+
+    m4_execution = dict(m4_suite['execution'])
+    m4_1_execution = dict(m4_1_suite['execution'])
+    m4_execution.pop('runs_root')
+    m4_1_execution.pop('runs_root')
+    assert m4_1_execution == m4_execution
+
+    for run in (m4, m4_1):
+        for field in (
+            'case_id',
+            'case_key',
+            'description',
+            'seed',
+            'suite_id',
+        ):
+            run.pop(field)
+        run['success']['controller']['contract_id'] = '<fresh-identity>'
+    assert m4_1 == m4
 
 
 @pytest.mark.parametrize(

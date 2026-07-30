@@ -6310,3 +6310,166 @@ has not started.**
 Validate, checkpoint, and commit the Plan-only M4.1 boundary. Then implement
 the exact publisher and timestamp-ordering contract, qualify it without
 Gazebo, and commit the fresh visible input before any simulator process starts.
+
+## Phase 08.7 M4.1 implementation and no-Gazebo qualification
+
+The Plan-only M4.1 boundary was validated, checkpointed, and committed at:
+
+```text
+d96b65e585d403f54c381e091f85fdae431f0286
+phase 08.7: plan M4.1 timestamp evidence correction
+```
+
+The shared Phase 05 recorder/validator now supports the additive optional
+topic fields `expected_publishers` and `timestamp_ordering`. The absent
+ordering field still resolves to `single_stream`. The only canonical topic
+using `multi_publisher_within_clock` is simulation `/joint_states`, with the
+exact owners:
+
+```text
+/joint_state_broadcaster
+/turtlebot3_joint_state
+```
+
+Manifest loading rejects empty, duplicate, relative, underdeclared, physical,
+optional, singleton-conflicting, and unknown-ordering contracts. Recorder
+preflight and offline completeness both require an exact owner-list match.
+Only the valid merged `/joint_states` sequence is excluded from the
+single-stream nonregression assertion. Every one of its typed stamps remains
+subject to monotonic `/clock` and the unchanged `0.150 s` within-clock
+tolerance. Singleton typed topics and the independently attributed
+`AlgorithmEvent` producer streams retain strict nonregression.
+
+No navigation, detector, fill, affine, recenter, wall, collision, stop,
+geometry, light, topic type, cost sign/unit, controller-owner, or runtime
+value changed. The evidence semantics are also recorded in
+`docs/codex/gesc_gaussian/topic_dictionary.md`.
+
+### Source and regression evidence
+
+The final focused recording/schema rerun passed:
+
+```text
+149 passed in 51.11 s
+/tmp/phase08_7_m4_1_focused_final.xml
+```
+
+Earlier same-source qualification envelopes passed:
+
+```text
+212 passed, 2 skipped in 51.47 s
+  /tmp/phase08_7_m4_1_recording_scenario.xml
+573 passed, 3 skipped, 1 deselected in 109.66 s
+  /tmp/phase08_7_m4_1_broad_functional.xml
+12 passed in 3.27 s
+  /tmp/phase08_7_m4_1_supervisor_integration.xml
+```
+
+The two skips in the recording/scenario envelope are the explicit opt-in
+Gazebo integration tests. The three broad skips are existing opt-in/generated
+tests. A deliberately broad nonintegration invocation that included the
+generic package lint wrappers returned `2 failed, 573 passed, 3 skipped,
+1 deselected`: `test_flake8.py` and `test_pep257.py` scanned inherited
+whole-package debt. The matching changed-file comparison proves M4.1 adds no
+finding:
+
+```text
+ament_flake8:
+  HEAD:    815 = D202 18, E501 13, I101 1, Q000 783
+  current: 815 = D202 18, E501 13, I101 1, Q000 783
+ament_pep257:
+  HEAD:    D202 18
+  current: D202 18
+```
+
+Python compilation and `python3 -m flake8
+--select=E9,F63,F7,F82` pass. `git diff --check` and
+`validate_phase_context.sh 08 implement` pass.
+
+The new focused tests prove:
+
+- malformed ownership and ordering declarations fail manifest loading;
+- exact preflight owners pass, while missing, duplicate, and unexpected
+  endpoints fail;
+- a merged `1.8 s -> 1.2 s` multi-publisher sequence passes only the scoped
+  nonregression assertion while remaining inside `/clock`;
+- an unexpected owner and an out-of-clock multi-publisher stamp fail;
+- a singleton typed rollback and an `AlgorithmEvent` producer rollback fail;
+- M4.1 has fresh identity while every nonidentity M4 behavior value matches;
+- the sealed historical scenario-byte and normalized-key manifest still
+  passes.
+
+Read-only validation of the retained M4 directory with
+`validate_run_directory(..., write_report=False)` remains failed on the same
+`225 ms` legacy merged `/joint_states` rollback. Its old resolved contract
+does not acquire the new ordering declaration, the new multi-publisher scope
+is empty, and its immutable completeness SHA-256 is unchanged before and
+after replay:
+
+```text
+4acc311734e63896faf33c07439b7c1c81e9ebdcd6902b0514bf9c9ce0846e88
+```
+
+This proves M4 was not retroactively relabelled.
+
+Non-authoritative setup diagnostics did not start ROS or Gazebo: direct
+execution of the relative-import source file failed before dry-run, a first
+focused invocation omitted the built interface overlay and failed during
+collection, and the shell name `flake8` was unavailable. The corrected module,
+overlay, and `python3 -m flake8` forms produced the passing results above.
+
+### Isolated build and installed evidence
+
+The isolated build passed:
+
+```text
+build base:   /tmp/phase08_7_m4_1_qual/build
+install base: /tmp/phase08_7_m4_1_qual/install
+log base:     /tmp/phase08_7_m4_1_qual/log
+Summary: 3 packages finished in 12.0 s
+```
+
+The installed executable dry-run at
+`/tmp/phase08_7_m4_1_installed_dry_run.yaml` resolved exactly one supported
+GUI case, zero unsupported cases, `89` launch argv entries, `108` recorder
+argv entries, and the frozen case key:
+
+```text
+b5ac3146c6bb6b91c3d374031b3531d34c4a7506f03728c3688ae73cb7159400
+```
+
+Installed manifest loading resolves the exact two owners and
+`multi_publisher_within_clock`. Source/install bytes match:
+
+```text
+4182d330ca43d2b48f14a0a388bcd86279adfbcc877e2fbcd19f4c14593c1a57  record_run.py
+76614b2420b5f5f00c9b5da8e95d6394f561524c20da6f28b10f11c72404a64d  validate_run.py
+2e131c4fc6aee447b3395a41ab62128fce8997e019012b475685902e40606843  topic manifest
+2d881faa180c18c0b423671f12f91868e2b12d484a533909f607fef8372ca313  M4.1 probe
+```
+
+Historical anchors remain byte-identical:
+
+```text
+37ba6e1e9adc842691328cc0a1c66e5fd04034db59c6fcdb0c05f6f6c4b769a1  M4 visible
+6e67e657b11f080a545abe6b87a8730112c350163e47f85ec6ac83ab32abb937  M4 two-light
+1a9ac4774094d43822b7d33f5eba24566e15cf745b9481ce8f25720a8e42c721  M4 three-light
+3be130581b88c986fd845aef0c33c9db94ceb02ecfe2a6361926b0317ef8e655  V6 hue sweep
+3b9badc92cf63739f65662158999e3c2aab71761f790e3f360be9a52e6f38688  V6 repeats
+1221d8cb9d7235218d4f3da710f10d41284632a93712bd89d763d938a0437dae  M3 suite
+88b10b39aa24a6430f6f031c750334ed34e6835e54c84de8d36f4cc6a26444bf  shifted world
+```
+
+The fresh M4.1 evidence root remains absent and the Gazebo, runner, recorder,
+and matching launch process set remains inactive.
+
+## Current milestone
+
+**Phase 08.7 M4.1 — evidence correction implemented and no-Gazebo
+qualification PASS; material-boundary checkpoint PASS; commit pending.**
+
+### Next criterion
+
+Commit this exact qualified boundary, record its full commit identity,
+reconfirm a clean tree plus absent evidence root and inactive process set,
+and only then dispatch the single authorized visible M4.1 probe.

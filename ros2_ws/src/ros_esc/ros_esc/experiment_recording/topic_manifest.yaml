@@ -42,7 +42,7 @@ topics:
   - {alias: clock, topic: /clock, type: rosgraph_msgs/msg/Clock, modes: [simulation], required: true, minimum_messages: 1, coverage: run, singleton_publisher: true}
   - {alias: encoder, topic: /turtlebot3/encoder_chatter, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation], required: true, minimum_messages: 1, coverage: none, singleton_publisher: true}
   - {alias: sensor_transform, topic: /turtlebot3/sensor_transform_chatter, type: ros_esc_interfaces/msg/StampedTransformMultiArray, modes: [simulation], required: true, minimum_messages: 1, coverage: none, singleton_publisher: true}
-  - {alias: joint_states, topic: /joint_states, type: sensor_msgs/msg/JointState, modes: [simulation], required: true, minimum_messages: 1, coverage: none}
+  - {alias: joint_states, topic: /joint_states, type: sensor_msgs/msg/JointState, modes: [simulation], required: true, minimum_messages: 1, coverage: none, expected_publishers: [/joint_state_broadcaster, /turtlebot3_joint_state], timestamp_ordering: multi_publisher_within_clock}
   - {alias: sensor_rotation_command, topic: /velocity_controller/commands, type: std_msgs/msg/Float64MultiArray, modes: [simulation], required: true, minimum_messages: 1, coverage: none, singleton_publisher: true}
   - {alias: gaussian_fills, topic: /gesc_gaussian/gaussian_fills, type: ros_esc_interfaces/msg/GaussianFill, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: conditional_fill}
   - {alias: convergence_status, topic: /gesc_gaussian/convergence_status, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}

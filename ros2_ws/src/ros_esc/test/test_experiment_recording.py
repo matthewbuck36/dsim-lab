@@ -200,6 +200,16 @@ def test_manifest_has_unique_audited_required_topics_and_mode_filtering():
     assert {"clock", "encoder", "joint_states"} <= required_sim
     assert not ({"clock", "encoder", "joint_states"} & required_physical)
     assert {"source_cost", "command_final", "pose", "recording_ready"} <= required_physical
+    joint_states = {
+        entry['alias']: entry for entry in simulation
+    }['joint_states']
+    assert joint_states['expected_publishers'] == [
+        '/joint_state_broadcaster',
+        '/turtlebot3_joint_state',
+    ]
+    assert joint_states['timestamp_ordering'] == (
+        'multi_publisher_within_clock'
+    )
 
 
 def test_manifest_rejects_duplicate_topics(tmp_path):
@@ -222,6 +232,73 @@ def test_manifest_rejects_nonfinite_timestamp_tolerance(tmp_path):
 
     with pytest.raises(ValueError, match='tolerance must be finite'):
         load_manifest(invalid)
+
+
+def test_manifest_rejects_invalid_multi_publisher_timestamp_contracts(
+    tmp_path,
+):
+    """Make the ordering exception narrow, explicit, and simulation-only."""
+    base = yaml.safe_load(MANIFEST.read_text(encoding='utf-8'))
+    joint_index = next(
+        index
+        for index, entry in enumerate(base['topics'])
+        if entry['alias'] == 'joint_states'
+    )
+    mutations = [
+        (
+            {'expected_publishers': []},
+            'expected_publishers must be a non-empty list',
+        ),
+        (
+            {
+                'expected_publishers': [
+                    '/joint_state_broadcaster',
+                    '/joint_state_broadcaster',
+                ],
+            },
+            'unique absolute ROS node names',
+        ),
+        (
+            {
+                'expected_publishers': [
+                    'joint_state_broadcaster',
+                    '/turtlebot3_joint_state',
+                ],
+            },
+            'unique absolute ROS node names',
+        ),
+        (
+            {'timestamp_ordering': 'ignore_regressions'},
+            'invalid timestamp_ordering',
+        ),
+        (
+            {'expected_publishers': ['/joint_state_broadcaster']},
+            'requires at least two exact expected_publishers',
+        ),
+        (
+            {'singleton_publisher': True},
+            'conflicts with singleton_publisher',
+        ),
+        (
+            {'modes': ['simulation', 'physical']},
+            'requires a simulation-only topic',
+        ),
+        (
+            {'required': False},
+            'requires a required topic',
+        ),
+    ]
+
+    for sequence, (changes, expected_error) in enumerate(mutations):
+        document = yaml.safe_load(yaml.safe_dump(base))
+        document['topics'][joint_index].update(changes)
+        invalid = tmp_path / f'invalid-multi-publisher-{sequence}.yaml'
+        invalid.write_text(
+            yaml.safe_dump(document),
+            encoding='utf-8',
+        )
+        with pytest.raises(ValueError, match=expected_error):
+            load_manifest(invalid)
 
 
 def test_simulation_requires_operational_barrier_but_physical_bypasses_it():
@@ -570,6 +647,57 @@ def test_preflight_rejects_duplicate_singleton_publisher_endpoints():
         "found 2 (['/gesc_gaussian_supervisor', "
         "'/gesc_gaussian_supervisor'])"
     ]
+
+
+def test_preflight_requires_exact_declared_multi_publisher_owners():
+    entry = {
+        'alias': 'joint_states',
+        'topic': '/joint_states',
+        'type': 'sensor_msgs/msg/JointState',
+        'required': True,
+        'expected_publishers': [
+            '/joint_state_broadcaster',
+            '/turtlebot3_joint_state',
+        ],
+        'timestamp_ordering': 'multi_publisher_within_clock',
+    }
+    graph_types = {'/joint_states': ['sensor_msgs/msg/JointState']}
+    subscriptions = {'/joint_states'}
+    exact = [
+        '/joint_state_broadcaster',
+        '/turtlebot3_joint_state',
+    ]
+
+    assert preflight_errors(
+        [entry],
+        graph_types,
+        {'/joint_states': exact},
+        subscriptions,
+        True,
+        True,
+    ) == []
+
+    for actual in (
+        ['/joint_state_broadcaster'],
+        [*exact, '/unexpected_joint_owner'],
+        [
+            '/joint_state_broadcaster',
+            '/joint_state_broadcaster',
+        ],
+    ):
+        failures = preflight_errors(
+            [entry],
+            graph_types,
+            {'/joint_states': actual},
+            subscriptions,
+            True,
+            True,
+        )
+        expected_failure = (
+            f'/joint_states: expected publisher endpoints {sorted(exact)}, '
+            f'found {len(actual)} ({sorted(actual)})'
+        )
+        assert failures == [expected_failure]
 
 
 def test_parameter_snapshot_helpers_preserve_node_paths_and_ros_types(monkeypatch):
@@ -1843,7 +1971,10 @@ def test_run_rechecks_operational_epoch_after_parameter_capture(
             for entry in entries
         }
         publishers = {
-            entry['topic']: ['/owner']
+            entry['topic']: entry.get(
+                'expected_publishers',
+                ['/owner'],
+            )
             for entry in entries
         }
         recorder_subscriptions = {
@@ -2179,6 +2310,14 @@ def test_run_validator_wires_event_stream_freshness_and_causality(
             '/cmd_vel',
             'geometry_msgs/msg/Twist',
         ),
+        'joint_states': (
+            '/joint_states',
+            'sensor_msgs/msg/JointState',
+        ),
+        'typed_singleton': (
+            '/test/singleton_stamped',
+            'sensor_msgs/msg/JointState',
+        ),
     }
     resolved = {
         'schema_version': 1,
@@ -2195,6 +2334,24 @@ def test_run_validator_wires_event_stream_freshness_and_causality(
             for alias, (topic, message_type) in topics.items()
         ],
     }
+    joint_entry = next(
+        entry
+        for entry in resolved['topics']
+        if entry['alias'] == 'joint_states'
+    )
+    joint_entry.update({
+        'modes': ['simulation'],
+        'required': True,
+        'expected_publishers': [
+            '/joint_state_broadcaster',
+            '/turtlebot3_joint_state',
+        ],
+        'publishers': [
+            '/joint_state_broadcaster',
+            '/turtlebot3_joint_state',
+        ],
+        'timestamp_ordering': 'multi_publisher_within_clock',
+    })
     metadata = {
         'mode': 'simulation',
         'algorithm_profile': 'robust_gaussian_v1',
@@ -2262,6 +2419,9 @@ def test_run_validator_wires_event_stream_freshness_and_causality(
         readiness_records=None,
         stop_records=None,
         command_records=None,
+        joint_records=None,
+        singleton_records=None,
+        resolved_joint_publishers=None,
     ):
         selected_readiness = (
             readiness
@@ -2287,6 +2447,18 @@ def test_run_validator_wires_event_stream_freshness_and_causality(
             yaml.safe_dump(metadata),
             encoding='utf-8',
         )
+        joint_entry['publishers'] = (
+            [
+                '/joint_state_broadcaster',
+                '/turtlebot3_joint_state',
+            ]
+            if resolved_joint_publishers is None
+            else resolved_joint_publishers
+        )
+        (tmp_path / 'resolved_topics.yaml').write_text(
+            yaml.safe_dump(resolved),
+            encoding='utf-8',
+        )
         messages = {
             topics['algorithm_events'][0]: events,
             topics['clock'][0]: clocks,
@@ -2299,6 +2471,42 @@ def test_run_validator_wires_event_stream_freshness_and_causality(
             ),
             topics['stop_requested'][0]: selected_stops,
             topics['command_final'][0]: selected_commands,
+            topics['joint_states'][0]: (
+                joint_records
+                if joint_records is not None
+                else [
+                    (
+                        20,
+                        SimpleNamespace(
+                            header=SimpleNamespace(stamp=_stamp(1.8)),
+                        ),
+                    ),
+                    (
+                        30,
+                        SimpleNamespace(
+                            header=SimpleNamespace(stamp=_stamp(1.2)),
+                        ),
+                    ),
+                ]
+            ),
+            topics['typed_singleton'][0]: (
+                singleton_records
+                if singleton_records is not None
+                else [
+                    (
+                        20,
+                        SimpleNamespace(
+                            header=SimpleNamespace(stamp=_stamp(1.2)),
+                        ),
+                    ),
+                    (
+                        30,
+                        SimpleNamespace(
+                            header=SimpleNamespace(stamp=_stamp(1.8)),
+                        ),
+                    ),
+                ]
+            ),
         }
         bag_types = {
             topic: message_type
@@ -2327,9 +2535,81 @@ def test_run_validator_wires_event_stream_freshness_and_causality(
     assert report['checks']['algorithm_event_producer_identified'][
         'passed'
     ]
+    assert report['checks']['timestamp_ordering_contract_valid']['passed']
+    assert report['checks']['expected_publishers_match']['passed']
+    assert report['checks']['multi_publisher_timestamp_scope']['detail'] == [{
+        'topic': '/joint_states',
+        'expected_publishers': [
+            '/joint_state_broadcaster',
+            '/turtlebot3_joint_state',
+        ],
+        'resolved_publishers': [
+            '/joint_state_broadcaster',
+            '/turtlebot3_joint_state',
+        ],
+    }]
     assert report['checks']['typed_timestamps_nonregressing']['passed']
+    assert report['checks']['typed_timestamps_within_clock']['passed']
     assert report['checks']['algorithm_event_emission_fresh']['passed']
     assert report['checks']['algorithm_event_source_causality']['passed']
+
+    unexpected_owner = validate(
+        [(20, convergence), (30, fill)],
+        [(40, request)],
+        resolved_joint_publishers=[
+            '/joint_state_broadcaster',
+            '/turtlebot3_joint_state',
+            '/unexpected_joint_owner',
+        ],
+    )
+    assert not unexpected_owner['checks']['expected_publishers_match'][
+        'passed'
+    ]
+
+    out_of_clock = validate(
+        [(20, convergence), (30, fill)],
+        [(40, request)],
+        joint_records=[
+            (
+                20,
+                SimpleNamespace(
+                    header=SimpleNamespace(stamp=_stamp(1.8)),
+                ),
+            ),
+            (
+                30,
+                SimpleNamespace(
+                    header=SimpleNamespace(stamp=_stamp(3.0)),
+                ),
+            ),
+        ],
+    )
+    assert out_of_clock['checks']['typed_timestamps_nonregressing']['passed']
+    assert not out_of_clock['checks']['typed_timestamps_within_clock'][
+        'passed'
+    ]
+
+    singleton_regression = validate(
+        [(20, convergence), (30, fill)],
+        [(40, request)],
+        singleton_records=[
+            (
+                20,
+                SimpleNamespace(
+                    header=SimpleNamespace(stamp=_stamp(1.8)),
+                ),
+            ),
+            (
+                30,
+                SimpleNamespace(
+                    header=SimpleNamespace(stamp=_stamp(1.0)),
+                ),
+            ),
+        ],
+    )
+    assert not singleton_regression['checks'][
+        'typed_timestamps_nonregressing'
+    ]['passed']
 
     regressed = validate(
         [

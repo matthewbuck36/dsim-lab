@@ -1,44 +1,55 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-30T06:09:05+00:00
-Base HEAD: 2d95deb555497b49283b19a7f7d5336ebb3cf9a2
+Generated: 2026-07-30T06:35:44+00:00
+Base HEAD: d96b65e585d403f54c381e091f85fdae431f0286
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 363c1c78646694c0de8921049e5662137bba2fb80ba8e2c161d9ee1f8de86aa6
+Status sha256: 124d8ae7a3f550512063bb39973cbe68746e7341efcbd3ebb5042775053b29c2
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
 Active subphase plan sha256: 206afca01731af6804817ac6ecbd3e16246d8a57f7b0d043a3b710852471ca02
-Unstaged diff sha256: c661bbbff913fcf4ad78cbda01825d2c22080f7a05594cfcf4c94570acadec6c
+Unstaged diff sha256: 06ab729468ad787a9e81d88e24c96ae818093800274cf6049f10f93965dc2c94
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 66]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 67]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
- M docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
+ M docs/codex/gesc_gaussian/topic_dictionary.md
+ M ros2_ws/src/ros_esc/ros_esc/experiment_recording/record_run.py
+ M ros2_ws/src/ros_esc/ros_esc/experiment_recording/topic_manifest.yaml
+ M ros2_ws/src/ros_esc/ros_esc/experiment_recording/validate_run.py
+ M ros2_ws/src/ros_esc/test/test_experiment_recording.py
+ M ros2_ws/src/ros_esc/test/test_scenario_schema.py
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v7_m4_1_visible_probe.yaml
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  45 ++-----
- docs/codex/gesc_gaussian/plans/phase_08_7_plan.md  | 136 +++++++++++++++++++++
- docs/codex/gesc_gaussian/status/phase_08_status.md |  41 +++++++
- 3 files changed, 187 insertions(+), 35 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  38 +--
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 163 ++++++++++++
+ docs/codex/gesc_gaussian/topic_dictionary.md       |  24 +-
+ .../ros_esc/experiment_recording/record_run.py     |  82 ++++++
+ .../experiment_recording/topic_manifest.yaml       |   2 +-
+ .../ros_esc/experiment_recording/validate_run.py   |  57 ++++-
+ .../src/ros_esc/test/test_experiment_recording.py  | 282 ++++++++++++++++++++-
+ ros2_ws/src/ros_esc/test/test_scenario_schema.py   |  51 ++++
+ 8 files changed, 663 insertions(+), 36 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**Phase 08.7 M4.1 — evidence correction authorized and saved; implementation
-has not started.**
+**Phase 08.7 M4.1 — evidence correction implemented and no-Gazebo
+qualification PASS; material-boundary checkpoint PASS; commit pending.**
 
 ### Next criterion
 
-Validate, checkpoint, and commit the Plan-only M4.1 boundary. Then implement
-the exact publisher and timestamp-ordering contract, qualify it without
-Gazebo, and commit the fresh visible input before any simulator process starts.
+Commit this exact qualified boundary, record its full commit identity,
+reconfirm a clean tree plus absent evidence root and inactive process set,
+and only then dispatch the single authorized visible M4.1 probe.
 
 
 This file describes the base HEAD and diff before the next commit; it is

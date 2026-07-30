@@ -49,11 +49,18 @@ These clocks have separate roles. Typed/header `stamp` is producer emission
 time, the rosbag timestamp is recorder receipt time, and `source_timestamp` is
 an origin/request correlation key rather than a second emission clock.
 Ordinary typed topics must be monotonic in topic order. The intentionally
-shared `AlgorithmEvent` bus is checked per semantic producer stream, while
-simulation also compares each event stamp with the latest `/clock` received
-before that event's bag receipt in both lead and lag directions. Robust
-fill-owner events correlate exactly to a recorded fill request by
-`source_timestamp`; bag-delivery order is not used as a causality claim.
+shared `AlgorithmEvent` bus is checked per semantic producer stream. The
+simulation `/joint_states` stream is the only declared merged-stamp
+exception: its exact owners are `/joint_state_broadcaster` and
+`/turtlebot3_joint_state`, whose independently stamped messages may interleave
+non-monotonically in rosbag receipt order. Every merged joint-state stamp must
+still remain within the unchanged lead/lag tolerance of the latest recorded
+`/clock`; any missing, duplicate, or unexpected owner invalidates the evidence
+before that exception applies. Simulation also compares each algorithm-event
+stamp with the latest `/clock` received before that event's bag receipt in
+both lead and lag directions. Robust fill-owner events correlate exactly to a
+recorded fill request by `source_timestamp`; bag-delivery order is not used as
+a causality claim.
 
 An unavailable floating-point scalar or array element is `NaN` and its
 corresponding validity field is false. An unavailable unsigned identifier is
@@ -599,8 +606,11 @@ response cannot cross the absolute deadline and authorize motion. Physical
 mode is code-enforced not to inherit these Gazebo-specific checks.
 Every required topic except the intentionally shared algorithm-event bus and
 the two-owner simulation `/joint_states` stream also requires exactly one live
-publisher endpoint. This prevents an orphaned prior launch from contaminating
-a new experiment even when the orphan reused the same ROS node name.
+publisher endpoint. `/joint_states` instead requires the exact resolved owner
+list `/joint_state_broadcaster` and `/turtlebot3_joint_state`; no subset,
+duplicate, or additional endpoint is accepted. This prevents an orphaned prior
+launch from contaminating a new experiment even when the orphan reused the
+same ROS node name.
 
 The controller's three recording arguments are default-off. When
 `recording_ready_required=False`, no readiness subscription is created and

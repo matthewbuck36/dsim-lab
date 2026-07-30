@@ -40,6 +40,12 @@ import yaml
 
 
 VALID_MODES = {"simulation", "physical"}
+DEFAULT_TIMESTAMP_ORDERING = 'single_stream'
+MULTI_PUBLISHER_TIMESTAMP_ORDERING = 'multi_publisher_within_clock'
+VALID_TIMESTAMP_ORDERINGS = {
+    DEFAULT_TIMESTAMP_ORDERING,
+    MULTI_PUBLISHER_TIMESTAMP_ORDERING,
+}
 VALID_PROFILES_BY_MODE = {
     "simulation": {"legacy", "robust_gaussian_v1"},
     "physical": {"robust_gaussian_v1"},
@@ -170,6 +176,76 @@ def atomic_json(path, value):
     os.replace(temporary, path)
 
 
+def topic_evidence_contract_errors(entry):
+    """Return additive publisher/timestamp contract validation errors."""
+    topic = str(entry.get('topic', '<unknown>'))
+    errors = []
+    expected_publishers = entry.get('expected_publishers')
+    if expected_publishers is not None:
+        if not isinstance(expected_publishers, list) or not expected_publishers:
+            errors.append(
+                f'expected_publishers must be a non-empty list for {topic}'
+            )
+        elif (
+            any(
+                not isinstance(owner, str) or not owner.startswith('/')
+                for owner in expected_publishers
+            )
+            or len(set(expected_publishers)) != len(expected_publishers)
+        ):
+            errors.append(
+                'expected_publishers must contain unique absolute ROS node '
+                f'names for {topic}'
+            )
+
+    ordering = entry.get(
+        'timestamp_ordering',
+        DEFAULT_TIMESTAMP_ORDERING,
+    )
+    if ordering not in VALID_TIMESTAMP_ORDERINGS:
+        errors.append(f'invalid timestamp_ordering for {topic}: {ordering}')
+    elif ordering == MULTI_PUBLISHER_TIMESTAMP_ORDERING:
+        if (
+            not isinstance(expected_publishers, list)
+            or len(expected_publishers) < 2
+        ):
+            errors.append(
+                'multi_publisher_within_clock requires at least two exact '
+                f'expected_publishers for {topic}'
+            )
+        if entry.get('singleton_publisher', False):
+            errors.append(
+                'multi_publisher_within_clock conflicts with '
+                f'singleton_publisher for {topic}'
+            )
+        if set(entry.get('modes', ())) != {'simulation'}:
+            errors.append(
+                'multi_publisher_within_clock requires a simulation-only '
+                f'topic for {topic}'
+            )
+        if not entry.get('required', False):
+            errors.append(
+                'multi_publisher_within_clock requires a required topic '
+                f'for {topic}'
+            )
+    return errors
+
+
+def expected_publisher_error(entry, publishers):
+    """Return an exact publisher-owner mismatch, if one is declared."""
+    expected = entry.get('expected_publishers')
+    if expected is None:
+        return None
+    actual = list(publishers)
+    if sorted(actual) == sorted(expected):
+        return None
+    topic = entry['topic']
+    return (
+        f'{topic}: expected publisher endpoints '
+        f'{sorted(expected)}, found {len(actual)} ({sorted(actual)})'
+    )
+
+
 def load_manifest(path):
     """Load and validate the repository topic manifest."""
 
@@ -219,6 +295,9 @@ def load_manifest(path):
             raise ValueError(
                 f"singleton_publisher must be boolean for {entry['topic']}"
             )
+        contract_errors = topic_evidence_contract_errors(entry)
+        if contract_errors:
+            raise ValueError(contract_errors[0])
     operational = manifest.get('operational_readiness', {})
     if not isinstance(operational, dict):
         raise ValueError('operational_readiness must be a mapping')
@@ -763,6 +842,9 @@ def preflight_errors(
                 f"{topic}: expected one publisher endpoint, found "
                 f"{len(publishers)} ({sorted(publishers)})"
             )
+        publisher_error = expected_publisher_error(entry, publishers)
+        if publisher_error is not None:
+            errors.append(publisher_error)
         if topic not in recorder_subscriptions:
             errors.append(f"{topic}: rosbag2_recorder is not subscribed")
     if not controller_ready_subscription:

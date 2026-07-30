@@ -14,10 +14,14 @@ from rosidl_runtime_py.utilities import get_message
 import yaml
 
 from .record_run import (
+    DEFAULT_TIMESTAMP_ORDERING,
+    MULTI_PUBLISHER_TIMESTAMP_ORDERING,
     REQUIRED_METADATA,
     VALID_PROFILES_BY_MODE,
     atomic_json,
+    expected_publisher_error,
     preauthorization_lifecycle_errors,
+    topic_evidence_contract_errors,
 )
 
 
@@ -385,6 +389,57 @@ def validate_run_directory(run_directory, write_report=True):
     by_topic = {entry["topic"]: entry for entry in entries if isinstance(entry, dict)}
     by_alias = {entry["alias"]: entry for entry in entries if isinstance(entry, dict)}
     expected_types = {topic: entry["type"] for topic, entry in by_topic.items()}
+    timestamp_contract_errors = []
+    publisher_contract_errors = []
+    multi_publisher_timestamp_topics = set()
+    multi_publisher_scope = []
+    for topic, entry in by_topic.items():
+        entry_errors = topic_evidence_contract_errors(entry)
+        timestamp_contract_errors.extend(entry_errors)
+        publisher_error = None
+        if not entry_errors:
+            publisher_error = expected_publisher_error(
+                entry,
+                entry.get('publishers', ()),
+            )
+            if publisher_error is not None:
+                publisher_contract_errors.append(publisher_error)
+        if (
+            not entry_errors
+            and publisher_error is None
+            and entry.get(
+                'timestamp_ordering',
+                DEFAULT_TIMESTAMP_ORDERING,
+            ) == MULTI_PUBLISHER_TIMESTAMP_ORDERING
+        ):
+            multi_publisher_timestamp_topics.add(topic)
+            multi_publisher_scope.append({
+                'topic': topic,
+                'expected_publishers': sorted(
+                    entry['expected_publishers']
+                ),
+                'resolved_publishers': sorted(entry.get('publishers', ())),
+            })
+    _check(
+        report,
+        'timestamp_ordering_contract_valid',
+        not timestamp_contract_errors,
+        'resolved timestamp-ordering contract is invalid',
+        timestamp_contract_errors,
+    )
+    _check(
+        report,
+        'expected_publishers_match',
+        not publisher_contract_errors,
+        'resolved publishers do not match the declared owners',
+        publisher_contract_errors,
+    )
+    _check(
+        report,
+        'multi_publisher_timestamp_scope',
+        True,
+        detail=multi_publisher_scope,
+    )
 
     try:
         parameters = _load_yaml(resolved_parameters_path)
@@ -495,7 +550,7 @@ def validate_run_directory(run_directory, write_report=True):
                 typed_stamps_in_interval.append({"topic": topic, "stamp": current})
                 if topic == event_topic:
                     event_interval_records.append((bag_stamp, message))
-                else:
+                elif topic not in multi_publisher_timestamp_topics:
                     topic_stamps.append(current)
         if topic != event_topic:
             for regression in timestamp_regressions(
