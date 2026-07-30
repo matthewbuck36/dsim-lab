@@ -4626,3 +4626,152 @@ input ready for pre-execution checkpoint and commit.**
 Checkpoint and commit this reviewed material boundary. Verify the clean commit
 and frozen installed scenario identity, then dispatch exactly one bounded
 visible-Gazebo M2.1 probe with no automatic retry.
+
+## Phase 08.7 M2.1 committed dispatch boundary
+
+The qualified implementation, tests, exact scenario, Plan amendment, live
+status, and Phase 08 checkpoint were committed at:
+
+```text
+46a06c665fafb19edcd6d3ef7553907f1656b05e
+phase 08.7: qualify M2.1 recovery correction
+```
+
+The post-commit worktree was clean and ahead of its remote by `54` commits.
+The source and isolated installed scenario still have identical SHA-256
+`541194d6152a8384c469f5bcc8573aef9afdb295bde6e148e5a82a692b8e4c8b`.
+The external M2.1 evidence root remains absent and no ROS/Gazebo scenario
+process is running.
+
+Exactly one attempt is predeclared with ROS domain `89` and this bounded
+visible-Gazebo invocation:
+
+```text
+source /opt/ros/humble/setup.bash
+source /tmp/phase08_7_m2_1_qual/install/setup.bash
+ROS_DOMAIN_ID=89
+ROS_LOG_DIR=/tmp/phase08_7_m2_1_probe_ros_logs
+MPLCONFIGDIR=/tmp/phase08_7_m2_1_probe_mpl
+TURTLEBOT3_MODEL=burger
+DISPLAY=:0
+timeout --signal=INT --kill-after=60s 660s \
+  ros2 run ros_esc run_scenario \
+  /tmp/phase08_7_m2_1_qual/install/ros_esc/share/ros_esc/\
+scenario_runner/scenarios/phase08_v7_m2_1_correction_probe.yaml \
+  --operator phase08_7_m2_1 \
+  --case-id v7_m2_1_diagonal_r1p5_h25_18001 \
+  --runs-root \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m2_1 \
+  --summary-output \
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m2_1/\
+phase08_v7_m2_1_correction_probe_summary.yaml \
+  --gui
+```
+
+No automatic retry, parameter change, second case, M3 work, physical action,
+or readiness claim is authorized by this dispatch.
+
+## Phase 08.7 M2.1 execution and retained failure
+
+The first shell wrapper stopped before `run_scenario` because `set -u` was
+applied before the ROS setup script. It changed no evidence or process state
+and is not an experiment attempt. The predeclared invocation was then run
+without that wrapper error. Exactly one visible M2.1 experiment was executed:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_v7_m2_1/
+  2026-07-29/
+  20260729T234858803958Z_simulation_phase08_v7_m2_1_correction_probe-
+  v7_m2_1_diagonal_r1p5_h25_18001-robust_gaussian_80ca5c97
+```
+
+The runner returned `1` for failed behavioral classification. The recorder
+returned `0`, did not time out, retained a complete bag, and passed cleanup.
+
+### Infrastructure and recording: PASS
+
+- `classification.infrastructure_status=completed`;
+- readiness duration is `360.128014908 s`;
+- recording and cleanup passed with no remaining new nodes or session
+  processes;
+- no non-ground collision was observed;
+- all three final command streams are zero and final readiness is false;
+- `validate_run` returned `0`, `passed=true`, with no failures or warnings;
+- the read-only sqlite fallback returned `ok` from `PRAGMA quick_check`;
+- standard `analyze_run` returned `0`, wrote eight plots and eleven tables,
+  and retained honest `analysis_status=partial` because the applicable escape
+  never occurred.
+
+### Staged behavior: FAIL before Stage A
+
+The sole in-readiness state was `SEARCH` for `360.096129064 s`. There was no
+convergence candidate or confirmation, no verification, fill, escape,
+recenter, post-recovery affine state, or graceful global-proximity stop.
+
+```text
+Stage A local recovery:             FAIL
+exact fill cardinality:             FAIL (zero fills)
+Stage B global proximity:           FAIL (Stage A absent)
+combined behavioral result:         FAIL
+```
+
+The robot was not stationary. It traveled `22.0617045159 m`, came within
+`0.0539395645 m` of the intended local, and orbited there, but its closest
+global distance was `2.8623873320 m`.
+
+### Root cause
+
+Read-only replay of the exact `3,622` PDE-history buffers found only `746`
+qualified under the frozen `0.35` path-efficiency cap. Eligibility fragmented
+into intervals no longer than `17.1 s`; the metric never crossed zero
+(`minimum=+0.0657099110`) and the counter remained `3`.
+
+The threshold excluded the known legitimate signal. At the retained M2
+successful local candidates, the exact same `k=20` motion statistic was:
+
+```text
+121.4 s: 0.3639431494
+156.4 s: 0.4434453791
+180.1 s: 0.3605826563
+```
+
+All exceed `0.35`. A conservative read-only replay of the failed M2.1 path
+with only the cap changed to `0.50` yields three local candidates at `172.9`,
+`198.9`, and `220.7 s`. Their recent-window means are respectively `0.19395`,
+`0.35529`, and `0.04452 m` from the local. No candidate occurs before
+`172.9 s`, so directed translation remains rejected.
+
+Full commands, evidence, hashes, and interpretation are retained in:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_7_m2_1_correction_probe_report.md
+```
+
+Immutable evidence SHA-256:
+
+```text
+b2d714392e4d17cca0fac7e054a6c48a4d2fb7cdece2e8caa42d1681f17b7db7  suite summary
+c04ddbc912686693f045c3ae34b31ae692b2182361521448b309f459a7895414  scenario_result.yaml
+02bf4614df8a4645cc29ef06cfe8a752fcace91dff2bfdd47e7946786b99e43b  completeness.json
+c7d4eec24fbd272267447cb2d63f5add1095afc0f395b5fc0a451f1a9d426b5c  bag/bag_0.db3
+74c467cef88e6c270c4b2d72284be6bb9fb58eaeeb3932f1c6f9cd5615fc7e3c  analysis/summary_metrics.json
+1cd4d7001d8b981cf8cd88c0165858014b592f4cb4be09fac87433339ba0c8d9  analysis/analysis_completeness.json
+```
+
+M2.1 is closed and will not be retried or relabeled. It did not exercise the
+topology-exhaustion or affine runtime corrections, so they remain
+implementation/test-qualified rather than empirically passed.
+
+## Current milestone
+
+**Phase 08.7 M2.1 — retained FAIL. Infrastructure passed; the uncalibrated
+`0.35` detector compactness cap prevented Stage A.**
+
+### Next criterion
+
+Checkpoint and commit the immutable M2.1 result. A separately versioned M2.2
+may preserve every qualified implementation, geometry, topology, affine, and
+stop value while changing only the empirically contradicted maximum path
+efficiency from `0.35` to `0.50`, with a fresh hash, key, evidence root,
+qualification, checkpoint, and commit. M3 remains unauthorized.
