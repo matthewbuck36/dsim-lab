@@ -2344,6 +2344,30 @@ def _staged_recovery_evidence(
         ),
         'thresholds': dict(contract),
     }
+    topology_qualification = contract.get('topology_qualification')
+    if isinstance(topology_qualification, dict):
+        evidence['topology_qualification'] = {
+            'method': topology_qualification.get('method'),
+            'result_sha256': topology_qualification.get('result_sha256'),
+            'local_source_id': topology_qualification.get(
+                'local_source_id'
+            ),
+            'global_source_id': topology_qualification.get(
+                'global_source_id'
+            ),
+            'basin_depth_raw_cost': topology_qualification.get(
+                'noise_adjusted_basin_depth_raw_cost'
+            ),
+            'raw_cost_separation': topology_qualification.get(
+                'noise_adjusted_raw_cost_separation'
+            ),
+            'basin_center_separation_m': topology_qualification.get(
+                'basin_center_separation_m'
+            ),
+            'forward_alignment': topology_qualification.get(
+                'route', {}
+            ).get('forward_alignment'),
+        }
     return stage_a_passed, fill_cardinality_passed, evidence, None
 
 

@@ -71,6 +71,49 @@ def route_barrier_truth():
     return sources, start, attached
 
 
+@pytest.fixture(scope='module')
+def two_source_topology_truth():
+    """Build the fixed secondary-layout observable-topology record."""
+    sources = [
+        {
+            'id': 'local',
+            'x_m': 0.5740251485476348,
+            'y_m': 1.38581929876693,
+            'relative_lumen_input': 400.0,
+        },
+        {
+            'id': 'global',
+            'x_m': 3.5,
+            'y_m': 3.5,
+            'relative_lumen_input': 1600.0,
+        },
+    ]
+    start = {
+        'id': 'open_start',
+        'x_m': 0.0,
+        'y_m': 0.0,
+        'yaw_rad': 0.0,
+    }
+    bounds = [-1.0, 5.0, -1.0, 5.0]
+    disturbances = {
+        'sensor_noise': {'model': 'none', 'bound': 0.0},
+        'sensor_delay_sec': 0.0,
+        'pose_delay_sec': 0.0,
+    }
+    record = (
+        aggregate_field_truth
+        .derive_two_source_topology_qualification(
+            sources,
+            start,
+            bounds,
+            disturbances,
+            'local',
+            'global',
+        )
+    )
+    return sources, start, bounds, disturbances, record
+
+
 def test_sensor_geometry_owner_is_declared_runtime_dependency():
     """Ensure isolated installs include the package that owns the URDF."""
     root = ET.parse(PACKAGE_ROOT / 'package.xml').getroot()
@@ -270,6 +313,359 @@ def test_route_barrier_rejects_out_of_scope_or_off_route_cases(
             'local',
             'global',
             NO_NOISE,
+        )
+
+
+def test_two_source_topology_is_hashed_and_fully_bound(
+    two_source_topology_truth,
+):
+    """Qualify two separated basins without exposing them to control."""
+    sources, start, bounds, disturbances, record = (
+        two_source_topology_truth
+    )
+
+    assert record['schema_version'] == 1
+    assert record['source_count'] == 2
+    assert record['method'] == (
+        'authoritative_two_source_local_first_topology'
+    )
+    assert record['local_source_id'] == 'local'
+    assert record['global_source_id'] == 'global'
+    normalized_sources = aggregate_field_truth._normalized_sources(sources)
+    assert record['source_list_sha256'] == (
+        aggregate_field_truth.canonical_sha256(normalized_sources)
+    )
+    assert record['disturbances_sha256'] == (
+        aggregate_field_truth.canonical_sha256(disturbances)
+    )
+    assert record['bounds_sha256'] == (
+        aggregate_field_truth.canonical_sha256(bounds)
+    )
+    assert record['start_sha256'] == (
+        aggregate_field_truth.canonical_sha256(start)
+    )
+    assert record['noise_adjusted_basin_depth_raw_cost'] >= 0.05
+    assert record['noise_adjusted_raw_cost_separation'] >= 0.05
+    assert record['basin_center_separation_m'] >= 1.0
+    assert record['route']['forward_alignment'] >= 0.80
+    assert record['local_basin'][
+        'noise_adjusted_source_score_upper_bound'
+    ] < 0.95
+    assert record['global_basin'][
+        'noise_adjusted_source_score_lower_bound'
+    ] >= 0.95
+    assert record['result_sha256'] == (
+        aggregate_field_truth.canonical_sha256({
+            key: value
+            for key, value in record.items()
+            if key != 'result_sha256'
+        })
+    )
+    assert (
+        aggregate_field_truth
+        .validate_two_source_topology_qualification(
+            record,
+            sources,
+            start,
+            bounds,
+            disturbances,
+            'local',
+            'global',
+        )
+        == record
+    )
+
+
+def test_two_source_topology_rejects_hash_and_binding_drift(
+    two_source_topology_truth,
+):
+    """Reject changed evidence, sources, start, or declared roles."""
+    sources, start, bounds, disturbances, record = (
+        two_source_topology_truth
+    )
+    changed = deepcopy(record)
+    changed['route']['forward_alignment'] -= 0.01
+    with pytest.raises(ValueError, match='result hash drifted'):
+        (
+            aggregate_field_truth
+            .validate_two_source_topology_qualification(
+                changed,
+                sources,
+                start,
+                bounds,
+                disturbances,
+                'local',
+                'global',
+            )
+        )
+
+    changed_sources = deepcopy(sources)
+    changed_sources[0]['relative_lumen_input'] = 410.0
+    changed_start = deepcopy(start)
+    changed_start['x_m'] = 0.05
+    changed_bounds = deepcopy(bounds)
+    changed_bounds[0] = -1.1
+    changed_disturbances = deepcopy(disturbances)
+    changed_disturbances['pose_delay_sec'] = 0.1
+    for bound_sources, bound_start, bound_bounds, bound_disturbances in (
+        (changed_sources, start, bounds, disturbances),
+        (sources, changed_start, bounds, disturbances),
+        (sources, start, changed_bounds, disturbances),
+        (sources, start, bounds, changed_disturbances),
+    ):
+        with pytest.raises(ValueError, match='binding or result drifted'):
+            (
+                aggregate_field_truth
+                .validate_two_source_topology_qualification(
+                    record,
+                    bound_sources,
+                    bound_start,
+                    bound_bounds,
+                    bound_disturbances,
+                    'local',
+                    'global',
+                )
+            )
+    with pytest.raises(ValueError, match='source identifiers are invalid'):
+        (
+            aggregate_field_truth
+            .derive_two_source_topology_qualification(
+                sources,
+                start,
+                bounds,
+                disturbances,
+                'local',
+                'local',
+            )
+        )
+
+
+def test_two_source_topology_rejects_model_and_sensor_drift(
+    two_source_topology_truth,
+    tmp_path,
+):
+    """Bind qualification to the exact model and sensor input bytes."""
+    sources, start, bounds, disturbances, record = (
+        two_source_topology_truth
+    )
+    changed_model = tmp_path / 'light_model.json'
+    changed_model.write_text(
+        Path(aggregate_field_truth.MODEL_CONFIG_PATH).read_text(
+            encoding='utf-8'
+        ) + '\n',
+        encoding='utf-8',
+    )
+    with pytest.raises(ValueError, match='binding or result drifted'):
+        aggregate_field_truth.validate_two_source_topology_qualification(
+            record,
+            sources,
+            start,
+            bounds,
+            disturbances,
+            'local',
+            'global',
+            model_config_path=changed_model,
+        )
+
+    changed_sensor = tmp_path / 'sensor_transform.json'
+    changed_sensor.write_text(
+        Path(aggregate_field_truth.SENSOR_TRANSFORM_CONFIG_PATH).read_text(
+            encoding='utf-8'
+        ) + '\n',
+        encoding='utf-8',
+    )
+    with pytest.raises(ValueError, match='binding or result drifted'):
+        aggregate_field_truth.validate_two_source_topology_qualification(
+            record,
+            sources,
+            start,
+            bounds,
+            disturbances,
+            'local',
+            'global',
+            sensor_transform_config_path=changed_sensor,
+        )
+
+
+def test_two_source_topology_rejects_unobservable_inputs(
+    two_source_topology_truth,
+    monkeypatch,
+):
+    """Reject absent strength, shallow basins, and non-forward layouts."""
+    sources, start, bounds, disturbances, unused_record = (
+        two_source_topology_truth
+    )
+    with pytest.raises(ValueError, match='exactly two sources'):
+        (
+            aggregate_field_truth
+            .derive_two_source_topology_qualification(
+                sources[:1],
+                start,
+                bounds,
+                disturbances,
+                'local',
+                'global',
+            )
+        )
+    zero_source = deepcopy(sources)
+    zero_source[0]['relative_lumen_input'] = 0.0
+    with pytest.raises(ValueError, match='inputs must be positive'):
+        (
+            aggregate_field_truth
+            .derive_two_source_topology_qualification(
+                zero_source,
+                start,
+                bounds,
+                disturbances,
+                'local',
+                'global',
+            )
+        )
+
+    equal_strength = deepcopy(sources)
+    equal_strength[1]['relative_lumen_input'] = 400.0
+    with pytest.raises(ValueError, match='strictly strongest'):
+        (
+            aggregate_field_truth
+            .derive_two_source_topology_qualification(
+                equal_strength,
+                start,
+                bounds,
+                disturbances,
+                'local',
+                'global',
+            )
+        )
+
+    monkeypatch.setattr(
+        aggregate_field_truth,
+        'TOPOLOGY_MINIMUM_BASIN_DEPTH',
+        10.0,
+    )
+    with pytest.raises(ValueError, match='minimum basin depth'):
+        (
+            aggregate_field_truth
+            .derive_two_source_topology_qualification(
+                sources,
+                start,
+                bounds,
+                disturbances,
+                'local',
+                'global',
+            )
+        )
+    monkeypatch.setattr(
+        aggregate_field_truth,
+        'TOPOLOGY_MINIMUM_BASIN_DEPTH',
+        0.05,
+    )
+
+    monkeypatch.setattr(
+        aggregate_field_truth,
+        'TOPOLOGY_MINIMUM_RAW_COST_SEPARATION',
+        10.0,
+    )
+    with pytest.raises(ValueError, match='raw-cost ordering'):
+        (
+            aggregate_field_truth
+            .derive_two_source_topology_qualification(
+                sources,
+                start,
+                bounds,
+                disturbances,
+                'local',
+                'global',
+            )
+        )
+    monkeypatch.setattr(
+        aggregate_field_truth,
+        'TOPOLOGY_MINIMUM_RAW_COST_SEPARATION',
+        0.05,
+    )
+
+    monkeypatch.setattr(
+        aggregate_field_truth,
+        'TOPOLOGY_MINIMUM_BASIN_SEPARATION_M',
+        10.0,
+    )
+    with pytest.raises(ValueError, match='basin centers are not distinct'):
+        (
+            aggregate_field_truth
+            .derive_two_source_topology_qualification(
+                sources,
+                start,
+                bounds,
+                disturbances,
+                'local',
+                'global',
+            )
+        )
+    monkeypatch.setattr(
+        aggregate_field_truth,
+        'TOPOLOGY_MINIMUM_BASIN_SEPARATION_M',
+        1.0,
+    )
+
+    monkeypatch.setattr(
+        aggregate_field_truth,
+        'TOPOLOGY_MAXIMUM_START_TO_LOCAL_M',
+        0.10,
+    )
+    with pytest.raises(ValueError, match='beyond the test horizon'):
+        (
+            aggregate_field_truth
+            .derive_two_source_topology_qualification(
+                sources,
+                start,
+                bounds,
+                disturbances,
+                'local',
+                'global',
+            )
+        )
+    monkeypatch.setattr(
+        aggregate_field_truth,
+        'TOPOLOGY_MAXIMUM_START_TO_LOCAL_M',
+        1.75,
+    )
+
+    monkeypatch.setattr(
+        aggregate_field_truth,
+        'TOPOLOGY_MINIMUM_GLOBAL_DISTANCE_ADVANTAGE_M',
+        10.0,
+    )
+    with pytest.raises(ValueError, match='local-first horizon'):
+        (
+            aggregate_field_truth
+            .derive_two_source_topology_qualification(
+                sources,
+                start,
+                bounds,
+                disturbances,
+                'local',
+                'global',
+            )
+        )
+    monkeypatch.setattr(
+        aggregate_field_truth,
+        'TOPOLOGY_MINIMUM_GLOBAL_DISTANCE_ADVANTAGE_M',
+        1.5,
+    )
+
+    lateral = deepcopy(sources)
+    lateral[0]['x_m'] = 0.5
+    lateral[0]['y_m'] = 1.5
+    with pytest.raises(ValueError, match='outside the forward envelope'):
+        (
+            aggregate_field_truth
+            .derive_two_source_topology_qualification(
+                lateral,
+                start,
+                bounds,
+                disturbances,
+                'local',
+                'global',
+            )
         )
 
 

@@ -13,9 +13,9 @@ from ros_esc.scenario_runner import aggregate_field_truth
 import yaml
 
 
-SCHEMA_VERSION = 13
+SCHEMA_VERSION = 14
 SUPPORTED_SCHEMA_VERSIONS = {
-    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
 }
 PROFILES = {'legacy', 'robust_gaussian_v1'}
 STATUSES = {'executable_unverified', 'unsupported'}
@@ -260,6 +260,7 @@ STAGED_RECOVERY_KEYS = {
     'local_association_mode',
     'stage_a_timeout_sec',
     'post_stage_a_timeout_sec',
+    'topology_qualification',
 }
 KNOWN_TOPOLOGY_KEYS = {
     'expected_local_minima',
@@ -3146,6 +3147,14 @@ def load_suite(path):
                 STAGED_RECOVERY_KEYS,
                 staged_location,
             )
+            if (
+                schema_version < 14
+                and 'topology_qualification' in staged_recovery
+            ):
+                raise ValueError(
+                    f'{staged_location}.topology_qualification requires '
+                    'schema version 14'
+                )
             local_source_ids = staged_recovery.get('local_source_ids')
             if (
                 not isinstance(local_source_ids, list)
@@ -3256,6 +3265,54 @@ def load_suite(path):
                     normalized_staged_recovery[
                         'global_closer_radius_m'
                     ] = closer_radius
+            if schema_version >= 14:
+                topology_qualification = staged_recovery.get(
+                    'topology_qualification'
+                )
+                if association_mode == 'verified_trap':
+                    if not counted_open_field:
+                        raise ValueError(
+                            f'{staged_location}.topology_qualification '
+                            'verified_trap contract requires counted '
+                            'open-field mode'
+                        )
+                    if len(local_source_ids) != 1:
+                        raise ValueError(
+                            f'{staged_location}.topology_qualification '
+                            'requires exactly one local source'
+                        )
+                    if len(normalized_starts) != 1:
+                        raise ValueError(
+                            f'{staged_location}.topology_qualification '
+                            'requires exactly one start'
+                        )
+                    if any(
+                        'relative_lumen_input' not in source
+                        for source in normalized_sources
+                    ):
+                        raise ValueError(
+                            f'{staged_location}.topology_qualification '
+                            'requires direct source inputs'
+                        )
+                    normalized_staged_recovery[
+                        'topology_qualification'
+                    ] = (
+                        aggregate_field_truth
+                        .validate_two_source_topology_qualification(
+                            topology_qualification,
+                            normalized_sources,
+                            normalized_starts[0],
+                            bounds,
+                            disturbances,
+                            local_source_ids[0],
+                            global_source_id,
+                        )
+                    )
+                elif topology_qualification is not None:
+                    raise ValueError(
+                        f'{staged_location}.topology_qualification requires '
+                        'local_association_mode verified_trap'
+                    )
             if schema_version >= 7:
                 post_stage_a_timeout = _number(
                     staged_recovery.get('post_stage_a_timeout_sec'),

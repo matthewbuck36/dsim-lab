@@ -18531,3 +18531,169 @@ Commit the reviewed four-file Plan/status/checkpoint boundary. Then implement
 schema v14 and the evaluator-only topology record, add fresh v8.11 scenarios
 and tests, and complete the full M8.2 no-Gazebo qualification, checkpoint,
 and implementation commit before any Gazebo dispatch.
+
+## Phase 08.8 M8.1-M8.2 v8.11 no-Gazebo qualification — 2026-07-31
+
+The Plan boundary is committed at:
+
+```text
+e39ef24 phase 08.8: plan topology-bound v8.11 continuation
+```
+
+Schema v14 and its evaluator-only two-source topology record are implemented.
+The canonical record binds the source list, evaluator source IDs, start,
+bounds, disturbances, authoritative light model, sensor transform, sensor
+geometry, local/global basin solutions, local ring depth, raw-cost ordering,
+basin separation, route geometry, frozen thresholds, and final result hash.
+Schema v1-v13 behavior remains covered and unchanged.
+
+The existing `verified_trap` Stage A owner now has a schema-bound topology
+precondition. It accepts the measured convergence/fill cluster without using
+individual local-lamp distance as a gate, while retaining exact one-fill,
+fill-to-convergence, distance-from-global, complete recovery path, strict
+later ranking, and post-recovery proximity requirements. No topology record,
+source geometry, intensity, role, or evaluator stop coordinate enters the
+controller graph. No motion owner or controller behavior changed.
+
+Fresh frozen inputs:
+
+```text
+ce6b80c83cd52b5e665d22bc2867b1a8046d6c6a817f8427dd94ea062a9b76c0
+  phase08_v8_11_secondary_visible_probe.yaml
+01466b3c350b4e37693eaffb0c40fe15591d28a8d09ee14f4b60aa00f200ce1d
+  phase08_v8_11_secondary_repeats.yaml
+b0ac9ff6582deecb56970d38f0a3f7d08f09aa8518343dd0477ae953d2a04b02
+  phase08_v8_11_broad_matrix.yaml
+```
+
+All six embedded topology records pass the frozen preflight. The final
+secondary topology hash is `eb749f0cb86f7b35231bdc308365f3008c6168df07b0188c03a97f339f364d71`;
+the four matrix hashes are recorded in the qualification report.
+
+Read-only retained replay:
+
+```text
+primary visible + repeats:             11/11 PASS
+secondary seed 19851 under v8.11:      PASS
+total:                                 12/12 PASS
+historical seed-19851 formal result:   failed and unchanged
+replay log:
+  /tmp/phase08_8_v8_11_retained_replay.log
+replay sha256:
+  7a5c1b9ab3a3fe9e855b82ae625a7ee24e1f982754369b7e3152aa04b9f1a212
+```
+
+Final qualification:
+
+```text
+topology/schema/runner focus:
+  387 passed, 1 skipped in 134.73 s
+controller/supervisor/detector/legacy focus:
+  310 passed in 8.42 s
+evidence/recording/analysis focus:
+  663 passed, 2 skipped in 165.64 s
+sealed broad functional rerun:
+  974 passed, 3 skipped in 185.74 s
+fatal changed-file lint:
+  PASS
+Python/YAML/XML/diff/context:
+  PASS
+```
+
+The first final broad invocation reported two late supervisor-integration
+timing failures after `972` passes. Both exact tests then passed `2/2`, their
+complete owner passed `60/60`, and the exact full suite passed on a sealed
+localhost DDS domain without a source change. The failed invocation remains
+retained and is classified as DDS/process-order test flakiness, not silently
+discarded evidence.
+
+Fresh installed qualification:
+
+```text
+root:
+  /tmp/phase08_8_v8_11_release_qual.AdUc5v
+build:
+  3 packages finished in 11.5 s
+source/install parity:
+  10/10 PASS
+installed schema:
+  14, supported 1..14
+installed launch construction:
+  2/2 PASS
+installed node construction:
+  4/4 expected timeout 124, no startup error
+installed dry-runs:
+  visible / repeats / matrix = 1 / 5 / 4, zero unsupported
+fresh roots after dry-run:
+  absent 3/3
+```
+
+Historical preservation passes for `94/94` tracked scenario files, all three
+world anchors, V6 selection, and the fixed v8.10 secondary summary/result.
+V6, shifted worlds, all historical failures, runs, bags, reports, and plots
+remain unchanged and selectable.
+
+Durable qualification:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m8_2_v8_11_no_gazebo_qualification.md
+```
+
+No Gazebo, analyzer, scenario runner, recorder, controller, supervisor, or
+physical process remains active. No fresh v8.11 run root exists. Physical
+stopping remains manual operator `Ctrl+C`.
+
+## Current milestone
+
+**PHASE 08.8 M8.1-M8.2 — V8.11 TOPOLOGY-BOUND EVALUATOR IMPLEMENTED /
+NO-GAZEBO QUALIFICATION PASS / IMPLEMENTATION CHECKPOINT PENDING / GAZEBO
+PROHIBITED.**
+
+## Next criterion
+
+Run the Phase 08 material checkpoint, inspect the complete implementation,
+scenario, test, report, and status diff, and commit this exact qualified
+boundary. Then write, checkpoint, and commit a separate dispatch boundary
+authorizing only the installed visible seed `19901`. Do not start Gazebo from
+the uncommitted implementation.
+
+## Phase 08.8 M8.1-M8.2 v8.11 implementation checkpoint — 2026-07-31
+
+The schema-v14 evaluator correction, three fresh inputs, expanded tests,
+retained read-only replay, isolated build, installed dry-runs, no-Gazebo
+qualification, and live status received the required Phase 08 material
+checkpoint against Plan HEAD `e39ef24`.
+
+```text
+base HEAD:
+  e39ef2403baf6bcbd2a4f6322dec382be906b698
+status sha256 before this checkpoint note:
+  c17583f135e9cc7e8a5045b99539edd232dda7873061de35fd02d583e1f93008
+active subphase plan sha256:
+  6d5d8446cf3dc56de77a34a62eb7e28e30e9e6d9e422ef9556ff990acaebd644
+no-Gazebo qualification sha256:
+  567f7f7829f9b3ad26870e3ecba494d1610cb8f06505c79976897a20c2cc328a
+checkpoint sha256 before this checkpoint note:
+  0141acac197ef551e801085605c47846912f4c300361e3e95da2261db419d63b
+unstaged and staged diff checks:
+  PASS
+Phase 08 implement context:
+  PASS
+active runtime:
+  none
+fresh v8.11 run roots:
+  absent 3/3
+```
+
+## Current milestone
+
+**PHASE 08.8 M8.1-M8.2 — V8.11 TOPOLOGY-BOUND EVALUATOR IMPLEMENTED /
+NO-GAZEBO QUALIFICATION PASS / IMPLEMENTATION CHECKPOINT PASS /
+IMPLEMENTATION COMMIT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Commit this exact qualified implementation boundary. Then write, checkpoint,
+and commit a separate visible-dispatch boundary naming only the installed
+seed `19901`. Do not start Gazebo from an uncommitted or undispatched state.

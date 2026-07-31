@@ -1,0 +1,198 @@
+schema_version: 14
+suite_id: phase08_v8_11_secondary_visible_probe
+description: One visible topology-bound counted-candidate probe for the fixed secondary open-field layout.
+mode: simulation
+execution:
+  max_parallel_runs: 1
+  gazebo_gui: true
+  runs_root: /home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_11_secondary_probe
+  preflight_timeout_sec: 150.0
+  run_timeout_sec: 720.0
+  wall_timeout_sec: 900.0
+  shutdown_grace_sec: 45.0
+  stop_on_run_failure: true
+  stop_on_cleanup_failure: true
+metadata:
+  experiment_version: phase08-v8.11-secondary-probe
+  operator_notes: Fresh seed-19901 topology-bound probe; evaluator topology and global geometry never enter the controller graph.
+level_map: {}
+defaults:
+  bounds_m: [-1.0, 5.0, -1.0, 5.0]
+  room_center_m: [2.0, 2.0]
+  validation_world: false
+  simulation_contacts_enabled: false
+  disturbances:
+    sensor_noise: {model: none, bound: 0.0}
+    sensor_delay_sec: 0.0
+    pose_delay_sec: 0.0
+frozen_profile:
+  profile_id: phase08_v8_11_topology_bound_counted_open_field_v1
+  launch_overrides:
+    convergence_min_fill_periods: 2.0
+    convergence_state_gating_enabled: true
+    convergence_minimum_path_length_m: 0.20
+    convergence_maximum_path_efficiency: 0.50
+    convergence_confirmation_policy: qualified_dwell
+    convergence_confirmation_dwell_sec: 6.0
+    convergence_confirmation_exit_threshold_scale: 1.5
+    robust_search_epoch_reset_enabled: true
+    gaussian_fill_covariance_scale: 2.5
+    gaussian_fill_sigma_floor_m: 0.50
+    gaussian_fill_sigma_ceiling_m: 1.25
+    gaussian_fill_amplitude_depth_scale: 1.5
+    gaussian_fill_amplitude_max: 6.25
+    gaussian_fill_exit_sigma: 2.70
+    gaussian_fill_max_fills: 1
+    gaussian_fill_minimum_valid_samples: 40
+    gaussian_fill_reuse_retained_samples_on_redesign: true
+    extremum_classification_mode: counted_candidates
+    known_source_count: 2
+    candidate_cost_rotation_period_sec: 3.0
+    candidate_cost_required_rotations: 3
+    candidate_cost_pretrigger_rotations: 6
+    candidate_cost_mad_scale: 3.0
+    candidate_informed_fill_enabled: true
+    candidate_informed_fill_amplitude_scale: 1.25
+    operating_bounds_enabled: false
+    open_field_escape_assist_enabled: true
+    open_field_escape_approach_continuity_enabled: true
+    open_field_escape_active_fill_transit_enabled: true
+    open_field_escape_supervisor_owned_assist_enabled: true
+    modified_cost_affine_gain: 0.50
+    modified_cost_affine_decay_rate: 0.0000005
+    modified_cost_affine_max_age: 35.0
+    modified_cost_affine_direction_sign: 1.0
+    post_recovery_guidance_enabled: false
+    recoverable_navigation_enabled: false
+    stall_window_sec: 3.0
+    minimum_radial_progress_m: 0.05
+    goal_score_threshold: 0.95
+    goal_score_rotation_period_sec: 3.0
+    goal_score_required_rotations: 2
+    goal_hold_sec: 3.0
+    undesired_score_hold_sec: 3.0
+    verification_max_sec: 12.0
+    fill_design_timeout_sec: 5.0
+    escape_max_sec: 35.0
+    escape_exit_hold_sec: 1.0
+    fill_avoidance_margin_m: 0.10
+    approach_history_window_sec: 0.5
+cases:
+  - case_id: v8_11_secondary_probe_r1p5_a67p5_h25_19901
+    family: open_field
+    acceptance_family: counted_two_source_open_field
+    acceptance_partition: development
+    description: Radius-1.5, 67.5-degree topology-bound secondary probe accepting measured direct repulse or strictly owned assist.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [19901]
+    known_topology:
+      expected_local_minima: 1
+      expected_global_minima: 1
+    metric_applicability:
+      escape_attempt: true
+      escape_duration: true
+      orbit_count: true
+      revisit: false
+      delay: false
+      saturation: false
+    starts:
+      - {id: open_start, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - id: local
+        x_m: 0.5740251485476348
+        y_m: 1.38581929876693
+        relative_lumen_input: 400.0
+        evaluation_role: local_minimum
+      - id: global
+        x_m: 3.5
+        y_m: 3.5
+        relative_lumen_input: 1600.0
+        evaluation_role: goal
+    algorithm:
+      ablations:
+        gaussian_fill_enabled: true
+        affine_assist_enabled: true
+        recenter_enabled: false
+      launch_overrides: {}
+    success:
+      all_of: &all_of
+        - recording_complete
+        - cleanup_complete
+        - controller_goal
+        - ground_truth_goal
+        - expected_terminal_state
+        - required_state_path
+        - required_events
+        - required_event_sequence
+        - no_forbidden_states
+        - no_forbidden_events
+        - local_recovery_stage
+        - escape_command_ownership
+        - post_recovery_global_proximity
+        - fill_cardinality
+      controller:
+        contract_id: v8_11_secondary_probe_r1p5_a67p5_h25_19901
+        expected_verification_outcome: below_target_extremum
+        expected_terminal_state: GOAL_HOLD
+        reachability_argument: The topology-qualified secondary layout must prove one measured local recovery before raw-cost ranking of source two.
+        supervisor_owned_assist_handoff_timeout_sec: 0.15
+        required_state_path: &direct_path
+          - SEARCH
+          - VERIFY_EXTREMUM
+          - DESIGN_OR_MERGE_FILL
+          - ESCAPE_REPULSE
+          - SEARCH
+          - VERIFY_EXTREMUM
+          - GOAL_HOLD
+        required_state_paths:
+          - *direct_path
+          -
+            - SEARCH
+            - VERIFY_EXTREMUM
+            - DESIGN_OR_MERGE_FILL
+            - ESCAPE_REPULSE
+            - ESCAPE_ASSIST
+            - SEARCH
+            - VERIFY_EXTREMUM
+            - GOAL_HOLD
+        required_events:
+          - CONVERGENCE_CONFIRMED
+          - FILL_CREATED
+          - ESCAPE_STARTED
+          - GOAL_REACHED
+        required_event_sequence:
+          - CONVERGENCE_CONFIRMED
+          - FILL_CREATED
+          - ESCAPE_STARTED
+          - CONVERGENCE_CONFIRMED
+          - GOAL_REACHED
+        forbidden_states: [RECENTER, FAILSAFE]
+        forbidden_events:
+          - FILL_REJECTED
+          - FILL_MERGED
+          - FILL_SUPERSEDED
+          - FILL_DESIGN_FAILED
+          - TIMEOUT
+          - FAILSAFE
+      ground_truth:
+        method: declared_global_proximity
+        global_source_id: global
+        proximity_radius_m: 0.50
+      staged_recovery:
+        local_source_ids: [local]
+        global_source_id: global
+        convergence_to_local_max_m: 0.60
+        convergence_to_global_min_m: 0.75
+        fill_to_convergence_max_m: 0.50
+        global_proximity_radius_m: 0.50
+        local_association_mode: verified_trap
+        stage_a_timeout_sec: 360.0
+        post_stage_a_timeout_sec: 300.0
+        topology_qualification: {"schema_version":1,"method":"authoritative_two_source_local_first_topology","source_count":2,"source_list_sha256":"96bc305847084db6f81b99424702710b1a6bd5d942c5c3c8b1e79720dcf36443","disturbances_sha256":"0199c46573a3e9984faf3e731983f4ffb2ecc7511cb79fd0be1df8a8c1c536a1","bounds_sha256":"4c9e87d337c3cf39826d2c4c9ae563e69c07228abfa1b46becab88f2164d8b1a","start_sha256":"469950f0f61b39dcfb97f6211eaf39111981f31b1150a08b450dc3d8d6714e7c","bounds_m":[-1.0,5.0,-1.0,5.0],"wall_margin_m":0.35,"domain":{"x_min_m":-0.65,"x_max_m":4.65,"y_min_m":-0.65,"y_max_m":4.65},"start":{"id":"open_start","x_m":0.0,"y_m":0.0,"yaw_rad":0.0},"local_source_id":"local","global_source_id":"global","local_basin":{"x_m":0.4242637222912333,"y_m":1.2784251182168458,"yaw_rad":0.6234969333334099,"raw_cost":-2.8484390271361857,"source_distance_m":0.18428780429093958,"optimizer_success":false,"optimizer_status":0,"optimizer_iterations":60,"source_score":0.7419918398664946,"noise_adjusted_source_score_upper_bound":0.7419918398664946},"global_basin":{"x_m":3.50115758567438,"y_m":3.2314499224739794,"yaw_rad":1.5766111360996766,"raw_cost":-3.8372093023255816,"source_distance_m":0.2685525724021745,"optimizer_success":true,"optimizer_status":0,"optimizer_iterations":22,"source_score":1.0,"noise_adjusted_source_score_lower_bound":1.0},"ring_minimum_raw_cost":-1.9889048779855065,"basin_depth_raw_cost":0.8595341491506792,"noise_margin_raw_cost":0.0,"noise_adjusted_basin_depth_raw_cost":0.8595341491506792,"raw_cost_separation":0.9887702751893959,"noise_adjusted_raw_cost_separation":0.9887702751893959,"basin_center_separation_m":3.644390447327026,"route":{"start_to_local_m":1.5,"local_to_global_m":3.609859951410587,"start_to_global_m":4.949747468305833,"global_distance_advantage_m":3.4497474683058327,"forward_alignment":0.8512713563490255},"thresholds":{"search_radius_m":0.4,"local_grid_points_per_axis":9,"local_yaw_spacing_rad":0.08726646259971647,"ring_radius_m":0.5,"ring_position_samples":48,"ring_yaw_spacing_rad":0.03490658503988659,"minimum_basin_depth_raw_cost":0.05,"goal_score_threshold":0.95,"minimum_raw_cost_separation":0.05,"minimum_basin_separation_m":1.0,"maximum_start_to_local_m":1.75,"minimum_global_distance_advantage_m":1.5,"minimum_forward_alignment":0.8},"model_config_sha256":"7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741","sensor_transform_config_sha256":"8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5","sensor_geometry_sha256":"6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425","sensor_joint_position_m":[0.0,0.0,0.355],"sensor_rotation_axis":[0.0,0.0,1.0],"sensor_offset_xyz_m":[0.18,0.0,0.015],"sensor_offset_rpy_rad":[0.0,0.0,0.0],"sensor_offset_m":0.18,"result_sha256":"eb749f0cb86f7b35231bdc308365f3008c6168df07b0188c03a97f339f364d71"}
+      result_scopes:
+        full_lifecycle:
+          anchor_state: SEARCH
+          boundary_state: null
+          graceful_stop: false
+          all_of: *all_of

@@ -364,6 +364,21 @@ V8_10_SECONDARY_REPEATS = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v8_10_secondary_repeats.yaml'
 )
+V8_11_SECONDARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_11_secondary_visible_probe.yaml'
+)
+V8_11_SECONDARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_11_secondary_repeats.yaml'
+)
+V8_11_BROAD_MATRIX = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_11_broad_matrix.yaml'
+)
 HISTORICAL_V2_ACTIVATION = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml'
@@ -745,7 +760,7 @@ def _v4_production_truth():
 
 
 def test_current_schema_version_is_latest_supported_version():
-    assert SCHEMA_VERSION == 13
+    assert SCHEMA_VERSION == 14
     assert SCHEMA_VERSION == max(SUPPORTED_SCHEMA_VERSIONS)
 
 
@@ -800,7 +815,7 @@ def test_checked_in_suites_validate_and_catalog_marks_gaps():
 @pytest.mark.parametrize(
     ('mutation', 'match'),
     [
-        (lambda doc: doc.update({'schema_version': 14}), 'schema_version'),
+        (lambda doc: doc.update({'schema_version': 15}), 'schema_version'),
         (
             lambda doc: doc.update({'mode': 'physical'}),
             'mode must be simulation',
@@ -2075,6 +2090,86 @@ def test_schema_v13_resolves_four_v8_10_recorder_cwd_suites():
                 ]
                 == 0.15
             )
+
+
+def test_schema_v14_resolves_topology_bound_secondary_and_matrix():
+    expected = {
+        V8_11_SECONDARY_VISIBLE_PROBE: (1, True, {19901}),
+        V8_11_SECONDARY_REPEATS: (
+            5,
+            False,
+            set(range(19911, 19916)),
+        ),
+        V8_11_BROAD_MATRIX: (
+            4,
+            False,
+            {19931, 19932, 19933, 19934},
+        ),
+    }
+    for path, (run_count, gui, seeds) in expected.items():
+        suite = load_suite(path)
+        runs, unsupported = expand_suite(suite)
+
+        assert unsupported == []
+        assert len(runs) == run_count
+        assert suite['schema_version'] == 14
+        assert suite['execution']['gazebo_gui'] is gui
+        assert {run['seed'] for run in runs} == seeds
+        for run in runs:
+            staged = run['success']['staged_recovery']
+            topology = staged['topology_qualification']
+            assert run['schema_version'] == 14
+            assert run['case_id'].startswith('v8_11_')
+            assert staged['local_association_mode'] == 'verified_trap'
+            assert topology['source_count'] == 2
+            assert topology['local_source_id'] == 'local'
+            assert topology['global_source_id'] == 'global'
+            assert topology['bounds_sha256']
+            assert topology['start_sha256']
+            assert topology['result_sha256']
+            assert topology[
+                'noise_adjusted_basin_depth_raw_cost'
+            ] >= 0.05
+            assert topology[
+                'noise_adjusted_raw_cost_separation'
+            ] >= 0.05
+            assert topology['route']['forward_alignment'] >= 0.80
+
+
+def test_schema_v14_requires_bound_topology_for_verified_trap(tmp_path):
+    document = yaml.safe_load(
+        V8_11_SECONDARY_VISIBLE_PROBE.read_text(encoding='utf-8')
+    )
+    staged = document['cases'][0]['success']['staged_recovery']
+    topology = staged.pop('topology_qualification')
+    with pytest.raises(ValueError, match='topology qualification'):
+        _load(tmp_path, document)
+
+    staged['topology_qualification'] = topology
+    document['schema_version'] = 13
+    with pytest.raises(ValueError, match='requires schema version 14'):
+        _load(tmp_path, document)
+
+
+def test_schema_v14_rejects_topology_hash_and_mode_drift(tmp_path):
+    document = yaml.safe_load(
+        V8_11_SECONDARY_VISIBLE_PROBE.read_text(encoding='utf-8')
+    )
+    staged = document['cases'][0]['success']['staged_recovery']
+    staged['topology_qualification']['route'][
+        'forward_alignment'
+    ] -= 0.01
+    with pytest.raises(ValueError, match='result hash drifted'):
+        _load(tmp_path, document)
+
+    document = yaml.safe_load(
+        V8_11_SECONDARY_VISIBLE_PROBE.read_text(encoding='utf-8')
+    )
+    document['cases'][0]['success']['staged_recovery'][
+        'local_association_mode'
+    ] = 'declared_source'
+    with pytest.raises(ValueError, match='requires local_association_mode'):
+        _load(tmp_path, document)
 
 
 @pytest.mark.parametrize(

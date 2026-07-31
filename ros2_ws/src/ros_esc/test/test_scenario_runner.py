@@ -334,6 +334,21 @@ V8_10_SECONDARY_REPEATS = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v8_10_secondary_repeats.yaml'
 )
+V8_11_SECONDARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_11_secondary_visible_probe.yaml'
+)
+V8_11_SECONDARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_11_secondary_repeats.yaml'
+)
+V8_11_BROAD_MATRIX = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_11_broad_matrix.yaml'
+)
 
 
 def test_observed_local_recovery_binds_fill_to_local_convergence():
@@ -2805,6 +2820,9 @@ def test_v8_5_launch_binds_active_fill_transit_without_evaluator_controls(
         V8_10_PRIMARY_REPEATS,
         V8_10_SECONDARY_VISIBLE_PROBE,
         V8_10_SECONDARY_REPEATS,
+        V8_11_SECONDARY_VISIBLE_PROBE,
+        V8_11_SECONDARY_REPEATS,
+        V8_11_BROAD_MATRIX,
     ],
 )
 def test_v8_6_launch_binds_supervisor_owner_without_evaluator_controls(
@@ -2857,6 +2875,50 @@ def test_v8_6_launch_binds_supervisor_owner_without_evaluator_controls(
             for token in launch
             if not token.startswith('number_of_lights:=')
         )
+        if resolved['schema_version'] >= 14:
+            topology = resolved['success']['staged_recovery'][
+                'topology_qualification'
+            ]
+            assert not any(
+                'topology' in token
+                or topology['result_sha256'] in token
+                or topology['source_list_sha256'] in token
+                for token in launch
+            )
+
+
+def test_schema_v14_stage_a_reports_bound_topology_without_lamp_gate():
+    resolved = expand_suite(
+        load_suite(V8_11_SECONDARY_VISIBLE_PROBE)
+    )[0][0]
+    states, events, fills = _counted_staged_records()
+    events[0][1].values = [1.70, 1.80]
+    fills[0][1].center_x = 1.72
+    fills[0][1].center_y = 1.82
+
+    stage_a, cardinality, evidence, error = (
+        runner._staged_recovery_evidence(
+            resolved,
+            states,
+            events,
+            fills,
+        )
+    )
+
+    assert error is None
+    assert stage_a is True
+    assert cardinality is True
+    assert evidence['assignments'][0][
+        'declared_local_distance_gate_applied'
+    ] is False
+    topology = evidence['topology_qualification']
+    assert topology['result_sha256'] == (
+        resolved['success']['staged_recovery'][
+            'topology_qualification'
+        ]['result_sha256']
+    )
+    assert topology['basin_depth_raw_cost'] >= 0.05
+    assert topology['raw_cost_separation'] >= 0.05
 
 
 def test_staged_recovery_reports_stage_a_cardinality_and_global_sample():

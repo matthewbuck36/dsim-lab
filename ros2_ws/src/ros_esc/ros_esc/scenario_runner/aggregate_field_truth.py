@@ -157,6 +157,21 @@ ROUTE_RING_YAW_SPACING_RAD = math.radians(2.0)
 ROUTE_MINIMUM_BASIN_DEPTH = 0.015
 ROUTE_LOCAL_GRID_POINTS_PER_AXIS = 9
 ROUTE_LOCAL_YAW_SPACING_RAD = math.radians(5.0)
+TOPOLOGY_SCHEMA_VERSION = 1
+TOPOLOGY_WALL_MARGIN_M = 0.35
+TOPOLOGY_SEARCH_RADIUS_M = 0.40
+TOPOLOGY_LOCAL_GRID_POINTS_PER_AXIS = 9
+TOPOLOGY_LOCAL_YAW_SPACING_RAD = math.radians(5.0)
+TOPOLOGY_RING_RADIUS_M = 0.50
+TOPOLOGY_RING_POSITION_SAMPLES = 48
+TOPOLOGY_RING_YAW_SPACING_RAD = math.radians(2.0)
+TOPOLOGY_MINIMUM_BASIN_DEPTH = 0.05
+TOPOLOGY_GOAL_SCORE_THRESHOLD = 0.95
+TOPOLOGY_MINIMUM_RAW_COST_SEPARATION = 0.05
+TOPOLOGY_MINIMUM_BASIN_SEPARATION_M = 1.00
+TOPOLOGY_MAXIMUM_START_TO_LOCAL_M = 1.75
+TOPOLOGY_MINIMUM_GLOBAL_DISTANCE_ADVANTAGE_M = 1.50
+TOPOLOGY_MINIMUM_FORWARD_ALIGNMENT = 0.80
 
 
 def canonical_json_bytes(value):
@@ -984,6 +999,426 @@ def attach_route_barrier_qualification(
     )
     result['result_sha256'] = canonical_sha256(result)
     return result
+
+
+def _source_basin(
+    model,
+    source,
+    domain,
+    *,
+    search_radius_m=TOPOLOGY_SEARCH_RADIUS_M,
+):
+    """Find one deterministic yaw-resolved basin near a source."""
+    x_bounds = (
+        max(domain[0], source['x_m'] - search_radius_m),
+        min(domain[1], source['x_m'] + search_radius_m),
+    )
+    y_bounds = (
+        max(domain[2], source['y_m'] - search_radius_m),
+        min(domain[3], source['y_m'] + search_radius_m),
+    )
+    if x_bounds[0] >= x_bounds[1] or y_bounds[0] >= y_bounds[1]:
+        raise ValueError(
+            f'topology search region for {source["id"]} is empty'
+        )
+
+    def objective(vector):
+        return evaluate_raw_cost(
+            model,
+            float(vector[0]),
+            float(vector[1]),
+            float(vector[2]) % (2.0 * math.pi),
+        )
+
+    yaw_values = _periodic_axis(
+        2.0 * math.pi,
+        TOPOLOGY_LOCAL_YAW_SPACING_RAD,
+        0.0,
+    )
+    grid_candidates = [
+        (
+            evaluate_raw_cost(model, x_value, y_value, yaw_value),
+            float(x_value),
+            float(y_value),
+            float(yaw_value),
+        )
+        for x_value in np.linspace(
+            x_bounds[0],
+            x_bounds[1],
+            TOPOLOGY_LOCAL_GRID_POINTS_PER_AXIS,
+        )
+        for y_value in np.linspace(
+            y_bounds[0],
+            y_bounds[1],
+            TOPOLOGY_LOCAL_GRID_POINTS_PER_AXIS,
+        )
+        for yaw_value in yaw_values
+    ]
+    source_aligned_candidates = []
+    for yaw_value in yaw_values:
+        sensor_at_origin = _sensor_transform(
+            0.0,
+            0.0,
+            yaw_value,
+            model._aggregate_sensor_binding,  # noqa: SLF001
+        )
+        robot_x = source['x_m'] - float(sensor_at_origin[0, 3])
+        robot_y = source['y_m'] - float(sensor_at_origin[1, 3])
+        if (
+            x_bounds[0] <= robot_x <= x_bounds[1]
+            and y_bounds[0] <= robot_y <= y_bounds[1]
+        ):
+            source_aligned_candidates.append(
+                (
+                    evaluate_raw_cost(
+                        model,
+                        robot_x,
+                        robot_y,
+                        yaw_value,
+                    ),
+                    robot_x,
+                    robot_y,
+                    float(yaw_value),
+                )
+            )
+    seed = min(
+        [
+            (
+                float(candidate[0]),
+                float(candidate[1]),
+                float(candidate[2]),
+                float(candidate[3]),
+            )
+            for candidate in (
+                grid_candidates + source_aligned_candidates
+            )
+        ],
+        key=lambda item: item,
+    )
+    optimized = optimize.differential_evolution(
+        objective,
+        [x_bounds, y_bounds, (0.0, 2.0 * math.pi)],
+        seed=0,
+        maxiter=60,
+        popsize=5,
+        tol=1.0e-9,
+        atol=1.0e-10,
+        polish=True,
+        workers=1,
+        updating='immediate',
+    )
+    vector = np.asarray(optimized.x, dtype=float)
+    cost = objective(vector)
+    if seed[0] < cost:
+        vector = np.asarray(seed[1:], dtype=float)
+        cost = float(seed[0])
+    result = {
+        'x_m': float(vector[0]),
+        'y_m': float(vector[1]),
+        'yaw_rad': float(vector[2] % (2.0 * math.pi)),
+        'raw_cost': cost,
+        'source_distance_m': math.hypot(
+            float(vector[0]) - source['x_m'],
+            float(vector[1]) - source['y_m'],
+        ),
+        'optimizer_success': bool(optimized.success),
+        'optimizer_status': int(getattr(optimized, 'status', 0)),
+        'optimizer_iterations': int(getattr(optimized, 'nit', 0)),
+    }
+    if result['source_distance_m'] > search_radius_m + 1.0e-12:
+        raise ValueError(
+            f'topology basin for {source["id"]} left its search region'
+        )
+    return result
+
+
+def derive_two_source_topology_qualification(
+    sources,
+    start,
+    bounds_m,
+    disturbances,
+    local_source_id,
+    global_source_id,
+    *,
+    model_config_path=MODEL_CONFIG_PATH,
+    sensor_transform_config_path=SENSOR_TRANSFORM_CONFIG_PATH,
+    sensor_geometry_path=SENSOR_GEOMETRY_PATH,
+):
+    """Qualify one evaluator-only, observable two-source local-first field."""
+    normalized_sources = _normalized_sources(sources)
+    if len(normalized_sources) != 2:
+        raise ValueError('topology qualification requires exactly two sources')
+    if any(
+        source['relative_lumen_input'] <= 0.0
+        for source in normalized_sources
+    ):
+        raise ValueError('topology source inputs must be positive')
+    by_id = {source['id']: source for source in normalized_sources}
+    local_id = str(local_source_id)
+    global_id = str(global_source_id)
+    if (
+        local_id == global_id
+        or local_id not in by_id
+        or global_id not in by_id
+    ):
+        raise ValueError('topology source identifiers are invalid')
+    local_source = by_id[local_id]
+    global_source = by_id[global_id]
+    if (
+        global_source['relative_lumen_input']
+        <= local_source['relative_lumen_input']
+    ):
+        raise ValueError('topology global source must be strictly strongest')
+
+    bounds, domain, margin = _domain(
+        bounds_m,
+        TOPOLOGY_WALL_MARGIN_M,
+    )
+    start_record = {
+        'id': str(start.get('id', '')),
+        'x_m': _finite_number(start.get('x_m'), 'start.x_m'),
+        'y_m': _finite_number(start.get('y_m'), 'start.y_m'),
+        'yaw_rad': _finite_number(start.get('yaw_rad', 0.0), 'start.yaw_rad'),
+    }
+    if not (
+        domain[0] <= start_record['x_m'] <= domain[1]
+        and domain[2] <= start_record['y_m'] <= domain[3]
+    ):
+        raise ValueError('topology start lies outside the valid domain')
+
+    sensor_binding = sensor_geometry_binding(
+        sensor_transform_config_path,
+        sensor_geometry_path,
+    )
+    model, config_path = _model(
+        normalized_sources,
+        model_config_path,
+        sensor_binding,
+    )
+    local_basin = _source_basin(
+        model,
+        local_source,
+        domain,
+    )
+    global_basin = _source_basin(
+        model,
+        global_source,
+        domain,
+    )
+    noise_margin = _noise_margin(disturbances)
+    local_score = float(model.source_score(local_basin['raw_cost']))
+    local_score_upper = float(
+        model.source_score(local_basin['raw_cost'] - noise_margin)
+    )
+    global_score = float(model.source_score(global_basin['raw_cost']))
+    global_score_lower = float(
+        model.source_score(global_basin['raw_cost'] + noise_margin)
+    )
+    if local_score_upper >= TOPOLOGY_GOAL_SCORE_THRESHOLD:
+        raise ValueError(
+            'topology local basin reaches the global score threshold'
+        )
+    if global_score_lower < TOPOLOGY_GOAL_SCORE_THRESHOLD:
+        raise ValueError(
+            'topology global basin is below the global score threshold'
+        )
+
+    ring_yaws = _periodic_axis(
+        2.0 * math.pi,
+        TOPOLOGY_RING_YAW_SPACING_RAD,
+        0.0,
+    )
+    ring_costs = []
+    for angle in np.linspace(
+        0.0,
+        2.0 * math.pi,
+        TOPOLOGY_RING_POSITION_SAMPLES,
+        endpoint=False,
+    ):
+        ring_x = (
+            local_basin['x_m']
+            + TOPOLOGY_RING_RADIUS_M * math.cos(angle)
+        )
+        ring_y = (
+            local_basin['y_m']
+            + TOPOLOGY_RING_RADIUS_M * math.sin(angle)
+        )
+        if not (
+            domain[0] <= ring_x <= domain[1]
+            and domain[2] <= ring_y <= domain[3]
+        ):
+            raise ValueError('topology local-basin ring leaves valid domain')
+        ring_costs.append(min(
+            evaluate_raw_cost(model, ring_x, ring_y, yaw)
+            for yaw in ring_yaws
+        ))
+    ring_minimum = min(ring_costs)
+    basin_depth = ring_minimum - local_basin['raw_cost']
+    conservative_depth = basin_depth - 2.0 * noise_margin
+    if conservative_depth < TOPOLOGY_MINIMUM_BASIN_DEPTH:
+        raise ValueError(
+            'topology local basin does not retain minimum basin depth'
+        )
+
+    raw_separation = local_basin['raw_cost'] - global_basin['raw_cost']
+    conservative_raw_separation = raw_separation - 2.0 * noise_margin
+    if (
+        conservative_raw_separation
+        < TOPOLOGY_MINIMUM_RAW_COST_SEPARATION
+    ):
+        raise ValueError('topology raw-cost ordering is not resolvable')
+    basin_separation = math.hypot(
+        local_basin['x_m'] - global_basin['x_m'],
+        local_basin['y_m'] - global_basin['y_m'],
+    )
+    if basin_separation < TOPOLOGY_MINIMUM_BASIN_SEPARATION_M:
+        raise ValueError('topology basin centers are not distinct')
+
+    approach_x = local_source['x_m'] - start_record['x_m']
+    approach_y = local_source['y_m'] - start_record['y_m']
+    onward_x = global_source['x_m'] - local_source['x_m']
+    onward_y = global_source['y_m'] - local_source['y_m']
+    start_to_local = math.hypot(approach_x, approach_y)
+    local_to_global = math.hypot(onward_x, onward_y)
+    start_to_global = math.hypot(
+        global_source['x_m'] - start_record['x_m'],
+        global_source['y_m'] - start_record['y_m'],
+    )
+    if start_to_local <= 0.0 or local_to_global <= 0.0:
+        raise ValueError('topology route vectors must be nonzero')
+    if start_to_local > TOPOLOGY_MAXIMUM_START_TO_LOCAL_M:
+        raise ValueError('topology local source is beyond the test horizon')
+    global_distance_advantage = start_to_global - start_to_local
+    if (
+        global_distance_advantage
+        < TOPOLOGY_MINIMUM_GLOBAL_DISTANCE_ADVANTAGE_M
+    ):
+        raise ValueError('topology does not establish a local-first horizon')
+    forward_alignment = (
+        approach_x * onward_x + approach_y * onward_y
+    ) / (start_to_local * local_to_global)
+    if forward_alignment < TOPOLOGY_MINIMUM_FORWARD_ALIGNMENT:
+        raise ValueError('topology route is outside the forward envelope')
+
+    disturbance_record = deepcopy(disturbances or {})
+    record = {
+        'schema_version': TOPOLOGY_SCHEMA_VERSION,
+        'method': 'authoritative_two_source_local_first_topology',
+        'source_count': len(normalized_sources),
+        'source_list_sha256': canonical_sha256(normalized_sources),
+        'disturbances_sha256': canonical_sha256(disturbance_record),
+        'bounds_sha256': canonical_sha256(bounds),
+        'start_sha256': canonical_sha256(start_record),
+        'bounds_m': bounds,
+        'wall_margin_m': margin,
+        'domain': {
+            'x_min_m': domain[0],
+            'x_max_m': domain[1],
+            'y_min_m': domain[2],
+            'y_max_m': domain[3],
+        },
+        'start': start_record,
+        'local_source_id': local_id,
+        'global_source_id': global_id,
+        'local_basin': local_basin | {
+            'source_score': local_score,
+            'noise_adjusted_source_score_upper_bound': local_score_upper,
+        },
+        'global_basin': global_basin | {
+            'source_score': global_score,
+            'noise_adjusted_source_score_lower_bound': global_score_lower,
+        },
+        'ring_minimum_raw_cost': ring_minimum,
+        'basin_depth_raw_cost': basin_depth,
+        'noise_margin_raw_cost': noise_margin,
+        'noise_adjusted_basin_depth_raw_cost': conservative_depth,
+        'raw_cost_separation': raw_separation,
+        'noise_adjusted_raw_cost_separation': (
+            conservative_raw_separation
+        ),
+        'basin_center_separation_m': basin_separation,
+        'route': {
+            'start_to_local_m': start_to_local,
+            'local_to_global_m': local_to_global,
+            'start_to_global_m': start_to_global,
+            'global_distance_advantage_m': global_distance_advantage,
+            'forward_alignment': forward_alignment,
+        },
+        'thresholds': {
+            'search_radius_m': TOPOLOGY_SEARCH_RADIUS_M,
+            'local_grid_points_per_axis': (
+                TOPOLOGY_LOCAL_GRID_POINTS_PER_AXIS
+            ),
+            'local_yaw_spacing_rad': TOPOLOGY_LOCAL_YAW_SPACING_RAD,
+            'ring_radius_m': TOPOLOGY_RING_RADIUS_M,
+            'ring_position_samples': TOPOLOGY_RING_POSITION_SAMPLES,
+            'ring_yaw_spacing_rad': TOPOLOGY_RING_YAW_SPACING_RAD,
+            'minimum_basin_depth_raw_cost': (
+                TOPOLOGY_MINIMUM_BASIN_DEPTH
+            ),
+            'goal_score_threshold': TOPOLOGY_GOAL_SCORE_THRESHOLD,
+            'minimum_raw_cost_separation': (
+                TOPOLOGY_MINIMUM_RAW_COST_SEPARATION
+            ),
+            'minimum_basin_separation_m': (
+                TOPOLOGY_MINIMUM_BASIN_SEPARATION_M
+            ),
+            'maximum_start_to_local_m': (
+                TOPOLOGY_MAXIMUM_START_TO_LOCAL_M
+            ),
+            'minimum_global_distance_advantage_m': (
+                TOPOLOGY_MINIMUM_GLOBAL_DISTANCE_ADVANTAGE_M
+            ),
+            'minimum_forward_alignment': (
+                TOPOLOGY_MINIMUM_FORWARD_ALIGNMENT
+            ),
+        },
+        'model_config_sha256': file_sha256(config_path),
+    } | {
+        key: value
+        for key, value in _sensor_binding_record(sensor_binding).items()
+        if not key.endswith('_path')
+    }
+    record['result_sha256'] = canonical_sha256(record)
+    return record
+
+
+def validate_two_source_topology_qualification(
+    record,
+    sources,
+    start,
+    bounds_m,
+    disturbances,
+    local_source_id,
+    global_source_id,
+    *,
+    model_config_path=MODEL_CONFIG_PATH,
+    sensor_transform_config_path=SENSOR_TRANSFORM_CONFIG_PATH,
+    sensor_geometry_path=SENSOR_GEOMETRY_PATH,
+):
+    """Recompute and validate a topology record against all bound inputs."""
+    if not isinstance(record, dict):
+        raise ValueError('topology qualification must be a mapping')
+    candidate = deepcopy(record)
+    recorded_hash = candidate.pop('result_sha256', None)
+    if not isinstance(recorded_hash, str) or len(recorded_hash) != 64:
+        raise ValueError('topology qualification result_sha256 is invalid')
+    if canonical_sha256(candidate) != recorded_hash:
+        raise ValueError('topology qualification result hash drifted')
+    expected = derive_two_source_topology_qualification(
+        sources,
+        start,
+        bounds_m,
+        disturbances,
+        local_source_id,
+        global_source_id,
+        model_config_path=model_config_path,
+        sensor_transform_config_path=sensor_transform_config_path,
+        sensor_geometry_path=sensor_geometry_path,
+    )
+    if record != expected:
+        raise ValueError('topology qualification binding or result drifted')
+    return deepcopy(record)
 
 
 def _axis(minimum, maximum, spacing, offset):
