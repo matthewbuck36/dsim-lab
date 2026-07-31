@@ -148,6 +148,7 @@ LAUNCH_OVERRIDES = {
     'known_source_count',
     'candidate_cost_rotation_period_sec',
     'candidate_cost_required_rotations',
+    'candidate_cost_pretrigger_rotations',
     'candidate_cost_mad_scale',
     'minimum_radial_progress_m',
     'open_field_escape_assist_enabled',
@@ -400,6 +401,7 @@ SCHEMA_V7_LAUNCH_OVERRIDES = {
 }
 SCHEMA_V8_LAUNCH_OVERRIDES = {
     'candidate_cost_mad_scale',
+    'candidate_cost_pretrigger_rotations',
     'candidate_cost_required_rotations',
     'candidate_cost_rotation_period_sec',
     'convergence_confirmation_dwell_sec',
@@ -564,6 +566,33 @@ def _validate_correction_overrides(overrides, ablations, location):
     ):
         if name in overrides:
             _positive_integer(overrides[name], f'{location}.{name}')
+    candidate_cost_pretrigger_rotations = overrides.get(
+        'candidate_cost_pretrigger_rotations',
+        0,
+    )
+    if (
+        isinstance(candidate_cost_pretrigger_rotations, bool)
+        or not isinstance(candidate_cost_pretrigger_rotations, int)
+        or candidate_cost_pretrigger_rotations < 0
+    ):
+        raise ValueError(
+            f'{location}.candidate_cost_pretrigger_rotations must be a '
+            'nonnegative integer'
+        )
+    if candidate_cost_pretrigger_rotations > 0:
+        if classification_mode != 'counted_candidates':
+            raise ValueError(
+                f'{location} candidate pretrigger rotations require '
+                'counted-candidate classification'
+            )
+        if candidate_cost_pretrigger_rotations < overrides.get(
+            'candidate_cost_required_rotations',
+            1,
+        ):
+            raise ValueError(
+                f'{location}.candidate_cost_pretrigger_rotations must be '
+                'zero or at least candidate_cost_required_rotations'
+            )
     operating_bounds_enabled = overrides.get(
         'operating_bounds_enabled',
         True,

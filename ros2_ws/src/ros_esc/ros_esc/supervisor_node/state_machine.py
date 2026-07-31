@@ -68,6 +68,7 @@ class StateMachineConfig:
     known_source_count: int = 0
     candidate_cost_rotation_period_sec: float = 3.0
     candidate_cost_required_rotations: int = 2
+    candidate_cost_pretrigger_rotations: int = 0
     candidate_cost_mad_scale: float = 3.0
 
     def __post_init__(self):
@@ -111,6 +112,29 @@ class StateMachineConfig:
             raise ValueError(
                 "candidate_cost_required_rotations must be a positive integer"
             )
+        if (
+            isinstance(self.candidate_cost_pretrigger_rotations, bool)
+            or not isinstance(self.candidate_cost_pretrigger_rotations, int)
+            or self.candidate_cost_pretrigger_rotations < 0
+        ):
+            raise ValueError(
+                "candidate_cost_pretrigger_rotations must be a "
+                "nonnegative integer"
+            )
+        if self.candidate_cost_pretrigger_rotations > 0:
+            if mode != COUNTED_CANDIDATES:
+                raise ValueError(
+                    "candidate pretrigger rotations require "
+                    "counted-candidate classification"
+                )
+            if (
+                self.candidate_cost_pretrigger_rotations
+                < self.candidate_cost_required_rotations
+            ):
+                raise ValueError(
+                    "candidate_cost_pretrigger_rotations must be zero or "
+                    "at least candidate_cost_required_rotations"
+                )
         if (
             isinstance(self.max_fill_clusters, bool)
             or not isinstance(self.max_fill_clusters, int)
@@ -233,6 +257,9 @@ class CandidateCostSummary:
     mad: float
     uncertainty: float
     rotation_count: int
+    pretrigger_rotation_count: int = 0
+    verification_rotation_count: int = 0
+    available_rotation_count: int = 0
 
     @property
     def lower(self) -> float:
@@ -253,6 +280,15 @@ class CandidateCostSummary:
             and not isinstance(self.rotation_count, bool)
             and isinstance(self.rotation_count, int)
             and self.rotation_count > 0
+            and not isinstance(self.pretrigger_rotation_count, bool)
+            and isinstance(self.pretrigger_rotation_count, int)
+            and self.pretrigger_rotation_count >= 0
+            and not isinstance(self.verification_rotation_count, bool)
+            and isinstance(self.verification_rotation_count, int)
+            and self.verification_rotation_count >= 0
+            and not isinstance(self.available_rotation_count, bool)
+            and isinstance(self.available_rotation_count, int)
+            and self.available_rotation_count >= 0
         )
 
 
@@ -341,6 +377,7 @@ class RotationCostWindow:
         rotation_period_sec: float,
         required_rotations: int = 2,
         mad_scale: float = 3.0,
+        retained_rotations: Optional[int] = None,
     ):
         rotation_period_sec = float(rotation_period_sec)
         if (
@@ -354,10 +391,22 @@ class RotationCostWindow:
             raise ValueError("rotation_period_sec must be finite and positive")
         if not math.isfinite(mad_scale) or mad_scale < 0.0:
             raise ValueError("mad_scale must be finite and nonnegative")
+        if retained_rotations is None:
+            retained_rotations = required_rotations
+        if (
+            isinstance(retained_rotations, bool)
+            or not isinstance(retained_rotations, int)
+            or retained_rotations < required_rotations
+        ):
+            raise ValueError(
+                "retained_rotations must be an integer no smaller than "
+                "required_rotations"
+            )
         self.rotation_period_sec = rotation_period_sec
         self.required_rotations = required_rotations
         self.mad_scale = mad_scale
-        self.completed_minima = deque(maxlen=required_rotations)
+        self.retained_rotations = retained_rotations
+        self.completed_minima = deque(maxlen=retained_rotations)
         self.window_started_sec = None
         self.current_minimum = None
         self.last_stamp_sec = None
@@ -404,7 +453,7 @@ class RotationCostWindow:
 
     @property
     def ready(self) -> bool:
-        return len(self.completed_minima) == self.required_rotations
+        return len(self.completed_minima) >= self.required_rotations
 
     @property
     def evidence_duration_sec(self) -> float:
@@ -414,16 +463,59 @@ class RotationCostWindow:
     def summary(self) -> Optional[CandidateCostSummary]:
         if not self.ready:
             return None
-        values = tuple(float(value) for value in self.completed_minima)
-        estimate = float(statistics.median(values))
+        return self.summarize_minima(
+            tuple(self.completed_minima),
+            required_rotations=self.required_rotations,
+            mad_scale=self.mad_scale,
+            verification_rotation_count=len(self.completed_minima),
+        )
+
+    @staticmethod
+    def summarize_minima(
+        values,
+        required_rotations: int,
+        mad_scale: float,
+        pretrigger_rotation_count: int = 0,
+        verification_rotation_count: int = 0,
+    ) -> Optional[CandidateCostSummary]:
+        """Summarize the strongest repeated minima in a bounded pool."""
+
+        if (
+            isinstance(required_rotations, bool)
+            or not isinstance(required_rotations, int)
+            or required_rotations <= 0
+        ):
+            raise ValueError("required_rotations must be a positive integer")
+        mad_scale = float(mad_scale)
+        if not math.isfinite(mad_scale) or mad_scale < 0.0:
+            raise ValueError("mad_scale must be finite and nonnegative")
+        if (
+            isinstance(pretrigger_rotation_count, bool)
+            or not isinstance(pretrigger_rotation_count, int)
+            or pretrigger_rotation_count < 0
+            or isinstance(verification_rotation_count, bool)
+            or not isinstance(verification_rotation_count, int)
+            or verification_rotation_count < 0
+        ):
+            raise ValueError("rotation provenance counts must be nonnegative")
+        finite_values = tuple(float(value) for value in values)
+        if any(not math.isfinite(value) for value in finite_values):
+            raise ValueError("rotation minima must be finite")
+        if len(finite_values) < required_rotations:
+            return None
+        selected = tuple(sorted(finite_values)[:required_rotations])
+        estimate = float(statistics.median(selected))
         mad = float(
-            statistics.median(abs(value - estimate) for value in values)
+            statistics.median(abs(value - estimate) for value in selected)
         )
         return CandidateCostSummary(
             estimate=estimate,
             mad=mad,
-            uncertainty=float(self.mad_scale * mad),
-            rotation_count=len(values),
+            uncertainty=float(mad_scale * mad),
+            rotation_count=len(selected),
+            pretrigger_rotation_count=pretrigger_rotation_count,
+            verification_rotation_count=verification_rotation_count,
+            available_rotation_count=len(finite_values),
         )
 
 

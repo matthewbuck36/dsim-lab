@@ -11263,3 +11263,167 @@ GAZEBO PROHIBITED.**
 Regenerate the checkpoint with this status, rerun context and whitespace
 checks, and commit the bounded evidence/amendment. Then begin M3.2
 implementation without Gazebo.
+
+## Phase 08.8 M3.1 failure committed boundary — 2026-07-30
+
+The retained v8.1 failure, complete diagnosis, plot/table index, M3.2 Plan
+amendment, status, and material checkpoint were committed at:
+
+```text
+c11ad74 phase 08.8: retain failed v8.1 primary probe
+```
+
+Post-commit checks passed with a clean worktree, complete Phase 08
+implementation context, and no matching Gazebo or scenario process. That
+commit authorized M3.2 implementation without Gazebo; it did not authorize a
+v8.1 retry or any v8.2 dispatch.
+
+## Phase 08.8 M3.2 no-Gazebo qualification — 2026-07-30
+
+The separately versioned, default-off pretrigger raw-cost correction is
+implemented and qualified.
+
+Implementation:
+
+```text
+new parameter:
+  candidate_cost_pretrigger_rotations
+default:
+  0
+v8.2 value:
+  6
+required repeated rotations:
+  3
+bounded raw history:
+  18.0 s
+ranking:
+  unchanged median/MAD strict nonoverlap
+```
+
+Only complete `SEARCH`-epoch raw-cost rotation minima are retained. The latest
+six freeze on `SEARCH -> VERIFY_EXTREMUM`, the normal three verification
+rotations must still complete, and the three most-negative repeated minima
+from the pooled evidence are ranked. All history resets for the next search
+epoch. No modified cost, route, pose, source coordinate, role, evaluator
+geometry, Vicon value, or planner enters the estimator.
+
+Final no-Gazebo evidence:
+
+```text
+focused controller/detector/core/legacy:
+  199 passed in 7.24 s
+  /tmp/phase08_8_2_focused_final.xml
+  b11b2c7e9fc2d7b53480140be0a33ca11d667aa145ffaee4eb60b6e6951f7125
+
+scenario/schema/Phase 08 validator:
+  395 passed, 1 skipped in 96.17 s
+  /tmp/phase08_8_2_scenario.xml
+  dcd8042885b2a1dd77fb0b045dc05a89054e740cbc4ff4b67ba7086e4a876dc6
+
+analyzer/plots:
+  18 passed in 6.29 s
+  /tmp/phase08_8_2_analysis.xml
+  629d0481f36c7a3adf2ec568c1fd1cc63c6fb5ec3404a2cadc8233632eabc3a3
+
+broad ROS-independent:
+  769 passed, 2 skipped in 134.10 s
+  /tmp/phase08_8_2_broad.xml
+  2083878c4169171926e310a4e8b36bc0c88dd2d089b6ec63903275d1500634e7
+```
+
+The skips are the unchanged environment-conditional Gazebo integrations.
+Fatal changed-Python lint, compilation, launch XML, all four YAML files,
+`git diff --check`, and Phase 08 implementation context pass.
+
+The fresh isolated build at `/tmp/phase08_8_2_release_qual` finished all three
+packages in `12.0 s`. Source/install parity passes for all `8/8` final runtime
+owners. Both a default and opted-in installed supervisor constructed without
+startup error under bounded five-second checks.
+
+Installed nonexecuting launch evidence:
+
+```text
+/tmp/phase08_8_2_release_show_args.txt
+  ed13d87d3dea6005b1697a17136f21287823cf9204fe7642d1696fbaaa0499b0
+
+/tmp/phase08_8_2_release_launch_description.txt
+  c373685f6c729df3170e110a88a6d89cec0350896a640e50e0f0503328ffd555
+```
+
+All seventeen installed dry-run cases resolve with zero unsupported cases:
+
+```text
+primary visible:
+  1 / 0
+  f5a9805dd44494c6871e3a01a4edb34e0d8a48cdb0577da50f1ce8b5700347e5
+primary repeats:
+  10 / 0
+  1ed3f5a504e0f7d538e7948326aa43e4c791c578f4dce3ee10530d8f6b27a148
+secondary visible:
+  1 / 0
+  f39b69aa06b662ea7f4a9e853afbc438e187da17ec75344ae60693754a315d2a
+secondary repeats:
+  5 / 0
+  fae1e60b0c1593d95049977afd0337b03137c22f179c340436d638909e3f85c5
+```
+
+Dry resolution created no campaign root. Historical world and V6 selection
+hashes remain exact. The failed v8 and v8.1 evidence remains failed and
+unchanged.
+
+Durable qualification:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m3_2_no_gazebo_qualification.md
+```
+
+No Gazebo, scenario recording, analyzer, or physical process occurred during
+M3.2 qualification.
+
+## Current milestone
+
+**PHASE 08.8 M3.2 — NO-GAZEBO QUALIFIED /
+MATERIAL CHECKPOINT AND COMMIT PENDING /
+GAZEBO STILL PROHIBITED.**
+
+## Next criterion
+
+Run the Phase 08 material checkpoint, include this status and the durable M3.2
+qualification, inspect the final diff, and create the authorized bounded
+commit. Only then execute the installed v8.2 primary visible probe, seed
+`19001`, exactly once.
+
+## Phase 08.8 M3.2 material checkpoint — 2026-07-30
+
+The qualified M3.2 implementation and its complete no-Gazebo validation record
+received the required precommit material checkpoint:
+
+```text
+docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
+
+generated:
+  2026-07-31T05:40:49+00:00
+base HEAD:
+  c11ad74a1b8000d802c52b04dd53c7579fd13a55
+active subphase plan:
+  docs/codex/gesc_gaussian/plans/phase_08_8_plan.md
+diff check:
+  PASS
+```
+
+No Gazebo, scenario, recording, analyzer, or physical process ran while
+creating the checkpoint.
+
+## Current milestone
+
+**PHASE 08.8 M3.2 — NO-GAZEBO QUALIFIED AND CHECKPOINTED /
+COMMIT PENDING /
+GAZEBO STILL PROHIBITED.**
+
+## Next criterion
+
+Regenerate the checkpoint so it includes this status update, rerun context and
+whitespace checks, inspect the complete commit scope, and create the authorized
+bounded commit. Only the committed boundary authorizes the one fixed v8.2
+visible probe.

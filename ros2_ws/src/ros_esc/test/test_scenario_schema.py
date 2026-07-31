@@ -182,6 +182,26 @@ V8_1_SECONDARY_REPEATS = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v8_1_secondary_repeats.yaml'
 )
+V8_2_PRIMARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_2_primary_visible_probe.yaml'
+)
+V8_2_PRIMARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_2_primary_repeats.yaml'
+)
+V8_2_SECONDARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_2_secondary_visible_probe.yaml'
+)
+V8_2_SECONDARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_2_secondary_repeats.yaml'
+)
 HISTORICAL_V2_ACTIVATION = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml'
@@ -1358,6 +1378,73 @@ def test_schema_v8_resolves_four_versioned_outward_assist_suites():
             assert 'RECENTER' in controller['forbidden_states']
             assert run['validation']['world'] is False
             assert run['validation']['contacts_enabled'] is False
+
+
+def test_schema_v8_resolves_four_versioned_pretrigger_raw_rank_suites():
+    """Bind v8.2 to bounded raw history without changing its assisted path."""
+    expected = {
+        V8_2_PRIMARY_VISIBLE_PROBE: (1, True, {19001}),
+        V8_2_PRIMARY_REPEATS: (10, False, set(range(19011, 19021))),
+        V8_2_SECONDARY_VISIBLE_PROBE: (1, True, {19051}),
+        V8_2_SECONDARY_REPEATS: (5, False, set(range(19061, 19066))),
+    }
+    for path, (run_count, gui, seeds) in expected.items():
+        suite = load_suite(path)
+        runs, unsupported = expand_suite(suite)
+
+        assert unsupported == []
+        assert len(runs) == run_count
+        assert suite['execution']['gazebo_gui'] is gui
+        assert {run['seed'] for run in runs} == seeds
+        for run in runs:
+            overrides = run['algorithm']['launch_overrides']
+            assert overrides['candidate_cost_rotation_period_sec'] == 3.0
+            assert overrides['candidate_cost_required_rotations'] == 3
+            assert overrides['candidate_cost_pretrigger_rotations'] == 6
+            assert overrides['candidate_cost_mad_scale'] == 3.0
+            assert overrides['open_field_escape_assist_enabled'] is True
+            assert overrides['operating_bounds_enabled'] is False
+            assert run['validation']['world'] is False
+            assert run['validation']['contacts_enabled'] is False
+
+
+@pytest.mark.parametrize(
+    ('value', 'match'),
+    [
+        (-1, 'nonnegative integer'),
+        (True, 'nonnegative integer'),
+        (2, 'at least candidate_cost_required_rotations'),
+    ],
+)
+def test_schema_v8_rejects_invalid_candidate_pretrigger_history(
+    tmp_path,
+    value,
+    match,
+):
+    document = yaml.safe_load(
+        V8_2_PRIMARY_VISIBLE_PROBE.read_text(encoding='utf-8')
+    )
+    document['frozen_profile']['launch_overrides'][
+        'candidate_cost_pretrigger_rotations'
+    ] = value
+
+    with pytest.raises(ValueError, match=match):
+        _load(tmp_path, document)
+
+
+def test_schema_v8_rejects_pretrigger_history_outside_counted_mode(tmp_path):
+    document = yaml.safe_load(
+        V8_2_PRIMARY_VISIBLE_PROBE.read_text(encoding='utf-8')
+    )
+    document['frozen_profile']['launch_overrides'][
+        'extremum_classification_mode'
+    ] = 'absolute_source_score'
+
+    with pytest.raises(
+        ValueError,
+        match='pretrigger rotations require counted-candidate',
+    ):
+        _load(tmp_path, document)
 
 
 @pytest.mark.parametrize(

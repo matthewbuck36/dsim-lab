@@ -190,6 +190,9 @@ class SupervisorNode(Node):
                 candidate_cost_required_rotations=self._positive_int(
                     "candidate_cost_required_rotations"
                 ),
+                candidate_cost_pretrigger_rotations=self._nonnegative_int(
+                    "candidate_cost_pretrigger_rotations"
+                ),
                 candidate_cost_mad_scale=self._nonnegative_float(
                     "candidate_cost_mad_scale"
                 ),
@@ -294,6 +297,19 @@ class SupervisorNode(Node):
             self.machine.config.candidate_cost_required_rotations,
             self.machine.config.candidate_cost_mad_scale,
         )
+        self.candidate_cost_search_window = (
+            RotationCostWindow(
+                self.machine.config.candidate_cost_rotation_period_sec,
+                self.machine.config.candidate_cost_required_rotations,
+                self.machine.config.candidate_cost_mad_scale,
+                retained_rotations=(
+                    self.machine.config.candidate_cost_pretrigger_rotations
+                ),
+            )
+            if self.machine.config.candidate_cost_pretrigger_rotations > 0
+            else None
+        )
+        self.candidate_cost_pretrigger_minima = ()
         self.goal_score_verification_margin_sec = (
             self.machine.config.verification_max_sec
             - self.goal_score_window.evidence_duration_sec
@@ -592,6 +608,7 @@ class SupervisorNode(Node):
             "known_source_count": 0,
             "candidate_cost_rotation_period_sec": 3.0,
             "candidate_cost_required_rotations": 2,
+            "candidate_cost_pretrigger_rotations": 0,
             "candidate_cost_mad_scale": 3.0,
             "goal_hold_sec": 3.0,
             "undesired_score_hold_sec": 3.0,
@@ -761,10 +778,24 @@ class SupervisorNode(Node):
             and np.all(np.isfinite(scores))
         )
         receipt_sec = self._now_sec()
+        counted_mode = (
+            self.machine.config.extremum_classification_mode
+            == COUNTED_CANDIDATES
+        )
+        if (
+            self.candidate_cost_search_window is not None
+            and self.machine.state == State.SEARCH
+        ):
+            if self.latest_source_valid:
+                self.candidate_cost_search_window.update(
+                    receipt_sec,
+                    float(np.min(raw)),
+                )
+            else:
+                self.candidate_cost_search_window.reset()
         if (
             self.machine.state == State.VERIFY_EXTREMUM
-            and self.machine.config.extremum_classification_mode
-            != COUNTED_CANDIDATES
+            and not counted_mode
             and self.latest_source_score_valid
         ):
             self.goal_score_window.update(receipt_sec, float(np.max(scores)))
@@ -773,8 +804,7 @@ class SupervisorNode(Node):
         self.latest_source_score = self.goal_score_window.score
         if (
             self.machine.state == State.VERIFY_EXTREMUM
-            and self.machine.config.extremum_classification_mode
-            == COUNTED_CANDIDATES
+            and counted_mode
             and self.latest_source_valid
         ):
             self.candidate_cost_window.update(
@@ -783,13 +813,36 @@ class SupervisorNode(Node):
             )
         else:
             self.candidate_cost_window.reset()
-        self.latest_candidate_cost_summary = self.candidate_cost_window.summary
+        self.latest_candidate_cost_summary = (
+            self._candidate_cost_summary()
+        )
         self.latest_source_timestamp = (
             float(msg.source_timestamp)
             if msg.source_timestamp_valid and math.isfinite(msg.source_timestamp)
             else None
         )
         self.latest_source_receipt_sec = receipt_sec
+
+    def _candidate_cost_summary(self):
+        """Combine frozen search and verification rotation minima."""
+
+        if not self.candidate_cost_window.ready:
+            return None
+        if self.candidate_cost_search_window is None:
+            return self.candidate_cost_window.summary
+        verification = tuple(
+            self.candidate_cost_window.completed_minima
+        )
+        pretrigger = tuple(self.candidate_cost_pretrigger_minima)
+        return RotationCostWindow.summarize_minima(
+            pretrigger + verification,
+            required_rotations=(
+                self.machine.config.candidate_cost_required_rotations
+            ),
+            mad_scale=self.machine.config.candidate_cost_mad_scale,
+            pretrigger_rotation_count=len(pretrigger),
+            verification_rotation_count=len(verification),
+        )
 
     def convergence_callback(self, msg):
         data = np.asarray(msg.data, dtype=np.float64)
@@ -1140,6 +1193,13 @@ class SupervisorNode(Node):
 
     def _handle_transition(self, transition, now_sec):
         if transition.current == State.VERIFY_EXTREMUM:
+            if self.candidate_cost_search_window is not None:
+                self.candidate_cost_pretrigger_minima = tuple(
+                    self.candidate_cost_search_window.completed_minima
+                )
+                self.candidate_cost_search_window.reset()
+            else:
+                self.candidate_cost_pretrigger_minima = ()
             self.goal_score_window.reset()
             self.latest_source_score = None
             self.candidate_cost_window.reset()
@@ -1147,6 +1207,16 @@ class SupervisorNode(Node):
         if "escape stalled" in transition.reason:
             self._publish_stall_event(now_sec, transition.previous)
         self._publish_transition(transition, now_sec)
+        if transition.current == State.SEARCH:
+            self._reset_candidate_cost_search_epoch()
+        elif transition.current in (
+            State.DESIGN_OR_MERGE_FILL,
+            State.GOAL_HOLD,
+            State.FAILSAFE,
+        ):
+            self.candidate_cost_pretrigger_minima = ()
+            if self.candidate_cost_search_window is not None:
+                self.candidate_cost_search_window.reset()
         if transition.current == State.DESIGN_OR_MERGE_FILL:
             if self.latest_convergence is None:
                 self._force_failsafe(
@@ -1220,6 +1290,7 @@ class SupervisorNode(Node):
                     geometry.approach_y,
                 ],
             )
+
         if transition.current == State.ESCAPE_ASSIST:
             failure = (
                 self._ensure_open_field_escape_direction()
@@ -1345,6 +1416,15 @@ class SupervisorNode(Node):
                     if failure is not None:
                         self._force_failsafe(now_sec, failure)
                         return
+
+    def _reset_candidate_cost_search_epoch(self):
+        """Start one bounded raw-cost history for a fresh search epoch."""
+
+        self.candidate_cost_pretrigger_minima = ()
+        if self.candidate_cost_search_window is not None:
+            self.candidate_cost_search_window.reset()
+        self.candidate_cost_window.reset()
+        self.latest_candidate_cost_summary = None
 
     def _force_failsafe(self, now_sec, reason):
         self.current_supervisor_command = Twist()
@@ -2606,6 +2686,9 @@ class SupervisorNode(Node):
             "candidate_raw_cost_lower",
             "candidate_raw_cost_upper",
             "candidate_rotation_count",
+            "candidate_pretrigger_rotation_count",
+            "candidate_verification_rotation_count",
+            "candidate_available_rotation_count",
             "candidate_ordinal",
             "filled_candidate_count",
             "known_source_count",
@@ -2617,6 +2700,9 @@ class SupervisorNode(Node):
             summary.lower,
             summary.upper,
             float(summary.rotation_count),
+            float(summary.pretrigger_rotation_count),
+            float(summary.verification_rotation_count),
+            float(summary.available_rotation_count),
             float(filled_count + 1),
             float(filled_count),
             float(self.machine.config.known_source_count),
@@ -2687,6 +2773,7 @@ class SupervisorNode(Node):
             "known_source_count",
             "candidate_cost_rotation_period_sec",
             "candidate_cost_required_rotations",
+            "candidate_cost_pretrigger_rotations",
             "candidate_cost_mad_scale",
             "candidate_cost_evidence_duration_sec",
             "candidate_cost_verification_margin_sec",
@@ -2766,6 +2853,9 @@ class SupervisorNode(Node):
             float(self.machine.config.known_source_count),
             self.candidate_cost_window.rotation_period_sec,
             float(self.candidate_cost_window.required_rotations),
+            float(
+                self.machine.config.candidate_cost_pretrigger_rotations
+            ),
             self.candidate_cost_window.mad_scale,
             self.candidate_cost_window.evidence_duration_sec,
             self.candidate_cost_verification_margin_sec,

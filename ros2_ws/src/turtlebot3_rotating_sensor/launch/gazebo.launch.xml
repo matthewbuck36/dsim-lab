@@ -149,6 +149,7 @@
     <arg name="known_source_count" default="0"/>
     <arg name="candidate_cost_rotation_period_sec" default="3.0"/>
     <arg name="candidate_cost_required_rotations" default="2"/>
+    <arg name="candidate_cost_pretrigger_rotations" default="0"/>
     <arg name="candidate_cost_mad_scale" default="3.0"/>
     <arg name="goal_hold_sec" default="3.0"/>
     <arg name="undesired_score_hold_sec" default="3.0"/>
@@ -841,6 +842,7 @@
             -p known_source_count:=$(var known_source_count)
             -p candidate_cost_rotation_period_sec:=$(var candidate_cost_rotation_period_sec)
             -p candidate_cost_required_rotations:=$(var candidate_cost_required_rotations)
+            -p candidate_cost_pretrigger_rotations:=$(var candidate_cost_pretrigger_rotations)
             -p candidate_cost_mad_scale:=$(var candidate_cost_mad_scale)
             -p goal_hold_sec:=$(var goal_hold_sec)
             -p undesired_score_hold_sec:=$(var undesired_score_hold_sec)

@@ -361,6 +361,108 @@ def test_counted_candidate_adapter_fills_first_then_ranks_raw_cost():
         rclpy.shutdown()
 
 
+def test_counted_candidate_pretrigger_history_uses_raw_and_resets_epoch():
+    rclpy.init()
+    node = SupervisorNode(
+        parameter_overrides=[
+            Parameter(
+                "extremum_classification_mode",
+                value="counted_candidates",
+            ),
+            Parameter("known_source_count", value=2),
+            Parameter("max_fill_clusters", value=1),
+            Parameter("candidate_cost_rotation_period_sec", value=1.0),
+            Parameter("candidate_cost_required_rotations", value=3),
+            Parameter("candidate_cost_pretrigger_rotations", value=6),
+            Parameter("candidate_cost_mad_scale", value=3.0),
+            Parameter("recenter_after_escape", value=False),
+        ]
+    )
+    now = [0.0]
+    node._now_sec = lambda: now[0]
+    try:
+        for stamp, raw_cost in enumerate(
+            (-3.8, -3.8, -3.8, -0.03, -0.02, -0.01, -0.01),
+        ):
+            now[0] = float(stamp)
+            source = _source(raw_cost=raw_cost)
+            source.augmented_cost = [-100.0]
+            source.augmented_cost_valid = True
+            node.source_callback(source)
+
+        assert tuple(
+            node.candidate_cost_search_window.completed_minima
+        ) == pytest.approx(
+            (-3.8, -3.8, -3.8, -0.03, -0.02, -0.01),
+        )
+
+        node.machine.state = State.VERIFY_EXTREMUM
+        node._handle_transition(
+            Transition(
+                State.SEARCH,
+                State.VERIFY_EXTREMUM,
+                "detector convergence confirmation received",
+            ),
+            now[0],
+        )
+        assert node.candidate_cost_pretrigger_minima == pytest.approx(
+            (-3.8, -3.8, -3.8, -0.03, -0.02, -0.01),
+        )
+
+        for offset, raw_cost in enumerate(
+            (-0.02, -0.01, -0.03, -0.02),
+            start=1,
+        ):
+            now[0] = 6.0 + float(offset)
+            source = _source(raw_cost=raw_cost)
+            source.augmented_cost = [-100.0]
+            source.augmented_cost_valid = True
+            node.source_callback(source)
+
+        summary = node.latest_candidate_cost_summary
+        assert summary.estimate == pytest.approx(-3.8)
+        assert summary.mad == pytest.approx(0.0)
+        assert summary.rotation_count == 3
+        assert summary.pretrigger_rotation_count == 6
+        assert summary.verification_rotation_count == 3
+        assert summary.available_rotation_count == 9
+
+        names, values = node._candidate_evidence(summary)
+        evidence = dict(zip(names, values))
+        assert evidence["candidate_pretrigger_rotation_count"] == 6.0
+        assert evidence["candidate_verification_rotation_count"] == 3.0
+        assert evidence["candidate_available_rotation_count"] == 9.0
+
+        node.machine.state = State.SEARCH
+        node._handle_transition(
+            Transition(
+                State.VERIFY_EXTREMUM,
+                State.SEARCH,
+                "counted candidate not strictly stronger; resume search",
+            ),
+            now[0],
+        )
+        assert node.candidate_cost_pretrigger_minima == ()
+        assert not node.candidate_cost_search_window.completed_minima
+        assert node.candidate_cost_window.ready is False
+        assert node.latest_candidate_cost_summary is None
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_candidate_pretrigger_history_is_default_off():
+    rclpy.init()
+    node = SupervisorNode()
+    try:
+        assert node.machine.config.candidate_cost_pretrigger_rotations == 0
+        assert node.candidate_cost_search_window is None
+        assert node.candidate_cost_pretrigger_minima == ()
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
 def test_open_field_disables_bounds_without_weakening_explicit_stop():
     rclpy.init()
     node = SupervisorNode(

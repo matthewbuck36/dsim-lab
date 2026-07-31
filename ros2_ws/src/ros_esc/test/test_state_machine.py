@@ -280,6 +280,52 @@ def test_rotation_cost_window_uses_rotation_minima_median_and_mad():
     assert window.summary.upper == pytest.approx(0.0)
 
 
+def test_rotation_cost_window_selects_repeated_strongest_minima_from_pool():
+    window = RotationCostWindow(
+        rotation_period_sec=1.0,
+        required_rotations=3,
+        mad_scale=3.0,
+        retained_rotations=6,
+    )
+    for stamp, value in enumerate(
+        (-0.1, -2.0, -0.2, -4.0, -3.0, -0.3, -0.4),
+    ):
+        window.update(float(stamp), value)
+
+    assert tuple(window.completed_minima) == (
+        -0.1,
+        -2.0,
+        -0.2,
+        -4.0,
+        -3.0,
+        -0.3,
+    )
+    assert window.ready is True
+    assert window.summary.estimate == pytest.approx(-3.0)
+    assert window.summary.mad == pytest.approx(1.0)
+    assert window.summary.rotation_count == 3
+    assert window.summary.pretrigger_rotation_count == 0
+    assert window.summary.verification_rotation_count == 6
+    assert window.summary.available_rotation_count == 6
+
+
+def test_rotation_cost_summary_combines_bounded_pretrigger_and_verification():
+    summary = RotationCostWindow.summarize_minima(
+        (-3.8, -3.8, -0.03, -0.02, -0.02, -0.01),
+        required_rotations=3,
+        mad_scale=3.0,
+        pretrigger_rotation_count=3,
+        verification_rotation_count=3,
+    )
+
+    assert summary.estimate == pytest.approx(-3.8)
+    assert summary.mad == pytest.approx(0.0)
+    assert summary.pretrigger_rotation_count == 3
+    assert summary.verification_rotation_count == 3
+    assert summary.available_rotation_count == 6
+    assert summary.rotation_count == 3
+
+
 def test_rotation_cost_window_discards_gap_and_rejects_invalid_input():
     window = RotationCostWindow(3.0, required_rotations=2)
     window.update(0.0, -1.0)
@@ -313,6 +359,18 @@ def test_rotation_cost_window_rejects_invalid_configuration(
             rotation_period_sec,
             required_rotations,
             mad_scale,
+        )
+
+
+@pytest.mark.parametrize("retained_rotations", [True, 0, 2])
+def test_rotation_cost_window_rejects_too_small_retained_pool(
+    retained_rotations,
+):
+    with pytest.raises(ValueError):
+        RotationCostWindow(
+            3.0,
+            required_rotations=3,
+            retained_rotations=retained_rotations,
         )
 
 
@@ -498,6 +556,22 @@ def test_counted_incomplete_rotation_evidence_times_out_without_classification()
         },
         {
             "candidate_cost_mad_scale": math.nan,
+        },
+        {
+            "candidate_cost_pretrigger_rotations": -1,
+        },
+        {
+            "candidate_cost_pretrigger_rotations": True,
+        },
+        {
+            "candidate_cost_pretrigger_rotations": 6,
+        },
+        {
+            "extremum_classification_mode": COUNTED_CANDIDATES,
+            "known_source_count": 2,
+            "max_fill_clusters": 1,
+            "candidate_cost_required_rotations": 3,
+            "candidate_cost_pretrigger_rotations": 2,
         },
     ],
 )
