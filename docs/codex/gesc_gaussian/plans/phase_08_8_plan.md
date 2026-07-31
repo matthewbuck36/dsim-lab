@@ -2281,3 +2281,29 @@ Broader light positions or intensity ratios require the separately sealed M6
 matrix and may require deliberate exploration with persistent basin/route
 memory. Three lights remain untested in Gazebo. Wall/obstacle avoidance is
 out of scope, and physical stopping remains manual operator `Ctrl+C`.
+
+### Executed M4.7 visible disposition and analysis-bundle clarification
+
+The one committed v8.6 primary visible probe, seed `19316`, passed every
+formal scenario predicate, including the schema-v10 command-owner predicate.
+It produced all expected analysis tables and all nine required plots from one
+successful `analyze_run` invocation with `analysis_failures=[]`.
+
+The analyzer summary status is `partial` only because its optional generic
+state-duration metric conservatively invalidated itself for three isolated
+pre-Stage-A `SEARCH` sampling gaps of `0.220447 s`, `0.162486 s`, and
+`0.338401 s`. Critical inputs, fresh Phase 05 validation, the typed state
+path, Stage A episode, all `1,876` evaluated assist control samples,
+post-exit handoff, terminal state, final zero, and every formal predicate are
+complete and valid.
+
+For the v8.6 runtime gates, the already-written phrase “complete analysis”
+means a successful one-time analyzer execution with the complete expected
+artifact bundle, all nine plots, and no `analysis_failures`. It does not make
+every optional generic metric an unstated acceptance predicate. Any missing
+critical input, analyzer failure, missing plot, incomplete formal evidence,
+or recording failure remains a fixed-experiment failure.
+
+This is an evidence interpretation clarification, not a parameter, code,
+scenario, timeout, acceptance-predicate, or result change. The run was not
+retried or reanalyzed.

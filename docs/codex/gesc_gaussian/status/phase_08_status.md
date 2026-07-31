@@ -14168,3 +14168,189 @@ COMMIT PENDING / GAZEBO PROHIBITED.**
 Stage this checkpoint note and checkpoint file, commit the exact dispatch
 boundary, and verify a clean tree. Then repeat the fixed preflight and execute
 the one installed GUI seed-`19316` attempt without retry or in-run change.
+
+## Phase 08.8 M4.7 fixed v8.6 primary visible result — 2026-07-31
+
+**FORMAL PASS / SUPERVISOR-OWNED EXIT PASS / STAGE B PASS /
+INFRASTRUCTURE COMPLETE / ALL NINE PLOTS RETAINED.**
+
+The one committed visible seed-`19316` attempt ran exactly once from dispatch
+HEAD `378804f` on ROS domain `230` with Gazebo GUI enabled. It was not retried
+or changed in flight.
+
+Retained run:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_6_primary_probe/
+  2026-07-31/
+  20260731T122710523689Z_simulation_phase08_v8_6_primary_visible_probe-
+  v8_6_primary_probe_r1p5_a45_h25_19316-robust__c4156158
+```
+
+Retained scenario summary:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_6_primary_probe/
+  scenario_summaries/
+  20260731T122709562239Z_phase08_v8_6_primary_visible_probe.yaml
+SHA-256:
+  de5b739c2aeb57750655c391dd427b25fef54f80a30cd7de1d8c5ac9d1fdfdb3
+```
+
+All required predicates pass:
+
+```text
+recording_complete:                 true
+cleanup_complete:                   true
+controller_goal:                    true
+ground_truth_goal:                  true
+expected_terminal_state:            true
+required_state_path:                true
+required_events:                    true
+required_event_sequence:            true
+no_forbidden_states:                true
+no_forbidden_events:                true
+local_recovery_stage:               true
+supervisor_owned_escape_assist:     true
+post_recovery_global_proximity:     true
+fill_cardinality:                   true
+```
+
+The exact state path is:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> ESCAPE_ASSIST
+-> SEARCH
+-> VERIFY_EXTREMUM
+-> GOAL_HOLD
+```
+
+Stage A completed at simulation time `184.532 s`, within `360.0 s`, with one
+local candidate, exactly one typed revision-one fill, no merge or
+supersession, and no recenter/failsafe/timeout. The selected direct
+onboard-history direction was `(0.752446653, 0.658653198)`, revision one.
+
+The formal v8.6 command-owner evidence is:
+
+```text
+evaluated assist control samples:      1,876
+fresh matching supervisor commands:    1,876
+nonzero GESC proposals suppressed:     1,876
+positive supervisor linear samples:    1,876
+measured fill-to-exit distance:         1.478864 m
+selected/actual-exit alignment:         0.999977987
+post-exit supervisor zero:              PASS
+post-exit ordinary GESC ownership:      PASS
+```
+
+Candidate two's strict raw interval was
+`[-3.8372093023255816, -3.8372093023255816]`, below candidate one's retained
+lower bound `-2.8453728221821186` by `0.9918364801434629`. `GOAL_REACHED`
+preceded the evaluator sample at simulation time `291.530 s`,
+`(3.607557, 3.569383) m`, `0.127995 m` from the declared global. Stage B
+took `106.998 s`, within `300.0 s`. Final retained distance is `0.127973 m`.
+
+The record process returned zero without timeout. Authoritative completeness,
+final readiness false, final commands zero, and cleanup pass with no
+remaining node or process.
+
+Offline analysis ran exactly once and returned zero. It produced every
+expected table and all nine plots with `analysis_failures=[]`. The summary
+status is honestly `partial` only because the optional generic state-duration
+metric invalidated itself for three isolated pre-Stage-A `SEARCH` sample
+gaps (`0.220447 s`, `0.162486 s`, and `0.338401 s`). No critical input,
+formal state, acceptance event, command-owner sample, terminal evidence, or
+plot is missing. The active plan now clarifies that a complete analysis
+bundle means successful analyzer completion, all expected artifacts and
+plots, and no analysis failure; optional generic metrics do not become
+unstated formal predicates.
+
+Plot directory:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_6_primary_probe/
+  2026-07-31/
+  20260731T122710523689Z_simulation_phase08_v8_6_primary_visible_probe-
+  v8_6_primary_probe_r1p5_a45_h25_19316-robust__c4156158/
+  analysis/phase07/plots/
+```
+
+It contains `trajectory_sources_fills.png`, `candidate_ranking.png`,
+`cost.png`, `components.png`, `state_events.png`, `weights.png`,
+`command_saturation.png`, `radial_escape.png`, and
+`gaussian_history.png`.
+
+Complete report:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_7_primary_probe.md
+```
+
+The evaluator coordinate was used only for the post-ranked simulation stop.
+Physical behavior remains coordinate-free and operator-stopped with
+`Ctrl+C`. No physical process ran.
+
+This one pass does not authorize immediate repeat execution. The result,
+analysis clarification, report, status, and checkpoint must be committed,
+then a separate fixed ten-run primary-repeat dispatch boundary must be
+checkpointed and committed.
+
+## Current milestone
+
+**PHASE 08.8 M4.7 — FIXED V8.6 PRIMARY VISIBLE PROBE PASS / FORMAL
+COMMAND OWNER PASS / ALL NINE PLOTS RETAINED / RESULT CHECKPOINT PENDING /
+GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Checkpoint and commit this immutable visible result and analysis-bundle
+clarification. Then write, checkpoint, and commit a separate dispatch boundary
+for exactly seeds `19411..19420`, serial/headless, stop on first failure, no
+retry. Do not dispatch the secondary probe or repeats.
+
+## Phase 08.8 M4.7 v8.6 primary-visible result checkpoint — 2026-07-31
+
+The immutable one-attempt visible pass, formal command-owner evidence,
+complete nine-plot analysis bundle, honestly partial optional metric, report,
+plan clarification, and live status received the required Phase 08 checkpoint
+against dispatch HEAD `378804f`.
+
+```text
+base HEAD:
+  378804f529ec900fa90b9f5c7ac2e118dc58d81f
+status sha256 before this checkpoint note:
+  1c2588033a3e933ac0ae5b0e00530f7da0dad6afc3236a704b4779ed6a995d7b
+active plan sha256:
+  0e1494c96dfab88bf0c2640b1a1abfdaf5d976bd11be25f4c74ff593458404e9
+visible report sha256:
+  04779e0b6b6dda9176d296a84c80498328c39f4f3e7c5bfd09a6b0777c765f5b
+unstaged tracked diff sha256:
+  b87be7794234dfa27f2eb1e7ee08d08b622831a6203e2f72c8ec3c2f631c8d46
+checkpoint sha256 before this checkpoint note:
+  87bcb5666de7eb5677b7357dbc11e54e02ef85b1bd04da1d347994ffdffd21d8
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+```
+
+No Gazebo, scenario, recorder, analyzer, rosbag recorder, or physical process
+remained during this result checkpoint.
+
+## Current milestone
+
+**PHASE 08.8 M4.7 — FIXED V8.6 PRIMARY VISIBLE PROBE PASS / FORMAL
+COMMAND OWNER PASS / ALL NINE PLOTS RETAINED / RESULT CHECKPOINT PASS /
+RESULT COMMIT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Stage and commit this exact visible-result boundary. Verify a clean tree, then
+write, checkpoint, and commit a separate fixed primary-repeat dispatch
+boundary for exactly seeds `19411..19420`, serial/headless, stop on first
+failure, no retry. Do not dispatch the secondary probe or repeats.
