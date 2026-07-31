@@ -12603,3 +12603,80 @@ Commit this exact qualified implementation boundary and verify a clean tree.
 Then save, checkpoint, and commit a separate visible-probe dispatch boundary.
 Only that later boundary may authorize seed `19201`; repeats and secondary
 runs remain prohibited.
+
+## Phase 08.8 M4.3 qualified implementation commit — 2026-07-30
+
+The exact v8.4 implementation, four fixed inputs, complete no-Gazebo
+qualification, Plan evidence correction, live status, and material checkpoint
+were committed at:
+
+```text
+c8fe788e781daece98993a223c5aa71fd1d5b7a9
+phase 08.8: qualify v8.4 approach continuity
+```
+
+Post-commit preflight is clean:
+
+```text
+worktree:
+  clean
+primary visible evidence root:
+  absent
+matching Gazebo/scenario/recorder/analyzer processes:
+  none
+DISPLAY:
+  :0
+xdpyinfo:
+  PASS
+source primary-visible scenario sha256:
+  3c876eddb86196b54207204b975f64930bcf8f99697e86f2524fd4168f7e66d8
+installed primary-visible scenario sha256:
+  3c876eddb86196b54207204b975f64930bcf8f99697e86f2524fd4168f7e66d8
+source/install parity:
+  PASS
+```
+
+This fixes the executable bytes but does not yet authorize Gazebo.
+
+## Current milestone
+
+**PHASE 08.8 M4.3 — QUALIFIED V8.4 IMPLEMENTATION COMMITTED / VISIBLE
+DISPATCH CHECKPOINT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Checkpoint and commit this exact two-document dispatch boundary against
+`c8fe788`. Only that clean committed record may authorize one installed
+visible run of `phase08_v8_4_primary_visible_probe.yaml`, seed `19201`.
+No retry, primary repeat, secondary run, or broad characterization is
+authorized.
+
+## Phase 08.8 M4.3 visible-dispatch checkpoint — 2026-07-30
+
+The committed-input dispatch record received a fresh Phase 08 checkpoint
+against qualified implementation HEAD `c8fe788`.
+
+```text
+status sha256:
+  b76b12d963ac3bf87cc6def7038f76541a5616f265778aa5c7ca8fcd9c7bb222
+unstaged dispatch diff sha256:
+  8cbf368ffe8d6c8e73fd3f48e1df2d3dbd379086531935a5e1391059306a2f89
+unstaged and staged diff check:
+  PASS
+```
+
+No Gazebo, scenario, recorder, analyzer, or physical process ran during this
+checkpoint.
+
+## Current milestone
+
+**PHASE 08.8 M4.3 — QUALIFIED V8.4 IMPLEMENTATION COMMITTED / VISIBLE
+DISPATCH CHECKPOINT PASS / DISPATCH-RECORD COMMIT PENDING / GAZEBO
+PROHIBITED.**
+
+## Next criterion
+
+Commit this exact two-document dispatch boundary. Then reconfirm the clean
+tree, inactive runtime process set, absent primary evidence root, installed
+scenario parity, and GUI display immediately before executing the one
+authorized seed-`19201` visible probe. All later dispatch remains prohibited.
