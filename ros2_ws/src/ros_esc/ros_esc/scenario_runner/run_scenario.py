@@ -2567,6 +2567,188 @@ def _diagnostic_saturated_command(message, combined):
     return saturated
 
 
+def _causal_supervisor_owned_assist_entry(
+    assist_diagnostics,
+    commands,
+    command_stamps,
+    authority_start_stamp,
+    search_stamp,
+    stale_ns,
+    handoff_timeout_sec,
+):
+    """Prove bounded schema-v12 settling into supervisor-only ownership."""
+    zero = [0.0] * 6
+    first_owned_stamp = None
+    transition_sample_count = 0
+    owned_sample_count = 0
+    suppressed_gesc_sample_count = 0
+    positive_linear_sample_count = 0
+    proven_authority_command_stamps = set()
+
+    for diagnostic_stamp, message in assist_diagnostics:
+        gesc = _finite_command(message.gesc_command_unsaturated)
+        combined = _finite_command(message.combined_command_unsaturated)
+        contribution = _finite_command(message.supervisor_contribution)
+        final = _finite_command(message.final_command)
+        if (
+            gesc is None
+            or combined is None
+            or contribution is None
+            or final is None
+            or not message.gesc_command_unsaturated_valid
+            or not message.combined_command_unsaturated_valid
+            or not message.supervisor_contribution_valid
+            or not message.final_command_valid
+        ):
+            return None, (
+                'causal assist-entry sample has invalid command evidence'
+            )
+
+        expected_contribution = [
+            combined[index] - gesc[index] for index in range(6)
+        ]
+        if not _commands_close(contribution, expected_contribution):
+            return None, (
+                'causal assist-entry supervisor contribution is inconsistent'
+            )
+        saturated = _diagnostic_saturated_command(message, combined)
+        if saturated is None or not _commands_close(final, saturated):
+            return None, (
+                'causal assist-entry final command saturation is invalid'
+            )
+
+        first_candidate = bisect.bisect_left(
+            command_stamps,
+            diagnostic_stamp - stale_ns,
+        )
+        last_candidate = bisect.bisect_right(
+            command_stamps,
+            diagnostic_stamp + stale_ns,
+        )
+        candidate_commands = []
+        for command_stamp, command_message in commands[
+            first_candidate:last_candidate
+        ]:
+            if command_stamp >= search_stamp:
+                continue
+            raw = _finite_command(_twist_command(command_message))
+            if raw is not None:
+                candidate_commands.append(
+                    (abs(diagnostic_stamp - command_stamp), command_stamp, raw)
+                )
+        if not candidate_commands:
+            return None, (
+                'causal assist-entry sample has a stale supervisor command'
+            )
+
+        nonzero_matches = [
+            candidate
+            for candidate in candidate_commands
+            if (
+                any(abs(value) > 1e-9 for value in candidate[2])
+                and _commands_close(combined, candidate[2])
+            )
+        ]
+        if nonzero_matches:
+            matched_supervisor = min(
+                nonzero_matches,
+                key=lambda item: (
+                    item[0],
+                    item[1] > diagnostic_stamp,
+                    item[1],
+                ),
+            )
+            if first_owned_stamp is None:
+                first_owned_stamp = diagnostic_stamp
+            proven_authority_command_stamps.add(matched_supervisor[1])
+            owned_sample_count += 1
+            if any(abs(value) > 1e-9 for value in gesc):
+                suppressed_gesc_sample_count += 1
+            if matched_supervisor[2][0] > 1e-9:
+                positive_linear_sample_count += 1
+            continue
+
+        additive_nonzero = any(
+            (
+                any(abs(value) > 1e-9 for value in candidate[2])
+                and _commands_close(
+                    combined,
+                    [
+                        candidate[2][index] + gesc[index]
+                        for index in range(6)
+                    ],
+                )
+            )
+            for candidate in candidate_commands
+        )
+        if additive_nonzero:
+            return None, (
+                'GESC leaked into a nonzero supervisor command during '
+                'causal assist entry'
+            )
+        if first_owned_stamp is not None:
+            return None, (
+                'supervisor ownership fell back after causal assist entry'
+            )
+
+        fresh_zero_command = any(
+            _commands_close(candidate[2], zero)
+            for candidate in candidate_commands
+        )
+        ordinary_previous_state = (
+            _commands_close(combined, gesc)
+            and _commands_close(contribution, zero)
+        )
+        zero_or_failsafe = _commands_close(combined, zero)
+        recognized_transition = (
+            ordinary_previous_state or zero_or_failsafe
+        )
+        if recognized_transition and not fresh_zero_command:
+            return None, (
+                'causal assist-entry transition has no fresh zero '
+                'supervisor command'
+            )
+        if not recognized_transition:
+            return None, (
+                'causal assist entry contains an unrecognized command'
+            )
+        transition_sample_count += 1
+
+    if first_owned_stamp is None:
+        return None, (
+            'causal assist entry never established supervisor ownership'
+        )
+    handoff_delay_ns = first_owned_stamp - authority_start_stamp
+    handoff_timeout_ns = handoff_timeout_sec * 1e9
+    if handoff_delay_ns < 0 or handoff_delay_ns > handoff_timeout_ns:
+        return None, 'causal assist entry exceeded its timeout'
+
+    return {
+        'proven_authority_command_stamps': (
+            proven_authority_command_stamps
+        ),
+        'fresh_supervisor_command_sample_count': owned_sample_count,
+        'nonzero_suppressed_gesc_sample_count': (
+            suppressed_gesc_sample_count
+        ),
+        'positive_supervisor_linear_sample_count': (
+            positive_linear_sample_count
+        ),
+        'assist_entry_transition_control_sample_count': (
+            transition_sample_count
+        ),
+        'assist_entry_first_owned_control_bag_stamp': first_owned_stamp,
+        'assist_entry_handoff_delay_sec': handoff_delay_ns * 1e-9,
+        'assist_entry_handoff_timeout_sec': handoff_timeout_sec,
+        'assist_entry_steady_owned_control_sample_count': (
+            owned_sample_count
+        ),
+        'assist_entry_handoff_evidence_mode': (
+            'bounded_causal_schema_v12'
+        ),
+    }, None
+
+
 def _supervisor_owned_escape_assist_evidence(
     resolved,
     state_messages,
@@ -2777,89 +2959,138 @@ def _supervisor_owned_escape_assist_evidence(
         return failed('assist interval has no control diagnostics')
 
     proven_authority_command_stamps = set()
-    for diagnostic_stamp, message in assist_diagnostics:
-        gesc = _finite_command(message.gesc_command_unsaturated)
-        combined = _finite_command(message.combined_command_unsaturated)
-        contribution = _finite_command(message.supervisor_contribution)
-        final = _finite_command(message.final_command)
+    schema_version = resolved.get('schema_version', 1)
+    if schema_version >= 12:
+        handoff_timeout_sec = resolved.get('success', {}).get(
+            'controller',
+            {},
+        ).get('supervisor_owned_assist_handoff_timeout_sec')
         if (
-            gesc is None
-            or combined is None
-            or contribution is None
-            or final is None
-            or not message.gesc_command_unsaturated_valid
-            or not message.combined_command_unsaturated_valid
-            or not message.supervisor_contribution_valid
-            or not message.final_command_valid
+            isinstance(handoff_timeout_sec, bool)
+            or not isinstance(handoff_timeout_sec, (int, float))
+            or not math.isfinite(float(handoff_timeout_sec))
+            or float(handoff_timeout_sec) <= 0.0
         ):
-            return failed('assist control sample has invalid command evidence')
-        first_candidate = bisect.bisect_left(
-            command_stamps,
-            diagnostic_stamp - stale_ns,
-        )
-        last_candidate = bisect.bisect_right(
-            command_stamps,
-            diagnostic_stamp + stale_ns,
-        )
-        candidate_commands = []
-        for command_stamp, command_message in commands[
-            first_candidate:last_candidate
-        ]:
-            if command_stamp >= search_stamp:
-                continue
-            raw = _finite_command(_twist_command(command_message))
-            if raw is not None:
-                candidate_commands.append(
-                    (abs(diagnostic_stamp - command_stamp), command_stamp, raw)
-                )
-        if not candidate_commands:
-            if commands:
-                return failed(
-                    'assist control sample has a stale supervisor command'
-                )
             return failed(
-                'assist control sample has no held supervisor command'
+                'causal assist-entry handoff timeout is unavailable'
             )
-        matching_commands = [
-            candidate
-            for candidate in candidate_commands
-            if _commands_close(combined, candidate[2])
-        ]
-        if not matching_commands:
-            if any(
-                _commands_close(
-                    combined,
-                    [
-                        candidate[2][index] + gesc[index]
-                        for index in range(6)
-                    ],
-                )
-                for candidate in candidate_commands
+        entry_evidence, entry_error = (
+            _causal_supervisor_owned_assist_entry(
+                assist_diagnostics,
+                commands,
+                command_stamps,
+                authority_start_stamp,
+                search_stamp,
+                stale_ns,
+                float(handoff_timeout_sec),
+            )
+        )
+        if entry_error is not None:
+            return failed(entry_error)
+        proven_authority_command_stamps = entry_evidence.pop(
+            'proven_authority_command_stamps'
+        )
+        evidence.update(entry_evidence)
+    else:
+        for diagnostic_stamp, message in assist_diagnostics:
+            gesc = _finite_command(message.gesc_command_unsaturated)
+            combined = _finite_command(message.combined_command_unsaturated)
+            contribution = _finite_command(message.supervisor_contribution)
+            final = _finite_command(message.final_command)
+            if (
+                gesc is None
+                or combined is None
+                or contribution is None
+                or final is None
+                or not message.gesc_command_unsaturated_valid
+                or not message.combined_command_unsaturated_valid
+                or not message.supervisor_contribution_valid
+                or not message.final_command_valid
             ):
-                return failed('GESC leaked into the supervisor-owned command')
-            return failed(
-                'assist combined command has no fresh matching supervisor '
-                'command'
+                return failed(
+                    'assist control sample has invalid command evidence'
+                )
+            first_candidate = bisect.bisect_left(
+                command_stamps,
+                diagnostic_stamp - stale_ns,
             )
-        matched_supervisor = min(
-            matching_commands,
-            key=lambda item: (item[0], item[1] > diagnostic_stamp, item[1]),
-        )
-        proven_authority_command_stamps.add(matched_supervisor[1])
-        raw_supervisor = matched_supervisor[2]
-        expected_contribution = [
-            combined[index] - gesc[index] for index in range(6)
-        ]
-        if not _commands_close(contribution, expected_contribution):
-            return failed('supervisor contribution arithmetic is inconsistent')
-        saturated = _diagnostic_saturated_command(message, combined)
-        if saturated is None or not _commands_close(final, saturated):
-            return failed('final command does not match recorded saturation')
-        evidence['fresh_supervisor_command_sample_count'] += 1
-        if any(abs(value) > 1e-9 for value in gesc):
-            evidence['nonzero_suppressed_gesc_sample_count'] += 1
-        if raw_supervisor[0] > 1e-9:
-            evidence['positive_supervisor_linear_sample_count'] += 1
+            last_candidate = bisect.bisect_right(
+                command_stamps,
+                diagnostic_stamp + stale_ns,
+            )
+            candidate_commands = []
+            for command_stamp, command_message in commands[
+                first_candidate:last_candidate
+            ]:
+                if command_stamp >= search_stamp:
+                    continue
+                raw = _finite_command(_twist_command(command_message))
+                if raw is not None:
+                    candidate_commands.append(
+                        (
+                            abs(diagnostic_stamp - command_stamp),
+                            command_stamp,
+                            raw,
+                        )
+                    )
+            if not candidate_commands:
+                if commands:
+                    return failed(
+                        'assist control sample has a stale supervisor command'
+                    )
+                return failed(
+                    'assist control sample has no held supervisor command'
+                )
+            matching_commands = [
+                candidate
+                for candidate in candidate_commands
+                if _commands_close(combined, candidate[2])
+            ]
+            if not matching_commands:
+                if any(
+                    _commands_close(
+                        combined,
+                        [
+                            candidate[2][index] + gesc[index]
+                            for index in range(6)
+                        ],
+                    )
+                    for candidate in candidate_commands
+                ):
+                    return failed(
+                        'GESC leaked into the supervisor-owned command'
+                    )
+                return failed(
+                    'assist combined command has no fresh matching '
+                    'supervisor command'
+                )
+            matched_supervisor = min(
+                matching_commands,
+                key=lambda item: (
+                    item[0],
+                    item[1] > diagnostic_stamp,
+                    item[1],
+                ),
+            )
+            proven_authority_command_stamps.add(matched_supervisor[1])
+            raw_supervisor = matched_supervisor[2]
+            expected_contribution = [
+                combined[index] - gesc[index] for index in range(6)
+            ]
+            if not _commands_close(contribution, expected_contribution):
+                return failed(
+                    'supervisor contribution arithmetic is inconsistent'
+                )
+            saturated = _diagnostic_saturated_command(message, combined)
+            if saturated is None or not _commands_close(final, saturated):
+                return failed(
+                    'final command does not match recorded saturation'
+                )
+            evidence['fresh_supervisor_command_sample_count'] += 1
+            if any(abs(value) > 1e-9 for value in gesc):
+                evidence['nonzero_suppressed_gesc_sample_count'] += 1
+            if raw_supervisor[0] > 1e-9:
+                evidence['positive_supervisor_linear_sample_count'] += 1
 
     if evidence['nonzero_suppressed_gesc_sample_count'] <= 0:
         return failed('no nonzero GESC proposal was proven suppressed')

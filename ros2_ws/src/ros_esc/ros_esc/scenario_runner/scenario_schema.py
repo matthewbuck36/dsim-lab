@@ -13,8 +13,8 @@ from ros_esc.scenario_runner import aggregate_field_truth
 import yaml
 
 
-SCHEMA_VERSION = 11
-SUPPORTED_SCHEMA_VERSIONS = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
+SCHEMA_VERSION = 12
+SUPPORTED_SCHEMA_VERSIONS = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
 PROFILES = {'legacy', 'robust_gaussian_v1'}
 STATUSES = {'executable_unverified', 'unsupported'}
 FAMILIES = {

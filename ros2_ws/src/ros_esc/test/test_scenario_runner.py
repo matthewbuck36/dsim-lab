@@ -274,6 +274,26 @@ V8_7_SECONDARY_REPEATS = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v8_7_secondary_repeats.yaml'
 )
+V8_8_PRIMARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_8_primary_visible_probe.yaml'
+)
+V8_8_PRIMARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_8_primary_repeats.yaml'
+)
+V8_8_SECONDARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_8_secondary_visible_probe.yaml'
+)
+V8_8_SECONDARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_8_secondary_repeats.yaml'
+)
 
 
 def test_observed_local_recovery_binds_fill_to_local_convergence():
@@ -1257,6 +1277,227 @@ def test_schema_v11_causal_handoff_rejects_returned_escape_state():
     )
 
 
+def _causal_entry_supervisor_owner_fixture():
+    fixture = _causal_supervisor_owner_fixture()
+    fixture['resolved'] = expand_suite(
+        load_suite(V8_8_PRIMARY_VISIBLE_PROBE)
+    )[0][0]
+    fixture['diagnostics'].insert(
+        1,
+        (
+            1_045_000_000,
+            _control_diagnostic(
+                [0.08, 0.0, 0.0, 0.0, 0.0, 7.095],
+                [0.08, 0.0, 0.0, 0.0, 0.0, 7.095],
+            ),
+        ),
+    )
+    return fixture
+
+
+def test_schema_v12_causal_entry_accepts_one_previous_state_sample():
+    fixture = _causal_entry_supervisor_owner_fixture()
+
+    passed, evidence, error = _evaluate_supervisor_owner(fixture)
+
+    assert error is None
+    assert passed is True
+    assert evidence['assist_entry_transition_control_sample_count'] == 1
+    assert evidence['assist_entry_handoff_delay_sec'] == pytest.approx(0.01)
+    assert evidence['assist_entry_handoff_timeout_sec'] == 0.15
+    assert evidence['assist_entry_first_owned_control_bag_stamp'] == (
+        1_050_000_000
+    )
+    assert evidence['assist_entry_steady_owned_control_sample_count'] == 3
+    assert evidence['fresh_supervisor_command_sample_count'] == 3
+    assert evidence['nonzero_suppressed_gesc_sample_count'] == 3
+    assert evidence['positive_supervisor_linear_sample_count'] == 2
+    assert (
+        evidence['assist_entry_handoff_evidence_mode']
+        == 'bounded_causal_schema_v12'
+    )
+    assert (
+        evidence['post_exit_handoff_evidence_mode']
+        == 'bounded_causal_schema_v11'
+    )
+
+
+def test_schema_v11_entry_rule_stays_unchanged():
+    fixture = _causal_entry_supervisor_owner_fixture()
+    fixture['resolved'] = expand_suite(
+        load_suite(V8_7_PRIMARY_VISIBLE_PROBE)
+    )[0][0]
+
+    passed, evidence, error = _evaluate_supervisor_owner(fixture)
+
+    assert error is None
+    assert passed is False
+    assert 'GESC leaked' in evidence['reason']
+
+
+def test_schema_v12_causal_entry_accepts_no_transition_sample():
+    fixture = _causal_entry_supervisor_owner_fixture()
+    fixture['diagnostics'].pop(1)
+
+    passed, evidence, error = _evaluate_supervisor_owner(fixture)
+
+    assert error is None
+    assert passed is True
+    assert evidence['assist_entry_transition_control_sample_count'] == 0
+    assert evidence['assist_entry_handoff_delay_sec'] == pytest.approx(0.01)
+
+
+def test_schema_v12_causal_entry_rejects_late_ownership():
+    fixture = _causal_entry_supervisor_owner_fixture()
+    fixture['diagnostics'].pop(2)
+
+    passed, evidence, error = _evaluate_supervisor_owner(fixture)
+
+    assert error is None
+    assert passed is False
+    assert 'entry exceeded its timeout' in evidence['reason']
+
+
+def test_schema_v12_causal_entry_rejects_missing_fresh_zero_command():
+    fixture = _causal_entry_supervisor_owner_fixture()
+    fixture['commands'].pop(0)
+
+    passed, evidence, error = _evaluate_supervisor_owner(fixture)
+
+    assert error is None
+    assert passed is False
+    assert 'no fresh zero supervisor command' in evidence['reason']
+
+
+def test_schema_v12_causal_entry_rejects_nonzero_additive_command():
+    fixture = _causal_entry_supervisor_owner_fixture()
+    transition = fixture['diagnostics'][1][1]
+    supervisor = [0.0, 0.0, 0.0, 0.0, 0.0, 0.4]
+    transition.combined_command_unsaturated = [
+        transition.gesc_command_unsaturated[index] + supervisor[index]
+        for index in range(6)
+    ]
+    transition.supervisor_contribution = supervisor
+    transition.final_command = list(
+        transition.combined_command_unsaturated
+    )
+    transition.final_command[0] = max(
+        -0.1,
+        min(0.1, transition.final_command[0]),
+    )
+    transition.final_command[5] = max(
+        -0.5,
+        min(0.5, transition.final_command[5]),
+    )
+
+    passed, evidence, error = _evaluate_supervisor_owner(fixture)
+
+    assert error is None
+    assert passed is False
+    assert 'GESC leaked into a nonzero supervisor command' in (
+        evidence['reason']
+    )
+
+
+@pytest.mark.parametrize(
+    ('mutation', 'reason'),
+    [
+        (
+            lambda message: message.combined_command_unsaturated
+            .__setitem__(0, 0.03),
+            'unrecognized command',
+        ),
+        (
+            lambda message: message.combined_command_unsaturated
+            .__setitem__(0, float('nan')),
+            'invalid command evidence',
+        ),
+        (
+            lambda message: message.supervisor_contribution
+            .__setitem__(0, 0.01),
+            'contribution is inconsistent',
+        ),
+        (
+            lambda message: message.final_command.__setitem__(0, 0.0),
+            'saturation is invalid',
+        ),
+    ],
+)
+def test_schema_v12_causal_entry_rejects_corrupt_transition(
+    mutation,
+    reason,
+):
+    fixture = _causal_entry_supervisor_owner_fixture()
+    transition = fixture['diagnostics'][1][1]
+    mutation(transition)
+    if reason == 'unrecognized command':
+        transition.supervisor_contribution = [
+            transition.combined_command_unsaturated[index]
+            - transition.gesc_command_unsaturated[index]
+            for index in range(6)
+        ]
+        transition.final_command = list(
+            transition.combined_command_unsaturated
+        )
+        transition.final_command[0] = max(
+            -0.1,
+            min(0.1, transition.final_command[0]),
+        )
+        transition.final_command[5] = max(
+            -0.5,
+            min(0.5, transition.final_command[5]),
+        )
+
+    passed, evidence, error = _evaluate_supervisor_owner(fixture)
+
+    assert error is None
+    assert passed is False
+    assert reason in evidence['reason']
+
+
+def test_schema_v12_causal_entry_rejects_missing_ownership():
+    fixture = _causal_entry_supervisor_owner_fixture()
+    fixture['diagnostics'] = [
+        record
+        for record in fixture['diagnostics']
+        if (
+            record[0] < 1_040_000_000
+            or record[0] == 1_045_000_000
+            or record[0] >= 2_000_000_000
+        )
+    ]
+
+    passed, evidence, error = _evaluate_supervisor_owner(fixture)
+
+    assert error is None
+    assert passed is False
+    assert 'never established supervisor ownership' in evidence['reason']
+
+
+def test_schema_v12_causal_entry_rejects_fallback_after_ownership():
+    fixture = _causal_entry_supervisor_owner_fixture()
+    fallback = fixture['diagnostics'][3][1]
+    fallback.combined_command_unsaturated = list(
+        fallback.gesc_command_unsaturated
+    )
+    fallback.supervisor_contribution = [0.0] * 6
+    fallback.final_command = list(fallback.gesc_command_unsaturated)
+    fallback.final_command[0] = max(
+        -0.1,
+        min(0.1, fallback.final_command[0]),
+    )
+    fallback.final_command[5] = max(
+        -0.5,
+        min(0.5, fallback.final_command[5]),
+    )
+
+    passed, evidence, error = _evaluate_supervisor_owner(fixture)
+
+    assert error is None
+    assert passed is False
+    assert 'ownership fell back' in evidence['reason']
+
+
 def test_supervisor_owned_assist_predicate_gates_classification():
     resolved = expand_suite(
         load_suite(V8_6_PRIMARY_VISIBLE_PROBE)
@@ -2083,6 +2324,10 @@ def test_v8_5_launch_binds_active_fill_transit_without_evaluator_controls(
         V8_7_PRIMARY_REPEATS,
         V8_7_SECONDARY_VISIBLE_PROBE,
         V8_7_SECONDARY_REPEATS,
+        V8_8_PRIMARY_VISIBLE_PROBE,
+        V8_8_PRIMARY_REPEATS,
+        V8_8_SECONDARY_VISIBLE_PROBE,
+        V8_8_SECONDARY_REPEATS,
     ],
 )
 def test_v8_6_launch_binds_supervisor_owner_without_evaluator_controls(

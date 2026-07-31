@@ -2541,7 +2541,7 @@ The complete message-level audit of seed `19514` found:
 
 ```text
 one ordinary GESC diagnostic with zero supervisor contribution
--> 13.125597 ms from recorded nonzero authority to first owned diagnostic
+-> 14.125597 ms from recorded nonzero authority to first owned diagnostic
 -> 2,678 consecutive supervisor-owned diagnostics
 -> no later fallback
 -> ordinary causal assist-exit handoff
@@ -2665,7 +2665,7 @@ Before any v8.8 Gazebo process:
 3. replay retained seed `19514` under its original schema-v11 resolved input
    and prove it still fails on the first entry diagnostic;
 4. replay the same immutable records through a schema-v12 fixture and prove
-   exactly one recognized ordinary transition, a `13.125597 ms` entry
+   exactly one recognized ordinary transition, a `14.125597 ms` entry
    handoff, all `2,678` later assist diagnostics owned, and the existing
    causal exit proof passes;
 5. prove schema v12 rejects late entry, unknown entry, a stale or missing

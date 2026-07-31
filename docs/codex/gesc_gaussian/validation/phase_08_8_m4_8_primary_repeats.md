@@ -193,7 +193,7 @@ The next diagnostic was already supervisor-owned:
 
 ```text
 stamp:                              1785506493851741071
-delay from authority command:       0.013125597 s
+delay from authority command:       0.014125597 s
 delay from recorded state:          0.016875588 s
 combined command:                   supervisor command only
 nonzero GESC proposal:              fully suppressed
@@ -213,7 +213,12 @@ All `2,678` later assist diagnostics through the returned `SEARCH` boundary
 matched a fresh supervisor command, suppressed the nonzero GESC proposal,
 had correct contribution arithmetic and saturation, and retained revision-one
 directional authority. The externally recorded transition settled in
-`13.126 ms`, well inside the existing `150 ms` cross-topic evidence horizon.
+`14.126 ms`, well inside the existing `150 ms` cross-topic evidence horizon.
+
+The first retained report draft stated `13.125597 ms` because of an
+arithmetic transcription error. Read-only replay of the immutable bag gives
+`1785506493851741071 - 1785506493837615474 = 14,125,597 ns`. This correction
+changes no sample, predicate, disposition, or timeout comparison.
 
 The schema-v11 evaluator checks causal settling only at the assist-to-search
 exit. At assist entry it still assumes that external bag publication order is

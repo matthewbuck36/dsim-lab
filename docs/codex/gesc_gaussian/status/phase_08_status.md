@@ -15358,7 +15358,7 @@ recorded ESCAPE_ASSIST state:        1785506493834865483
 recorded nonzero authority command:  1785506493837615474
 first evaluated diagnostic:          1785506493841327810
 first supervisor-owned diagnostic:   1785506493851741071
-entry handoff from authority:         0.013125597 s
+entry handoff from authority:         0.014125597 s
 ordinary transition diagnostics:     1
 GESC plus nonzero supervisor:         0
 steady supervisor-owned diagnostics: 2,678
@@ -15486,7 +15486,7 @@ secondary repeats:  seeds 19661..19665
 
 The retained seed-`19514` bag is the immutable causal replay fixture. V8.8
 must prove schema v11 still fails it and schema v12 recognizes exactly one
-ordinary entry-transition diagnostic, a `13.125597 ms` handoff, and all
+ordinary entry-transition diagnostic, a `14.125597 ms` handoff, and all
 `2,678` later supervisor-owned diagnostics. Adversarial late, additive,
 unknown, stale-zero, nonfinite, arithmetic, saturation, no-ownership, and
 fallback fixtures must fail.
@@ -15538,3 +15538,227 @@ PLAN COMMIT PENDING / NO GAZEBO AUTHORIZED.**
 
 Commit this exact Plan boundary. Then implement and qualify schema v12 plus
 fresh v8.8 scenarios entirely without Gazebo.
+
+## Phase 08.8 M4.9 v8.8 no-Gazebo implementation qualification — 2026-07-31
+
+The correction Plan is committed:
+
+```text
+789298c phase 08.8: plan v8.8 causal assist entry evidence
+```
+
+The separately versioned v8.8 evidence correction is implemented and
+qualified without Gazebo. It changes no controller, supervisor, detector,
+fill, modified-cost, launch, world, source, motion, ranking, time budget,
+stop, final-zero, or cleanup behavior.
+
+The scenario parser now exports schema 12 as the current version while
+retaining support for versions 1 through 12. The runner keeps schema
+versions through 11 on the exact old assist-entry branch. Schema 12 adds a
+bounded causal entry proof using the already-declared evaluator-only
+`supervisor_owned_assist_handoff_timeout_sec: 0.15`.
+
+Before first ownership, schema 12 accepts only a finite, arithmetically
+valid, correctly saturated ordinary GESC diagnostic supported by a fresh
+zero supervisor command, or equivalently valid zero/failsafe output. It
+then requires a fresh nonzero supervisor-only owner within `0.15 s` and
+uninterrupted ownership through escape completion. It continues to reject
+true GESC plus nonzero supervisor, unknown/stale/late evidence, nonfinite
+data, arithmetic or saturation corruption, missing ownership, and later
+fallback.
+
+The retained seed-`19514` bag was replayed read only. Schema v11 still
+fails on:
+
+```text
+GESC leaked into the supervisor-owned command
+```
+
+Schema v12 passes with:
+
+```text
+ordinary entry-transition diagnostics: 1
+entry authority stamp:                  1785506493837615474
+first owned diagnostic stamp:           1785506493851741071
+entry handoff:                          0.014125597 s
+steady owned diagnostics:               2,678
+fresh supervisor diagnostics:           2,678
+suppressed nonzero GESC diagnostics:     2,678
+positive linear supervisor diagnostics: 2,109
+post-exit handoff:                       0.006192330 s
+post-exit ordinary diagnostics:          14,339
+Stage A / fill cardinality / Stage B:    PASS / PASS / PASS
+outcome error:                           null
+```
+
+This replay also corrects a prior arithmetic transcription:
+
+```text
+1785506493851741071 - 1785506493837615474
+= 14,125,597 ns
+= 14.125597 ms
+```
+
+The Plan, live status, and retained v8.7 report now record an explicit
+erratum from `13.125597 ms` to `14.125597 ms`. No immutable sample,
+predicate, result, or timeout comparison changes.
+
+The adversarial schema-v12 fixtures reject late ownership, missing fresh
+zero support, additive GESC plus supervisor, unknown command, nonfinite
+command, contribution corruption, saturation corruption, missing
+ownership, and fallback after ownership. Schema v11's original failure is
+also regression-tested.
+
+Final test evidence:
+
+```text
+new causal-entry selection:
+  17 passed, 301 deselected in 1.62 s
+schema and runner:
+  318 passed, 1 skipped in 52.86 s
+focused controller/supervisor/detector/legacy:
+  310 passed in 8.33 s
+focused runner/validator/recorder/analyzer evidence:
+  604 passed, 2 skipped in 130.92 s
+final broad ROS-independent functional gate:
+  915 passed, 3 skipped in 135.14 s
+final current-schema assertion:
+  1 passed in 0.61 s
+```
+
+The three broad skips are the unchanged copyright-template check and two
+explicit Gazebo opt-ins. Changed-file fatal lint
+`E9,F63,F7,F82`, Python compilation, central-launch XML parsing, four YAML
+parses, `git diff --check`, and Phase 08 implementation context all pass.
+Full changed-file `ament_flake8` reports only the inherited D202 at the
+unchanged `run_scenario.py:2410`.
+
+The final fresh isolated build:
+
+```text
+root:
+  /tmp/phase08_8_v8_8_release_final.L0zEGg
+packages:
+  ros_esc_interfaces
+  ros_esc
+  turtlebot3_rotating_sensor
+result:
+  3 packages finished in 11.8 s
+source/install runtime parity:
+  10/10 PASS
+```
+
+Installed `--show-args` and `--print-description` both pass, and the
+evaluator-only handoff field is absent from the launch graph. Default
+supervisor, fully enabled counted-source supervisor with exact one-fill
+cardinality, robust affine modified cost, and robust controller all
+construct on isolated domain `226` and reach the expected timeout `124`.
+No process survives. The modified-cost owner records normal startup before
+the bounding timeout produces its expected executor shutdown exception.
+
+The four final installed dry-runs pass:
+
+```text
+primary visible:    1 run,  seed 19601
+primary repeats:   10 runs, seeds 19611..19620
+secondary visible:  1 run,  seed 19651
+secondary repeats:  5 runs, seeds 19661..19665
+unsupported cases:  0
+created run roots:  0
+```
+
+Fresh scenario hashes:
+
+```text
+003230a00ddc0ab07adad5957012c3c28539119fbbb885a3edcd5f594b4298ca
+  phase08_v8_8_primary_repeats.yaml
+e48f8f6fd1e2e8377f13d5e621ad6df2017b663b8f35a977d01af5d14605b5e1
+  phase08_v8_8_primary_visible_probe.yaml
+ff2da3610f977e8f239f67ed9e1d586705894fb84e1821d87d817b6b9f479884
+  phase08_v8_8_secondary_repeats.yaml
+5a0b18609a7e4abb87858d36575d0fa9c10fd0837b259d84bf357aea83ce31f7
+  phase08_v8_8_secondary_visible_probe.yaml
+```
+
+Pairwise normalization proves all runtime inputs remain identical to v8.7
+except schema/evidence identities, prose, roots, and seeds. Historical v8.7
+scenario hashes, the three retained worlds, V6 selection, all old inputs,
+and all old results remain unchanged. V8.7 stays failed and closed.
+
+Bounded qualification corrections are retained in the report: missing ROS
+interface overlays, advancing the unsupported-version fixture to 13,
+advancing the current schema constant to 12, lint invocation and
+new-test-format corrections, one overbroad diagnostic that included
+non-gating historical style suites, invalid DDS domain 237, missing dry-run
+operator, and an initially misspelled controller parity path. Every
+corrected declared gate passes; none involved algorithm motion or an
+empirical result.
+
+Durable record:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_9_no_gazebo_qualification.md
+SHA-256:
+  28f3666fd8626f2bf6d87b46f59f4b903277f28abc359f6a35f39ff6ef5bd128
+```
+
+At close, no Gazebo, scenario runner, recorder, analyzer, rosbag recorder,
+controller, supervisor, modified-cost, or physical process is active. All
+four v8.8 run roots are absent. Gazebo remains prohibited until this
+implementation boundary is checkpointed and committed and a separate
+visible-probe dispatch boundary is checkpointed and committed.
+
+## Current milestone
+
+**PHASE 08.8 M4.9 — V8.8 SCHEMA-V12 CAUSAL ASSIST-ENTRY IMPLEMENTATION /
+NO-GAZEBO QUALIFICATION PASS / MATERIAL CHECKPOINT PENDING / GAZEBO
+PROHIBITED.**
+
+## Next criterion
+
+Run the Phase 08 material checkpoint, inspect and commit the exact v8.8
+implementation boundary. Then write, checkpoint, and commit a separate
+seed-`19601` visible-primary dispatch record before starting Gazebo.
+
+## Phase 08.8 M4.9 v8.8 implementation checkpoint — 2026-07-31
+
+The schema-v12 implementation, adversarial tests, immutable causal replay,
+four fresh scenarios, complete no-Gazebo qualification, arithmetic erratum,
+durable report, and live status received the required Phase 08 material
+checkpoint against correction-Plan HEAD `789298c`.
+
+```text
+base HEAD:
+  789298cd18724b4430d41aaecaa88b87de4d5bb8
+active plan sha256 before this checkpoint note:
+  c761c3aec53531931abf3a1f0edfd2b9366bbcbef53cfa1266cdb8b2f1aa211d
+status sha256 before this checkpoint note:
+  e7974e75ed1294fc648278d80916ba1c3ef5db4f43339ca07485a20f1695fe22
+no-Gazebo report sha256:
+  28f3666fd8626f2bf6d87b46f59f4b903277f28abc359f6a35f39ff6ef5bd128
+unstaged diff sha256:
+  66a3bb9529772446a2b7d9e0e009723c4652b1a99280fb6e0e270d0707a6bf3b
+checkpoint sha256 before this checkpoint note:
+  5eac86de4f7e7e97e90554ade2475592efbe4573ab29026217da7c7a58e133f2
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+active Gazebo/scenario/recorder/analyzer:
+  none
+v8.8 run roots:
+  all four absent
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.9 — V8.8 SCHEMA-V12 CAUSAL ASSIST-ENTRY IMPLEMENTATION /
+NO-GAZEBO QUALIFICATION PASS / MATERIAL CHECKPOINT PASS / IMPLEMENTATION
+COMMIT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Inspect and commit this exact implementation boundary. Then write,
+checkpoint, and commit a separate seed-`19601` visible-primary dispatch
+record before starting Gazebo.
