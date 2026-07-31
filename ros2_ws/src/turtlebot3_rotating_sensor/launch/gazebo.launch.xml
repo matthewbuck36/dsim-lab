@@ -116,6 +116,8 @@
     <arg name="gaussian_fill_minimum_merge_probability" default="0.60"/>
     <arg name="gaussian_fill_low_confidence_threshold" default="0.60"/>
     <arg name="gaussian_fill_reuse_retained_samples_on_redesign" default="False"/>
+    <arg name="candidate_informed_fill_enabled" default="False"/>
+    <arg name="candidate_informed_fill_amplitude_scale" default="1.0"/>
     <arg name="pde_cost_history_topic" default="/turtlebot3/cost_value_chatter"/>
     <arg name="modified_cost_enable_affine_bias" default="True"/>
     <arg name="modified_cost_affine_gain" default="0.5"/>
@@ -817,6 +819,8 @@
             -p minimum_merge_probability:=$(var gaussian_fill_minimum_merge_probability)
             -p low_confidence_threshold:=$(var gaussian_fill_low_confidence_threshold)
             -p reuse_retained_samples_on_redesign:=$(var gaussian_fill_reuse_retained_samples_on_redesign)
+            -p candidate_informed_fill_enabled:=$(var candidate_informed_fill_enabled)
+            -p candidate_informed_fill_amplitude_scale:=$(var candidate_informed_fill_amplitude_scale)
             -p gaussian_fill_diagnostics_topic:=$(var gaussian_fill_diagnostics_topic)
             -p algorithm_event_topic:=$(var algorithm_event_topic)
         "
@@ -844,6 +848,7 @@
             -p candidate_cost_required_rotations:=$(var candidate_cost_required_rotations)
             -p candidate_cost_pretrigger_rotations:=$(var candidate_cost_pretrigger_rotations)
             -p candidate_cost_mad_scale:=$(var candidate_cost_mad_scale)
+            -p candidate_informed_fill_enabled:=$(var candidate_informed_fill_enabled)
             -p goal_hold_sec:=$(var goal_hold_sec)
             -p undesired_score_hold_sec:=$(var undesired_score_hold_sec)
             -p verification_max_sec:=$(var verification_max_sec)

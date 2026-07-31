@@ -90,6 +90,38 @@ class FillDesign:
     escalation_limit_reached: bool
 
 
+@dataclass(frozen=True)
+class CandidateAmplitudeFloor:
+    """Bounded amplitude floor derived from conservative raw evidence."""
+
+    requested: float
+    applied: float
+    capped: bool
+
+
+def candidate_amplitude_floor(raw_cost_lower, scale, amplitude_max):
+    """Map one negative minimization interval bound into a bounded fill floor."""
+
+    raw_cost_lower = float(raw_cost_lower)
+    scale = float(scale)
+    amplitude_max = float(amplitude_max)
+    if not math.isfinite(raw_cost_lower) or raw_cost_lower >= 0.0:
+        raise ValueError(
+            "candidate raw-cost lower bound must be finite and negative"
+        )
+    if not math.isfinite(scale) or scale <= 0.0:
+        raise ValueError("candidate amplitude scale must be finite and positive")
+    if not math.isfinite(amplitude_max) or amplitude_max <= 0.0:
+        raise ValueError("candidate amplitude cap must be finite and positive")
+    requested = float(scale * -raw_cost_lower)
+    applied = float(min(requested, amplitude_max))
+    return CandidateAmplitudeFloor(
+        requested=requested,
+        applied=applied,
+        capped=bool(requested > amplitude_max),
+    )
+
+
 def _canonical_orientation(eigenvalues, eigenvectors):
     if math.isclose(
         float(eigenvalues[0]),
@@ -139,9 +171,17 @@ def geometry_from_covariance(
     )
 
 
-def initial_fill_geometry(estimate: BasinEstimate, config: FillDesignConfig):
+def initial_fill_geometry(
+    estimate: BasinEstimate,
+    config: FillDesignConfig,
+    minimum_amplitude=0.0,
+):
     """Construct the width-coupled initial fill proposal."""
 
+    minimum_amplitude = float(minimum_amplitude)
+    if not math.isfinite(minimum_amplitude) or minimum_amplitude < 0.0:
+        raise ValueError("minimum fill amplitude must be finite and nonnegative")
+    minimum_amplitude = min(minimum_amplitude, config.amplitude_max)
     sample_covariance = np.asarray(estimate.sample_covariance, dtype=np.float64)
     covariance = (
         config.covariance_scale * sample_covariance
@@ -168,7 +208,12 @@ def initial_fill_geometry(estimate: BasinEstimate, config: FillDesignConfig):
     )
     amplitude = float(
         np.clip(
-            max(config.amplitude_min, amplitude_depth, amplitude_curvature),
+            max(
+                config.amplitude_min,
+                amplitude_depth,
+                amplitude_curvature,
+                minimum_amplitude,
+            ),
             config.amplitude_min,
             config.amplitude_max,
         )
@@ -301,10 +346,15 @@ def design_fill(
     config,
     minimum_valid_samples=40,
     condition_limit=1e8,
+    minimum_amplitude=0.0,
 ):
     """Design, validate, and boundedly escalate one adaptive fill."""
 
-    geometry = initial_fill_geometry(estimate, config)
+    geometry = initial_fill_geometry(
+        estimate,
+        config,
+        minimum_amplitude=minimum_amplitude,
+    )
     residual = residual_minima_count(estimate, geometry, config)
     amplitude_steps = 0
     width_steps = 0

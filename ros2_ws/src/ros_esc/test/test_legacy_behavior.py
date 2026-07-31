@@ -32,6 +32,11 @@ from ros_esc.modified_cost_node.modified_cost_script import ModifiedCost2D
 from ros_esc.pde_cost_history_node import pde_cost_history_script
 from ros_esc.rotate_frame_node import rotate_frame_node_script
 from ros_esc.supervisor_node import supervisor_node_script
+from ros_esc.supervisor_node.state_machine import (
+    CANDIDATE_INFORMED_FILL_HEADER,
+    CandidateCostSummary,
+    encode_candidate_informed_fill_payload,
+)
 from ros_esc_interfaces.msg import (
     AlgorithmEvent,
     AlgorithmState,
@@ -1169,6 +1174,106 @@ def test_gaussian_fill_keeps_legacy_layout_and_publishes_fit_record(monkeypatch)
         assert len(created) == 1
         assert len(created[0].value_names) == len(created[0].values)
         assert all(np.isfinite(created[0].values))
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_robust_fill_applies_and_reports_candidate_amplitude_floor(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["gaussian_fill_node"])
+    rclpy.init(
+        args=[
+            "--ros-args",
+            "-p",
+            "algorithm_profile:=robust_gaussian_v1",
+            "-p",
+            "minimum_valid_samples:=20",
+            "-p",
+            "maximum_position_speed_mps:=100.0",
+            "-p",
+            "candidate_informed_fill_enabled:=true",
+            "-p",
+            "candidate_informed_fill_amplitude_scale:=1.25",
+            "-p",
+            "amplitude_max:=6.25",
+            "-p",
+            "sigma_floor_m:=0.5",
+            "-p",
+            "sigma_ceiling_m:=1.25",
+            "-p",
+            "exit_sigma:=2.7",
+            "-p",
+            "max_fills:=1",
+        ]
+    )
+    node = GaussianFill()
+    try:
+        node.pub = Recorder()
+        node.gaussian_fill_diagnostics_publisher = Recorder()
+        node.algorithm_event_publisher = Recorder()
+        for index in range(60):
+            stamp = -5.9 + index * 0.1
+            angle = index * 2.0 * np.pi / 20.0
+            radius = 0.30 - 0.003 * index
+            x_value = radius * np.cos(angle)
+            y_value = radius * np.sin(angle)
+            cost = 0.05 * (x_value ** 2 + y_value ** 2)
+            node.pose_snapshots.append(
+                PoseSnapshot(stamp, x_value, y_value, angle, True)
+            )
+            node.cost_snapshots.append(
+                CostSnapshot(
+                    stamp,
+                    float("nan"),
+                    False,
+                    cost,
+                    0.2,
+                    True,
+                    AlgorithmState.STATE_DESIGN_OR_MERGE_FILL,
+                    True,
+                )
+            )
+
+        summary = CandidateCostSummary(
+            estimate=-1.572582366887451,
+            mad=0.2898819545479434,
+            uncertainty=0.8696458636438302,
+            rotation_count=3,
+            pretrigger_rotation_count=6,
+            verification_rotation_count=3,
+            available_rotation_count=9,
+        )
+        request = StampedFloat64MultiArray()
+        request.header = CANDIDATE_INFORMED_FILL_HEADER
+        request.timestamp = 42.0
+        request.data = list(
+            encode_candidate_informed_fill_payload([0.0] * 8, summary)
+        )
+        node.trigger_cb(request)
+
+        assert len(node.gaussian_fill_diagnostics_publisher.messages) == 1
+        fill = node.gaussian_fill_diagnostics_publisher.messages[0]
+        expected_floor = 1.25 * 2.4422282305312812
+        assert expected_floor <= fill.amplitude <= 6.25
+        assert fill.sigma_major >= 0.5
+        assert fill.sigma_minor >= 0.5
+        assert fill.exit_radius == pytest.approx(2.7 * fill.sigma_major)
+        created = next(
+            event
+            for event in node.algorithm_event_publisher.messages
+            if event.event_type == AlgorithmEvent.EVENT_FILL_CREATED
+        )
+        diagnostics = dict(zip(created.value_names, created.values))
+        assert diagnostics["candidate_fill_raw_cost_lower"] == pytest.approx(
+            -2.4422282305312812
+        )
+        assert diagnostics[
+            "candidate_fill_requested_amplitude_floor"
+        ] == pytest.approx(expected_floor)
+        assert diagnostics[
+            "candidate_fill_applied_amplitude_floor"
+        ] == pytest.approx(expected_floor)
+        assert diagnostics["candidate_fill_amplitude_floor_capped"] == 0.0
     finally:
         node.destroy_node()
         rclpy.shutdown()

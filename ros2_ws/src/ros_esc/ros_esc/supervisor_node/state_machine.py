@@ -17,6 +17,11 @@ VALID_EXTREMUM_CLASSIFICATION_MODES = (
     ABSOLUTE_SOURCE_SCORE,
     COUNTED_CANDIDATES,
 )
+CANDIDATE_INFORMED_FILL_HEADER = (
+    "ROBUST_FILL_CREATE:CANDIDATE_RAW_COST_V1"
+)
+CANDIDATE_INFORMED_FILL_BASE_VALUE_COUNT = 8
+CANDIDATE_INFORMED_FILL_EVIDENCE_VALUE_COUNT = 5
 
 
 class State(IntEnum):
@@ -70,6 +75,7 @@ class StateMachineConfig:
     candidate_cost_required_rotations: int = 2
     candidate_cost_pretrigger_rotations: int = 0
     candidate_cost_mad_scale: float = 3.0
+    candidate_informed_fill_enabled: bool = False
 
     def __post_init__(self):
         mode = str(self.extremum_classification_mode).strip().lower()
@@ -135,6 +141,16 @@ class StateMachineConfig:
                     "candidate_cost_pretrigger_rotations must be zero or "
                     "at least candidate_cost_required_rotations"
                 )
+        if not isinstance(self.candidate_informed_fill_enabled, bool):
+            raise ValueError("candidate_informed_fill_enabled must be boolean")
+        if (
+            self.candidate_informed_fill_enabled
+            and mode != COUNTED_CANDIDATES
+        ):
+            raise ValueError(
+                "candidate-informed fill requires counted-candidate "
+                "classification"
+            )
         if (
             isinstance(self.max_fill_clusters, bool)
             or not isinstance(self.max_fill_clusters, int)
@@ -290,6 +306,121 @@ class CandidateCostSummary:
             and isinstance(self.available_rotation_count, int)
             and self.available_rotation_count >= 0
         )
+
+
+@dataclass(frozen=True)
+class CandidateFillEvidence:
+    """Versioned raw-cost evidence carried by one robust fill request."""
+
+    estimate: float
+    mad: float
+    uncertainty: float
+    lower: float
+    rotation_count: int
+
+    @property
+    def valid(self) -> bool:
+        return bool(
+            math.isfinite(float(self.estimate))
+            and math.isfinite(float(self.mad))
+            and float(self.mad) >= 0.0
+            and math.isfinite(float(self.uncertainty))
+            and float(self.uncertainty) >= 0.0
+            and math.isfinite(float(self.lower))
+            and float(self.lower) < 0.0
+            and math.isclose(
+                float(self.lower),
+                float(self.estimate) - float(self.uncertainty),
+                rel_tol=1e-9,
+                abs_tol=1e-9,
+            )
+            and not isinstance(self.rotation_count, bool)
+            and isinstance(self.rotation_count, int)
+            and self.rotation_count >= 2
+        )
+
+
+def candidate_fill_evidence_from_summary(summary):
+    """Freeze one valid repeated raw-cost interval for fill design."""
+
+    if not isinstance(summary, CandidateCostSummary) or not summary.valid:
+        raise ValueError("candidate fill evidence requires a valid cost summary")
+    evidence = CandidateFillEvidence(
+        estimate=float(summary.estimate),
+        mad=float(summary.mad),
+        uncertainty=float(summary.uncertainty),
+        lower=float(summary.lower),
+        rotation_count=int(summary.rotation_count),
+    )
+    if not evidence.valid:
+        raise ValueError(
+            "candidate fill evidence requires repeated finite negative "
+            "raw-cost support"
+        )
+    return evidence
+
+
+def encode_candidate_informed_fill_payload(base_values, summary):
+    """Append the v1 candidate evidence suffix to one canonical snapshot."""
+
+    values = tuple(float(value) for value in base_values)
+    if (
+        len(values) != CANDIDATE_INFORMED_FILL_BASE_VALUE_COUNT
+        or any(not math.isfinite(value) for value in values)
+    ):
+        raise ValueError(
+            "candidate-informed fill requires eight finite convergence values"
+        )
+    evidence = candidate_fill_evidence_from_summary(summary)
+    return values + (
+        evidence.estimate,
+        evidence.mad,
+        evidence.uncertainty,
+        evidence.lower,
+        float(evidence.rotation_count),
+    )
+
+
+def decode_candidate_informed_fill_payload(header, values):
+    """Decode a v1 suffix; unrelated historical create headers return None."""
+
+    if str(header).strip() != CANDIDATE_INFORMED_FILL_HEADER:
+        return None
+    payload = tuple(float(value) for value in values)
+    expected = (
+        CANDIDATE_INFORMED_FILL_BASE_VALUE_COUNT
+        + CANDIDATE_INFORMED_FILL_EVIDENCE_VALUE_COUNT
+    )
+    if len(payload) != expected or any(
+        not math.isfinite(value) for value in payload
+    ):
+        raise ValueError(
+            "candidate-informed fill payload must contain thirteen "
+            "finite values"
+        )
+    rotation_value = payload[-1]
+    rotation_count = int(rotation_value)
+    if not math.isclose(
+        rotation_value,
+        float(rotation_count),
+        rel_tol=0.0,
+        abs_tol=1e-9,
+    ):
+        raise ValueError(
+            "candidate-informed fill rotation count must be integral"
+        )
+    evidence = CandidateFillEvidence(
+        estimate=payload[-5],
+        mad=payload[-4],
+        uncertainty=payload[-3],
+        lower=payload[-2],
+        rotation_count=rotation_count,
+    )
+    if not evidence.valid:
+        raise ValueError(
+            "candidate-informed fill evidence is invalid or inconsistent"
+        )
+    return evidence
 
 
 class RotationScoreWindow:

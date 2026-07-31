@@ -24,6 +24,7 @@ from ros_esc.gaussian_fill_node.basin_estimator import (
 )
 from ros_esc.gaussian_fill_node.fill_designer import (
     FillDesignConfig,
+    candidate_amplitude_floor,
     design_fill,
     gaussian_gradient,
     gaussian_value,
@@ -338,6 +339,56 @@ def test_amplitude_scales_with_width_and_curvature():
     wide_fill = initial_fill_geometry(wide, config)
     assert wide_fill.amplitude_curvature > narrow_fill.amplitude_curvature
     assert wide_fill.amplitude > narrow_fill.amplitude
+
+
+def test_candidate_amplitude_floor_is_conservative_bounded_and_unit_exact():
+    floor = candidate_amplitude_floor(-2.4422282305312812, 1.25, 6.25)
+    assert floor.requested == pytest.approx(3.0527852881641015)
+    assert floor.applied == pytest.approx(floor.requested)
+    assert floor.capped is False
+
+    capped = candidate_amplitude_floor(-5.0, 1.5, 6.25)
+    assert capped.requested == pytest.approx(7.5)
+    assert capped.applied == pytest.approx(6.25)
+    assert capped.capped is True
+
+
+@pytest.mark.parametrize(
+    "lower,scale,cap",
+    [
+        (0.0, 1.0, 1.0),
+        (math.nan, 1.0, 1.0),
+        (-1.0, 0.0, 1.0),
+        (-1.0, 1.0, math.inf),
+    ],
+)
+def test_candidate_amplitude_floor_rejects_invalid_contract(lower, scale, cap):
+    with pytest.raises(ValueError):
+        candidate_amplitude_floor(lower, scale, cap)
+
+
+def test_candidate_floor_changes_only_initial_amplitude_when_opted_in():
+    estimate = estimate_fixture(
+        covariance=np.eye(2) * 0.001,
+        hessian=np.zeros((2, 2)),
+    )
+    config = FillDesignConfig(
+        sigma_floor_m=0.5,
+        amplitude_min=0.1,
+        amplitude_max=6.25,
+    )
+    default = initial_fill_geometry(estimate, config)
+    informed = initial_fill_geometry(
+        estimate,
+        config,
+        minimum_amplitude=3.0527852881641015,
+    )
+    assert default.amplitude == pytest.approx(0.1)
+    assert informed.amplitude == pytest.approx(3.0527852881641015)
+    assert informed.center == pytest.approx(default.center)
+    assert informed.covariance == pytest.approx(default.covariance)
+    assert informed.sigma_major == pytest.approx(default.sigma_major)
+    assert informed.exit_radius == pytest.approx(2.5 * informed.sigma_major)
 
 
 def test_current_narrow_fill_can_leave_a_residual_minimum():

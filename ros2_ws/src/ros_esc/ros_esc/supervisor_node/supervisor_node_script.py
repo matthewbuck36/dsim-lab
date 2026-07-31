@@ -52,6 +52,7 @@ from ros_esc.supervisor_node.escape_recenter import (
     source_continuity_evidence,
 )
 from ros_esc.supervisor_node.state_machine import (
+    CANDIDATE_INFORMED_FILL_HEADER,
     COUNTED_CANDIDATES,
     ROBUST_PROFILE,
     RotationCostWindow,
@@ -60,6 +61,7 @@ from ros_esc.supervisor_node.state_machine import (
     StateMachineConfig,
     SupervisorStateMachine,
     TransitionInputs,
+    encode_candidate_informed_fill_payload,
 )
 
 
@@ -195,6 +197,11 @@ class SupervisorNode(Node):
                 ),
                 candidate_cost_mad_scale=self._nonnegative_float(
                     "candidate_cost_mad_scale"
+                ),
+                candidate_informed_fill_enabled=bool(
+                    self.get_parameter(
+                        "candidate_informed_fill_enabled"
+                    ).value
                 ),
             ),
         )
@@ -610,6 +617,7 @@ class SupervisorNode(Node):
             "candidate_cost_required_rotations": 2,
             "candidate_cost_pretrigger_rotations": 0,
             "candidate_cost_mad_scale": 3.0,
+            "candidate_informed_fill_enabled": False,
             "goal_hold_sec": 3.0,
             "undesired_score_hold_sec": 3.0,
             "verification_max_sec": 12.0,
@@ -1237,7 +1245,24 @@ class SupervisorNode(Node):
                     + str(self.machine.active_escape_fill_id)
                 )
             else:
-                request.header = ROBUST_FILL_CREATE
+                if self.machine.config.candidate_informed_fill_enabled:
+                    try:
+                        request.data = list(
+                            encode_candidate_informed_fill_payload(
+                                request.data,
+                                self.machine.pending_candidate_cost,
+                            )
+                        )
+                    except ValueError as exc:
+                        self._force_failsafe(
+                            now_sec,
+                            "candidate-informed fill request invalid: "
+                            + str(exc),
+                        )
+                        return
+                    request.header = CANDIDATE_INFORMED_FILL_HEADER
+                else:
+                    request.header = ROBUST_FILL_CREATE
             self.machine.register_fill_request(request.timestamp)
             self.fill_request_publisher.publish(request)
         if transition.current == State.GOAL_HOLD:
@@ -2775,6 +2800,7 @@ class SupervisorNode(Node):
             "candidate_cost_required_rotations",
             "candidate_cost_pretrigger_rotations",
             "candidate_cost_mad_scale",
+            "candidate_informed_fill_enabled",
             "candidate_cost_evidence_duration_sec",
             "candidate_cost_verification_margin_sec",
             "candidate_cost_verification_timing_sufficient",
@@ -2857,6 +2883,11 @@ class SupervisorNode(Node):
                 self.machine.config.candidate_cost_pretrigger_rotations
             ),
             self.candidate_cost_window.mad_scale,
+            (
+                1.0
+                if self.machine.config.candidate_informed_fill_enabled
+                else 0.0
+            ),
             self.candidate_cost_window.evidence_duration_sec,
             self.candidate_cost_verification_margin_sec,
             (

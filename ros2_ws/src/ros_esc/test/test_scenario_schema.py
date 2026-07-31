@@ -202,6 +202,26 @@ V8_2_SECONDARY_REPEATS = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v8_2_secondary_repeats.yaml'
 )
+V8_3_PRIMARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_3_primary_visible_probe.yaml'
+)
+V8_3_PRIMARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_3_primary_repeats.yaml'
+)
+V8_3_SECONDARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_3_secondary_visible_probe.yaml'
+)
+V8_3_SECONDARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_3_secondary_repeats.yaml'
+)
 HISTORICAL_V2_ACTIVATION = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml'
@@ -1406,6 +1426,100 @@ def test_schema_v8_resolves_four_versioned_pretrigger_raw_rank_suites():
             assert overrides['operating_bounds_enabled'] is False
             assert run['validation']['world'] is False
             assert run['validation']['contacts_enabled'] is False
+
+
+def test_schema_v8_resolves_four_candidate_informed_fill_suites():
+    expected = {
+        V8_3_PRIMARY_VISIBLE_PROBE: (1, True, {19101}),
+        V8_3_PRIMARY_REPEATS: (10, False, set(range(19111, 19121))),
+        V8_3_SECONDARY_VISIBLE_PROBE: (1, True, {19151}),
+        V8_3_SECONDARY_REPEATS: (5, False, set(range(19161, 19166))),
+    }
+    direct = [
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'DESIGN_OR_MERGE_FILL',
+        'ESCAPE_REPULSE',
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'GOAL_HOLD',
+    ]
+    assisted = [
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'DESIGN_OR_MERGE_FILL',
+        'ESCAPE_REPULSE',
+        'ESCAPE_ASSIST',
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'GOAL_HOLD',
+    ]
+    for path, (run_count, gui, seeds) in expected.items():
+        suite = load_suite(path)
+        runs, unsupported = expand_suite(suite)
+
+        assert unsupported == []
+        assert len(runs) == run_count
+        assert suite['execution']['gazebo_gui'] is gui
+        assert {run['seed'] for run in runs} == seeds
+        for run in runs:
+            overrides = run['algorithm']['launch_overrides']
+            controller = run['success']['controller']
+            assert overrides['candidate_informed_fill_enabled'] is True
+            assert (
+                overrides['candidate_informed_fill_amplitude_scale']
+                == 1.25
+            )
+            assert overrides['gaussian_fill_amplitude_max'] == 6.25
+            assert overrides['gaussian_fill_sigma_floor_m'] == 0.50
+            assert overrides['gaussian_fill_sigma_ceiling_m'] == 1.25
+            assert overrides['gaussian_fill_exit_sigma'] == 2.70
+            assert overrides['candidate_cost_required_rotations'] == 3
+            assert overrides['candidate_cost_pretrigger_rotations'] == 6
+            assert overrides['open_field_escape_assist_enabled'] is True
+            assert overrides['operating_bounds_enabled'] is False
+            assert controller['required_state_path'] == direct
+            assert controller['required_state_paths'] == [direct, assisted]
+            assert 'ESCAPE_STALLED' not in controller['required_events']
+            assert 'FILL_REJECTED' in controller['forbidden_events']
+            assert run['validation']['world'] is False
+            assert run['validation']['contacts_enabled'] is False
+
+
+@pytest.mark.parametrize(
+    ('mutation', 'match'),
+    [
+        (
+            lambda overrides: overrides.pop(
+                'candidate_informed_fill_amplitude_scale'
+            ),
+            'requires candidate_informed_fill_amplitude_scale',
+        ),
+        (
+            lambda overrides: overrides.update(
+                {'candidate_informed_fill_enabled': 1}
+            ),
+            'must be true or false',
+        ),
+        (
+            lambda overrides: overrides.update(
+                {'candidate_cost_required_rotations': 1}
+            ),
+            'requires at least two selected rotations',
+        ),
+    ],
+)
+def test_schema_v8_rejects_invalid_candidate_informed_fill_contract(
+    tmp_path,
+    mutation,
+    match,
+):
+    document = yaml.safe_load(
+        V8_3_PRIMARY_VISIBLE_PROBE.read_text(encoding='utf-8')
+    )
+    mutation(document['frozen_profile']['launch_overrides'])
+    with pytest.raises(ValueError, match=match):
+        _load(tmp_path, document)
 
 
 @pytest.mark.parametrize(

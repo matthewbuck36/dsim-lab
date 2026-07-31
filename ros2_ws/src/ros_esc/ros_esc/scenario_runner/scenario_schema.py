@@ -150,6 +150,8 @@ LAUNCH_OVERRIDES = {
     'candidate_cost_required_rotations',
     'candidate_cost_pretrigger_rotations',
     'candidate_cost_mad_scale',
+    'candidate_informed_fill_enabled',
+    'candidate_informed_fill_amplitude_scale',
     'minimum_radial_progress_m',
     'open_field_escape_assist_enabled',
     'modified_cost_affine_decay_rate',
@@ -404,6 +406,8 @@ SCHEMA_V8_LAUNCH_OVERRIDES = {
     'candidate_cost_pretrigger_rotations',
     'candidate_cost_required_rotations',
     'candidate_cost_rotation_period_sec',
+    'candidate_informed_fill_enabled',
+    'candidate_informed_fill_amplitude_scale',
     'convergence_confirmation_dwell_sec',
     'convergence_confirmation_exit_threshold_scale',
     'convergence_confirmation_policy',
@@ -540,6 +544,7 @@ def _validate_correction_overrides(overrides, ablations, location):
         )
     for name in (
         'candidate_cost_rotation_period_sec',
+        'candidate_informed_fill_amplitude_scale',
         'convergence_confirmation_dwell_sec',
     ):
         if name in overrides:
@@ -611,6 +616,31 @@ def _validate_correction_overrides(overrides, ablations, location):
             open_field_escape_assist_enabled,
             f'{location}.open_field_escape_assist_enabled',
         )
+    candidate_informed_fill_enabled = overrides.get(
+        'candidate_informed_fill_enabled',
+        False,
+    )
+    if 'candidate_informed_fill_enabled' in overrides:
+        candidate_informed_fill_enabled = _boolean(
+            candidate_informed_fill_enabled,
+            f'{location}.candidate_informed_fill_enabled',
+        )
+    if candidate_informed_fill_enabled:
+        if classification_mode != 'counted_candidates':
+            raise ValueError(
+                f'{location} candidate-informed fill requires '
+                'counted-candidate classification'
+            )
+        if 'candidate_informed_fill_amplitude_scale' not in overrides:
+            raise ValueError(
+                f'{location} candidate-informed fill requires '
+                'candidate_informed_fill_amplitude_scale'
+            )
+        if overrides.get('candidate_cost_required_rotations', 1) < 2:
+            raise ValueError(
+                f'{location} candidate-informed fill requires at least '
+                'two selected rotations'
+            )
     if classification_mode == 'counted_candidates':
         required = {
             'candidate_cost_mad_scale',
@@ -2198,6 +2228,13 @@ def load_suite(path):
                 False,
             )
         )
+        candidate_informed_fill_enabled = bool(
+            counted_open_field
+            and overrides.get(
+                'candidate_informed_fill_enabled',
+                False,
+            )
+        )
         if counted_open_field:
             expected_source_count = (
                 known_topology['expected_local_minima']
@@ -3135,20 +3172,34 @@ def load_suite(path):
                 [normalized_controller['required_state_path']],
             )
             if counted_open_field:
-                expected_counted_path = (
-                    COUNTED_OPEN_FIELD_ASSISTED_STATE_PATH
-                    if counted_open_field_assisted
-                    else COUNTED_OPEN_FIELD_STATE_PATH
-                )
+                if candidate_informed_fill_enabled:
+                    expected_counted_paths = {
+                        COUNTED_OPEN_FIELD_STATE_PATH,
+                        COUNTED_OPEN_FIELD_ASSISTED_STATE_PATH,
+                    }
+                    counted_path_contract_valid = (
+                        {
+                            tuple(path)
+                            for path in controller_paths
+                        }
+                        == expected_counted_paths
+                    )
+                else:
+                    expected_counted_path = (
+                        COUNTED_OPEN_FIELD_ASSISTED_STATE_PATH
+                        if counted_open_field_assisted
+                        else COUNTED_OPEN_FIELD_STATE_PATH
+                    )
+                    counted_path_contract_valid = all(
+                        tuple(path) == expected_counted_path
+                        for path in controller_paths
+                    )
                 if (
                     normalized_controller['expected_verification_outcome']
                     != 'below_target_extremum'
                     or normalized_controller['expected_terminal_state']
                     != 'GOAL_HOLD'
-                    or any(
-                        tuple(path) != expected_counted_path
-                        for path in controller_paths
-                    )
+                    or not counted_path_contract_valid
                 ):
                     raise ValueError(
                         f'{controller_location} counted open-field contract '
@@ -3161,7 +3212,10 @@ def load_suite(path):
                     'ESCAPE_STARTED',
                     'GOAL_REACHED',
                 }
-                if counted_open_field_assisted:
+                if (
+                    counted_open_field_assisted
+                    and not candidate_informed_fill_enabled
+                ):
                     required_staged_events.add('ESCAPE_STALLED')
             else:
                 expected_paths = {

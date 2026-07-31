@@ -26,9 +26,12 @@ from ros_esc.supervisor_node.escape_recenter import (
     source_continuity_evidence,
 )
 from ros_esc.supervisor_node.state_machine import (
+    CANDIDATE_INFORMED_FILL_HEADER,
+    CandidateCostSummary,
     State,
     Transition,
     TransitionInputs,
+    decode_candidate_informed_fill_payload,
 )
 from ros_esc.supervisor_node.supervisor_node_script import SupervisorNode
 from ros_esc_interfaces.msg import (
@@ -458,6 +461,65 @@ def test_candidate_pretrigger_history_is_default_off():
         assert node.machine.config.candidate_cost_pretrigger_rotations == 0
         assert node.candidate_cost_search_window is None
         assert node.candidate_cost_pretrigger_minima == ()
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_candidate_informed_fill_request_carries_only_frozen_raw_evidence():
+    rclpy.init()
+    node = SupervisorNode(
+        parameter_overrides=[
+            Parameter(
+                "extremum_classification_mode",
+                value="counted_candidates",
+            ),
+            Parameter("known_source_count", value=2),
+            Parameter("max_fill_clusters", value=1),
+            Parameter("candidate_cost_required_rotations", value=3),
+            Parameter("candidate_cost_pretrigger_rotations", value=6),
+            Parameter("candidate_informed_fill_enabled", value=True),
+            Parameter("recenter_after_escape", value=False),
+        ]
+    )
+    requests = Recorder()
+    node.fill_request_publisher = requests
+    try:
+        node.machine.state = State.DESIGN_OR_MERGE_FILL
+        node.machine.pending_candidate_cost = CandidateCostSummary(
+            estimate=-1.572582366887451,
+            mad=0.2898819545479434,
+            uncertainty=0.8696458636438302,
+            rotation_count=3,
+            pretrigger_rotation_count=6,
+            verification_rotation_count=3,
+            available_rotation_count=9,
+        )
+        node.latest_convergence = _convergence(0.9, 1.1)
+        transition = Transition(
+            State.VERIFY_EXTREMUM,
+            State.DESIGN_OR_MERGE_FILL,
+            "counted candidate requires local fill before terminal ranking",
+        )
+        node._handle_transition(transition, node.machine.last_now_sec)
+
+        assert len(requests.messages) == 1
+        request = requests.messages[0]
+        assert request.header == CANDIDATE_INFORMED_FILL_HEADER
+        assert len(request.data) == 13
+        assert request.data[:8] == pytest.approx(
+            node.latest_convergence.data
+        )
+        evidence = decode_candidate_informed_fill_payload(
+            request.header,
+            request.data,
+        )
+        assert evidence.estimate == pytest.approx(-1.572582366887451)
+        assert evidence.lower == pytest.approx(-2.4422282305312812)
+        assert evidence.rotation_count == 3
+        assert node.machine.fill_request_timestamp == pytest.approx(
+            node.latest_convergence.timestamp
+        )
     finally:
         node.destroy_node()
         rclpy.shutdown()

@@ -174,6 +174,26 @@ V8_2_SECONDARY_REPEATS = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v8_2_secondary_repeats.yaml'
 )
+V8_3_PRIMARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_3_primary_visible_probe.yaml'
+)
+V8_3_PRIMARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_3_primary_repeats.yaml'
+)
+V8_3_SECONDARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_3_secondary_visible_probe.yaml'
+)
+V8_3_SECONDARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_3_secondary_repeats.yaml'
+)
 
 
 def test_observed_local_recovery_binds_fill_to_local_convergence():
@@ -1234,6 +1254,69 @@ def test_v8_2_launch_binds_bounded_raw_history_without_evaluator_controls(
             'candidate_cost_required_rotations:=3',
             'candidate_cost_pretrigger_rotations:=6',
             'candidate_cost_mad_scale:=3.0',
+            'open_field_escape_assist_enabled:=True',
+            'operating_bounds_enabled:=False',
+            'modified_cost_enable_affine_bias:=False',
+            'recenter_after_escape:=False',
+            'post_recovery_guidance_enabled:=False',
+            'recoverable_navigation_enabled:=False',
+            'simulation_contacts_enabled:=False',
+        ):
+            assert expected in launch
+        forbidden_fragments = {
+            str(source[field])
+            for source in resolved['sources']
+            for field in ('x_m', 'y_m', 'relative_lumen_input')
+        }
+        assert not any(
+            token.startswith('global_source_')
+            or token.startswith('source_role_')
+            or token.startswith('simulation_truth_')
+            or (
+                not token.startswith('light_')
+                and any(
+                    fragment in token for fragment in forbidden_fragments
+                )
+            )
+            for token in launch
+            if not token.startswith('number_of_lights:=')
+        )
+
+
+@pytest.mark.parametrize(
+    'scenario_path',
+    [
+        V8_3_PRIMARY_VISIBLE_PROBE,
+        V8_3_PRIMARY_REPEATS,
+        V8_3_SECONDARY_VISIBLE_PROBE,
+        V8_3_SECONDARY_REPEATS,
+    ],
+)
+def test_v8_3_launch_binds_candidate_fill_without_evaluator_controls(
+    scenario_path,
+):
+    suite = load_suite(scenario_path)
+    runs, unsupported = expand_suite(suite)
+
+    assert unsupported == []
+    for resolved in runs:
+        launch = build_launch_command(
+            resolved,
+            cost_path=Path('/tmp/phase08_v8_3_cost.yaml'),
+            gui=suite['execution']['gazebo_gui'],
+        )
+        for expected in (
+            'number_of_lights:=2',
+            'extremum_classification_mode:=counted_candidates',
+            'known_source_count:=2',
+            'candidate_cost_required_rotations:=3',
+            'candidate_cost_pretrigger_rotations:=6',
+            'candidate_informed_fill_enabled:=True',
+            'candidate_informed_fill_amplitude_scale:=1.25',
+            'gaussian_fill_amplitude_max:=6.25',
+            'gaussian_fill_sigma_floor_m:=0.5',
+            'gaussian_fill_sigma_ceiling_m:=1.25',
+            'gaussian_fill_exit_sigma:=2.7',
             'open_field_escape_assist_enabled:=True',
             'operating_bounds_enabled:=False',
             'modified_cost_enable_affine_bias:=False',

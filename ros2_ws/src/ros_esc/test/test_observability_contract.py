@@ -393,6 +393,8 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         "escape_exit_hold_sec": "1.0",
         "open_field_escape_assist_enabled": "False",
         "candidate_cost_pretrigger_rotations": "0",
+        "candidate_informed_fill_enabled": "False",
+        "candidate_informed_fill_amplitude_scale": "1.0",
         "stall_window_sec": "3.0",
         "minimum_radial_progress_m": "0.05",
         "approach_history_window_sec": "3.0",
@@ -525,6 +527,7 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         'adaptive_recenter_lookahead_enabled',
         'open_field_escape_assist_enabled',
         'candidate_cost_pretrigger_rotations',
+        'candidate_informed_fill_enabled',
     ):
         assert (
             f'-p {name}:=$(var {name})'
@@ -566,6 +569,16 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         if "modified_cost_node" in element.attrib.get("cmd", "")
     ]
     assert len(gaussian_commands) == 1
+    assert (
+        "-p candidate_informed_fill_enabled:="
+        "$(var candidate_informed_fill_enabled)"
+        in gaussian_commands[0].attrib["cmd"]
+    )
+    assert (
+        "-p candidate_informed_fill_amplitude_scale:="
+        "$(var candidate_informed_fill_amplitude_scale)"
+        in gaussian_commands[0].attrib["cmd"]
+    )
     assert len(modified_cost_commands) == 1
     assert "gaussian_fill_diagnostics_topic" in modified_cost_commands[0].attrib["cmd"]
     controller_commands = [

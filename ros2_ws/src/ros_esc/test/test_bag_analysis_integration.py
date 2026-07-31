@@ -217,8 +217,17 @@ def _event(timestamp_ns, event_type):
     message.state_name = 'ESCAPE_REPULSE'
     message.state_valid = True
     message.detail = 'fixture event'
-    message.value_names = ['known']
-    message.values = [1.0]
+    if event_type == AlgorithmEvent.EVENT_FILL_CREATED:
+        message.value_names = [
+            'candidate_fill_raw_cost_lower',
+            'candidate_fill_requested_amplitude_floor',
+            'candidate_fill_applied_amplitude_floor',
+            'candidate_fill_amplitude_floor_capped',
+        ]
+        message.values = [-2.4, 3.0, 3.0, 0.0]
+    else:
+        message.value_names = ['known']
+        message.values = [1.0]
     return message
 
 
@@ -451,6 +460,21 @@ def test_generated_sqlite_bag_produces_complete_evidence(
     assert synchronized[0]['bag_timestamp_ns'] == '1100000000'
     assert synchronized[0]['ros_timestamp_ns'] == '1100000000'
     assert synchronized[0]['source_timestamp_sec'] == '1.1'
+    with (output / 'tables/algorithm_events.csv').open(
+        'r', encoding='utf-8', newline=''
+    ) as stream:
+        events = list(csv.DictReader(stream))
+    created = next(
+        row for row in events
+        if int(row['event_type']) == AlgorithmEvent.EVENT_FILL_CREATED
+    )
+    assert json.loads(created['value_names']) == [
+        'candidate_fill_raw_cost_lower',
+        'candidate_fill_requested_amplitude_floor',
+        'candidate_fill_applied_amplitude_floor',
+        'candidate_fill_amplitude_floor_capped',
+    ]
+    assert json.loads(created['values']) == [-2.4, 3.0, 3.0, 0.0]
 
 
 def test_schema_v4_summary_exposes_applicability_and_attempt_scalars(

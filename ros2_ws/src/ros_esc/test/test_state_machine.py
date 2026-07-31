@@ -5,6 +5,7 @@ import math
 import pytest
 
 from ros_esc.supervisor_node.state_machine import (
+    CANDIDATE_INFORMED_FILL_HEADER,
     COUNTED_CANDIDATES,
     STATE_WEIGHTS,
     CandidateCostSummary,
@@ -14,6 +15,8 @@ from ros_esc.supervisor_node.state_machine import (
     StateMachineConfig,
     SupervisorStateMachine,
     TransitionInputs,
+    decode_candidate_informed_fill_payload,
+    encode_candidate_informed_fill_payload,
 )
 
 
@@ -160,6 +163,71 @@ def test_open_field_assist_is_opt_in_and_preserves_default_weights():
     )
     assisted.state = State.ESCAPE_ASSIST
     assert assisted.weights == (0.0, 1.0, 0.0)
+
+
+def test_candidate_informed_fill_is_default_off_and_counted_only():
+    assert StateMachineConfig().candidate_informed_fill_enabled is False
+    enabled = counted_config(candidate_informed_fill_enabled=True)
+    assert enabled.candidate_informed_fill_enabled is True
+    with pytest.raises(ValueError, match="counted-candidate"):
+        config(candidate_informed_fill_enabled=True)
+    with pytest.raises(ValueError, match="must be boolean"):
+        counted_config(candidate_informed_fill_enabled=1)
+
+
+def test_candidate_informed_fill_payload_round_trips_raw_interval_only():
+    summary = CandidateCostSummary(
+        estimate=-1.5,
+        mad=0.2,
+        uncertainty=0.6,
+        rotation_count=3,
+        pretrigger_rotation_count=6,
+        verification_rotation_count=3,
+        available_rotation_count=9,
+    )
+    payload = encode_candidate_informed_fill_payload(
+        [float(index) for index in range(8)],
+        summary,
+    )
+    assert payload[:8] == tuple(float(index) for index in range(8))
+    assert payload[8:] == pytest.approx((-1.5, 0.2, 0.6, -2.1, 3.0))
+    evidence = decode_candidate_informed_fill_payload(
+        CANDIDATE_INFORMED_FILL_HEADER,
+        payload,
+    )
+    assert evidence.estimate == pytest.approx(-1.5)
+    assert evidence.lower == pytest.approx(-2.1)
+    assert evidence.rotation_count == 3
+    assert decode_candidate_informed_fill_payload(
+        "ROBUST_FILL_CREATE",
+        [0.0] * 8,
+    ) is None
+
+
+@pytest.mark.parametrize(
+    "header,payload",
+    [
+        (CANDIDATE_INFORMED_FILL_HEADER, [0.0] * 12),
+        (
+            CANDIDATE_INFORMED_FILL_HEADER,
+            [0.0] * 8 + [-1.0, 0.1, 0.3, -1.2, 1.0],
+        ),
+        (
+            CANDIDATE_INFORMED_FILL_HEADER,
+            [0.0] * 8 + [-1.0, 0.1, 0.3, -1.0, 3.0],
+        ),
+        (
+            CANDIDATE_INFORMED_FILL_HEADER,
+            [0.0] * 8 + [1.0, 0.1, 0.3, 0.7, 3.0],
+        ),
+    ],
+)
+def test_candidate_informed_fill_payload_rejects_malformed_evidence(
+    header,
+    payload,
+):
+    with pytest.raises(ValueError):
+        decode_candidate_informed_fill_payload(header, payload)
 
 
 @pytest.mark.parametrize(

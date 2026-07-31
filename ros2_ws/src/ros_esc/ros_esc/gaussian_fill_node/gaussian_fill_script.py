@@ -32,6 +32,7 @@ from ros_esc.gaussian_fill_node.basin_estimator import (
 )
 from ros_esc.gaussian_fill_node.fill_designer import (
     FillDesignConfig,
+    candidate_amplitude_floor,
     design_fill,
     initial_fill_geometry,
 )
@@ -39,7 +40,11 @@ from ros_esc.gaussian_fill_node.fill_registry import (
     FillRegistry,
     RegistryConfig,
 )
-from ros_esc.supervisor_node.state_machine import ROBUST_PROFILE, VALID_PROFILES
+from ros_esc.supervisor_node.state_machine import (
+    ROBUST_PROFILE,
+    VALID_PROFILES,
+    decode_candidate_informed_fill_payload,
+)
 
 
 ROBUST_FILL_CREATE = "ROBUST_FILL_CREATE"
@@ -170,6 +175,8 @@ class GaussianFill(Node):
             "minimum_merge_probability": 0.60,
             "low_confidence_threshold": 0.60,
             'reuse_retained_samples_on_redesign': False,
+            "candidate_informed_fill_enabled": False,
+            "candidate_informed_fill_amplitude_scale": 1.0,
         }
         for name, value in robust_defaults.items():
             self.declare_parameter(name, value)
@@ -283,6 +290,20 @@ class GaussianFill(Node):
         self.reuse_retained_samples_on_redesign = bool(
             self.get_parameter('reuse_retained_samples_on_redesign').value
         )
+        self.candidate_informed_fill_enabled = bool(
+            self.get_parameter("candidate_informed_fill_enabled").value
+        )
+        self.candidate_informed_fill_amplitude_scale = self._parameter_float(
+            "candidate_informed_fill_amplitude_scale"
+        )
+        if (
+            not math.isfinite(self.candidate_informed_fill_amplitude_scale)
+            or self.candidate_informed_fill_amplitude_scale <= 0.0
+        ):
+            raise ValueError(
+                "candidate_informed_fill_amplitude_scale must be finite "
+                "and positive"
+            )
         self.estimator_config = None
         self.design_config = None
         self.fill_registry = None
@@ -675,11 +696,95 @@ class GaussianFill(Node):
             )
             return
         try:
+            candidate_fill_evidence = (
+                decode_candidate_informed_fill_payload(
+                    msg.header,
+                    msg.data,
+                )
+            )
+        except (TypeError, ValueError) as exc:
+            self._publish_robust_failure(
+                AlgorithmEvent.EVENT_FILL_REJECTED,
+                35,
+                "candidate-informed fill request invalid: " + str(exc),
+                request_timestamp,
+                window,
+                unmatched,
+            )
+            return
+        if redesign_fill_id is None:
+            if (
+                self.candidate_informed_fill_enabled
+                and candidate_fill_evidence is None
+            ):
+                self._publish_robust_failure(
+                    AlgorithmEvent.EVENT_FILL_REJECTED,
+                    35,
+                    "candidate-informed fill evidence is required",
+                    request_timestamp,
+                    window,
+                    unmatched,
+                )
+                return
+            if (
+                not self.candidate_informed_fill_enabled
+                and candidate_fill_evidence is not None
+            ):
+                self._publish_robust_failure(
+                    AlgorithmEvent.EVENT_FILL_REJECTED,
+                    35,
+                    "candidate-informed fill evidence is disabled",
+                    request_timestamp,
+                    window,
+                    unmatched,
+                )
+                return
+        amplitude_floor = None
+        if candidate_fill_evidence is not None:
+            amplitude_floor = candidate_amplitude_floor(
+                candidate_fill_evidence.lower,
+                self.candidate_informed_fill_amplitude_scale,
+                self.design_config.amplitude_max,
+            )
+            self.robust_request_diagnostics.update({
+                "candidate_fill_raw_cost_estimate": (
+                    candidate_fill_evidence.estimate
+                ),
+                "candidate_fill_raw_cost_mad": candidate_fill_evidence.mad,
+                "candidate_fill_raw_cost_uncertainty": (
+                    candidate_fill_evidence.uncertainty
+                ),
+                "candidate_fill_raw_cost_lower": (
+                    candidate_fill_evidence.lower
+                ),
+                "candidate_fill_rotation_count": float(
+                    candidate_fill_evidence.rotation_count
+                ),
+                "candidate_fill_amplitude_scale": (
+                    self.candidate_informed_fill_amplitude_scale
+                ),
+                "candidate_fill_requested_amplitude_floor": (
+                    amplitude_floor.requested
+                ),
+                "candidate_fill_applied_amplitude_floor": (
+                    amplitude_floor.applied
+                ),
+                "candidate_fill_amplitude_floor_capped": (
+                    1.0 if amplitude_floor.capped else 0.0
+                ),
+            })
+        try:
             candidate_estimate = estimate_basin(
                 window.samples, self.estimator_config
             )
             candidate_geometry = initial_fill_geometry(
-                candidate_estimate, self.design_config
+                candidate_estimate,
+                self.design_config,
+                minimum_amplitude=(
+                    amplitude_floor.applied
+                    if amplitude_floor is not None
+                    else 0.0
+                ),
             )
             if redesign_fill_id is None:
                 association = self.fill_registry.associate(
@@ -741,6 +846,11 @@ class GaussianFill(Node):
                 minimum_valid_samples=self.estimator_config.minimum_valid_samples,
                 condition_limit=(
                     self.estimator_config.quadratic_condition_number_max
+                ),
+                minimum_amplitude=(
+                    amplitude_floor.applied
+                    if amplitude_floor is not None
+                    else 0.0
                 ),
             )
         except (ValueError, np.linalg.LinAlgError) as exc:
@@ -1670,6 +1780,8 @@ class GaussianFill(Node):
                 "minimum_merge_probability",
                 "low_confidence_threshold",
                 'reuse_retained_samples_on_redesign',
+                "candidate_informed_fill_enabled",
+                "candidate_informed_fill_amplitude_scale",
                 "max_fills",
             ]
             values = []

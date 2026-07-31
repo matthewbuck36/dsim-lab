@@ -11786,3 +11786,154 @@ GAZEBO PROHIBITED.**
 
 Commit the bounded failure/amendment evidence. Then implement and fully
 qualify M4.1 without Gazebo before any v8.3 dispatch can be authorized.
+
+## Phase 08.8 M4 failure/amendment commit boundary — 2026-07-30
+
+The retained v8.2 fixed-gate failure, complete diagnosis, and approved v8.3
+correction amendment were committed at:
+
+```text
+937c6d441bc3a03c1d160d1d40fac9c0b13ec7db
+phase 08.8: retain failed primary repeat gate
+```
+
+V8.2 remains closed failed. Its undispatched repetitions, secondary suite, and
+broad characterization were not run.
+
+## Phase 08.8 M4.1 implementation and no-Gazebo qualification — 2026-07-30
+
+The default-off candidate-informed fill contract is implemented. For a newly
+confirmed counted candidate, the supervisor appends the validated
+rotation-stable raw-cost estimate, MAD, uncertainty, lower interval bound, and
+selected rotation count to a versioned robust fill request. The Gaussian owner
+uses only that negative raw-cost lower bound to impose a bounded amplitude
+floor. Its existing adaptive center, covariance, anisotropy, association,
+validation, escalation, and fill registry remain authoritative.
+
+The fixed v8.3 profile uses:
+
+```text
+candidate_informed_fill_enabled:          true
+candidate_informed_fill_amplitude_scale: 1.25
+gaussian_fill_amplitude_max:              6.25
+gaussian_fill_sigma_floor_m:              0.50
+gaussian_fill_sigma_ceiling_m:            1.25
+gaussian_fill_exit_sigma:                 2.70
+```
+
+It retains source count two, one-fill cardinality, `400/1600` direct inputs,
+strict raw ranking, open-field motion, no contacts, no operating bounds, no
+affine bias, no recenter, no post-recovery guidance, no recoverable navigation,
+the evaluator-only `0.50 m` simulation stop, and the physical `Ctrl+C`
+contract. No controller receives a source coordinate, source role, global
+coordinate, room geometry, Vicon value, or evaluator proximity.
+
+Direct Gaussian repulsion and the existing finite outward fallback are both
+valid recovery paths for v8.3. The schema permits exactly those two paths only
+for opted-in candidate-informed counted suites. Historical counted profiles
+retain their existing single-path and event contracts.
+
+Final source-tree evidence:
+
+```text
+focused controller/detector/fill/core/legacy:
+  213 passed in 7.34 s
+  /tmp/phase08_8_3_focused.xml
+  a5585325a1caca01bc3f0974fc83de872df27a2bc17441e9e5a683a466ed238e
+
+scenario/schema/Phase 08 validator:
+  403 passed, 1 Gazebo-only skip in 94.30 s
+  /tmp/phase08_8_3_scenario.xml
+  1dc086718083595dba6d7cc72e658e7836898b51c1a0a07c8d31ff352c927c15
+
+analyzer/integration:
+  18 passed in 6.10 s
+  /tmp/phase08_8_3_analysis.xml
+  ae5f364b361e0a6520f36443c425f08c71291daf3334a032cd5de341a55907ae
+
+broad ROS-independent functional:
+  791 passed, 2 Gazebo-only skips in 135.75 s
+  /tmp/phase08_8_3_broad.xml
+  597fdccfaf97c93d6d93b80f77ec14759684cef67f19f5177218aaa682936624
+```
+
+Fatal changed-Python lint, compilation, launch XML, all four v8.3 YAML
+documents, `git diff --check`, and Phase 08 implementation-context validation
+pass.
+
+The fresh isolated build at `/tmp/phase08_8_3_release_qual` finished
+`ros_esc_interfaces`, `ros_esc`, and `turtlebot3_rotating_sensor` in `13.0 s`.
+Source/install parity passes for all `10/10` runtime artifacts. Installed
+launch argument and description construction pass. Default and opted-in
+supervisor and Gaussian nodes construct from the isolated install under
+bounded five-second checks.
+
+An initial direct opted-in supervisor construction command omitted the
+existing counted-source `max_fill_clusters=1` parameter and was correctly
+rejected. The corrected command matched `known_source_count=2` with
+`max_fill_clusters=1` and passed. No source or scenario changed in response.
+
+Installed dry-run resolution passes:
+
+```text
+primary visible:    1 resolved / 0 unsupported
+primary repeats:   10 resolved / 0 unsupported
+secondary visible:  1 resolved / 0 unsupported
+secondary repeats:  5 resolved / 0 unsupported
+```
+
+None of the four declared campaign roots was created. Historical world and V6
+selection hashes remain exact, and no historical scenario changed.
+
+Complete implementation, compatibility, test, build, installed-graph, dry-run,
+hash, and dispatch evidence:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_1_no_gazebo_qualification.md
+```
+
+No Gazebo, recording, new-bag analysis, or physical process ran during M4.1
+implementation or qualification.
+
+## Current milestone
+
+**PHASE 08.8 M4.1 — V8.3 IMPLEMENTED / NO-GAZEBO QUALIFICATION PASS /
+MATERIAL CHECKPOINT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Run the Phase 08 material checkpoint, inspect its bounded diff, and commit the
+exact qualified v8.3 boundary. Only that committed boundary can authorize one
+visible primary probe at seed `19101`.
+
+## Phase 08.8 M4.1 material checkpoint — 2026-07-30
+
+The fully qualified v8.3 implementation, tests, scenarios, live status, and
+durable validation record received the required precommit Phase 08 checkpoint
+against base HEAD `937c6d4`.
+
+```text
+checkpoint:
+  docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
+status sha256:
+  fdee18e366b815d0f04cb241ec6d28cd8a1a9c54141a053e88b474d3cd446f4c
+unstaged diff sha256:
+  7e7df65fc3fd45336f959810d0e77dc7261a6286353a69ee76acb6d4a7b98d74
+diff check:
+  PASS
+```
+
+No Gazebo, scenario, recorder, analyzer, or physical process ran while
+creating the checkpoint.
+
+## Current milestone
+
+**PHASE 08.8 M4.1 — V8.3 IMPLEMENTED / NO-GAZEBO QUALIFICATION PASS /
+MATERIAL CHECKPOINT PASS / COMMIT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Commit this exact qualified boundary, verify the commit and clean worktree,
+then record a separate committed dispatch boundary before executing the single
+visible primary probe at seed `19101`.
