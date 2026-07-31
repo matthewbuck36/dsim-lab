@@ -3210,3 +3210,19 @@ wall/obstacle behavior, or broad field robustness. The global coordinate
 remains evaluator-only. Physical motion remains prohibited in Phase 08, and
 the physical controller must continue until the operator presses `Ctrl+C`;
 no simulation proximity stop may enter the physical path.
+
+## Active goal-continuation amendment — v8.11
+
+The bounded v8.10 closeout remains immutable, but it did not finish the
+already-approved broader Phase 08.8 objective. The active continuation is now
+defined by the separately reviewable subplan:
+
+```text
+docs/codex/gesc_gaussian/plans/phase_08_8_v8_11_plan.md
+```
+
+That subplan is authoritative for the fresh schema-v14 evaluator-topology
+correction, retained evidence replay, secondary visible/repeat gate, and
+sealed varied-layout/intensity matrix. It changes no v8.10 result and
+authorizes no Gazebo process until its own no-Gazebo qualification,
+checkpoint, and implementation commit pass.

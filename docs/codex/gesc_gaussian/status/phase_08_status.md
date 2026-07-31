@@ -18433,3 +18433,101 @@ motion. Preserve manual operator `Ctrl+C`, final-zero, recording
 finalization, open-field assumptions, and scoped cleanup. Do not infer
 secondary-layout, arbitrary-intensity, three-light, wall, obstacle, or broad
 simulation readiness.
+
+## Phase 08.8 active-goal continuation / v8.11 Plan — 2026-07-31
+
+The automatic goal remains active because the bounded v8.10 closeout did not
+complete the previously approved secondary repeat or varied-layout/intensity
+work. Commit `5d76841` and every v8.10 result remain immutable; this is a
+fresh versioned continuation, not a reclassification.
+
+Repository reconstruction found one smallest coherent correction. Retained
+secondary seed `19851` completed one fill, direct measured escape, strict raw
+ranking of candidate two, `GOAL_HOLD`, and final global distance
+`0.1055488518 m`. Its formal failure came solely from associating the
+aggregate-field convergence to the individual local lamp with a `0.60 m`
+gate. The convergence-to-fill distance was `0.0078869239 m`, while the
+convergence-to-lamp distance was `0.7570611822 m`.
+
+The fresh subplan is:
+
+```text
+docs/codex/gesc_gaussian/plans/phase_08_8_v8_11_plan.md
+```
+
+It freezes a schema-v14, evaluator-only, hashed two-source topology
+qualification and reuses the existing counted-candidate `verified_trap`
+association. No controller, detector, fill, affine term, modified cost, raw
+ranking, source-count policy, motion parameter, wall behavior, launch graph,
+recorder, or physical path changes. Source geometry and topology proof remain
+outside the controller graph.
+
+After complete no-Gazebo qualification and a committed implementation
+boundary, v8.11 plans exactly:
+
+```text
+secondary visible:  seed 19901
+secondary repeats:  seeds 19911..19915
+sealed matrix:       seeds 19931..19934
+matrix ratios:       1:3 and 1:5
+matrix placements:   radii 1.25, 1.50, 1.75 m; angles 45 and 60 degrees
+```
+
+The retained v8.10 secondary bag will be replayed only as no-Gazebo evidence;
+its historical formal result remains failed because its original live runner
+did not perform a graceful global-proximity stop. Every fresh dispatched case
+is one-time/no-retry and remains subject to recording, final-zero, cleanup,
+strict ranking, exact one-fill, staged recovery, and post-recovery proximity
+gates. All nine standard plots are required for every complete run.
+
+No Gazebo, ROS graph, analyzer, or physical process was started while writing
+this Plan. The worktree before the Plan edit was clean at `5d76841`.
+
+## Current milestone
+
+**PHASE 08.8 M8.1 — V8.11 TOPOLOGY-BOUND EVALUATOR CORRECTION PLANNED /
+PLAN CHECKPOINT AND COMMIT PENDING / NO GAZEBO AUTHORIZED.**
+
+## Next criterion
+
+Run Plan-only static validation and Phase 08 context, inspect the three-file
+Plan/status diff, checkpoint Phase 08, and commit the bounded amendment. Then
+implement M8.1-M8.2 and complete the full no-Gazebo qualification before any
+fresh simulation dispatch. Do not modify or relabel v8.10, run Gazebo, invoke
+the analyzer, launch Phase 09, or move physical hardware.
+
+## Phase 08.8 v8.11 Plan checkpoint — 2026-07-31
+
+The fresh topology-bound continuation Plan received its required Plan-only
+checkpoint against clean committed base `5d76841`.
+
+```text
+Phase 00 required documents:       PASS
+Phase 08 implement context:        PASS
+git diff --check:                  PASS
+active simulation/analysis/physical runtime: none
+v8.11 subplan sha256:
+  6d5d8446cf3dc56de77a34a62eb7e28e30e9e6d9e422ef9556ff990acaebd644
+parent Phase 08.8 Plan sha256:
+  cae634bd2d19bac0de442635520790d916d816d4160cea226b8d22b82c891641
+status sha256 before this checkpoint note:
+  4bb0a4604920c68c87f0917c2b8da88b60e86639200e4813b24b15bf8dbe1c80
+checkpoint sha256 before this checkpoint note:
+  7928992369b1a069808c3009e3f2be6f8780ed35b54c5180af6c35dbf0ea1a50
+```
+
+No code, scenario, world, run, bag, report, plot, controller input, or
+physical path changed in this Plan milestone. No Gazebo, ROS graph, analyzer,
+or hardware process ran.
+
+## Current milestone
+
+**PHASE 08.8 M8.1 — V8.11 TOPOLOGY-BOUND EVALUATOR CORRECTION PLANNED /
+PLAN CHECKPOINT PASS / PLAN COMMIT PENDING / NO GAZEBO AUTHORIZED.**
+
+## Next criterion
+
+Commit the reviewed four-file Plan/status/checkpoint boundary. Then implement
+schema v14 and the evaluator-only topology record, add fresh v8.11 scenarios
+and tests, and complete the full M8.2 no-Gazebo qualification, checkpoint,
+and implementation commit before any Gazebo dispatch.
