@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-30T17:18:00-07:00`
-Status: `PHASE 08 WHOLE-PHASE REPORT QUALIFIED; BROAD SIMULATION-READY OBJECTIVE FAILED; CHECKPOINT/COMMIT PENDING`
+Last verified: `2026-07-30T17:25:00-07:00`
+Status: `PHASE 08 CLOSED AND COMMITTED; BROAD SIMULATION-READY OBJECTIVE FAILED; PHASE 09 PLAN REQUIRES SEPARATE REQUEST`
 
 ## Objective
 
@@ -10521,3 +10521,47 @@ Run `checkpoint_phase.sh 08`, inspect the resulting checkpoint and complete
 six-file closeout diff, rerun context and whitespace checks, and commit the
 report/handoff/navigation/status/checkpoint boundary. Do not run Gazebo,
 Phase 09 implementation, three-light simulation, or physical hardware.
+
+## Whole-Phase-08 committed boundary
+
+The qualified whole-phase report, final handoff, navigation updates, live
+status evidence, and material checkpoint were committed at:
+
+```text
+b1d1e7c7a619f308765e1d913ed1b891610df2c3
+phase 08: publish final development report
+```
+
+Immediately after that commit:
+
+```text
+worktree:                         clean
+branch:                           feature/gesc-gaussian-robustness-v1
+ahead of tracked remote:          102 commits
+validate_phase_context.sh 08:     pass
+final report SHA-256:
+  a884577d7d844f24b554f461543e15c9a2aa527f61e41f1c18141cea6a3a2306
+final handoff SHA-256:
+  a082e23b58345eb7d418822b409824122ffc185530d7285e6e16c6defb7f5727
+```
+
+The report commit does not create a simulation-ready tag, reopen any failed
+experiment, authorize three-light execution, begin Phase 09 implementation,
+or authorize physical hardware. It closes Phase 08 with the broad
+simulation-ready objective failed and the narrower M4.8 known-success
+reproduction retained.
+
+## Current milestone
+
+**PHASE 08 — CLOSED /
+FINAL REPORT AND HANDOFF COMMITTED AT B1D1E7C /
+BROAD SIMULATION-READY OBJECTIVE FAILED /
+PHYSICAL AUTO-DISTANCE STOP PROHIBITED.**
+
+### Next criterion
+
+Wait for a separate user request to plan Phase 09. Begin with current physical
+interface inventory and a two-light `1:4` measured-response commissioning
+proposal. Planning does not authorize hardware motion. Preserve manual
+operator `Ctrl+C`, final-zero, recording-finalization, and scoped-cleanup
+requirements; do not infer three-light readiness.
