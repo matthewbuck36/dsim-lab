@@ -13,8 +13,8 @@ from ros_esc.scenario_runner import aggregate_field_truth
 import yaml
 
 
-SCHEMA_VERSION = 9
-SUPPORTED_SCHEMA_VERSIONS = {1, 2, 3, 4, 5, 6, 7, 8, 9}
+SCHEMA_VERSION = 10
+SUPPORTED_SCHEMA_VERSIONS = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 PROFILES = {'legacy', 'robust_gaussian_v1'}
 STATUSES = {'executable_unverified', 'unsupported'}
 FAMILIES = {
@@ -97,6 +97,7 @@ SUCCESS_PREDICATES = {
     'local_recovery_stage',
     'post_recovery_global_proximity',
     'fill_cardinality',
+    'supervisor_owned_escape_assist',
 }
 LAUNCH_OVERRIDES = {
     'approach_history_window_sec',
@@ -156,6 +157,7 @@ LAUNCH_OVERRIDES = {
     'open_field_escape_assist_enabled',
     'open_field_escape_approach_continuity_enabled',
     'open_field_escape_active_fill_transit_enabled',
+    'open_field_escape_supervisor_owned_assist_enabled',
     'modified_cost_affine_decay_rate',
     'modified_cost_affine_direction_sign',
     'modified_cost_affine_gain',
@@ -423,6 +425,9 @@ SCHEMA_V8_LAUNCH_OVERRIDES = {
 SCHEMA_V9_LAUNCH_OVERRIDES = {
     'open_field_escape_active_fill_transit_enabled',
 }
+SCHEMA_V10_LAUNCH_OVERRIDES = {
+    'open_field_escape_supervisor_owned_assist_enabled',
+}
 DIRECT_STAGED_RECOVERY_STATE_PATH = (
     'SEARCH',
     'VERIFY_EXTREMUM',
@@ -642,6 +647,18 @@ def _validate_correction_overrides(overrides, ablations, location):
             active_fill_transit_enabled,
             f'{location}.open_field_escape_active_fill_transit_enabled',
         )
+    supervisor_owned_assist_enabled = overrides.get(
+        'open_field_escape_supervisor_owned_assist_enabled',
+        False,
+    )
+    if 'open_field_escape_supervisor_owned_assist_enabled' in overrides:
+        supervisor_owned_assist_enabled = _boolean(
+            supervisor_owned_assist_enabled,
+            (
+                f'{location}.'
+                'open_field_escape_supervisor_owned_assist_enabled'
+            ),
+        )
     candidate_informed_fill_enabled = overrides.get(
         'candidate_informed_fill_enabled',
         False,
@@ -704,6 +721,11 @@ def _validate_correction_overrides(overrides, ablations, location):
         raise ValueError(
             f'{location} open-field escape active-fill transit requires '
             'approach continuity'
+        )
+    if supervisor_owned_assist_enabled and not active_fill_transit_enabled:
+        raise ValueError(
+            f'{location} open-field escape supervisor-owned assist requires '
+            'active-fill transit'
         )
     if classification_mode == 'counted_candidates':
         required = {
@@ -1951,6 +1973,57 @@ def load_suite(path):
         raise ValueError(
             'schema version 9 is required for active-fill transit'
         )
+    schema_v10_predicates = {'supervisor_owned_escape_assist'}
+    uses_schema_v10_fields = bool(
+        isinstance(raw_frozen_overrides, dict)
+        and SCHEMA_V10_LAUNCH_OVERRIDES & set(raw_frozen_overrides)
+    )
+    if isinstance(raw_cases, list):
+        for case in raw_cases:
+            if not isinstance(case, dict):
+                continue
+            raw_algorithm = case.get('algorithm', {})
+            raw_overrides = (
+                raw_algorithm.get('launch_overrides', {})
+                if isinstance(raw_algorithm, dict)
+                else {}
+            )
+            raw_success = case.get('success', {})
+            raw_all_of = (
+                raw_success.get('all_of', [])
+                if isinstance(raw_success, dict)
+                else []
+            )
+            raw_result_scopes = (
+                raw_success.get('result_scopes', {})
+                if isinstance(raw_success, dict)
+                else {}
+            )
+            scoped_predicates = set()
+            if isinstance(raw_result_scopes, dict):
+                for raw_scope in raw_result_scopes.values():
+                    if not isinstance(raw_scope, dict):
+                        continue
+                    raw_scope_all_of = raw_scope.get('all_of', [])
+                    if isinstance(raw_scope_all_of, list):
+                        scoped_predicates.update(raw_scope_all_of)
+            uses_schema_v10_fields = uses_schema_v10_fields or (
+                isinstance(raw_overrides, dict)
+                and bool(
+                    SCHEMA_V10_LAUNCH_OVERRIDES & set(raw_overrides)
+                )
+            ) or (
+                isinstance(raw_all_of, list)
+                and bool(schema_v10_predicates & set(raw_all_of))
+            ) or (
+                bool(schema_v10_predicates & scoped_predicates)
+            )
+            if uses_schema_v10_fields:
+                break
+    if schema_version < 10 and uses_schema_v10_fields:
+        raise ValueError(
+            'schema version 10 is required for supervisor-owned assist'
+        )
     suite_id = _identifier(document.get('suite_id'), 'suite_id')
     if document.get('mode') != 'simulation':
         raise ValueError('mode must be simulation')
@@ -2335,6 +2408,13 @@ def load_suite(path):
             counted_open_field
             and overrides.get(
                 'open_field_escape_approach_continuity_enabled',
+                False,
+            )
+        )
+        supervisor_owned_assist_enabled = bool(
+            counted_open_field
+            and overrides.get(
+                'open_field_escape_supervisor_owned_assist_enabled',
                 False,
             )
         )
@@ -3262,6 +3342,8 @@ def load_suite(path):
                     'ground_truth_goal',
                     'expected_terminal_state',
                 })
+                if supervisor_owned_assist_enabled:
+                    staged_core.add('supervisor_owned_escape_assist')
             else:
                 staged_core.add('collision_expectation')
             missing_core = sorted(staged_core - set(all_of))
@@ -3275,7 +3357,18 @@ def load_suite(path):
                 [normalized_controller['required_state_path']],
             )
             if counted_open_field:
-                if candidate_informed_fill_enabled:
+                if supervisor_owned_assist_enabled:
+                    expected_counted_paths = {
+                        COUNTED_OPEN_FIELD_ASSISTED_STATE_PATH,
+                    }
+                    counted_path_contract_valid = (
+                        {
+                            tuple(path)
+                            for path in controller_paths
+                        }
+                        == expected_counted_paths
+                    )
+                elif candidate_informed_fill_enabled:
                     expected_counted_paths = {
                         COUNTED_OPEN_FIELD_STATE_PATH,
                         COUNTED_OPEN_FIELD_ASSISTED_STATE_PATH,
@@ -3317,7 +3410,10 @@ def load_suite(path):
                 }
                 if (
                     counted_open_field_assisted
-                    and not candidate_informed_fill_enabled
+                    and (
+                        not candidate_informed_fill_enabled
+                        or supervisor_owned_assist_enabled
+                    )
                 ):
                     required_staged_events.add('ESCAPE_STALLED')
             else:
@@ -3478,6 +3574,9 @@ def load_suite(path):
                 }
                 backed_predicates.update(staged_predicates)
                 declared_predicates.update(staged_predicates)
+            if supervisor_owned_assist_enabled:
+                backed_predicates.add('supervisor_owned_escape_assist')
+                declared_predicates.add('supervisor_owned_escape_assist')
             if (
                 outcome == 'goal'
                 or (
@@ -3512,6 +3611,7 @@ def load_suite(path):
                 'local_recovery_stage',
                 'post_recovery_global_proximity',
                 'fill_cardinality',
+                'supervisor_owned_escape_assist',
             }
             unbacked_predicates = sorted(
                 (set(all_of) & predicates_requiring_backing)

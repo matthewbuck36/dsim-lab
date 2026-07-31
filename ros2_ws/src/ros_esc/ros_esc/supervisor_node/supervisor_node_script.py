@@ -166,6 +166,11 @@ class SupervisorNode(Node):
                         "open_field_escape_active_fill_transit_enabled"
                     ).value
                 ),
+                open_field_escape_supervisor_owned_assist_enabled=bool(
+                    self.get_parameter(
+                        "open_field_escape_supervisor_owned_assist_enabled"
+                    ).value
+                ),
                 recenter_after_escape=bool(
                     self.get_parameter("recenter_after_escape").value
                 ),
@@ -639,6 +644,7 @@ class SupervisorNode(Node):
             "open_field_escape_assist_enabled": False,
             "open_field_escape_approach_continuity_enabled": False,
             "open_field_escape_active_fill_transit_enabled": False,
+            "open_field_escape_supervisor_owned_assist_enabled": False,
             "escape_exit_hold_sec": 1.0,
             "stall_window_sec": 3.0,
             "minimum_radial_progress_m": 0.05,
@@ -3143,6 +3149,14 @@ class SupervisorNode(Node):
         ):
             names.append(
                 "open_field_escape_approach_continuity_enabled"
+            )
+            values.append(1.0)
+        if (
+            self.machine.config
+            .open_field_escape_supervisor_owned_assist_enabled
+        ):
+            names.append(
+                "open_field_escape_supervisor_owned_assist_enabled"
             )
             values.append(1.0)
         if (

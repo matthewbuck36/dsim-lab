@@ -161,6 +161,7 @@
     <arg name="open_field_escape_assist_enabled" default="False"/>
     <arg name="open_field_escape_approach_continuity_enabled" default="False"/>
     <arg name="open_field_escape_active_fill_transit_enabled" default="False"/>
+    <arg name="open_field_escape_supervisor_owned_assist_enabled" default="False"/>
     <arg name="escape_exit_hold_sec" default="1.0"/>
     <arg name="stall_window_sec" default="3.0"/>
     <arg name="minimum_radial_progress_m" default="0.05"/>
@@ -859,6 +860,7 @@
             -p open_field_escape_assist_enabled:=$(var open_field_escape_assist_enabled)
             -p open_field_escape_approach_continuity_enabled:=$(var open_field_escape_approach_continuity_enabled)
             -p open_field_escape_active_fill_transit_enabled:=$(var open_field_escape_active_fill_transit_enabled)
+            -p open_field_escape_supervisor_owned_assist_enabled:=$(var open_field_escape_supervisor_owned_assist_enabled)
             -p escape_exit_hold_sec:=$(var escape_exit_hold_sec)
             -p stall_window_sec:=$(var stall_window_sec)
             -p minimum_radial_progress_m:=$(var minimum_radial_progress_m)
@@ -992,6 +994,8 @@
             $(var supervisor_state_stale_sec)
             --supervisor_command_stale_sec
             $(var supervisor_command_stale_sec)
+            --open_field_escape_supervisor_owned_assist_enabled
+            $(var open_field_escape_supervisor_owned_assist_enabled)
             --stale_pose_sec
             $(var stale_pose_sec)
             --stale_filter_sec

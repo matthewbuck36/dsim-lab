@@ -234,6 +234,26 @@ V8_5_SECONDARY_REPEATS = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v8_5_secondary_repeats.yaml'
 )
+V8_6_PRIMARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_6_primary_visible_probe.yaml'
+)
+V8_6_PRIMARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_6_primary_repeats.yaml'
+)
+V8_6_SECONDARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_6_secondary_visible_probe.yaml'
+)
+V8_6_SECONDARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_6_secondary_repeats.yaml'
+)
 
 
 def test_observed_local_recovery_binds_fill_to_local_convergence():
@@ -742,6 +762,300 @@ def _ranked_goal_message(
             margin,
         ],
     )
+
+
+def _owner_state(name):
+    state = _state_message(name)
+    state.sensor_weight = 0.0
+    state.gaussian_weight = 1.0
+    state.affine_weight = 1.0
+    state.weights_valid = True
+    state.safe_direction_x = 1.0
+    state.safe_direction_y = 0.0
+    state.safe_direction_valid = True
+    state.safe_direction_revision = 1
+    state.safe_direction_revision_valid = True
+    state.escape_center_x = 0.0
+    state.escape_center_y = 0.0
+    state.escape_geometry_valid = True
+    if name == 'SEARCH':
+        state.sensor_weight = 1.0
+        state.affine_weight = 0.0
+        state.safe_direction_valid = False
+        state.safe_direction_revision_valid = False
+    return state
+
+
+def _twist(command):
+    message = runner.Twist()
+    message.linear.x = command[0]
+    message.linear.y = command[1]
+    message.linear.z = command[2]
+    message.angular.x = command[3]
+    message.angular.y = command[4]
+    message.angular.z = command[5]
+    return message
+
+
+def _control_diagnostic(gesc, combined):
+    combined = list(combined)
+    gesc = list(gesc)
+    final = list(combined)
+    final[0] = max(-0.1, min(0.1, final[0]))
+    final[5] = max(-0.5, min(0.5, final[5]))
+    return SimpleNamespace(
+        gesc_command_unsaturated=gesc,
+        gesc_command_unsaturated_valid=True,
+        combined_command_unsaturated=combined,
+        combined_command_unsaturated_valid=True,
+        supervisor_contribution=[
+            combined[index] - gesc[index] for index in range(6)
+        ],
+        supervisor_contribution_valid=True,
+        final_command=final,
+        final_command_valid=True,
+        lower_limits=[
+            -0.1, float('nan'), float('nan'),
+            float('nan'), float('nan'), -0.5,
+        ],
+        upper_limits=[
+            0.1, float('nan'), float('nan'),
+            float('nan'), float('nan'), 0.5,
+        ],
+        limit_valid=[True, False, False, False, False, True],
+    )
+
+
+def _supervisor_owner_fixture():
+    resolved = expand_suite(
+        load_suite(V8_6_PRIMARY_VISIBLE_PROBE)
+    )[0][0]
+    states = [
+        (1_000_000_000, _owner_state('ESCAPE_ASSIST')),
+        (1_500_000_000, _owner_state('ESCAPE_ASSIST')),
+        (2_000_000_000, _owner_state('SEARCH')),
+    ]
+    event = _event_message(
+        'ESCAPE_STARTED',
+        value_names=[
+            'escape_center_x_m',
+            'escape_center_y_m',
+            'approach_selected_direction_x',
+            'approach_selected_direction_y',
+            'approach_direction_revision',
+        ],
+        values=[0.0, 0.0, 1.0, 0.0, 1.0],
+    )
+    commands = [
+        (
+            990_000_000,
+            _twist([0.0] * 6),
+        ),
+        (
+            1_040_000_000,
+            _twist([0.0, 0.0, 0.0, 0.0, 0.0, 0.4]),
+        ),
+        (
+            1_190_000_000,
+            _twist([0.15, 0.0, 0.0, 0.0, 0.0, 0.0]),
+        ),
+        (
+            2_010_000_000,
+            _twist([0.0] * 6),
+        ),
+    ]
+    diagnostics = [
+        (
+            1_001_000_000,
+            _control_diagnostic(
+                [0.08, 0.0, 0.0, 0.0, 0.0, 7.095],
+                [0.08, 0.0, 0.0, 0.0, 0.0, 7.095],
+            ),
+        ),
+        (
+            1_050_000_000,
+            _control_diagnostic(
+                [0.08, 0.0, 0.0, 0.0, 0.0, 7.095],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 0.4],
+            ),
+        ),
+        (
+            1_250_000_000,
+            _control_diagnostic(
+                [0.08, 0.0, 0.0, 0.0, 0.0, -0.2],
+                [0.15, 0.0, 0.0, 0.0, 0.0, 0.0],
+            ),
+        ),
+        (
+            2_020_000_000,
+            _control_diagnostic(
+                [0.08, 0.0, 0.0, 0.0, 0.0, 0.2],
+                [0.08, 0.0, 0.0, 0.0, 0.0, 0.2],
+            ),
+        ),
+    ]
+    odometry = [(1_900_000_000, _odom_message(2.0, 0.0))]
+    return {
+        'resolved': resolved,
+        'states': states,
+        'events': [(900_000_000, event)],
+        'diagnostics': diagnostics,
+        'commands': commands,
+        'odometry': odometry,
+    }
+
+
+def _evaluate_supervisor_owner(fixture):
+    return runner._supervisor_owned_escape_assist_evidence(
+        fixture['resolved'],
+        fixture['states'],
+        fixture['events'],
+        fixture['diagnostics'],
+        fixture['commands'],
+        fixture['odometry'],
+    )
+
+
+def test_supervisor_owned_assist_evidence_proves_full_handoff():
+    passed, evidence, error = _evaluate_supervisor_owner(
+        _supervisor_owner_fixture()
+    )
+
+    assert error is None
+    assert passed is True
+    assert evidence['assist_control_sample_count'] == 2
+    assert evidence['assist_authority_start_bag_stamp'] == 1_040_000_000
+    assert evidence['fresh_supervisor_command_sample_count'] == 2
+    assert evidence['nonzero_suppressed_gesc_sample_count'] == 2
+    assert evidence['positive_supervisor_linear_sample_count'] == 1
+    assert evidence['fill_to_exit_alignment'] == pytest.approx(1.0)
+    assert evidence['post_exit_ordinary_gesc_restored'] is True
+
+
+def test_supervisor_owned_assist_evidence_rejects_missing_or_stale_command():
+    missing = _supervisor_owner_fixture()
+    missing['commands'] = []
+    passed, evidence, error = _evaluate_supervisor_owner(missing)
+    assert error is None
+    assert passed is False
+    assert 'no nonzero supervisor command' in evidence['reason']
+
+    stale = _supervisor_owner_fixture()
+    stale['resolved']['algorithm']['launch_overrides'][
+        'supervisor_command_stale_sec'
+    ] = 0.001
+    passed, evidence, error = _evaluate_supervisor_owner(stale)
+    assert error is None
+    assert passed is False
+    assert 'stale supervisor command' in evidence['reason']
+
+
+def test_supervisor_owned_assist_evidence_rejects_gesc_leak_and_zero_drive():
+    leaked = _supervisor_owner_fixture()
+    leaked_message = leaked['diagnostics'][1][1]
+    leaked_message.combined_command_unsaturated = [
+        leaked_message.combined_command_unsaturated[index]
+        + leaked_message.gesc_command_unsaturated[index]
+        for index in range(6)
+    ]
+    passed, evidence, error = _evaluate_supervisor_owner(leaked)
+    assert error is None
+    assert passed is False
+    assert 'GESC leaked' in evidence['reason']
+
+    zero_drive = _supervisor_owner_fixture()
+    zero_drive['commands'][2] = (
+        zero_drive['commands'][2][0],
+        _twist([0.0] * 6),
+    )
+    zero_message = zero_drive['diagnostics'][2][1]
+    zero_message.combined_command_unsaturated = [0.0] * 6
+    zero_message.supervisor_contribution = [
+        -value for value in zero_message.gesc_command_unsaturated
+    ]
+    zero_message.final_command = [0.0] * 6
+    passed, evidence, error = _evaluate_supervisor_owner(zero_drive)
+    assert error is None
+    assert passed is False
+    assert 'positive supervisor translation' in evidence['reason']
+
+
+def test_supervisor_owned_assist_evidence_rejects_direction_and_handoff():
+    wrong_revision = _supervisor_owner_fixture()
+    wrong_revision['states'][1][1].safe_direction_revision = 2
+    passed, evidence, error = _evaluate_supervisor_owner(wrong_revision)
+    assert error is None
+    assert passed is False
+    assert 'revision-one' in evidence['reason']
+
+    wrong_exit = _supervisor_owner_fixture()
+    wrong_exit['odometry'] = [
+        (1_900_000_000, _odom_message(-2.0, 0.0))
+    ]
+    passed, evidence, error = _evaluate_supervisor_owner(wrong_exit)
+    assert error is None
+    assert passed is False
+    assert 'alignment' in evidence['reason']
+
+    persistent = _supervisor_owner_fixture()
+    post = persistent['diagnostics'][-1][1]
+    post.combined_command_unsaturated[0] += 0.05
+    post.supervisor_contribution[0] = 0.05
+    post.final_command[0] += 0.02
+    passed, evidence, error = _evaluate_supervisor_owner(persistent)
+    assert error is None
+    assert passed is False
+    assert 'ordinary GESC ownership' in evidence['reason']
+
+
+def test_supervisor_owned_assist_predicate_gates_classification():
+    resolved = expand_suite(
+        load_suite(V8_6_PRIMARY_VISIBLE_PROBE)
+    )[0][0]
+    resolved['success']['all_of'] = [
+        'supervisor_owned_escape_assist'
+    ]
+    resolved['success']['result_scopes'] = {}
+    outcomes = runner._unavailable_outcomes('unused')
+    outcomes.update({
+        'readiness_interval_available': True,
+        'supervisor_owned_escape_assist_passed': True,
+        'supervisor_owned_escape_assist': {
+            'fill_to_exit_alignment': 1.0,
+        },
+        'outcome_error': None,
+    })
+    process_result = {
+        'timed_out': False,
+        'return_code': 0,
+    }
+
+    passed = classify_result(
+        resolved,
+        {'passed': True},
+        {'passed': True},
+        outcomes,
+        process_result,
+        metadata={},
+    )
+    assert passed['passed'] is True
+    assert passed['predicate_results'][
+        'supervisor_owned_escape_assist'
+    ] is True
+
+    outcomes['supervisor_owned_escape_assist_passed'] = False
+    failed = classify_result(
+        resolved,
+        {'passed': True},
+        {'passed': True},
+        outcomes,
+        process_result,
+        metadata={},
+    )
+    assert failed['passed'] is False
+    assert failed['predicate_results'][
+        'supervisor_owned_escape_assist'
+    ] is False
 
 
 def test_route_blocker_encounter_matches_first_active_typed_fill():
@@ -1482,6 +1796,64 @@ def test_v8_5_launch_binds_active_fill_transit_without_evaluator_controls(
             'modified_cost_affine_decay_rate:=5e-07',
             'modified_cost_affine_max_age:=35.0',
             'modified_cost_affine_direction_sign:=1.0',
+            'operating_bounds_enabled:=False',
+            'recenter_after_escape:=False',
+            'post_recovery_guidance_enabled:=False',
+            'recoverable_navigation_enabled:=False',
+            'simulation_contacts_enabled:=False',
+        ):
+            assert expected in launch
+        forbidden_fragments = {
+            str(source[field])
+            for source in resolved['sources']
+            for field in ('x_m', 'y_m', 'relative_lumen_input')
+        }
+        assert not any(
+            token.startswith('global_source_')
+            or token.startswith('source_role_')
+            or token.startswith('simulation_truth_')
+            or (
+                not token.startswith('light_')
+                and any(
+                    fragment in token for fragment in forbidden_fragments
+                )
+            )
+            for token in launch
+            if not token.startswith('number_of_lights:=')
+        )
+
+
+@pytest.mark.parametrize(
+    'scenario_path',
+    [
+        V8_6_PRIMARY_VISIBLE_PROBE,
+        V8_6_PRIMARY_REPEATS,
+        V8_6_SECONDARY_VISIBLE_PROBE,
+        V8_6_SECONDARY_REPEATS,
+    ],
+)
+def test_v8_6_launch_binds_supervisor_owner_without_evaluator_controls(
+    scenario_path,
+):
+    suite = load_suite(scenario_path)
+    runs, unsupported = expand_suite(suite)
+
+    assert unsupported == []
+    for resolved in runs:
+        launch = build_launch_command(
+            resolved,
+            cost_path=Path('/tmp/phase08_v8_6_cost.yaml'),
+            gui=suite['execution']['gazebo_gui'],
+        )
+        for expected in (
+            'number_of_lights:=2',
+            'extremum_classification_mode:=counted_candidates',
+            'known_source_count:=2',
+            'open_field_escape_assist_enabled:=True',
+            'open_field_escape_approach_continuity_enabled:=True',
+            'open_field_escape_active_fill_transit_enabled:=True',
+            'open_field_escape_supervisor_owned_assist_enabled:=True',
+            'modified_cost_enable_affine_bias:=True',
             'operating_bounds_enabled:=False',
             'recenter_after_escape:=False',
             'post_recovery_guidance_enabled:=False',

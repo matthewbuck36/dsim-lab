@@ -13,6 +13,7 @@ import os
 import time
 import json
 import argparse
+import math
 import rclpy
 import numpy as np
 from rclpy.executors import SingleThreadedExecutor
@@ -103,6 +104,10 @@ class CustomController(Node):
         )
         parser.add_argument("--supervisor_state_stale_sec", type=float, default=0.5)
         parser.add_argument("--supervisor_command_stale_sec", type=float, default=0.5)
+        parser.add_argument(
+            "--open_field_escape_supervisor_owned_assist_enabled",
+            default="False",
+        )
         parser.add_argument("--stale_pose_sec", type=float, default=0.5)
         parser.add_argument("--stale_filter_sec", type=float, default=0.5)
         parser.add_argument("--command_watchdog_rate_hz", type=float, default=20.0)
@@ -128,6 +133,17 @@ class CustomController(Node):
                 f"received {self.algorithm_profile!r}"
             )
         self.robust_profile = self.algorithm_profile == ROBUST_PROFILE
+        self.open_field_escape_supervisor_owned_assist_enabled = _as_bool(
+            args.open_field_escape_supervisor_owned_assist_enabled
+        )
+        if (
+            self.open_field_escape_supervisor_owned_assist_enabled
+            and not self.robust_profile
+        ):
+            raise ValueError(
+                "supervisor-owned escape assist requires "
+                f"algorithm_profile={ROBUST_PROFILE}"
+            )
         self.enable_observability = (
             _as_bool(args.enable_observability) or self.robust_profile
         )
@@ -550,6 +566,34 @@ class CustomController(Node):
             or state.algorithm_profile != ROBUST_PROFILE
         ):
             return "supervisor state invalid"
+        if (
+            getattr(
+                self,
+                "open_field_escape_supervisor_owned_assist_enabled",
+                False,
+            )
+            and state.state == AlgorithmState.STATE_ESCAPE_ASSIST
+            and (
+                not state.safe_direction_valid
+                or not state.safe_direction_revision_valid
+                or state.safe_direction_revision != 1
+                or not np.all(
+                    np.isfinite(
+                        [state.safe_direction_x, state.safe_direction_y]
+                    )
+                )
+                or not np.isclose(
+                    math.hypot(
+                        state.safe_direction_x,
+                        state.safe_direction_y,
+                    ),
+                    1.0,
+                    rtol=0.0,
+                    atol=1e-9,
+                )
+            )
+        ):
+            return "supervisor-owned escape direction invalid"
         valid_states = {
             AlgorithmState.STATE_SEARCH,
             AlgorithmState.STATE_VERIFY_EXTREMUM,
@@ -582,6 +626,21 @@ class CustomController(Node):
 
     def _authorized_combination(self, gesc_command, supervisor_command):
         state = self.latest_algorithm_state.state
+        supervisor_owned_assist = getattr(
+            self,
+            "open_field_escape_supervisor_owned_assist_enabled",
+            False,
+        )
+        if supervisor_owned_assist:
+            if state == AlgorithmState.STATE_ESCAPE_ASSIST:
+                return np.asarray(supervisor_command, dtype=np.float64)
+            if state == AlgorithmState.STATE_SEARCH:
+                # The first SEARCH update after escape can arrive before the
+                # zero supervisor command published beside it on a different
+                # ROS topic.  Restore ordinary GESC ownership from the state
+                # boundary itself so a delayed ASSIST command cannot leak
+                # through that cross-topic handoff.
+                return np.asarray(gesc_command, dtype=np.float64)
         if state in (
             AlgorithmState.STATE_SEARCH,
             AlgorithmState.STATE_ESCAPE_REPULSE,

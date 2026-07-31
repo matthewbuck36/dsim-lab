@@ -3,6 +3,7 @@
 """Execute deterministic serial Gazebo scenarios through Phase 05 recording."""
 
 import argparse
+import bisect
 import datetime as dt
 import itertools
 import json
@@ -20,6 +21,7 @@ import uuid
 
 from gazebo_msgs.msg import ContactsState
 
+from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 
 import rclpy
@@ -1692,6 +1694,8 @@ def _unavailable_outcomes(reason, readiness_interval_available=False):
         'local_recovery_stage_passed': None,
         'local_recovery_stage': None,
         'fill_cardinality_passed': None,
+        'supervisor_owned_escape_assist_passed': None,
+        'supervisor_owned_escape_assist': None,
         'post_recovery_global_proximity_passed': None,
         'post_recovery_global_proximity': None,
         'collision_evidence_available': False,
@@ -2501,6 +2505,488 @@ def _collision_before_sample(contact_records, sample_evidence):
     )
 
 
+def _twist_command(message):
+    """Return the repository's six-axis command convention for one Twist."""
+    return [
+        float(message.linear.x),
+        float(message.linear.y),
+        float(message.linear.z),
+        float(message.angular.x),
+        float(message.angular.y),
+        float(message.angular.z),
+    ]
+
+
+def _finite_command(values):
+    """Normalize one finite six-axis command or return None."""
+    try:
+        command = [float(value) for value in values]
+    except (TypeError, ValueError):
+        return None
+    if len(command) != 6 or not all(math.isfinite(value) for value in command):
+        return None
+    return command
+
+
+def _commands_close(left, right, tolerance=1e-9):
+    return all(
+        math.isclose(
+            float(left[index]),
+            float(right[index]),
+            rel_tol=0.0,
+            abs_tol=tolerance,
+        )
+        for index in range(6)
+    )
+
+
+def _diagnostic_saturated_command(message, combined):
+    """Apply the recorded controller limits to one combined command."""
+    try:
+        lower = [float(value) for value in message.lower_limits]
+        upper = [float(value) for value in message.upper_limits]
+        limit_valid = list(message.limit_valid)
+    except (TypeError, ValueError):
+        return None
+    if len(lower) != 6 or len(upper) != 6 or len(limit_valid) != 6:
+        return None
+    saturated = list(combined)
+    for index, valid in enumerate(limit_valid):
+        if not valid:
+            continue
+        if (
+            not math.isfinite(lower[index])
+            or not math.isfinite(upper[index])
+            or lower[index] > upper[index]
+        ):
+            return None
+        saturated[index] = min(
+            upper[index],
+            max(lower[index], combined[index]),
+        )
+    return saturated
+
+
+def _supervisor_owned_escape_assist_evidence(
+    resolved,
+    state_messages,
+    event_messages,
+    diagnostic_records,
+    supervisor_command_records,
+    odometry_records,
+):
+    """Prove v8.6 command ownership and measured aligned escape."""
+    enabled = bool(
+        resolved.get('algorithm', {}).get('launch_overrides', {}).get(
+            'open_field_escape_supervisor_owned_assist_enabled',
+            False,
+        )
+    )
+    if not enabled:
+        return None, None, None
+
+    evidence = {
+        'enabled': True,
+        'assist_state_sample_count': 0,
+        'assist_control_sample_count': 0,
+        'fresh_supervisor_command_sample_count': 0,
+        'nonzero_suppressed_gesc_sample_count': 0,
+        'positive_supervisor_linear_sample_count': 0,
+    }
+
+    def failed(reason):
+        return False, {**evidence, 'reason': reason}, None
+
+    assist_indices = [
+        index
+        for index, (unused_stamp, message) in enumerate(state_messages)
+        if (
+            message.state_valid
+            and message.state == AlgorithmState.STATE_ESCAPE_ASSIST
+        )
+    ]
+    if not assist_indices:
+        return failed('no valid ESCAPE_ASSIST state interval')
+    first_assist_index = assist_indices[0]
+    assist_start_stamp = state_messages[first_assist_index][0]
+    post_search_index = next(
+        (
+            index
+            for index in range(first_assist_index + 1, len(state_messages))
+            if (
+                state_messages[index][1].state_valid
+                and state_messages[index][1].state
+                == AlgorithmState.STATE_SEARCH
+            )
+        ),
+        None,
+    )
+    if post_search_index is None:
+        return failed('ESCAPE_ASSIST has no later SEARCH boundary')
+    search_stamp, search_state = state_messages[post_search_index]
+    if any(
+        index >= post_search_index
+        for index in assist_indices
+    ):
+        return failed('ESCAPE_ASSIST persisted after the SEARCH boundary')
+
+    assist_states = [
+        (stamp, message)
+        for stamp, message in state_messages
+        if assist_start_stamp <= stamp < search_stamp
+    ]
+    evidence['assist_state_sample_count'] = len(assist_states)
+    if not assist_states or any(
+        (
+            not message.state_valid
+            or message.state != AlgorithmState.STATE_ESCAPE_ASSIST
+        )
+        for unused_stamp, message in assist_states
+    ):
+        return failed('assist interval contains a non-ASSIST state sample')
+
+    direction = None
+    center = None
+    for unused_stamp, message in assist_states:
+        candidate_direction = _finite_command([
+            message.safe_direction_x,
+            message.safe_direction_y,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        ])
+        candidate_center = _finite_command([
+            message.escape_center_x,
+            message.escape_center_y,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        ])
+        if (
+            not message.safe_direction_valid
+            or not message.safe_direction_revision_valid
+            or message.safe_direction_revision != 1
+            or not message.escape_geometry_valid
+            or candidate_direction is None
+            or candidate_center is None
+        ):
+            return failed(
+                'assist state lacks finite revision-one direction geometry'
+            )
+        norm = math.hypot(
+            candidate_direction[0],
+            candidate_direction[1],
+        )
+        if not math.isclose(norm, 1.0, rel_tol=0.0, abs_tol=1e-9):
+            return failed('assist direction is not a unit vector')
+        if direction is None:
+            direction = candidate_direction[:2]
+            center = candidate_center[:2]
+        elif (
+            not _commands_close(
+                [*direction, 0.0, 0.0, 0.0, 0.0],
+                candidate_direction,
+            )
+            or not _commands_close(
+                [*center, 0.0, 0.0, 0.0, 0.0],
+                candidate_center,
+            )
+        ):
+            return failed('assist direction or fill center changed')
+
+    escape_event = next(
+        (
+            message
+            for stamp, message in reversed(event_messages)
+            if (
+                stamp <= assist_start_stamp
+                and message.event_type == AlgorithmEvent.EVENT_ESCAPE_STARTED
+            )
+        ),
+        None,
+    )
+    if escape_event is None:
+        return failed('assist interval has no preceding ESCAPE_STARTED event')
+    try:
+        escape_values = _event_value_map(escape_event)
+        event_direction = [
+            float(escape_values['approach_selected_direction_x']),
+            float(escape_values['approach_selected_direction_y']),
+        ]
+        event_center = [
+            float(escape_values['escape_center_x_m']),
+            float(escape_values['escape_center_y_m']),
+        ]
+        event_revision = float(
+            escape_values['approach_direction_revision']
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        return failed(f'ESCAPE_STARTED ownership evidence is malformed: {exc}')
+    if (
+        not all(math.isfinite(value) for value in event_direction + event_center)
+        or event_revision != 1.0
+        or not _commands_close(
+            [*direction, 0.0, 0.0, 0.0, 0.0],
+            [*event_direction, 0.0, 0.0, 0.0, 0.0],
+        )
+        or not _commands_close(
+            [*center, 0.0, 0.0, 0.0, 0.0],
+            [*event_center, 0.0, 0.0, 0.0, 0.0],
+        )
+    ):
+        return failed('ESCAPE_STARTED and assist-state direction disagree')
+
+    stale_sec = float(
+        resolved.get('algorithm', {}).get('launch_overrides', {}).get(
+            'supervisor_command_stale_sec',
+            0.5,
+        )
+    )
+    if not math.isfinite(stale_sec) or stale_sec < 0.0:
+        return failed('supervisor command freshness limit is invalid')
+    stale_ns = stale_sec * 1e9
+    commands = sorted(supervisor_command_records, key=lambda item: item[0])
+    command_stamps = [stamp for stamp, unused_message in commands]
+    authority_commands = [
+        (stamp, message)
+        for stamp, message in commands
+        if (
+            assist_start_stamp <= stamp < search_stamp
+            and any(
+                abs(value) > 1e-9
+                for value in _twist_command(message)
+            )
+        )
+    ]
+    if not authority_commands:
+        return failed('assist interval has no nonzero supervisor command')
+    authority_start_stamp = authority_commands[0][0]
+    evidence['assist_authority_start_bag_stamp'] = authority_start_stamp
+    assist_diagnostics = [
+        (stamp, message)
+        for stamp, message in diagnostic_records
+        if (
+            max(assist_start_stamp, authority_start_stamp)
+            <= stamp < search_stamp
+        )
+    ]
+    evidence['assist_control_sample_count'] = len(assist_diagnostics)
+    if not assist_diagnostics:
+        return failed('assist interval has no control diagnostics')
+
+    for diagnostic_stamp, message in assist_diagnostics:
+        gesc = _finite_command(message.gesc_command_unsaturated)
+        combined = _finite_command(message.combined_command_unsaturated)
+        contribution = _finite_command(message.supervisor_contribution)
+        final = _finite_command(message.final_command)
+        if (
+            gesc is None
+            or combined is None
+            or contribution is None
+            or final is None
+            or not message.gesc_command_unsaturated_valid
+            or not message.combined_command_unsaturated_valid
+            or not message.supervisor_contribution_valid
+            or not message.final_command_valid
+        ):
+            return failed('assist control sample has invalid command evidence')
+        first_candidate = bisect.bisect_left(
+            command_stamps,
+            diagnostic_stamp - stale_ns,
+        )
+        last_candidate = bisect.bisect_right(
+            command_stamps,
+            diagnostic_stamp + stale_ns,
+        )
+        candidate_commands = []
+        for command_stamp, command_message in commands[
+            first_candidate:last_candidate
+        ]:
+            if command_stamp >= search_stamp:
+                continue
+            raw = _finite_command(_twist_command(command_message))
+            if raw is not None:
+                candidate_commands.append(
+                    (abs(diagnostic_stamp - command_stamp), command_stamp, raw)
+                )
+        if not candidate_commands:
+            if commands:
+                return failed(
+                    'assist control sample has a stale supervisor command'
+                )
+            return failed(
+                'assist control sample has no held supervisor command'
+            )
+        matching_commands = [
+            candidate
+            for candidate in candidate_commands
+            if _commands_close(combined, candidate[2])
+        ]
+        if not matching_commands:
+            if any(
+                _commands_close(
+                    combined,
+                    [
+                        candidate[2][index] + gesc[index]
+                        for index in range(6)
+                    ],
+                )
+                for candidate in candidate_commands
+            ):
+                return failed('GESC leaked into the supervisor-owned command')
+            return failed(
+                'assist combined command has no fresh matching supervisor '
+                'command'
+            )
+        raw_supervisor = min(
+            matching_commands,
+            key=lambda item: (item[0], item[1] > diagnostic_stamp, item[1]),
+        )[2]
+        expected_contribution = [
+            combined[index] - gesc[index] for index in range(6)
+        ]
+        if not _commands_close(contribution, expected_contribution):
+            return failed('supervisor contribution arithmetic is inconsistent')
+        saturated = _diagnostic_saturated_command(message, combined)
+        if saturated is None or not _commands_close(final, saturated):
+            return failed('final command does not match recorded saturation')
+        evidence['fresh_supervisor_command_sample_count'] += 1
+        if any(abs(value) > 1e-9 for value in gesc):
+            evidence['nonzero_suppressed_gesc_sample_count'] += 1
+        if raw_supervisor[0] > 1e-9:
+            evidence['positive_supervisor_linear_sample_count'] += 1
+
+    if evidence['nonzero_suppressed_gesc_sample_count'] <= 0:
+        return failed('no nonzero GESC proposal was proven suppressed')
+    if evidence['positive_supervisor_linear_sample_count'] <= 0:
+        return failed('assist never produced positive supervisor translation')
+
+    exit_candidates = [
+        (stamp, message)
+        for stamp, message in odometry_records
+        if (
+            assist_start_stamp <= stamp
+            and abs(stamp - search_stamp) <= stale_ns
+        )
+    ]
+    exit_odometry = (
+        min(
+            exit_candidates,
+            key=lambda item: (
+                abs(item[0] - search_stamp),
+                item[0] > search_stamp,
+                item[0],
+            ),
+        )
+        if exit_candidates
+        else None
+    )
+    if exit_odometry is None:
+        return failed('SEARCH boundary has no measured exit odometry')
+    exit_stamp, exit_message = exit_odometry
+    exit_x = float(exit_message.pose.pose.position.x)
+    exit_y = float(exit_message.pose.pose.position.y)
+    exit_vector = [exit_x - center[0], exit_y - center[1]]
+    exit_radius = math.hypot(*exit_vector)
+    if (
+        not all(math.isfinite(value) for value in [exit_x, exit_y, exit_radius])
+        or exit_radius <= 1e-12
+    ):
+        return failed('measured fill-to-exit vector is invalid')
+    exit_unit = [value / exit_radius for value in exit_vector]
+    exit_alignment = sum(
+        exit_unit[index] * direction[index] for index in range(2)
+    )
+    evidence.update({
+        'assist_start_bag_stamp': assist_start_stamp,
+        'post_exit_search_bag_stamp': search_stamp,
+        'exit_odometry_bag_stamp': exit_stamp,
+        'selected_direction': direction,
+        'fill_center_m': center,
+        'exit_position_m': [exit_x, exit_y],
+        'fill_to_exit_distance_m': exit_radius,
+        'fill_to_exit_alignment': exit_alignment,
+    })
+    if exit_alignment < 0.80:
+        return failed('measured fill-to-exit alignment is below 0.80')
+
+    search_weights = [
+        float(search_state.sensor_weight),
+        float(search_state.gaussian_weight),
+        float(search_state.affine_weight),
+    ]
+    if (
+        not search_state.weights_valid
+        or search_weights != [1.0, 1.0, 0.0]
+        or search_state.safe_direction_valid
+        or search_state.safe_direction_revision_valid
+    ):
+        return failed('first post-exit SEARCH state retained escape authority')
+
+    zero_command_record = next(
+        (
+            (stamp, message)
+            for stamp, message in commands
+            if stamp >= search_stamp
+        ),
+        None,
+    )
+    if zero_command_record is None:
+        return failed('post-exit SEARCH has no supervisor command')
+    zero_command_stamp, zero_command_message = zero_command_record
+    zero_command = _finite_command(_twist_command(zero_command_message))
+    if zero_command is None or any(abs(value) > 1e-9 for value in zero_command):
+        return failed('post-exit SEARCH supervisor command is not zero')
+
+    post_diagnostic = next(
+        (
+            (stamp, message)
+            for stamp, message in diagnostic_records
+            if stamp >= zero_command_stamp
+        ),
+        None,
+    )
+    if post_diagnostic is None:
+        return failed('post-exit SEARCH has no control diagnostic sample')
+    post_stamp, post_message = post_diagnostic
+    post_gesc = _finite_command(post_message.gesc_command_unsaturated)
+    post_combined = _finite_command(
+        post_message.combined_command_unsaturated
+    )
+    post_contribution = _finite_command(post_message.supervisor_contribution)
+    post_final = _finite_command(post_message.final_command)
+    if (
+        post_gesc is None
+        or post_combined is None
+        or post_contribution is None
+        or post_final is None
+        or not post_message.gesc_command_unsaturated_valid
+        or not post_message.combined_command_unsaturated_valid
+        or not post_message.supervisor_contribution_valid
+        or not post_message.final_command_valid
+        or not _commands_close(post_combined, post_gesc)
+        or any(abs(value) > 1e-9 for value in post_contribution)
+    ):
+        return failed('post-exit SEARCH did not restore ordinary GESC ownership')
+    post_saturated = _diagnostic_saturated_command(
+        post_message,
+        post_combined,
+    )
+    if post_saturated is None or not _commands_close(
+        post_final,
+        post_saturated,
+    ):
+        return failed('post-exit SEARCH final command saturation is invalid')
+    evidence.update({
+        'post_exit_supervisor_zero_bag_stamp': zero_command_stamp,
+        'post_exit_control_bag_stamp': post_stamp,
+        'post_exit_ordinary_gesc_restored': True,
+    })
+    return True, evidence, None
+
+
 def _bag_outcomes(run_directory, resolved):
     bag_directory = Path(run_directory) / 'bag'
     reader = rosbag2_py.SequentialReader()
@@ -2515,6 +3001,7 @@ def _bag_outcomes(run_directory, resolved):
         '/gesc_gaussian/algorithm_state': AlgorithmState,
         '/gesc_gaussian/algorithm_events': AlgorithmEvent,
         '/gesc_gaussian/control_diagnostics': ControlDiagnostics,
+        '/gesc_gaussian/supervisor_command': Twist,
         '/gesc_gaussian/gaussian_fills': GaussianFill,
         '/odom': Odometry,
         '/gesc_gaussian/simulation/contacts': ContactsState,
@@ -2560,9 +3047,17 @@ def _bag_outcomes(run_directory, resolved):
         (stamp, message) for stamp, message
         in records['/gesc_gaussian/algorithm_events'] if inside(stamp)
     ]
-    diagnostics = [
-        message for stamp, message
+    diagnostic_records = [
+        (stamp, message) for stamp, message
         in records['/gesc_gaussian/control_diagnostics'] if inside(stamp)
+    ]
+    diagnostics = [
+        message for unused_stamp, message in diagnostic_records
+    ]
+    supervisor_command_records = [
+        (stamp, message)
+        for stamp, message
+        in records['/gesc_gaussian/supervisor_command'] if inside(stamp)
     ]
     odometry_records = [
         (stamp, message)
@@ -2625,6 +3120,19 @@ def _bag_outcomes(run_directory, resolved):
         stage_a_evidence,
     )
     outcome_error = outcome_error or ranked_goal_error
+    (
+        supervisor_owned_assist_passed,
+        supervisor_owned_assist_evidence,
+        supervisor_owned_assist_error,
+    ) = _supervisor_owned_escape_assist_evidence(
+        resolved,
+        state_messages,
+        event_messages,
+        diagnostic_records,
+        supervisor_command_records,
+        odometry_records,
+    )
+    outcome_error = outcome_error or supervisor_owned_assist_error
     ranked_goal_stamp = (
         ranked_goal_evidence.get('event_bag_stamp')
         if ranked_goal_passed and ranked_goal_evidence
@@ -2949,6 +3457,15 @@ def _bag_outcomes(run_directory, resolved):
         'result_scopes': scope_results,
         'outcome_error': outcome_error,
     }
+    if supervisor_owned_assist_passed is not None:
+        outcomes.update({
+            'supervisor_owned_escape_assist_passed': (
+                supervisor_owned_assist_passed
+            ),
+            'supervisor_owned_escape_assist': (
+                supervisor_owned_assist_evidence
+            ),
+        })
     if approach_radius_declared:
         outcomes.update({
             'post_recovery_global_approach_passed': (
@@ -3031,6 +3548,9 @@ def classify_result(
         'post_recovery_global_proximity': global_proximity,
         'fill_cardinality': outcomes.get(
             'fill_cardinality_passed'
+        ),
+        'supervisor_owned_escape_assist': outcomes.get(
+            'supervisor_owned_escape_assist_passed'
         ),
         'collision_expectation': outcomes.get(
             'collision_expectation_passed'
@@ -3192,6 +3712,17 @@ def classify_result(
                 'infrastructure_status': infrastructure_status,
             },
         }
+        if (
+            'supervisor_owned_escape_assist'
+            in resolved['success']['all_of']
+        ):
+            staged_results['supervisor_owned_escape_assist'] = {
+                'passed': facts['supervisor_owned_escape_assist'],
+                'evidence': outcomes.get(
+                    'supervisor_owned_escape_assist'
+                ),
+                'gating': True,
+            }
         staged_recovery = resolved.get('success', {}).get(
             'staged_recovery', {}
         )

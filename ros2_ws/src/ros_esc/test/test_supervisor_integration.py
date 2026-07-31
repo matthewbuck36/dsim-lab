@@ -545,6 +545,10 @@ def test_open_field_disables_bounds_without_weakening_explicit_stop():
             "open_field_escape_active_fill_transit_enabled"
             not in node.event_publisher.messages[-1].value_names
         )
+        assert (
+            "open_field_escape_supervisor_owned_assist_enabled"
+            not in node.event_publisher.messages[-1].value_names
+        )
         node.latest_pose = Pose2D(
             node._now_sec(),
             100.0,
@@ -929,6 +933,94 @@ def test_v8_5_active_fill_transit_latches_direct_corridor_and_clears():
         assert node.safe_direction is None
         assert search.safe_direction_valid is False
         assert search.affine_weight == 0.0
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_v8_6_owner_configuration_preserves_rotate_then_drive_assist():
+    rclpy.init()
+    node = SupervisorNode(
+        parameter_overrides=[
+            Parameter("operating_bounds_enabled", value=False),
+            Parameter("recenter_after_escape", value=False),
+            Parameter("open_field_escape_assist_enabled", value=True),
+            Parameter(
+                "open_field_escape_approach_continuity_enabled",
+                value=True,
+            ),
+            Parameter(
+                "open_field_escape_active_fill_transit_enabled",
+                value=True,
+            ),
+            Parameter(
+                "open_field_escape_supervisor_owned_assist_enabled",
+                value=True,
+            ),
+            Parameter(
+                "extremum_classification_mode",
+                value="counted_candidates",
+            ),
+            Parameter("known_source_count", value=2),
+            Parameter("max_fill_clusters", value=1),
+            Parameter("candidate_informed_fill_enabled", value=True),
+        ]
+    )
+    node.event_publisher = Recorder()
+    try:
+        node._publish_configuration_event(1.0)
+        configuration = node.event_publisher.messages[-1]
+        evidence = dict(
+            zip(configuration.value_names, configuration.values)
+        )
+        assert (
+            evidence[
+                "open_field_escape_supervisor_owned_assist_enabled"
+            ]
+            == 1.0
+        )
+        assert not any(
+            name.startswith("global_")
+            or name.startswith("evaluator_")
+            or name.endswith("_source_x_m")
+            or name.endswith("_source_y_m")
+            for name in configuration.value_names
+        )
+
+        anchor = Pose2D(0.0, -2.0, 0.0, 0.0)
+        current = Pose2D(1.0, 0.05, 0.0, math.pi)
+        node.pose_history.extend([anchor, current])
+        node.latest_pose = current
+        node.latest_pose_valid = True
+        node.latest_pose_sequence = 2
+        node.active_fill_records = {
+            1: {
+                "fill_id": 1,
+                "revision": 1,
+                "center": np.array([0.0, 0.0]),
+                "support_radius": 0.50,
+                "exit_radius": 1.25,
+            }
+        }
+        node.machine.active_escape_fill_id = 1
+        node.machine.escape_started_sec = 1.0
+        assert node._begin_escape(1.0) is None
+        node.machine.state = State.ESCAPE_ASSIST
+
+        assert node._update_open_field_escape_assist(1.1) is None
+        assert node.safe_direction.direction == pytest.approx([1.0, 0.0])
+        assert node.safe_direction_revision == 1
+        assert node.current_supervisor_command.linear.x == 0.0
+        assert abs(node.current_supervisor_command.angular.z) > 0.0
+
+        node.latest_pose = Pose2D(1.2, 0.05, 0.0, 0.0)
+        node.latest_pose_sequence += 1
+        node.escape_tracker.update(node.latest_pose)
+        assert node._update_open_field_escape_assist(1.2) is None
+        assert node.current_supervisor_command.linear.x > 0.0
+        assert node.current_supervisor_command.angular.z == pytest.approx(
+            0.0
+        )
     finally:
         node.destroy_node()
         rclpy.shutdown()

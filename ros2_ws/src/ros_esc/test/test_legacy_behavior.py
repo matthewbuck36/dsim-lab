@@ -79,6 +79,52 @@ class Recorder:
         self.messages.append(msg)
 
 
+def test_supervisor_owned_assist_arbitration_is_default_off_and_scoped():
+    controller = object.__new__(CustomController)
+    state = AlgorithmState()
+    state.state = AlgorithmState.STATE_ESCAPE_ASSIST
+    controller.latest_algorithm_state = state
+    gesc = np.array([0.08, 0.0, 0.0, 0.0, 0.0, 7.095])
+    supervisor = np.array([0.0, 0.0, 0.0, 0.0, 0.0, -0.398])
+
+    controller.open_field_escape_supervisor_owned_assist_enabled = False
+    assert controller._authorized_combination(
+        gesc,
+        supervisor,
+    ) == pytest.approx(gesc + supervisor)
+
+    controller.open_field_escape_supervisor_owned_assist_enabled = True
+    assert controller._authorized_combination(
+        gesc,
+        supervisor,
+    ) == pytest.approx(supervisor)
+    assert controller._authorized_combination(
+        gesc,
+        np.zeros(6),
+    ) == pytest.approx(np.zeros(6))
+
+    state.state = AlgorithmState.STATE_ESCAPE_REPULSE
+    assert controller._authorized_combination(
+        gesc,
+        supervisor,
+    ) == pytest.approx(gesc + supervisor)
+    state.state = AlgorithmState.STATE_SEARCH
+    assert controller._authorized_combination(
+        gesc,
+        supervisor,
+    ) == pytest.approx(gesc)
+    state.state = AlgorithmState.STATE_RECENTER
+    assert controller._authorized_combination(
+        gesc,
+        supervisor,
+    ) == pytest.approx(supervisor)
+    state.state = AlgorithmState.STATE_GOAL_HOLD
+    assert controller._authorized_combination(
+        gesc,
+        supervisor,
+    ) == pytest.approx(np.zeros(6))
+
+
 def test_recording_interlock_disabled_is_a_noop():
     controller = object.__new__(CustomController)
     controller.recording_ready_required = False
@@ -1112,6 +1158,103 @@ def test_robust_controller_combines_then_saturates_and_gates_goal(monkeypatch):
         node.recording_ready_required = False
         node.watchdog_callback()
         assert node.twist_publisher.messages[-1].linear.x == 0.0
+        assert any(
+            event.event_type == AlgorithmEvent.EVENT_FAILSAFE
+            for event in node.algorithm_event_publisher.messages
+        )
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_robust_controller_supervisor_owns_only_enabled_assist(monkeypatch):
+    argv = [
+        "controller_node",
+        "/test/filter",
+        "/test/odom",
+        "/test/timekeeper",
+        "/test/control",
+        "/test/cmd_vel",
+        str(CONTROLLER_CONFIG),
+        "--algorithm_profile",
+        "robust_gaussian_v1",
+        "--open_field_escape_supervisor_owned_assist_enabled",
+        "True",
+        "--supervisor_state_stale_sec",
+        "5.0",
+        "--supervisor_command_stale_sec",
+        "5.0",
+        "--stale_pose_sec",
+        "5.0",
+        "--stale_filter_sec",
+        "5.0",
+    ]
+    monkeypatch.setattr(sys, "argv", argv)
+    rclpy.init(args=argv)
+    node = CustomController()
+    try:
+        node.twist_publisher = Recorder()
+        node.controller_publisher = Recorder()
+        node.control_diagnostics_publisher = Recorder()
+        node.algorithm_event_publisher = Recorder()
+        node.start_time = 0.0
+        node.timekeeping_mode = "sim time"
+        node.state_value = np.zeros(6)
+        node.input_value = [0.08, 0.04]
+        node.input_value_timestamp = 2.0
+        now_sec = node._now_sec()
+        node.pose_receipt_sec = now_sec
+        node.input_receipt_sec = now_sec
+        node.supervisor_state_receipt_sec = now_sec
+        node.supervisor_command_receipt_sec = now_sec
+        node.supervisor_command = np.array(
+            [0.15, 0.0, 0.0, 0.0, 0.0, 0.60]
+        )
+        state = AlgorithmState()
+        state.algorithm_profile = "robust_gaussian_v1"
+        state.state = AlgorithmState.STATE_ESCAPE_ASSIST
+        state.state_valid = True
+        state.weights_valid = True
+        state.safe_direction_x = 1.0
+        state.safe_direction_y = 0.0
+        state.safe_direction_valid = True
+        state.safe_direction_revision = 1
+        state.safe_direction_revision_valid = True
+        node.latest_algorithm_state = state
+
+        node.publish_control_value()
+        diagnostics = node.control_diagnostics_publisher.messages[-1]
+        assert list(diagnostics.gesc_command_unsaturated) == pytest.approx(
+            [0.08, 0.0, 0.0, 0.0, 0.0, 0.2]
+        )
+        assert list(
+            diagnostics.combined_command_unsaturated
+        ) == pytest.approx(node.supervisor_command)
+        assert list(diagnostics.supervisor_contribution) == pytest.approx(
+            [0.07, 0.0, 0.0, 0.0, 0.0, 0.4]
+        )
+        assert list(diagnostics.final_command) == pytest.approx(
+            [0.1, 0.0, 0.0, 0.0, 0.0, 0.5]
+        )
+
+        node.supervisor_command = np.zeros(6)
+        node.supervisor_command_receipt_sec = node._now_sec()
+        node.publish_control_value()
+        diagnostics = node.control_diagnostics_publisher.messages[-1]
+        assert list(
+            diagnostics.combined_command_unsaturated
+        ) == pytest.approx(np.zeros(6))
+        assert list(diagnostics.final_command) == pytest.approx(
+            np.zeros(6)
+        )
+
+        state.safe_direction_valid = False
+        node.supervisor_state_receipt_sec = node._now_sec()
+        node.supervisor_command_receipt_sec = node._now_sec()
+        node.publish_control_value()
+        assert list(
+            node.control_diagnostics_publisher.messages[-1].final_command
+        ) == pytest.approx(np.zeros(6))
         assert any(
             event.event_type == AlgorithmEvent.EVENT_FAILSAFE
             for event in node.algorithm_event_publisher.messages

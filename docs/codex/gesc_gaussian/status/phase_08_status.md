@@ -13876,3 +13876,160 @@ PROHIBITED.**
 
 Stage and commit this exact plan boundary, verify the clean tree, and then
 begin only the declared implementation and no-Gazebo qualification.
+
+## Phase 08.8 M4.7 v8.6 implementation and no-Gazebo qualification — 2026-07-31
+
+**IMPLEMENTATION QUALIFICATION PASS / BEHAVIOR NOT YET RUN /
+GAZEBO PROHIBITED.**
+
+The fresh default-off
+`open_field_escape_supervisor_owned_assist_enabled` correction is
+implemented through the existing state-machine, supervisor, controller,
+central launch, scenario-schema, and scenario-runner owners. No message,
+second `/cmd_vel` publisher, pose estimator, planner, source/global
+coordinate, evaluator input, Vicon input, room-map input, simulation/physical
+algorithm fork, or physical stop was added.
+
+With the switch enabled, repulse remains GESC-owned and zero-supervisor.
+After the existing measured stall enters assist, the controller continues to
+compute and record the GESC proposal but authorizes the fresh supervisor
+command exactly. It never falls back to GESC on an invalid assist input.
+Enabled `SEARCH` restores GESC ownership directly from the state boundary so
+a delayed assisted command on the separate supervisor topic cannot leak
+post-exit. Default-off and every historical path retain the prior
+combination rule.
+
+Schema v10 adds the mandatory
+`supervisor_owned_escape_assist` predicate for the four v8.6 inputs. The
+recorded state, event, supervisor-command, control-diagnostic, and odometry
+evidence must prove revision-one direction continuity, exact command
+ownership, a nonzero suppressed GESC proposal, positive bounded supervisor
+translation, correct saturation, measured fill-to-exit alignment of at least
+`+0.80`, and complete post-exit authority clearing.
+
+Read-only replay of the committed failed v8.5 seed-`19316` bag proves:
+
+```text
+switch disabled:
+  outcome_error=None; no owner-result key
+steady assist samples:
+  2,860
+default-disabled commands equal recorded combined:
+  2,860
+enabled commands equal supervisor:
+  2,860
+enabled commands suppress competing nonzero GESC:
+  2,860
+old v8.5 evidence under the new formal predicate:
+  FAIL — GESC leaked into the supervisor-owned command
+retained replay:
+  /tmp/phase08_8_m4_7_seed19316_replay.log
+SHA-256:
+  cfe1f3d17245457cc17e458516f3c324887a270f403b273959588bb518c15ff4
+```
+
+Final retained tests:
+
+```text
+focused controller/supervisor/state/geometry:
+  305 passed in 8.35 s
+  /tmp/phase08_8_m4_7_focused_controller_final.xml
+  cf1545dfd47072e20b1e0da036ef9970dca15637aafd619478f93e4018f984df
+focused schema/runner/evidence:
+  555 passed, 1 skipped in 125.55 s
+  /tmp/phase08_8_m4_7_focused_evidence_final.xml
+  8f743f84836158329741945486b1e59b1437a58f92af546608972e1d7cc6b84c
+broad ROS-independent:
+  866 passed, 2 skipped in 137.56 s
+  /tmp/phase08_8_m4_7_broad_functional_final.xml
+  a80a7242ca301d8c92fb971a3ed7a87afbecd5ea1414c7d41b051536f46656bb
+```
+
+The skips are the unchanged explicit visible/headless Gazebo opt-ins. Fatal
+changed-file lint, Python compilation, launch XML and four YAML parses,
+historical tracked-scenario bytes, `git diff --check`, context validation,
+sole-`/cmd_vel` ownership, and physical/evaluator separation pass.
+
+The fresh isolated build at
+`/tmp/phase08_8_v8_6_release_qual.qth8ZZ` finished
+`ros_esc_interfaces`, `ros_esc`, and `turtlebot3_rotating_sensor` in
+`11.9 s`. Source/install parity is `10/10`. Installed `--show-args`,
+`--print-description`, default supervisor, fully enabled v8.6 supervisor,
+robust affine modified-cost, and fully enabled controller construction all
+pass. All 17 installed dry-run expansions are supported:
+
+```text
+primary visible:    1 run,  seed 19316
+primary repeats:   10 runs, seeds 19411..19420
+secondary visible:  1 run,  seed 19451
+secondary repeats:  5 runs, seeds 19461..19465
+```
+
+All four v8.6 evidence roots were absent before and after dry-run. V6,
+v8-v8.5, all historical scenarios, worlds, failed evidence, bags, plots, and
+results remain unchanged and selectable. No Gazebo, scenario, recorder,
+analyzer, rosbag recorder, or physical process remains.
+
+Complete qualification:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_7_no_gazebo_qualification.md
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.7 — V8.6 IMPLEMENTED / COMPLETE NO-GAZEBO
+QUALIFICATION PASS / IMPLEMENTATION CHECKPOINT PENDING / GAZEBO
+PROHIBITED.**
+
+## Next criterion
+
+Inspect the complete diff, checkpoint Phase 08, and commit the exact qualified
+implementation. Then save and commit a separate dispatch boundary authorizing
+only the installed visible primary probe at seed `19316`. Do not dispatch
+primary repeats or either secondary case.
+
+## Phase 08.8 M4.7 v8.6 implementation checkpoint — 2026-07-31
+
+The complete qualified v8.6 implementation, schema-v10 evidence predicate,
+four fixed inputs, final test records, isolated build, installed graph,
+dry-run summaries, compatibility evidence, and no-Gazebo qualification
+received the required Phase 08 checkpoint against immutable v8.6 plan HEAD
+`d389a01`.
+
+```text
+base HEAD:
+  d389a01fbcb4fb1f30c02ed0cf8b41e42492dc27
+status sha256 before this checkpoint note:
+  3da63a130cd7ad1cb8b5be15948fc8a60baad4957b97b0e44fd6ed10b4b2fa3f
+active plan sha256:
+  767e3e8ffb3dbfa6744048ceed275367e3028f4ac647e969c478466f621fa6ec
+qualification report sha256:
+  8eaa5efe00a232fd0df81a1128ae909a3d97c6fc1bc898f1d423e80bec913ca5
+unstaged tracked diff sha256:
+  845491eadfc360faac239c24ddd9c68fc269b5661281615700523dd71f039d36
+checkpoint sha256 before this checkpoint note:
+  271a6d67d366a2128638a11341b80db6a73fa62af8c37d38e00eb9e495bf32ac
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+```
+
+No Gazebo, scenario, recorder, analyzer, rosbag recorder, or physical process
+remained during this implementation checkpoint. All four fresh v8.6 run
+roots remain absent.
+
+## Current milestone
+
+**PHASE 08.8 M4.7 — V8.6 IMPLEMENTED / COMPLETE NO-GAZEBO
+QUALIFICATION PASS / IMPLEMENTATION CHECKPOINT PASS / IMPLEMENTATION
+COMMIT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Stage and commit this exact qualified v8.6 implementation boundary. Verify a
+clean tree, then write, checkpoint, and commit a separate dispatch boundary
+authorizing only the installed visible primary seed-`19316` probe. Do not
+dispatch primary repeats or either secondary case.

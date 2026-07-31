@@ -242,6 +242,36 @@ def test_active_fill_transit_is_default_off_and_requires_continuity():
         )
 
 
+def test_supervisor_owned_assist_is_default_off_and_requires_transit():
+    default = SupervisorStateMachine(config=counted_config())
+    assert (
+        default.config.open_field_escape_supervisor_owned_assist_enabled
+        is False
+    )
+    enabled = SupervisorStateMachine(
+        config=counted_config(
+            candidate_informed_fill_enabled=True,
+            open_field_escape_assist_enabled=True,
+            open_field_escape_approach_continuity_enabled=True,
+            open_field_escape_active_fill_transit_enabled=True,
+            open_field_escape_supervisor_owned_assist_enabled=True,
+        )
+    )
+    assert (
+        enabled.config.open_field_escape_supervisor_owned_assist_enabled
+        is True
+    )
+
+    with pytest.raises(ValueError, match="requires active-fill transit"):
+        counted_config(
+            open_field_escape_supervisor_owned_assist_enabled=True,
+        )
+    with pytest.raises(ValueError, match="must be boolean"):
+        counted_config(
+            open_field_escape_supervisor_owned_assist_enabled=1,
+        )
+
+
 def test_candidate_informed_fill_is_default_off_and_counted_only():
     assert StateMachineConfig().candidate_informed_fill_enabled is False
     enabled = counted_config(candidate_informed_fill_enabled=True)

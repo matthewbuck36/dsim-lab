@@ -262,6 +262,26 @@ V8_5_SECONDARY_REPEATS = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v8_5_secondary_repeats.yaml'
 )
+V8_6_PRIMARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_6_primary_visible_probe.yaml'
+)
+V8_6_PRIMARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_6_primary_repeats.yaml'
+)
+V8_6_SECONDARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_6_secondary_visible_probe.yaml'
+)
+V8_6_SECONDARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_6_secondary_repeats.yaml'
+)
 HISTORICAL_V2_ACTIVATION = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml'
@@ -693,7 +713,7 @@ def test_checked_in_suites_validate_and_catalog_marks_gaps():
 @pytest.mark.parametrize(
     ('mutation', 'match'),
     [
-        (lambda doc: doc.update({'schema_version': 10}), 'schema_version'),
+        (lambda doc: doc.update({'schema_version': 11}), 'schema_version'),
         (
             lambda doc: doc.update({'mode': 'physical'}),
             'mode must be simulation',
@@ -1720,6 +1740,227 @@ def test_schema_v9_rejects_invalid_active_fill_transit_contract(
     mutation(document, overrides)
 
     with pytest.raises(ValueError, match=match):
+        _load(tmp_path, document)
+
+
+def test_schema_v10_resolves_four_supervisor_owned_assist_suites():
+    expected = {
+        V8_6_PRIMARY_VISIBLE_PROBE: (1, True, {19316}),
+        V8_6_PRIMARY_REPEATS: (10, False, set(range(19411, 19421))),
+        V8_6_SECONDARY_VISIBLE_PROBE: (1, True, {19451}),
+        V8_6_SECONDARY_REPEATS: (5, False, set(range(19461, 19466))),
+    }
+    expected_path = [
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'DESIGN_OR_MERGE_FILL',
+        'ESCAPE_REPULSE',
+        'ESCAPE_ASSIST',
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'GOAL_HOLD',
+    ]
+    for path, (run_count, gui, seeds) in expected.items():
+        suite = load_suite(path)
+        runs, unsupported = expand_suite(suite)
+
+        assert unsupported == []
+        assert len(runs) == run_count
+        assert suite['schema_version'] == 10
+        assert suite['execution']['gazebo_gui'] is gui
+        assert suite['execution']['run_timeout_sec'] == 720.0
+        assert suite['execution']['wall_timeout_sec'] == 900.0
+        assert {run['seed'] for run in runs} == seeds
+        for run in runs:
+            overrides = run['algorithm']['launch_overrides']
+            assert run['schema_version'] == 10
+            assert run['case_id'].startswith('v8_6_')
+            assert (
+                overrides[
+                    'open_field_escape_supervisor_owned_assist_enabled'
+                ]
+                is True
+            )
+            assert (
+                overrides[
+                    'open_field_escape_active_fill_transit_enabled'
+                ]
+                is True
+            )
+            assert run['success']['staged_recovery'][
+                'post_stage_a_timeout_sec'
+            ] == 300.0
+            assert (
+                'supervisor_owned_escape_assist'
+                in run['success']['all_of']
+            )
+            controller = run['success']['controller']
+            assert controller['required_state_path'] == expected_path
+            assert controller.get(
+                'required_state_paths',
+                [controller['required_state_path']],
+            ) == [expected_path]
+            assert (
+                'ESCAPE_STALLED'
+                in run['success']['controller']['required_events']
+            )
+
+
+@pytest.mark.parametrize(
+    ('v8_5_path', 'v8_6_path'),
+    [
+        (V8_5_PRIMARY_VISIBLE_PROBE, V8_6_PRIMARY_VISIBLE_PROBE),
+        (V8_5_PRIMARY_REPEATS, V8_6_PRIMARY_REPEATS),
+        (
+            V8_5_SECONDARY_VISIBLE_PROBE,
+            V8_6_SECONDARY_VISIBLE_PROBE,
+        ),
+        (V8_5_SECONDARY_REPEATS, V8_6_SECONDARY_REPEATS),
+    ],
+)
+def test_v8_6_inputs_preserve_v8_5_geometry_and_algorithm_values(
+    v8_5_path,
+    v8_6_path,
+):
+    old = yaml.safe_load(v8_5_path.read_text(encoding='utf-8'))
+    new = yaml.safe_load(v8_6_path.read_text(encoding='utf-8'))
+
+    assert old['schema_version'] == 9
+    assert new['schema_version'] == 10
+    assert old['defaults'] == new['defaults']
+    assert old['level_map'] == new['level_map']
+
+    old_execution = deepcopy(old['execution'])
+    new_execution = deepcopy(new['execution'])
+    for execution in (old_execution, new_execution):
+        execution.pop('runs_root')
+        execution.pop('run_timeout_sec')
+        execution.pop('wall_timeout_sec')
+    assert old_execution == new_execution
+
+    old_overrides = deepcopy(
+        old['frozen_profile']['launch_overrides']
+    )
+    new_overrides = deepcopy(
+        new['frozen_profile']['launch_overrides']
+    )
+    assert new_overrides.pop(
+        'open_field_escape_supervisor_owned_assist_enabled'
+    ) is True
+    assert old_overrides == new_overrides
+
+    old_case = old['cases'][0]
+    new_case = new['cases'][0]
+    for key in (
+        'family',
+        'acceptance_family',
+        'acceptance_partition',
+        'status',
+        'profiles',
+        'known_topology',
+        'metric_applicability',
+        'starts',
+        'sources',
+        'algorithm',
+    ):
+        assert old_case[key] == new_case[key]
+    assert (
+        old_case['success']['ground_truth']
+        == new_case['success']['ground_truth']
+    )
+    old_staged = deepcopy(old_case['success']['staged_recovery'])
+    new_staged = deepcopy(new_case['success']['staged_recovery'])
+    old_staged.pop('post_stage_a_timeout_sec')
+    new_staged.pop('post_stage_a_timeout_sec')
+    assert old_staged == new_staged
+    assert new_case['sources'][0]['y_m'] in (
+        1.0606601717798212,
+        1.38581929876693,
+    )
+
+
+@pytest.mark.parametrize(
+    ('mutation', 'match'),
+    [
+        (
+            lambda document, overrides: document.update(
+                {'schema_version': 9}
+            ),
+            'schema version 10',
+        ),
+        (
+            lambda document, overrides: overrides.update({
+                'open_field_escape_supervisor_owned_assist_enabled': 1,
+            }),
+            'must be true or false',
+        ),
+        (
+            lambda document, overrides: overrides.update({
+                'open_field_escape_active_fill_transit_enabled': False,
+            }),
+            'requires active-fill transit',
+        ),
+        (
+            lambda document, overrides: document['cases'][0]['success'][
+                'all_of'
+            ].remove('supervisor_owned_escape_assist'),
+            'omits|does not bind',
+        ),
+        (
+            lambda document, overrides: document['cases'][0]['success'][
+                'controller'
+            ].update({
+                'required_state_path': [
+                    'SEARCH',
+                    'VERIFY_EXTREMUM',
+                    'DESIGN_OR_MERGE_FILL',
+                    'ESCAPE_REPULSE',
+                    'SEARCH',
+                    'VERIFY_EXTREMUM',
+                    'GOAL_HOLD',
+                ],
+            }),
+            'counted open-field contract',
+        ),
+    ],
+)
+def test_schema_v10_rejects_invalid_supervisor_owned_assist_contract(
+    tmp_path,
+    mutation,
+    match,
+):
+    document = yaml.safe_load(
+        V8_6_PRIMARY_VISIBLE_PROBE.read_text(encoding='utf-8')
+    )
+    overrides = document['frozen_profile']['launch_overrides']
+    mutation(document, overrides)
+
+    with pytest.raises(ValueError, match=match):
+        _load(tmp_path, document)
+
+
+def test_schema_v10_is_required_for_scoped_supervisor_owner_predicate(
+    tmp_path,
+):
+    document = yaml.safe_load(
+        V8_6_PRIMARY_VISIBLE_PROBE.read_text(encoding='utf-8')
+    )
+    document['schema_version'] = 9
+    document['frozen_profile']['launch_overrides'].pop(
+        'open_field_escape_supervisor_owned_assist_enabled'
+    )
+    success = document['cases'][0]['success']
+    success['all_of'] = [
+        predicate
+        for predicate in success['all_of']
+        if predicate != 'supervisor_owned_escape_assist'
+    ]
+    success['result_scopes']['full_lifecycle']['all_of'] = [
+        *success['all_of'],
+        'supervisor_owned_escape_assist',
+    ]
+
+    with pytest.raises(ValueError, match='schema version 10'):
         _load(tmp_path, document)
 
 

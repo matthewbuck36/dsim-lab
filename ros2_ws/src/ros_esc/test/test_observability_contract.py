@@ -394,6 +394,7 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         "open_field_escape_assist_enabled": "False",
         "open_field_escape_approach_continuity_enabled": "False",
         "open_field_escape_active_fill_transit_enabled": "False",
+        "open_field_escape_supervisor_owned_assist_enabled": "False",
         "candidate_cost_pretrigger_rotations": "0",
         "candidate_informed_fill_enabled": "False",
         "candidate_informed_fill_amplitude_scale": "1.0",
@@ -530,6 +531,7 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         'open_field_escape_assist_enabled',
         'open_field_escape_approach_continuity_enabled',
         'open_field_escape_active_fill_transit_enabled',
+        'open_field_escape_supervisor_owned_assist_enabled',
         'candidate_cost_pretrigger_rotations',
         'candidate_informed_fill_enabled',
     ):
@@ -597,6 +599,14 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
     assert "--recording_ready_topic" in controller_command
     assert "$(var recording_ready_topic)" in controller_command
     assert "--recording_ready_stale_sec" in controller_command
+    assert (
+        "--open_field_escape_supervisor_owned_assist_enabled"
+        in controller_command
+    )
+    assert (
+        "$(var open_field_escape_supervisor_owned_assist_enabled)"
+        in controller_command
+    )
 
 
 def test_controller_spawners_allow_bounded_gazebo_startup_latency():
