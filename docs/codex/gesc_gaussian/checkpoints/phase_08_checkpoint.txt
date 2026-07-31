@@ -1,74 +1,38 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-31T04:04:23+00:00
-Base HEAD: bc25fefcfde02dac5d5efac6c494412b0aa2e0c3
+Generated: 2026-07-31T04:24:17+00:00
+Base HEAD: 78b0f4d977c168c4e71dae75569eb7844e6ad28a
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 3951338a717f0573307a20147c316b1e9e29bca06e177ee71a115e1e6225633c
+Status sha256: b103a6cea0d23d5b13fddb0e415717a433f105749fdf6490b624c66f908df9f9
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_8_plan.md
 Active subphase plan sha256: 913e8d74c0f7be1a27d09050d29b16b77205f16f8f639e702c2c07bb2ad129fe
-Unstaged diff sha256: 164439ca0a45a5b62e1f4bd730eb7da1d588e681432dfb46581793bb39404fa6
+Unstaged diff sha256: 3516c16bde4bf76f10788b16669342aef18aa89ff5f8257eb34bc0a0915fa9c4
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 103]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 104]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
- M ros2_ws/src/ros_esc/ros_esc/convergence_detector_node/convergence_detector_node_script.py
- M ros2_ws/src/ros_esc/ros_esc/plotting_scripts/gesc_gaussian_bag_analysis.py
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/phase08_validation.py
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py
- M ros2_ws/src/ros_esc/ros_esc/supervisor_node/state_machine.py
- M ros2_ws/src/ros_esc/ros_esc/supervisor_node/supervisor_node_script.py
- M ros2_ws/src/ros_esc/setup.py
- M ros2_ws/src/ros_esc/test/test_bag_analysis.py
- M ros2_ws/src/ros_esc/test/test_convergence_detector_policy.py
- M ros2_ws/src/ros_esc/test/test_scenario_runner.py
- M ros2_ws/src/ros_esc/test/test_scenario_schema.py
- M ros2_ws/src/ros_esc/test/test_state_machine.py
- M ros2_ws/src/ros_esc/test/test_supervisor_integration.py
- M ros2_ws/src/turtlebot3_rotating_sensor/launch/gazebo.launch.xml
-?? docs/codex/gesc_gaussian/plans/phase_08_8_plan.md
-?? docs/codex/gesc_gaussian/validation/phase_08_8_baseline_audit.md
-?? docs/codex/gesc_gaussian/validation/phase_08_8_no_gazebo_qualification.md
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v8_primary_repeats.yaml
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v8_primary_visible_probe.yaml
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v8_secondary_repeats.yaml
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v8_secondary_visible_probe.yaml
+?? docs/codex/gesc_gaussian/validation/phase_08_8_primary_probe.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  59 ++--
- docs/codex/gesc_gaussian/status/phase_08_status.md | 172 +++++++++
- .../convergence_detector_node_script.py            | 385 +++++++++++++++++----
- .../plotting_scripts/gesc_gaussian_bag_analysis.py | 201 +++++++++++
- .../ros_esc/scenario_runner/phase08_validation.py  |  24 +-
- .../ros_esc/scenario_runner/run_scenario.py        | 245 ++++++++++++-
- .../ros_esc/scenario_runner/scenario_schema.py     | 383 +++++++++++++++++---
- .../ros_esc/supervisor_node/state_machine.py       | 317 +++++++++++++++++
- .../supervisor_node/supervisor_node_script.py      | 243 ++++++++++++-
- ros2_ws/src/ros_esc/setup.py                       |   2 +-
- ros2_ws/src/ros_esc/test/test_bag_analysis.py      | 104 +++++-
- .../test/test_convergence_detector_policy.py       | 106 ++++++
- ros2_ws/src/ros_esc/test/test_scenario_runner.py   | 371 ++++++++++++++++++++
- ros2_ws/src/ros_esc/test/test_scenario_schema.py   | 161 ++++++++-
- ros2_ws/src/ros_esc/test/test_state_machine.py     | 322 +++++++++++++++++
- .../ros_esc/test/test_supervisor_integration.py    | 154 ++++++++-
- .../launch/gazebo.launch.xml                       |  18 +
- 17 files changed, 3077 insertions(+), 190 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  63 +--------
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 155 +++++++++++++++++++++
+ 2 files changed, 161 insertions(+), 57 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**PHASE 08.8 M1-M2 — QUALIFIED /
-MATERIAL CHECKPOINT AND COMMIT PENDING /
-GAZEBO STILL PROHIBITED.**
+**PHASE 08.8 M3 — FIXED V8 PROBE FAILED /
+FAILURE EVIDENCE CHECKPOINTED / COMMIT PENDING /
+NO FURTHER GAZEBO AUTHORIZED UNTIL A VERSIONED CORRECTION QUALIFIES.**
 
 
 

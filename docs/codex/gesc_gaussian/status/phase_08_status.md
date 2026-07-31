@@ -10737,3 +10737,158 @@ GAZEBO STILL PROHIBITED.**
 Run `checkpoint_phase.sh 08`, inspect the checkpoint plus complete M1-M2 diff,
 rerun context/whitespace checks, and create the authorized bounded commit.
 Only then dispatch the primary visible probe exactly once.
+
+## Phase 08.8 M1-M2 committed boundary — 2026-07-30
+
+The qualified counted-source/open-field implementation, tests, fixed
+scenarios, baseline audit, no-Gazebo record, live status, and material
+checkpoint were committed at:
+
+```text
+78b0f4d phase 08.8: qualify counted-source open-field profile
+```
+
+Post-commit verification:
+
+```text
+branch:
+  feature/gesc-gaussian-robustness-v1
+tracked remote:
+  ahead 104
+worktree:
+  clean
+validate_phase_context.sh 08 implement:
+  PASS
+matching Gazebo/scenario/recorder/analyzer processes:
+  none
+```
+
+This satisfies the explicit M1-M2 prerequisite for Gazebo. It does not imply a
+behavioral simulation pass.
+
+## Current milestone
+
+**PHASE 08.8 M3 — AUTHORIZED FOR ONE VISIBLE PRIMARY DISPATCH.**
+
+## Next criterion
+
+Execute `phase08_v8_primary_visible_probe.yaml` once from the qualified
+installed graph with GUI enabled. Retain the complete outcome, do not retry the
+same fixed version, run the authoritative validator/analyzer if recording is
+complete, checkpoint the result, and stop later dispatch if any M3 gate fails.
+
+## Phase 08.8 M3 fixed primary visible probe — 2026-07-30
+
+**FIXED EXPERIMENT FAIL / INFRASTRUCTURE COMPLETE / RETAINED.**
+
+The one authorized visible execution of the installed
+`phase08_v8_primary_visible_probe.yaml` was dispatched exactly once. The
+scenario returned exit 1 after the live Stage A monitor reached its fixed
+`360.0 s` budget without observing the required direct recovery path.
+
+Retained suite summary:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_primary_probe/scenario_summaries/20260731T040555626244Z_phase08_v8_primary_visible_probe.yaml
+```
+
+Retained run:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_primary_probe/2026-07-31/20260731T040556569481Z_simulation_phase08_v8_primary_visible_probe-v8_primary_probe_r1p5_a45_h25_18801-robust_gaus_5fa57e59
+```
+
+Infrastructure remained healthy:
+
+```text
+record process:
+  return_code 0
+  timed_out false
+recording complete:
+  true
+authoritative completeness:
+  PASS
+cleanup:
+  PASS
+remaining nodes/processes:
+  none
+analysis:
+  command exit 0
+  partial only because behavior failed
+  analysis failures none
+```
+
+Behavioral result:
+
+```text
+observed path:
+  SEARCH
+  -> VERIFY_EXTREMUM
+  -> DESIGN_OR_MERGE_FILL
+  -> ESCAPE_REPULSE
+  -> DESIGN_OR_MERGE_FILL
+  -> ESCAPE_ASSIST
+  -> SEARCH
+  -> VERIFY_EXTREMUM
+  -> SEARCH
+  -> VERIFY_EXTREMUM
+  -> SEARCH
+
+required v8 recovery path:
+  SEARCH
+  -> VERIFY_EXTREMUM
+  -> DESIGN_OR_MERGE_FILL
+  -> ESCAPE_REPULSE
+  -> SEARCH
+
+fill cardinality:
+  PASS, exactly one created/active cluster
+Stage A:
+  FAIL
+Stage B:
+  not started / FAIL
+controller ranked goal:
+  false
+terminal state:
+  SEARCH
+terminal position:
+  (1.255092, 1.140857) m
+distance to declared evaluator global:
+  3.256557 m
+```
+
+The first confirmed candidate and fill were correct. Its complete-rotation raw
+estimate was `-2.339437`, MAD `0.506357`, uncertainty `1.519071`, and interval
+`[-3.858508, -0.820366]`. The fill was associated `0.273508 m` from the
+declared local and `0.166811 m` from the convergence point.
+
+The escape stalled, redesigned/merged the same fill, entered the legacy assist
+state, and achieved only `0.213563 m` of sustained radial progress. It then met
+the small historical exit radius and returned to ordinary search while still
+close enough to fall back into the same local basin. Later confirmations were
+correctly rejected as active-fill revisits; no false candidate two or false
+global decision occurred.
+
+The bounded diagnosis and all plot/table paths are recorded in:
+
+```text
+docs/codex/gesc_gaussian/validation/phase_08_8_primary_probe.md
+```
+
+The failed fixed v8 input is closed. It will not be retried, mutated, or
+included as a pass. Primary repeats, secondary runs, and broader dispatch are
+stopped at the M3 gate.
+
+## Current milestone
+
+**PHASE 08.8 M3 — FIXED V8 PROBE FAILED /
+FAILURE EVIDENCE CHECKPOINTED / COMMIT PENDING /
+NO FURTHER GAZEBO AUTHORIZED UNTIL A VERSIONED CORRECTION QUALIFIES.**
+
+## Next criterion
+
+Commit the checkpointed fixed M3 failure evidence. Then amend the Phase 08.8
+Plan for a new, opt-in open-field escape-assist version; qualify its state
+semantics, supervisor command ownership, schema, validator, historical
+defaults, launch graph, build, and dry-run expansion without Gazebo. Only a
+successful material checkpoint and commit may authorize one new visible probe.
