@@ -11613,3 +11613,44 @@ PRIMARY REPEATS NOT YET AUTHORIZED.**
 Regenerate the checkpoint with this status, rerun context and whitespace
 checks, and commit the bounded M3.2 pass evidence. Only that clean committed
 boundary authorizes M4's sealed ten-run primary gate.
+
+## Phase 08.8 M3.2 pass committed / M4 dispatch boundary — 2026-07-30
+
+The fixed v8.2 visible-probe pass, analysis, plots, status, and material
+checkpoint were committed at:
+
+```text
+5d1d54b phase 08.8: retain passing v8.2 primary probe
+```
+
+Post-commit verification found a clean worktree, complete Phase 08 context,
+and no matching Gazebo, scenario, recorder, or analyzer process.
+
+This authorizes the sealed
+`phase08_v8_2_primary_repeats.yaml` population only:
+
+```text
+seeds:
+  19011..19020
+execution:
+  serial
+  headless
+retry:
+  prohibited
+first failure:
+  stop remaining dispatch
+```
+
+It does not authorize either secondary input, a broader matrix, physical
+hardware, or three lights until the preceding gate passes and is retained.
+
+## Current milestone
+
+**PHASE 08.8 M4 — AUTHORIZED FOR THE SEALED TEN-RUN V8.2 PRIMARY GATE.**
+
+## Next criterion
+
+Commit this dispatch record, verify the dedicated M4 run root is absent and
+the worktree/runtime are clean, then execute the installed ten-case primary
+suite once. Analyze every completed recording and stop immediately on the
+first fixed failure.

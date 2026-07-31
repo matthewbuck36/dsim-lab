@@ -1,38 +1,35 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-31T05:53:10+00:00
-Base HEAD: 551a62632b73ef62539d7b59bef9967c37b31deb
+Generated: 2026-07-31T05:53:35+00:00
+Base HEAD: 5d1d54b6eafe06f891be5145148636428998240b
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 7aed17ba2013443455f8e9da78360a7ef09d26baa715581a5fccd35f04cd74d4
+Status sha256: 24895cbb0f571a5938d482f86047a15ce6041000b2d55960192c2a87fd3b9bd4
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_8_plan.md
 Active subphase plan sha256: 81727fdf83a3c664608429f5b385b6efdf60bd164ee8086a85ec2790e59514fa
-Unstaged diff sha256: 01cc74a070e355f0b9bd62600b6d8f2229a61090c4b2f18411411f80b003a4ac
+Unstaged diff sha256: abc329c3ddacb2831ea19190b0b9552c81fb096eed9fde2fcd13e783a4426e3c
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 109]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 110]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
-?? docs/codex/gesc_gaussian/validation/phase_08_8_m3_2_primary_probe.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  25 +---
- docs/codex/gesc_gaussian/status/phase_08_status.md | 146 +++++++++++++++++++++
- 2 files changed, 152 insertions(+), 19 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 26 +++-----------
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 41 ++++++++++++++++++++++
+ 2 files changed, 46 insertions(+), 21 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**PHASE 08.8 M3.2 — FIXED VISIBLE PASS RETAINED AND CHECKPOINTED /
-EVIDENCE COMMIT PENDING /
-PRIMARY REPEATS NOT YET AUTHORIZED.**
+**PHASE 08.8 M4 — AUTHORIZED FOR THE SEALED TEN-RUN V8.2 PRIMARY GATE.**
 
 
 
