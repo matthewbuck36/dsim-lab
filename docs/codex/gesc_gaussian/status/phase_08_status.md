@@ -14890,3 +14890,114 @@ IMPLEMENTATION COMMIT PENDING / GAZEBO PROHIBITED.**
 Stage and commit exactly this qualified implementation boundary. Then create,
 checkpoint, and commit a separate visible-dispatch authority before executing
 installed primary visible seed `19501` once without any ROS-domain monitor.
+
+## Phase 08.8 M4.8 v8.7 primary-visible dispatch boundary — 2026-07-31
+
+The qualified v8.7 implementation is committed:
+
+```text
+2391133 phase 08.8: qualify v8.7 causal handoff evidence
+```
+
+The only next runtime authorized is the installed, visible, single-run
+primary probe:
+
+```text
+install:
+  /tmp/phase08_8_v8_7_release_qual.krosar/install
+scenario:
+  <install>/ros_esc/share/ros_esc/scenario_runner/scenarios/
+    phase08_v8_7_primary_visible_probe.yaml
+scenario SHA-256:
+  5c5f40dd77005fea3f44faa1c7f425e709b245ffcd1279f9f7979505d3059910
+case:
+  v8_7_primary_probe_r1p5_a45_h25_19501
+seed:
+  19501
+GUI:
+  visible
+ROS_DOMAIN_ID:
+  231
+ROS_LOCALHOST_ONLY:
+  1
+outer timeout:
+  1050 s, INT then 30 s kill bound
+dispatch log:
+  /tmp/phase08_8_m4_8_v8_7_primary_probe_dispatch.log
+```
+
+The run executes once with no retry and no parameter change. No `ros2 topic`,
+`ros2 node`, `ros2 service`, `ros2 param`, RViz, plotter, or other DDS
+participant may join domain `231` while the sealed run is active. Progress
+inspection is limited to the dispatch process, console file, run-directory
+creation, bag-file growth, and final scenario summary.
+
+The runner retains strict graph and session-process cleanup. No node allowlist
+or cleanup exception exists. The run must pass every v8.6 behavioral
+predicate, schema-v11 causal ownership, complete recording, final readiness
+false, final zero, and uncontaminated cleanup. The standard analyzer may run
+exactly once only after the sealed run is fully closed.
+
+At this boundary:
+
+```text
+branch:
+  feature/gesc-gaussian-robustness-v1
+HEAD:
+  2391133
+worktree:
+  clean before this status amendment
+active Gazebo/scenario/recorder/analyzer:
+  none
+primary v8.7 run root:
+  absent
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.8 — V8.7 IMPLEMENTATION COMMITTED / PRIMARY VISIBLE
+SEED 19501 DISPATCH BOUNDARY WRITTEN / DISPATCH CHECKPOINT PENDING /
+GAZEBO NOT YET STARTED.**
+
+## Next criterion
+
+Checkpoint and commit this exact dispatch boundary. Then execute the installed
+visible primary probe once. Do not join ROS domain `231`. A formal failure
+closes the visible gate; a pass must be analyzed once, produce all nine plots,
+and be checkpointed and committed before any primary repeat dispatch.
+
+## Phase 08.8 M4.8 v8.7 primary-visible dispatch checkpoint — 2026-07-31
+
+The exact single-run primary-visible authority received the required Phase 08
+checkpoint against qualified implementation HEAD `2391133`.
+
+```text
+base HEAD:
+  2391133c32c00a74149d0eeaab7ac62efcf7aa4e
+status sha256 before this checkpoint note:
+  e4ae19bb37a4230d06fad9140aa850401fd872d826491780c2a0cc097f77d581
+active plan sha256:
+  8c063ed44514bd9a84e0601f5cb73e56aeecabddce7cabda0d6c65fe80077694
+unstaged tracked diff sha256:
+  a9815a409fc3c55aca8ed9fd71399641c423f7bfad0c6faf85c912e6e5dbfafc
+checkpoint sha256 before this checkpoint note:
+  29c98102bf74d7d618f3094b9cf854b68fdf413b28d41eeb2088c4ea22b97f29
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+```
+
+No Gazebo or run process had started, and the primary v8.7 run root remained
+absent during this checkpoint.
+
+## Current milestone
+
+**PHASE 08.8 M4.8 — V8.7 IMPLEMENTATION COMMITTED / PRIMARY VISIBLE
+SEED 19501 DISPATCH CHECKPOINT PASS / DISPATCH COMMIT PENDING /
+GAZEBO NOT YET STARTED.**
+
+## Next criterion
+
+Commit this exact dispatch boundary, then execute installed visible seed
+`19501` once on isolated domain `231` with no ROS-domain monitor and no retry.
