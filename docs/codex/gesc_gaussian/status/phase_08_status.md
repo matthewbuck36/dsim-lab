@@ -15167,3 +15167,125 @@ Commit this exact visible result. Then create, checkpoint, and commit a
 separate exact ten-seed primary-repeat dispatch boundary before executing the
 headless population serially with first-failure stop and no ROS-domain
 monitor.
+
+## Phase 08.8 M4.8 v8.7 primary-repeat dispatch boundary — 2026-07-31
+
+The immutable v8.7 primary-visible pass is committed:
+
+```text
+9f177ea phase 08.8: retain passing v8.7 primary probe
+```
+
+The only next runtime authorized is the installed ten-seed primary population:
+
+```text
+install:
+  /tmp/phase08_8_v8_7_release_qual.krosar/install
+scenario:
+  <install>/ros_esc/share/ros_esc/scenario_runner/scenarios/
+    phase08_v8_7_primary_repeats.yaml
+scenario SHA-256:
+  f654f51a3cc445359b1f94c81512f25471d0c388267126bd8923791a1d2b542b
+case:
+  v8_7_primary_repeat_r1p5_a45_h25
+seeds:
+  19511, 19512, 19513, 19514, 19515,
+  19516, 19517, 19518, 19519, 19520
+GUI:
+  headless
+execution:
+  serial, max_parallel_runs=1
+first-failure policy:
+  stop_on_run_failure=true
+  stop_on_cleanup_failure=true
+retry:
+  none
+ROS_DOMAIN_ID:
+  232
+ROS_LOCALHOST_ONLY:
+  1
+outer suite timeout:
+  10500 s, INT then 30 s kill bound
+dispatch log:
+  /tmp/phase08_8_m4_8_v8_7_primary_repeats_dispatch.log
+```
+
+No parameter, source, position, intensity, detector, fill, affine, evaluator,
+budget, or evidence change is permitted after dispatch. Every seed executes
+at most once.
+
+No `ros2 topic`, `ros2 node`, `ros2 service`, `ros2 param`, RViz, plotter, or
+other external DDS participant may join domain `232` while the sealed suite
+is active. Progress inspection is limited to process state, the dispatch
+console file, run directories, bag-file growth, and runner-written scenario
+summaries.
+
+Each run must pass all `14` predicates, including schema-v11 causal ownership,
+Stage A, exact one-fill cardinality, strict candidate ranking, Stage B,
+recording, final readiness false, final zero, and cleanup. The runner stops
+before the next seed on any behavioral or cleanup failure. A stopped
+population remains stopped and failed; no seed is retried or relabeled.
+
+At this boundary:
+
+```text
+branch:
+  feature/gesc-gaussian-robustness-v1
+HEAD:
+  9f177ea
+worktree:
+  clean before this status amendment
+active Gazebo/scenario/recorder/analyzer:
+  none
+primary-repeat v8.7 run root:
+  absent
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.8 — V8.7 PRIMARY VISIBLE PASS COMMITTED /
+TEN-SEED PRIMARY-REPEAT BOUNDARY WRITTEN / REPEAT DISPATCH CHECKPOINT
+PENDING / REPEATS NOT YET STARTED.**
+
+## Next criterion
+
+Checkpoint and commit this exact population boundary. Then execute the
+installed suite once on isolated domain `232` without external ROS/DDS
+monitoring. Stop on the runner's first failure and never retry a seed.
+
+## Phase 08.8 M4.8 v8.7 primary-repeat dispatch checkpoint — 2026-07-31
+
+The exact serial ten-seed primary population authority received the required
+Phase 08 checkpoint against visible-result HEAD `9f177ea`.
+
+```text
+base HEAD:
+  9f177ea5a5bd20a5b0375da7d58ca805e72f259b
+status sha256 before this checkpoint note:
+  18397950686b9e77b86389e6730a896aba36dca197495549cd1326ef1fd5b0ad
+active plan sha256:
+  8c063ed44514bd9a84e0601f5cb73e56aeecabddce7cabda0d6c65fe80077694
+unstaged tracked diff sha256:
+  b968be3fe3c8510ca4ed50f00e31f4ec1d9d763b9f4c34bb324c699236260e7a
+checkpoint sha256 before this checkpoint note:
+  1b4bcef1d3224e07a47513e7073fe2fd97f55c099e7e52d3bb720c56e6bef10f
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+```
+
+No Gazebo or run process had started, and the v8.7 primary-repeat root
+remained absent during this checkpoint.
+
+## Current milestone
+
+**PHASE 08.8 M4.8 — V8.7 PRIMARY VISIBLE PASS COMMITTED /
+TEN-SEED PRIMARY-REPEAT DISPATCH CHECKPOINT PASS / REPEAT DISPATCH
+COMMIT PENDING / REPEATS NOT YET STARTED.**
+
+## Next criterion
+
+Commit this exact population boundary, then execute the installed suite once
+on isolated domain `232`, serially, without external ROS/DDS monitoring and
+without retries.
