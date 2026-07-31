@@ -14354,3 +14354,128 @@ Stage and commit this exact visible-result boundary. Verify a clean tree, then
 write, checkpoint, and commit a separate fixed primary-repeat dispatch
 boundary for exactly seeds `19411..19420`, serial/headless, stop on first
 failure, no retry. Do not dispatch the secondary probe or repeats.
+
+## Phase 08.8 M4.7 fixed v8.6 primary-repeat dispatch boundary — 2026-07-31
+
+The immutable passing visible result and analysis clarification were committed
+at:
+
+```text
+56ad1de603e7b1965b8cdc1d5af75a2e3489c469
+phase 08.8: retain passing v8.6 primary probe
+```
+
+Post-commit preflight passes:
+
+```text
+worktree:
+  clean
+phase context:
+  PASS
+primary-repeat evidence root:
+  absent
+matching Gazebo/scenario/recorder/analyzer processes:
+  none
+source primary-repeat scenario sha256:
+  641e60c3382afca6b3f499bd1f8abc6609df30eb2dfbbc20793dbfaabab57efe
+installed primary-repeat scenario sha256:
+  641e60c3382afca6b3f499bd1f8abc6609df30eb2dfbbc20793dbfaabab57efe
+source/install parity:
+  PASS
+```
+
+This boundary proposes exactly one installed serial/headless population:
+
+```text
+scenario:
+  phase08_v8_6_primary_repeats.yaml
+case:
+  v8_6_primary_repeat_r1p5_a45_h25
+seeds:
+  19411, 19412, 19413, 19414, 19415,
+  19416, 19417, 19418, 19419, 19420
+profile:
+  robust_gaussian_v1
+ROS domain:
+  228
+execution:
+  serial, Gazebo headless, one attempt per dispatched seed, no retry
+stop policy:
+  stop on first run or cleanup failure; later seeds are not dispatched
+per-run simulation timeout:
+  720.0 s
+per-run wall timeout:
+  900.0 s
+outer population timeout:
+  9,600 s, INT then 60 s kill-after
+evidence root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_6_primary_repeats
+```
+
+No source, start, light position, intensity, seed, profile value, acceptance
+predicate, evidence budget, cleanup rule, or stop rule may change after
+dispatch. Every executed run must pass the complete visible-probe contract,
+including exactly one fill, revision-one direction, supervisor-owned assist,
+positive translation, exit alignment at least `+0.80`, strict second-candidate
+raw ranking, later evaluator-only `0.50 m` proximity, final zero, readiness
+false, complete recording, and clean shutdown.
+
+After the population closes, the standard analyzer may run exactly once for
+each dispatched run. All outputs, including a first failure and any optional
+metric limitation, are retained honestly. No failed seed is retried.
+
+Only a formal `10/10` result may authorize the v8.6 secondary visible probe.
+The secondary probe, secondary repeats, broader characterization, three
+lights, physical motion, and Phase 09 remain prohibited during this
+population.
+
+## Current milestone
+
+**PHASE 08.8 M4.7 — PASSING V8.6 PRIMARY PROBE COMMITTED / FIXED TEN-RUN
+PRIMARY POPULATION DECLARED / REPEAT DISPATCH CHECKPOINT PENDING / GAZEBO
+PROHIBITED.**
+
+## Next criterion
+
+Checkpoint and commit this exact status plus checkpoint repeat-dispatch
+boundary. Then reconfirm the clean tree, inactive runtime process set, absent
+evidence root, and installed scenario parity before executing the one fixed
+serial/headless population.
+
+## Phase 08.8 M4.7 v8.6 primary-repeat dispatch checkpoint — 2026-07-31
+
+The sealed ten-run primary-repeat dispatch boundary received the required
+Phase 08 checkpoint against visible-result HEAD `56ad1de`.
+
+```text
+base HEAD:
+  56ad1de603e7b1965b8cdc1d5af75a2e3489c469
+status sha256 before this checkpoint note:
+  fe4915d110b759c1668bcedfb28a2a5407cbef1716e46e9415d4469f205dbf7a
+active plan sha256:
+  0e1494c96dfab88bf0c2640b1a1abfdaf5d976bd11be25f4c74ff593458404e9
+unstaged tracked diff sha256:
+  b871122c629d0267f3f85b89996ad0d6ff6c96562c2cb9a67c98500c37effe4c
+checkpoint sha256 before this checkpoint note:
+  deca2e43ee5e7db62085d4f0ced3f2beed3f593d06950ceb3db701b21db8e4dd
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+```
+
+No Gazebo, scenario, recorder, analyzer, rosbag recorder, or physical process
+ran during this checkpoint.
+
+## Current milestone
+
+**PHASE 08.8 M4.7 — PASSING V8.6 PRIMARY PROBE COMMITTED / FIXED TEN-RUN
+PRIMARY POPULATION DECLARED / REPEAT DISPATCH CHECKPOINT PASS / DISPATCH
+COMMIT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Stage and commit exactly this status plus checkpoint boundary. Then reconfirm
+the clean tree, inactive runtime process set, absent evidence root, and
+installed scenario parity before executing the one fixed serial/headless
+population. Do not dispatch the secondary probe or repeats.
