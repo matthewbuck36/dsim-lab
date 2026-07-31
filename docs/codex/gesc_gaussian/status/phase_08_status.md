@@ -16803,3 +16803,133 @@ Commit this exact dispatch boundary. Reverify a clean worktree, installed
 scenario hash, absent root, and inactive runtime. Then dispatch visible seed
 `19701` exactly once on domain `224`, with no retry and no ROS-domain
 monitoring.
+
+## Phase 08.8 M4.10 fixed v8.9 primary-visible result — 2026-07-31
+
+The one authorized installed seed-`19701` attempt closed before Gazebo or the
+recording graph started:
+
+```text
+runner return:          1
+record_run return:      2
+classification:         failed / runner_or_recorder_failure
+recording complete:     false
+cleanup:                pass
+bag:                    absent
+behavioral predicates:  unavailable
+retry:                  prohibited
+```
+
+`record_run` failed while constructing Git metadata:
+
+```text
+git rev-parse --show-toplevel
+return code 128
+```
+
+The installed runner had been invoked after `cd /tmp`. Although
+`run_scenario.py` resolves and retains `REPOSITORY_ROOT`, its staged
+global-proximity recorder owner launched the child without a working
+directory. The child inherited `/tmp`, and `record_run.py` called
+`git_state(Path.cwd())`. A read-only invocation of the same Git command from
+`/tmp` reproduces return code `128`. No Gazebo process ever started.
+
+The fixed retained evidence is:
+
+```text
+run:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_9_primary_probe/2026-07-31/
+  20260731T165942441730Z_simulation_phase08_v8_9_primary_visible_probe-
+  v8_9_primary_probe_r1p5_a45_h25_19701-robust__59eb6408
+summary:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_9_primary_probe/scenario_summaries/
+  20260731T165941455647Z_phase08_v8_9_primary_visible_probe.yaml
+dispatch log:
+  /tmp/phase08_8_m4_10_v8_9_primary_visible_dispatch.log
+```
+
+Hashes:
+
+```text
+scenario definition: 2131b9b77587c7326e31acb63a6922ce4fbd81655b711f0b119f1c97be4c736c
+summary:             c1f322e48eb06132a9dcf065d9d11f039dd5275842bf42caa19318ad47f7cdf7
+scenario result:     9f4a5318c63f1d4d4ba4751fefd5e92c995e420dcffc418c1949e28430b78daa
+resolved scenario:   8fb444ff46d98e47ad3781829355cade828f94ea37b572cc8debc66b1bae1296
+notes:               b5b0ce3e05f57f6c6b7e53f6cf03a7d46426b403efc13b5ea39ed72cc3d8fa11
+dispatch log:        324afa05e4491f930b47af517efe631c1663c201d6cb6b585d5516be76f2900f
+```
+
+The required analyzer was invoked once after closure. Its manually
+transcribed target omitted `_19701`, so it returned `2` before analysis.
+No second invocation is made; no bag existed to analyze in either case.
+
+```text
+/tmp/phase08_8_m4_10_v8_9_primary_visible_analysis.log
+64414c17fef8838ad148dec1b4d911e733271dc8bbcb5dad992dc8f2c31102b0
+```
+
+Durable result:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_10_primary_probe.md
+```
+
+V8.9 is closed as an infrastructure failure. Seed `19701` is not retried,
+and all later v8.9 gates remain prohibited. This is not a behavioral result
+and does not change the completed schema-v13 retained-replay qualification.
+No active Gazebo, scenario-runner, recorder, rosbag-recorder, analyzer, or
+physical process remains.
+
+## Current milestone
+
+**PHASE 08.8 M4.10 — V8.9 PRIMARY VISIBLE FIXED PRE-GAZEBO
+INFRASTRUCTURE FAIL / NO RETRY / RESULT CHECKPOINT PENDING / ALL LATER
+V8.9 GATES PROHIBITED.**
+
+## Next criterion
+
+Checkpoint and commit the exact failed v8.9 result. Then plan a fresh v8.10
+runner/recorder working-directory correction with new scenario identities,
+roots, and seeds. Gazebo remains prohibited until the new version is
+implemented, qualified without Gazebo, checkpointed, and committed.
+
+## Phase 08.8 M4.10 v8.9 failed-result checkpoint — 2026-07-31
+
+The fixed pre-Gazebo infrastructure failure, retained artifact references,
+one failed analyzer invocation, causal diagnosis, no-retry disposition, and
+fresh-version correction boundary received the required Phase 08 checkpoint
+against dispatch HEAD `95efaa5`.
+
+```text
+base HEAD:
+  95efaa5b4ae980d3fcbfef5687b7f82568176590
+status sha256 before this checkpoint note:
+  d1b56829e440bd27c5a65aec3f791f730f28d57d160d42703b30f2344eb0c89a
+active plan sha256:
+  5dde1f6be543939e27145ac7fc0a0b32da47b2613b0e60901030652d95e24892
+failed-result report sha256:
+  034c6136a1701295539b3cd4d36c3914cbd6d64e7084dd9e3350301162a04b49
+checkpoint sha256 before this checkpoint note:
+  ca1f1abcc5f97589496ce1a3624581017312a5fd77c256d2e23b381e78007f0e
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+active runtime:
+  none
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.10 — V8.9 PRIMARY VISIBLE FIXED PRE-GAZEBO
+INFRASTRUCTURE FAIL / NO RETRY / RESULT CHECKPOINT PASS / RESULT COMMIT
+PENDING / ALL LATER V8.9 GATES PROHIBITED.**
+
+## Next criterion
+
+Commit this exact failed-result boundary. Then write and checkpoint the fresh
+v8.10 correction Plan before changing runner code or scenario inputs.
+Gazebo remains prohibited.

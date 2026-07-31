@@ -1,37 +1,38 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-31T16:58:59+00:00
-Base HEAD: 270bba0c5222b3562d4a2f4db5e5e388f65dbc79
+Generated: 2026-07-31T17:05:37+00:00
+Base HEAD: 95efaa5b4ae980d3fcbfef5687b7f82568176590
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 5d3a565d5c633210a740615ab1724bc5f64fd3cf1fd50a23a836b8c34a796802
+Status sha256: d1b56829e440bd27c5a65aec3f791f730f28d57d160d42703b30f2344eb0c89a
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_8_plan.md
 Active subphase plan sha256: 5dde1f6be543939e27145ac7fc0a0b32da47b2613b0e60901030652d95e24892
-Unstaged diff sha256: df0ce84274fa37c8e56aae003ddd72f701dd307c1334cab1049d30d78fc6774c
+Unstaged diff sha256: 0b3508c8858e1b62b03016ad19a73a632a41bd0052456113e12c969f7b801940
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 149]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 150]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
+?? docs/codex/gesc_gaussian/validation/phase_08_8_m4_10_primary_probe.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 38 ++-----------
- docs/codex/gesc_gaussian/status/phase_08_status.md | 63 ++++++++++++++++++++++
- 2 files changed, 68 insertions(+), 33 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 26 ++----
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 92 ++++++++++++++++++++++
+ 2 files changed, 98 insertions(+), 20 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**PHASE 08.8 M4.10 — V8.9 IMPLEMENTATION COMMITTED AT `270bba0` /
-PRIMARY VISIBLE SEED `19701` DISPATCH BOUNDARY WRITTEN / DISPATCH
-CHECKPOINT PENDING / GAZEBO NOT YET AUTHORIZED.**
+**PHASE 08.8 M4.10 — V8.9 PRIMARY VISIBLE FIXED PRE-GAZEBO
+INFRASTRUCTURE FAIL / NO RETRY / RESULT CHECKPOINT PENDING / ALL LATER
+V8.9 GATES PROHIBITED.**
 
 
 
