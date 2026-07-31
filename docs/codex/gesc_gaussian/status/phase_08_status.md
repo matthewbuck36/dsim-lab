@@ -12894,3 +12894,118 @@ DISPATCH CHECKPOINT PASS / DISPATCH COMMIT PENDING / GAZEBO PROHIBITED.**
 
 Commit this exact dispatch boundary. Only that later clean committed state
 authorizes the sealed ten-run primary gate.
+
+## Phase 08.8 M4.4 fixed v8.4 primary-repeat result — 2026-07-30
+
+**FIXED POPULATION FAIL / ONE OF TWO DISPATCHED PASS / SEED `19212` STAGE B
+FAIL AFTER ESCAPE-DIRECTION REVERSAL / EIGHT LATER SEEDS NOT DISPATCHED /
+INFRASTRUCTURE COMPLETE / EVIDENCE RETAINED.**
+
+The committed headless population ran serially from dispatch HEAD `31a99ed`
+on ROS domain `231`. Exactly seeds `19211` and `19212` executed once. Seed
+`19211` passed the complete counted-candidate path, strict second-candidate
+ranking, and the `0.50 m` post-recovery evaluator stop. Seed `19212` passed
+Stage A at simulation time `167.513 s`, created exactly one typed active fill,
+and completed `ESCAPE_REPULSE -> ESCAPE_ASSIST -> SEARCH`, but did not find or
+rank candidate two within its independent `180.0 s` Stage B budget.
+
+```text
+seed       formal result   Stage A (s)   Stage B (s)   final global distance
+19211      PASS             193.419       165.988       0.119298 m
+19212      FAIL             167.513       180.030       4.679383 m
+19213-20   NOT DISPATCHED
+```
+
+The runner stopped at the first formal failure with
+`stopped_early_reason: run_failure`; seed `19212` was not retried. Both
+recorders returned zero without timeout, authoritative completeness passed,
+final-zero and final-readiness-false passed, cleanup passed with no leftovers,
+and no Gazebo process remains.
+
+Retained summary:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_4_primary_repeats/
+  scenario_summaries/
+  20260731T090629163024Z_phase08_v8_4_primary_repeats.yaml
+SHA-256:
+  5b464fa8c405c4651d863949839d161d00dfd4bd44bc415d4d54cf02fa4ee381
+```
+
+Complete report:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_4_primary_repeats.md
+```
+
+The failed run's onboard-history vector was valid and aligned `+0.911`
+against the evaluator-only fill-to-global direction. The active-fill
+hard-avoidance rule rejected that direct vector because the robot was only
+about `0.001758 m` from the estimated fill center and the direct vector
+momentarily reduced that millimetric offset. It selected a tangent instead.
+
+During the Gaussian-only repulse interval, the robot crossed to the opposite
+side of the estimated center. Revalidation changed the direction from
+`(0.915820, -0.401588)` to `(-0.363617, 0.931549)` and then to
+`(-0.915820, 0.401588)`. The final vector is the exact negative of the first.
+The robot completed a valid radial escape westward, returned to `SEARCH` near
+`(-0.380863, 1.327148) m`, and ended at `(-0.731250, 1.501713) m`.
+
+Seed `19211` retained directional continuity and passed. The active Gaussian
+fill is mathematical basin memory rather than a physical obstacle; treating
+it as hard avoidance during its own escape permits a millimetric estimator
+offset to override and eventually reverse the correct frozen intent.
+
+A fresh correction must latch the direct approach-continuity direction for
+the active escape, exclude only the active mathematical fill from
+direction-reversal logic, retain avoidance of any other fill, fail rather than
+reverse, and clear authority at measured escape completion. Extending Stage B,
+weakening the fill, or increasing affine gain alone does not correct a typed
+direction that the supervisor itself reverses.
+
+## Current milestone
+
+**PHASE 08.8 M4.4 — FIXED V8.4 PRIMARY POPULATION CLOSED FAIL / SECONDARY AND
+BROAD V8.4 DISPATCH PROHIBITED / RESULT CHECKPOINT PENDING.**
+
+## Next criterion
+
+Checkpoint and commit the immutable v8.4 failure report, two executed run
+records, analysis bundles, and live status. Then save and review a fresh
+default-off amendment for active-fill corridor locking. No further Gazebo
+process is authorized until that correction passes complete no-Gazebo
+qualification, checkpointing, and a bounded commit.
+
+## Phase 08.8 M4.4 retained-result checkpoint — 2026-07-30
+
+The fixed-population failure, two immutable run records, analysis/plot
+bundles, complete diagnostic report, live status, and first-failure
+disposition received the required Phase 08 material checkpoint against
+dispatch HEAD `31a99ed`.
+
+```text
+status sha256:
+  d52ebdeecabba502f745c0cd7a9c76a12cc0681c1adc1f109531026b9817a6c8
+validation report sha256:
+  03a889f58600287159800fcbe90ec8c447979d79da83f21ecaaa0623a224bc10
+unstaged diff sha256:
+  57edd4ae9e74595a8da9ce6dda1bf30c083a3b08188dcb00338546f090567037
+diff check:
+  PASS
+```
+
+No Gazebo, scenario, recorder, analyzer, or physical process remained during
+the checkpoint.
+
+## Current milestone
+
+**PHASE 08.8 M4.4 — FIXED V8.4 PRIMARY POPULATION CLOSED FAIL / RETAINED
+RESULT CHECKPOINT PASS / RESULT COMMIT PENDING / ALL V8.4 DISPATCH
+PROHIBITED.**
+
+## Next criterion
+
+Commit this immutable result boundary and verify a clean tree. Only then may a
+fresh versioned active-fill corridor-lock amendment be saved and qualified
+without Gazebo.
