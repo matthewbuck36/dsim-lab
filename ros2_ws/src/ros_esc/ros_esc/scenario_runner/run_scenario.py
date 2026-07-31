@@ -45,6 +45,7 @@ from std_msgs.msg import Bool
 import yaml
 
 from .scenario_schema import (
+    COUNTED_OPEN_FIELD_RECOVERY_STATE_PATH,
     expand_suite,
     load_suite,
     STAGED_RECOVERY_STATE_PATHS,
@@ -164,11 +165,19 @@ def build_launch_command(resolved, cost_path=None, gui=False):
         resolved['success'].get('collision_expected') is True
     )
     validation_world = VALIDATION_WORLD
-    if resolved.get('schema_version', 1) >= 5:
-        world_file = resolved.get('geometry', {}).get('world_file')
+    geometry = resolved.get('geometry')
+    if resolved.get('schema_version', 1) >= 5 and geometry is not None:
+        world_file = geometry.get('world_file')
         if world_file != CORNER_ORIGIN_VALIDATION_WORLD.name:
             raise ValueError('resolved geometry world file is unsupported')
         validation_world = CORNER_ORIGIN_VALIDATION_WORLD
+    elif (
+        resolved.get('schema_version', 1) >= 5
+        and resolved['validation']['world']
+    ):
+        raise ValueError(
+            'schema-v8 open-field runs cannot request a validation world'
+        )
     arguments = {
         'gazebo_gui': gui,
         'gazebo_use_random_seed': True,
@@ -917,8 +926,15 @@ def _run_record_to_global_proximity(
         'post_stage_a_latest_sim_sec': None,
         'post_stage_a_timeout': False,
         'post_stage_a_timeout_sample': None,
+        'controller_ranked_goal': False,
+        'controller_ranked_goal_evidence': None,
     }
     staged_contract = resolved['success']['staged_recovery']
+    requires_ranked_goal = bool(
+        resolved.get('algorithm', {}).get('launch_overrides', {}).get(
+            'extremum_classification_mode'
+        ) == 'counted_candidates'
+    )
     sources = {source['id']: source for source in resolved['sources']}
     global_source = sources[staged_contract['global_source_id']]
 
@@ -949,7 +965,49 @@ def _run_record_to_global_proximity(
         refresh_stage_a()
 
     def event_callback(message):
-        event_messages.append((next_sequence(), message))
+        callback_sequence = next_sequence()
+        event_messages.append((callback_sequence, message))
+        if (
+            requires_ranked_goal
+            and message.event_type == AlgorithmEvent.EVENT_GOAL_REACHED
+        ):
+            try:
+                evidence = _event_value_map(message)
+                required_values = [
+                    float(evidence[name])
+                    for name in (
+                        'candidate_raw_cost_upper',
+                        'candidate_ordinal',
+                        'filled_candidate_count',
+                        'known_source_count',
+                        'comparison_filled_raw_cost_lower',
+                        'candidate_strict_separation_margin',
+                    )
+                ]
+                known_count = int(
+                    resolved['algorithm']['launch_overrides'][
+                        'known_source_count'
+                    ]
+                )
+                valid = bool(
+                    all(math.isfinite(value) for value in required_values)
+                    and required_values[1] == float(known_count)
+                    and required_values[2] == float(known_count - 1)
+                    and required_values[3] == float(known_count)
+                    and required_values[0] < required_values[4]
+                    and required_values[5] > 0.0
+                    and 'strictly lower' in message.detail
+                )
+            except (KeyError, TypeError, ValueError):
+                valid = False
+                evidence = {}
+            if valid:
+                observed['controller_ranked_goal'] = True
+                observed['controller_ranked_goal_evidence'] = {
+                    'callback_sequence': callback_sequence,
+                    'detail': message.detail,
+                    'values': evidence,
+                }
         refresh_stage_a()
 
     def fill_callback(message):
@@ -1048,7 +1106,17 @@ def _run_record_to_global_proximity(
             }
         if not observed['fill_cardinality']:
             return
-        if distance <= staged_contract['global_proximity_radius_m']:
+        ranked_goal_sequence = None
+        ranked_goal_ready = not requires_ranked_goal
+        if requires_ranked_goal:
+            ranked_goal = observed['controller_ranked_goal_evidence']
+            if ranked_goal is not None:
+                ranked_goal_sequence = ranked_goal['callback_sequence']
+                ranked_goal_ready = sample_sequence > ranked_goal_sequence
+        if (
+            ranked_goal_ready
+            and distance <= staged_contract['global_proximity_radius_m']
+        ):
             observed['global_proximity'] = True
             observed['global_sample'] = {
                 'callback_sequence': sample_sequence,
@@ -1059,6 +1127,8 @@ def _run_record_to_global_proximity(
                     'global_proximity_radius_m'
                 ],
                 'interpolation_used': False,
+                'controller_ranked_goal_required': requires_ranked_goal,
+                'controller_ranked_goal_sequence': ranked_goal_sequence,
             }
             return
         post_stage_a_timeout = staged_contract.get(
@@ -1246,6 +1316,12 @@ def _run_record_to_global_proximity(
             'post_stage_a_timeout_sample'
         ],
         'staged_monitor_error': observed['stage_error'],
+        'controller_ranked_goal_observed_live': observed[
+            'controller_ranked_goal'
+        ],
+        'controller_ranked_goal_evidence_live': observed[
+            'controller_ranked_goal_evidence'
+        ],
     }
     if 'global_approach_radius_m' in staged_contract:
         result.update({
@@ -1593,6 +1669,8 @@ def _unavailable_outcomes(reason, readiness_interval_available=False):
         'observed_terminal_state': None,
         'observed_events': [],
         'controller_goal': 'unavailable',
+        'counted_candidate_ranked_goal_passed': None,
+        'counted_candidate_ranked_goal': None,
         'simulation_ground_truth': 'unavailable',
         'final_position': None,
         'final_goal_distances_m': {},
@@ -1814,10 +1892,12 @@ def _event_value_map(message):
     return dict(zip(names, values))
 
 
-def _recovery_episodes(state_records, expected_count):
-    patterns = [
-        list(path) for path in STAGED_RECOVERY_STATE_PATHS
-    ]
+def _recovery_episodes(
+    state_records,
+    expected_count,
+    patterns=STAGED_RECOVERY_STATE_PATHS,
+):
+    patterns = [list(path) for path in patterns]
     episodes = []
     cursor = 0
     while cursor < len(state_records):
@@ -1979,7 +2059,21 @@ def _staged_recovery_evidence(
     del unused_event_records
     if state_error or event_error:
         return None, None, None, state_error or event_error
-    episodes = _recovery_episodes(state_records, expected_count)
+    counted_open_field = bool(
+        resolved.get('algorithm', {}).get('launch_overrides', {}).get(
+            'extremum_classification_mode'
+        ) == 'counted_candidates'
+    )
+    accepted_paths = (
+        (COUNTED_OPEN_FIELD_RECOVERY_STATE_PATH,)
+        if counted_open_field
+        else STAGED_RECOVERY_STATE_PATHS
+    )
+    episodes = _recovery_episodes(
+        state_records,
+        expected_count,
+        accepted_paths,
+    )
     clusters, cluster_error = _created_fill_clusters(
         event_messages,
         fill_records,
@@ -2164,8 +2258,11 @@ def _staged_recovery_evidence(
         for name in (
             'CONVERGENCE_CONFIRMED',
             'ESCAPE_STARTED',
-            'RECENTER_STARTED',
-            'RECENTER_COMPLETE',
+            *(
+                ()
+                if counted_open_field
+                else ('RECENTER_STARTED', 'RECENTER_COMPLETE')
+            ),
         )
     }
     required_event_counts['FILL_CREATED'] = len(
@@ -2200,10 +2297,10 @@ def _staged_recovery_evidence(
         'expected_local_minima': expected_count,
         'local_association_mode': association_mode,
         'required_state_path': list(
-            STAGED_RECOVERY_STATE_PATHS[0]
+            accepted_paths[0]
         ),
         'accepted_state_paths': [
-            list(path) for path in STAGED_RECOVERY_STATE_PATHS
+            list(path) for path in accepted_paths
         ],
         'completed_episode_count': len(episodes),
         'episodes': episodes,
@@ -2230,6 +2327,7 @@ def _post_recovery_global_proximity(
     stage_a_evidence,
     odometry_records,
     radius_key='global_proximity_radius_m',
+    minimum_bag_stamp=None,
 ):
     """Find the first finite, noninterpolated post-Stage-A global sample."""
     contract = resolved.get('success', {}).get('staged_recovery')
@@ -2242,13 +2340,16 @@ def _post_recovery_global_proximity(
     completion_stamp = stage_a_evidence.get('stage_a_completion_stamp')
     if completion_stamp is None:
         return None, None, 'Stage A completion stamp is unavailable'
+    required_stamp = completion_stamp
+    if minimum_bag_stamp is not None:
+        required_stamp = max(required_stamp, minimum_bag_stamp)
     sources = {source['id']: source for source in resolved['sources']}
     global_source = sources[contract['global_source_id']]
     radius = contract[radius_key]
     invalid_samples = 0
     valid_samples = 0
     for sample_index, (bag_stamp, message) in enumerate(odometry_records):
-        if bag_stamp <= completion_stamp:
+        if bag_stamp <= required_stamp:
             continue
         try:
             x_value = float(message.pose.pose.position.x)
@@ -2279,6 +2380,7 @@ def _post_recovery_global_proximity(
                 'post_stage_a_valid_sample_count': valid_samples,
                 'post_stage_a_invalid_sample_count': invalid_samples,
                 'interpolation_used': False,
+                'minimum_bag_stamp': minimum_bag_stamp,
             }, None
     return False, {
         'reason': 'no qualifying post-Stage-A odometry sample',
@@ -2287,6 +2389,81 @@ def _post_recovery_global_proximity(
         'post_stage_a_valid_sample_count': valid_samples,
         'post_stage_a_invalid_sample_count': invalid_samples,
         'interpolation_used': False,
+        'minimum_bag_stamp': minimum_bag_stamp,
+    }, None
+
+
+def _ranked_goal_evidence(resolved, event_messages, stage_a_evidence):
+    """Validate counted-candidate GOAL_REACHED evidence after local recovery."""
+
+    overrides = resolved.get('algorithm', {}).get('launch_overrides', {})
+    if overrides.get('extremum_classification_mode') != 'counted_candidates':
+        return None, None, None
+    completion_stamp = (
+        stage_a_evidence.get('stage_a_completion_stamp')
+        if stage_a_evidence
+        else None
+    )
+    if completion_stamp is None:
+        return False, {'reason': 'Stage A completion stamp is unavailable'}, None
+    known_count = int(overrides['known_source_count'])
+    invalid_count = 0
+    for bag_stamp, message in event_messages:
+        if (
+            bag_stamp <= completion_stamp
+            or message.event_type != AlgorithmEvent.EVENT_GOAL_REACHED
+        ):
+            continue
+        try:
+            values = _event_value_map(message)
+            candidate_upper = float(values['candidate_raw_cost_upper'])
+            candidate_ordinal = float(values['candidate_ordinal'])
+            filled_count = float(values['filled_candidate_count'])
+            reported_known_count = float(values['known_source_count'])
+            comparison_lower = float(
+                values['comparison_filled_raw_cost_lower']
+            )
+            separation_margin = float(
+                values['candidate_strict_separation_margin']
+            )
+        except (KeyError, TypeError, ValueError):
+            invalid_count += 1
+            continue
+        required = (
+            candidate_upper,
+            candidate_ordinal,
+            filled_count,
+            reported_known_count,
+            comparison_lower,
+            separation_margin,
+        )
+        if not all(math.isfinite(value) for value in required):
+            invalid_count += 1
+            continue
+        if (
+            candidate_ordinal != float(known_count)
+            or filled_count != float(known_count - 1)
+            or reported_known_count != float(known_count)
+            or candidate_upper >= comparison_lower
+            or separation_margin <= 0.0
+            or 'strictly lower' not in message.detail
+        ):
+            invalid_count += 1
+            continue
+        return True, {
+            'event_bag_stamp': bag_stamp,
+            'detail': message.detail,
+            'candidate_raw_cost_upper': candidate_upper,
+            'comparison_filled_raw_cost_lower': comparison_lower,
+            'strict_separation_margin': separation_margin,
+            'candidate_ordinal': candidate_ordinal,
+            'filled_candidate_count': filled_count,
+            'known_source_count': reported_known_count,
+            'invalid_ranked_goal_event_count': invalid_count,
+        }, None
+    return False, {
+        'reason': 'no valid post-recovery counted-candidate GOAL_REACHED event',
+        'invalid_ranked_goal_event_count': invalid_count,
     }, None
 
 
@@ -2430,6 +2607,21 @@ def _bag_outcomes(run_directory, resolved):
     )
     outcome_error = outcome_error or staged_error
     (
+        ranked_goal_passed,
+        ranked_goal_evidence,
+        ranked_goal_error,
+    ) = _ranked_goal_evidence(
+        resolved,
+        event_messages,
+        stage_a_evidence,
+    )
+    outcome_error = outcome_error or ranked_goal_error
+    ranked_goal_stamp = (
+        ranked_goal_evidence.get('event_bag_stamp')
+        if ranked_goal_passed and ranked_goal_evidence
+        else None
+    )
+    (
         global_proximity_passed,
         global_proximity_evidence,
         proximity_error,
@@ -2438,8 +2630,21 @@ def _bag_outcomes(run_directory, resolved):
         stage_a_passed,
         stage_a_evidence,
         odometry_records,
+        minimum_bag_stamp=ranked_goal_stamp,
     )
     outcome_error = outcome_error or proximity_error
+    if (
+        ranked_goal_passed is False
+        and global_proximity_passed is True
+    ):
+        global_proximity_passed = False
+        global_proximity_evidence = {
+            **global_proximity_evidence,
+            'reason': (
+                'counted-candidate ranked goal was not valid before proximity'
+            ),
+            'ranked_goal_evidence': ranked_goal_evidence,
+        }
     if (
         resolved.get('schema_version', 1) >= 5
         and global_proximity_passed
@@ -2476,6 +2681,7 @@ def _bag_outcomes(run_directory, resolved):
             stage_a_passed,
             stage_a_evidence,
             odometry_records,
+            minimum_bag_stamp=ranked_goal_stamp,
         )
         outcome_error = outcome_error or proximity_error
     if (
@@ -2597,11 +2803,20 @@ def _bag_outcomes(run_directory, resolved):
             distances[target['id']] = distance
     controller_goal = 'not_applicable'
     if resolved['profile'] == 'robust_gaussian_v1':
+        counted_mode = bool(
+            resolved.get('algorithm', {}).get('launch_overrides', {}).get(
+                'extremum_classification_mode'
+            ) == 'counted_candidates'
+        )
         controller_goal = (
             'passed'
             if (
                 'GOAL_REACHED' in observed_events
                 and 'GOAL_HOLD' in observed_states
+                and (
+                    not counted_mode
+                    or ranked_goal_passed is True
+                )
             )
             else 'failed'
         )
@@ -2674,6 +2889,8 @@ def _bag_outcomes(run_directory, resolved):
         ),
         'observed_events': observed_events,
         'controller_goal': controller_goal,
+        'counted_candidate_ranked_goal_passed': ranked_goal_passed,
+        'counted_candidate_ranked_goal': ranked_goal_evidence,
         'simulation_ground_truth': ground_truth,
         'final_position': final_position,
         'final_goal_distances_m': distances,

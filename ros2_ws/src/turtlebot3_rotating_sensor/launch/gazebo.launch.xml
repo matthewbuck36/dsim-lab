@@ -61,6 +61,9 @@
     <arg name="convergence_state_gating_enabled" default="False"/>
     <arg name="convergence_minimum_path_length_m" default="0.0"/>
     <arg name="convergence_maximum_path_efficiency" default="1.0"/>
+    <arg name="convergence_confirmation_policy" default="crossing_count"/>
+    <arg name="convergence_confirmation_dwell_sec" default="6.0"/>
+    <arg name="convergence_confirmation_exit_threshold_scale" default="1.5"/>
     <arg name="gaussian_fill_amplitude" default="5.0"/>
     <arg name="gaussian_fill_min_sigma" default="3.16"/>
     <arg name="gaussian_fill_max_sigma" default="5.0"/>
@@ -142,6 +145,11 @@
     <arg name="goal_score_threshold" default="0.95"/>
     <arg name="goal_score_rotation_period_sec" default="3.0"/>
     <arg name="goal_score_required_rotations" default="2"/>
+    <arg name="extremum_classification_mode" default="absolute_source_score"/>
+    <arg name="known_source_count" default="0"/>
+    <arg name="candidate_cost_rotation_period_sec" default="3.0"/>
+    <arg name="candidate_cost_required_rotations" default="2"/>
+    <arg name="candidate_cost_mad_scale" default="3.0"/>
     <arg name="goal_hold_sec" default="3.0"/>
     <arg name="undesired_score_hold_sec" default="3.0"/>
     <arg name="verification_max_sec" default="12.0"/>
@@ -152,6 +160,7 @@
     <arg name="minimum_radial_progress_m" default="0.05"/>
     <arg name="approach_history_window_sec" default="3.0"/>
     <arg name="recenter_after_escape" default="True"/>
+    <arg name="operating_bounds_enabled" default="True"/>
     <arg name="recenter_max_sec" default="30.0"/>
     <arg name="post_recovery_guidance_enabled" default="False"/>
     <arg name="post_recovery_guidance_max_sec" default="0.0"/>
@@ -732,6 +741,9 @@
             -p state_gating_enabled:=$(var convergence_state_gating_enabled)
             -p minimum_path_length_m:=$(var convergence_minimum_path_length_m)
             -p maximum_path_efficiency:=$(var convergence_maximum_path_efficiency)
+            -p convergence_confirmation_policy:=$(var convergence_confirmation_policy)
+            -p convergence_confirmation_dwell_sec:=$(var convergence_confirmation_dwell_sec)
+            -p convergence_confirmation_exit_threshold_scale:=$(var convergence_confirmation_exit_threshold_scale)
             -p enable_observability:=$(var enable_observability)
             -p algorithm_profile:=$(var algorithm_profile)
             -p convergence_status_topic:=$(var convergence_status_topic)
@@ -824,6 +836,11 @@
             -p goal_score_threshold:=$(var goal_score_threshold)
             -p goal_score_rotation_period_sec:=$(var goal_score_rotation_period_sec)
             -p goal_score_required_rotations:=$(var goal_score_required_rotations)
+            -p extremum_classification_mode:=$(var extremum_classification_mode)
+            -p known_source_count:=$(var known_source_count)
+            -p candidate_cost_rotation_period_sec:=$(var candidate_cost_rotation_period_sec)
+            -p candidate_cost_required_rotations:=$(var candidate_cost_required_rotations)
+            -p candidate_cost_mad_scale:=$(var candidate_cost_mad_scale)
             -p goal_hold_sec:=$(var goal_hold_sec)
             -p undesired_score_hold_sec:=$(var undesired_score_hold_sec)
             -p verification_max_sec:=$(var verification_max_sec)
@@ -834,6 +851,7 @@
             -p minimum_radial_progress_m:=$(var minimum_radial_progress_m)
             -p approach_history_window_sec:=$(var approach_history_window_sec)
             -p recenter_after_escape:=$(var recenter_after_escape)
+            -p operating_bounds_enabled:=$(var operating_bounds_enabled)
             -p recenter_max_sec:=$(var recenter_max_sec)
             -p max_fill_clusters:=$(var gaussian_fill_max_fills)
             -p post_recovery_guidance_enabled:=$(var post_recovery_guidance_enabled)

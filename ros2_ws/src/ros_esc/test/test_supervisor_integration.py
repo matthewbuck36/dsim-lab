@@ -67,27 +67,36 @@ def _pose(x, y=0.0, yaw=0.0):
     return msg
 
 
-def _source(score=0.2):
+def _source(score=0.2, raw_cost=-1.0):
     msg = CostBreakdown()
     msg.source_timestamp = 7.0
     msg.source_timestamp_valid = True
     msg.channel_count = 1
-    msg.raw_cost = [-1.0]
+    msg.raw_cost = [float(raw_cost)]
     msg.raw_cost_valid = True
     msg.source_score = [float(score)]
     msg.source_score_valid = True
     return msg
 
 
-def _convergence():
+def _convergence(center_x=0.2, center_y=0.0):
     msg = StampedFloat64MultiArray()
     msg.header = "CONVERGENCE_STATUS"
     msg.timestamp = 42.0
-    msg.data = [-0.1, 0.0, 0.0, 0.2, 0.0, 0.3, 0.0, 3.0]
+    msg.data = [
+        -0.1,
+        0.0,
+        0.0,
+        float(center_x),
+        float(center_y),
+        0.3,
+        0.0,
+        3.0,
+    ]
     return msg
 
 
-def _confirmed_convergence():
+def _confirmed_convergence(center_x=0.2, center_y=0.0):
     msg = AlgorithmEvent()
     msg.event_type = AlgorithmEvent.EVENT_CONVERGENCE_CONFIRMED
     msg.source_timestamp = 42.0
@@ -102,7 +111,16 @@ def _confirmed_convergence():
         "mean_old_y_m",
         "count_remaining",
     ]
-    msg.values = [-0.1, 0.0, 0.0, 0.2, 0.0, 0.3, 0.0, 0.0]
+    msg.values = [
+        -0.1,
+        0.0,
+        0.0,
+        float(center_x),
+        float(center_y),
+        0.3,
+        0.0,
+        0.0,
+    ]
     return msg
 
 
@@ -229,16 +247,24 @@ class SupervisorHarness:
             raise RuntimeError("synthetic supervisor ROS graph did not match")
 
     def publish_inputs(
-        self, pose, convergence=None, duration=0.08, score=0.2
+        self,
+        pose,
+        convergence=None,
+        duration=0.08,
+        score=0.2,
+        raw_cost=-1.0,
+        confirmation=None,
     ):
         deadline = time.monotonic() + duration
-        source = _source(score)
+        source = _source(score, raw_cost)
         while time.monotonic() < deadline:
             self.pose_pub.publish(pose)
             self.source_pub.publish(source)
             if convergence is not None:
                 self.convergence_pub.publish(convergence)
-                self.event_pub.publish(_confirmed_convergence())
+                self.event_pub.publish(
+                    confirmation or _confirmed_convergence()
+                )
             time.sleep(0.005)
 
     def close(self):
@@ -248,6 +274,116 @@ class SupervisorHarness:
         self.executor.remove_node(self.supervisor)
         self.peer.destroy_node()
         self.supervisor.destroy_node()
+
+
+def test_counted_candidate_adapter_fills_first_then_ranks_raw_cost():
+    rclpy.init()
+    harness = SupervisorHarness(
+        overrides=[
+            Parameter(
+                "extremum_classification_mode",
+                value="counted_candidates",
+            ),
+            Parameter("known_source_count", value=2),
+            Parameter("max_fill_clusters", value=1),
+            Parameter("candidate_cost_rotation_period_sec", value=0.01),
+            Parameter("candidate_cost_required_rotations", value=1),
+            Parameter("candidate_cost_mad_scale", value=3.0),
+            Parameter("recenter_after_escape", value=False),
+        ],
+        name="phase088_counted_candidate_peer",
+    )
+    try:
+        local_confirmation = _confirmed_convergence(0.0, 0.0)
+        harness.publish_inputs(
+            _pose(0.0),
+            _convergence(0.0, 0.0),
+            duration=0.20,
+            score=1.0,
+            raw_cost=-1.0,
+            confirmation=local_confirmation,
+        )
+        assert _wait_for(lambda: len(harness.requests) == 1)
+        assert not any(
+            event.event_type == AlgorithmEvent.EVENT_GOAL_REACHED
+            for event in harness.events
+        )
+
+        harness.fill_pub.publish(_fill(harness.requests[0].timestamp))
+        assert _wait_for(
+            lambda: harness.supervisor.machine.state == State.ESCAPE_REPULSE
+        )
+        harness.publish_inputs(
+            _pose(0.6),
+            duration=0.35,
+            raw_cost=-1.0,
+        )
+        assert _wait_for(
+            lambda: harness.supervisor.machine.state == State.SEARCH
+        )
+
+        global_confirmation = _confirmed_convergence(3.0, 0.0)
+        harness.publish_inputs(
+            _pose(3.0),
+            _convergence(3.0, 0.0),
+            duration=0.20,
+            score=0.1,
+            raw_cost=-2.0,
+            confirmation=global_confirmation,
+        )
+        assert _wait_for(
+            lambda: harness.supervisor.machine.state == State.GOAL_HOLD
+        )
+
+        goal = next(
+            event
+            for event in harness.events
+            if event.event_type == AlgorithmEvent.EVENT_GOAL_REACHED
+        )
+        evidence = dict(zip(goal.value_names, goal.values))
+        assert "strictly lower" in goal.detail
+        assert evidence["candidate_raw_cost_estimate"] == pytest.approx(-2.0)
+        assert evidence["candidate_ordinal"] == 2.0
+        assert evidence["filled_candidate_count"] == 1.0
+        assert evidence["known_source_count"] == 2.0
+        assert len(harness.supervisor.active_fill_records) == 1
+        assert len(harness.requests) == 1
+    finally:
+        harness.close()
+        rclpy.shutdown()
+
+
+def test_open_field_disables_bounds_without_weakening_explicit_stop():
+    rclpy.init()
+    node = SupervisorNode(
+        parameter_overrides=[
+            Parameter("operating_bounds_enabled", value=False),
+            Parameter("recenter_after_escape", value=False),
+        ]
+    )
+    try:
+        node.latest_pose = Pose2D(
+            node._now_sec(),
+            100.0,
+            -100.0,
+            0.0,
+        )
+        node.latest_pose_valid = True
+
+        assert node.operating_bounds_enabled is False
+        assert node.bounded_mode is False
+        assert node.bounds is None
+        assert node._prepare_geometry(node._now_sec()) is None
+
+        transition = node.machine.step(
+            node._now_sec(),
+            TransitionInputs(explicit_stop=True),
+        )
+        assert transition.current == State.FAILSAFE
+        assert transition.reason == "explicit stop requested"
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
 
 
 def test_pure_repulsion_exits_without_redesign_and_recenter_completes():

@@ -114,6 +114,26 @@ M4_7_TWO_LIGHT_SUITE = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v7_m4_7_two_light_suite.yaml'
 )
+V8_PRIMARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_primary_visible_probe.yaml'
+)
+V8_PRIMARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_primary_repeats.yaml'
+)
+V8_SECONDARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_secondary_visible_probe.yaml'
+)
+V8_SECONDARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_secondary_repeats.yaml'
+)
 
 
 def test_observed_local_recovery_binds_fill_to_local_convergence():
@@ -417,6 +437,10 @@ def _v6_staged_resolved():
     return resolved
 
 
+def _v8_counted_resolved():
+    return expand_suite(load_suite(V8_PRIMARY_VISIBLE_PROBE))[0][0]
+
+
 def _state_message(name):
     return SimpleNamespace(
         state=getattr(runner.AlgorithmState, f'STATE_{name}'),
@@ -537,6 +561,68 @@ def _assisted_staged_records():
     ]
     fills = [(5, _fill_message())]
     return states, events, fills
+
+
+def _counted_staged_records():
+    states = [
+        (1, _state_message('SEARCH')),
+        (2, _state_message('VERIFY_EXTREMUM')),
+        (4, _state_message('DESIGN_OR_MERGE_FILL')),
+        (7, _state_message('ESCAPE_REPULSE')),
+        (10, _state_message('SEARCH')),
+    ]
+    events = [
+        (3, _event_message(
+            'CONVERGENCE_CONFIRMED',
+            source_timestamp=10.0,
+            source_timestamp_valid=True,
+            value_names=['fill_center_x_m', 'fill_center_y_m'],
+            values=[1.04, 1.04],
+        )),
+        (6, _event_message(
+            'FILL_CREATED',
+            source_timestamp=11.007,
+            source_timestamp_valid=True,
+            fill_id=7,
+            fill_id_valid=True,
+            value_names=['cluster_id', 'revision'],
+            values=[42.0, 1.0],
+        )),
+        (8, _event_message('ESCAPE_STARTED')),
+    ]
+    fills = [(5, _fill_message())]
+    return states, events, fills
+
+
+def _ranked_goal_message(
+    *,
+    candidate_upper=-10.0,
+    comparison_lower=-5.0,
+    margin=5.0,
+):
+    return _event_message(
+        'GOAL_REACHED',
+        detail=(
+            'counted candidate raw-cost interval strictly lower than '
+            'all retained candidates'
+        ),
+        value_names=[
+            'candidate_raw_cost_upper',
+            'candidate_ordinal',
+            'filled_candidate_count',
+            'known_source_count',
+            'comparison_filled_raw_cost_lower',
+            'candidate_strict_separation_margin',
+        ],
+        values=[
+            candidate_upper,
+            2.0,
+            1.0,
+            2.0,
+            comparison_lower,
+            margin,
+        ],
+    )
 
 
 def test_route_blocker_encounter_matches_first_active_typed_fill():
@@ -938,6 +1024,68 @@ def test_m4_7_launch_binds_source_resume_without_ground_truth_controls(
     assert suite['execution']['wall_timeout_sec'] == 780.0
 
 
+@pytest.mark.parametrize(
+    'scenario_path',
+    [
+        V8_PRIMARY_VISIBLE_PROBE,
+        V8_PRIMARY_REPEATS,
+        V8_SECONDARY_VISIBLE_PROBE,
+        V8_SECONDARY_REPEATS,
+    ],
+)
+def test_v8_launch_binds_count_only_and_open_field_without_evaluator_controls(
+    scenario_path,
+):
+    """Pass source count, never evaluator geometry, into the controller."""
+    suite = load_suite(scenario_path)
+    runs, unsupported = expand_suite(suite)
+
+    assert unsupported == []
+    for resolved in runs:
+        launch = build_launch_command(
+            resolved,
+            cost_path=Path('/tmp/phase08_v8_cost.yaml'),
+            gui=suite['execution']['gazebo_gui'],
+        )
+        for expected in (
+            'number_of_lights:=2',
+            'extremum_classification_mode:=counted_candidates',
+            'known_source_count:=2',
+            'candidate_cost_rotation_period_sec:=3.0',
+            'candidate_cost_required_rotations:=2',
+            'candidate_cost_mad_scale:=3.0',
+            'convergence_confirmation_policy:=qualified_dwell',
+            'convergence_confirmation_dwell_sec:=6.0',
+            'robust_search_epoch_reset_enabled:=True',
+            'operating_bounds_enabled:=False',
+            'modified_cost_enable_affine_bias:=False',
+            'recenter_after_escape:=False',
+            'post_recovery_guidance_enabled:=False',
+            'recoverable_navigation_enabled:=False',
+            'simulation_contacts_enabled:=False',
+        ):
+            assert expected in launch
+        assert not any(token.startswith('gazebo_world:=') for token in launch)
+        forbidden_fragments = {
+            str(source[field])
+            for source in resolved['sources']
+            for field in ('x_m', 'y_m', 'relative_lumen_input')
+        }
+        assert not any(
+            token.startswith('global_source_')
+            or token.startswith('source_role_')
+            or token.startswith('simulation_truth_')
+            or (
+                not token.startswith('light_')
+                and any(
+                    fragment in token for fragment in forbidden_fragments
+                )
+            )
+            for token in launch
+            if not token.startswith('number_of_lights:=')
+        )
+
+
 def test_staged_recovery_reports_stage_a_cardinality_and_global_sample():
     """Separate local recovery, exact clusters, and post-recovery arrival."""
     resolved = _v5_staged_resolved()
@@ -1004,6 +1152,89 @@ def test_staged_recovery_reports_stage_a_cardinality_and_global_sample():
     assert stage_a is True
     assert cardinality is False
     assert evidence['unassigned_cluster_ids'] == [43]
+
+
+def test_counted_stage_requires_direct_recovery_ranked_goal_then_near_sample():
+    """Keep controller ranking causally ahead of evaluator-only proximity."""
+    resolved = _v8_counted_resolved()
+    states, events, fills = _counted_staged_records()
+    stage_a, cardinality, stage_evidence, stage_error = (
+        runner._staged_recovery_evidence(
+            resolved,
+            states,
+            events,
+            fills,
+        )
+    )
+    ranked, ranked_evidence, ranked_error = runner._ranked_goal_evidence(
+        resolved,
+        events + [(12, _ranked_goal_message())],
+        stage_evidence,
+    )
+    proximity = runner._post_recovery_global_proximity(
+        resolved,
+        stage_a,
+        stage_evidence,
+        [
+            (11, _odom_message(3.5, 3.5)),
+            (13, _odom_message(3.2, 3.2)),
+        ],
+        minimum_bag_stamp=ranked_evidence['event_bag_stamp'],
+    )
+
+    assert stage_error is None
+    assert stage_a is True
+    assert cardinality is True
+    assert stage_evidence['accepted_state_paths'] == [[
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'DESIGN_OR_MERGE_FILL',
+        'ESCAPE_REPULSE',
+        'SEARCH',
+    ]]
+    assert ranked_error is None
+    assert ranked is True
+    assert ranked_evidence['candidate_ordinal'] == 2.0
+    assert ranked_evidence['strict_separation_margin'] == 5.0
+    assert proximity[2] is None
+    assert proximity[0] is True
+    assert proximity[1]['sample_bag_stamp'] == 13
+    assert proximity[1]['minimum_bag_stamp'] == 12
+    ranked_without_proximity = runner._post_recovery_global_proximity(
+        resolved,
+        stage_a,
+        stage_evidence,
+        [(13, _odom_message(2.5, 2.5))],
+        minimum_bag_stamp=ranked_evidence['event_bag_stamp'],
+    )
+    assert ranked_without_proximity[0] is False
+    assert ranked_without_proximity[2] is None
+
+    missing_rank, missing_evidence, missing_error = (
+        runner._ranked_goal_evidence(
+            resolved,
+            events,
+            stage_evidence,
+        )
+    )
+    assert missing_error is None
+    assert missing_rank is False
+    assert 'no valid' in missing_evidence['reason']
+
+    ambiguous_rank = runner._ranked_goal_evidence(
+        resolved,
+        events + [(
+            12,
+            _ranked_goal_message(
+                candidate_upper=-4.0,
+                comparison_lower=-5.0,
+                margin=-1.0,
+            ),
+        )],
+        stage_evidence,
+    )
+    assert ambiguous_rank[0] is False
+    assert ambiguous_rank[1]['invalid_ranked_goal_event_count'] == 1
 
 
 def test_verified_trap_stage_a_reports_but_does_not_gate_local_distance():
@@ -2837,6 +3068,146 @@ def test_live_global_stop_waits_for_stage_a_cardinality_and_near_odom(
         assert 'global_approach_observed_live' not in result
         assert 'global_approach_sample_live' not in result
     assert result['stdout'] == 'global proximity test\n'
+    assert executor_events == ['created', 'added', 'removed', 'shutdown']
+
+
+def test_v8_live_stop_requires_ranked_goal_and_later_near_odom(
+    monkeypatch,
+):
+    """Do not let evaluator proximity create a controller success."""
+    callbacks = {}
+    dispatched = []
+    executor_events = []
+    signals = []
+    wait_timeouts = []
+    private_context = object()
+    resolved = _v8_counted_resolved()
+
+    class FakeNode:
+        def create_subscription(
+            self,
+            unused_type,
+            topic,
+            callback,
+            unused_depth,
+        ):
+            callbacks[topic] = callback
+            return object()
+
+        def destroy_node(self):
+            return None
+
+    node = FakeNode()
+
+    class FakeProcess:
+        def __init__(self, command, stdout, **unused_kwargs):
+            del command
+            self.stdout = stdout
+            self.pid = 8521
+            self.returncode = None
+            stdout.write('counted ranked-goal stop test\n')
+
+        def poll(self):
+            return self.returncode
+
+        def wait(self, timeout=None):
+            wait_timeouts.append(timeout)
+            self.returncode = 0
+            return 0
+
+    states, events, fills = _counted_staged_records()
+    timed_messages = [
+        (stamp, '/gesc_gaussian/algorithm_state', message)
+        for stamp, message in states
+    ]
+    timed_messages.extend(
+        (stamp, '/gesc_gaussian/algorithm_events', message)
+        for stamp, message in events
+    )
+    timed_messages.extend(
+        (stamp, '/gesc_gaussian/gaussian_fills', message)
+        for stamp, message in fills
+    )
+    timed_messages.extend([
+        (11, '/odom', _odom_message(3.5, 3.5, stamp_sec=100.0)),
+        (12, '/gesc_gaussian/algorithm_state', _state_message(
+            'VERIFY_EXTREMUM'
+        )),
+        (13, '/gesc_gaussian/algorithm_events', _event_message(
+            'CONVERGENCE_CONFIRMED',
+            source_timestamp=20.0,
+            source_timestamp_valid=True,
+            value_names=['fill_center_x_m', 'fill_center_y_m'],
+            values=[3.45, 3.45],
+        )),
+        (14, '/gesc_gaussian/algorithm_state', _state_message('GOAL_HOLD')),
+        (15, '/gesc_gaussian/algorithm_events', _ranked_goal_message()),
+        (16, '/odom', _odom_message(3.2, 3.2, stamp_sec=101.0)),
+    ])
+    sequence = [
+        (topic, message)
+        for unused_stamp, topic, message in sorted(timed_messages)
+    ]
+
+    def spin_once(timeout_sec):
+        del timeout_sec
+        topic, message = sequence.pop(0)
+        dispatched.append(topic)
+        callbacks[topic](message)
+
+    monkeypatch.setattr(
+        runner.rclpy.context,
+        'Context',
+        lambda: private_context,
+    )
+    monkeypatch.setattr(runner.rclpy, 'init', lambda context: None)
+    monkeypatch.setattr(runner.rclpy, 'shutdown', lambda context: None)
+    monkeypatch.setattr(
+        runner.rclpy,
+        'create_node',
+        lambda *args, **kwargs: node,
+    )
+    _install_boundary_executor(
+        monkeypatch,
+        private_context,
+        node,
+        spin_once,
+        executor_events,
+    )
+    monkeypatch.setattr(runner.subprocess, 'Popen', FakeProcess)
+    monkeypatch.setattr(
+        runner.os,
+        'killpg',
+        lambda pid, signum: signals.append((pid, signum)),
+    )
+
+    result = runner.run_record_process(
+        ['record'],
+        5.0,
+        1.0,
+        staged_recovery=resolved,
+    )
+
+    assert sequence == []
+    assert dispatched.count('/odom') == 2
+    assert dispatched[-1] == '/odom'
+    assert signals == [(8521, runner.signal.SIGINT)]
+    assert wait_timeouts == [
+        1.0 + runner.BOUNDARY_RECORD_FINALIZATION_GRACE_SEC
+    ]
+    assert result['stage_a_observed_live'] is True
+    assert result['fill_cardinality_observed_live'] is True
+    assert result['controller_ranked_goal_observed_live'] is True
+    assert result['graceful_global_proximity_stop'] is True
+    sample = result['global_proximity_sample_live']
+    assert sample['distance_m'] == pytest.approx(
+        runner.math.hypot(0.3, 0.3)
+    )
+    assert sample['controller_ranked_goal_required'] is True
+    assert sample['callback_sequence'] > (
+        sample['controller_ranked_goal_sequence']
+    )
+    assert result['stdout'] == 'counted ranked-goal stop test\n'
     assert executor_events == ['created', 'added', 'removed', 'shutdown']
 
 

@@ -15,6 +15,8 @@ from ros_esc.plotting_scripts.bag_reader import (
 )
 from ros_esc.plotting_scripts.gesc_gaussian_bag_analysis import (
     _apply_v4_metric_applicability,
+    _candidate_ranking_metric,
+    _candidate_rows,
     _escape_attempts,
     _ground_truth_metric,
     _revisit_count,
@@ -24,7 +26,7 @@ from ros_esc.plotting_scripts.gesc_gaussian_bag_analysis import (
     summarize_matrix,
     unavailable,
 )
-from ros_esc_interfaces.msg import AlgorithmState
+from ros_esc_interfaces.msg import AlgorithmEvent, AlgorithmState
 
 
 class _State:
@@ -114,6 +116,106 @@ def test_metric_statuses_do_not_fabricate_missing_values():
     assert missing['value'] is None
     assert missing['status'] == 'not_applicable'
     assert missing['reason'] == 'no fill occurred'
+
+
+def test_counted_candidate_table_prefers_goal_and_reports_strict_ranking():
+    """Expose raw-cost intervals as a table and an analyzer metric."""
+
+    def candidate_event(event_type, ordinal, estimate, lower, upper):
+        names = [
+            'candidate_raw_cost_estimate',
+            'candidate_raw_cost_mad',
+            'candidate_raw_cost_uncertainty',
+            'candidate_raw_cost_lower',
+            'candidate_raw_cost_upper',
+            'candidate_rotation_count',
+            'candidate_ordinal',
+            'filled_candidate_count',
+            'known_source_count',
+        ]
+        values = [
+            estimate,
+            0.1,
+            0.3,
+            lower,
+            upper,
+            2.0,
+            float(ordinal),
+            float(ordinal - 1),
+            2.0,
+        ]
+        if ordinal == 2:
+            names.extend([
+                'comparison_filled_raw_cost_lower',
+                'candidate_strict_separation_margin',
+            ])
+            values.extend([-5.3, -5.3 - upper])
+        return SimpleNamespace(
+            event_type=event_type,
+            state=AlgorithmState.STATE_GOAL_HOLD,
+            state_name='GOAL_HOLD',
+            detail='strictly lower counted candidate',
+            value_names=names,
+            values=values,
+        )
+
+    records = [
+        _record(
+            1,
+            candidate_event(
+                AlgorithmEvent.EVENT_STATE_TRANSITION,
+                1,
+                -5.0,
+                -5.3,
+                -4.7,
+            ),
+        ),
+        _record(
+            2,
+            candidate_event(
+                AlgorithmEvent.EVENT_STATE_TRANSITION,
+                2,
+                -10.0,
+                -10.3,
+                -9.7,
+            ),
+        ),
+        _record(
+            3,
+            candidate_event(
+                AlgorithmEvent.EVENT_GOAL_REACHED,
+                2,
+                -10.0,
+                -10.3,
+                -9.7,
+            ),
+        ),
+    ]
+    scenario = {
+        'algorithm': {
+            'launch_overrides': {
+                'extremum_classification_mode': 'counted_candidates',
+                'known_source_count': 2,
+            },
+        },
+    }
+
+    rows = _candidate_rows(records)
+    result = _candidate_ranking_metric(scenario, rows)
+
+    assert len(rows) == 2
+    assert rows[0]['candidate_ordinal'] == 1.0
+    assert rows[1]['event_name'] == 'EVENT_GOAL_REACHED'
+    assert rows[1]['candidate_interval_valid'] is True
+    assert rows[1]['candidate_strict_separation_margin'] == pytest.approx(
+        4.4
+    )
+    assert result['status'] == 'valid'
+    assert result['value'] is True
+
+    rows[1]['candidate_strict_separation_margin'] = -1.0
+    assert _candidate_ranking_metric(scenario, rows)['value'] is False
+    assert _candidate_ranking_metric({}, rows)['status'] == 'not_applicable'
 
 
 def test_legacy_ground_truth_reason_and_missing_contract_are_stable(

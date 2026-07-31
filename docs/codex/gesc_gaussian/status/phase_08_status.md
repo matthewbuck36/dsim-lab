@@ -10565,3 +10565,175 @@ interface inventory and a two-light `1:4` measured-response commissioning
 proposal. Planning does not authorize hardware motion. Preserve manual
 operator `Ctrl+C`, final-zero, recording-finalization, and scoped-cleanup
 requirements; do not infer three-light readiness.
+
+## Phase 08.8 approved implementation boundary — 2026-07-30
+
+Phase 08.8 is a separately versioned development and reproducibility iteration.
+It does not reopen, overwrite, or add to any Phase 08 v1-v6, Phase 08.7, or
+whole-phase acceptance denominator.
+
+User authority:
+
+```text
+Phase 08.8 plan:             approved
+bounded Plan/code fixes:     authorized
+Gazebo after M1-M2 gate:     authorized
+physical hardware:           not authorized
+```
+
+The approved Plan is:
+
+```text
+docs/codex/gesc_gaussian/plans/phase_08_8_plan.md
+```
+
+The user requested repeatable two-source behavior across differing positions
+and intensities. The Plan now preserves the frozen primary/secondary `1:4`
+qualification first, then permits a versioned broadening matrix within the
+physically observable distinct-extrema envelope. Coincident, zero-strength, or
+aggregate single-basin declarations cannot truthfully be counted as
+local-escape passes.
+
+Implementation preflight:
+
+```text
+branch:
+  feature/gesc-gaussian-robustness-v1
+starting HEAD:
+  bc25fef phase 08: close final report boundary
+starting tracked state:
+  ahead 103
+starting worktree:
+  only the untracked Phase 08.8 Plan
+matching Gazebo/scenario/recorder processes:
+  none
+tools/validate_phase_context.sh 08 implement:
+  PASS
+active subphase plan:
+  docs/codex/gesc_gaussian/plans/phase_08_8_plan.md
+```
+
+No Gazebo process may start until the counted-source policy, detector,
+open-field recovery wiring, focused regressions, isolated build, installed
+launch instantiation, scenario dry-runs, validation record, and material
+checkpoint all qualify.
+
+### Current milestone
+
+**PHASE 08.8 M1 — IN PROGRESS / NO GAZEBO AUTHORIZED BEFORE M1-M2 GATE.**
+
+### Next criterion
+
+Implement the selectable counted-source candidate policy and raw-cost
+rotation summary in the existing supervisor owner. Pass its ROS-independent
+two-source, three-source, invalid-input, revisit, fill-cardinality, and
+historical-default tests without weakening existing behavior.
+
+## Phase 08.8 M1-M2 no-Gazebo qualification — 2026-07-30
+
+M1 and M2 implementation is complete and technically qualified. The durable
+records are:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_baseline_audit.md
+  phase_08_8_no_gazebo_qualification.md
+```
+
+Implemented selectable behavior:
+
+```text
+known total source count
+-> qualified-dwell candidate confirmation
+-> two complete-rotation raw-cost minima
+-> median/MAD interval
+-> exactly N-1 distinct typed fills
+-> direct Gaussian repulse to SEARCH
+-> active-fill revisit suppression
+-> strict terminal comparison against every filled candidate
+-> ranked GOAL_REACHED
+```
+
+Historical defaults remain absolute source-score classification,
+crossing-count confirmation, enabled operating bounds, and their existing
+recenter/affine selections. The new profile is explicit and defaults off.
+
+The fixed Phase 08.8 scenarios resolve through schema version 8 under the
+installed names:
+
+```text
+phase08_v8_primary_visible_probe.yaml:     1 GUI case
+phase08_v8_primary_repeats.yaml:          10 headless cases
+phase08_v8_secondary_visible_probe.yaml:   1 GUI case
+phase08_v8_secondary_repeats.yaml:         5 headless cases
+```
+
+All 17 installed dry-run expansions are supported. They use two positive
+direct sources, known count two, one fill, empty world, no contacts, no
+operating bounds, no recenter, no affine bias, no recoverable navigation, and
+no post-recovery guidance. The dry-run root remains absent.
+
+Final no-Gazebo evidence:
+
+```text
+focused controller/detector:
+  180 passed in 7.32 s
+
+scenario/schema/Phase 08 validation:
+  380 passed, 1 Gazebo-only skip in 92.54 s
+
+candidate analysis:
+  13 passed in 0.75 s
+
+broad ROS-independent functional:
+  735 passed, 2 Gazebo-only skips in 134.05 s
+
+fatal changed-file lint:
+  PASS
+
+changed-Python compilation:
+  PASS
+
+fresh isolated build:
+  3 packages passed in 13.0 s
+
+source/install parity:
+  12/12
+
+installed launch:
+  show-args PASS
+  exact print-description PASS
+  detector construction PASS
+  supervisor construction PASS
+
+validate_phase_context.sh 08 implement:
+  PASS
+
+git diff --check:
+  PASS
+```
+
+The repository-wide style test files remain non-gating legacy debt:
+14,397 flake8 and 1,842 pep257 findings outside this behavioral change.
+Fatal syntax/name errors in changed files are zero.
+
+The runner's `0.50 m` terminal check is evaluator-only and causally follows a
+valid controller-ranked goal. The supervisor and physical path receive no
+global coordinate or distance stop. Physical termination remains manual
+operator `Ctrl+C`.
+
+No Gazebo, scenario execution, recorder, rosbag recorder, analyzer, Phase 09,
+three-light run, or physical process has occurred. No tracked historical
+scenario or world changed. V6 remains preserved.
+
+## Current milestone
+
+**PHASE 08.8 M1-M2 — QUALIFIED /
+MATERIAL CHECKPOINT AND COMMIT PENDING /
+GAZEBO STILL PROHIBITED.**
+
+## Next criterion
+
+Run `checkpoint_phase.sh 08`, inspect the checkpoint plus complete M1-M2 diff,
+rerun context/whitespace checks, and create the authorized bounded commit.
+Only then dispatch the primary visible probe exactly once.

@@ -12,6 +12,69 @@ from ros_esc_interfaces.msg import (
 )
 
 
+CROSSING_COUNT = "crossing_count"
+QUALIFIED_DWELL = "qualified_dwell"
+VALID_CONFIRMATION_POLICIES = (CROSSING_COUNT, QUALIFIED_DWELL)
+
+
+class QualifiedDwellPolicy:
+    """Accumulate qualified below-threshold time with hysteretic rearming."""
+
+    def __init__(self, dwell_sec, exit_metric):
+        self.dwell_sec = float(dwell_sec)
+        self.exit_metric = float(exit_metric)
+        if not np.isfinite(self.dwell_sec) or self.dwell_sec <= 0.0:
+            raise ValueError("qualified dwell duration must be finite and positive")
+        if not np.isfinite(self.exit_metric) or self.exit_metric <= 0.0:
+            raise ValueError("qualified dwell exit metric must be finite and positive")
+        self.reset()
+
+    def reset(self):
+        self.episode_active = False
+        self.confirmed = False
+        self.below_entry = False
+        self.accumulated_sec = 0.0
+        self.last_stamp_sec = None
+
+    def update(self, stamp_sec, metric, qualified=True, valid=True):
+        stamp_sec = float(stamp_sec)
+        metric = float(metric)
+        if (
+            not valid
+            or not qualified
+            or not np.isfinite(stamp_sec)
+            or not np.isfinite(metric)
+        ):
+            self.reset()
+            return False
+        if self.last_stamp_sec is not None and stamp_sec < self.last_stamp_sec:
+            self.reset()
+        if metric > self.exit_metric:
+            self.reset()
+            self.last_stamp_sec = stamp_sec
+            return False
+
+        if self.confirmed:
+            self.last_stamp_sec = stamp_sec
+            return False
+
+        below_entry = metric < 0.0
+        if below_entry:
+            if not self.episode_active:
+                self.episode_active = True
+            if self.below_entry and self.last_stamp_sec is not None:
+                self.accumulated_sec += stamp_sec - self.last_stamp_sec
+            if self.accumulated_sec >= self.dwell_sec:
+                self.confirmed = True
+                self.below_entry = True
+                self.last_stamp_sec = stamp_sec
+                return True
+
+        self.below_entry = below_entry
+        self.last_stamp_sec = stamp_sec
+        return False
+
+
 def trajectory_motion_statistics(history):
     """Return finite path length, net displacement, and path efficiency."""
     points = np.asarray(history, dtype=np.float64)
@@ -112,6 +175,15 @@ class ConvergenceDetector(Node):
         # If True, after publishing a fill-ready event, reset the counter
         # so future local minima can also be detected and filled.
         self.declare_parameter("reset_counter_after_event", True)
+        self.declare_parameter(
+            "convergence_confirmation_policy",
+            CROSSING_COUNT,
+        )
+        self.declare_parameter("convergence_confirmation_dwell_sec", 6.0)
+        self.declare_parameter(
+            "convergence_confirmation_exit_threshold_scale",
+            1.5,
+        )
         self.declare_parameter("enable_observability", False)
         self.declare_parameter(
             "algorithm_event_topic", "/gesc_gaussian/algorithm_events"
@@ -151,6 +223,38 @@ class ConvergenceDetector(Node):
         self.reset_counter_after_event = bool(
             self.get_parameter("reset_counter_after_event").value
         )
+        self.confirmation_policy = str(
+            self.get_parameter("convergence_confirmation_policy").value
+        ).strip().lower()
+        if self.confirmation_policy not in VALID_CONFIRMATION_POLICIES:
+            raise ValueError(
+                "convergence_confirmation_policy must be one of "
+                + ", ".join(VALID_CONFIRMATION_POLICIES)
+            )
+        self.confirmation_dwell_sec = float(
+            self.get_parameter("convergence_confirmation_dwell_sec").value
+        )
+        self.confirmation_exit_threshold_scale = float(
+            self.get_parameter(
+                "convergence_confirmation_exit_threshold_scale"
+            ).value
+        )
+        if not np.isfinite(self.th) or self.th <= 0.0:
+            raise ValueError("threshold must be finite and positive")
+        if (
+            not np.isfinite(self.confirmation_dwell_sec)
+            or self.confirmation_dwell_sec <= 0.0
+        ):
+            raise ValueError(
+                "convergence_confirmation_dwell_sec must be finite and positive"
+            )
+        if (
+            not np.isfinite(self.confirmation_exit_threshold_scale)
+            or self.confirmation_exit_threshold_scale <= 1.0
+        ):
+            raise ValueError(
+                "convergence_confirmation_exit_threshold_scale must exceed one"
+            )
         self.algorithm_profile = str(
             self.get_parameter("algorithm_profile").value
         ).strip()
@@ -170,6 +274,13 @@ class ConvergenceDetector(Node):
             raise ValueError(
                 "state_gating_enabled requires algorithm_profile="
                 f"{ROBUST_PROFILE}"
+            )
+        if (
+            self.confirmation_policy == QUALIFIED_DWELL
+            and (not self.robust_profile or not self.state_gating_enabled)
+        ):
+            raise ValueError(
+                "qualified-dwell confirmation requires robust profile state gating"
             )
         self.minimum_path_length_m = float(
             self.get_parameter("minimum_path_length_m").value
@@ -202,7 +313,12 @@ class ConvergenceDetector(Node):
         self.t0 = None
         self.first_time = None
         self.last_metric = None
+        self.last_buffer_timestamp = None
         self.search_gate = SearchEpochGate(self.state_gating_enabled)
+        self.qualified_dwell_policy = QualifiedDwellPolicy(
+            self.confirmation_dwell_sec,
+            self.th * (self.confirmation_exit_threshold_scale - 1.0),
+        )
 
         # ---------------------------------------------------------------------
         # Subscribers
@@ -273,6 +389,10 @@ class ConvergenceDetector(Node):
             f"N={self.N}, omega={self.omega:.3f}, dt_node={self.dt_node:.6f}, "
             f"min_trigger_time={self.min_time_before_trigger:.2f}s, "
             f"count_start={self.count_start}, "
+            f"confirmation_policy={self.confirmation_policy}, "
+            f"confirmation_dwell_sec={self.confirmation_dwell_sec:.3f}, "
+            "confirmation_exit_threshold_scale="
+            f"{self.confirmation_exit_threshold_scale:.3f}, "
             f"state_gating={self.state_gating_enabled}, "
             f"minimum_path_length_m={self.minimum_path_length_m:.3f}, "
             f"maximum_path_efficiency={self.maximum_path_efficiency:.3f}"
@@ -283,7 +403,9 @@ class ConvergenceDetector(Node):
         self.t0 = None
         self.first_time = None
         self.last_metric = None
+        self.last_buffer_timestamp = None
         self.count_remaining = self.count_start
+        self.qualified_dwell_policy.reset()
 
     def algorithm_state_cb(self, msg):
         """Reset on every typed SEARCH boundary and disarm outside SEARCH."""
@@ -293,6 +415,16 @@ class ConvergenceDetector(Node):
 
     def buffer_cb(self, msg: StampedFloat64MultiArray):
         t = float(msg.timestamp)
+        if self.confirmation_policy == QUALIFIED_DWELL:
+            if not np.isfinite(t):
+                self._reset_detection_state()
+                return
+            if (
+                self.last_buffer_timestamp is not None
+                and t < self.last_buffer_timestamp
+            ):
+                self._reset_detection_state()
+            self.last_buffer_timestamp = t
 
         if (
             self.enable_observability
@@ -310,6 +442,9 @@ class ConvergenceDetector(Node):
                     "omega_rad_sec",
                     "min_fill_periods",
                     "convergence_count_start",
+                    "qualified_dwell_policy",
+                    "convergence_confirmation_dwell_sec",
+                    "convergence_confirmation_exit_threshold_scale",
                     "state_gating_enabled",
                     "minimum_path_length_m",
                     "maximum_path_efficiency",
@@ -322,6 +457,13 @@ class ConvergenceDetector(Node):
                     self.omega,
                     self.min_fill_periods,
                     float(self.count_start),
+                    (
+                        1.0
+                        if self.confirmation_policy == QUALIFIED_DWELL
+                        else 0.0
+                    ),
+                    self.confirmation_dwell_sec,
+                    self.confirmation_exit_threshold_scale,
                     1.0 if self.state_gating_enabled else 0.0,
                     self.minimum_path_length_m,
                     self.maximum_path_efficiency,
@@ -348,24 +490,34 @@ class ConvergenceDetector(Node):
         data = np.array(msg.data, dtype=np.float64)
 
         if data.size < 2:
+            if self.confirmation_policy == QUALIFIED_DWELL:
+                self.qualified_dwell_policy.reset()
             return
 
         if data.size % 2 != 0:
+            if self.confirmation_policy == QUALIFIED_DWELL:
+                self.qualified_dwell_policy.reset()
             return
 
         U = data.reshape(-1, 2)
 
         if not np.all(np.isfinite(U)):
+            if self.confirmation_policy == QUALIFIED_DWELL:
+                self.qualified_dwell_policy.reset()
             return
 
         N = U.shape[0]
 
         if N < self.k * 3:
+            if self.confirmation_policy == QUALIFIED_DWELL:
+                self.qualified_dwell_policy.reset()
             return
 
         M = N // self.k
 
         if 3 * M > N or M <= 0:
+            if self.confirmation_policy == QUALIFIED_DWELL:
+                self.qualified_dwell_policy.reset()
             return
 
         # ---------------------------------------------------------------------
@@ -399,6 +551,8 @@ class ConvergenceDetector(Node):
         ):
             self.t0 = t
             self.last_metric = None
+            if self.confirmation_policy == QUALIFIED_DWELL:
+                self.qualified_dwell_policy.reset()
             return
 
         mean_recent = np.mean(seg_recent, axis=0)
@@ -429,6 +583,10 @@ class ConvergenceDetector(Node):
         r_msg.data = [float(r_val)]
         self.pub_r.publish(r_msg)
 
+        if self.confirmation_policy == QUALIFIED_DWELL:
+            self.count_remaining = (
+                0 if self.qualified_dwell_policy.confirmed else 1
+            )
         count_msg = StampedFloat64MultiArray()
         count_msg.header = "CONV_COUNT"
         count_msg.timestamp = t
@@ -450,6 +608,74 @@ class ConvergenceDetector(Node):
                 float(self.count_remaining),
             ]
             self.convergence_status_publisher.publish(status_msg)
+
+        if self.confirmation_policy == QUALIFIED_DWELL:
+            episode_was_active = self.qualified_dwell_policy.episode_active
+            confirmed = self.qualified_dwell_policy.update(
+                t,
+                metric,
+                qualified=True,
+                valid=True,
+            )
+            candidate_entered = bool(
+                not episode_was_active
+                and self.qualified_dwell_policy.episode_active
+            )
+            self.count_remaining = (
+                0 if self.qualified_dwell_policy.confirmed else 1
+            )
+            if candidate_entered and self.enable_observability:
+                self._publish_event(
+                    AlgorithmEvent.EVENT_CONVERGENCE_CANDIDATE,
+                    "qualified-dwell convergence candidate",
+                    source_timestamp=t,
+                    value_names=[
+                        "metric",
+                        "r_mean_m2",
+                        "decay",
+                        "mean_recent_x_m",
+                        "mean_recent_y_m",
+                        "mean_old_x_m",
+                        "mean_old_y_m",
+                        "count_remaining",
+                        "path_length_m",
+                        "net_displacement_m",
+                        "path_efficiency",
+                        "qualified_dwell_elapsed_sec",
+                        "qualified_dwell_required_sec",
+                    ],
+                    values=[
+                        metric,
+                        r_val,
+                        decay_term,
+                        float(mean_recent[0]),
+                        float(mean_recent[1]),
+                        float(mean_old[0]),
+                        float(mean_old[1]),
+                        float(self.count_remaining),
+                        path_length,
+                        net_displacement,
+                        path_efficiency,
+                        self.qualified_dwell_policy.accumulated_sec,
+                        self.confirmation_dwell_sec,
+                    ],
+                )
+            if confirmed:
+                self._publish_confirmation(
+                    t,
+                    metric,
+                    r_val,
+                    decay_term,
+                    mean_recent,
+                    mean_old,
+                    path_length,
+                    net_displacement,
+                    path_efficiency,
+                    qualified_dwell_elapsed_sec=(
+                        self.qualified_dwell_policy.accumulated_sec
+                    ),
+                )
+            return
 
         # ---------------------------------------------------------------------
         # Crossing logic
@@ -534,70 +760,17 @@ class ConvergenceDetector(Node):
         # ---------------------------------------------------------------------
 
         if self.count_remaining <= 0:
-            out = StampedFloat64MultiArray()
-            out.header = "CONVERGED_FILL_READY"
-            out.timestamp = t
-
-            out.data = [
-                float(metric),
-                float(r_val),
-                float(decay_term),
-
-                # Recommended fill center estimate:
-                float(mean_recent[0]),
-                float(mean_recent[1]),
-
-                # Old segment mean, useful for diagnostics:
-                float(mean_old[0]),
-                float(mean_old[1]),
-
-                # Counter state:
-                float(self.count_remaining),
-            ]
-
-            self.pub.publish(out)
-
-            self.get_logger().info(
-                "CONVERGED_FILL_READY: "
-                + f"metric={metric:.6f}, "
-                + f"r_mean={r_val:.6f}, "
-                + f"decay={decay_term:.6f}, "
-                + f"fill_center=({mean_recent[0]:.4f}, {mean_recent[1]:.4f}), "
-                + f"t={t:.3f}"
+            self._publish_confirmation(
+                t,
+                metric,
+                r_val,
+                decay_term,
+                mean_recent,
+                mean_old,
+                path_length,
+                net_displacement,
+                path_efficiency,
             )
-
-            if self.enable_observability:
-                self._publish_event(
-                    AlgorithmEvent.EVENT_CONVERGENCE_CONFIRMED,
-                    "convergence confirmed; fill ready",
-                    source_timestamp=t,
-                    value_names=[
-                        "metric",
-                        "r_mean_m2",
-                        "decay",
-                        "fill_center_x_m",
-                        "fill_center_y_m",
-                        "mean_old_x_m",
-                        "mean_old_y_m",
-                        "count_remaining",
-                        "path_length_m",
-                        "net_displacement_m",
-                        "path_efficiency",
-                    ],
-                    values=[
-                        metric,
-                        r_val,
-                        decay_term,
-                        float(mean_recent[0]),
-                        float(mean_recent[1]),
-                        float(mean_old[0]),
-                        float(mean_old[1]),
-                        float(self.count_remaining),
-                        path_length,
-                        net_displacement,
-                        path_efficiency,
-                    ],
-                )
 
             if self.reset_counter_after_event:
                 self.count_remaining = self.count_start
@@ -605,6 +778,92 @@ class ConvergenceDetector(Node):
                 self.get_logger().info(
                     f"Convergence counter reset to {self.count_start}"
                 )
+
+    def _publish_confirmation(
+        self,
+        source_timestamp,
+        metric,
+        r_val,
+        decay_term,
+        mean_recent,
+        mean_old,
+        path_length,
+        net_displacement,
+        path_efficiency,
+        qualified_dwell_elapsed_sec=None,
+    ):
+        out = StampedFloat64MultiArray()
+        out.header = "CONVERGED_FILL_READY"
+        out.timestamp = float(source_timestamp)
+        out.data = [
+            float(metric),
+            float(r_val),
+            float(decay_term),
+            float(mean_recent[0]),
+            float(mean_recent[1]),
+            float(mean_old[0]),
+            float(mean_old[1]),
+            float(self.count_remaining),
+        ]
+        self.pub.publish(out)
+
+        self.get_logger().info(
+            "CONVERGED_FILL_READY: "
+            + f"metric={metric:.6f}, "
+            + f"r_mean={r_val:.6f}, "
+            + f"decay={decay_term:.6f}, "
+            + f"fill_center=({mean_recent[0]:.4f}, {mean_recent[1]:.4f}), "
+            + f"t={source_timestamp:.3f}"
+        )
+
+        if not self.enable_observability:
+            return
+        value_names = [
+            "metric",
+            "r_mean_m2",
+            "decay",
+            "fill_center_x_m",
+            "fill_center_y_m",
+            "mean_old_x_m",
+            "mean_old_y_m",
+            "count_remaining",
+            "path_length_m",
+            "net_displacement_m",
+            "path_efficiency",
+        ]
+        values = [
+            metric,
+            r_val,
+            decay_term,
+            float(mean_recent[0]),
+            float(mean_recent[1]),
+            float(mean_old[0]),
+            float(mean_old[1]),
+            float(self.count_remaining),
+            path_length,
+            net_displacement,
+            path_efficiency,
+        ]
+        if qualified_dwell_elapsed_sec is not None:
+            value_names.extend(
+                [
+                    "qualified_dwell_elapsed_sec",
+                    "qualified_dwell_required_sec",
+                ]
+            )
+            values.extend(
+                [
+                    float(qualified_dwell_elapsed_sec),
+                    self.confirmation_dwell_sec,
+                ]
+            )
+        self._publish_event(
+            AlgorithmEvent.EVENT_CONVERGENCE_CONFIRMED,
+            "convergence confirmed; fill ready",
+            source_timestamp=source_timestamp,
+            value_names=value_names,
+            values=values,
+        )
 
     def _publish_event(
         self,

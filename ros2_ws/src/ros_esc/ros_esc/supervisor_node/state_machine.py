@@ -4,12 +4,19 @@ from collections import deque
 from dataclasses import dataclass
 from enum import IntEnum
 import math
+import statistics
 from typing import Optional, Tuple
 
 
 LEGACY_PROFILE = "legacy"
 ROBUST_PROFILE = "robust_gaussian_v1"
 VALID_PROFILES = (LEGACY_PROFILE, ROBUST_PROFILE)
+ABSOLUTE_SOURCE_SCORE = "absolute_source_score"
+COUNTED_CANDIDATES = "counted_candidates"
+VALID_EXTREMUM_CLASSIFICATION_MODES = (
+    ABSOLUTE_SOURCE_SCORE,
+    COUNTED_CANDIDATES,
+)
 
 
 class State(IntEnum):
@@ -56,8 +63,20 @@ class StateMachineConfig:
     post_recovery_retry_limit: int = 0
     recoverable_navigation_enabled: bool = False
     recovery_retry_limit: int = 0
+    extremum_classification_mode: str = ABSOLUTE_SOURCE_SCORE
+    known_source_count: int = 0
+    candidate_cost_rotation_period_sec: float = 3.0
+    candidate_cost_required_rotations: int = 2
+    candidate_cost_mad_scale: float = 3.0
 
     def __post_init__(self):
+        mode = str(self.extremum_classification_mode).strip().lower()
+        if mode not in VALID_EXTREMUM_CLASSIFICATION_MODES:
+            raise ValueError(
+                "extremum_classification_mode must be one of "
+                + ", ".join(VALID_EXTREMUM_CLASSIFICATION_MODES)
+            )
+        object.__setattr__(self, "extremum_classification_mode", mode)
         durations = (
             self.convergence_hold_sec,
             self.goal_hold_sec,
@@ -72,11 +91,48 @@ class StateMachineConfig:
         if not math.isfinite(self.goal_score_threshold):
             raise ValueError("goal_score_threshold must be finite")
         if (
+            not math.isfinite(float(self.candidate_cost_mad_scale))
+            or float(self.candidate_cost_mad_scale) < 0.0
+        ):
+            raise ValueError("candidate_cost_mad_scale must be finite and nonnegative")
+        if (
+            not math.isfinite(float(self.candidate_cost_rotation_period_sec))
+            or float(self.candidate_cost_rotation_period_sec) <= 0.0
+        ):
+            raise ValueError(
+                "candidate_cost_rotation_period_sec must be finite and positive"
+            )
+        if (
+            isinstance(self.candidate_cost_required_rotations, bool)
+            or not isinstance(self.candidate_cost_required_rotations, int)
+            or self.candidate_cost_required_rotations <= 0
+        ):
+            raise ValueError(
+                "candidate_cost_required_rotations must be a positive integer"
+            )
+        if (
             isinstance(self.max_fill_clusters, bool)
             or not isinstance(self.max_fill_clusters, int)
             or self.max_fill_clusters < 0
         ):
             raise ValueError("max_fill_clusters must be a nonnegative integer")
+        if (
+            isinstance(self.known_source_count, bool)
+            or not isinstance(self.known_source_count, int)
+            or self.known_source_count < 0
+        ):
+            raise ValueError("known_source_count must be a nonnegative integer")
+        if self.extremum_classification_mode == COUNTED_CANDIDATES:
+            if self.known_source_count < 2:
+                raise ValueError(
+                    "counted-candidate classification requires at least two sources"
+                )
+            required_fills = self.known_source_count - 1
+            if self.max_fill_clusters != required_fills:
+                raise ValueError(
+                    "counted-candidate classification requires "
+                    "max_fill_clusters == known_source_count - 1"
+                )
         if (
             isinstance(self.post_recovery_retry_limit, bool)
             or not isinstance(self.post_recovery_retry_limit, int)
@@ -126,6 +182,11 @@ class TransitionInputs:
     source_score_observed: bool = True
     source_score_valid: bool = False
     source_score_ready: bool = True
+    candidate_cost_observed: bool = True
+    candidate_cost_valid: bool = False
+    candidate_cost_ready: bool = True
+    candidate_cost_summary: Optional["CandidateCostSummary"] = None
+    candidate_associated_with_fill: bool = False
     pose_valid: bool = True
     sensor_valid: bool = True
     explicit_stop: bool = False
@@ -148,6 +209,37 @@ class Transition:
     previous: State
     current: State
     reason: str
+
+
+@dataclass(frozen=True)
+class CandidateCostSummary:
+    """Rotation-stable raw-cost evidence for one extremum candidate."""
+
+    estimate: float
+    mad: float
+    uncertainty: float
+    rotation_count: int
+
+    @property
+    def lower(self) -> float:
+        return float(self.estimate - self.uncertainty)
+
+    @property
+    def upper(self) -> float:
+        return float(self.estimate + self.uncertainty)
+
+    @property
+    def valid(self) -> bool:
+        return bool(
+            math.isfinite(float(self.estimate))
+            and math.isfinite(float(self.mad))
+            and float(self.mad) >= 0.0
+            and math.isfinite(float(self.uncertainty))
+            and float(self.uncertainty) >= 0.0
+            and not isinstance(self.rotation_count, bool)
+            and isinstance(self.rotation_count, int)
+            and self.rotation_count > 0
+        )
 
 
 class RotationScoreWindow:
@@ -227,6 +319,100 @@ class RotationScoreWindow:
         return float(min(self.completed_maxima))
 
 
+class RotationCostWindow:
+    """Aggregate raw minimization cost over complete sensor revolutions."""
+
+    def __init__(
+        self,
+        rotation_period_sec: float,
+        required_rotations: int = 2,
+        mad_scale: float = 3.0,
+    ):
+        rotation_period_sec = float(rotation_period_sec)
+        if (
+            isinstance(required_rotations, bool)
+            or not isinstance(required_rotations, int)
+            or required_rotations <= 0
+        ):
+            raise ValueError("required_rotations must be a positive integer")
+        mad_scale = float(mad_scale)
+        if not math.isfinite(rotation_period_sec) or rotation_period_sec <= 0.0:
+            raise ValueError("rotation_period_sec must be finite and positive")
+        if not math.isfinite(mad_scale) or mad_scale < 0.0:
+            raise ValueError("mad_scale must be finite and nonnegative")
+        self.rotation_period_sec = rotation_period_sec
+        self.required_rotations = required_rotations
+        self.mad_scale = mad_scale
+        self.completed_minima = deque(maxlen=required_rotations)
+        self.window_started_sec = None
+        self.current_minimum = None
+        self.last_stamp_sec = None
+
+    def reset(self):
+        """Discard incomplete and completed rotation evidence."""
+
+        self.completed_minima.clear()
+        self.window_started_sec = None
+        self.current_minimum = None
+        self.last_stamp_sec = None
+
+    def update(self, stamp_sec: float, raw_cost: float):
+        """Add one valid raw-cost sample and close complete rotation windows."""
+
+        stamp_sec = float(stamp_sec)
+        raw_cost = float(raw_cost)
+        if not math.isfinite(stamp_sec) or not math.isfinite(raw_cost):
+            raise ValueError("rotation cost samples must be finite")
+        if self.last_stamp_sec is not None and stamp_sec < self.last_stamp_sec:
+            self.reset()
+        self.last_stamp_sec = stamp_sec
+
+        if self.window_started_sec is None:
+            self.window_started_sec = stamp_sec
+            self.current_minimum = raw_cost
+            return
+
+        elapsed = stamp_sec - self.window_started_sec
+        if elapsed < self.rotation_period_sec:
+            self.current_minimum = min(self.current_minimum, raw_cost)
+            return
+
+        elapsed_windows = int(elapsed // self.rotation_period_sec)
+        if elapsed_windows > 1:
+            self.completed_minima.clear()
+            self.window_started_sec = stamp_sec
+            self.current_minimum = raw_cost
+            return
+
+        self.completed_minima.append(float(self.current_minimum))
+        self.window_started_sec += self.rotation_period_sec
+        self.current_minimum = raw_cost
+
+    @property
+    def ready(self) -> bool:
+        return len(self.completed_minima) == self.required_rotations
+
+    @property
+    def evidence_duration_sec(self) -> float:
+        return self.rotation_period_sec * self.required_rotations
+
+    @property
+    def summary(self) -> Optional[CandidateCostSummary]:
+        if not self.ready:
+            return None
+        values = tuple(float(value) for value in self.completed_minima)
+        estimate = float(statistics.median(values))
+        mad = float(
+            statistics.median(abs(value - estimate) for value in values)
+        )
+        return CandidateCostSummary(
+            estimate=estimate,
+            mad=mad,
+            uncertainty=float(self.mad_scale * mad),
+            rotation_count=len(values),
+        )
+
+
 class SupervisorStateMachine:
     """Deterministic state machine with latched terminal states."""
 
@@ -252,6 +438,10 @@ class SupervisorStateMachine:
         self.post_recovery_guidance_started_sec = None
         self.post_recovery_retry_count = 0
         self.recovery_retry_count = 0
+        self.filled_candidate_costs = []
+        self.pending_candidate_cost = None
+        self.terminal_candidate_cost = None
+        self.last_rejected_candidate_cost = None
 
     @staticmethod
     def _require_time(now_sec):
@@ -364,6 +554,9 @@ class SupervisorStateMachine:
         return None
 
     def _step_verify(self, now_sec, inputs):
+        if self.config.extremum_classification_mode == COUNTED_CANDIDATES:
+            return self._step_counted_verify(now_sec, inputs)
+
         score = inputs.source_score
         if not inputs.source_score_observed:
             if self.elapsed(now_sec) >= self.config.verification_max_sec:
@@ -443,11 +636,105 @@ class SupervisorStateMachine:
             return self._transition(State.FAILSAFE, now_sec, "verification timeout")
         return None
 
+    def _step_counted_verify(self, now_sec, inputs):
+        if inputs.candidate_associated_with_fill:
+            return self._transition(
+                State.SEARCH,
+                now_sec,
+                "confirmed candidate associated with active fill; resume search",
+            )
+
+        if not inputs.candidate_cost_observed:
+            return self._wait_for_candidate_cost_or_timeout(now_sec)
+        if not inputs.candidate_cost_valid:
+            return self._transition(
+                State.FAILSAFE, now_sec, "candidate raw-cost evidence invalid"
+            )
+        if not inputs.candidate_cost_ready:
+            return self._wait_for_candidate_cost_or_timeout(now_sec)
+
+        summary = inputs.candidate_cost_summary
+        if (
+            summary is None
+            or not isinstance(summary, CandidateCostSummary)
+            or not summary.valid
+            or summary.rotation_count
+            < self.config.candidate_cost_required_rotations
+        ):
+            return self._transition(
+                State.FAILSAFE, now_sec, "candidate raw-cost summary invalid"
+            )
+
+        active_count = self.active_fill_count
+        if inputs.active_fill_count is not None:
+            if (
+                isinstance(inputs.active_fill_count, bool)
+                or not isinstance(inputs.active_fill_count, int)
+                or inputs.active_fill_count < 0
+            ):
+                return self._transition(
+                    State.FAILSAFE, now_sec, "invalid active fill-cluster count"
+                )
+            active_count = int(inputs.active_fill_count)
+            self.active_fill_count = active_count
+
+        required_fills = self.config.known_source_count - 1
+        if active_count > required_fills:
+            return self._transition(
+                State.FAILSAFE,
+                now_sec,
+                "active fill count exceeds counted-source cardinality",
+            )
+        if active_count != len(self.filled_candidate_costs):
+            return self._transition(
+                State.FAILSAFE,
+                now_sec,
+                "active fills and retained candidate costs disagree",
+            )
+
+        if active_count < required_fills:
+            self.pending_candidate_cost = summary
+            return self._transition(
+                State.DESIGN_OR_MERGE_FILL,
+                now_sec,
+                "counted candidate requires local fill before terminal ranking",
+            )
+
+        self.pending_candidate_cost = None
+        strictly_lower = all(
+            summary.upper < retained.lower
+            for retained in self.filled_candidate_costs
+        )
+        if strictly_lower:
+            self.terminal_candidate_cost = summary
+            self.last_rejected_candidate_cost = None
+            return self._transition(
+                State.GOAL_HOLD,
+                now_sec,
+                "counted candidate raw-cost interval strictly lower than "
+                "all filled candidates",
+            )
+
+        self.last_rejected_candidate_cost = summary
+        return self._transition(
+            State.SEARCH,
+            now_sec,
+            "counted candidate not strictly stronger; resume search",
+        )
+
+    def _wait_for_candidate_cost_or_timeout(self, now_sec):
+        if self.elapsed(now_sec) >= self.config.verification_max_sec:
+            return self._transition(
+                State.FAILSAFE, now_sec, "candidate raw-cost verification timeout"
+            )
+        return None
+
     def _step_design(self, now_sec, inputs):
         if inputs.fill_result is not None:
             if not self._matching_fill_result(inputs.fill_source_timestamp):
                 return None
             if inputs.fill_result == "success":
+                previous_active_fill_count = self.active_fill_count
                 if inputs.active_fill_count is None:
                     self.active_fill_count += 1
                 elif int(inputs.active_fill_count) < 0:
@@ -456,6 +743,36 @@ class SupervisorStateMachine:
                     )
                 else:
                     self.active_fill_count = int(inputs.active_fill_count)
+                if self.config.extremum_classification_mode == COUNTED_CANDIDATES:
+                    required_fills = self.config.known_source_count - 1
+                    if self.active_fill_count > required_fills:
+                        return self._transition(
+                            State.FAILSAFE,
+                            now_sec,
+                            "accepted fill exceeds counted-source cardinality",
+                        )
+                    if not self.design_returns_to_assist:
+                        if self.pending_candidate_cost is None:
+                            return self._transition(
+                                State.FAILSAFE,
+                                now_sec,
+                                "accepted fill has no pending candidate cost",
+                            )
+                        expected_count = len(self.filled_candidate_costs) + 1
+                        if (
+                            self.active_fill_count != expected_count
+                            or self.active_fill_count
+                            != previous_active_fill_count + 1
+                        ):
+                            return self._transition(
+                                State.FAILSAFE,
+                                now_sec,
+                                "counted candidate did not create one distinct fill",
+                            )
+                        self.filled_candidate_costs.append(
+                            self.pending_candidate_cost
+                        )
+                        self.pending_candidate_cost = None
                 if inputs.fill_id is not None and int(inputs.fill_id) > 0:
                     self.active_escape_fill_id = int(inputs.fill_id)
                     self.post_recovery_fill_id = int(inputs.fill_id)

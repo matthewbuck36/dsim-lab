@@ -54,6 +54,7 @@ TABLE_FILES = (
     'algorithm_state.csv',
     'state_intervals.csv',
     'algorithm_events.csv',
+    'candidate_ranking.csv',
     'gaussian_history.csv',
     'escape_attempts.csv',
 )
@@ -66,6 +67,7 @@ PLOT_FILES = (
     'command_saturation.png',
     'radial_escape.png',
     'gaussian_history.png',
+    'candidate_ranking.png',
 )
 
 
@@ -326,6 +328,99 @@ def _event_rows(records):
         })
         rows.append(row)
     return rows
+
+
+def _candidate_rows(records):
+    """Extract one preferred rotation-stable raw-cost row per observation."""
+    required = {
+        'candidate_raw_cost_estimate',
+        'candidate_raw_cost_mad',
+        'candidate_raw_cost_uncertainty',
+        'candidate_raw_cost_lower',
+        'candidate_raw_cost_upper',
+        'candidate_rotation_count',
+        'candidate_ordinal',
+        'filled_candidate_count',
+        'known_source_count',
+    }
+    event_names = _event_names()
+    preferred = {}
+    for record in records:
+        if not record.in_readiness_interval:
+            continue
+        message = record.message
+        names = list(message.value_names)
+        values = list(message.values)
+        if len(names) != len(values):
+            continue
+        evidence = dict(zip(names, values))
+        if not required <= set(evidence):
+            continue
+        try:
+            numeric = {
+                name: float(evidence[name])
+                for name in required
+            }
+        except (TypeError, ValueError):
+            continue
+        if not all(_finite(value) for value in numeric.values()):
+            continue
+        ordinal = int(numeric['candidate_ordinal'])
+        row = _timestamp_columns(record)
+        row.update({
+            'event_type': int(message.event_type),
+            'event_name': event_names.get(
+                int(message.event_type),
+                str(message.event_type),
+            ),
+            'state': int(message.state),
+            'state_name': message.state_name,
+            'detail': message.detail,
+            **numeric,
+            'comparison_filled_raw_cost_lower': (
+                float(evidence['comparison_filled_raw_cost_lower'])
+                if _finite(evidence.get(
+                    'comparison_filled_raw_cost_lower'
+                ))
+                else None
+            ),
+            'candidate_strict_separation_margin': (
+                float(evidence['candidate_strict_separation_margin'])
+                if _finite(evidence.get(
+                    'candidate_strict_separation_margin'
+                ))
+                else None
+            ),
+            'candidate_interval_valid': bool(
+                numeric['candidate_raw_cost_lower']
+                <= numeric['candidate_raw_cost_estimate']
+                <= numeric['candidate_raw_cost_upper']
+                and numeric['candidate_rotation_count'] > 0.0
+                and ordinal >= 1
+            ),
+        })
+        identity = (
+            ordinal,
+            numeric['candidate_raw_cost_estimate'],
+            numeric['candidate_raw_cost_lower'],
+            numeric['candidate_raw_cost_upper'],
+            int(numeric['filled_candidate_count']),
+        )
+        priority = (
+            2
+            if message.event_type == AlgorithmEvent.EVENT_GOAL_REACHED
+            else 1
+        )
+        current = preferred.get(identity)
+        if current is None or priority > current[0]:
+            preferred[identity] = (priority, row)
+    return sorted(
+        (item[1] for item in preferred.values()),
+        key=lambda row: (
+            row['bag_timestamp_ns'],
+            row['candidate_ordinal'],
+        ),
+    )
 
 
 def _fill_rows(records):
@@ -1073,6 +1168,48 @@ def _event_names():
         for name, value in vars(AlgorithmEvent).items()
         if name.startswith('EVENT_') and isinstance(value, int)
     }
+
+
+def _candidate_ranking_metric(scenario, candidate_rows):
+    """Report strict counted-source raw-cost ranking without ground truth."""
+    overrides = scenario.get('algorithm', {}).get('launch_overrides', {})
+    if overrides.get('extremum_classification_mode') != 'counted_candidates':
+        return unavailable(
+            'counted-candidate classification was not selected',
+            unit='boolean',
+            provenance='/gesc_gaussian/algorithm_events',
+            status='not_applicable',
+        )
+    known_count = int(overrides.get('known_source_count', 0))
+    goal_rows = [
+        row for row in candidate_rows
+        if row['event_type'] == AlgorithmEvent.EVENT_GOAL_REACHED
+    ]
+    passed = any(
+        row['candidate_interval_valid']
+        and row['candidate_ordinal'] == float(known_count)
+        and row['filled_candidate_count'] == float(known_count - 1)
+        and row['known_source_count'] == float(known_count)
+        and _finite(row['comparison_filled_raw_cost_lower'])
+        and _finite(row['candidate_strict_separation_margin'])
+        and row['candidate_raw_cost_upper']
+        < row['comparison_filled_raw_cost_lower']
+        and row['candidate_strict_separation_margin'] > 0.0
+        for row in goal_rows
+    )
+    return metric(
+        passed,
+        unit='boolean',
+        reason=(
+            None
+            if passed
+            else 'no strict counted-candidate GOAL_REACHED interval ranking'
+        ),
+        provenance=(
+            'rotation-stable raw-cost intervals in '
+            '/gesc_gaussian/algorithm_events'
+        ),
+    )
 
 
 def _source_points(run_directory):
@@ -1910,6 +2047,7 @@ def _generate_plots(
     odometry_rows,
     state_rows,
     event_rows,
+    candidate_rows,
     control_rows,
     fill_rows,
     sources,
@@ -2121,6 +2259,59 @@ def _generate_plots(
         fill_plot, bool(fill_rows), 'no typed Gaussian fill lifecycle',
     )
 
+    valid_candidate_rows = [
+        row for row in candidate_rows if row['candidate_interval_valid']
+    ]
+
+    def candidate_plot(axis):
+        for index, row in enumerate(valid_candidate_rows, start=1):
+            estimate = row['candidate_raw_cost_estimate']
+            lower = row['candidate_raw_cost_lower']
+            upper = row['candidate_raw_cost_upper']
+            is_goal = row['event_type'] == AlgorithmEvent.EVENT_GOAL_REACHED
+            axis.errorbar(
+                [index],
+                [estimate],
+                yerr=[[estimate - lower], [upper - estimate]],
+                fmt='o',
+                color='tab:green' if is_goal else 'tab:blue',
+                capsize=4,
+                label=(
+                    'ranked goal'
+                    if is_goal
+                    else 'candidate observation'
+                ),
+            )
+            axis.annotate(
+                f"C{int(row['candidate_ordinal'])}",
+                (index, estimate),
+                xytext=(4, 4),
+                textcoords='offset points',
+                fontsize=8,
+            )
+            comparison = row.get('comparison_filled_raw_cost_lower')
+            if is_goal and _finite(comparison):
+                axis.axhline(
+                    comparison,
+                    color='tab:orange',
+                    linestyle='--',
+                    alpha=0.8,
+                    label='retained candidate lower bound',
+                )
+        handles, labels = axis.get_legend_handles_labels()
+        unique = dict(zip(labels, handles))
+        axis.legend(unique.values(), unique.keys(), fontsize=7)
+        axis.set_xlabel('candidate evidence observation')
+        axis.set_ylabel('raw cost')
+
+    _save_plot(
+        plot_directory / 'candidate_ranking.png',
+        'Rotation-stable candidate raw costs',
+        candidate_plot,
+        bool(valid_candidate_rows),
+        'no valid counted-candidate interval evidence',
+    )
+
 
 def _summary_csv_row(metrics, run_id, status):
     row = {'run_id': run_id, 'analysis_status': status}
@@ -2238,6 +2429,7 @@ def analyze_run(
         odometry_rows = _odometry_rows(odometry_records)
         state_rows = _state_rows(state_records)
         event_rows = _event_rows(event_records)
+        candidate_rows = _candidate_rows(event_records)
         fill_rows = _fill_rows(fill_records)
         synchronized = _synchronized_rows(
             bag_data, channel_index, sync_tolerance_sec
@@ -2283,6 +2475,7 @@ def analyze_run(
             'algorithm_state.csv': state_rows,
             'state_intervals.csv': intervals,
             'algorithm_events.csv': event_rows,
+            'candidate_ranking.csv': candidate_rows,
             'gaussian_history.csv': fill_rows,
             'escape_attempts.csv': attempts,
         }
@@ -2303,6 +2496,9 @@ def analyze_run(
         )
         v4_summary = {}
         v4_integrity = {'passed': True, 'reasons': []}
+        metrics['counted_candidate_ranked_goal'] = (
+            _candidate_ranking_metric(scenario, candidate_rows)
+        )
         if scenario.get('schema_version', 1) >= 4:
             applicability = scenario.get('metric_applicability')
             if not isinstance(applicability, dict):
@@ -2379,6 +2575,10 @@ def analyze_run(
                 'supervisor_publish_rate_source': rate_source,
             },
             'metrics': metrics,
+            'candidate_ranking': {
+                'observation_count': len(candidate_rows),
+                'observations': candidate_rows,
+            },
         }
         summary.update(v4_summary)
         (temporary / 'summary_metrics.json').write_text(
@@ -2396,6 +2596,7 @@ def analyze_run(
             odometry_rows,
             state_rows,
             event_rows,
+            candidate_rows,
             control_rows,
             fill_rows,
             _source_points(run_directory),

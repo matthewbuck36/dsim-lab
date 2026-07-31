@@ -142,6 +142,26 @@ M4_THREE_LIGHT_PROBE = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v7_m4_three_light_probe.yaml'
 )
+V8_PRIMARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_primary_visible_probe.yaml'
+)
+V8_PRIMARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_primary_repeats.yaml'
+)
+V8_SECONDARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_secondary_visible_probe.yaml'
+)
+V8_SECONDARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_secondary_repeats.yaml'
+)
 HISTORICAL_V2_ACTIVATION = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml'
@@ -231,6 +251,10 @@ def _load(tmp_path, document):
         yaml.safe_dump(document, sort_keys=False), encoding='utf-8'
     )
     return load_suite(path)
+
+
+def _raw_document(path):
+    return yaml.safe_load(Path(path).read_text(encoding='utf-8'))
 
 
 def _v3_document():
@@ -569,7 +593,7 @@ def test_checked_in_suites_validate_and_catalog_marks_gaps():
 @pytest.mark.parametrize(
     ('mutation', 'match'),
     [
-        (lambda doc: doc.update({'schema_version': 8}), 'schema_version'),
+        (lambda doc: doc.update({'schema_version': 9}), 'schema_version'),
         (
             lambda doc: doc.update({'mode': 'physical'}),
             'mode must be simulation',
@@ -1211,6 +1235,141 @@ def test_schema_v7_fields_require_v7_and_complete_dependencies(tmp_path):
     document = _v7_document()
     document['cases'][0]['profiles'] = ['legacy']
     with pytest.raises(ValueError, match='robust_gaussian_v1'):
+        _load(tmp_path, document)
+
+
+def test_schema_v8_resolves_four_fixed_counted_open_field_suites():
+    """Bind the approved probe/repeat populations without wall evidence."""
+    expected = {
+        V8_PRIMARY_VISIBLE_PROBE: (1, True, {18801}),
+        V8_PRIMARY_REPEATS: (10, False, set(range(18811, 18821))),
+        V8_SECONDARY_VISIBLE_PROBE: (1, True, {18851}),
+        V8_SECONDARY_REPEATS: (5, False, set(range(18861, 18866))),
+    }
+    profile_keys = None
+    for path, (run_count, gui, seeds) in expected.items():
+        suite = load_suite(path)
+        runs, unsupported = expand_suite(suite)
+
+        assert unsupported == []
+        assert len(runs) == run_count
+        assert suite['execution']['gazebo_gui'] is gui
+        assert {run['seed'] for run in runs} == seeds
+        for run in runs:
+            overrides = run['algorithm']['launch_overrides']
+            assert run['schema_version'] == 8
+            assert run['family'] == 'open_field'
+            assert run['acceptance_family'] == (
+                'counted_two_source_open_field'
+            )
+            assert run['validation'] == {
+                'world': False,
+                'contacts_enabled': False,
+                'geometry_profile': None,
+            }
+            assert run['geometry'] is None
+            assert run['known_topology'] == {
+                'expected_global_minima': 1,
+                'expected_local_minima': 1,
+            }
+            assert overrides['extremum_classification_mode'] == (
+                'counted_candidates'
+            )
+            assert overrides['known_source_count'] == 2
+            assert overrides['gaussian_fill_max_fills'] == 1
+            assert overrides['convergence_confirmation_policy'] == (
+                'qualified_dwell'
+            )
+            assert overrides['robust_search_epoch_reset_enabled'] is True
+            assert overrides['operating_bounds_enabled'] is False
+            assert run['success']['collision_expected'] is None
+            assert 'collision_expectation' not in run['success']['all_of']
+            assert run['success']['ground_truth'][
+                'proximity_radius_m'
+            ] == 0.50
+            assert run['success']['staged_recovery'][
+                'post_stage_a_timeout_sec'
+            ] == 180.0
+            current_keys = frozenset(overrides)
+            profile_keys = current_keys if profile_keys is None else profile_keys
+            assert current_keys == profile_keys
+
+
+@pytest.mark.parametrize(
+    ('mutation', 'match'),
+    [
+        (
+            lambda doc: doc.update({'schema_version': 7}),
+            'schema version 8',
+        ),
+        (
+            lambda doc: doc['frozen_profile']['launch_overrides'].update(
+                {'operating_bounds_enabled': True}
+            ),
+            'disable operating bounds',
+        ),
+        (
+            lambda doc: doc['frozen_profile']['launch_overrides'].update(
+                {'robust_search_epoch_reset_enabled': False}
+            ),
+            'search-epoch reset',
+        ),
+        (
+            lambda doc: doc['frozen_profile']['launch_overrides'].update(
+                {'convergence_confirmation_policy': 'crossing_count'}
+            ),
+            'require qualified dwell',
+        ),
+        (
+            lambda doc: doc['frozen_profile']['launch_overrides'].update(
+                {'known_source_count': 3}
+            ),
+            'known count two',
+        ),
+        (
+            lambda doc: doc['frozen_profile']['launch_overrides'].update(
+                {'gaussian_fill_max_fills': 2}
+            ),
+            'one fill',
+        ),
+        (
+            lambda doc: doc['defaults'].update({'validation_world': True}),
+            'no validation world',
+        ),
+        (
+            lambda doc: doc['cases'][0]['sources'][0].update(
+                {'relative_lumen_input': 0.0}
+            ),
+            'positive direct-input local',
+        ),
+        (
+            lambda doc: doc['cases'][0]['sources'][1].update(
+                {'relative_lumen_input': 400.0}
+            ),
+            'stronger positive direct-input global',
+        ),
+        (
+            lambda doc: doc['cases'][0]['success'].update(
+                {'collision_expected': False}
+            ),
+            'requires simulation contacts',
+        ),
+        (
+            lambda doc: doc['cases'][0]['success']['all_of'].remove(
+                'controller_goal'
+            ),
+            'staged contract omits',
+        ),
+    ],
+)
+def test_schema_v8_rejects_count_topology_and_open_field_drift(
+    tmp_path,
+    mutation,
+    match,
+):
+    document = _raw_document(V8_PRIMARY_VISIBLE_PROBE)
+    mutation(document)
+    with pytest.raises(ValueError, match=match):
         _load(tmp_path, document)
 
 

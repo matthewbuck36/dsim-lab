@@ -5743,14 +5743,22 @@ def _v3_require_operator(state, operator, stage):
         raise RuntimeError(f'v3 {stage} operator drifted')
 
 
-def _v3_historical_case_keys(include_v3_development=True):
+def _v3_historical_case_keys(
+    include_v3_development=True,
+    include_names=None,
+):
     keys = set()
     hashes = {}
+    include_names = (
+        None if include_names is None else frozenset(include_names)
+    )
     excluded = {
         V3_CANDIDATES_PATH.name,
         V3_FROZEN_PATH.name,
     }
     for path in sorted(SCENARIO_ROOT.glob('phase08*.yaml')):
+        if include_names is not None and path.name not in include_names:
+            continue
         if path.name in excluded:
             continue
         if (
@@ -7948,15 +7956,17 @@ def _v4_validate_population_adoption():
         ).values()
     ):
         reasons.append('V3 formal-stage state is not empty')
-    unused_keys, historical_hashes = _v3_historical_case_keys()
-    del unused_keys
-    if historical_hashes != adoption.get(
-        'historical_exclusion_hashes'
-    ):
+    expected_historical_hashes = adoption.get(
+        'historical_exclusion_hashes', {}
+    )
+    historical_keys, historical_hashes = _v3_historical_case_keys(
+        include_names=expected_historical_hashes,
+    )
+    if historical_hashes != expected_historical_hashes:
         reasons.append('v4 historical exclusion hashes drifted')
     validation = validate_v3_population(
         suite,
-        historical_case_keys=_v3_historical_case_keys()[0],
+        historical_case_keys=historical_keys,
     )
     if not validation['passed']:
         reasons.extend(validation['reasons'])

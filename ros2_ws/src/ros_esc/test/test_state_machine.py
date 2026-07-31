@@ -5,7 +5,10 @@ import math
 import pytest
 
 from ros_esc.supervisor_node.state_machine import (
+    COUNTED_CANDIDATES,
     STATE_WEIGHTS,
+    CandidateCostSummary,
+    RotationCostWindow,
     RotationScoreWindow,
     State,
     StateMachineConfig,
@@ -61,6 +64,74 @@ def enter_repulse(machine):
         ),
     )
     assert transition.current == State.ESCAPE_REPULSE
+
+
+def counted_config(source_count=2, **overrides):
+    values = {
+        "extremum_classification_mode": COUNTED_CANDIDATES,
+        "known_source_count": source_count,
+        "max_fill_clusters": source_count - 1,
+        "recenter_after_escape": False,
+    }
+    values.update(overrides)
+    return config(**values)
+
+
+def candidate_summary(estimate, uncertainty=0.01, rotations=2):
+    return CandidateCostSummary(
+        estimate=float(estimate),
+        mad=float(uncertainty) / 3.0,
+        uncertainty=float(uncertainty),
+        rotation_count=int(rotations),
+    )
+
+
+def counted_candidate_inputs(summary, active_fill_count):
+    return TransitionInputs(
+        source_score=1.0,
+        source_score_valid=True,
+        candidate_cost_valid=True,
+        candidate_cost_ready=True,
+        candidate_cost_summary=summary,
+        active_fill_count=active_fill_count,
+    )
+
+
+def confirm_counted_candidate(machine, now_sec, summary, active_fill_count):
+    transition = machine.step(
+        now_sec,
+        TransitionInputs(convergence_confirmed=True),
+    )
+    assert transition.current == State.VERIFY_EXTREMUM
+    return machine.step(
+        now_sec + 0.1,
+        counted_candidate_inputs(summary, active_fill_count),
+    )
+
+
+def accept_counted_fill(
+    machine,
+    now_sec,
+    request_timestamp,
+    fill_id,
+    active_fill_count,
+):
+    machine.register_fill_request(request_timestamp)
+    transition = machine.step(
+        now_sec,
+        TransitionInputs(
+            fill_result="success",
+            fill_source_timestamp=request_timestamp,
+            fill_id=fill_id,
+            active_fill_count=active_fill_count,
+        ),
+    )
+    assert transition.current == State.ESCAPE_REPULSE
+    transition = machine.step(
+        now_sec + 0.1,
+        TransitionInputs(stable_exit=True),
+    )
+    assert transition.current == State.SEARCH
 
 
 def test_initial_state_and_explicit_weights_for_every_state():
@@ -132,6 +203,257 @@ def test_rotation_score_window_rejects_invalid_configuration(
 ):
     with pytest.raises(ValueError):
         RotationScoreWindow(rotation_period_sec, required_rotations)
+
+
+def test_rotation_cost_window_uses_rotation_minima_median_and_mad():
+    window = RotationCostWindow(
+        rotation_period_sec=3.0,
+        required_rotations=3,
+        mad_scale=3.0,
+    )
+
+    window.update(0.0, -1.0)
+    window.update(1.0, -2.0)
+    window.update(3.0, -1.0)
+    window.update(4.0, -4.0)
+    window.update(6.0, -1.0)
+    window.update(7.0, -3.0)
+    window.update(9.0, -1.0)
+
+    assert window.ready is True
+    assert tuple(window.completed_minima) == (-2.0, -4.0, -3.0)
+    assert window.evidence_duration_sec == 9.0
+    assert window.summary.estimate == pytest.approx(-3.0)
+    assert window.summary.mad == pytest.approx(1.0)
+    assert window.summary.uncertainty == pytest.approx(3.0)
+    assert window.summary.lower == pytest.approx(-6.0)
+    assert window.summary.upper == pytest.approx(0.0)
+
+
+def test_rotation_cost_window_discards_gap_and_rejects_invalid_input():
+    window = RotationCostWindow(3.0, required_rotations=2)
+    window.update(0.0, -1.0)
+    window.update(3.0, -2.0)
+    window.update(9.1, -3.0)
+
+    assert window.ready is False
+    assert window.summary is None
+    with pytest.raises(ValueError):
+        window.update(10.0, math.nan)
+
+
+@pytest.mark.parametrize(
+    ("rotation_period_sec", "required_rotations", "mad_scale"),
+    [
+        (0.0, 2, 3.0),
+        (math.nan, 2, 3.0),
+        (3.0, 0, 3.0),
+        (3.0, True, 3.0),
+        (3.0, 2, -1.0),
+        (3.0, 2, math.nan),
+    ],
+)
+def test_rotation_cost_window_rejects_invalid_configuration(
+    rotation_period_sec,
+    required_rotations,
+    mad_scale,
+):
+    with pytest.raises(ValueError):
+        RotationCostWindow(
+            rotation_period_sec,
+            required_rotations,
+            mad_scale,
+        )
+
+
+def test_counted_two_source_first_candidate_is_filled_regardless_absolute_score():
+    machine = SupervisorStateMachine(config=counted_config())
+    local = candidate_summary(-1.0)
+
+    transition = confirm_counted_candidate(machine, 0.0, local, 0)
+
+    assert transition.current == State.DESIGN_OR_MERGE_FILL
+    assert transition.reason == (
+        "counted candidate requires local fill before terminal ranking"
+    )
+    assert machine.pending_candidate_cost == local
+    assert machine.terminal_candidate_cost is None
+
+
+def test_counted_two_source_requires_fill_then_accepts_strictly_lower_candidate():
+    machine = SupervisorStateMachine(config=counted_config())
+    local = candidate_summary(-1.0, uncertainty=0.05)
+    global_candidate = candidate_summary(-2.0, uncertainty=0.05)
+
+    assert confirm_counted_candidate(machine, 0.0, local, 0).current == (
+        State.DESIGN_OR_MERGE_FILL
+    )
+    accept_counted_fill(machine, 0.2, 11.0, 4, 1)
+    assert machine.filled_candidate_costs == [local]
+
+    transition = confirm_counted_candidate(
+        machine,
+        0.4,
+        global_candidate,
+        1,
+    )
+
+    assert transition.current == State.GOAL_HOLD
+    assert "strictly lower" in transition.reason
+    assert machine.terminal_candidate_cost == global_candidate
+    assert machine.active_fill_count == 1
+
+
+@pytest.mark.parametrize(
+    "terminal",
+    [
+        candidate_summary(-0.5, uncertainty=0.01),
+        candidate_summary(-1.08, uncertainty=0.05),
+    ],
+)
+def test_counted_higher_or_overlapping_terminal_candidate_resumes_search(terminal):
+    machine = SupervisorStateMachine(config=counted_config())
+    local = candidate_summary(-1.0, uncertainty=0.05)
+    confirm_counted_candidate(machine, 0.0, local, 0)
+    accept_counted_fill(machine, 0.2, 11.0, 4, 1)
+
+    transition = confirm_counted_candidate(machine, 0.4, terminal, 1)
+
+    assert transition.current == State.SEARCH
+    assert transition.reason == (
+        "counted candidate not strictly stronger; resume search"
+    )
+    assert machine.last_rejected_candidate_cost == terminal
+    assert machine.active_fill_count == 1
+
+
+def test_counted_active_fill_revisit_is_suppressed_without_new_candidate():
+    machine = SupervisorStateMachine(config=counted_config())
+    local = candidate_summary(-1.0)
+    confirm_counted_candidate(machine, 0.0, local, 0)
+    accept_counted_fill(machine, 0.2, 11.0, 4, 1)
+
+    machine.step(0.4, TransitionInputs(convergence_confirmed=True))
+    transition = machine.step(
+        0.5,
+        TransitionInputs(
+            candidate_associated_with_fill=True,
+            active_fill_count=1,
+        ),
+    )
+
+    assert transition.current == State.SEARCH
+    assert "associated with active fill" in transition.reason
+    assert machine.filled_candidate_costs == [local]
+    assert machine.active_fill_count == 1
+
+
+def test_counted_three_source_requires_two_fills_before_terminal_ranking():
+    machine = SupervisorStateMachine(config=counted_config(source_count=3))
+    first = candidate_summary(-1.0)
+    second = candidate_summary(-2.0)
+    terminal = candidate_summary(-4.0)
+
+    assert confirm_counted_candidate(machine, 0.0, first, 0).current == (
+        State.DESIGN_OR_MERGE_FILL
+    )
+    accept_counted_fill(machine, 0.2, 11.0, 4, 1)
+    assert confirm_counted_candidate(machine, 0.4, second, 1).current == (
+        State.DESIGN_OR_MERGE_FILL
+    )
+    accept_counted_fill(machine, 0.6, 12.0, 5, 2)
+
+    transition = confirm_counted_candidate(machine, 0.8, terminal, 2)
+
+    assert transition.current == State.GOAL_HOLD
+    assert machine.filled_candidate_costs == [first, second]
+    assert machine.terminal_candidate_cost == terminal
+
+
+def test_counted_fill_cardinality_and_candidate_evidence_fail_safe():
+    machine = SupervisorStateMachine(config=counted_config())
+    transition = confirm_counted_candidate(
+        machine,
+        0.0,
+        candidate_summary(-1.0),
+        2,
+    )
+    assert transition.current == State.FAILSAFE
+    assert "exceeds counted-source cardinality" in transition.reason
+
+    invalid = SupervisorStateMachine(config=counted_config())
+    invalid.step(0.0, TransitionInputs(convergence_confirmed=True))
+    transition = invalid.step(
+        0.1,
+        TransitionInputs(
+            candidate_cost_valid=True,
+            candidate_cost_ready=True,
+            candidate_cost_summary=CandidateCostSummary(
+                math.nan,
+                0.0,
+                0.0,
+                2,
+            ),
+            active_fill_count=0,
+        ),
+    )
+    assert transition.current == State.FAILSAFE
+    assert transition.reason == "candidate raw-cost summary invalid"
+
+
+def test_counted_incomplete_rotation_evidence_times_out_without_classification():
+    machine = SupervisorStateMachine(
+        config=counted_config(verification_max_sec=4.0)
+    )
+    machine.step(0.0, TransitionInputs(convergence_confirmed=True))
+
+    assert machine.step(
+        0.1,
+        TransitionInputs(
+            candidate_cost_valid=True,
+            candidate_cost_ready=False,
+            active_fill_count=0,
+        ),
+    ) is None
+    transition = machine.step(
+        4.0,
+        TransitionInputs(
+            candidate_cost_valid=True,
+            candidate_cost_ready=False,
+            active_fill_count=0,
+        ),
+    )
+    assert transition.current == State.FAILSAFE
+    assert transition.reason == "candidate raw-cost verification timeout"
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {
+            "extremum_classification_mode": COUNTED_CANDIDATES,
+            "known_source_count": 1,
+            "max_fill_clusters": 0,
+        },
+        {
+            "extremum_classification_mode": COUNTED_CANDIDATES,
+            "known_source_count": 2,
+            "max_fill_clusters": 0,
+        },
+        {
+            "extremum_classification_mode": "unknown",
+        },
+        {
+            "known_source_count": -1,
+        },
+        {
+            "candidate_cost_mad_scale": math.nan,
+        },
+    ],
+)
+def test_counted_configuration_rejects_invalid_contract(overrides):
+    with pytest.raises(ValueError):
+        config(**overrides)
 
 
 def test_high_score_goal_dwell_and_latch():

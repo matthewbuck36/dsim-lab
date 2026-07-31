@@ -13,8 +13,8 @@ from ros_esc.scenario_runner import aggregate_field_truth
 import yaml
 
 
-SCHEMA_VERSION = 7
-SUPPORTED_SCHEMA_VERSIONS = {1, 2, 3, 4, 5, 6, 7}
+SCHEMA_VERSION = 8
+SUPPORTED_SCHEMA_VERSIONS = {1, 2, 3, 4, 5, 6, 7, 8}
 PROFILES = {'legacy', 'robust_gaussian_v1'}
 STATUSES = {'executable_unverified', 'unsupported'}
 FAMILIES = {
@@ -31,6 +31,7 @@ FAMILIES = {
     'fill_merge',
     'recenter_resume',
     'corner_origin',
+    'open_field',
 }
 ACCEPTANCE_FAMILIES = {
     'ordered_two_source',
@@ -46,6 +47,7 @@ ACCEPTANCE_FAMILIES = {
     'obstructing_wall_corner',
     'obstructing_noise_delay',
     'corner_origin_diagonal_sector',
+    'counted_two_source_open_field',
 }
 ACCEPTANCE_PARTITIONS = {
     'activation',
@@ -106,6 +108,9 @@ LAUNCH_OVERRIDES = {
     'convergence_maximum_path_efficiency',
     'convergence_state_gating_enabled',
     'convergence_threshold',
+    'convergence_confirmation_policy',
+    'convergence_confirmation_dwell_sec',
+    'convergence_confirmation_exit_threshold_scale',
     'direction_candidate_step_rad',
     'direction_lookahead_m',
     'adaptive_recenter_lookahead_enabled',
@@ -139,6 +144,11 @@ LAUNCH_OVERRIDES = {
     'goal_score_required_rotations',
     'goal_score_rotation_period_sec',
     'goal_score_threshold',
+    'extremum_classification_mode',
+    'known_source_count',
+    'candidate_cost_rotation_period_sec',
+    'candidate_cost_required_rotations',
+    'candidate_cost_mad_scale',
     'minimum_radial_progress_m',
     'modified_cost_affine_decay_rate',
     'modified_cost_affine_gain',
@@ -171,6 +181,7 @@ LAUNCH_OVERRIDES = {
     'recenter_max_angular_velocity_rps',
     'recenter_max_linear_velocity_mps',
     'recenter_max_sec',
+    'operating_bounds_enabled',
     'recenter_rotate_in_place_angle_rad',
     'recenter_target_fill_clearance_m',
     'recenter_tolerance_m',
@@ -315,7 +326,7 @@ ALGORITHM_EVENTS = {
 ALGORITHM_TRANSITIONS = {
     'SEARCH': {'VERIFY_EXTREMUM', 'FAILSAFE'},
     'VERIFY_EXTREMUM': {
-        'DESIGN_OR_MERGE_FILL', 'GOAL_HOLD', 'FAILSAFE',
+        'DESIGN_OR_MERGE_FILL', 'SEARCH', 'GOAL_HOLD', 'FAILSAFE',
     },
     'DESIGN_OR_MERGE_FILL': {
         'ESCAPE_REPULSE', 'ESCAPE_ASSIST', 'FAILSAFE',
@@ -385,6 +396,17 @@ SCHEMA_V7_LAUNCH_OVERRIDES = {
     'controller_spawner_load_recovery_enabled',
     'robust_search_epoch_reset_enabled',
 }
+SCHEMA_V8_LAUNCH_OVERRIDES = {
+    'candidate_cost_mad_scale',
+    'candidate_cost_required_rotations',
+    'candidate_cost_rotation_period_sec',
+    'convergence_confirmation_dwell_sec',
+    'convergence_confirmation_exit_threshold_scale',
+    'convergence_confirmation_policy',
+    'extremum_classification_mode',
+    'known_source_count',
+    'operating_bounds_enabled',
+}
 DIRECT_STAGED_RECOVERY_STATE_PATH = (
     'SEARCH',
     'VERIFY_EXTREMUM',
@@ -406,6 +428,18 @@ ASSISTED_STAGED_RECOVERY_STATE_PATH = (
 STAGED_RECOVERY_STATE_PATHS = (
     DIRECT_STAGED_RECOVERY_STATE_PATH,
     ASSISTED_STAGED_RECOVERY_STATE_PATH,
+)
+COUNTED_OPEN_FIELD_RECOVERY_STATE_PATH = (
+    'SEARCH',
+    'VERIFY_EXTREMUM',
+    'DESIGN_OR_MERGE_FILL',
+    'ESCAPE_REPULSE',
+    'SEARCH',
+)
+COUNTED_OPEN_FIELD_STATE_PATH = (
+    *COUNTED_OPEN_FIELD_RECOVERY_STATE_PATH,
+    'VERIFY_EXTREMUM',
+    'GOAL_HOLD',
 )
 GEOMETRY_PROFILES = {
     CORNER_ORIGIN_GEOMETRY_PROFILE: {
@@ -468,6 +502,106 @@ def _positive_integer(value, location):
 
 def _validate_correction_overrides(overrides, ablations, location):
     """Validate optional Phase 08.7 robust correction controls."""
+    classification_mode = overrides.get(
+        'extremum_classification_mode',
+        'absolute_source_score',
+    )
+    if classification_mode not in {
+        'absolute_source_score',
+        'counted_candidates',
+    }:
+        raise ValueError(
+            f'{location}.extremum_classification_mode is unsupported'
+        )
+    confirmation_policy = overrides.get(
+        'convergence_confirmation_policy',
+        'crossing_count',
+    )
+    if confirmation_policy not in {'crossing_count', 'qualified_dwell'}:
+        raise ValueError(
+            f'{location}.convergence_confirmation_policy is unsupported'
+        )
+    for name in (
+        'candidate_cost_rotation_period_sec',
+        'convergence_confirmation_dwell_sec',
+    ):
+        if name in overrides:
+            _number(overrides[name], f'{location}.{name}', positive=True)
+    for name in (
+        'candidate_cost_mad_scale',
+    ):
+        if name in overrides:
+            _number(overrides[name], f'{location}.{name}', minimum=0.0)
+    if 'convergence_confirmation_exit_threshold_scale' in overrides:
+        scale = _number(
+            overrides['convergence_confirmation_exit_threshold_scale'],
+            f'{location}.convergence_confirmation_exit_threshold_scale',
+            positive=True,
+        )
+        if scale <= 1.0:
+            raise ValueError(
+                f'{location}.convergence_confirmation_exit_threshold_scale '
+                'must exceed 1.0'
+            )
+    for name in (
+        'known_source_count',
+        'candidate_cost_required_rotations',
+    ):
+        if name in overrides:
+            _positive_integer(overrides[name], f'{location}.{name}')
+    operating_bounds_enabled = overrides.get(
+        'operating_bounds_enabled',
+        True,
+    )
+    if 'operating_bounds_enabled' in overrides:
+        operating_bounds_enabled = _boolean(
+            operating_bounds_enabled,
+            f'{location}.operating_bounds_enabled',
+        )
+    if classification_mode == 'counted_candidates':
+        required = {
+            'candidate_cost_mad_scale',
+            'candidate_cost_required_rotations',
+            'candidate_cost_rotation_period_sec',
+            'convergence_confirmation_dwell_sec',
+            'convergence_confirmation_exit_threshold_scale',
+            'convergence_confirmation_policy',
+            'known_source_count',
+            'operating_bounds_enabled',
+            'robust_search_epoch_reset_enabled',
+        }
+        missing = sorted(required - set(overrides))
+        if missing:
+            raise ValueError(
+                f'{location} counted-candidate contract omits: '
+                + ', '.join(missing)
+            )
+        if confirmation_policy != 'qualified_dwell':
+            raise ValueError(
+                f'{location} counted candidates require qualified dwell'
+            )
+        if not overrides.get('convergence_state_gating_enabled', False):
+            raise ValueError(
+                f'{location} counted candidates require convergence state gating'
+            )
+        if operating_bounds_enabled:
+            raise ValueError(
+                f'{location} counted open-field mode must disable operating bounds'
+            )
+        if not overrides.get('robust_search_epoch_reset_enabled', False):
+            raise ValueError(
+                f'{location} counted candidates require robust search-epoch reset'
+            )
+        if (
+            ablations['affine_assist_enabled']
+            or ablations['recenter_enabled']
+            or overrides.get('recoverable_navigation_enabled', False)
+            or overrides.get('post_recovery_guidance_enabled', False)
+        ):
+            raise ValueError(
+                f'{location} counted open-field mode requires affine, recenter, '
+                'recoverable navigation, and post-recovery guidance disabled'
+            )
     adaptive_recenter_enabled = False
     if 'adaptive_recenter_lookahead_enabled' in overrides:
         adaptive_recenter_enabled = _boolean(
@@ -1600,6 +1734,30 @@ def load_suite(path):
         raise ValueError(
             'schema version 7 is required for progress-guidance fields'
         )
+    uses_schema_v8_fields = bool(
+        isinstance(raw_frozen_overrides, dict)
+        and SCHEMA_V8_LAUNCH_OVERRIDES & set(raw_frozen_overrides)
+    )
+    if isinstance(raw_cases, list):
+        for case in raw_cases:
+            if not isinstance(case, dict):
+                continue
+            raw_algorithm = case.get('algorithm', {})
+            raw_overrides = (
+                raw_algorithm.get('launch_overrides', {})
+                if isinstance(raw_algorithm, dict)
+                else {}
+            )
+            uses_schema_v8_fields = uses_schema_v8_fields or (
+                isinstance(raw_overrides, dict)
+                and bool(SCHEMA_V8_LAUNCH_OVERRIDES & set(raw_overrides))
+            )
+            if uses_schema_v8_fields:
+                break
+    if schema_version < 8 and uses_schema_v8_fields:
+        raise ValueError(
+            'schema version 8 is required for counted open-field fields'
+        )
     suite_id = _identifier(document.get('suite_id'), 'suite_id')
     if document.get('mode') != 'simulation':
         raise ValueError('mode must be simulation')
@@ -1811,13 +1969,15 @@ def load_suite(path):
             )
         geometry_profile_name = None
         if schema_version >= 5:
-            geometry_profile_name = _geometry_profile(
-                case.get(
-                    'geometry_profile',
-                    defaults.get('geometry_profile'),
-                ),
-                f'{location}.geometry_profile',
+            geometry_profile_value = case.get(
+                'geometry_profile',
+                defaults.get('geometry_profile'),
             )
+            if geometry_profile_value is not None or schema_version < 8:
+                geometry_profile_name = _geometry_profile(
+                    geometry_profile_value,
+                    f'{location}.geometry_profile',
+                )
 
         starts = case.get('starts')
         if not isinstance(starts, list) or not starts:
@@ -1959,6 +2119,57 @@ def load_suite(path):
             ablations,
             f'{location}.algorithm.launch_overrides',
         )
+        counted_open_field = bool(
+            schema_version >= 8
+            and overrides.get('extremum_classification_mode')
+            == 'counted_candidates'
+        )
+        if counted_open_field:
+            expected_source_count = (
+                known_topology['expected_local_minima']
+                + known_topology['expected_global_minima']
+            )
+            local_sources = [
+                source for source in normalized_sources
+                if source['evaluation_role'] == 'local_minimum'
+            ]
+            global_sources = [
+                source for source in normalized_sources
+                if source['evaluation_role'] == 'goal'
+            ]
+            positive_direct_inputs = all(
+                source.get('relative_lumen_input', 0.0) > 0.0
+                for source in normalized_sources
+            )
+            ordered_inputs = bool(
+                len(local_sources) == 1
+                and len(global_sources) == 1
+                and global_sources[0].get('relative_lumen_input', 0.0)
+                > local_sources[0].get('relative_lumen_input', 0.0)
+            )
+            if (
+                profiles != ['robust_gaussian_v1']
+                or expected_source_count != 2
+                or len(normalized_sources) != expected_source_count
+                or len(local_sources) != 1
+                or len(global_sources) != 1
+                or known_topology['expected_global_minima'] != 1
+                or overrides.get('known_source_count')
+                != expected_source_count
+                or overrides.get('gaussian_fill_max_fills')
+                != known_topology['expected_local_minima']
+                or not positive_direct_inputs
+                or not ordered_inputs
+                or geometry_profile_name is not None
+                or validation_world
+                or contacts_enabled
+            ):
+                raise ValueError(
+                    f'{location} counted open-field contract requires exactly '
+                    'one positive direct-input local and one stronger positive '
+                    'direct-input global, known count two, one fill, no '
+                    'geometry profile, and no validation world/contacts'
+                )
         if (
             (
                 overrides.get('post_recovery_progress_enabled') is True
@@ -2354,7 +2565,18 @@ def load_suite(path):
             historical_proximity = GEOMETRY_PROFILES[
                 CORNER_ORIGIN_GEOMETRY_PROFILE
             ]['global_proximity_radius_m']
-            if corrected_stop:
+            if counted_open_field:
+                if not math.isclose(
+                    tolerance,
+                    0.50,
+                    rel_tol=0.0,
+                    abs_tol=1e-12,
+                ):
+                    raise ValueError(
+                        f'{ground_truth_location}.proximity_radius_m must '
+                        'equal 0.50 for counted open-field evaluation'
+                    )
+            elif corrected_stop:
                 if not (
                     CORRECTED_GLOBAL_PROXIMITY_MIN_M
                     <= tolerance
@@ -2819,46 +3041,76 @@ def load_suite(path):
                 'required_events',
                 'no_forbidden_states',
                 'no_forbidden_events',
-                'collision_expectation',
             }
+            if counted_open_field:
+                staged_core.update({
+                    'controller_goal',
+                    'ground_truth_goal',
+                    'expected_terminal_state',
+                })
+            else:
+                staged_core.add('collision_expectation')
             missing_core = sorted(staged_core - set(all_of))
             if missing_core:
                 raise ValueError(
                     f'{location}.success staged contract omits: '
                     + ', '.join(missing_core)
                 )
-            expected_paths = {
-                tuple(path) for path in STAGED_RECOVERY_STATE_PATHS
-            }
             controller_paths = normalized_controller.get(
                 'required_state_paths',
                 [normalized_controller['required_state_path']],
             )
-            if (
-                normalized_controller['expected_verification_outcome']
-                != 'below_target_extremum'
-                or any(
-                    tuple(path) not in expected_paths
-                    for path in controller_paths
-                )
-            ):
-                raise ValueError(
-                    f'{controller_location} staged contract must bind the '
-                    'complete direct or assisted local recovery path'
-                )
-            required_staged_events = {
-                'CONVERGENCE_CONFIRMED',
-                'FILL_CREATED',
-                'ESCAPE_STARTED',
-                'RECENTER_STARTED',
-                'RECENTER_COMPLETE',
-            }
+            if counted_open_field:
+                if (
+                    normalized_controller['expected_verification_outcome']
+                    != 'below_target_extremum'
+                    or normalized_controller['expected_terminal_state']
+                    != 'GOAL_HOLD'
+                    or any(
+                        tuple(path) != COUNTED_OPEN_FIELD_STATE_PATH
+                        for path in controller_paths
+                    )
+                ):
+                    raise ValueError(
+                        f'{controller_location} counted open-field contract '
+                        'must bind local direct recovery followed by ranked '
+                        'GOAL_HOLD'
+                    )
+                required_staged_events = {
+                    'CONVERGENCE_CONFIRMED',
+                    'FILL_CREATED',
+                    'ESCAPE_STARTED',
+                    'GOAL_REACHED',
+                }
+            else:
+                expected_paths = {
+                    tuple(path) for path in STAGED_RECOVERY_STATE_PATHS
+                }
+                if (
+                    normalized_controller['expected_verification_outcome']
+                    != 'below_target_extremum'
+                    or any(
+                        tuple(path) not in expected_paths
+                        for path in controller_paths
+                    )
+                ):
+                    raise ValueError(
+                        f'{controller_location} staged contract must bind the '
+                        'complete direct or assisted local recovery path'
+                    )
+                required_staged_events = {
+                    'CONVERGENCE_CONFIRMED',
+                    'FILL_CREATED',
+                    'ESCAPE_STARTED',
+                    'RECENTER_STARTED',
+                    'RECENTER_COMPLETE',
+                }
             if not required_staged_events <= set(
                 normalized_controller['required_events']
             ):
                 raise ValueError(
                     f'{controller_location} staged contract must require '
-                    'every local recovery event'
+                    'every local recovery and terminal event'
                 )
             if (
                 'FAILSAFE' not in normalized_controller['forbidden_states']
@@ -2870,14 +3122,30 @@ def load_suite(path):
                     f'{controller_location} staged contract must forbid '
                     'FAILSAFE and TIMEOUT'
                 )
-            if (
-                collision_expected is not False
-                or not ablations['gaussian_fill_enabled']
-                or not ablations['recenter_enabled']
-            ):
+            if counted_open_field:
+                valid_algorithm_contract = bool(
+                    collision_expected is None
+                    and ablations['gaussian_fill_enabled']
+                    and not ablations['affine_assist_enabled']
+                    and not ablations['recenter_enabled']
+                )
+                algorithm_requirement = (
+                    'Gaussian fill with affine/recenter disabled and '
+                    'collision evaluation omitted as not applicable'
+                )
+            else:
+                valid_algorithm_contract = bool(
+                    collision_expected is False
+                    and ablations['gaussian_fill_enabled']
+                    and ablations['recenter_enabled']
+                )
+                algorithm_requirement = (
+                    'Gaussian fill, recenter, and collision_expected=false'
+                )
+            if not valid_algorithm_contract:
                 raise ValueError(
-                    f'{location} staged contract requires Gaussian fill, '
-                    'recenter, and collision_expected=false'
+                    f'{location} staged contract requires '
+                    + algorithm_requirement
                 )
             if (
                 set(result_scopes) != {'full_lifecycle'}
@@ -2901,22 +3169,23 @@ def load_suite(path):
                 raise ValueError(
                     f'{location} geometry profile requires exactly one start'
                 )
-            geometry = _resolve_geometry_profile(
-                geometry_profile_name,
-                bounds,
-                center,
-                normalized_starts[0],
-                normalized_sources,
-                overrides,
-                {
-                    'world': validation_world,
-                    'contacts_enabled': contacts_enabled,
-                },
-                known_topology,
-                staged_recovery,
-                schema_version,
-                location,
-            )
+            if not counted_open_field:
+                geometry = _resolve_geometry_profile(
+                    geometry_profile_name,
+                    bounds,
+                    center,
+                    normalized_starts[0],
+                    normalized_sources,
+                    overrides,
+                    {
+                        'world': validation_world,
+                        'contacts_enabled': contacts_enabled,
+                    },
+                    known_topology,
+                    staged_recovery,
+                    schema_version,
+                    location,
+                )
         normalized_success = {
             'all_of': list(all_of),
             'controller': normalized_controller,

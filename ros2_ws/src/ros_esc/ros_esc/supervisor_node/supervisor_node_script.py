@@ -52,7 +52,9 @@ from ros_esc.supervisor_node.escape_recenter import (
     source_continuity_evidence,
 )
 from ros_esc.supervisor_node.state_machine import (
+    COUNTED_CANDIDATES,
     ROBUST_PROFILE,
+    RotationCostWindow,
     RotationScoreWindow,
     State,
     StateMachineConfig,
@@ -171,6 +173,21 @@ class SupervisorNode(Node):
                 recovery_retry_limit=self._nonnegative_int(
                     'recovery_retry_limit'
                 ),
+                extremum_classification_mode=self._string(
+                    "extremum_classification_mode"
+                ),
+                known_source_count=self._nonnegative_int(
+                    "known_source_count"
+                ),
+                candidate_cost_rotation_period_sec=self._positive_float(
+                    "candidate_cost_rotation_period_sec"
+                ),
+                candidate_cost_required_rotations=self._positive_int(
+                    "candidate_cost_required_rotations"
+                ),
+                candidate_cost_mad_scale=self._nonnegative_float(
+                    "candidate_cost_mad_scale"
+                ),
             ),
         )
         self.recoverable_navigation_enabled = (
@@ -196,8 +213,25 @@ class SupervisorNode(Node):
                 'post_recovery_source_resume_enabled'
             ).value
         )
-        self.bounded_mode = bool(
+        self.operating_bounds_enabled = bool(
+            self.get_parameter("operating_bounds_enabled").value
+        )
+        recenter_after_escape = bool(
             self.get_parameter("recenter_after_escape").value
+        )
+        if (
+            not self.operating_bounds_enabled
+            and (
+                recenter_after_escape
+                or self.recoverable_navigation_enabled
+            )
+        ):
+            raise ValueError(
+                "disabled operating bounds require recenter and recoverable "
+                "navigation to be disabled"
+            )
+        self.bounded_mode = bool(
+            self.operating_bounds_enabled and recenter_after_escape
         )
         self.bounds = None
         if self.bounded_mode:
@@ -243,6 +277,11 @@ class SupervisorNode(Node):
             self._positive_float("goal_score_rotation_period_sec"),
             self._positive_int("goal_score_required_rotations"),
         )
+        self.candidate_cost_window = RotationCostWindow(
+            self.machine.config.candidate_cost_rotation_period_sec,
+            self.machine.config.candidate_cost_required_rotations,
+            self.machine.config.candidate_cost_mad_scale,
+        )
         self.goal_score_verification_margin_sec = (
             self.machine.config.verification_max_sec
             - self.goal_score_window.evidence_duration_sec
@@ -254,11 +293,27 @@ class SupervisorNode(Node):
         self.goal_score_verification_timing_sufficient = (
             self.goal_score_verification_margin_sec > 0.0
         )
+        self.candidate_cost_verification_margin_sec = (
+            self.machine.config.verification_max_sec
+            - self.candidate_cost_window.evidence_duration_sec
+        )
+        self.candidate_cost_verification_timing_sufficient = (
+            self.candidate_cost_verification_margin_sec > 0.0
+        )
         if not self.goal_score_verification_timing_sufficient:
             self.get_logger().warning(
                 'verification_max_sec leaves no scheduling margin after '
                 'complete rotation evidence and score dwell; use only for an '
                 'intentional safe-timeout scenario'
+            )
+        if (
+            self.machine.config.extremum_classification_mode
+            == COUNTED_CANDIDATES
+            and not self.candidate_cost_verification_timing_sufficient
+        ):
+            raise ValueError(
+                "verification_max_sec must exceed complete candidate raw-cost "
+                "rotation evidence"
             )
         self.fill_avoidance_margin_m = self._nonnegative_float(
             'fill_avoidance_margin_m'
@@ -422,6 +477,7 @@ class SupervisorNode(Node):
         self.latest_source_valid = False
         self.latest_source_score = None
         self.latest_source_score_valid = False
+        self.latest_candidate_cost_summary = None
         self.latest_source_timestamp = None
         self.latest_convergence = None
         self.latest_convergence_receipt_sec = None
@@ -520,6 +576,11 @@ class SupervisorNode(Node):
             "goal_score_threshold": 0.95,
             "goal_score_rotation_period_sec": 3.0,
             "goal_score_required_rotations": 2,
+            "extremum_classification_mode": "absolute_source_score",
+            "known_source_count": 0,
+            "candidate_cost_rotation_period_sec": 3.0,
+            "candidate_cost_required_rotations": 2,
+            "candidate_cost_mad_scale": 3.0,
             "goal_hold_sec": 3.0,
             "undesired_score_hold_sec": 3.0,
             "verification_max_sec": 12.0,
@@ -530,6 +591,7 @@ class SupervisorNode(Node):
             "minimum_radial_progress_m": 0.05,
             "approach_history_window_sec": 3.0,
             "recenter_after_escape": True,
+            "operating_bounds_enabled": True,
             "recenter_max_sec": 30.0,
             "max_fill_clusters": 0,
             "post_recovery_guidance_enabled": False,
@@ -688,12 +750,27 @@ class SupervisorNode(Node):
         receipt_sec = self._now_sec()
         if (
             self.machine.state == State.VERIFY_EXTREMUM
+            and self.machine.config.extremum_classification_mode
+            != COUNTED_CANDIDATES
             and self.latest_source_score_valid
         ):
             self.goal_score_window.update(receipt_sec, float(np.max(scores)))
         else:
             self.goal_score_window.reset()
         self.latest_source_score = self.goal_score_window.score
+        if (
+            self.machine.state == State.VERIFY_EXTREMUM
+            and self.machine.config.extremum_classification_mode
+            == COUNTED_CANDIDATES
+            and self.latest_source_valid
+        ):
+            self.candidate_cost_window.update(
+                receipt_sec,
+                float(np.min(raw)),
+            )
+        else:
+            self.candidate_cost_window.reset()
+        self.latest_candidate_cost_summary = self.candidate_cost_window.summary
         self.latest_source_timestamp = (
             float(msg.source_timestamp)
             if msg.source_timestamp_valid and math.isfinite(msg.source_timestamp)
@@ -777,6 +854,41 @@ class SupervisorNode(Node):
             fill_id,
             len(self.active_fill_records),
         )
+
+    def _candidate_associated_with_active_fill(self):
+        """Return whether the confirmed event center lies in an active fill."""
+
+        if (
+            self.machine.config.extremum_classification_mode
+            != COUNTED_CANDIDATES
+            or self.latest_convergence is None
+            or len(self.latest_convergence.data) != 8
+            or not self.active_fill_records
+        ):
+            return False
+        center = np.asarray(
+            self.latest_convergence.data[3:5],
+            dtype=np.float64,
+        )
+        if center.size != 2 or not np.all(np.isfinite(center)):
+            return False
+        for record in self.active_fill_records.values():
+            fill_center = np.asarray(record.get("center"), dtype=np.float64)
+            support_radius = float(record.get("support_radius", float("nan")))
+            exit_radius = float(record.get("exit_radius", float("nan")))
+            radii = [
+                radius
+                for radius in (support_radius, exit_radius)
+                if math.isfinite(radius) and radius > 0.0
+            ]
+            if (
+                fill_center.size == 2
+                and np.all(np.isfinite(fill_center))
+                and radii
+                and float(np.linalg.norm(center - fill_center)) <= max(radii)
+            ):
+                return True
+        return False
 
     def stop_callback(self, msg):
         if bool(msg.data):
@@ -942,6 +1054,10 @@ class SupervisorNode(Node):
             now_sec,
         )
         fill_result = self.pending_fill_result or (None, None, None, None)
+        counted_mode = (
+            self.machine.config.extremum_classification_mode
+            == COUNTED_CANDIDATES
+        )
         progress = (
             self.escape_tracker.latest
             if self.escape_tracker is not None
@@ -954,6 +1070,13 @@ class SupervisorNode(Node):
             source_score_observed=self.latest_source_receipt_sec is not None,
             source_score_valid=self.latest_source_score_valid,
             source_score_ready=self.goal_score_window.ready,
+            candidate_cost_observed=self.latest_source_receipt_sec is not None,
+            candidate_cost_valid=self.latest_source_valid,
+            candidate_cost_ready=self.candidate_cost_window.ready,
+            candidate_cost_summary=self.latest_candidate_cost_summary,
+            candidate_associated_with_fill=(
+                counted_mode and self._candidate_associated_with_active_fill()
+            ),
             pose_valid=pose_valid,
             sensor_valid=sensor_valid,
             explicit_stop=self.stop_requested,
@@ -961,7 +1084,11 @@ class SupervisorNode(Node):
             fill_result=fill_result[0],
             fill_source_timestamp=fill_result[1],
             fill_id=fill_result[2],
-            active_fill_count=fill_result[3],
+            active_fill_count=(
+                len(self.active_fill_records)
+                if counted_mode
+                else fill_result[3]
+            ),
             stable_exit=bool(
                 progress is not None
                 and self.machine.state
@@ -1000,6 +1127,8 @@ class SupervisorNode(Node):
         if transition.current == State.VERIFY_EXTREMUM:
             self.goal_score_window.reset()
             self.latest_source_score = None
+            self.candidate_cost_window.reset()
+            self.latest_candidate_cost_summary = None
         if "escape stalled" in transition.reason:
             self._publish_stall_event(now_sec, transition.previous)
         self._publish_transition(transition, now_sec)
@@ -1028,11 +1157,26 @@ class SupervisorNode(Node):
             self.fill_request_publisher.publish(request)
         if transition.current == State.GOAL_HOLD:
             self.current_supervisor_command = Twist()
-            self._publish_event(
-                AlgorithmEvent.EVENT_GOAL_REACHED,
-                now_sec,
-                "goal source-score dwell satisfied",
-            )
+            if (
+                self.machine.config.extremum_classification_mode
+                == COUNTED_CANDIDATES
+            ):
+                names, values = self._candidate_evidence(
+                    self.machine.terminal_candidate_cost
+                )
+                self._publish_event(
+                    AlgorithmEvent.EVENT_GOAL_REACHED,
+                    now_sec,
+                    transition.reason,
+                    names,
+                    values,
+                )
+            else:
+                self._publish_event(
+                    AlgorithmEvent.EVENT_GOAL_REACHED,
+                    now_sec,
+                    "goal source-score dwell satisfied",
+                )
             self._reset_escape_attempt()
         if transition.current == State.ESCAPE_REPULSE:
             failure = self._begin_escape(now_sec)
@@ -2306,11 +2450,69 @@ class SupervisorNode(Node):
         )
 
     def _publish_transition(self, transition, now_sec):
+        names = None
+        values = None
+        if (
+            self.machine.config.extremum_classification_mode
+            == COUNTED_CANDIDATES
+            and transition.previous == State.VERIFY_EXTREMUM
+        ):
+            summary = None
+            if transition.current == State.DESIGN_OR_MERGE_FILL:
+                summary = self.machine.pending_candidate_cost
+            elif transition.current == State.GOAL_HOLD:
+                summary = self.machine.terminal_candidate_cost
+            elif transition.current == State.SEARCH:
+                summary = self.machine.last_rejected_candidate_cost
+            names, values = self._candidate_evidence(summary)
         self._publish_event(
             AlgorithmEvent.EVENT_STATE_TRANSITION,
             now_sec,
             f"{transition.previous.name}->{transition.current.name}: {transition.reason}",
+            names,
+            values,
         )
+
+    def _candidate_evidence(self, summary):
+        if summary is None:
+            return [], []
+        filled_count = len(self.machine.filled_candidate_costs)
+        names = [
+            "candidate_raw_cost_estimate",
+            "candidate_raw_cost_mad",
+            "candidate_raw_cost_uncertainty",
+            "candidate_raw_cost_lower",
+            "candidate_raw_cost_upper",
+            "candidate_rotation_count",
+            "candidate_ordinal",
+            "filled_candidate_count",
+            "known_source_count",
+        ]
+        values = [
+            summary.estimate,
+            summary.mad,
+            summary.uncertainty,
+            summary.lower,
+            summary.upper,
+            float(summary.rotation_count),
+            float(filled_count + 1),
+            float(filled_count),
+            float(self.machine.config.known_source_count),
+        ]
+        if self.machine.filled_candidate_costs:
+            comparison_lower = min(
+                retained.lower
+                for retained in self.machine.filled_candidate_costs
+            )
+            names.extend([
+                "comparison_filled_raw_cost_lower",
+                "candidate_strict_separation_margin",
+            ])
+            values.extend([
+                comparison_lower,
+                comparison_lower - summary.upper,
+            ])
+        return names, values
 
     def _publish_failsafe_event(self, now_sec, reason):
         self._publish_event(AlgorithmEvent.EVENT_FAILSAFE, now_sec, reason)
@@ -2344,6 +2546,7 @@ class SupervisorNode(Node):
 
     def _publish_configuration_event(self, now_sec):
         names = [
+            "operating_bounds_enabled",
             "bounded_mode",
             "room_bounds_x_min_m",
             "room_bounds_x_max_m",
@@ -2357,6 +2560,14 @@ class SupervisorNode(Node):
             'goal_score_evidence_duration_sec',
             'goal_score_verification_margin_sec',
             'goal_score_verification_timing_sufficient',
+            "counted_candidate_mode",
+            "known_source_count",
+            "candidate_cost_rotation_period_sec",
+            "candidate_cost_required_rotations",
+            "candidate_cost_mad_scale",
+            "candidate_cost_evidence_duration_sec",
+            "candidate_cost_verification_margin_sec",
+            "candidate_cost_verification_timing_sufficient",
             "escape_exit_hold_sec",
             "stall_window_sec",
             "minimum_radial_progress_m",
@@ -2400,6 +2611,7 @@ class SupervisorNode(Node):
             'post_recovery_source_bypass_clearance_m',
         ]
         values = [
+            1.0 if self.operating_bounds_enabled else 0.0,
             1.0 if self.bounded_mode else 0.0,
             self._float("room_bounds_x_min_m"),
             self._float("room_bounds_x_max_m"),
@@ -2415,6 +2627,23 @@ class SupervisorNode(Node):
             (
                 1.0
                 if self.goal_score_verification_timing_sufficient
+                else 0.0
+            ),
+            (
+                1.0
+                if self.machine.config.extremum_classification_mode
+                == COUNTED_CANDIDATES
+                else 0.0
+            ),
+            float(self.machine.config.known_source_count),
+            self.candidate_cost_window.rotation_period_sec,
+            float(self.candidate_cost_window.required_rotations),
+            self.candidate_cost_window.mad_scale,
+            self.candidate_cost_window.evidence_duration_sec,
+            self.candidate_cost_verification_margin_sec,
+            (
+                1.0
+                if self.candidate_cost_verification_timing_sufficient
                 else 0.0
             ),
             self.escape_progress_config.escape_exit_hold_sec,
