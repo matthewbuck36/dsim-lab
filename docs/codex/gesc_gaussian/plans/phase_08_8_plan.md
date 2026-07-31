@@ -2307,3 +2307,216 @@ or recording failure remains a fixed-experiment failure.
 This is an evidence interpretation clarification, not a parameter, code,
 scenario, timeout, acceptance-predicate, or result change. The run was not
 retried or reanalyzed.
+
+## Executed M4.7 repeat disposition and M4.8 v8.7 correction amendment
+
+### Fixed v8.6 primary-repeat disposition
+
+The sealed v8.6 primary population is closed as a fixed formal gate failure.
+Seed `19411`, the first of ten serial cases, executed once. It was not
+retried, and seeds `19412..19420` were not dispatched.
+
+Seed `19411` completed the scientific behavior:
+
+```text
+one local candidate
+-> exactly one typed fill
+-> revision-one supervisor-owned aligned assisted exit
+-> ordinary raw-plus-Gaussian SEARCH
+-> strictly lower second raw-cost interval
+-> GOAL_REACHED
+-> evaluator sample 0.123633 m from the declared global
+```
+
+Recording, Stage A, fill cardinality, candidate ranking, Stage B, terminal
+state, final readiness false, final commands zero, and run-session process
+cleanup all passed. The formal result failed two mandatory predicates:
+
+1. the schema-v10 command-owner predicate interpreted one `6.363998 ms`
+   cross-topic handoff tail as failed post-exit ownership; and
+2. an external `ros2 topic echo --once` progress inspection joined the active
+   ROS domain and left `/_ros2cli_282407` in discovery during the cleanup
+   audit.
+
+The first ordinary post-exit control diagnostic occurred `7.696498 ms` after
+the recorded `SEARCH` state boundary. Every one of the next `13,069`
+diagnostics through the following state transition had combined command equal
+to GESC and zero supervisor contribution. The one tail diagnostic exactly
+matched the last finite revision-one assist command; it was not a GESC leak,
+invalid command, reversal, or continuing supervisor authority.
+
+The complete immutable result is retained in:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_7_primary_repeats.md
+```
+
+The external monitoring contamination is an operator/workflow defect, not a
+reason to weaken cleanup. The schema-v10 timestamp rule is an evidence
+causality defect: publication order across separate ROS topics is not proof
+of the order in which the controller consumed those messages.
+
+### M4.8 objective
+
+Version v8.7 changes no controller, supervisor, detector, fill, modified-cost,
+launch, world, source, motion, ranking, timeout, final-zero, or cleanup
+behavior. It adds a schema-v11 causal post-exit handoff contract and a sealed
+execution protocol that forbids external ROS graph participants.
+
+This is a fresh formal-evidence version. It does not retry, relabel, mutate,
+or reopen v8.6.
+
+### Schema-v11 causal handoff contract
+
+The existing predicate name remains:
+
+```text
+supervisor_owned_escape_assist
+```
+
+Schema versions through v10 retain their existing first-recorded-sample
+semantics byte-for-behavior. Schema v11 adds the evaluator-only controller
+evidence field:
+
+```text
+supervisor_owned_assist_handoff_timeout_sec: 0.15
+```
+
+This field is never passed to the launch graph or controller. It bounds
+cross-topic delivery settling in the offline formal validator.
+
+For schema v11, the assist-interval ownership, fresh supervisor match,
+suppressed nonzero GESC proposal, contribution arithmetic, saturation,
+revision-one direction, positive translation, measured exit, and alignment
+requirements remain unchanged. Post-exit evidence must additionally prove:
+
+1. the first and every recorded `SEARCH` state sample before the next state
+   have weights `(1,1,0)`, no safe-direction validity, and no escape
+   geometry/authority;
+2. a zero supervisor command is recorded after the `SEARCH` boundary, and
+   every later supervisor command within that `SEARCH` interval is zero;
+3. any diagnostic between the recorded `SEARCH` boundary and causal ordinary
+   ownership is finite, arithmetically consistent, correctly saturated, and
+   equals either:
+   - ordinary GESC with zero contribution,
+   - a zero/failsafe command, or
+   - the final fresh supervisor command proven valid during the immediately
+     preceding assist interval;
+4. a diagnostic with combined command equal to GESC and zero supervisor
+   contribution occurs within `0.15 s` of the `SEARCH` boundary;
+5. every later diagnostic through the next state transition remains ordinary
+   GESC ownership with valid saturation; and
+6. the result records the transition-sample count, handoff delay, first
+   ordinary diagnostic stamp, and steady ordinary sample count.
+
+An unrecognized transient command, GESC-plus-supervisor leak, stale or
+nonfinite command, invalid contribution arithmetic, invalid saturation,
+nonzero post-boundary supervisor publication, handoff later than `0.15 s`,
+or any later reappearance of supervisor contribution fails.
+
+This contract does not excuse persistent authority. It replaces a bag
+publication-order assumption with a bounded causal proof and is stronger
+after the handoff because it validates the complete returned `SEARCH`
+interval, not only one selected diagnostic.
+
+### Sealed-run observation protocol
+
+Once a v8.7 Gazebo dispatch starts:
+
+- no `ros2 topic`, `ros2 node`, `ros2 service`, `ros2 param`, RViz, plotter,
+  or other DDS participant may join that run's ROS domain;
+- progress may be observed only from process state, console files, run
+  directories, bag-file growth, and scenario summaries;
+- the runner's graph audit continues to fail on every new node and every
+  surviving run-session process;
+- no node-name allowlist or cleanup exception is added;
+- an operator-caused graph contaminant remains a fixed-run failure.
+
+### Fresh fixed inputs
+
+Create four schema-v11 scenarios:
+
+```text
+phase08_v8_7_primary_visible_probe.yaml
+  seed 19501
+  visible
+  runs root phase08_8_7_primary_probe
+
+phase08_v8_7_primary_repeats.yaml
+  seeds 19511 through 19520
+  headless
+  runs root phase08_8_7_primary_repeats
+
+phase08_v8_7_secondary_visible_probe.yaml
+  seed 19551
+  visible
+  runs root phase08_8_7_secondary_probe
+
+phase08_v8_7_secondary_repeats.yaml
+  seeds 19561 through 19565
+  headless
+  runs root phase08_8_7_secondary_repeats
+```
+
+Every source declaration, start, intensity, topology, launch override,
+controller profile, Stage A/Stage B budget, evaluator-only `0.50 m` stop,
+forbidden state/event, final-zero rule, cleanup rule, first-failure rule, and
+claim boundary is copied from v8.6. Only schema/evidence semantics, versioned
+identities, roots, descriptions, and fresh seeds change.
+
+### No-Gazebo qualification
+
+Before any v8.7 Gazebo process:
+
+1. preserve every historical and v8-v8.6 scenario byte and result;
+2. prove schema versions through v10 retain the existing handoff predicate;
+3. replay the retained seed-`19411` bag under its original schema-v10
+   resolved input and prove it still fails the first-sample rule;
+4. replay the same immutable records through a schema-v11 evidence fixture
+   and prove exactly one recognized tail sample, a `7.696498 ms` handoff, and
+   all later ordinary diagnostics pass;
+5. prove schema v11 rejects late handoff, unrecognized tail, GESC leak,
+   nonfinite data, contribution error, saturation error, nonzero later
+   supervisor command, invalid returned state, and later authority
+   reappearance;
+6. prove the handoff timeout is evaluator-only and cannot enter the launch
+   graph;
+7. prove cleanup still rejects any external ROS CLI node or run-session
+   survivor;
+8. prove all four v8.7/v8.6 scenario pairs differ only in the declared
+   versioned evidence, identities, roots, descriptions, and seeds;
+9. run focused schema, runner, validator, analyzer, controller, supervisor,
+   observability, and legacy tests;
+10. run the broad ROS-independent suite, changed-file fatal lint, Python
+    compilation, XML/YAML parsing, isolated three-package build, installed
+    node construction, source/install parity, and all four installed dry-runs
+    without creating a run root;
+11. validate Phase 08 context, run `git diff --check`, verify no active
+    runtime process, write a separate no-Gazebo qualification record, update
+    live status, checkpoint, and commit.
+
+No Gazebo process is authorized until that complete qualification,
+checkpoint, and implementation commit pass.
+
+### V8.7 runtime gates
+
+After a separate clean committed dispatch boundary:
+
+1. execute the primary visible probe once, with no ROS-domain monitoring and
+   no retry;
+2. require every v8.6 behavioral predicate plus schema-v11 causal ownership,
+   recording, final zero, and uncontaminated cleanup;
+3. analyze it exactly once and retain all nine plots;
+4. checkpoint and commit the result before primary repeats;
+5. execute ten primary repeats serially/headlessly, stopping at the first
+   failure with no retry;
+6. only `10/10` authorizes the secondary visible probe;
+7. only a passing secondary visible probe authorizes five secondary repeats;
+8. only `5/5` secondary repeats authorizes M6.
+
+The v8.7 claim remains limited to the two fixed local-first, two-source,
+open-field layouts at simulator-relative `400/1600`. Physical stopping
+remains manual operator `Ctrl+C`. Three-light Gazebo execution, wall/obstacle
+behavior, arbitrary intensity/layout claims, physical motion, and Phase 09
+remain outside this correction.

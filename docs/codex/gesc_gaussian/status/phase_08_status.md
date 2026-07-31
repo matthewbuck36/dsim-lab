@@ -14619,3 +14619,90 @@ CHECKPOINT PASS / FAILURE COMMIT PENDING / GAZEBO PROHIBITED.**
 Stage and commit exactly this failure boundary. Then review and commit a
 separately versioned correction plan. Do not retry seed `19411`; do not
 dispatch v8.6 seed `19412` or any later v8.6 gate.
+
+## Phase 08.8 M4.8 v8.7 correction plan — 2026-07-31
+
+The fixed v8.6 primary-repeat failure was committed at:
+
+```text
+e9dbc23 phase 08.8: retain failed v8.6 primary repeats
+```
+
+The active Plan now defines v8.7 as a fresh evidence-causality correction.
+It changes no controller motion, source layout, intensity, detector, fill,
+affine, candidate ranking, timeout, final-zero, or cleanup behavior.
+
+Schema v11 retains the predicate name
+`supervisor_owned_escape_assist` but replaces the cross-topic publication
+order assumption with a bounded causal handoff proof:
+
+```text
+handoff deadline:                       0.15 s
+allowed pre-handoff diagnostic:         finite ordinary, zero/failsafe, or
+                                        the final proven assist command
+forbidden:                              GESC leak, arbitrary command,
+                                        bad arithmetic/saturation,
+                                        nonzero later supervisor command
+required after handoff:                 every diagnostic through the next
+                                        state remains ordinary GESC
+schema <=10 behavior:                   unchanged
+```
+
+The fresh v8.7 scenarios use seeds `19501`, `19511..19520`, `19551`, and
+`19561..19565`. All v8.6 controller and evaluator inputs are otherwise
+unchanged.
+
+Sealed-run monitoring is also corrected operationally: no ROS CLI or other
+DDS participant may join the active run domain. Progress inspection is
+limited to process state and retained files. Cleanup remains strict and gains
+no node allowlist.
+
+## Current milestone
+
+**PHASE 08.8 M4.8 — V8.6 FAILURE COMMITTED / V8.7 CAUSAL HANDOFF AND
+UNCONTAMINATED EXECUTION PLAN WRITTEN / PLAN COMMIT PENDING / NO-GAZEBO
+QUALIFICATION PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Commit the v8.7 Plan amendment. Then implement schema-v11 evidence and fresh
+scenarios, qualify entirely without Gazebo, checkpoint, and commit before any
+new runtime dispatch.
+
+## Phase 08.8 M4.8 v8.7 correction-plan checkpoint — 2026-07-31
+
+The separately versioned causal-handoff and uncontaminated-execution Plan
+amendment received the required Phase 08 checkpoint against immutable v8.6
+failure HEAD `e9dbc23`.
+
+```text
+base HEAD:
+  e9dbc237a73e410015520ca1521a7babe869658a
+status sha256 before this checkpoint note:
+  826daa6f019cc484c23c90db14e30397e879fab8a04bc2f20d18f619ced201b1
+active plan sha256:
+  8c063ed44514bd9a84e0601f5cb73e56aeecabddce7cabda0d6c65fe80077694
+unstaged tracked diff sha256:
+  debeb68915684b00d5ed3aa202e297c7a6e6d128e8ce23fd8b8ca9892ff86582
+checkpoint sha256 before this checkpoint note:
+  be162ea06f839a3721f3f35a57c2b35ea74440b8aa3a8abf812d9986ced24d06
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+```
+
+No Gazebo, scenario, recorder, analyzer, rosbag recorder, or physical process
+ran during this Plan checkpoint.
+
+## Current milestone
+
+**PHASE 08.8 M4.8 — V8.6 FAILURE COMMITTED / V8.7 CAUSAL HANDOFF AND
+UNCONTAMINATED EXECUTION PLAN CHECKPOINT PASS / PLAN COMMIT PENDING /
+NO-GAZEBO QUALIFICATION PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Commit this exact Plan boundary. Then implement schema-v11 evidence and fresh
+scenarios, qualify entirely without Gazebo, checkpoint, and commit before any
+new runtime dispatch.
