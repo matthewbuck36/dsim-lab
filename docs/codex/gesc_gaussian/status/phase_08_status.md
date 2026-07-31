@@ -17631,3 +17631,191 @@ Commit this exact repeat boundary. Reverify a clean worktree, unchanged
 installed scenario hash, absent root, and inactive runtime. Then invoke the
 installed suite once from `/tmp` on domain `226`, with no retry and no
 ROS-domain monitoring.
+
+## Phase 08.8 M4.11 v8.10 primary-repeat result — 2026-07-31
+
+The sole installed primary-repeat suite invocation completed all ten seeds
+in order with a `10/10` formal population pass.
+
+```text
+dispatch commit:
+  ccf75cda3cd154737d02c619ad8ab60e30b827cf
+installed scenario sha256:
+  cdb5e05339745d89afc632388af2e8bae45de75159c514f3d85832732361c796
+started:
+  2026-07-31T17:46:46.863081Z
+completed:
+  2026-07-31T18:48:21.153945Z
+resolved / executed / unsupported:
+  10 / 10 / 0
+formal:
+  10 PASS / 0 FAIL
+recording / completeness / final zero / cleanup:
+  10/10 / 10/10 / 10/10 / 10/10
+bag sqlite quick_check:
+  10/10 ok
+```
+
+A pre-dispatch shell wrapper exited while sourcing ROS because Bash
+`nounset` was already enabled. It invoked no runner, seed, or Gazebo process
+and created neither run root nor dispatch log. The corrected wrapper then
+made the sole installed suite invocation. No seed was retried.
+
+The runner-emitted summary is:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_10_primary_repeats/
+  phase08_v8_10_primary_repeats_summary.yaml
+sha256:
+  4689b2d225ebc707dd41408417a4156123b1f74afa9ee02f4e499c478cd91b91
+dispatch log:
+  /tmp/phase08_8_m4_11_v8_10_primary_repeats_dispatch.log
+sha256:
+  f13e57d74b3b4ee42eaa9d36930f73951fc0cc720191d06ee27a2325f6abda14
+```
+
+The child wrapper captured runner return code `0`. The hosted execution
+channel surfaced code `1` after printing that zero; the retained runner
+summary, ten per-run results, complete recordings, and inactive process
+audit are authoritative.
+
+Every recorder metadata file identifies working directory and repository
+root `/home/mattb/dsim-lab`, clean committed dispatch HEAD `ccf75cd`, and no
+untracked path.
+
+All ten seeds used:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> ESCAPE_ASSIST
+-> SEARCH
+-> VERIFY_EXTREMUM
+-> GOAL_HOLD
+```
+
+Every run completed exactly one local-recovery episode, created exactly one
+typed active fill, passed the schema-v13 assisted entry and exit ownership
+contracts, restored ordinary GESC after exit, strictly ranked candidate two
+below the retained candidate-one bound, and produced a noninterpolated
+post-ranking sample inside the evaluator-only `0.50 m` radius.
+
+Population ranges:
+
+```text
+Stage A:
+  121.634 to 294.024 s
+Stage B:
+  100.402 to 127.704 s
+global-proximity sample:
+  0.106370 to 0.188827 m
+final retained distance:
+  0.106346 to 0.188818 m
+strict ranking margin:
+  0.094916 to 2.475247
+selected/actual exit alignment:
+  0.991816 to 0.999946
+assist-entry / exit handoff maximum:
+  9.999 / 11.238 ms
+```
+
+No run entered `RECENTER`, `FAILSAFE`, or `TIMEOUT`; no fill was rejected,
+merged, superseded, or failed.
+
+After population closure, every exact run path was read directly from that
+summary and analyzed exactly once:
+
+```text
+analyze_run return zero:
+  10/10
+fresh Phase 05 validation:
+  10/10
+analysis failures:
+  0
+critical inputs:
+  10/10
+analysis status:
+  9 complete / 1 partial
+plots:
+  90/90
+```
+
+Seed `19812` is `partial` only because one state-sampling gap exceeded
+`0.150000 s`, invalidating the optional generic `state_durations` metric.
+All core scientific metrics, formal evidence, critical inputs, fresh
+validation, and nine plots are complete. Per the active plan's explicit
+analysis interpretation, this is not a formal or analysis-bundle failure.
+The analyzer was not rerun.
+
+All ten trajectory plots were visually inspected and show start-to-local
+capture, one fill, assisted exit, ordinary transit, and global capture.
+
+The complete result and artifact hashes are:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_11_primary_repeats.md
+```
+
+No GUI, scenario runner, recorder, analyzer, rosbag recorder, or descendant
+remains active. Physical motion did not occur. The evaluator-only simulation
+stop remains absent from the physical path; physical stopping is manual
+operator `Ctrl+C`.
+
+## Current milestone
+
+**PHASE 08.8 M4.11 — V8.10 PRIMARY REPEATS `10/10` FORMAL PASS / TEN
+ONE-TIME ANALYSES COMPLETE / NINETY PLOTS COMPLETE / RESULT CHECKPOINT
+PENDING / SECONDARY VISIBLE NOT YET AUTHORIZED.**
+
+## Next criterion
+
+Checkpoint and commit this exact primary-repeat result. Then write,
+checkpoint, and commit a separate visible secondary-layout boundary naming
+only installed seed `19851`. Do not dispatch the secondary probe before that
+clean committed boundary.
+
+## Phase 08.8 M4.11 v8.10 primary-repeat result checkpoint — 2026-07-31
+
+The `10/10` formal population pass, ten summary-owned one-time analyses,
+ninety plots, optional seed-`19812` analysis limitation, artifact hashes,
+and inactive runtime received the required Phase 08 checkpoint against
+committed repeat-dispatch HEAD `ccf75cd`.
+
+```text
+base HEAD:
+  ccf75cda3cd154737d02c619ad8ab60e30b827cf
+status sha256 before this checkpoint note:
+  af3dd56af3b29bbce1dabe9688c34ddc60f84474a4688b817a695eaae5aea17e
+active plan sha256:
+  9d7a7ea410c43dfc1e404c6bba30453dfd4d2d593fe74eb72c2648913246dcbb
+primary-repeat report sha256:
+  8c0ae77de7813d3c55893c60058cd2b57c0a367437e959b3ccbebde586abfc61
+checkpoint sha256 before this checkpoint note:
+  daa73d69677419a922bb9f6ae1cea17b0624df491563d07d65262a8418d3ca79
+summary sha256:
+  4689b2d225ebc707dd41408417a4156123b1f74afa9ee02f4e499c478cd91b91
+installed scenario sha256:
+  cdb5e05339745d89afc632388af2e8bae45de75159c514f3d85832732361c796
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+active runtime:
+  none
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.11 — V8.10 PRIMARY REPEATS `10/10` FORMAL PASS / TEN
+ONE-TIME ANALYSES COMPLETE / NINETY PLOTS COMPLETE / RESULT CHECKPOINT
+PASS / RESULT COMMIT PENDING / SECONDARY VISIBLE NOT YET AUTHORIZED.**
+
+## Next criterion
+
+Commit this exact primary-repeat result. Then write, checkpoint, and commit
+a separate visible secondary-layout boundary naming only installed seed
+`19851`. Do not dispatch the secondary probe from an uncommitted boundary.

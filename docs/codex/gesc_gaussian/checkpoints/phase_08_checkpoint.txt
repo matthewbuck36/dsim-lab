@@ -1,37 +1,38 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-31T17:45:10+00:00
-Base HEAD: de2e10a6ce93f9d37b7cd9a06cfe562df5e87b54
+Generated: 2026-07-31T19:12:24+00:00
+Base HEAD: ccf75cda3cd154737d02c619ad8ab60e30b827cf
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 8297eafa45d5e2a8befae16e6d7bfdbc6f59a77156d21c00f79f84b9a62633b2
+Status sha256: af3dd56af3b29bbce1dabe9688c34ddc60f84474a4688b817a695eaae5aea17e
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_8_plan.md
 Active subphase plan sha256: 9d7a7ea410c43dfc1e404c6bba30453dfd4d2d593fe74eb72c2648913246dcbb
-Unstaged diff sha256: c9d7fdd1dcd5d3df5de2857a908fddd087b8da567578bdae275abc04bca58139
+Unstaged diff sha256: 7a638684957a7f04c38d5da28b6029cac57499e8bccbd4586f1f3f01bf2ace1d
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 155]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 156]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
+?? docs/codex/gesc_gaussian/validation/phase_08_8_m4_11_primary_repeats.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 26 ++----
- docs/codex/gesc_gaussian/status/phase_08_status.md | 92 ++++++++++++++++++++++
- 2 files changed, 97 insertions(+), 21 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  26 +---
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 146 +++++++++++++++++++++
+ 2 files changed, 152 insertions(+), 20 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**PHASE 08.8 M4.11 — V8.10 PRIMARY VISIBLE RESULT COMMITTED AT `de2e10a` /
-TEN-RUN PRIMARY-REPEAT BOUNDARY WRITTEN / REPEAT CHECKPOINT PENDING /
-PRIMARY REPEATS NOT YET AUTHORIZED.**
+**PHASE 08.8 M4.11 — V8.10 PRIMARY REPEATS `10/10` FORMAL PASS / TEN
+ONE-TIME ANALYSES COMPLETE / NINETY PLOTS COMPLETE / RESULT CHECKPOINT
+PENDING / SECONDARY VISIBLE NOT YET AUTHORIZED.**
 
 
 
