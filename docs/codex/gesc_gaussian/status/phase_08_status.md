@@ -19049,3 +19049,145 @@ PROHIBITED.**
 Commit this exact two-file repeat boundary. Then invoke the installed suite
 once on domain `221`, preserve every dispatched result, and stop without a
 retry if any fixed case fails.
+
+## Phase 08.8 M8.3 v8.11 secondary-repeat result — 2026-07-31
+
+The fixed repeat dispatch boundary is committed:
+
+```text
+13ccb8b phase 08.8: authorize v8.11 secondary repeats
+```
+
+The one authorized installed suite ran all five fixed seeds serially on
+`ROS_DOMAIN_ID=221` with `ROS_LOCALHOST_ONLY=1`, stopped at no intermediate
+failure, and exited `0`. Each seed ran once; retries, replacements, tuning,
+and outcome-based omissions were all zero.
+
+```text
+started / completed:
+  2026-07-31T21:12:44.723799Z / 2026-07-31T21:37:40.960812Z
+resolved / unsupported:
+  5 / 0
+attempts / retries per seed:
+  1 / 0
+runner return code:
+  0
+formal predicates:
+  70/70 PASS
+```
+
+Exact summary:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_11_secondary_repeats/scenario_summaries/
+  20260731T211244723799Z_phase08_v8_11_secondary_repeats.yaml
+SHA-256:
+  a05e6d4de1863324af1cd09178b7a0b7165e9f2776e76bb626481018b0b16f5c
+```
+
+Per-seed behavior:
+
+```text
+seed   Stage A s   branch           strict margin   Stage B s   final global m
+19911  115.722     direct_repulse   3.607655        237.306     0.165580
+19912  201.122     assisted         0.991836        327.534     0.128708
+19913  116.035     direct_repulse   3.595674        235.613     0.130621
+19914  115.834     direct_repulse   3.597580        236.704     0.124299
+19915  115.718     direct_repulse   3.605789        232.610     0.135716
+```
+
+All five created, typed, and retained exactly one active fill. Four runs
+confirmed the shifted aggregate-field basin about `0.76..0.77 m` from the
+individual local lamp and completed direct repulse. Seed `19912` confirmed
+near the local lamp, exercised the supervisor-owned assisted branch, restored
+ordinary GESC, and still strictly ranked candidate two. All five topology
+bindings used hash
+`eb749f0cb86f7b35231bdc308365f3008c6168df07b0188c03a97f339f364d71`.
+
+Population evidence:
+
+```text
+formal classifications:             5/5 PASS
+recording / completeness:            5/5 / 5/5 PASS
+fresh Phase 05 validation:           5/5 PASS
+final zero / final readiness false:  5/5 / 5/5 PASS
+cleanup:                             5/5 PASS
+SQLite quick_check:                  5/5 ok
+analysis status / failures:          5/5 complete / []
+plots:                               45/45
+```
+
+The first analysis shell wrapper exited `1` before invoking any analyzer
+because ROS setup referenced unset `AMENT_TRACE_SETUP_FILES` under shell
+`nounset`. No analysis directory existed at that point. The corrected bounded
+wrapper omitted `nounset` and analyzed each summary-owned run exactly once.
+The five analyzer logs are retained under `/tmp` using each run ID followed by
+`_analysis.log`. All trajectory plots and representative candidate-ranking
+plots were visually inspected. They show exact one-fill recovery, outward
+escape, ordinary transit, global capture, and strict candidate ordering; seed
+`19912` visibly includes its longer local orbit and assisted exit.
+
+Durable result and complete run/analysis/plot/hash manifest:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m8_3_v8_11_secondary_repeats.md
+```
+
+No Gazebo, scenario runner, recorder, analyzer, rosbag recorder, or physical
+process remains active. Physical stopping remains manual operator `Ctrl+C`.
+No matrix case has been dispatched.
+
+## Current milestone
+
+**PHASE 08.8 M8.3 — V8.11 SECONDARY REPEATS `19911..19915` 5/5 FORMAL
+PASS / DIRECT AND ASSISTED RECOVERY QUALIFIED / ONE-TIME ANALYSES COMPLETE /
+45/45 PLOTS / RESULT CHECKPOINT PENDING / MATRIX PROHIBITED.**
+
+## Next criterion
+
+Run the Phase 08 result checkpoint, inspect and commit the exact repeat report,
+status, and checkpoint boundary. Only after that commit may a separately
+checkpointed and committed dispatch boundary authorize the fixed matrix seeds
+`19931..19934`.
+
+## Phase 08.8 M8.3 v8.11 secondary-repeat result checkpoint — 2026-07-31
+
+The fixed five-seed pass, one-time analyses, 45 plots, complete hash manifest,
+live status, absent matrix root, and inactive runtime received the required
+Phase 08 material checkpoint against dispatch HEAD `13ccb8b`.
+
+```text
+base HEAD:
+  13ccb8b4c890c93d4363f1f2e7609a3b5f473168
+status sha256 before this checkpoint note:
+  c97e1c027f901dc71c75b64bf99ed962abd19d3453b9d59f6409a96d0de48471
+repeat-result report sha256:
+  50674a53ee864833b65a4f651ebf976d6ebac30eda54ee54790c6493b7ecbea1
+checkpoint sha256 before this checkpoint note:
+  142db403186d4e276a7a4e980a4f8156c51e53d86262948894705a48dedc1748
+Phase 08 implement context / git diff check:
+  PASS / PASS
+installed/source repeat scenario parity:
+  PASS
+active simulation/analysis/physical runtime:
+  none
+matrix root:
+  absent
+formal population / plots:
+  5/5 / 45/45
+```
+
+## Current milestone
+
+**PHASE 08.8 M8.3 — V8.11 SECONDARY REPEATS `19911..19915` 5/5 FORMAL
+PASS / DIRECT AND ASSISTED RECOVERY QUALIFIED / ONE-TIME ANALYSES COMPLETE /
+45/45 PLOTS / RESULT CHECKPOINT PASS / RESULT COMMIT PENDING / MATRIX
+PROHIBITED.**
+
+## Next criterion
+
+Commit this exact three-file repeat-result boundary. Then write, checkpoint,
+and commit a separate one-time/no-retry dispatch boundary for installed matrix
+seeds `19931..19934`. Do not start the matrix from this uncommitted result.
