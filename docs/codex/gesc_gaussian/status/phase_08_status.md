@@ -11992,3 +11992,190 @@ PASS / DISPATCH-RECORD COMMIT PENDING / GAZEBO PROHIBITED.**
 Commit this exact two-document dispatch boundary. Then verify a clean tree,
 inactive Gazebo process set, absent primary evidence root, and isolated-install
 scenario parity before running the one authorized visible seed-`19101` probe.
+
+## Phase 08.8 M4.1 dispatch-record commit boundary — 2026-07-30
+
+The committed-input dispatch checkpoint and its live-status record were
+committed at:
+
+```text
+77bb447e22f335dc0b748f1c4b465f8d57e49913
+phase 08.8: authorize v8.3 primary probe
+```
+
+Preflight confirmed a clean tree, exact committed scenario hash, exact
+source/install scenario parity, available X display, absent evidence root, and
+inactive Gazebo process set.
+
+## Phase 08.8 M4.1 fixed v8.3 primary visible probe — 2026-07-30
+
+**FORMAL PASS / INFRASTRUCTURE COMPLETE / STAGE A PASS / EXACT ONE FILL /
+CANDIDATE-INFORMED AMPLITUDE FLOOR PASS / STRICT SECOND-CANDIDATE RAW RANKING
+PASS / STAGE B PASS / ANALYSIS COMPLETE / CLEANUP PASS / RETAINED.**
+
+Exactly one installed execution of
+`phase08_v8_3_primary_visible_probe.yaml`, seed `19101`, ran with Gazebo GUI on
+ROS domain `228`. It was not retried.
+
+Retained summary:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_3_primary_probe/
+  scenario_summaries/
+  20260731T065341485714Z_phase08_v8_3_primary_visible_probe.yaml
+SHA-256:
+  f9bc1e98ea5169e9e14c00564c189dc9f6ceaa61b1f96a578f646b73a037a511
+```
+
+Retained run:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_3_primary_probe/
+  2026-07-31/
+  20260731T065342440883Z_simulation_phase08_v8_3_primary_visible_probe-v8_3_primary_probe_r1p5_a45_h25_19101-robust__f966a38d
+```
+
+Infrastructure and validation:
+
+```text
+record return code / timed out: 0 / false
+recording completeness:         PASS
+completeness failures/warnings: none / none
+final readiness false:          PASS
+final-zero:                     PASS
+cleanup / leftovers:            PASS / none
+analysis status/failures:       complete / none
+```
+
+The complete required path passed:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> ESCAPE_ASSIST
+-> SEARCH
+-> VERIFY_EXTREMUM
+-> GOAL_HOLD
+```
+
+Stage A completed at simulation time `286.917 s`, within `360.0 s`, with
+exactly one created, typed, active fill and no merge or supersession.
+
+The candidate-informed correction bound the same raw interval across the
+detector and fill owner:
+
+```text
+candidate-one estimate / MAD:   -2.066566929 / 0.109025122
+candidate-one uncertainty:       0.327075365
+candidate-one lower bound:      -2.393642294
+amplitude scale:                 1.25
+requested/applied floor:         2.992052867 / 2.992052867
+amplitude capped:                false
+accepted fill amplitude:         2.992052867
+sigma major/minor:               0.506211 / 0.506211 m
+exit radius:                     1.366771 m
+```
+
+The prior v8.2 failure used a `0.10` fill. This run's accepted amplitude equals
+the bounded candidate-informed floor, proving the intended integration was
+live. The initial repulsion crossed its unchanged stall gate, the allowed
+finite assist ran, and escape completed successfully in `29.000459 s`.
+
+Strict terminal ranking passed:
+
+```text
+candidate-two estimate/lower:   -3.837209302 / -3.837209302
+filled candidate lower:         -2.393642294
+strict separation margin:        1.443567009
+candidate ordinal / count:       2 / 2
+```
+
+Stage B stopped only after controller ranking and the first valid later
+proximity sample:
+
+```text
+GOAL_REACHED simulation time: 415.8 s
+proximity sample time:        415.913 s
+position:                     (3.606833, 3.550034) m
+global distance:              0.117969 m
+interpolation:                false
+Stage B elapsed:              128.996 s of 180.0 s
+```
+
+The physical contract remains manual `Ctrl+C`; the evaluator coordinate and
+automatic proximity stop remain simulation-only.
+
+Analyzer evidence:
+
+```text
+synchronized samples: 53,516
+path length:          25.320732 m
+goal time:            416.390855 s
+escape attempts:      1
+escape successes:     1
+failsafe/timeout:     false / false
+terminal state:       GOAL_HOLD
+```
+
+Evidence hashes:
+
+```text
+7528317aebcaa7c9ddd2b277888b55b26e26cba4c78374764edae34f3685fce2  bag
+773b2345bd882c655b22d9c5f1d4a283f72716e9b9dacd119e5a5f5d9370c7ac  completeness
+f7e0bd349863b35786d3c19404615e8b63fab1bcab47799e94dd993e80e8bd8e  scenario result
+28379327d17c4f60ddab4374afae3dd00c14ea5d495885d7f137b7ef2dde37e2  analysis completeness
+70e536001c2d9f9914e62995d66867b9f0ec05eeadb70ffc0ff45101466c6836  summary metrics
+```
+
+All nine standard plots and their machine-readable tables are retained under
+`analysis/phase07`. The trajectory visibly shows local capture, one fill,
+escape, open-field transit, and global capture. The candidate plot visibly
+shows candidate two below candidate one's retained lower bound.
+
+Complete report:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_1_primary_probe.md
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.1 — FIXED V8.3 PRIMARY VISIBLE PROBE FORMAL PASS /
+RESULT CHECKPOINT PENDING / PRIMARY REPEATS PROHIBITED UNTIL RESULT COMMIT.**
+
+## Next criterion
+
+Checkpoint and commit this immutable visible-probe result. Then create and
+commit the separate primary-repeat dispatch boundary before running the sealed
+ten seeds `19111..19120` serially and headlessly under first-failure stop.
+
+## Phase 08.8 M4.1 visible-result material checkpoint — 2026-07-31
+
+The retained formal pass, complete report, live status, evidence hashes, and
+plot paths received the required Phase 08 checkpoint against committed
+dispatch HEAD `77bb447`.
+
+```text
+status sha256:
+  50ed095ec4d1f0588a50ec6dda344ab4b045b7f5737c9689e29c9bec7e933af5
+unstaged diff sha256:
+  e58e4409213d725b8c12b4d3f737e422f5bee3aeac9df8ed4e3a0094f86f0b8c
+diff check:
+  PASS
+```
+
+No Gazebo or matching runtime process remained during the checkpoint.
+
+## Current milestone
+
+**PHASE 08.8 M4.1 — FIXED V8.3 PRIMARY VISIBLE PROBE FORMAL PASS /
+RESULT CHECKPOINT PASS / RESULT COMMIT PENDING / PRIMARY REPEATS PROHIBITED.**
+
+## Next criterion
+
+Commit this exact result boundary and verify it. Then record, checkpoint, and
+commit authorization for the fixed primary-repeat suite before dispatching any
+of seeds `19111..19120`.
