@@ -261,25 +261,38 @@ outputs on a recorded reference bag.
 
 ## Phase 08 - simulation validation, diagnosis, and freeze
 
-Terminal status as of 2026-07-31: Phase 08 and the separately approved
-Phase 08.8 iteration are closed. The broad simulation-ready objective failed;
-no 70-unique-case acceptance denominator or simulation-ready tag exists. The
-final Phase 08.7 retrospective known-success reproduction produced `13/17`
-formal and `14/17` behavioral passes at simulator-relative `400/1600`, but it
-is not an unbiased robustness claim.
+Recorded closeout status before the later approved goal continuation: Phase 08
+and the first Phase 08.8 iteration were closed. The broad simulation-ready
+objective failed; no 70-unique-case acceptance denominator or simulation-ready
+tag exists. The final Phase 08.7 retrospective known-success reproduction
+produced `13/17` formal and `14/17` behavioral passes at simulator-relative
+`400/1600`, but it is not an unbiased robustness claim.
 
-Phase 08.8 then implemented an opt-in known-source-count policy. Its final
-primary fixed two-source layout passed one visible probe plus ten consecutive
-fresh-process repeats (`11/11` formal). Its one secondary run completed the
-scientific behavior but failed the frozen evaluator geometry contract; the
-secondary repeats, broad matrix, and three-light Gazebo work did not run.
-Read the
+Phase 08.8 implemented an opt-in known-source-count policy. Its first closed
+population's primary fixed two-source layout passed one visible probe plus ten
+consecutive fresh-process repeats (`11/11` formal). Its one secondary run
+completed the scientific behavior but failed the frozen evaluator geometry
+contract; that population's secondary repeats, broad matrix, and three-light
+Gazebo work did not run. Read the
 [Phase 08.8 final report](validation/phase_08_8_final_report.md),
 [Phase 08.8 handoff](handoffs/phase_08_8_handoff.md),
 [whole-Phase-08 final report](validation/phase_08_final_report.md), and
 [earlier final handoff](handoffs/phase_08_final_handoff.md) before Phase 09
-planning. The detailed history below remains useful but its earlier
-active-subphase language is superseded by those closeout documents.
+planning for that closed boundary.
+
+The user subsequently authorized a bounded, additive Phase 08.8 continuation.
+V8.11 passed its corrected secondary visible probe plus five fresh-process
+repeats (`1/1 + 5/5` formal), then retained and closed its first fixed broad-
+matrix case when the supervisor could not find an approach-history pose outside
+the runtime fill exit radius. The active continuation is the
+[v8.12 interior-anchor Plan](plans/phase_08_8_v8_12_plan.md). It permits one
+legacy-default-off odometry-history correction, but no v8.12 Gazebo process
+until the complete no-Gazebo implementation boundary is qualified,
+checkpointed, committed, and separately authorized for dispatch. The
+[live Phase 08 status](status/phase_08_status.md) is authoritative for progress.
+The detailed history below remains useful, but its earlier active-subphase
+language is superseded by the closeout documents and then by this explicit
+goal continuation.
 
 Historical disposition: v1 and v2 are closed failed experiment versions. V1
 retains its incomplete large-matrix evidence. V2 retains ten activation

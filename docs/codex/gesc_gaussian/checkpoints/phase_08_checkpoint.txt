@@ -1,39 +1,41 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-31T22:10:13+00:00
-Base HEAD: 39b73f947e490febe8b496a37dee767193d64835
+Generated: 2026-07-31T22:18:14+00:00
+Base HEAD: cff0178ffe94ec6e9d8ac128482b436aaf9fa463
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: e28f86cb7e5e755808b8c393ef7402fbb081de9f1b0f61f2b298009127e78195
+Status sha256: 33eab2ec724f658f5ed307357cf608082809c5078a46e3f12e8ed0fe755de507
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
-Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_8_v8_11_plan.md
-Active subphase plan sha256: 6d5d8446cf3dc56de77a34a62eb7e28e30e9e6d9e422ef9556ff990acaebd644
-Unstaged diff sha256: 7e9ecf6641031ad299ecf9830b200e54a8aae3399bfd7031dabce81945123b17
+Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_8_v8_12_plan.md
+Active subphase plan sha256: 95fa59b4c9d098b1ecfb41dd3dfe619c6a3030c615a502f28095ac6eae7c89d8
+Unstaged diff sha256: 240057aef6895f8cff5b05ff5832f21422d8b8bc8950512c79a89b85b05302e4
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 168]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 169]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
+ M docs/codex/gesc_gaussian/implementation_sequence.md
+ M docs/codex/gesc_gaussian/plans/phase_08_8_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
-?? docs/codex/gesc_gaussian/validation/phase_08_8_m8_4_v8_11_broad_matrix.md
+?? docs/codex/gesc_gaussian/plans/phase_08_8_v8_12_plan.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  25 ++---
- docs/codex/gesc_gaussian/status/phase_08_status.md | 111 +++++++++++++++++++++
- 2 files changed, 117 insertions(+), 19 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 34 +++-----
+ .../codex/gesc_gaussian/implementation_sequence.md | 43 ++++++----
+ docs/codex/gesc_gaussian/plans/phase_08_8_plan.md  | 18 ++++
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 97 ++++++++++++++++++++++
+ 4 files changed, 153 insertions(+), 39 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**PHASE 08.8 M8.4 — V8.11 MATRIX FORMAL FAIL ON FIRST FIXED CASE / 19931
-RETAINED WITHOUT RETRY / 19932..19934 NOT DISPATCHED / ROOT CAUSE IS
-INSIDE-EXIT-RADIUS APPROACH-CONTINUITY CONTRACT GAP / RESULT CHECKPOINT
-PENDING / V8.11 BROAD CLAIM CLOSED.**
+**PHASE 08.8 M8.6 — V8.12 PLAN VALIDATED / PLAN CHECKPOINT AND COMMIT
+PENDING / CODE AND GAZEBO PROHIBITED.**
 
 
 

@@ -19459,3 +19459,131 @@ FAILURE COMMIT PENDING / V8.11 BROAD CLAIM CLOSED.**
 Commit this exact three-file failure boundary. Then write, validate,
 checkpoint, and commit a fresh v8.12 Plan before changing code or dispatching
 any fresh simulation.
+
+## Phase 08.8 active-goal continuation / v8.12 Plan — 2026-07-31
+
+The complete v8.11 matrix failure boundary is committed:
+
+```text
+cff0178 phase 08.8: retain failed v8.11 broad matrix
+```
+
+The worktree was clean immediately afterward. The fresh authoritative subplan
+is:
+
+```text
+docs/codex/gesc_gaussian/plans/phase_08_8_v8_12_plan.md
+```
+
+It freezes one legacy-default-off, odometry-only correction:
+
+```text
+open_field_escape_interior_anchor_fallback_enabled:    false
+open_field_escape_interior_anchor_min_displacement_m:  0.50
+```
+
+The original newest-outside-radius approach anchor retains priority and exact
+default behavior. Only when enabled and no outside pose exists may the helper
+select the farthest historical pose, require at least `0.50 m` displacement,
+and label it `interior_farthest`. Empty, tiny, unordered, nonfinite, and
+degenerate history remain failsafe. No source, global, map, room, Vicon, or
+evaluator coordinate enters the controller.
+
+The existing schema-v14 topology record remains unchanged. New optional
+scenario validation cross-checks the enabled minimum against the recorded
+`start_to_local_m`; the runtime history/fill-radius test remains
+authoritative. Historical scenarios omit the option and retain their case
+keys, launch commands, and behavior.
+
+After full no-Gazebo qualification and a committed implementation boundary,
+v8.12 plans exactly:
+
+```text
+visible corrective probe:
+  seed 20001, GUI, failed-v8.11 geometry with fresh version/seed
+fresh matrix:
+  seeds 20031..20034, headless serial, ratios 1:3 and 1:5
+```
+
+No code, scenario, launch graph, run, bag, or historical result changed while
+writing this Plan. No Gazebo, ROS graph, analyzer, or physical process was
+started. Physical stopping remains manual operator `Ctrl+C`.
+
+## Current milestone
+
+**PHASE 08.8 M8.6 — V8.12 INTERIOR APPROACH-ANCHOR CORRECTION PLANNED /
+PLAN CHECKPOINT AND COMMIT PENDING / CODE AND GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Run Plan-only context and diff validation, inspect the Plan/status boundary,
+checkpoint Phase 08, and commit. Only then implement M8.6-M8.7. No v8.12
+Gazebo process is authorized before the complete no-Gazebo implementation
+qualification is checkpointed and committed.
+
+## Phase 08.8 v8.12 Plan validation — 2026-07-31
+
+The fresh subplan, parent amendment, live-status record, and corrected durable
+navigation were inspected against clean base HEAD
+`cff0178ffe94ec6e9d8ac128482b436aaf9fa463`.
+
+```text
+Phase 08 Plan context:                PASS
+unstaged/staged git diff check:       PASS / PASS
+active simulation/analysis/physical: none
+code/scenario/launch/runtime changes: none
+v8.12 Plan sha256:
+  95fa59b4c9d098b1ecfb41dd3dfe619c6a3030c615a502f28095ac6eae7c89d8
+parent Phase 08.8 Plan sha256:
+  1f7b93e86a5280423e175faa0fbbf82a8063c75f7a5e1b0c3db5687849570827
+implementation navigation sha256:
+  8ff06e375c73f2d0dcf0f269e5f869a4c79084a7fb62252ec98f982d2d2d5c9f
+status sha256 before this validation note:
+  b9f0aeef2f07d770b67702e648fc51421be709ff8ce0d11a4af1e06296c61684
+```
+
+The navigation correction distinguishes the historical Phase 08.8 closeout
+from the subsequently approved additive continuation and points fresh context
+recovery to v8.12. It changes no earlier result or readiness claim.
+
+## Current milestone
+
+**PHASE 08.8 M8.6 — V8.12 PLAN VALIDATED / PLAN CHECKPOINT AND COMMIT
+PENDING / CODE AND GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Checkpoint Phase 08 and commit the exact Plan-only boundary. Only that commit
+authorizes M8.6-M8.7 implementation; v8.12 Gazebo remains prohibited until the
+separate complete no-Gazebo implementation boundary passes and is committed.
+
+## Phase 08.8 v8.12 Plan checkpoint — 2026-07-31
+
+The Plan-only continuation received the required Phase 08 material-boundary
+checkpoint against base HEAD `cff0178ffe94ec6e9d8ac128482b436aaf9fa463`.
+
+```text
+status sha256 before this checkpoint note:
+  33eab2ec724f658f5ed307357cf608082809c5078a46e3f12e8ed0fe755de507
+v8.12 Plan sha256:
+  95fa59b4c9d098b1ecfb41dd3dfe619c6a3030c615a502f28095ac6eae7c89d8
+parent Phase 08.8 Plan sha256:
+  1f7b93e86a5280423e175faa0fbbf82a8063c75f7a5e1b0c3db5687849570827
+implementation navigation sha256:
+  8ff06e375c73f2d0dcf0f269e5f869a4c79084a7fb62252ec98f982d2d2d5c9f
+checkpoint sha256 before this checkpoint note:
+  213c347bd5ff858c78b30a8e82ce2087626614edbdff9c7815796005b35304ae
+Phase 08 Plan context / git diff check: PASS / PASS
+active simulation/analysis/physical runtime: none
+```
+
+## Current milestone
+
+**PHASE 08.8 M8.6 — V8.12 PLAN CHECKPOINT PASS / PLAN COMMIT PENDING /
+CODE AND GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Commit this exact five-file Plan boundary. Then implement and completely
+qualify M8.6-M8.7 without Gazebo. Do not create a dispatch boundary or start
+v8.12 simulation before that implementation is checkpointed and committed.

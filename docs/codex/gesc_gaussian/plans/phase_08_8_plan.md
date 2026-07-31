@@ -3226,3 +3226,21 @@ correction, retained evidence replay, secondary visible/repeat gate, and
 sealed varied-layout/intensity matrix. It changes no v8.10 result and
 authorizes no Gazebo process until its own no-Gazebo qualification,
 checkpoint, and implementation commit pass.
+
+## Active goal-continuation amendment — v8.12
+
+V8.11 remains immutable: its secondary visible/repeat population passed, but
+its first broad-matrix case failed because every recorded approach pose was
+inside the runtime fill exit radius and the supervisor had no bounded
+interior-anchor fallback. The fresh continuation is defined by:
+
+```text
+docs/codex/gesc_gaussian/plans/phase_08_8_v8_12_plan.md
+```
+
+That subplan is authoritative for a legacy-default-off, odometry-only
+interior approach-anchor fallback, exact failed-history replay, a fresh
+visible corrective probe, and a fresh four-case varied-layout/intensity
+matrix. It authorizes no code change before its Plan checkpoint/commit and no
+Gazebo process before its own complete no-Gazebo qualification,
+checkpoint, implementation commit, and separate dispatch boundary.
