@@ -16117,3 +16117,138 @@ REPEATS PROHIBITED.**
 Commit this exact visible-result boundary. Then write, checkpoint, and
 commit the exact ten-seed v8.8 primary-repeat population before dispatching
 any repeat.
+
+## Phase 08.8 M4.9 v8.8 primary-repeat population boundary — 2026-07-31
+
+The passing visible-primary result is committed:
+
+```text
+61adc3c phase 08.8: pass v8.8 visible primary probe
+```
+
+The worktree is clean, Phase 08 implementation context passes, and no
+Gazebo, scenario runner, recorder, analyzer, rosbag recorder, or physical
+process is active. The primary-repeat run root is absent.
+
+The source and installed population inputs are byte-identical:
+
+```text
+003230a00ddc0ab07adad5957012c3c28539119fbbb885a3edcd5f594b4298ca
+  phase08_v8_8_primary_repeats.yaml
+```
+
+The sealed population is exactly:
+
+```text
+scenario:
+  /tmp/phase08_8_v8_8_release_final.L0zEGg/install/ros_esc/share/
+  ros_esc/scenario_runner/scenarios/
+  phase08_v8_8_primary_repeats.yaml
+suite:
+  phase08_v8_8_primary_repeats
+case:
+  v8_8_primary_repeat_r1p5_a45_h25
+profile:
+  robust_gaussian_v1
+seeds:
+  19611
+  19612
+  19613
+  19614
+  19615
+  19616
+  19617
+  19618
+  19619
+  19620
+Gazebo GUI:
+  false
+serial:
+  true
+ROS_DOMAIN_ID:
+  223
+operator:
+  Codex
+run root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_8_primary_repeats
+per-run preflight timeout:
+  150.0 s
+per-run scenario timeout:
+  720.0 s
+per-run wall timeout:
+  900.0 s
+per-run shutdown grace:
+  45.0 s
+stop on first behavioral failure:
+  true
+stop on first cleanup failure:
+  true
+retry:
+  prohibited
+```
+
+Every run must independently pass the same fourteen predicates as the
+visible probe. The runner must stop before the next seed on any behavioral,
+evidence, recording, final-zero, or cleanup failure. A stopped population
+remains stopped and failed; no seed may be retried or relabeled.
+
+No external ROS/DDS participant may join domain `223` while the sealed
+suite is active. Observation is limited to OS process state and retained
+files. After the population closes, the standard analyzer may run exactly
+once for each dispatched run. Analysis must not run concurrently with
+dispatch.
+
+Only a complete `10/10` formal pass authorizes the secondary visible probe.
+No secondary, broad-matrix, three-light, or physical run is authorized by
+this boundary.
+
+## Current milestone
+
+**PHASE 08.8 M4.9 — V8.8 PRIMARY VISIBLE RESULT COMMITTED / EXACT
+TEN-SEED PRIMARY POPULATION DECLARED / REPEAT DISPATCH CHECKPOINT PENDING /
+GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Run the Phase 08 dispatch checkpoint, commit this exact population, and
+only then execute the installed serial suite once on domain `223`, stopping
+on the runner's first failure with no retry.
+
+## Phase 08.8 M4.9 v8.8 primary-repeat dispatch checkpoint — 2026-07-31
+
+The exact ten-seed primary-repeat population received the required Phase 08
+checkpoint against visible-result HEAD `61adc3c`.
+
+```text
+base HEAD:
+  61adc3c4b11d5eaecbc89033f058b1d529035134
+status sha256 before this checkpoint note:
+  b9a2addbdc5bd8004a069071b5380736c6ed9430410510849e2b79a0be7e7a2c
+active plan sha256:
+  c761c3aec53531931abf3a1f0edfd2b9366bbcbef53cfa1266cdb8b2f1aa211d
+unstaged diff sha256:
+  5d8b141e72b37f95414199a891089f5aea797449116ae44b34f41dc44d4c1a0f
+checkpoint sha256 before this checkpoint note:
+  915e7830826894786afe936f17efe8dd8b18e56ee228333a7f2d7d1ac4585710
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+active Gazebo/scenario/recorder/analyzer:
+  none
+primary-repeat run root:
+  absent
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.9 — EXACT TEN-SEED V8.8 PRIMARY POPULATION /
+REPEAT DISPATCH CHECKPOINT PASS / DISPATCH COMMIT PENDING / GAZEBO
+PROHIBITED.**
+
+## Next criterion
+
+Commit this exact population boundary. Then execute the installed serial
+suite once on domain `223`, stopping on the runner's first failure with no
+retry.
