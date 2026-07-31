@@ -11427,3 +11427,43 @@ Regenerate the checkpoint so it includes this status update, rerun context and
 whitespace checks, inspect the complete commit scope, and create the authorized
 bounded commit. Only the committed boundary authorizes the one fixed v8.2
 visible probe.
+
+## Phase 08.8 M3.2 committed dispatch boundary — 2026-07-30
+
+The qualified, checkpointed v8.2 correction was committed at:
+
+```text
+e88f2aa phase 08.8: qualify pretrigger raw-cost ranking
+```
+
+Post-commit verification:
+
+```text
+branch:
+  feature/gesc-gaussian-robustness-v1
+tracked remote:
+  ahead 108
+worktree:
+  clean
+validate_phase_context.sh 08 implement:
+  PASS
+matching Gazebo/scenario/recorder/analyzer processes:
+  none
+```
+
+This boundary authorizes exactly one installed visible execution of
+`phase08_v8_2_primary_visible_probe.yaml`, seed `19001`. It does not authorize
+a retry, the ten primary repeats, either secondary input, a broader matrix, or
+physical hardware unless the preceding fixed gate passes.
+
+## Current milestone
+
+**PHASE 08.8 M3.2 — AUTHORIZED FOR ONE FIXED V8.2 PRIMARY VISIBLE
+DISPATCH.**
+
+## Next criterion
+
+Commit this post-commit dispatch record, verify a clean worktree and no stale
+runtime, and execute the installed v8.2 primary visible probe exactly once.
+Retain its recording, authoritative validation, analysis, plots, and cleanup
+evidence. Stop all later dispatch if any fixed gate fails.
