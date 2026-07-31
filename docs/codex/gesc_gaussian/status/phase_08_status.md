@@ -19191,3 +19191,121 @@ PROHIBITED.**
 Commit this exact three-file repeat-result boundary. Then write, checkpoint,
 and commit a separate one-time/no-retry dispatch boundary for installed matrix
 seeds `19931..19934`. Do not start the matrix from this uncommitted result.
+
+## Phase 08.8 M8.4 v8.11 broad-matrix dispatch boundary — 2026-07-31
+
+The qualified repeat population is committed:
+
+```text
+4209c1a phase 08.8: qualify v8.11 secondary repeats
+```
+
+The worktree was clean immediately afterward. This boundary authorizes one
+installed serial invocation containing exactly four fixed headless cases:
+
+```text
+installed scenario:
+  /tmp/phase08_8_v8_11_release_qual.AdUc5v/install/ros_esc/share/
+  ros_esc/scenario_runner/scenarios/phase08_v8_11_broad_matrix.yaml
+installed/source scenario sha256:
+  b0ac9ff6582deecb56970d38f0a3f7d08f09aa8518343dd0477ae953d2a04b02
+seeds:
+  19931, 19932, 19933, 19934
+ROS_DOMAIN_ID / ROS_LOCALHOST_ONLY:
+  220 / 1
+presentation / execution:
+  headless Gazebo / serial
+attempts / retries per case:
+  1 / 0
+run root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_11_broad_matrix
+```
+
+Frozen cases:
+
+| Seed | Local position m | Local/global input | Topology hash |
+|---:|---|---|---|
+| `19931` | `(0.8838834765, 0.8838834765)` | `533.3333333333 / 1600` (`1:3`) | `da4e64008b2950c93ccbf08e31b6ead65c4fe6cc5791991965b9ceb156006bd6` |
+| `19932` | `(1.0606601718, 1.0606601718)` | `320 / 1600` (`1:5`) | `14f52589f05b2dc62f8b12122f823fb97b8e897b304462e37087c1100944560c` |
+| `19933` | `(0.7500000000, 1.2990381057)` | `533.3333333333 / 1600` (`1:3`) | `faafb05e4b004ef7d444c56badec3ea55f88107fcd052fef8c094782e7a82e26` |
+| `19934` | `(0.8750000000, 1.5155444566)` | `320 / 1600` (`1:5`) | `47dd95926a4c9345770a0303ac83287c1f26a41afee108e6c6dc5d089e36837b` |
+
+All cases use start `(0.0, 0.0)`, global `(3.5, 3.5)` at input `1600`,
+schema v14, known source count two, evaluator-only topology qualification,
+exact one-fill cardinality, accepted direct or strictly owned assisted
+recovery, strict raw ranking, and a post-recovery evaluator radius of
+`0.50 m`. The controller receives no source location, role, intensity,
+topology record, or evaluator coordinate.
+
+The installed dry-run was invoked from `/tmp` and resolved `4` runs with
+`0` unsupported cases. It created no run root:
+
+```text
+/tmp/phase08_8_v8_11_matrix_boundary_dry_run.log
+SHA-256:
+  b4f9274d8b68d10dbcd1ab63681bc9a4060a92f2c8b4913427927c850ccaf2be
+```
+
+The runner must stop at the first formal or cleanup failure. It may not skip,
+retry, replace, or tune a case. The population gate is `4/4` formal passes,
+four complete recordings, final zeros and cleanups, four exact one-fill
+recoveries, four strict rankings, four graceful proximity stops, SQLite
+integrity, one analysis per complete dispatched run, and `36/36` plots.
+
+The installed runner must be invoked from `/tmp` with no source-worktree
+`PYTHONPATH`, under the scenario's finite `720.0 s` simulation, `900.0 s`
+wall, and `45.0 s` shutdown-grace limits plus an explicit outer `4200 s`
+timeout. No Gazebo, scenario runner, recorder, analyzer, rosbag recorder, or
+physical process was started while writing this boundary. The matrix root is
+absent. Physical stopping remains manual operator `Ctrl+C`.
+
+## Current milestone
+
+**PHASE 08.8 M8.4 — V8.11 FOUR-CASE MATRIX BOUNDARY WRITTEN / INSTALLED
+DRY-RUN 4/4 / DISPATCH CHECKPOINT AND COMMIT PENDING / MATRIX PROHIBITED.**
+
+## Next criterion
+
+Validate source/install parity, root absence, inactive runtime, context, and
+diff; checkpoint Phase 08; and commit this exact boundary. Only then invoke
+the installed matrix once. Preserve every dispatched case and stop without a
+retry if any fixed case fails.
+
+## Phase 08.8 M8.4 v8.11 broad-matrix dispatch checkpoint — 2026-07-31
+
+The exact installed four-case serial, headless, first-failure-stop,
+one-time/no-retry boundary received the required Phase 08 checkpoint against
+repeat-result HEAD `4209c1a`.
+
+```text
+base HEAD:
+  4209c1a839100d41c5a813c8b88d78e9de38aebd
+status sha256 before this checkpoint note:
+  d68ec87acd55094257393f609f8c70debfcff72d433e9b069e87f2a4717bb122
+checkpoint sha256 before this checkpoint note:
+  0c4de520abb1cd9cf9dccc8bc963aee918ad8eee901d41d8d95c5f00df4e29c9
+installed/source scenario parity:
+  PASS
+installed/source scenario sha256:
+  b0ac9ff6582deecb56970d38f0a3f7d08f09aa8518343dd0477ae953d2a04b02
+installed dry-run / unsupported:
+  4 / 0
+Phase 08 implement context / git diff check:
+  PASS / PASS
+active simulation/analysis/physical runtime:
+  none
+matrix root:
+  absent
+```
+
+## Current milestone
+
+**PHASE 08.8 M8.4 — V8.11 FOUR-CASE MATRIX BOUNDARY / INSTALLED DRY-RUN
+4/4 / DISPATCH CHECKPOINT PASS / DISPATCH COMMIT PENDING / MATRIX
+PROHIBITED.**
+
+## Next criterion
+
+Commit this exact two-file dispatch boundary. Then invoke the installed matrix
+once on domain `220`, preserve every dispatched result, and stop without a
+retry if any fixed case fails.
