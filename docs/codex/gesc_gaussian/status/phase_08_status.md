@@ -14033,3 +14033,138 @@ Stage and commit this exact qualified v8.6 implementation boundary. Verify a
 clean tree, then write, checkpoint, and commit a separate dispatch boundary
 authorizing only the installed visible primary seed-`19316` probe. Do not
 dispatch primary repeats or either secondary case.
+
+## Phase 08.8 M4.7 v8.6 visible-dispatch boundary — 2026-07-31
+
+The exact qualified v8.6 implementation was committed at:
+
+```text
+fb3c2648adca4931471d68b502cf8bf7f2fc9827
+phase 08.8: qualify v8.6 supervisor-owned assist
+```
+
+Post-commit preflight passes:
+
+```text
+worktree:
+  clean
+phase context:
+  PASS
+primary visible evidence root:
+  absent
+matching Gazebo/scenario/recorder/analyzer processes:
+  none
+DISPLAY:
+  :0
+xdpyinfo:
+  PASS
+source primary-visible scenario sha256:
+  47faf45f4cd1464dde02e727ea4cfcfc7b7dd77139ac4a355a2366e229884fc9
+installed primary-visible scenario sha256:
+  47faf45f4cd1464dde02e727ea4cfcfc7b7dd77139ac4a355a2366e229884fc9
+source/install parity:
+  PASS
+```
+
+This record proposes exactly one installed GUI execution:
+
+```text
+scenario:
+  phase08_v8_6_primary_visible_probe.yaml
+case:
+  v8_6_primary_probe_r1p5_a45_h25_19316
+seed:
+  19316
+profile:
+  robust_gaussian_v1
+ROS domain:
+  230
+execution:
+  serial, Gazebo GUI visible, one attempt, no retry
+scenario run timeout:
+  720.0 s
+scenario wall timeout:
+  900.0 s
+outer process timeout:
+  1080 s, INT then 60 s kill-after
+evidence root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_6_primary_probe
+```
+
+No source, start, source position, intensity, profile value, acceptance
+predicate, timeout, seed, cleanup rule, or stop rule may change during the
+attempt. The fixed run must demonstrate candidate one, exactly one typed
+active fill, one latched direction at revision one, `ESCAPE_STALLED`,
+supervisor-owned assisted control with a nonzero suppressed GESC proposal,
+positive bounded supervisor translation, measured fill-to-exit alignment of
+at least `+0.80`, completed local escape, ordinary affine-free `SEARCH`,
+strict raw-cost ranking of candidate two, `GOAL_REACHED`, a later
+evaluator-only `0.50 m` simulation proximity sample, final readiness false,
+final zero, complete recording, and clean shutdown.
+
+The run must be analyzed exactly once after recording closes and must produce
+all nine standard plots:
+
+```text
+trajectory_sources_fills.png
+candidate_ranking.png
+cost.png
+components.png
+state_events.png
+weights.png
+command_saturation.png
+radial_escape.png
+gaussian_history.png
+```
+
+Any behavioral, formal ownership, recording, final-zero, cleanup, or
+infrastructure failure closes v8.6 immediately. The attempt is retained
+regardless of outcome and cannot be retried. Primary repeats, the secondary
+probe, secondary repeats, broader characterization, three lights, physical
+motion, and Phase 09 remain prohibited.
+
+## Current milestone
+
+**PHASE 08.8 M4.7 — QUALIFIED V8.6 IMPLEMENTATION COMMITTED / ONE FIXED
+VISIBLE PRIMARY PROBE DECLARED / DISPATCH CHECKPOINT PENDING / GAZEBO
+PROHIBITED.**
+
+## Next criterion
+
+Checkpoint and commit this exact status plus checkpoint dispatch boundary.
+Then immediately reconfirm the clean tree, inactive runtime process set,
+absent evidence root, installed scenario parity, and GUI display before
+executing the one authorized seed-`19316` visible probe.
+
+## Phase 08.8 M4.7 v8.6 visible-dispatch checkpoint — 2026-07-31
+
+The one-attempt visible dispatch contract received the required Phase 08
+checkpoint against qualified implementation HEAD `fb3c264`.
+
+```text
+base HEAD:
+  fb3c2648adca4931471d68b502cf8bf7f2fc9827
+status sha256 before this checkpoint note:
+  44cf34937b3b5be5b0a65c4710b8fb3de19dee3d63ada9dd9a0890e8bc82da69
+unstaged dispatch diff sha256:
+  c64190f20b48d475d5283f24c7e5ce9c1a6cdb6cedbf1120ab65e616b138c368
+checkpoint sha256 before this checkpoint note:
+  f5d8c5c04e823451c48392b7b3c803ea1ee0132b835024ced077f472aec7f15f
+unstaged and staged diff checks:
+  PASS
+```
+
+No Gazebo, scenario, recorder, analyzer, rosbag recorder, or physical process
+ran during the dispatch checkpoint. The primary evidence root remains absent.
+
+## Current milestone
+
+**PHASE 08.8 M4.7 — QUALIFIED V8.6 IMPLEMENTATION COMMITTED / ONE FIXED
+VISIBLE PRIMARY PROBE DECLARED / DISPATCH CHECKPOINT PASS / DISPATCH
+COMMIT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Stage this checkpoint note and checkpoint file, commit the exact dispatch
+boundary, and verify a clean tree. Then repeat the fixed preflight and execute
+the one installed GUI seed-`19316` attempt without retry or in-run change.

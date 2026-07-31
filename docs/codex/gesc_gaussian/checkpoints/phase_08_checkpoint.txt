@@ -1,65 +1,36 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-31T12:24:05+00:00
-Base HEAD: d389a01fbcb4fb1f30c02ed0cf8b41e42492dc27
+Generated: 2026-07-31T12:26:27+00:00
+Base HEAD: fb3c2648adca4931471d68b502cf8bf7f2fc9827
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 3da63a130cd7ad1cb8b5be15948fc8a60baad4957b97b0e44fd6ed10b4b2fa3f
+Status sha256: 44cf34937b3b5be5b0a65c4710b8fb3de19dee3d63ada9dd9a0890e8bc82da69
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_8_plan.md
 Active subphase plan sha256: 767e3e8ffb3dbfa6744048ceed275367e3028f4ac647e969c478466f621fa6ec
-Unstaged diff sha256: 845491eadfc360faac239c24ddd9c68fc269b5661281615700523dd71f039d36
+Unstaged diff sha256: c64190f20b48d475d5283f24c7e5ce9c1a6cdb6cedbf1120ab65e616b138c368
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 130]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 131]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
- M ros2_ws/src/ros_esc/ros_esc/controller_node/controller_node_script.py
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py
- M ros2_ws/src/ros_esc/ros_esc/supervisor_node/state_machine.py
- M ros2_ws/src/ros_esc/ros_esc/supervisor_node/supervisor_node_script.py
- M ros2_ws/src/ros_esc/test/test_legacy_behavior.py
- M ros2_ws/src/ros_esc/test/test_observability_contract.py
- M ros2_ws/src/ros_esc/test/test_scenario_runner.py
- M ros2_ws/src/ros_esc/test/test_scenario_schema.py
- M ros2_ws/src/ros_esc/test/test_state_machine.py
- M ros2_ws/src/ros_esc/test/test_supervisor_integration.py
- M ros2_ws/src/turtlebot3_rotating_sensor/launch/gazebo.launch.xml
-?? docs/codex/gesc_gaussian/validation/phase_08_8_m4_7_no_gazebo_qualification.md
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v8_6_primary_repeats.yaml
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v8_6_primary_visible_probe.yaml
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v8_6_secondary_repeats.yaml
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v8_6_secondary_visible_probe.yaml
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  43 +-
- docs/codex/gesc_gaussian/status/phase_08_status.md | 113 +++++
- .../controller_node/controller_node_script.py      |  59 +++
- .../ros_esc/scenario_runner/run_scenario.py        | 535 ++++++++++++++++++++-
- .../ros_esc/scenario_runner/scenario_schema.py     | 108 ++++-
- .../ros_esc/supervisor_node/state_machine.py       |  17 +
- .../supervisor_node/supervisor_node_script.py      |  14 +
- ros2_ws/src/ros_esc/test/test_legacy_behavior.py   | 143 ++++++
- .../ros_esc/test/test_observability_contract.py    |  10 +
- ros2_ws/src/ros_esc/test/test_scenario_runner.py   | 372 ++++++++++++++
- ros2_ws/src/ros_esc/test/test_scenario_schema.py   | 243 +++++++++-
- ros2_ws/src/ros_esc/test/test_state_machine.py     |  30 ++
- .../ros_esc/test/test_supervisor_integration.py    |  92 ++++
- .../launch/gazebo.launch.xml                       |   4 +
- 14 files changed, 1755 insertions(+), 28 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  54 +----------
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 102 +++++++++++++++++++++
+ 2 files changed, 107 insertions(+), 49 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**PHASE 08.8 M4.7 — V8.6 IMPLEMENTED / COMPLETE NO-GAZEBO
-QUALIFICATION PASS / IMPLEMENTATION CHECKPOINT PENDING / GAZEBO
+**PHASE 08.8 M4.7 — QUALIFIED V8.6 IMPLEMENTATION COMMITTED / ONE FIXED
+VISIBLE PRIMARY PROBE DECLARED / DISPATCH CHECKPOINT PENDING / GAZEBO
 PROHIBITED.**
 
 
