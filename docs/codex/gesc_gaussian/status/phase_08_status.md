@@ -17313,3 +17313,189 @@ Commit this exact dispatch boundary. Reverify a clean worktree, installed
 scenario hash, absent root, and inactive runtime. Then dispatch visible seed
 `19801` exactly once on domain `225`, with no retry and no ROS-domain
 monitoring.
+
+## Phase 08.8 M4.11 v8.10 primary-visible result — 2026-07-31
+
+The one authorized installed visible seed `19801` execution is a formal
+pass. It ran once from `/tmp` with Gazebo GUI enabled on isolated domain
+`225`, with no retry and no external ROS/DDS monitoring.
+
+```text
+committed dispatch HEAD:
+  f96edfd302fbd6fed7f48263ace766d0b425a20a
+installed scenario:
+  /tmp/phase08_8_v8_10_release_qual.VIowrN/install/ros_esc/share/
+  ros_esc/scenario_runner/scenarios/
+  phase08_v8_10_primary_visible_probe.yaml
+scenario sha256:
+  c41eea1e6e10d8f736bb669fdf13db46eb8a6ed23b512a5827e8675d2d5c501b
+started:
+  2026-07-31T17:30:55.946255Z
+completed:
+  2026-07-31T17:36:48.717776Z
+runner / recorder:
+  0 / 0
+recording / completeness / final zero / cleanup:
+  PASS / PASS / PASS / PASS
+formal predicates:
+  14/14 PASS
+```
+
+The exact summary is:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_10_primary_probe/
+  phase08_v8_10_primary_visible_probe_summary.yaml
+sha256:
+  f37e9cab4ab790e647897118c576635ad6011bba211d882da84f2ba7c78b6a73
+```
+
+It contains exactly one selected/resolved case and supplied the exact run
+directory used for the sole analyzer invocation:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_10_primary_probe/2026-07-31/
+  20260731T173056885644Z_simulation_phase08_v8_10_primary_visible_probe-
+  v8_10_primary_probe_r1p5_a45_h25_19801-robus_d984451c
+```
+
+The recorder-CWD correction is proven in fresh runtime metadata:
+
+```text
+working_directory / repository_root:
+  /home/mattb/dsim-lab
+commit:
+  f96edfd302fbd6fed7f48263ace766d0b425a20a
+dirty / untracked:
+  false / []
+```
+
+The exact behavioral path passed:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> ESCAPE_ASSIST
+-> SEARCH
+-> VERIFY_EXTREMUM
+-> GOAL_HOLD
+```
+
+Stage A completed at `168.713 s` with exactly one created, typed, and active
+fill. The convergence was `0.341375 m` from the declared local and the fill
+was `0.158120 m` from that convergence.
+
+Schema-v13 selected the assisted branch and passed both command-ownership
+topologies:
+
+```text
+assist entry:
+  bounded_causal_schema_v12, 0.003215288 s, 2,731 steady owned samples
+exit:
+  bounded_causal_schema_v11, 0.011156662 s, 15,024 ordinary samples
+selected/actual alignment:
+  0.993861949
+fill-to-exit distance:
+  1.471256 m
+failsafe / timeout:
+  false / false
+```
+
+The second raw-cost interval
+`[-3.8372093023255816, -3.8372093023255816]` was strictly below the first
+candidate lower bound `-2.938548817736818`, with margin
+`0.8986604845887634`. The controller emitted ranked `GOAL_REACHED` for
+ordinal two with one filled candidate and known source count two.
+
+The first valid post-ranking evaluator sample was noninterpolated, at
+simulation time `293.935 s` and distance `0.104594 m` from `(3.5, 3.5)`.
+The retained final distance is `0.104573 m`. Approximate Stage B duration
+was `125.222 s`.
+
+Analysis ran exactly once after closure from the summary-owned path:
+
+```text
+analysis log:
+  /tmp/phase08_8_m4_11_v8_10_primary_visible_analysis.log
+sha256:
+  4d3c1fa9b383d5f273b81e1a2c5b7c804a5ddf8f9e504cf8029de1a65d89e08d
+status / failures / fresh validator:
+  complete / [] / PASS
+plots:
+  9/9
+```
+
+The trajectory plot was visually inspected and agrees with the formal path.
+The complete result is:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_11_primary_probe.md
+```
+
+Level B evidence erratum: the prior dispatch text called implementation
+commit `77dd443` the "committed dispatch HEAD." The actual clean committed
+dispatch tree, correctly captured by runtime metadata, is `f96edfd`. This is
+a documentation-only correction and changes no runtime evidence or gate.
+
+The GUI, scenario runner, recorder, analyzer, rosbag recorder, and their
+descendants are inactive. Physical motion did not occur. The evaluator-only
+simulation stop remains absent from the physical path; physical stopping is
+manual operator `Ctrl+C`.
+
+## Current milestone
+
+**PHASE 08.8 M4.11 — V8.10 PRIMARY VISIBLE SEED `19801` FORMAL PASS /
+ONE-TIME ANALYSIS COMPLETE / NINE PLOTS COMPLETE / RESULT CHECKPOINT
+PENDING / PRIMARY REPEATS NOT YET AUTHORIZED.**
+
+## Next criterion
+
+Checkpoint and commit this exact visible result. Then write, checkpoint, and
+commit a separate serial/headless primary-repeat boundary for installed
+seeds `19811..19820`. Do not dispatch any repeat before that clean committed
+boundary.
+
+## Phase 08.8 M4.11 v8.10 primary-visible result checkpoint — 2026-07-31
+
+The formal visible result, summary-owned one-time analysis, nine plots,
+recorder-CWD proof, Level B dispatch-HEAD wording erratum, and inactive
+runtime received the required Phase 08 checkpoint against committed
+dispatch HEAD `f96edfd`.
+
+```text
+base HEAD:
+  f96edfd302fbd6fed7f48263ace766d0b425a20a
+status sha256 before this checkpoint note:
+  d61b0e02dba971220c630722d0c23926ef29c1d6237c79614710f090a696d807
+active plan sha256:
+  9d7a7ea410c43dfc1e404c6bba30453dfd4d2d593fe74eb72c2648913246dcbb
+primary-visible report sha256:
+  6421d1fed9fbbafb2e47bec0723d4bb66789c69f44e7d49128a749ca392a4dc4
+checkpoint sha256 before this checkpoint note:
+  5da39cabbaad769ba8c97d2dc0048476530132377aa338092021fc8e82275c20
+installed scenario sha256:
+  c41eea1e6e10d8f736bb669fdf13db46eb8a6ed23b512a5827e8675d2d5c501b
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+active runtime:
+  none
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.11 — V8.10 PRIMARY VISIBLE SEED `19801` FORMAL PASS /
+ONE-TIME ANALYSIS COMPLETE / NINE PLOTS COMPLETE / RESULT CHECKPOINT
+PASS / RESULT COMMIT PENDING / PRIMARY REPEATS NOT YET AUTHORIZED.**
+
+## Next criterion
+
+Commit this exact visible result. Then write, checkpoint, and commit a
+separate serial/headless primary-repeat boundary for installed seeds
+`19811..19820`. Do not dispatch any repeat from an uncommitted boundary.
