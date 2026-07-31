@@ -13,8 +13,10 @@ from ros_esc.scenario_runner import aggregate_field_truth
 import yaml
 
 
-SCHEMA_VERSION = 12
-SUPPORTED_SCHEMA_VERSIONS = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
+SCHEMA_VERSION = 13
+SUPPORTED_SCHEMA_VERSIONS = {
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+}
 PROFILES = {'legacy', 'robust_gaussian_v1'}
 STATUSES = {'executable_unverified', 'unsupported'}
 FAMILIES = {
@@ -98,6 +100,7 @@ SUCCESS_PREDICATES = {
     'post_recovery_global_proximity',
     'fill_cardinality',
     'supervisor_owned_escape_assist',
+    'escape_command_ownership',
 }
 LAUNCH_OVERRIDES = {
     'approach_history_window_sec',
@@ -2049,6 +2052,41 @@ def load_suite(path):
         raise ValueError(
             'schema version 11 is required for causal assist handoff evidence'
         )
+    uses_schema_v13_fields = False
+    if isinstance(raw_cases, list):
+        for case in raw_cases:
+            if not isinstance(case, dict):
+                continue
+            raw_success = case.get('success', {})
+            raw_all_of = (
+                raw_success.get('all_of', [])
+                if isinstance(raw_success, dict)
+                else []
+            )
+            raw_result_scopes = (
+                raw_success.get('result_scopes', {})
+                if isinstance(raw_success, dict)
+                else {}
+            )
+            scoped_predicates = set()
+            if isinstance(raw_result_scopes, dict):
+                for raw_scope in raw_result_scopes.values():
+                    if not isinstance(raw_scope, dict):
+                        continue
+                    raw_scope_all_of = raw_scope.get('all_of', [])
+                    if isinstance(raw_scope_all_of, list):
+                        scoped_predicates.update(raw_scope_all_of)
+            uses_schema_v13_fields = (
+                isinstance(raw_all_of, list)
+                and 'escape_command_ownership' in raw_all_of
+            ) or 'escape_command_ownership' in scoped_predicates
+            if uses_schema_v13_fields:
+                break
+    if schema_version < 13 and uses_schema_v13_fields:
+        raise ValueError(
+            'schema version 13 is required for conditional escape '
+            'command ownership'
+        )
     suite_id = _identifier(document.get('suite_id'), 'suite_id')
     if document.get('mode') != 'simulation':
         raise ValueError('mode must be simulation')
@@ -3393,7 +3431,11 @@ def load_suite(path):
                     'expected_terminal_state',
                 })
                 if supervisor_owned_assist_enabled:
-                    staged_core.add('supervisor_owned_escape_assist')
+                    staged_core.add(
+                        'escape_command_ownership'
+                        if schema_version >= 13
+                        else 'supervisor_owned_escape_assist'
+                    )
             else:
                 staged_core.add('collision_expectation')
             missing_core = sorted(staged_core - set(all_of))
@@ -3408,9 +3450,16 @@ def load_suite(path):
             )
             if counted_open_field:
                 if supervisor_owned_assist_enabled:
-                    expected_counted_paths = {
-                        COUNTED_OPEN_FIELD_ASSISTED_STATE_PATH,
-                    }
+                    expected_counted_paths = (
+                        {
+                            COUNTED_OPEN_FIELD_STATE_PATH,
+                            COUNTED_OPEN_FIELD_ASSISTED_STATE_PATH,
+                        }
+                        if schema_version >= 13
+                        else {
+                            COUNTED_OPEN_FIELD_ASSISTED_STATE_PATH,
+                        }
+                    )
                     counted_path_contract_valid = (
                         {
                             tuple(path)
@@ -3464,6 +3513,7 @@ def load_suite(path):
                         not candidate_informed_fill_enabled
                         or supervisor_owned_assist_enabled
                     )
+                    and schema_version < 13
                 ):
                     required_staged_events.add('ESCAPE_STALLED')
             else:
@@ -3625,8 +3675,13 @@ def load_suite(path):
                 backed_predicates.update(staged_predicates)
                 declared_predicates.update(staged_predicates)
             if supervisor_owned_assist_enabled:
-                backed_predicates.add('supervisor_owned_escape_assist')
-                declared_predicates.add('supervisor_owned_escape_assist')
+                ownership_predicate = (
+                    'escape_command_ownership'
+                    if schema_version >= 13
+                    else 'supervisor_owned_escape_assist'
+                )
+                backed_predicates.add(ownership_predicate)
+                declared_predicates.add(ownership_predicate)
             if (
                 outcome == 'goal'
                 or (
@@ -3662,6 +3717,7 @@ def load_suite(path):
                 'post_recovery_global_proximity',
                 'fill_cardinality',
                 'supervisor_owned_escape_assist',
+                'escape_command_ownership',
             }
             unbacked_predicates = sorted(
                 (set(all_of) & predicates_requiring_backing)

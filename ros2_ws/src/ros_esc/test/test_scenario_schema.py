@@ -324,6 +324,26 @@ V8_8_SECONDARY_REPEATS = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v8_8_secondary_repeats.yaml'
 )
+V8_9_PRIMARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_9_primary_visible_probe.yaml'
+)
+V8_9_PRIMARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_9_primary_repeats.yaml'
+)
+V8_9_SECONDARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_9_secondary_visible_probe.yaml'
+)
+V8_9_SECONDARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_9_secondary_repeats.yaml'
+)
 HISTORICAL_V2_ACTIVATION = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml'
@@ -705,7 +725,7 @@ def _v4_production_truth():
 
 
 def test_current_schema_version_is_latest_supported_version():
-    assert SCHEMA_VERSION == 12
+    assert SCHEMA_VERSION == 13
     assert SCHEMA_VERSION == max(SUPPORTED_SCHEMA_VERSIONS)
 
 
@@ -760,7 +780,7 @@ def test_checked_in_suites_validate_and_catalog_marks_gaps():
 @pytest.mark.parametrize(
     ('mutation', 'match'),
     [
-        (lambda doc: doc.update({'schema_version': 13}), 'schema_version'),
+        (lambda doc: doc.update({'schema_version': 14}), 'schema_version'),
         (
             lambda doc: doc.update({'mode': 'physical'}),
             'mode must be simulation',
@@ -1915,6 +1935,67 @@ def test_schema_v12_resolves_four_causal_entry_handoff_suites():
             )
 
 
+def test_schema_v13_resolves_four_dual_topology_suites():
+    expected = {
+        V8_9_PRIMARY_VISIBLE_PROBE: (1, True, {19701}),
+        V8_9_PRIMARY_REPEATS: (10, False, set(range(19711, 19721))),
+        V8_9_SECONDARY_VISIBLE_PROBE: (1, True, {19751}),
+        V8_9_SECONDARY_REPEATS: (5, False, set(range(19761, 19766))),
+    }
+    direct = [
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'DESIGN_OR_MERGE_FILL',
+        'ESCAPE_REPULSE',
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'GOAL_HOLD',
+    ]
+    assisted = [
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'DESIGN_OR_MERGE_FILL',
+        'ESCAPE_REPULSE',
+        'ESCAPE_ASSIST',
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'GOAL_HOLD',
+    ]
+    for path, (run_count, gui, seeds) in expected.items():
+        suite = load_suite(path)
+        runs, unsupported = expand_suite(suite)
+
+        assert unsupported == []
+        assert len(runs) == run_count
+        assert suite['schema_version'] == 13
+        assert suite['execution']['gazebo_gui'] is gui
+        assert {run['seed'] for run in runs} == seeds
+        for run in runs:
+            assert run['schema_version'] == 13
+            assert run['case_id'].startswith('v8_9_')
+            assert run['success']['controller'][
+                'required_state_paths'
+            ] == [direct, assisted]
+            assert 'escape_command_ownership' in (
+                run['success']['all_of']
+            )
+            assert 'supervisor_owned_escape_assist' not in (
+                run['success']['all_of']
+            )
+            assert 'ESCAPE_STALLED' not in (
+                run['success']['controller']['required_events']
+            )
+            assert 'ESCAPE_STALLED' not in (
+                run['success']['controller']['required_event_sequence']
+            )
+            assert (
+                run['success']['controller'][
+                    'supervisor_owned_assist_handoff_timeout_sec'
+                ]
+                == 0.15
+            )
+
+
 @pytest.mark.parametrize(
     ('v8_6_path', 'v8_7_path'),
     [
@@ -2064,6 +2145,181 @@ def test_v8_8_preserves_v8_7_runtime_inputs(v8_7_path, v8_8_path):
     for name in ('contract_id', 'reachability_argument'):
         equivalent_controller[name] = old_controller[name]
     assert equivalent == old
+
+
+@pytest.mark.parametrize(
+    ('v8_8_path', 'v8_9_path'),
+    [
+        (V8_8_PRIMARY_VISIBLE_PROBE, V8_9_PRIMARY_VISIBLE_PROBE),
+        (V8_8_PRIMARY_REPEATS, V8_9_PRIMARY_REPEATS),
+        (
+            V8_8_SECONDARY_VISIBLE_PROBE,
+            V8_9_SECONDARY_VISIBLE_PROBE,
+        ),
+        (V8_8_SECONDARY_REPEATS, V8_9_SECONDARY_REPEATS),
+    ],
+)
+def test_v8_9_preserves_v8_8_runtime_inputs(v8_8_path, v8_9_path):
+    old = yaml.safe_load(v8_8_path.read_text(encoding='utf-8'))
+    new = yaml.safe_load(v8_9_path.read_text(encoding='utf-8'))
+
+    assert old['schema_version'] == 12
+    assert new['schema_version'] == 13
+    assert old['defaults'] == new['defaults']
+    assert old['level_map'] == new['level_map']
+    assert (
+        old['frozen_profile']['launch_overrides']
+        == new['frozen_profile']['launch_overrides']
+    )
+    old_execution = deepcopy(old['execution'])
+    new_execution = deepcopy(new['execution'])
+    old_execution.pop('runs_root')
+    new_execution.pop('runs_root')
+    assert old_execution == new_execution
+
+    old_case = old['cases'][0]
+    new_case = new['cases'][0]
+    for key in (
+        'family',
+        'acceptance_family',
+        'acceptance_partition',
+        'status',
+        'profiles',
+        'known_topology',
+        'metric_applicability',
+        'starts',
+        'sources',
+        'algorithm',
+    ):
+        assert old_case[key] == new_case[key]
+    assert (
+        old_case['success']['ground_truth']
+        == new_case['success']['ground_truth']
+    )
+    assert (
+        old_case['success']['staged_recovery']
+        == new_case['success']['staged_recovery']
+    )
+    old_success = deepcopy(old_case['success'])
+    new_success = deepcopy(new_case['success'])
+    old_controller = old_success.pop('controller')
+    new_controller = new_success.pop('controller')
+    old_all_of = old_success.pop('all_of')
+    new_all_of = new_success.pop('all_of')
+    old_result_scopes = old_success.pop('result_scopes')
+    new_result_scopes = new_success.pop('result_scopes')
+    assert old_success == new_success
+
+    def old_predicate_names(predicates):
+        return [
+            (
+                'supervisor_owned_escape_assist'
+                if predicate == 'escape_command_ownership'
+                else predicate
+            )
+            for predicate in predicates
+        ]
+
+    assert old_predicate_names(new_all_of) == old_all_of
+    assert set(old_result_scopes) == set(new_result_scopes)
+    for scope_name, old_scope in old_result_scopes.items():
+        normalized_scope = deepcopy(new_result_scopes[scope_name])
+        normalized_scope['all_of'] = old_predicate_names(
+            normalized_scope['all_of']
+        )
+        assert normalized_scope == old_scope
+
+    old_path = old_controller['required_state_path']
+    direct_path = new_controller['required_state_path']
+    assert new_controller['required_state_paths'] == [
+        direct_path,
+        old_path,
+    ]
+    assert (
+        new_controller['required_events']
+        == [
+            event for event in old_controller['required_events']
+            if event != 'ESCAPE_STALLED'
+        ]
+    )
+    assert (
+        new_controller['required_event_sequence']
+        == [
+            event
+            for event in old_controller['required_event_sequence']
+            if event != 'ESCAPE_STALLED'
+        ]
+    )
+    normalized_controller = deepcopy(new_controller)
+    normalized_controller.pop('required_state_paths')
+    normalized_controller['required_state_path'] = deepcopy(old_path)
+    normalized_controller['required_events'] = deepcopy(
+        old_controller['required_events']
+    )
+    normalized_controller['required_event_sequence'] = deepcopy(
+        old_controller['required_event_sequence']
+    )
+    for name in ('contract_id', 'reachability_argument'):
+        normalized_controller[name] = old_controller[name]
+    assert normalized_controller == old_controller
+
+    equivalent = deepcopy(new)
+    equivalent['schema_version'] = old['schema_version']
+    equivalent['suite_id'] = old['suite_id']
+    equivalent['description'] = old['description']
+    equivalent['execution']['runs_root'] = old['execution']['runs_root']
+    equivalent['metadata'] = deepcopy(old['metadata'])
+    equivalent['frozen_profile']['profile_id'] = (
+        old['frozen_profile']['profile_id']
+    )
+    equivalent_case = equivalent['cases'][0]
+    for name in ('case_id', 'description', 'seeds'):
+        equivalent_case[name] = deepcopy(old_case[name])
+    equivalent_success = equivalent_case['success']
+    equivalent_success['all_of'] = deepcopy(old_all_of)
+    equivalent_success['controller'] = deepcopy(old_controller)
+    equivalent_success['result_scopes'] = deepcopy(old_result_scopes)
+    assert equivalent == old
+
+
+@pytest.mark.parametrize(
+    ('mutation', 'match'),
+    [
+        (
+            lambda document, success: document.update(
+                {'schema_version': 12}
+            ),
+            'schema version 13',
+        ),
+        (
+            lambda document, success: success['controller'].update({
+                'required_state_paths': [
+                    success['controller']['required_state_path'],
+                ],
+            }),
+            'counted open-field contract',
+        ),
+        (
+            lambda document, success: success['all_of'].remove(
+                'escape_command_ownership'
+            ),
+            'staged contract omits',
+        ),
+    ],
+)
+def test_schema_v13_rejects_invalid_dual_topology_contract(
+    tmp_path,
+    mutation,
+    match,
+):
+    document = yaml.safe_load(
+        V8_9_PRIMARY_VISIBLE_PROBE.read_text(encoding='utf-8')
+    )
+    success = document['cases'][0]['success']
+    mutation(document, success)
+
+    with pytest.raises(ValueError, match=match):
+        _load(tmp_path, document)
 
 
 @pytest.mark.parametrize(

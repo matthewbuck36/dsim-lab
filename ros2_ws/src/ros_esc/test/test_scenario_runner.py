@@ -294,6 +294,26 @@ V8_8_SECONDARY_REPEATS = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v8_8_secondary_repeats.yaml'
 )
+V8_9_PRIMARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_9_primary_visible_probe.yaml'
+)
+V8_9_PRIMARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_9_primary_repeats.yaml'
+)
+V8_9_SECONDARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_9_secondary_visible_probe.yaml'
+)
+V8_9_SECONDARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_9_secondary_repeats.yaml'
+)
 
 
 def test_observed_local_recovery_binds_fill_to_local_convergence():
@@ -1498,6 +1518,435 @@ def test_schema_v12_causal_entry_rejects_fallback_after_ownership():
     assert 'ownership fell back' in evidence['reason']
 
 
+def _direct_escape_owner_fixture():
+    resolved = expand_suite(
+        load_suite(V8_9_PRIMARY_VISIBLE_PROBE)
+    )[0][0]
+    first_repulse = _owner_state('ESCAPE_REPULSE')
+    second_repulse = _owner_state('ESCAPE_REPULSE')
+    for state, distance in (
+        (first_repulse, 0.20),
+        (second_repulse, 1.10),
+    ):
+        state.escape_exit_radius = 1.0
+        state.radial_distance = distance
+        state.radial_distance_valid = True
+        state.radial_progress = 0.10
+        state.radial_progress_valid = True
+        state.escape_stalled = False
+        state.escape_stalled_valid = True
+        state.failsafe = False
+        state.failsafe_valid = True
+    search = _owner_state('SEARCH')
+    search.previous_state = runner.AlgorithmState.STATE_ESCAPE_REPULSE
+    search.previous_state_valid = True
+    search.transition_reason = (
+        'ESCAPE_REPULSE->SEARCH: stable escape exit'
+    )
+    search.transition_reason_valid = True
+    search.failsafe = False
+    search.failsafe_valid = True
+    event = _event_message(
+        'ESCAPE_STARTED',
+        value_names=[
+            'escape_center_x_m',
+            'escape_center_y_m',
+            'escape_exit_radius_m',
+            'approach_selected_direction_x',
+            'approach_selected_direction_y',
+            'approach_direction_revision',
+        ],
+        values=[0.0, 0.0, 1.0, 1.0, 0.0, 1.0],
+    )
+    diagnostics = [
+        (
+            1_200_000_000,
+            _control_diagnostic(
+                [0.08, 0.0, 0.0, 0.0, 0.0, 0.4],
+                [0.08, 0.0, 0.0, 0.0, 0.0, 0.4],
+            ),
+        ),
+        (
+            1_700_000_000,
+            _control_diagnostic(
+                [0.06, 0.0, 0.0, 0.0, 0.0, -0.2],
+                [0.06, 0.0, 0.0, 0.0, 0.0, -0.2],
+            ),
+        ),
+    ]
+    return {
+        'resolved': resolved,
+        'states': [
+            (1_000_000_000, first_repulse),
+            (1_500_000_000, second_repulse),
+            (2_000_000_000, search),
+        ],
+        'events': [(1_010_000_000, event)],
+        'diagnostics': diagnostics,
+        'commands': [
+            (1_100_000_000, _twist([0.0] * 6)),
+            (1_800_000_000, _twist([0.0] * 6)),
+            (2_100_000_000, _twist([0.0] * 6)),
+        ],
+        'odometry': [(2_010_000_000, _odom_message(1.20, 0.0))],
+    }
+
+
+def _evaluate_escape_owner(fixture):
+    return runner._escape_command_ownership_evidence(
+        fixture['resolved'],
+        fixture['states'],
+        fixture['events'],
+        fixture['diagnostics'],
+        fixture['commands'],
+        fixture['odometry'],
+    )
+
+
+def test_schema_v13_direct_escape_proves_geometry_and_ordinary_ownership():
+    passed, evidence, error = _evaluate_escape_owner(
+        _direct_escape_owner_fixture()
+    )
+
+    assert error is None
+    assert passed is True
+    assert evidence['branch'] == 'direct_repulse'
+    assert evidence['assist_applicable'] is False
+    assert evidence['repulse_state_sample_count'] == 2
+    assert evidence['repulse_control_sample_count'] == 2
+    assert evidence['repulse_supervisor_command_sample_count'] == 2
+    assert evidence['nonzero_gesc_control_sample_count'] == 2
+    assert evidence['mature_radial_progress_sample_count'] == 2
+    assert evidence['fill_to_exit_distance_m'] == pytest.approx(1.2)
+    assert evidence['fill_to_exit_alignment'] == pytest.approx(1.0)
+    assert evidence['ordinary_gesc_ownership_proven'] is True
+    assert evidence['returned_search_authority_cleared'] is True
+    assert (
+        evidence['evidence_mode']
+        == 'bounded_direct_repulse_schema_v13'
+    )
+
+
+def test_schema_v13_direct_escape_binds_event_just_before_state_sample():
+    fixture = _direct_escape_owner_fixture()
+    fixture['events'][0] = (
+        999_724_066,
+        fixture['events'][0][1],
+    )
+    fixture['states'][0][1].escape_stalled_valid = False
+    fixture['states'][0][1].radial_progress_valid = False
+
+    passed, evidence, error = _evaluate_escape_owner(fixture)
+
+    assert error is None
+    assert passed is True
+    assert evidence['escape_started_to_repulse_state_sec'] == pytest.approx(
+        0.000275934
+    )
+    assert evidence['evidence_freshness_limit_sec'] == pytest.approx(0.5)
+    assert evidence['mature_radial_progress_sample_count'] == 1
+
+
+def test_schema_v13_direct_escape_rejects_event_before_freshness_window():
+    fixture = _direct_escape_owner_fixture()
+    fixture['events'][0] = (
+        499_999_999,
+        fixture['events'][0][1],
+    )
+
+    passed, evidence, error = _evaluate_escape_owner(fixture)
+
+    assert error is None
+    assert passed is False
+    assert 'exactly one ESCAPE_STARTED' in evidence['reason']
+
+
+def test_schema_v13_assisted_escape_retains_schema_v12_proof():
+    fixture = _causal_entry_supervisor_owner_fixture()
+    fixture['resolved'] = expand_suite(
+        load_suite(V8_9_PRIMARY_VISIBLE_PROBE)
+    )[0][0]
+
+    passed, evidence, error = _evaluate_escape_owner(fixture)
+
+    assert error is None
+    assert passed is True
+    assert evidence['branch'] == 'assisted'
+    assert evidence['assist_applicable'] is True
+    assert evidence['assist_entry_transition_control_sample_count'] == 1
+    assert evidence['assist_entry_handoff_delay_sec'] == pytest.approx(0.01)
+    assert evidence['assist_entry_steady_owned_control_sample_count'] == 3
+    assert (
+        evidence['assist_entry_handoff_evidence_mode']
+        == 'bounded_causal_schema_v12'
+    )
+    assert (
+        evidence['post_exit_handoff_evidence_mode']
+        == 'bounded_causal_schema_v11'
+    )
+    assert evidence['evidence_mode'] == 'conditional_escape_schema_v13'
+
+
+def _remove_direct_progress(fixture):
+    for unused_stamp, message in fixture['states'][:2]:
+        message.radial_progress_valid = False
+
+
+def _keep_direct_distance_inside_radius(fixture):
+    for unused_stamp, message in fixture['states'][:2]:
+        message.radial_distance = 0.50
+
+
+def _zero_direct_diagnostics(fixture):
+    for unused_stamp, message in fixture['diagnostics']:
+        message.gesc_command_unsaturated = [0.0] * 6
+        message.combined_command_unsaturated = [0.0] * 6
+        message.final_command = [0.0] * 6
+
+
+def _add_direct_stalled_event(fixture):
+    fixture['events'].append(
+        (1_600_000_000, _event_message('ESCAPE_STALLED'))
+    )
+
+
+def _remove_direct_returned_search(fixture):
+    fixture['states'].pop()
+
+
+@pytest.mark.parametrize(
+    ('mutation', 'reason'),
+    [
+        (
+            lambda fixture: fixture['odometry'].__setitem__(
+                0, (2_010_000_000, _odom_message(0.8, 0.0))
+            ),
+            'inside the frozen exit radius',
+        ),
+        (
+            lambda fixture: fixture['odometry'].__setitem__(
+                0, (2_010_000_000, _odom_message(-1.2, 0.0))
+            ),
+            'alignment is below 0.80',
+        ),
+        (
+            lambda fixture: setattr(
+                fixture['states'][0][1],
+                'radial_progress',
+                0.01,
+            ),
+            'fell below the stall threshold',
+        ),
+        (
+            _remove_direct_progress,
+            'no mature radial-progress evidence',
+        ),
+        (
+            _keep_direct_distance_inside_radius,
+            'did not reach the frozen exit radius',
+        ),
+        (
+            lambda fixture: setattr(
+                fixture['states'][0][1],
+                'escape_stalled',
+                True,
+            ),
+            'changed geometry, weights, or safety',
+        ),
+        (
+            lambda fixture: setattr(
+                fixture['states'][0][1],
+                'escape_center_x',
+                0.25,
+            ),
+            'changed geometry, weights, or safety',
+        ),
+        (
+            lambda fixture: setattr(
+                fixture['states'][0][1],
+                'safe_direction_revision',
+                2,
+            ),
+            'changed geometry, weights, or safety',
+        ),
+        (
+            lambda fixture: fixture['events'][0][1].values.__setitem__(
+                0,
+                float('nan'),
+            ),
+            'geometry is invalid',
+        ),
+        (
+            _add_direct_stalled_event,
+            'emitted ESCAPE_STALLED without assist',
+        ),
+        (
+            lambda fixture: fixture['commands'].__setitem__(
+                0, (1_100_000_000, _twist([0.01] + [0.0] * 5))
+            ),
+            'supervisor command is nonzero or invalid',
+        ),
+        (
+            lambda fixture: fixture['diagnostics'][0][1]
+            .combined_command_unsaturated.__setitem__(0, 0.03),
+            'not ordinary GESC ownership',
+        ),
+        (
+            _zero_direct_diagnostics,
+            'no nonzero GESC command evidence',
+        ),
+        (
+            lambda fixture: fixture['diagnostics'][0][1]
+            .combined_command_unsaturated.__setitem__(0, float('nan')),
+            'invalid command evidence',
+        ),
+        (
+            lambda fixture: fixture['diagnostics'][0][1]
+            .supervisor_contribution.__setitem__(0, 0.01),
+            'not ordinary GESC ownership',
+        ),
+        (
+            lambda fixture: fixture['diagnostics'][0][1]
+            .final_command.__setitem__(0, 0.0),
+            'saturation is invalid',
+        ),
+        (
+            lambda fixture: setattr(
+                fixture['states'][-1][1],
+                'safe_direction_valid',
+                True,
+            ),
+            'cleared stable direct exit',
+        ),
+        (
+            lambda fixture: fixture['commands'].__setitem__(
+                -1,
+                (2_100_000_000, _twist([0.01] + [0.0] * 5)),
+            ),
+            'returned SEARCH supervisor command is not zero',
+        ),
+        (
+            _remove_direct_returned_search,
+            'no later SEARCH boundary',
+        ),
+    ],
+)
+def test_schema_v13_direct_escape_rejects_invalid_evidence(
+    mutation,
+    reason,
+):
+    fixture = _direct_escape_owner_fixture()
+    mutation(fixture)
+
+    passed, evidence, error = _evaluate_escape_owner(fixture)
+
+    assert error is None
+    assert passed is False
+    assert reason in evidence['reason']
+
+
+def test_schema_v13_cannot_bypass_failed_assist_with_direct_proof():
+    fixture = _direct_escape_owner_fixture()
+    fixture['states'].insert(
+        2,
+        (1_800_000_000, _owner_state('ESCAPE_ASSIST')),
+    )
+
+    passed, evidence, error = _evaluate_escape_owner(fixture)
+
+    assert error is None
+    assert passed is False
+    assert evidence['branch'] == 'assisted'
+    assert 'later SEARCH boundary' not in evidence['reason']
+    assert 'assist' in evidence['reason'].lower()
+
+
+def test_schema_v13_stage_a_accepts_direct_and_assisted_paths():
+    resolved = expand_suite(
+        load_suite(V8_9_PRIMARY_VISIBLE_PROBE)
+    )[0][0]
+    for records, expected_path in (
+        (
+            _counted_staged_records(),
+            [
+                'SEARCH',
+                'VERIFY_EXTREMUM',
+                'DESIGN_OR_MERGE_FILL',
+                'ESCAPE_REPULSE',
+                'SEARCH',
+            ],
+        ),
+        (
+            _counted_assisted_staged_records(),
+            [
+                'SEARCH',
+                'VERIFY_EXTREMUM',
+                'DESIGN_OR_MERGE_FILL',
+                'ESCAPE_REPULSE',
+                'ESCAPE_ASSIST',
+                'SEARCH',
+            ],
+        ),
+    ):
+        states, events, fills = records
+        passed, cardinality, evidence, error = (
+            runner._staged_recovery_evidence(
+                resolved,
+                states,
+                events,
+                fills,
+            )
+        )
+
+        assert error is None
+        assert passed is True
+        assert cardinality is True
+        assert evidence['episodes'][0]['state_path'] == expected_path
+        assert len(evidence['accepted_state_paths']) == 2
+
+
+def test_schema_v13_escape_ownership_predicate_gates_classification():
+    resolved = expand_suite(
+        load_suite(V8_9_PRIMARY_VISIBLE_PROBE)
+    )[0][0]
+    resolved['success']['all_of'] = ['escape_command_ownership']
+    resolved['success']['result_scopes'] = {}
+    outcomes = runner._unavailable_outcomes('unused')
+    outcomes.update({
+        'readiness_interval_available': True,
+        'escape_command_ownership_passed': True,
+        'escape_command_ownership': {
+            'branch': 'direct_repulse',
+            'fill_to_exit_alignment': 1.0,
+        },
+        'outcome_error': None,
+    })
+    process_result = {'timed_out': False, 'return_code': 0}
+
+    passed = classify_result(
+        resolved,
+        {'passed': True},
+        {'passed': True},
+        outcomes,
+        process_result,
+        metadata={},
+    )
+    assert passed['passed'] is True
+    assert passed['predicate_results']['escape_command_ownership'] is True
+
+    outcomes['escape_command_ownership_passed'] = False
+    failed = classify_result(
+        resolved,
+        {'passed': True},
+        {'passed': True},
+        outcomes,
+        process_result,
+        metadata={},
+    )
+    assert failed['passed'] is False
+    assert failed['predicate_results']['escape_command_ownership'] is False
+
+
 def test_supervisor_owned_assist_predicate_gates_classification():
     resolved = expand_suite(
         load_suite(V8_6_PRIMARY_VISIBLE_PROBE)
@@ -2328,6 +2777,10 @@ def test_v8_5_launch_binds_active_fill_transit_without_evaluator_controls(
         V8_8_PRIMARY_REPEATS,
         V8_8_SECONDARY_VISIBLE_PROBE,
         V8_8_SECONDARY_REPEATS,
+        V8_9_PRIMARY_VISIBLE_PROBE,
+        V8_9_PRIMARY_REPEATS,
+        V8_9_SECONDARY_VISIBLE_PROBE,
+        V8_9_SECONDARY_REPEATS,
     ],
 )
 def test_v8_6_launch_binds_supervisor_owner_without_evaluator_controls(

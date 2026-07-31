@@ -16533,3 +16533,170 @@ Commit this exact Plan boundary. Then implement schema-v13 direct and
 assisted command-ownership evidence, historical compatibility, tests, and
 fresh v8.9 scenarios. Gazebo remains prohibited until the complete
 no-Gazebo qualification is checkpointed and committed.
+
+## Phase 08.8 M4.10 v8.9 no-Gazebo implementation qualification — 2026-07-31
+
+The schema-v13 dual-topology evaluator, compatibility guards, negative
+fixtures, and four fresh fixed inputs are implemented and qualified without
+Gazebo.
+
+Schema v13 adds:
+
+```text
+escape_command_ownership
+```
+
+and accepts exactly the measured direct and stall-triggered assisted recovery
+paths. Direct recovery requires positive frozen-geometry, mature-progress,
+ordinary-GESC ownership, stable-cleanup, measured-distance, and alignment
+proof. Any assist state selects the complete unchanged schema-v12 entry and
+schema-v11 exit proof; a failed assist cannot use the direct branch. Schema
+versions through 12 retain their existing behavior.
+
+Immutable replay results:
+
+```text
+seed 19616 under original schema 12:
+  Stage A / ranking / proximity: false / false / false
+  unchanged assist-only formal failure
+
+same messages under schema 13:
+  branch: direct_repulse
+  Stage A / ranking / proximity / ownership: true / true / true / true
+  raw states / diagnostics / commands: 466 / 3,010 / 466
+  synchronized analyzer rows: 3,015
+  supervisor contribution and combined-GESC error: 0.0 / 0.0
+  mature state/analyzer samples: 407 / 2,640
+  exit distance / radius: 1.4011374666 / 1.3667708294 m
+  alignment: 0.9475175293
+
+seed 19611 under schemas 12 and 13:
+  assisted proof: true / true
+  schema-v13 branch: assisted
+  entry / exit modes: bounded_causal_schema_v12 /
+                      bounded_causal_schema_v11
+  non-wrapper evidence differences: none
+```
+
+Retained replay:
+
+```text
+/tmp/phase08_8_m4_10_v8_9_retained_replay.log
+e064ae7e4b59d75c87ece6970e0ab77dd3194f940037ff5eb25b3fdbfac87300
+```
+
+Final tests:
+
+```text
+schema + runner:
+  356 passed, 1 skipped in 55.62 s
+focused controller/supervisor/detector/legacy:
+  310 passed in 8.49 s
+focused evidence/recording/analysis:
+  643 passed, 2 skipped in 131.53 s
+broad ROS-independent functional:
+  953 passed, 3 skipped in 142.17 s
+fatal changed-file lint:
+  PASS
+Python/YAML/XML/diff/context:
+  PASS
+```
+
+The broad skips are the unchanged copyright-template check and two explicit
+Gazebo opt-ins. Full changed-file style reports only the inherited D202 in
+`run_scenario.py`; no required fatal lint code is present.
+
+Fresh installed qualification:
+
+```text
+root:
+  /tmp/phase08_8_v8_9_release_qual.2fWDxv
+build:
+  3 packages finished in 11.9 s
+source/install parity:
+  10/10
+installed schema:
+  13, supported 1..13
+installed launch checks:
+  2/2 pass
+installed node construction:
+  4/4 expected bounded timeout 124, no startup error
+installed dry-runs:
+  primary visible / repeats:   1 / 10, zero unsupported
+  secondary visible / repeats: 1 / 5, zero unsupported
+sealed roots after dry-run:
+  absent 4/4
+```
+
+All four v8.9/v8.8 pairs have explicit whole-document normalization proof.
+Only schema/evidence paths and events, predicate identity, versioned
+identities/descriptions/roots, and fresh seeds differ. Sources, starts,
+`400/1600` intensities, launch overrides, controller behavior, Stage A/Stage
+B budgets, evaluator-only `0.50 m` simulation stop, final-zero, cleanup, and
+first-failure rules are unchanged.
+
+Durable qualification:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_10_no_gazebo_qualification.md
+```
+
+Historical V6, v8-v8.8 scenarios, worlds, results, and failures remain
+unchanged and selectable. No Gazebo, scenario runner, recorder, analyzer,
+rosbag recorder, or physical process is active. All four v8.9 run roots are
+absent. Physical stopping remains manual operator `Ctrl+C`.
+
+## Current milestone
+
+**PHASE 08.8 M4.10 — V8.9 SCHEMA-V13 DUAL-TOPOLOGY IMPLEMENTATION /
+NO-GAZEBO QUALIFICATION PASS / IMPLEMENTATION CHECKPOINT PENDING / GAZEBO
+PROHIBITED.**
+
+## Next criterion
+
+Run the Phase 08 implementation checkpoint and commit the exact qualified
+source, scenarios, tests, report, and live status. Then create a separate
+checkpointed and committed visible-dispatch boundary. Do not start Gazebo
+from the uncommitted implementation.
+
+## Phase 08.8 M4.10 v8.9 implementation checkpoint — 2026-07-31
+
+The qualified schema-v13 evaluator, four fresh inputs, negative and
+compatibility tests, retained-replay record, no-Gazebo qualification, and
+live status received the required Phase 08 checkpoint against correction-plan
+HEAD `1ce890d`.
+
+```text
+base HEAD:
+  1ce890de78d3fe83de01a008e63d8e087938dd03
+status sha256 before this checkpoint note:
+  deabac612c2c66e35f17c424c8c0da6c3a446bf62c860a84318089f1bbc1dd1f
+active plan sha256:
+  5dde1f6be543939e27145ac7fc0a0b32da47b2613b0e60901030652d95e24892
+no-Gazebo qualification sha256:
+  a6919f2949ba722dfc36bad9ac949901a468f2b85a6c9a1f5c238061fcae8dc0
+checkpoint sha256 before this checkpoint note:
+  fbc78db300f10adc25f4b5843adccaed7390010faf99fe61f938f22ffb01d0dd
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+active Gazebo/scenario/recorder/analyzer:
+  none
+sealed v8.9 run roots:
+  absent 4/4
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.10 — V8.9 SCHEMA-V13 DUAL-TOPOLOGY IMPLEMENTATION /
+NO-GAZEBO QUALIFICATION PASS / IMPLEMENTATION CHECKPOINT PASS /
+IMPLEMENTATION COMMIT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Commit this exact qualified implementation boundary. Then write, checkpoint,
+and commit a separate dispatch authorization naming only the installed
+visible primary seed `19701`. Do not start Gazebo before both commits exist
+and the worktree is clean.

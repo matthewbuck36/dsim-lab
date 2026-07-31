@@ -1696,6 +1696,8 @@ def _unavailable_outcomes(reason, readiness_interval_available=False):
         'fill_cardinality_passed': None,
         'supervisor_owned_escape_assist_passed': None,
         'supervisor_owned_escape_assist': None,
+        'escape_command_ownership_passed': None,
+        'escape_command_ownership': None,
         'post_recovery_global_proximity_passed': None,
         'post_recovery_global_proximity': None,
         'collision_evidence_available': False,
@@ -2069,19 +2071,27 @@ def _staged_recovery_evidence(
             'extremum_classification_mode'
         ) == 'counted_candidates'
     )
-    accepted_paths = (
-        (
-            (
-                COUNTED_OPEN_FIELD_ASSISTED_RECOVERY_STATE_PATH
-                if resolved.get('algorithm', {}).get(
-                    'launch_overrides', {}
-                ).get('open_field_escape_assist_enabled', False)
-                else COUNTED_OPEN_FIELD_RECOVERY_STATE_PATH
-            ),
-        )
-        if counted_open_field
-        else STAGED_RECOVERY_STATE_PATHS
+    assist_enabled = bool(
+        resolved.get('algorithm', {}).get(
+            'launch_overrides', {}
+        ).get('open_field_escape_assist_enabled', False)
     )
+    if counted_open_field:
+        if assist_enabled and resolved.get('schema_version', 1) >= 13:
+            accepted_paths = (
+                COUNTED_OPEN_FIELD_RECOVERY_STATE_PATH,
+                COUNTED_OPEN_FIELD_ASSISTED_RECOVERY_STATE_PATH,
+            )
+        else:
+            accepted_paths = (
+                (
+                    COUNTED_OPEN_FIELD_ASSISTED_RECOVERY_STATE_PATH
+                    if assist_enabled
+                    else COUNTED_OPEN_FIELD_RECOVERY_STATE_PATH
+                ),
+            )
+    else:
+        accepted_paths = STAGED_RECOVERY_STATE_PATHS
     episodes = _recovery_episodes(
         state_records,
         expected_count,
@@ -3460,6 +3470,542 @@ def _supervisor_owned_escape_assist_evidence(
     return True, evidence, None
 
 
+def _direct_escape_repulse_ownership_evidence(
+    resolved,
+    state_messages,
+    event_messages,
+    diagnostic_records,
+    supervisor_command_records,
+    odometry_records,
+):
+    """Prove a bounded direct repulse exit under ordinary GESC ownership."""
+    evidence = {
+        'enabled': True,
+        'branch': 'direct_repulse',
+        'assist_applicable': False,
+        'evidence_mode': 'bounded_direct_repulse_schema_v13',
+        'repulse_state_sample_count': 0,
+        'repulse_control_sample_count': 0,
+        'repulse_supervisor_command_sample_count': 0,
+        'nonzero_gesc_control_sample_count': 0,
+        'mature_radial_progress_sample_count': 0,
+    }
+
+    def failed(reason):
+        return False, {**evidence, 'reason': reason}, None
+
+    assist_indices = [
+        index
+        for index, (unused_stamp, message) in enumerate(state_messages)
+        if (
+            message.state_valid
+            and message.state == AlgorithmState.STATE_ESCAPE_ASSIST
+        )
+    ]
+    if assist_indices:
+        return failed(
+            'direct recovery proof is invalid after ESCAPE_ASSIST entry'
+        )
+
+    repulse_indices = [
+        index
+        for index, (unused_stamp, message) in enumerate(state_messages)
+        if (
+            message.state_valid
+            and message.state == AlgorithmState.STATE_ESCAPE_REPULSE
+        )
+    ]
+    if not repulse_indices:
+        return failed('no valid ESCAPE_REPULSE state interval')
+    first_repulse_index = repulse_indices[0]
+    repulse_start_stamp = state_messages[first_repulse_index][0]
+    post_search_index = next(
+        (
+            index
+            for index in range(first_repulse_index + 1, len(state_messages))
+            if (
+                state_messages[index][1].state_valid
+                and state_messages[index][1].state
+                == AlgorithmState.STATE_SEARCH
+            )
+        ),
+        None,
+    )
+    if post_search_index is None:
+        return failed('ESCAPE_REPULSE has no later SEARCH boundary')
+    search_stamp, search_state = state_messages[post_search_index]
+    if any(index >= post_search_index for index in repulse_indices):
+        return failed('ESCAPE_REPULSE reappeared after the SEARCH boundary')
+
+    repulse_states = [
+        (stamp, message)
+        for stamp, message in state_messages
+        if repulse_start_stamp <= stamp < search_stamp
+    ]
+    evidence['repulse_state_sample_count'] = len(repulse_states)
+    if not repulse_states or any(
+        (
+            not message.state_valid
+            or message.state != AlgorithmState.STATE_ESCAPE_REPULSE
+        )
+        for unused_stamp, message in repulse_states
+    ):
+        return failed('direct interval contains a non-REPULSE state sample')
+
+    stale_sec = float(
+        resolved.get('algorithm', {}).get('launch_overrides', {}).get(
+            'supervisor_command_stale_sec',
+            0.5,
+        )
+    )
+    if not math.isfinite(stale_sec) or stale_sec < 0.0:
+        return failed('direct evidence freshness limit is invalid')
+    stale_ns = stale_sec * 1e9
+    escape_events = [
+        (stamp, message)
+        for stamp, message in event_messages
+        if (
+            repulse_start_stamp - stale_ns <= stamp < search_stamp
+            and message.event_type == AlgorithmEvent.EVENT_ESCAPE_STARTED
+        )
+    ]
+    if len(escape_events) != 1:
+        return failed(
+            'direct interval must contain exactly one ESCAPE_STARTED event'
+        )
+    escape_event_stamp, escape_event = escape_events[0]
+    try:
+        escape_values = _event_value_map(escape_event)
+        center = [
+            float(escape_values['escape_center_x_m']),
+            float(escape_values['escape_center_y_m']),
+        ]
+        direction = [
+            float(escape_values['approach_selected_direction_x']),
+            float(escape_values['approach_selected_direction_y']),
+        ]
+        exit_radius = float(escape_values['escape_exit_radius_m'])
+        direction_revision = float(
+            escape_values['approach_direction_revision']
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        return failed(
+            f'ESCAPE_STARTED direct ownership evidence is malformed: {exc}'
+        )
+    direction_norm = math.hypot(*direction)
+    if (
+        not all(
+            math.isfinite(value)
+            for value in [*center, *direction, exit_radius]
+        )
+        or exit_radius <= 0.0
+        or direction_revision != 1.0
+        or not math.isclose(
+            direction_norm,
+            1.0,
+            rel_tol=0.0,
+            abs_tol=1e-9,
+        )
+    ):
+        return failed(
+            'ESCAPE_STARTED direct geometry is invalid or not revision one'
+        )
+
+    stalled_events = [
+        message
+        for stamp, message in event_messages
+        if (
+            repulse_start_stamp <= stamp < search_stamp
+            and message.event_type == AlgorithmEvent.EVENT_ESCAPE_STALLED
+        )
+    ]
+    if stalled_events:
+        return failed('direct recovery emitted ESCAPE_STALLED without assist')
+
+    minimum_progress = resolved.get('algorithm', {}).get(
+        'launch_overrides', {}
+    ).get('minimum_radial_progress_m')
+    if (
+        isinstance(minimum_progress, bool)
+        or not isinstance(minimum_progress, (int, float))
+        or not math.isfinite(float(minimum_progress))
+        or float(minimum_progress) <= 0.0
+    ):
+        return failed('direct radial-progress threshold is invalid')
+    minimum_progress = float(minimum_progress)
+
+    radial_distances = []
+    radial_progress = []
+    for unused_stamp, message in repulse_states:
+        try:
+            weights = [
+                float(message.sensor_weight),
+                float(message.gaussian_weight),
+                float(message.affine_weight),
+            ]
+            state_center = [
+                float(message.escape_center_x),
+                float(message.escape_center_y),
+            ]
+            state_direction = [
+                float(message.safe_direction_x),
+                float(message.safe_direction_y),
+            ]
+            state_radius = float(message.escape_exit_radius)
+        except (AttributeError, TypeError, ValueError):
+            return failed('direct repulse state geometry is malformed')
+        if (
+            not message.weights_valid
+            or weights != [0.0, 1.0, 1.0]
+            or not message.escape_geometry_valid
+            or not message.safe_direction_valid
+            or not message.safe_direction_revision_valid
+            or message.safe_direction_revision != 1
+            or not message.failsafe_valid
+            or message.failsafe
+            or (
+                message.escape_stalled_valid
+                and message.escape_stalled
+            )
+            or not all(
+                math.isfinite(value)
+                for value in [*state_center, *state_direction, state_radius]
+            )
+            or not _commands_close(
+                [*state_center, 0.0, 0.0, 0.0, 0.0],
+                [*center, 0.0, 0.0, 0.0, 0.0],
+            )
+            or not _commands_close(
+                [*state_direction, 0.0, 0.0, 0.0, 0.0],
+                [*direction, 0.0, 0.0, 0.0, 0.0],
+            )
+            or not math.isclose(
+                state_radius,
+                exit_radius,
+                rel_tol=0.0,
+                abs_tol=1e-9,
+            )
+        ):
+            return failed(
+                'direct repulse state changed geometry, weights, or safety'
+            )
+        if message.radial_distance_valid:
+            distance = float(message.radial_distance)
+            if not math.isfinite(distance) or distance < 0.0:
+                return failed('direct radial-distance evidence is invalid')
+            radial_distances.append(distance)
+        if message.radial_progress_valid:
+            progress = float(message.radial_progress)
+            if not math.isfinite(progress):
+                return failed('direct radial-progress evidence is invalid')
+            if progress < minimum_progress:
+                return failed(
+                    'direct radial progress fell below the stall threshold'
+                )
+            radial_progress.append(progress)
+    if not radial_distances or max(radial_distances) < exit_radius:
+        return failed('direct repulse did not reach the frozen exit radius')
+    if not radial_progress:
+        return failed('direct repulse has no mature radial-progress evidence')
+    evidence.update({
+        'minimum_radial_progress_m': minimum_progress,
+        'mature_radial_progress_sample_count': len(radial_progress),
+        'minimum_mature_radial_progress_m': min(radial_progress),
+        'maximum_mature_radial_progress_m': max(radial_progress),
+        'maximum_radial_distance_m': max(radial_distances),
+    })
+
+    commands = sorted(
+        supervisor_command_records,
+        key=lambda item: item[0],
+    )
+    repulse_commands = [
+        (stamp, message)
+        for stamp, message in commands
+        if repulse_start_stamp <= stamp < search_stamp
+    ]
+    evidence['repulse_supervisor_command_sample_count'] = len(
+        repulse_commands
+    )
+    if not repulse_commands:
+        return failed('direct repulse has no supervisor command evidence')
+    for unused_stamp, message in repulse_commands:
+        command = _finite_command(_twist_command(message))
+        if command is None or any(abs(value) > 1e-9 for value in command):
+            return failed(
+                'direct repulse supervisor command is nonzero or invalid'
+            )
+
+    repulse_diagnostics = [
+        (stamp, message)
+        for stamp, message in diagnostic_records
+        if repulse_start_stamp <= stamp < search_stamp
+    ]
+    evidence['repulse_control_sample_count'] = len(repulse_diagnostics)
+    if not repulse_diagnostics:
+        return failed('direct repulse has no control diagnostic evidence')
+    zero = [0.0] * 6
+    for unused_stamp, message in repulse_diagnostics:
+        gesc = _finite_command(message.gesc_command_unsaturated)
+        combined = _finite_command(message.combined_command_unsaturated)
+        contribution = _finite_command(message.supervisor_contribution)
+        final = _finite_command(message.final_command)
+        if (
+            gesc is None
+            or combined is None
+            or contribution is None
+            or final is None
+            or not message.gesc_command_unsaturated_valid
+            or not message.combined_command_unsaturated_valid
+            or not message.supervisor_contribution_valid
+            or not message.final_command_valid
+        ):
+            return failed('direct repulse has invalid command evidence')
+        if (
+            not _commands_close(combined, gesc)
+            or not _commands_close(contribution, zero)
+        ):
+            return failed(
+                'direct repulse command is not ordinary GESC ownership'
+            )
+        saturated = _diagnostic_saturated_command(message, combined)
+        if saturated is None or not _commands_close(final, saturated):
+            return failed('direct repulse final command saturation is invalid')
+        if any(abs(value) > 1e-9 for value in gesc):
+            evidence['nonzero_gesc_control_sample_count'] += 1
+    if evidence['nonzero_gesc_control_sample_count'] <= 0:
+        return failed('direct repulse has no nonzero GESC command evidence')
+
+    try:
+        search_weights = [
+            float(search_state.sensor_weight),
+            float(search_state.gaussian_weight),
+            float(search_state.affine_weight),
+        ]
+    except (AttributeError, TypeError, ValueError):
+        return failed('returned SEARCH state weights are malformed')
+    if (
+        not search_state.previous_state_valid
+        or search_state.previous_state
+        != AlgorithmState.STATE_ESCAPE_REPULSE
+        or not search_state.transition_reason_valid
+        or 'stable escape exit' not in search_state.transition_reason
+        or not search_state.weights_valid
+        or search_weights != [1.0, 1.0, 0.0]
+        or search_state.active_escape_fill_id_valid
+        or search_state.escape_geometry_valid
+        or search_state.safe_direction_valid
+        or search_state.safe_direction_revision_valid
+        or not search_state.failsafe_valid
+        or search_state.failsafe
+    ):
+        return failed(
+            'returned SEARCH state did not prove a cleared stable direct exit'
+        )
+
+    next_state_index = next(
+        (
+            index
+            for index in range(post_search_index + 1, len(state_messages))
+            if (
+                state_messages[index][1].state_valid
+                and state_messages[index][1].state
+                != AlgorithmState.STATE_SEARCH
+            )
+        ),
+        None,
+    )
+    search_end_stamp = (
+        state_messages[next_state_index][0]
+        if next_state_index is not None
+        else None
+    )
+
+    def in_returned_search(stamp):
+        return (
+            stamp >= search_stamp
+            and (search_end_stamp is None or stamp < search_end_stamp)
+        )
+
+    returned_search_states = [
+        (stamp, message)
+        for stamp, message in state_messages
+        if in_returned_search(stamp)
+    ]
+    for unused_stamp, message in returned_search_states:
+        try:
+            weights = [
+                float(message.sensor_weight),
+                float(message.gaussian_weight),
+                float(message.affine_weight),
+            ]
+        except (AttributeError, TypeError, ValueError):
+            return failed('returned SEARCH state weights are malformed')
+        if (
+            not message.state_valid
+            or message.state != AlgorithmState.STATE_SEARCH
+            or not message.weights_valid
+            or weights != [1.0, 1.0, 0.0]
+            or message.active_escape_fill_id_valid
+            or message.escape_geometry_valid
+            or message.safe_direction_valid
+            or message.safe_direction_revision_valid
+            or not message.failsafe_valid
+            or message.failsafe
+        ):
+            return failed('returned SEARCH retained direct escape authority')
+
+    returned_search_commands = [
+        (stamp, message)
+        for stamp, message in commands
+        if in_returned_search(stamp)
+    ]
+    if not returned_search_commands:
+        return failed('returned SEARCH has no supervisor command evidence')
+    for unused_stamp, message in returned_search_commands:
+        command = _finite_command(_twist_command(message))
+        if command is None or any(abs(value) > 1e-9 for value in command):
+            return failed('returned SEARCH supervisor command is not zero')
+
+    exit_candidates = [
+        (stamp, message)
+        for stamp, message in odometry_records
+        if (
+            repulse_start_stamp <= stamp
+            and abs(stamp - search_stamp) <= stale_ns
+        )
+    ]
+    exit_odometry = (
+        min(
+            exit_candidates,
+            key=lambda item: (
+                abs(item[0] - search_stamp),
+                item[0] < search_stamp,
+                item[0],
+            ),
+        )
+        if exit_candidates
+        else None
+    )
+    if exit_odometry is None:
+        return failed('direct SEARCH boundary has no measured exit odometry')
+    exit_stamp, exit_message = exit_odometry
+    try:
+        exit_x = float(exit_message.pose.pose.position.x)
+        exit_y = float(exit_message.pose.pose.position.y)
+    except (AttributeError, TypeError, ValueError):
+        return failed('direct measured exit odometry is malformed')
+    exit_vector = [exit_x - center[0], exit_y - center[1]]
+    measured_distance = math.hypot(*exit_vector)
+    if (
+        not all(
+            math.isfinite(value)
+            for value in [exit_x, exit_y, measured_distance]
+        )
+        or measured_distance <= 1e-12
+    ):
+        return failed('direct measured fill-to-exit vector is invalid')
+    measured_unit = [
+        value / measured_distance for value in exit_vector
+    ]
+    alignment = sum(
+        measured_unit[index] * direction[index] for index in range(2)
+    )
+    if measured_distance < exit_radius:
+        return failed('direct measured exit is inside the frozen exit radius')
+    if alignment < 0.80:
+        return failed('direct measured fill-to-exit alignment is below 0.80')
+
+    evidence.update({
+        'escape_started_bag_stamp': escape_event_stamp,
+        'escape_started_to_repulse_state_sec': (
+            repulse_start_stamp - escape_event_stamp
+        ) / 1e9,
+        'evidence_freshness_limit_sec': stale_sec,
+        'repulse_start_bag_stamp': repulse_start_stamp,
+        'post_exit_search_bag_stamp': search_stamp,
+        'exit_odometry_bag_stamp': exit_stamp,
+        'selected_direction': direction,
+        'fill_center_m': center,
+        'frozen_exit_radius_m': exit_radius,
+        'exit_position_m': [exit_x, exit_y],
+        'fill_to_exit_distance_m': measured_distance,
+        'fill_to_exit_alignment': alignment,
+        'returned_search_state_sample_count': len(
+            returned_search_states
+        ),
+        'returned_search_zero_command_sample_count': len(
+            returned_search_commands
+        ),
+        'ordinary_gesc_ownership_proven': True,
+        'returned_search_authority_cleared': True,
+    })
+    return True, evidence, None
+
+
+def _escape_command_ownership_evidence(
+    resolved,
+    state_messages,
+    event_messages,
+    diagnostic_records,
+    supervisor_command_records,
+    odometry_records,
+):
+    """Select the strict schema-v13 direct or assisted ownership proof."""
+    if resolved.get('schema_version', 1) < 13:
+        return None, None, None
+    enabled = bool(
+        resolved.get('algorithm', {}).get('launch_overrides', {}).get(
+            'open_field_escape_supervisor_owned_assist_enabled',
+            False,
+        )
+    )
+    if not enabled:
+        return None, None, None
+    assist_observed = any(
+        (
+            message.state_valid
+            and message.state == AlgorithmState.STATE_ESCAPE_ASSIST
+        )
+        for unused_stamp, message in state_messages
+    )
+    if assist_observed:
+        passed, assist_evidence, error = (
+            _supervisor_owned_escape_assist_evidence(
+                resolved,
+                state_messages,
+                event_messages,
+                diagnostic_records,
+                supervisor_command_records,
+                odometry_records,
+            )
+        )
+        if error is not None:
+            return None, None, error
+        evidence = {
+            **(assist_evidence or {}),
+            'branch': 'assisted',
+            'assist_applicable': True,
+            'evidence_mode': 'conditional_escape_schema_v13',
+        }
+        if passed is not True:
+            evidence['reason'] = (
+                (assist_evidence or {}).get(
+                    'reason',
+                    'schema-v12 assisted ownership proof failed',
+                )
+            )
+        return passed, evidence, None
+    return _direct_escape_repulse_ownership_evidence(
+        resolved,
+        state_messages,
+        event_messages,
+        diagnostic_records,
+        supervisor_command_records,
+        odometry_records,
+    )
+
+
 def _bag_outcomes(run_directory, resolved):
     bag_directory = Path(run_directory) / 'bag'
     reader = rosbag2_py.SequentialReader()
@@ -3606,6 +4152,19 @@ def _bag_outcomes(run_directory, resolved):
         odometry_records,
     )
     outcome_error = outcome_error or supervisor_owned_assist_error
+    (
+        escape_command_ownership_passed,
+        escape_command_ownership_evidence,
+        escape_command_ownership_error,
+    ) = _escape_command_ownership_evidence(
+        resolved,
+        state_messages,
+        event_messages,
+        diagnostic_records,
+        supervisor_command_records,
+        odometry_records,
+    )
+    outcome_error = outcome_error or escape_command_ownership_error
     ranked_goal_stamp = (
         ranked_goal_evidence.get('event_bag_stamp')
         if ranked_goal_passed and ranked_goal_evidence
@@ -3939,6 +4498,15 @@ def _bag_outcomes(run_directory, resolved):
                 supervisor_owned_assist_evidence
             ),
         })
+    if escape_command_ownership_passed is not None:
+        outcomes.update({
+            'escape_command_ownership_passed': (
+                escape_command_ownership_passed
+            ),
+            'escape_command_ownership': (
+                escape_command_ownership_evidence
+            ),
+        })
     if approach_radius_declared:
         outcomes.update({
             'post_recovery_global_approach_passed': (
@@ -4024,6 +4592,9 @@ def classify_result(
         ),
         'supervisor_owned_escape_assist': outcomes.get(
             'supervisor_owned_escape_assist_passed'
+        ),
+        'escape_command_ownership': outcomes.get(
+            'escape_command_ownership_passed'
         ),
         'collision_expectation': outcomes.get(
             'collision_expectation_passed'
@@ -4194,6 +4765,12 @@ def classify_result(
                 'evidence': outcomes.get(
                     'supervisor_owned_escape_assist'
                 ),
+                'gating': True,
+            }
+        if 'escape_command_ownership' in resolved['success']['all_of']:
+            staged_results['escape_command_ownership'] = {
+                'passed': facts['escape_command_ownership'],
+                'evidence': outcomes.get('escape_command_ownership'),
                 'gating': True,
             }
         staged_recovery = resolved.get('success', {}).get(
