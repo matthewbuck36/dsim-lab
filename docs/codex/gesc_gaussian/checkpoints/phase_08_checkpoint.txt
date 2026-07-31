@@ -1,36 +1,39 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-31T21:54:08+00:00
-Base HEAD: 4209c1a839100d41c5a813c8b88d78e9de38aebd
+Generated: 2026-07-31T22:10:13+00:00
+Base HEAD: 39b73f947e490febe8b496a37dee767193d64835
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: d68ec87acd55094257393f609f8c70debfcff72d433e9b069e87f2a4717bb122
+Status sha256: e28f86cb7e5e755808b8c393ef7402fbb081de9f1b0f61f2b298009127e78195
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_8_v8_11_plan.md
 Active subphase plan sha256: 6d5d8446cf3dc56de77a34a62eb7e28e30e9e6d9e422ef9556ff990acaebd644
-Unstaged diff sha256: 612f3bd671eeade8f6c9d41218e83c9241fdb8d0682b309c76cf71cc859f4d9a
+Unstaged diff sha256: 7e9ecf6641031ad299ecf9830b200e54a8aae3399bfd7031dabce81945123b17
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 167]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 168]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
+?? docs/codex/gesc_gaussian/validation/phase_08_8_m8_4_v8_11_broad_matrix.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 26 ++-----
- docs/codex/gesc_gaussian/status/phase_08_status.md | 79 ++++++++++++++++++++++
- 2 files changed, 84 insertions(+), 21 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  25 ++---
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 111 +++++++++++++++++++++
+ 2 files changed, 117 insertions(+), 19 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**PHASE 08.8 M8.4 — V8.11 FOUR-CASE MATRIX BOUNDARY WRITTEN / INSTALLED
-DRY-RUN 4/4 / DISPATCH CHECKPOINT AND COMMIT PENDING / MATRIX PROHIBITED.**
+**PHASE 08.8 M8.4 — V8.11 MATRIX FORMAL FAIL ON FIRST FIXED CASE / 19931
+RETAINED WITHOUT RETRY / 19932..19934 NOT DISPATCHED / ROOT CAUSE IS
+INSIDE-EXIT-RADIUS APPROACH-CONTINUITY CONTRACT GAP / RESULT CHECKPOINT
+PENDING / V8.11 BROAD CLAIM CLOSED.**
 
 
 

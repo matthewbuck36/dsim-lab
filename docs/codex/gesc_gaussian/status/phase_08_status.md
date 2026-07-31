@@ -19309,3 +19309,153 @@ PROHIBITED.**
 Commit this exact two-file dispatch boundary. Then invoke the installed matrix
 once on domain `220`, preserve every dispatched result, and stop without a
 retry if any fixed case fails.
+
+## Phase 08.8 M8.4 v8.11 broad-matrix result — 2026-07-31
+
+The fixed matrix dispatch boundary is committed:
+
+```text
+39b73f9 phase 08.8: authorize v8.11 broad matrix
+```
+
+The one authorized installed suite dispatched seed `19931` once. It failed
+the formal Stage A gate, so the runner stopped exactly as declared. Seed
+`19931` was not retried, tuned, or reclassified; seeds `19932..19934` were not
+dispatched.
+
+```text
+started / completed:
+  2026-07-31T21:55:07.749994Z / 2026-07-31T22:02:16.204028Z
+runner / recorder return code:
+  1 / 0
+stopped reason:
+  run_failure
+resolved definitions / dispatched:
+  4 / 1
+attempts / retries:
+  1 / 0
+```
+
+Exact summary:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_11_broad_matrix/scenario_summaries/
+  20260731T215507749994Z_phase08_v8_11_broad_matrix.yaml
+SHA-256:
+  6504450fbd404bb4adea04a7d29ad92605ddd11a05201ce5d39f1d75335d235d
+```
+
+Seed `19931` correctly confirmed candidate one and created exactly one valid
+typed fill. The controller emitted a transition to `ESCAPE_REPULSE` and then
+immediately forced `FAILSAFE` before a publishable escape interval:
+
+```text
+convergence confirmed:             77.4 sim s
+fill created / escape transition:  86.7 / 86.7 sim s
+failsafe reason:
+  open-field escape approach continuity has no pose outside the frozen exit radius
+collapsed state path:
+  SEARCH -> VERIFY_EXTREMUM -> DESIGN_OR_MERGE_FILL -> FAILSAFE
+Stage A timeout sample:            360.638 sim s
+formal predicates:                 3/14 PASS
+```
+
+The fill center was `(1.069961, 0.760591) m`, the fill-to-convergence distance
+was `0.185510 m`, and created/typed/active cardinality was `1/1/1`. The frozen
+exit radius was `1.366770829 m`. Across `2,536` pre-escape odometry samples,
+the maximum distance from the fill center was only `1.315565112 m`; zero
+samples were outside and the shortfall was `0.051205717 m`.
+
+The schema-v14 topology preflight admitted `start_to_local_m=1.25` but did not
+bind the runtime supervisor's requirement for one pose outside the
+data-derived fill radius. This is a fill/topology/supervisor integration gap.
+It is not a wall, collision, source-count, cardinality, fill-validity, affine-
+disablement, recording, or cleanup failure.
+
+Evidence boundary:
+
+```text
+classification / matrix population:  FAIL / NOT ESTABLISHED
+recording / completeness:             PASS / PASS
+final zero / readiness false:         PASS / PASS
+cleanup / SQLite quick_check:         PASS / ok
+analysis status / failures:           partial / []
+plots:                                9/9
+raw bag SHA-256:
+  15a91e7edc924d5bb98c974261e6f31aa67a5c41a1d276a3153f056e415bc901
+```
+
+The analyzer's `partial` status is expected because no valid escape or goal
+interval exists; recording and analysis failure lists are empty. The
+trajectory, state/event, and radial-escape plots were visually inspected and
+show the approach/orbit, one fill, immediate persistent failsafe, and absence
+of escape evidence.
+
+Durable failure, exact run, diagnosis, artifact hashes, plot hashes, and
+fresh-version correction boundary:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m8_4_v8_11_broad_matrix.md
+```
+
+V8.11 is closed for the broad matrix. Its fixed secondary `1/1 + 5/5` result
+remains passed only for that exact layout. No broad varied-layout/intensity
+claim is established. No Gazebo, runner, recorder, analyzer, rosbag recorder,
+or physical process remains active. Physical stopping remains manual operator
+`Ctrl+C`.
+
+## Current milestone
+
+**PHASE 08.8 M8.4 — V8.11 MATRIX FORMAL FAIL ON FIRST FIXED CASE / 19931
+RETAINED WITHOUT RETRY / 19932..19934 NOT DISPATCHED / ROOT CAUSE IS
+INSIDE-EXIT-RADIUS APPROACH-CONTINUITY CONTRACT GAP / RESULT CHECKPOINT
+PENDING / V8.11 BROAD CLAIM CLOSED.**
+
+## Next criterion
+
+Run the Phase 08 failure-result checkpoint and commit the exact retained
+report/status/checkpoint boundary. Then, under the user's existing bounded-
+correction authority, write and checkpoint a fresh versioned Plan for a
+legacy-default-off, odometry-only interior approach-anchor fallback. Do not
+rerun seed `19931`, dispatch `19932..19934`, or change v8.11 in place.
+
+## Phase 08.8 M8.4 v8.11 broad-matrix failure checkpoint — 2026-07-31
+
+The retained first-case formal failure, stopped population, one-time partial
+analysis, nine plots, exact root-cause diagnosis, live status, and inactive
+runtime received the required Phase 08 material checkpoint against dispatch
+HEAD `39b73f9`.
+
+```text
+base HEAD:
+  39b73f947e490febe8b496a37dee767193d64835
+status sha256 before this checkpoint note:
+  e28f86cb7e5e755808b8c393ef7402fbb081de9f1b0f61f2b298009127e78195
+matrix-failure report sha256:
+  a21f831d6c0aad602d47818f3fa0ffd1d7d20d802bcfb9f9c0e42cbf0db82fd5
+checkpoint sha256 before this checkpoint note:
+  9d2697f6f54660d0d9310657d4ffa65bc573a0b26468c4b0195d588a32833610
+Phase 08 implement context / git diff check:
+  PASS / PASS
+active simulation/analysis/physical runtime:
+  none
+dispatched / retries / plots:
+  1 / 0 / 9
+matrix disposition:
+  FAIL / v8.11 broad claim closed
+```
+
+## Current milestone
+
+**PHASE 08.8 M8.4 — V8.11 MATRIX FORMAL FAIL ON FIRST FIXED CASE / 19931
+RETAINED WITHOUT RETRY / 19932..19934 NOT DISPATCHED / ROOT CAUSE IS
+INSIDE-EXIT-RADIUS APPROACH-CONTINUITY CONTRACT GAP / RESULT CHECKPOINT PASS /
+FAILURE COMMIT PENDING / V8.11 BROAD CLAIM CLOSED.**
+
+## Next criterion
+
+Commit this exact three-file failure boundary. Then write, validate,
+checkpoint, and commit a fresh v8.12 Plan before changing code or dispatching
+any fresh simulation.
