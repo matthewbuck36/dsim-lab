@@ -20299,3 +20299,47 @@ V8.12 CLOSED / NO V8.13 / CLOSEOUT COMMIT PENDING.**
 Commit this exact terminal boundary. Then verify the commit and clean
 worktree, add the bounded post-commit status receipt, commit that receipt, and
 complete the approved goal. Do not start Gazebo or physical hardware.
+
+## Phase 08.8 M8.10 terminal closeout post-commit receipt — 2026-07-31
+
+The bounded terminal result and closeout were committed:
+
+```text
+9335da2057ac488944578af9f941d8d8fb6164ae
+  phase 08.8: close v8.12 terminal boundary
+```
+
+Immediate post-commit verification:
+
+```text
+branch:
+  feature/gesc-gaussian-robustness-v1
+ahead of matching origin branch:
+  176 commits
+tracked and untracked worktree changes:
+  none
+active simulation/analysis/physical runtime:
+  none
+matrix report sha256:
+  1923c697ef4491f3ee41603f023faf27d1af03d3030c22d676a35ae51739555e
+final report sha256:
+  552bdcf465de35ac76cc190547881d2f4ff9076dc6bacdd86c1e58699d80a55a
+handoff sha256:
+  4d66bf71e229920177323c93217dabc10ae126f3efc92d8c4b9d5ae2aca22ec1
+checkpoint sha256:
+  dade9a29fdb4b1bc93d638093c388579970a2723a2bc8b09bc67dae21895ce92
+```
+
+## Current milestone
+
+**PHASE 08.8 M8.10 COMPLETE / V8.12 TERMINALLY CLOSED / V8.12 VISIBLE
+FORMAL PASS / V8.12 MATRIX FIRST CASE SCIENTIFICALLY COMPLETE BUT FORMAL
+13/14 FAIL / REMAINING CASES NOT RUN / NO RETRY / NO V8.13 / NO PHYSICAL
+MOTION.**
+
+## Next criterion
+
+There is no remaining Phase 08.8 criterion. Start only a separately planned
+and authorized Phase 09 boundary. Physical motion remains unauthorized until
+that future phase receives explicit motion authority; physical arrival remains
+manual operator `Ctrl+C`.
