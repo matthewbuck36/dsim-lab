@@ -18953,3 +18953,99 @@ RESULT COMMIT PENDING / REPEATS AND MATRIX PROHIBITED.**
 
 Commit this exact visible-result boundary. Then write, checkpoint, and commit
 the fixed `19911..19915` repeat dispatch boundary before starting any repeat.
+
+## Phase 08.8 M8.3 v8.11 secondary-repeat dispatch boundary — 2026-07-31
+
+The fixed visible result is committed:
+
+```text
+6bad670 phase 08.8: record v8.11 visible pass
+```
+
+The worktree was clean immediately afterward. This boundary authorizes one
+installed serial invocation containing exactly five fixed headless cases:
+
+```text
+installed scenario:
+  /tmp/phase08_8_v8_11_release_qual.AdUc5v/install/ros_esc/share/
+  ros_esc/scenario_runner/scenarios/
+  phase08_v8_11_secondary_repeats.yaml
+installed/source scenario sha256:
+  01466b3c350b4e37693eaffb0c40fe15591d28a8d09ee14f4b60aa00f200ce1d
+case:
+  v8_11_secondary_repeats_r1p5_a67p5_h25
+seeds:
+  19911, 19912, 19913, 19914, 19915
+ROS_DOMAIN_ID:
+  221
+ROS_LOCALHOST_ONLY:
+  1
+presentation:
+  headless Gazebo, serial execution
+attempts / retries per seed:
+  1 / 0
+run root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_11_secondary_repeats
+```
+
+The runner must stop at the first formal or cleanup failure. It may not skip,
+retry, replace, or tune a seed. The population gate is `5/5` formal passes,
+five complete recordings, final zeros and cleanups, five exact one-fill
+recoveries, five strict rankings, five graceful proximity stops, and `45/45`
+plots after one analysis per complete dispatched run.
+
+The installed runner is invoked from `/tmp` with no source-worktree
+`PYTHONPATH` and an explicit outer `5100 s` bound. No Gazebo, scenario runner,
+recorder, analyzer, or physical process was started while writing this
+boundary. The repeat root is absent.
+
+## Current milestone
+
+**PHASE 08.8 M8.3 — V8.11 SECONDARY REPEATS `19911..19915` BOUNDARY
+WRITTEN / DISPATCH CHECKPOINT AND COMMIT PENDING / REPEATS AND MATRIX
+PROHIBITED.**
+
+## Next criterion
+
+Validate source/install parity, root absence, inactive runtime, context, and
+diff; checkpoint Phase 08; and commit this exact boundary. Only then invoke
+the installed repeat suite once. Do not authorize the matrix unless all five
+fixed repeats pass and are analyzed.
+
+## Phase 08.8 M8.3 v8.11 secondary-repeat dispatch checkpoint — 2026-07-31
+
+The exact installed `19911..19915` serial, headless, first-failure-stop,
+one-time/no-retry boundary received the required Phase 08 checkpoint against
+visible-result HEAD `6bad670`.
+
+```text
+base HEAD:
+  6bad670
+status sha256 before this checkpoint note:
+  904b8d81601e47afe854ba1389a8a94f46e6cee74fec111bd08fc71452823caf
+checkpoint sha256 before this checkpoint note:
+  5630a659c828bc954f416682e756986ddd2bec29b9f3584dfaa948f49b489782
+installed/source scenario parity:
+  PASS
+installed/source scenario sha256:
+  01466b3c350b4e37693eaffb0c40fe15591d28a8d09ee14f4b60aa00f200ce1d
+Phase 08 implement context / git diff check:
+  PASS / PASS
+active runtime:
+  none
+repeat root:
+  absent
+```
+
+## Current milestone
+
+**PHASE 08.8 M8.3 — V8.11 SECONDARY REPEATS `19911..19915` BOUNDARY /
+DISPATCH CHECKPOINT PASS / DISPATCH COMMIT PENDING / REPEATS AND MATRIX
+PROHIBITED.**
+
+## Next criterion
+
+Commit this exact two-file repeat boundary. Then invoke the installed suite
+once on domain `221`, preserve every dispatched result, and stop without a
+retry if any fixed case fails.

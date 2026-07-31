@@ -1,38 +1,37 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-31T21:11:17+00:00
-Base HEAD: 66c7e8e462dafe33e2cf5c3b6df4a14c60758940
+Generated: 2026-07-31T21:12:09+00:00
+Base HEAD: 6bad670b117554f04c731e5086165c6e43d5e232
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: f22bc3e847cf73dc8493935b52b645d7beb61d0b8c355f03ae70c1cc442890fd
+Status sha256: 904b8d81601e47afe854ba1389a8a94f46e6cee74fec111bd08fc71452823caf
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_8_v8_11_plan.md
 Active subphase plan sha256: 6d5d8446cf3dc56de77a34a62eb7e28e30e9e6d9e422ef9556ff990acaebd644
-Unstaged diff sha256: 69a7b09171122f1bd1cf1b320a2ac8169e24d82a5fd086ecdc13c1b0cd12a28f
+Unstaged diff sha256: 7e18c5d37c02e67f5fb8784ceefbd4e1a6aa620348731fdc7a92e2e8b7b59ba5
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 164]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 165]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
-?? docs/codex/gesc_gaussian/validation/phase_08_8_m8_3_v8_11_secondary_visible_probe.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  25 ++---
- docs/codex/gesc_gaussian/status/phase_08_status.md | 112 +++++++++++++++++++++
- 2 files changed, 118 insertions(+), 19 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 26 ++--------
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 59 ++++++++++++++++++++++
+ 2 files changed, 64 insertions(+), 21 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**PHASE 08.8 M8.3 — V8.11 SECONDARY VISIBLE SEED `19901` FORMAL PASS /
-ONE-TIME ANALYSIS COMPLETE / 9/9 PLOTS / RESULT CHECKPOINT PENDING /
-REPEATS AND MATRIX PROHIBITED.**
+**PHASE 08.8 M8.3 — V8.11 SECONDARY REPEATS `19911..19915` BOUNDARY
+WRITTEN / DISPATCH CHECKPOINT AND COMMIT PENDING / REPEATS AND MATRIX
+PROHIBITED.**
 
 
 
