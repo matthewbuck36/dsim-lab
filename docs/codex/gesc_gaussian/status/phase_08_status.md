@@ -19866,3 +19866,128 @@ PROHIBITED.**
 Commit this exact two-file dispatch boundary. Then invoke the installed
 visible suite once on domain `219`, preserve the result, and stop without a
 retry if any fixed gate fails.
+
+## Phase 08.8 M8.8 v8.12 visible corrective result — 2026-07-31
+
+The committed installed seed-`20001` visible boundary executed exactly once
+without a retry:
+
+```text
+dispatch HEAD:
+  40940877a67920653cca2378c91336803cfd5761
+scenario summary:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_12_interior_anchor_probe/scenario_summaries/
+  20260731T231350696332Z_phase08_v8_12_interior_anchor_visible_probe.yaml
+scenario summary sha256:
+  b9e3f9711600dd36a9d897bf550cf432ce8dcdb9f34ba444921ad030c1322cde
+attempts / retries:
+  1 / 0
+formal predicates:
+  14/14 PASS
+recording / final zero / readiness false / SQLite / cleanup:
+  PASS / PASS / PASS / ok / PASS
+```
+
+The behavior exercised the intended v8.12 correction and complete two-source
+contract:
+
+```text
+Stage A completion:                 106.609 sim s
+created / active fills:             1 / 1
+fill-to-convergence:                0.099527192962 m
+approach anchor mode / value:       interior_farthest / 1
+anchor displacement / minimum:      1.330954903938 / 0.50 m
+escape branch / duration:           assisted / 17.55953105 s
+escape-stalled event:               observed
+escape succeeds / fails:            1 / 0
+ordinary GESC ownership restored:   true
+candidate one raw lower:            -3.188705462004
+candidate two raw upper:            -3.837209302326
+strict separation margin:            0.648503840321
+Stage B proximity:                  222.719 sim s
+post-Stage-A elapsed:               116.110 s
+first live proximity distance:      0.116717368350 m
+final global distance:              0.116706544674 m
+graceful proximity stop:            true
+```
+
+The exact summary-owned run was analyzed once. Analysis completed with zero
+failures, both fresh and stored Phase 05 validation passed, all nine standard
+plots exist, and visual inspection of trajectory, candidate ranking, and cost
+confirmed the local basin/fill, recovery/transit, final global approach, and
+strict raw-cost ordering. The follow-up plot check first named the wrong
+`analysis/plots` directory; it then inspected the already-complete standard
+`analysis/phase07/plots` output without rerunning the analyzer.
+
+Durable report:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m8_8_v8_12_visible_probe.md
+```
+
+No Gazebo, runner, recorder, analyzer, rosbag recorder, or physical process
+remains active. The four-case matrix has not been dispatched. The simulation
+coordinate stop remains evaluator-only; physical arrival remains manual
+operator `Ctrl+C`.
+
+## Current milestone
+
+**PHASE 08.8 M8.8 — V8.12 VISIBLE SEED `20001` FORMAL PASS / EXPECTED
+INTERIOR ANCHOR AND ASSISTED RECOVERY PASS / ONE-TIME ANALYSIS COMPLETE /
+9/9 PLOTS / RESULT CHECKPOINT PENDING / MATRIX PROHIBITED.**
+
+## Next criterion
+
+Run the Phase 08 result checkpoint and commit this exact visible evidence.
+Then write, checkpoint, and commit a separate one-time/no-retry boundary for
+the installed headless seeds `20031..20034`. Do not start the matrix before
+both commits exist.
+
+## Phase 08.8 M8.8 v8.12 visible-result checkpoint — 2026-07-31
+
+The fixed seed-`20001` formal pass, expected interior anchor, assisted local
+recovery, strict ranking, one-time analysis, nine plots, durable result, and
+inactive runtime received the required Phase 08 result checkpoint against
+dispatch HEAD `4094087`.
+
+```text
+base HEAD:
+  40940877a67920653cca2378c91336803cfd5761
+status sha256 before this checkpoint note:
+  9c6fee1d703ddd0d88e501925eb485bd57a59d3d7046d71190d826b37802f154
+visible-result report sha256:
+  a915a9086302c77ca1dea48123bb61026e3395dfa91ae18096b06411b315f150
+checkpoint sha256 before this checkpoint note:
+  6dd9ecaf88f448c66c03f54b607638d9345b60b7adb9868d2b729f3c1eea623a
+Phase 08 implement context:
+  PASS
+git diff --check:
+  PASS
+bag SQLite quick_check using read-only Python sqlite3 fallback:
+  ok
+active simulation/analysis/physical runtime:
+  none
+attempts / retries:
+  1 / 0
+formal predicates / plots:
+  14/14 / 9/9
+```
+
+The `sqlite3` command-line program is unavailable on this host, so the
+read-only `file:...?mode=ro` Python sqlite3 fallback performed the same
+`PRAGMA quick_check` without mutating the retained bag.
+
+## Current milestone
+
+**PHASE 08.8 M8.8 — V8.12 VISIBLE SEED `20001` FORMAL PASS / EXPECTED
+INTERIOR ANCHOR AND ASSISTED RECOVERY PASS / ONE-TIME ANALYSIS COMPLETE /
+9/9 PLOTS / RESULT CHECKPOINT PASS / RESULT COMMIT PENDING / MATRIX
+PROHIBITED.**
+
+## Next criterion
+
+Commit this exact visible-result boundary. Then write, validate, checkpoint,
+and commit the fixed `20031..20034` matrix dispatch boundary before starting
+any matrix case.
