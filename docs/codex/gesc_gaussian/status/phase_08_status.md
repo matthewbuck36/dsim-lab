@@ -1,6 +1,6 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-31T03:07:12-07:00`
+Last verified: `2026-07-31T03:09:19-07:00`
 Status: `PHASE 08 CLOSED AND COMMITTED; BROAD SIMULATION-READY OBJECTIVE FAILED; PHASE 09 PLAN REQUIRES SEPARATE REQUEST`
 
 ## Objective
@@ -13221,3 +13221,120 @@ Stage this checkpoint note and checkpoint file, commit the exact qualified
 implementation, and verify a clean tree. Then create a separate committed
 dispatch boundary authorizing only the installed visible primary seed
 `19301`.
+
+## Phase 08.8 M4.5 v8.5 visible-dispatch boundary — 2026-07-31
+
+The exact qualified v8.5 implementation was committed at:
+
+```text
+9e65952919f26d7ec62a9e1dd0fbd630b9e56424
+phase 08.8: qualify v8.5 active-fill transit
+```
+
+Post-commit preflight passes:
+
+```text
+worktree:
+  clean
+phase context:
+  PASS
+primary visible evidence root:
+  absent
+matching Gazebo/scenario/recorder/analyzer processes:
+  none
+DISPLAY:
+  :0
+xdpyinfo:
+  PASS
+source primary-visible scenario sha256:
+  39f807c055d5ea0217b6f3510ac34bb1a068316da4cc18841911f428371dae28
+installed primary-visible scenario sha256:
+  39f807c055d5ea0217b6f3510ac34bb1a068316da4cc18841911f428371dae28
+source/install parity:
+  PASS
+```
+
+This record proposes exactly one installed GUI execution:
+
+```text
+scenario:
+  phase08_v8_5_primary_visible_probe.yaml
+case:
+  v8_5_primary_probe_r1p5_a45_h25_19301
+seed:
+  19301
+profile:
+  robust_gaussian_v1
+ROS domain:
+  230
+execution:
+  serial, Gazebo GUI visible, one attempt, no retry
+scenario run timeout:
+  540.0 s
+scenario wall timeout:
+  720.0 s
+outer process timeout:
+  900 s
+evidence root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_5_primary_probe
+```
+
+No source, start, source position, intensity, profile value, acceptance
+predicate, timeout, seed, cleanup rule, or stop rule may change during the
+attempt. The fixed run must demonstrate candidate one, exactly one typed
+active fill, one latched direction at revision one, completed local escape,
+ordinary affine-free `SEARCH`, strict raw-cost ranking of candidate two,
+`GOAL_REACHED`, a later evaluator-only `0.50 m` simulation proximity sample,
+final readiness false, final zero, complete recording, and clean shutdown.
+
+Any behavioral, evidence, recording, final-zero, cleanup, or infrastructure
+failure closes v8.5 immediately. The attempt is retained regardless of
+outcome and cannot be retried. Primary repeats, the secondary probe,
+secondary repeats, broad characterization, three lights, physical motion,
+and Phase 09 remain prohibited.
+
+## Current milestone
+
+**PHASE 08.8 M4.5 — QUALIFIED V8.5 IMPLEMENTATION COMMITTED / ONE FIXED
+VISIBLE PRIMARY PROBE DECLARED / DISPATCH CHECKPOINT PENDING / GAZEBO
+PROHIBITED.**
+
+## Next criterion
+
+Checkpoint and commit this exact status plus checkpoint dispatch boundary.
+Then immediately reconfirm the clean tree, inactive runtime process set,
+absent evidence root, installed scenario parity, and GUI display before
+executing the one authorized seed-`19301` visible probe.
+
+## Phase 08.8 M4.5 v8.5 visible-dispatch checkpoint — 2026-07-31
+
+The one-attempt visible dispatch contract received the required Phase 08
+checkpoint against qualified implementation HEAD `9e65952`.
+
+```text
+base HEAD:
+  9e65952919f26d7ec62a9e1dd0fbd630b9e56424
+status sha256 before this checkpoint note:
+  c4540d904cd9c9fe036b92ceeb4ef9c527b87a3072ea28fad5a19b3ebba03dfb
+staged dispatch diff sha256:
+  b8a072988a7c396055785288a4db2217b6e0f091bc46195d06db3adaf0fea093
+checkpoint sha256 before this checkpoint note:
+  829f5c0eea12d7c622c2b4ca517227ab25a6789c68f33b615b54c92acfb7fbd1
+unstaged and staged diff checks:
+  PASS
+```
+
+No Gazebo, scenario, recorder, analyzer, rosbag recorder, or physical process
+ran during the dispatch checkpoint. The primary evidence root remains absent.
+
+## Current milestone
+
+**PHASE 08.8 M4.5 — QUALIFIED V8.5 IMPLEMENTATION COMMITTED / ONE FIXED
+VISIBLE PRIMARY PROBE DECLARED / DISPATCH CHECKPOINT PASS / DISPATCH COMMIT
+PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Stage this checkpoint note and checkpoint file, commit the exact dispatch
+boundary, and verify a clean tree. Then repeat the fixed preflight and execute
+the one installed GUI seed-`19301` attempt without retry or in-run change.
