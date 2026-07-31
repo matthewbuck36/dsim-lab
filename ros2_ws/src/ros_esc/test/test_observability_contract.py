@@ -391,6 +391,7 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         "recording_ready_topic": "/gesc_gaussian/recording_ready",
         "recording_ready_stale_sec": "0.50",
         "escape_exit_hold_sec": "1.0",
+        "open_field_escape_assist_enabled": "False",
         "stall_window_sec": "3.0",
         "minimum_radial_progress_m": "0.05",
         "approach_history_window_sec": "3.0",
@@ -521,6 +522,7 @@ def test_launch_contract_has_canonical_defaults_and_one_final_owner():
         'post_recovery_source_resume_enabled',
         'post_recovery_source_resume_min_progress_m',
         'adaptive_recenter_lookahead_enabled',
+        'open_field_escape_assist_enabled',
     ):
         assert (
             f'-p {name}:=$(var {name})'

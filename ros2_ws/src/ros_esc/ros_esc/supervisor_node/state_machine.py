@@ -55,6 +55,7 @@ class StateMachineConfig:
     verification_max_sec: float = 12.0
     fill_design_timeout_sec: float = 5.0
     escape_max_sec: float = 20.0
+    open_field_escape_assist_enabled: bool = False
     recenter_after_escape: bool = True
     recenter_max_sec: float = 30.0
     max_fill_clusters: int = 0
@@ -133,6 +134,19 @@ class StateMachineConfig:
                     "counted-candidate classification requires "
                     "max_fill_clusters == known_source_count - 1"
                 )
+        if not isinstance(self.open_field_escape_assist_enabled, bool):
+            raise ValueError(
+                "open_field_escape_assist_enabled must be boolean"
+            )
+        if self.open_field_escape_assist_enabled and (
+            self.recenter_after_escape
+            or self.post_recovery_guidance_enabled
+            or self.recoverable_navigation_enabled
+        ):
+            raise ValueError(
+                "open-field escape assist requires recenter, recoverable "
+                "navigation, and post-recovery guidance to be disabled"
+            )
         if (
             isinstance(self.post_recovery_retry_limit, bool)
             or not isinstance(self.post_recovery_retry_limit, int)
@@ -454,6 +468,11 @@ class SupervisorStateMachine:
 
         if self.state == State.SEARCH and self.post_recovery_guidance_active:
             return (1.0, 1.0, 1.0)
+        if (
+            self.state == State.ESCAPE_ASSIST
+            and self.config.open_field_escape_assist_enabled
+        ):
+            return (0.0, 1.0, 0.0)
         return STATE_WEIGHTS[self.state]
 
     def elapsed(self, now_sec: float) -> float:
@@ -814,6 +833,12 @@ class SupervisorStateMachine:
             destination = State.RECENTER if self.config.recenter_after_escape else State.SEARCH
             return self._transition(destination, now_sec, "stable escape exit")
         if inputs.stalled:
+            if self.config.open_field_escape_assist_enabled:
+                return self._transition(
+                    State.ESCAPE_ASSIST,
+                    now_sec,
+                    "escape stalled; continue bounded outward assist",
+                )
             if self.redesign_attempted:
                 if self.config.recoverable_navigation_enabled:
                     return self._recover_to_recenter(

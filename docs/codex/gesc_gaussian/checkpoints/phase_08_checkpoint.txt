@@ -1,38 +1,64 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-31T04:24:17+00:00
-Base HEAD: 78b0f4d977c168c4e71dae75569eb7844e6ad28a
+Generated: 2026-07-31T05:00:02+00:00
+Base HEAD: 8ebb9cde00901d392357eb13b6be045d9be33c51
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: b103a6cea0d23d5b13fddb0e415717a433f105749fdf6490b624c66f908df9f9
+Status sha256: 7ae4e8478daaf62cd66722bb215e6be4d49651f47241ab8b6926a41621e55a4c
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_8_plan.md
-Active subphase plan sha256: 913e8d74c0f7be1a27d09050d29b16b77205f16f8f639e702c2c07bb2ad129fe
-Unstaged diff sha256: 3516c16bde4bf76f10788b16669342aef18aa89ff5f8257eb34bc0a0915fa9c4
+Active subphase plan sha256: dcab9eec78c362398a1e727aaef80d55e30f9fa9d995af57fed3f20edf44dc6e
+Unstaged diff sha256: b1e1d89238df32a189d5b84b8b9e92fb49671bda0bae24bc90a4cd28669a2a6d
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 104]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 105]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
+ M docs/codex/gesc_gaussian/plans/phase_08_8_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
-?? docs/codex/gesc_gaussian/validation/phase_08_8_primary_probe.md
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py
+ M ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py
+ M ros2_ws/src/ros_esc/ros_esc/supervisor_node/state_machine.py
+ M ros2_ws/src/ros_esc/ros_esc/supervisor_node/supervisor_node_script.py
+ M ros2_ws/src/ros_esc/test/test_observability_contract.py
+ M ros2_ws/src/ros_esc/test/test_scenario_runner.py
+ M ros2_ws/src/ros_esc/test/test_scenario_schema.py
+ M ros2_ws/src/ros_esc/test/test_state_machine.py
+ M ros2_ws/src/ros_esc/test/test_supervisor_integration.py
+ M ros2_ws/src/turtlebot3_rotating_sensor/launch/gazebo.launch.xml
+?? docs/codex/gesc_gaussian/validation/phase_08_8_m3_1_no_gazebo_qualification.md
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v8_1_primary_repeats.yaml
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v8_1_primary_visible_probe.yaml
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v8_1_secondary_repeats.yaml
+?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v8_1_secondary_visible_probe.yaml
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  63 +--------
- docs/codex/gesc_gaussian/status/phase_08_status.md | 155 +++++++++++++++++++++
- 2 files changed, 161 insertions(+), 57 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  44 +++---
+ docs/codex/gesc_gaussian/plans/phase_08_8_plan.md  | 103 ++++++++++++
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 174 +++++++++++++++++++++
+ .../ros_esc/scenario_runner/run_scenario.py        |  11 +-
+ .../ros_esc/scenario_runner/scenario_schema.py     |  58 ++++++-
+ .../ros_esc/supervisor_node/state_machine.py       |  25 +++
+ .../supervisor_node/supervisor_node_script.py      | 136 +++++++++++++++-
+ .../ros_esc/test/test_observability_contract.py    |   2 +
+ ros2_ws/src/ros_esc/test/test_scenario_runner.py   | 124 +++++++++++++++
+ ros2_ws/src/ros_esc/test/test_scenario_schema.py   |  65 ++++++++
+ ros2_ws/src/ros_esc/test/test_state_machine.py     |  94 +++++++++++
+ .../ros_esc/test/test_supervisor_integration.py    |  98 ++++++++++++
+ .../launch/gazebo.launch.xml                       |   2 +
+ 13 files changed, 908 insertions(+), 28 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**PHASE 08.8 M3 — FIXED V8 PROBE FAILED /
-FAILURE EVIDENCE CHECKPOINTED / COMMIT PENDING /
-NO FURTHER GAZEBO AUTHORIZED UNTIL A VERSIONED CORRECTION QUALIFIES.**
+**PHASE 08.8 M3.1 — NO-GAZEBO QUALIFIED AND CHECKPOINTED /
+COMMIT PENDING /
+GAZEBO STILL PROHIBITED.**
 
 
 

@@ -15,6 +15,8 @@ from rclpy.parameter import Parameter
 from ros_esc.supervisor_node import supervisor_node_script
 from ros_esc.supervisor_node.escape_recenter import (
     DirectionConfig,
+    EscapeGeometry,
+    EscapeProgressTracker,
     FillAvoidance,
     OperatingBounds,
     Pose2D,
@@ -334,6 +336,12 @@ def test_counted_candidate_adapter_fills_first_then_ranks_raw_cost():
         assert _wait_for(
             lambda: harness.supervisor.machine.state == State.GOAL_HOLD
         )
+        assert _wait_for(
+            lambda: any(
+                event.event_type == AlgorithmEvent.EVENT_GOAL_REACHED
+                for event in harness.events
+            )
+        )
 
         goal = next(
             event
@@ -381,6 +389,96 @@ def test_open_field_disables_bounds_without_weakening_explicit_stop():
         )
         assert transition.current == State.FAILSAFE
         assert transition.reason == "explicit stop requested"
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_open_field_escape_assist_requires_bounds_disabled():
+    rclpy.init()
+    try:
+        with pytest.raises(
+            ValueError,
+            match="open-field escape assist requires operating bounds",
+        ):
+            SupervisorNode(
+                parameter_overrides=[
+                    Parameter(
+                        "open_field_escape_assist_enabled",
+                        value=True,
+                    ),
+                    Parameter("recenter_after_escape", value=False),
+                ]
+            )
+    finally:
+        rclpy.shutdown()
+
+
+def test_open_field_escape_assist_commands_radially_outward_and_zeros_on_exit():
+    rclpy.init()
+    node = SupervisorNode(
+        parameter_overrides=[
+            Parameter("operating_bounds_enabled", value=False),
+            Parameter("recenter_after_escape", value=False),
+            Parameter("open_field_escape_assist_enabled", value=True),
+            Parameter("direction_lookahead_m", value=0.50),
+            Parameter("fill_avoidance_margin_m", value=0.10),
+            Parameter("recenter_tolerance_m", value=0.25),
+            Parameter("recenter_max_linear_velocity_mps", value=0.10),
+            Parameter("supervisor_command_stale_sec", value=0.50),
+        ]
+    )
+    node.command_publisher = Recorder()
+    try:
+        node.machine.state = State.ESCAPE_ASSIST
+        node.machine.escape_started_sec = node.machine.last_now_sec
+        node.machine.active_escape_fill_id = 1
+        node.latest_pose = Pose2D(0.0, 0.25, 0.0, 0.0)
+        node.latest_pose_valid = True
+        node.latest_pose_sequence = 1
+        node.active_fill_records = {
+            1: {
+                "fill_id": 1,
+                "revision": 1,
+                "center": [0.0, 0.0],
+                "support_radius": 0.50,
+                "exit_radius": 1.25,
+            }
+        }
+        node.escape_tracker = EscapeProgressTracker(
+            EscapeGeometry(
+                initial_fill_id=1,
+                center_x=0.0,
+                center_y=0.0,
+                exit_radius=1.25,
+                started_sec=0.0,
+                approach_x=1.0,
+                approach_y=0.0,
+            ),
+            node.escape_progress_config,
+        )
+        node.escape_tracker.update(node.latest_pose)
+
+        assert node._prepare_geometry(0.0) is None
+        assert node.safe_direction.direction == pytest.approx([1.0, 0.0])
+        assert node.current_supervisor_command.linear.x > 0.0
+        assert node.current_supervisor_command.angular.z == pytest.approx(0.0)
+        assert node.machine.weights == (0.0, 1.0, 0.0)
+
+        node._publish_state_and_command(0.0)
+        assert node.command_publisher.messages[-1].linear.x > 0.0
+
+        transition_time = node.machine.last_now_sec + 0.1
+        transition = node.machine.step(
+            transition_time,
+            TransitionInputs(stable_exit=True),
+        )
+        assert transition.current == State.SEARCH
+        node._handle_transition(transition, transition_time)
+        node._publish_state_and_command(transition_time)
+        assert node.current_supervisor_command.linear.x == 0.0
+        assert node.command_publisher.messages[-1].linear.x == 0.0
+        assert node.escape_tracker is None
     finally:
         node.destroy_node()
         rclpy.shutdown()

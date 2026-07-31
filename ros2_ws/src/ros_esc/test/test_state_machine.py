@@ -144,6 +144,56 @@ def test_initial_state_and_explicit_weights_for_every_state():
     assert STATE_WEIGHTS[State.FAILSAFE] == (0.0, 0.0, 0.0)
 
 
+def test_open_field_assist_is_opt_in_and_preserves_default_weights():
+    default = SupervisorStateMachine(
+        config=config(recenter_after_escape=False)
+    )
+    default.state = State.ESCAPE_ASSIST
+    assert default.config.open_field_escape_assist_enabled is False
+    assert default.weights == (0.0, 1.0, 1.0)
+
+    assisted = SupervisorStateMachine(
+        config=config(
+            recenter_after_escape=False,
+            open_field_escape_assist_enabled=True,
+        )
+    )
+    assisted.state = State.ESCAPE_ASSIST
+    assert assisted.weights == (0.0, 1.0, 0.0)
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {
+            "open_field_escape_assist_enabled": True,
+            "recenter_after_escape": True,
+        },
+        {
+            "open_field_escape_assist_enabled": True,
+            "recenter_after_escape": False,
+            "recoverable_navigation_enabled": True,
+        },
+        {
+            "open_field_escape_assist_enabled": True,
+            "recenter_after_escape": False,
+            "post_recovery_guidance_enabled": True,
+            "post_recovery_guidance_max_sec": 1.0,
+        },
+        {
+            "open_field_escape_assist_enabled": 1,
+            "recenter_after_escape": False,
+        },
+    ],
+)
+def test_open_field_assist_rejects_incompatible_configuration(overrides):
+    with pytest.raises(
+        ValueError,
+        match="open-field escape assist|must be boolean",
+    ):
+        config(**overrides)
+
+
 def test_convergence_requires_continuous_dwell_and_exact_boundary():
     machine = SupervisorStateMachine()
     machine.step(0.0, TransitionInputs(convergence=True))
@@ -619,6 +669,50 @@ def test_single_redesign_enters_assist_and_preserves_escape_deadline():
     assert transition.current == State.ESCAPE_ASSIST
     assert machine.escape_started_sec == escape_start
     assert machine.active_fill_count == 1
+
+
+def test_open_field_stall_enters_assist_without_redesign_or_fill_mutation():
+    machine = SupervisorStateMachine(
+        config=counted_config(open_field_escape_assist_enabled=True)
+    )
+    first = candidate_summary(-1.0)
+    transition = confirm_counted_candidate(machine, 0.0, first, 0)
+    assert transition.current == State.DESIGN_OR_MERGE_FILL
+    machine.register_fill_request(11.0)
+    transition = machine.step(
+        0.2,
+        TransitionInputs(
+            fill_result="success",
+            fill_source_timestamp=11.0,
+            fill_id=4,
+            active_fill_count=1,
+        ),
+    )
+    assert transition.current == State.ESCAPE_REPULSE
+    escape_start = machine.escape_started_sec
+
+    transition = machine.step(
+        3.2,
+        TransitionInputs(stalled=True),
+    )
+
+    assert transition.current == State.ESCAPE_ASSIST
+    assert transition.reason == (
+        "escape stalled; continue bounded outward assist"
+    )
+    assert machine.escape_started_sec == escape_start
+    assert machine.redesign_attempted is False
+    assert machine.design_returns_to_assist is False
+    assert machine.active_fill_count == 1
+    assert machine.filled_candidate_costs == [first]
+    assert machine.weights == (0.0, 1.0, 0.0)
+
+    transition = machine.step(
+        4.0,
+        TransitionInputs(stable_exit=True),
+    )
+    assert transition.current == State.SEARCH
+    assert machine.weights == (1.0, 1.0, 0.0)
 
 
 def test_successful_revision_replaces_authoritative_active_cluster_count():

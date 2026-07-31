@@ -134,6 +134,26 @@ V8_SECONDARY_REPEATS = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v8_secondary_repeats.yaml'
 )
+V8_1_PRIMARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_1_primary_visible_probe.yaml'
+)
+V8_1_PRIMARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_1_primary_repeats.yaml'
+)
+V8_1_SECONDARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_1_secondary_visible_probe.yaml'
+)
+V8_1_SECONDARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_1_secondary_repeats.yaml'
+)
 
 
 def test_observed_local_recovery_binds_fill_to_local_convergence():
@@ -441,6 +461,10 @@ def _v8_counted_resolved():
     return expand_suite(load_suite(V8_PRIMARY_VISIBLE_PROBE))[0][0]
 
 
+def _v8_1_counted_resolved():
+    return expand_suite(load_suite(V8_1_PRIMARY_VISIBLE_PROBE))[0][0]
+
+
 def _state_message(name):
     return SimpleNamespace(
         state=getattr(runner.AlgorithmState, f'STATE_{name}'),
@@ -591,6 +615,17 @@ def _counted_staged_records():
         (8, _event_message('ESCAPE_STARTED')),
     ]
     fills = [(5, _fill_message())]
+    return states, events, fills
+
+
+def _counted_assisted_staged_records():
+    states, events, fills = _counted_staged_records()
+    states = [
+        *states[:4],
+        (9, _state_message('ESCAPE_ASSIST')),
+        (11, _state_message('SEARCH')),
+    ]
+    events.append((8, _event_message('ESCAPE_STALLED')))
     return states, events, fills
 
 
@@ -1086,6 +1121,64 @@ def test_v8_launch_binds_count_only_and_open_field_without_evaluator_controls(
         )
 
 
+@pytest.mark.parametrize(
+    'scenario_path',
+    [
+        V8_1_PRIMARY_VISIBLE_PROBE,
+        V8_1_PRIMARY_REPEATS,
+        V8_1_SECONDARY_VISIBLE_PROBE,
+        V8_1_SECONDARY_REPEATS,
+    ],
+)
+def test_v8_1_launch_binds_outward_assist_without_evaluator_controls(
+    scenario_path,
+):
+    """Expose only the opt-in assist and count through the launch graph."""
+    suite = load_suite(scenario_path)
+    runs, unsupported = expand_suite(suite)
+
+    assert unsupported == []
+    for resolved in runs:
+        launch = build_launch_command(
+            resolved,
+            cost_path=Path('/tmp/phase08_v8_1_cost.yaml'),
+            gui=suite['execution']['gazebo_gui'],
+        )
+        for expected in (
+            'number_of_lights:=2',
+            'extremum_classification_mode:=counted_candidates',
+            'known_source_count:=2',
+            'open_field_escape_assist_enabled:=True',
+            'gaussian_fill_exit_sigma:=8.0',
+            'escape_max_sec:=35.0',
+            'operating_bounds_enabled:=False',
+            'modified_cost_enable_affine_bias:=False',
+            'recenter_after_escape:=False',
+            'post_recovery_guidance_enabled:=False',
+            'recoverable_navigation_enabled:=False',
+            'simulation_contacts_enabled:=False',
+        ):
+            assert expected in launch
+        forbidden_fragments = {
+            str(source[field])
+            for source in resolved['sources']
+            for field in ('x_m', 'y_m', 'relative_lumen_input')
+        }
+        assert not any(
+            token.startswith('global_source_')
+            or token.startswith('source_role_')
+            or token.startswith('simulation_truth_')
+            or (
+                not token.startswith('light_')
+                and any(
+                    fragment in token for fragment in forbidden_fragments
+                )
+            )
+            for token in launch
+            if not token.startswith('number_of_lights:=')
+        )
+
+
 def test_staged_recovery_reports_stage_a_cardinality_and_global_sample():
     """Separate local recovery, exact clusters, and post-recovery arrival."""
     resolved = _v5_staged_resolved()
@@ -1235,6 +1328,37 @@ def test_counted_stage_requires_direct_recovery_ranked_goal_then_near_sample():
     )
     assert ambiguous_rank[0] is False
     assert ambiguous_rank[1]['invalid_ranked_goal_event_count'] == 1
+
+
+def test_counted_stage_accepts_versioned_outward_assist_without_redesign():
+    """Recognize direct repulse-to-assist as one counted Stage A episode."""
+    resolved = _v8_1_counted_resolved()
+    states, events, fills = _counted_assisted_staged_records()
+
+    stage_a, cardinality, evidence, error = (
+        runner._staged_recovery_evidence(
+            resolved,
+            states,
+            events,
+            fills,
+        )
+    )
+
+    assert error is None
+    assert stage_a is True
+    assert cardinality is True
+    assert evidence['completed_episode_count'] == 1
+    assert evidence['episodes'][0]['state_path'] == [
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'DESIGN_OR_MERGE_FILL',
+        'ESCAPE_REPULSE',
+        'ESCAPE_ASSIST',
+        'SEARCH',
+    ]
+    assert 'DESIGN_OR_MERGE_FILL' not in (
+        evidence['episodes'][0]['state_path'][3:]
+    )
 
 
 def test_verified_trap_stage_a_reports_but_does_not_gate_local_distance():

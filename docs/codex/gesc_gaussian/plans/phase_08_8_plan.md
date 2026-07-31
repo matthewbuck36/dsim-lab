@@ -746,6 +746,109 @@ After explicit Gazebo authorization:
 
 Next criterion: one complete visible formal pass.
 
+### Executed M3 disposition and approved M3.1 correction amendment
+
+The fixed M3 execution of `phase08_v8_primary_visible_probe.yaml`, seed
+`18801`, is closed as a retained behavioral failure. Recording, final-zero,
+analysis, and cleanup passed. The first candidate, raw-cost summary, one-fill
+cardinality, local association, and revisit suppression were correct. The
+short direct escape stalled, entered the historical redesign/assist path, and
+returned to the local basin before finding candidate two.
+
+The complete fixed result and diagnosis are retained in
+`phase_08_8_primary_probe.md` and commit `8ebb9cd`. The scenario is not to be
+retried, tuned, renamed, or counted as a pass. Its original M4-M5 successors
+are not dispatched.
+
+The user's implementation authority permits a bounded, separately versioned
+correction. M3.1 adds the missing finite open-field departure behavior without
+changing the counted-source policy, detector, adaptive fill, GESC core, or any
+historical default:
+
+1. Add `open_field_escape_assist_enabled`, default `false`.
+2. Permit it only in the opt-in unbounded/no-recenter/no-recoverable-navigation
+   profile.
+3. When `ESCAPE_REPULSE` reports a measured stall, transition directly to
+   `ESCAPE_ASSIST` in the same escape episode; do not request a redesign and do
+   not supersede or merge the accepted fill.
+4. In that assist state, retain Gaussian cost and disable affine cost with
+   weights `(raw=0, Gaussian=1, affine=0)`.
+5. Select the supervisor direction radially outward from the frozen accepted
+   fill center using current odometry. Publish a bounded differential-drive
+   command through the existing supervisor/controller arbitration; do not add
+   a node, publisher, planner, global coordinate, source role, source
+   coordinate, Vicon pose, or room geometry.
+6. Continue only until the measured frozen-fill exit criterion has held. Then
+   zero the supervisor command and return to ordinary GESC `SEARCH`.
+7. Use a larger fixed `exit_sigma=8.0` and `escape_max_sec=35.0` so the exit
+   represents a durable departure rather than the failed v8 `0.423896 m`
+   release. This is a versioned empirical correction, not a mutation of v8.
+8. Record `ESCAPE_STALLED` and the assisted state path as required evidence.
+   Continue to forbid fill merge/supersession, recenter, timeout, and failsafe.
+
+The corrected Stage A path is:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> ESCAPE_ASSIST
+-> SEARCH
+```
+
+The terminal path adds:
+
+```text
+-> VERIFY_EXTREMUM
+-> GOAL_HOLD
+```
+
+The new fixed inputs are:
+
+```text
+phase08_v8_1_primary_visible_probe.yaml
+  seed 18901
+  visible
+  runs root phase08_8_1_primary_probe
+
+phase08_v8_1_primary_repeats.yaml
+  seeds 18911 through 18920
+  headless
+  runs root phase08_8_1_primary_repeats
+
+phase08_v8_1_secondary_visible_probe.yaml
+  seed 18951
+  visible
+  runs root phase08_8_1_secondary_probe
+
+phase08_v8_1_secondary_repeats.yaml
+  seeds 18961 through 18965
+  headless
+  runs root phase08_8_1_secondary_repeats
+```
+
+Source positions, `400/1600` inputs, start, topology, evaluator proximity,
+Stage A and Stage B budgets, and every non-escape policy setting remain the
+same as the corresponding v8 files.
+
+Before a new Gazebo process:
+
+- add pure transition/weight/default compatibility tests;
+- add supervisor radial-direction, bounded-command, and zero-on-exit tests;
+- add schema, live/offline Stage A, validator, launch, and dry-run tests;
+- verify the controller still receives no evaluator geometry;
+- run the same focused, scenario, analyzer, and broad no-Gazebo suites;
+- perform a fresh isolated three-package build and installed graph
+  instantiation;
+- write a separate M3.1 no-Gazebo qualification record;
+- update live status, checkpoint Phase 08, and commit the bounded correction.
+
+Only then may `phase08_v8_1_primary_visible_probe.yaml` be launched once. A
+failure closes that exact version and stops the corrected repeats. A pass
+authorizes the v8.1 primary repeat gate, followed by the v8.1 secondary gate.
+The original no-retry and first-failure rules remain in force.
+
 ### M4 — Ten consecutive primary repeats
 
 Only after M3 passes:

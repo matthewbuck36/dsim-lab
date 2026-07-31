@@ -147,6 +147,11 @@ class SupervisorNode(Node):
                 verification_max_sec=self._float("verification_max_sec"),
                 fill_design_timeout_sec=self._float("fill_design_timeout_sec"),
                 escape_max_sec=self._float("escape_max_sec"),
+                open_field_escape_assist_enabled=bool(
+                    self.get_parameter(
+                        "open_field_escape_assist_enabled"
+                    ).value
+                ),
                 recenter_after_escape=bool(
                     self.get_parameter("recenter_after_escape").value
                 ),
@@ -229,6 +234,13 @@ class SupervisorNode(Node):
             raise ValueError(
                 "disabled operating bounds require recenter and recoverable "
                 "navigation to be disabled"
+            )
+        if (
+            self.machine.config.open_field_escape_assist_enabled
+            and self.operating_bounds_enabled
+        ):
+            raise ValueError(
+                "open-field escape assist requires operating bounds disabled"
             )
         self.bounded_mode = bool(
             self.operating_bounds_enabled and recenter_after_escape
@@ -586,6 +598,7 @@ class SupervisorNode(Node):
             "verification_max_sec": 12.0,
             "fill_design_timeout_sec": 5.0,
             "escape_max_sec": 20.0,
+            "open_field_escape_assist_enabled": False,
             "escape_exit_hold_sec": 1.0,
             "stall_window_sec": 3.0,
             "minimum_radial_progress_m": 0.05,
@@ -1013,6 +1026,8 @@ class SupervisorNode(Node):
             self.escape_pose_sequence = self.latest_pose_sequence
 
         if self.machine.state == State.ESCAPE_ASSIST:
+            if self.machine.config.open_field_escape_assist_enabled:
+                return self._update_open_field_escape_assist(now_sec)
             return self._ensure_safe_direction(recenter=False)
         if self.machine.state == State.RECENTER:
             return self._update_recenter(now_sec)
@@ -1206,7 +1221,11 @@ class SupervisorNode(Node):
                 ],
             )
         if transition.current == State.ESCAPE_ASSIST:
-            failure = self._ensure_safe_direction(recenter=False)
+            failure = (
+                self._ensure_open_field_escape_direction()
+                if self.machine.config.open_field_escape_assist_enabled
+                else self._ensure_safe_direction(recenter=False)
+            )
             if failure is not None:
                 self._force_failsafe(now_sec, failure)
                 return
@@ -1474,6 +1493,101 @@ class SupervisorNode(Node):
             return "no safe assisted/recenter direction candidate"
         self.safe_direction = selected
         self.safe_direction_revision += 1
+        return None
+
+    def _ensure_open_field_escape_direction(self):
+        """Select a hard-safe direction outward from the frozen fill center."""
+        if self.latest_pose is None or not self.latest_pose_valid:
+            return "open-field escape assist requires a valid pose"
+        if self.escape_tracker is None:
+            return "open-field escape assist has no frozen geometry"
+        if self.bounds is not None:
+            return "open-field escape assist cannot use operating bounds"
+        position = self.latest_pose.position
+        preferred = (
+            position
+            - np.asarray(
+                self.escape_tracker.geometry.center,
+                dtype=np.float64,
+            )
+        )
+        if float(np.linalg.norm(preferred)) <= 1e-12:
+            return "open-field escape direction is undefined at fill center"
+        fills = self._active_fill_avoidances()
+        if self.safe_direction is not None:
+            safe, clearance = evaluate_direction(
+                position,
+                self.safe_direction.direction,
+                preferred,
+                fills,
+                self.direction_config,
+                None,
+            )
+            if safe:
+                self.safe_direction = DirectionSelection(
+                    self.safe_direction.x,
+                    self.safe_direction.y,
+                    clearance,
+                    self.safe_direction.rotation_rad,
+                    self.safe_direction.candidate_index,
+                )
+                return None
+        selected = select_safe_direction(
+            position,
+            preferred,
+            fills,
+            self.direction_config,
+            None,
+        )
+        if selected is None:
+            return "no safe open-field escape direction candidate"
+        self.safe_direction = selected
+        self.safe_direction_revision += 1
+        return None
+
+    def _update_open_field_escape_assist(self, now_sec):
+        """Publish one bounded outward command until the exit hold completes."""
+        del now_sec
+        failure = self._ensure_open_field_escape_direction()
+        if failure is not None:
+            return failure
+        progress = (
+            self.escape_tracker.latest
+            if self.escape_tracker is not None
+            else None
+        )
+        if progress is None:
+            return "open-field escape assist has no measured progress"
+        remaining = max(
+            0.0,
+            (
+                self.escape_tracker.geometry.exit_radius
+                - progress.radial_distance
+            ),
+        )
+        command_distance = (
+            remaining
+            + 2.0 * self.recenter_config.tolerance_m
+        )
+        linear, angular = recenter_command(
+            self.safe_direction.direction,
+            self.latest_pose.yaw,
+            command_distance,
+            self.recenter_config,
+        )
+        if not command_sweep_is_safe(
+            self.latest_pose.position,
+            self.latest_pose.yaw,
+            linear,
+            self.supervisor_command_stale_sec,
+            self._active_fill_avoidances(),
+            None,
+        ):
+            linear = 0.0
+        command = Twist()
+        command.linear.x = linear
+        command.angular.z = angular
+        self.current_supervisor_command = command
         return None
 
     def _ensure_post_recovery_direction(self):
@@ -2427,7 +2541,15 @@ class SupervisorNode(Node):
         self._publish_event(
             AlgorithmEvent.EVENT_ESCAPE_STALLED,
             now_sec,
-            "radial progress below threshold; requesting one targeted redesign",
+            (
+                "radial progress below threshold; continuing bounded "
+                "open-field outward assist"
+                if self.machine.config.open_field_escape_assist_enabled
+                else (
+                    "radial progress below threshold; requesting one "
+                    "targeted redesign"
+                )
+            ),
             [
                 "escape_center_x_m",
                 "escape_center_y_m",
@@ -2548,6 +2670,7 @@ class SupervisorNode(Node):
         names = [
             "operating_bounds_enabled",
             "bounded_mode",
+            "open_field_escape_assist_enabled",
             "room_bounds_x_min_m",
             "room_bounds_x_max_m",
             "room_bounds_y_min_m",
@@ -2613,6 +2736,11 @@ class SupervisorNode(Node):
         values = [
             1.0 if self.operating_bounds_enabled else 0.0,
             1.0 if self.bounded_mode else 0.0,
+            (
+                1.0
+                if self.machine.config.open_field_escape_assist_enabled
+                else 0.0
+            ),
             self._float("room_bounds_x_min_m"),
             self._float("room_bounds_x_max_m"),
             self._float("room_bounds_y_min_m"),
@@ -2836,6 +2964,10 @@ class SupervisorNode(Node):
             self.current_supervisor_command
             if (
                 self.machine.state == State.RECENTER
+                or (
+                    self.machine.state == State.ESCAPE_ASSIST
+                    and self.machine.config.open_field_escape_assist_enabled
+                )
                 or (
                     self.post_recovery_progress_enabled
                     and self.machine.state == State.SEARCH

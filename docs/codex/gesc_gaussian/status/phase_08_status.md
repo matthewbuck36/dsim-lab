@@ -10892,3 +10892,177 @@ Plan for a new, opt-in open-field escape-assist version; qualify its state
 semantics, supervisor command ownership, schema, validator, historical
 defaults, launch graph, build, and dry-run expansion without Gazebo. Only a
 successful material checkpoint and commit may authorize one new visible probe.
+
+## Phase 08.8 M3.1 versioned correction — 2026-07-30
+
+The fixed v8 failure was committed at:
+
+```text
+8ebb9cd phase 08.8: retain failed primary probe
+```
+
+The approved Phase 08.8 Plan now contains a separately versioned M3.1
+correction. It does not mutate or retry the failed v8 input.
+
+Implemented opt-in behavior:
+
+```text
+ESCAPE_REPULSE measured stall
+-> ESCAPE_ASSIST without fill redesign
+-> radial outward direction from frozen fill center and current odometry
+-> existing bounded supervisor/controller command arbitration
+-> Gaussian retained, affine disabled
+-> enlarged finite exit boundary and hold
+-> supervisor zero
+-> ordinary GESC SEARCH
+```
+
+Defaults and historical behavior:
+
+```text
+open_field_escape_assist_enabled:
+  false by default
+historical ESCAPE_ASSIST weights:
+  (0, 1, 1), unchanged
+v8.1 opt-in weights:
+  (0, 1, 0)
+new node/topic/publisher/planner:
+  none
+controller evaluator geometry:
+  none
+```
+
+The four new fixed scenario definitions resolve:
+
+```text
+phase08_v8_1_primary_visible_probe.yaml:     1 GUI case, seed 18901
+phase08_v8_1_primary_repeats.yaml:          10 headless, 18911..18920
+phase08_v8_1_secondary_visible_probe.yaml:   1 GUI case, seed 18951
+phase08_v8_1_secondary_repeats.yaml:         5 headless, 18961..18965
+```
+
+They require:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> ESCAPE_ASSIST
+-> SEARCH
+-> VERIFY_EXTREMUM
+-> GOAL_HOLD
+
+required:
+  ESCAPE_STALLED
+forbidden:
+  FILL_MERGED
+  FILL_SUPERSEDED
+  RECENTER
+  TIMEOUT
+  FAILSAFE
+```
+
+Final no-Gazebo qualification:
+
+```text
+focused controller/detector:
+  188 passed in 7.11 s
+
+scenario/schema/Phase 08 validation:
+  386 passed, 1 Gazebo-only skip in 94.39 s
+
+candidate analysis:
+  13 passed in 0.79 s
+
+broad ROS-independent functional:
+  749 passed, 2 Gazebo-only skips in 133.87 s
+
+fatal changed-file lint:
+  PASS
+
+changed-Python compilation:
+  PASS
+
+fresh isolated build:
+  3 packages passed in 12.1 s
+
+source/install parity:
+  9/9
+
+installed launch:
+  show-args PASS
+  exact print-description PASS
+  supervisor construction PASS
+  Gaussian fill exit-sigma construction PASS
+
+installed dry-runs:
+  1 + 10 + 1 + 5 resolved
+  0 unsupported
+  no campaign root created
+
+validate_phase_context.sh 08 implement:
+  PASS
+
+git diff --check:
+  PASS
+```
+
+The durable qualification record is:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m3_1_no_gazebo_qualification.md
+```
+
+No Gazebo or physical process occurred during correction qualification. V6,
+all historical scenarios, the failed v8 case, physical manual `Ctrl+C`
+termination, and controller/evaluator separation remain preserved.
+
+## Current milestone
+
+**PHASE 08.8 M3.1 — NO-GAZEBO QUALIFIED /
+MATERIAL CHECKPOINT AND COMMIT PENDING /
+GAZEBO STILL PROHIBITED.**
+
+## Next criterion
+
+Run the Phase 08 material checkpoint, inspect the complete M3.1 diff, rerun
+context and whitespace checks, and commit the versioned correction. Only then
+execute `phase08_v8_1_primary_visible_probe.yaml` once from
+`/tmp/phase08_8_1_release_qual/install` with Gazebo GUI enabled.
+
+## Phase 08.8 M3.1 material checkpoint — 2026-07-30
+
+The qualified v8.1 correction received the required precommit material
+checkpoint:
+
+```text
+docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
+
+generated:
+  2026-07-31T04:59:36+00:00
+base HEAD:
+  8ebb9cde00901d392357eb13b6be045d9be33c51
+active subphase plan:
+  docs/codex/gesc_gaussian/plans/phase_08_8_plan.md
+diff check:
+  PASS
+```
+
+The checkpoint captures the complete implementation and qualification
+boundary before commit. No Gazebo, scenario, recording, analyzer, or physical
+process was started while creating it.
+
+## Current milestone
+
+**PHASE 08.8 M3.1 — NO-GAZEBO QUALIFIED AND CHECKPOINTED /
+COMMIT PENDING /
+GAZEBO STILL PROHIBITED.**
+
+## Next criterion
+
+Regenerate the checkpoint so it includes this checkpoint-status update, rerun
+the context and whitespace checks, inspect the final commit scope, and create
+the authorized bounded commit. Only then execute the fixed v8.1 primary
+visible probe exactly once.

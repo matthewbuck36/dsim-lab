@@ -150,6 +150,7 @@ LAUNCH_OVERRIDES = {
     'candidate_cost_required_rotations',
     'candidate_cost_mad_scale',
     'minimum_radial_progress_m',
+    'open_field_escape_assist_enabled',
     'modified_cost_affine_decay_rate',
     'modified_cost_affine_gain',
     'modified_cost_affine_max_age',
@@ -332,7 +333,8 @@ ALGORITHM_TRANSITIONS = {
         'ESCAPE_REPULSE', 'ESCAPE_ASSIST', 'FAILSAFE',
     },
     'ESCAPE_REPULSE': {
-        'DESIGN_OR_MERGE_FILL', 'RECENTER', 'SEARCH', 'FAILSAFE',
+        'DESIGN_OR_MERGE_FILL', 'ESCAPE_ASSIST', 'RECENTER', 'SEARCH',
+        'FAILSAFE',
     },
     'ESCAPE_ASSIST': {'RECENTER', 'SEARCH', 'FAILSAFE'},
     'RECENTER': {'SEARCH', 'FAILSAFE'},
@@ -436,8 +438,21 @@ COUNTED_OPEN_FIELD_RECOVERY_STATE_PATH = (
     'ESCAPE_REPULSE',
     'SEARCH',
 )
+COUNTED_OPEN_FIELD_ASSISTED_RECOVERY_STATE_PATH = (
+    'SEARCH',
+    'VERIFY_EXTREMUM',
+    'DESIGN_OR_MERGE_FILL',
+    'ESCAPE_REPULSE',
+    'ESCAPE_ASSIST',
+    'SEARCH',
+)
 COUNTED_OPEN_FIELD_STATE_PATH = (
     *COUNTED_OPEN_FIELD_RECOVERY_STATE_PATH,
+    'VERIFY_EXTREMUM',
+    'GOAL_HOLD',
+)
+COUNTED_OPEN_FIELD_ASSISTED_STATE_PATH = (
+    *COUNTED_OPEN_FIELD_ASSISTED_RECOVERY_STATE_PATH,
     'VERIFY_EXTREMUM',
     'GOAL_HOLD',
 )
@@ -558,6 +573,15 @@ def _validate_correction_overrides(overrides, ablations, location):
             operating_bounds_enabled,
             f'{location}.operating_bounds_enabled',
         )
+    open_field_escape_assist_enabled = overrides.get(
+        'open_field_escape_assist_enabled',
+        False,
+    )
+    if 'open_field_escape_assist_enabled' in overrides:
+        open_field_escape_assist_enabled = _boolean(
+            open_field_escape_assist_enabled,
+            f'{location}.open_field_escape_assist_enabled',
+        )
     if classification_mode == 'counted_candidates':
         required = {
             'candidate_cost_mad_scale',
@@ -601,6 +625,20 @@ def _validate_correction_overrides(overrides, ablations, location):
             raise ValueError(
                 f'{location} counted open-field mode requires affine, recenter, '
                 'recoverable navigation, and post-recovery guidance disabled'
+            )
+        if (
+            open_field_escape_assist_enabled
+            and (
+                operating_bounds_enabled
+                or ablations['recenter_enabled']
+                or overrides.get('recoverable_navigation_enabled', False)
+                or overrides.get('post_recovery_guidance_enabled', False)
+            )
+        ):
+            raise ValueError(
+                f'{location} open-field escape assist requires bounds, '
+                'recenter, recoverable navigation, and post-recovery '
+                'guidance disabled'
             )
     adaptive_recenter_enabled = False
     if 'adaptive_recenter_lookahead_enabled' in overrides:
@@ -2124,6 +2162,13 @@ def load_suite(path):
             and overrides.get('extremum_classification_mode')
             == 'counted_candidates'
         )
+        counted_open_field_assisted = bool(
+            counted_open_field
+            and overrides.get(
+                'open_field_escape_assist_enabled',
+                False,
+            )
+        )
         if counted_open_field:
             expected_source_count = (
                 known_topology['expected_local_minima']
@@ -3061,19 +3106,24 @@ def load_suite(path):
                 [normalized_controller['required_state_path']],
             )
             if counted_open_field:
+                expected_counted_path = (
+                    COUNTED_OPEN_FIELD_ASSISTED_STATE_PATH
+                    if counted_open_field_assisted
+                    else COUNTED_OPEN_FIELD_STATE_PATH
+                )
                 if (
                     normalized_controller['expected_verification_outcome']
                     != 'below_target_extremum'
                     or normalized_controller['expected_terminal_state']
                     != 'GOAL_HOLD'
                     or any(
-                        tuple(path) != COUNTED_OPEN_FIELD_STATE_PATH
+                        tuple(path) != expected_counted_path
                         for path in controller_paths
                     )
                 ):
                     raise ValueError(
                         f'{controller_location} counted open-field contract '
-                        'must bind local direct recovery followed by ranked '
+                        'must bind its declared local recovery followed by ranked '
                         'GOAL_HOLD'
                     )
                 required_staged_events = {
@@ -3082,6 +3132,8 @@ def load_suite(path):
                     'ESCAPE_STARTED',
                     'GOAL_REACHED',
                 }
+                if counted_open_field_assisted:
+                    required_staged_events.add('ESCAPE_STALLED')
             else:
                 expected_paths = {
                     tuple(path) for path in STAGED_RECOVERY_STATE_PATHS

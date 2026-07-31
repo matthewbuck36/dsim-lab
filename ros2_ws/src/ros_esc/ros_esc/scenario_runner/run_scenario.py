@@ -45,6 +45,7 @@ from std_msgs.msg import Bool
 import yaml
 
 from .scenario_schema import (
+    COUNTED_OPEN_FIELD_ASSISTED_RECOVERY_STATE_PATH,
     COUNTED_OPEN_FIELD_RECOVERY_STATE_PATH,
     expand_suite,
     load_suite,
@@ -2065,7 +2066,15 @@ def _staged_recovery_evidence(
         ) == 'counted_candidates'
     )
     accepted_paths = (
-        (COUNTED_OPEN_FIELD_RECOVERY_STATE_PATH,)
+        (
+            (
+                COUNTED_OPEN_FIELD_ASSISTED_RECOVERY_STATE_PATH
+                if resolved.get('algorithm', {}).get(
+                    'launch_overrides', {}
+                ).get('open_field_escape_assist_enabled', False)
+                else COUNTED_OPEN_FIELD_RECOVERY_STATE_PATH
+            ),
+        )
         if counted_open_field
         else STAGED_RECOVERY_STATE_PATHS
     )

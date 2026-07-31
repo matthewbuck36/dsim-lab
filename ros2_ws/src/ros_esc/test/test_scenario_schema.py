@@ -162,6 +162,26 @@ V8_SECONDARY_REPEATS = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v8_secondary_repeats.yaml'
 )
+V8_1_PRIMARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_1_primary_visible_probe.yaml'
+)
+V8_1_PRIMARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_1_primary_repeats.yaml'
+)
+V8_1_SECONDARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_1_secondary_visible_probe.yaml'
+)
+V8_1_SECONDARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_1_secondary_repeats.yaml'
+)
 HISTORICAL_V2_ACTIVATION = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml'
@@ -1293,6 +1313,51 @@ def test_schema_v8_resolves_four_fixed_counted_open_field_suites():
             current_keys = frozenset(overrides)
             profile_keys = current_keys if profile_keys is None else profile_keys
             assert current_keys == profile_keys
+
+
+def test_schema_v8_resolves_four_versioned_outward_assist_suites():
+    """Bind v8.1 to one assisted path without mutating fixed v8."""
+    expected = {
+        V8_1_PRIMARY_VISIBLE_PROBE: (1, True, {18901}),
+        V8_1_PRIMARY_REPEATS: (10, False, set(range(18911, 18921))),
+        V8_1_SECONDARY_VISIBLE_PROBE: (1, True, {18951}),
+        V8_1_SECONDARY_REPEATS: (5, False, set(range(18961, 18966))),
+    }
+    required_path = [
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'DESIGN_OR_MERGE_FILL',
+        'ESCAPE_REPULSE',
+        'ESCAPE_ASSIST',
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'GOAL_HOLD',
+    ]
+    for path, (run_count, gui, seeds) in expected.items():
+        suite = load_suite(path)
+        runs, unsupported = expand_suite(suite)
+
+        assert unsupported == []
+        assert len(runs) == run_count
+        assert suite['execution']['gazebo_gui'] is gui
+        assert {run['seed'] for run in runs} == seeds
+        for run in runs:
+            overrides = run['algorithm']['launch_overrides']
+            controller = run['success']['controller']
+            assert overrides['open_field_escape_assist_enabled'] is True
+            assert overrides['gaussian_fill_exit_sigma'] == 8.0
+            assert overrides['escape_max_sec'] == 35.0
+            assert overrides['operating_bounds_enabled'] is False
+            assert overrides['post_recovery_guidance_enabled'] is False
+            assert overrides['recoverable_navigation_enabled'] is False
+            assert controller['required_state_path'] == required_path
+            assert 'ESCAPE_STALLED' in controller['required_events']
+            assert 'ESCAPE_STALLED' not in controller['forbidden_events']
+            assert 'FILL_MERGED' in controller['forbidden_events']
+            assert 'FILL_SUPERSEDED' in controller['forbidden_events']
+            assert 'RECENTER' in controller['forbidden_states']
+            assert run['validation']['world'] is False
+            assert run['validation']['contacts_enabled'] is False
 
 
 @pytest.mark.parametrize(
