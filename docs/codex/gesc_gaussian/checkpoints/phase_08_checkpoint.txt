@@ -1,53 +1,36 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-31T20:58:17+00:00
-Base HEAD: e39ef2403baf6bcbd2a4f6322dec382be906b698
+Generated: 2026-07-31T21:00:15+00:00
+Base HEAD: d3e752de3ae990bbdece5fd935714b3571b09fbb
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: c17583f135e9cc7e8a5045b99539edd232dda7873061de35fd02d583e1f93008
+Status sha256: d41c116d73cecb111efa02bde5bb2e33678f5f38a53021c6398b1e9c9fd8b479
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_8_v8_11_plan.md
 Active subphase plan sha256: 6d5d8446cf3dc56de77a34a62eb7e28e30e9e6d9e422ef9556ff990acaebd644
-Unstaged diff sha256: 3035188aef3c81aea013caee4dfa5e930d91ec55a872984275ca32022649fdc3
+Unstaged diff sha256: 55775e4b0a004135111e55cc89cb24625cf6a2c7bae2ca94093180e8100b900e
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 162]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 163]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/aggregate_field_truth.py
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py
- M ros2_ws/src/ros_esc/test/test_aggregate_field_truth.py
- M ros2_ws/src/ros_esc/test/test_scenario_runner.py
- M ros2_ws/src/ros_esc/test/test_scenario_schema.py
-?? docs/codex/gesc_gaussian/validation/phase_08_8_m8_2_v8_11_no_gazebo_qualification.md
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v8_11_broad_matrix.yaml
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v8_11_secondary_repeats.yaml
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v8_11_secondary_visible_probe.yaml
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  37 +-
- docs/codex/gesc_gaussian/status/phase_08_status.md | 126 ++++++
- .../scenario_runner/aggregate_field_truth.py       | 435 +++++++++++++++++++++
- .../ros_esc/scenario_runner/run_scenario.py        |  24 ++
- .../ros_esc/scenario_runner/scenario_schema.py     |  61 ++-
- .../src/ros_esc/test/test_aggregate_field_truth.py | 396 +++++++++++++++++++
- ros2_ws/src/ros_esc/test/test_scenario_runner.py   |  62 +++
- ros2_ws/src/ros_esc/test/test_scenario_schema.py   |  99 ++++-
- 8 files changed, 1214 insertions(+), 26 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 41 ++------------
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 64 ++++++++++++++++++++++
+ 2 files changed, 69 insertions(+), 36 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**PHASE 08.8 M8.1-M8.2 — V8.11 TOPOLOGY-BOUND EVALUATOR IMPLEMENTED /
-NO-GAZEBO QUALIFICATION PASS / IMPLEMENTATION CHECKPOINT PENDING / GAZEBO
-PROHIBITED.**
+**PHASE 08.8 M8.3 — V8.11 SECONDARY VISIBLE SEED `19901` BOUNDARY WRITTEN /
+DISPATCH CHECKPOINT AND COMMIT PENDING / GAZEBO PROHIBITED.**
 
 
 

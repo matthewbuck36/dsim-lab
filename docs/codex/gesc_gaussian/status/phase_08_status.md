@@ -18697,3 +18697,109 @@ IMPLEMENTATION COMMIT PENDING / GAZEBO PROHIBITED.**
 Commit this exact qualified implementation boundary. Then write, checkpoint,
 and commit a separate visible-dispatch boundary naming only the installed
 seed `19901`. Do not start Gazebo from an uncommitted or undispatched state.
+
+## Phase 08.8 M8.3 v8.11 secondary-visible dispatch boundary — 2026-07-31
+
+The complete no-Gazebo-qualified implementation is committed:
+
+```text
+d3e752d phase 08.8: qualify topology-bound v8.11 evaluator
+```
+
+The worktree was clean immediately after that commit. This boundary
+authorizes exactly one installed visible dispatch:
+
+```text
+installed scenario:
+  /tmp/phase08_8_v8_11_release_qual.AdUc5v/install/ros_esc/share/
+  ros_esc/scenario_runner/scenarios/
+  phase08_v8_11_secondary_visible_probe.yaml
+installed scenario sha256:
+  ce6b80c83cd52b5e665d22bc2867b1a8046d6c6a817f8427dd94ea062a9b76c0
+case:
+  v8_11_secondary_probe_r1p5_a67p5_h25_19901
+seed:
+  19901
+ROS_DOMAIN_ID:
+  222
+ROS_LOCALHOST_ONLY:
+  1
+presentation:
+  visible Gazebo GUI
+attempts / retries:
+  1 / 0
+run root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_11_secondary_probe
+```
+
+The run must use the isolated install qualified at `d3e752d`, be invoked from
+`/tmp`, and remain bounded by the scenario's `720.0 s` simulation,
+`900.0 s` wall, and `45.0 s` shutdown-grace limits plus an outer
+`1020 s` timeout. No source-worktree `PYTHONPATH`, external DDS monitor, or
+second invocation is permitted.
+
+Acceptance remains all-or-nothing: recording and completeness, final zero,
+scoped cleanup, expected state/event path, exact one-fill cardinality,
+schema-v14 topology hash, direct or strictly owned assisted recovery, strict
+second-candidate raw-cost ranking, graceful post-recovery `0.50 m` proximity
+stop, SQLite integrity, and all nine plots. A formal failure is retained and
+closes v8.11; it is not retried or tuned in place.
+
+No Gazebo, scenario runner, recorder, analyzer, or physical process was
+started while writing this boundary. The fresh run root is absent. Physical
+stopping remains manual operator `Ctrl+C`.
+
+## Current milestone
+
+**PHASE 08.8 M8.3 — V8.11 SECONDARY VISIBLE SEED `19901` BOUNDARY WRITTEN /
+DISPATCH CHECKPOINT AND COMMIT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Validate context and diff, prove installed scenario parity and inactive
+runtime, run the Phase 08 dispatch checkpoint, and commit this exact boundary.
+Only then execute seed `19901` once with visible Gazebo. Do not invoke the
+analyzer until the runner emits a complete summary-owned run path.
+
+## Phase 08.8 M8.3 v8.11 secondary-visible dispatch checkpoint — 2026-07-31
+
+The installed seed-`19901` one-time/no-retry visible boundary received the
+required Phase 08 checkpoint against implementation HEAD `d3e752d`.
+
+```text
+base HEAD:
+  d3e752de3ae990bbdece5fd935714b3571b09fbb
+status sha256 before this checkpoint note:
+  d41c116d73cecb111efa02bde5bb2e33678f5f38a53021c6398b1e9c9fd8b479
+active subphase plan sha256:
+  6d5d8446cf3dc56de77a34a62eb7e28e30e9e6d9e422ef9556ff990acaebd644
+checkpoint sha256 before this checkpoint note:
+  11517d94bf61e2876cd85f759a005ae6c54bfa5569226f8f564fc89d4e91bf20
+installed/source scenario parity:
+  PASS
+installed/source scenario sha256:
+  ce6b80c83cd52b5e665d22bc2867b1a8046d6c6a817f8427dd94ea062a9b76c0
+Phase 08 implement context:
+  PASS
+git diff --check:
+  PASS
+ROS_DOMAIN_ID 222 visible nodes:
+  none
+active simulation/analysis/physical runtime:
+  none
+fresh run root:
+  absent
+```
+
+## Current milestone
+
+**PHASE 08.8 M8.3 — V8.11 SECONDARY VISIBLE SEED `19901` BOUNDARY /
+DISPATCH CHECKPOINT PASS / DISPATCH COMMIT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Commit this exact two-file dispatch boundary. Then execute the installed
+seed `19901` once on domain `222` with visible Gazebo and no retry. Preserve
+the runner summary and all descendants whether the formal result passes or
+fails.
