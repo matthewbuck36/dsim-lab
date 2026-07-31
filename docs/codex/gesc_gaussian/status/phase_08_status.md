@@ -15451,3 +15451,90 @@ FAILURE CHECKPOINT PASS / FAILURE COMMIT PENDING / GAZEBO PROHIBITED.**
 Commit this exact v8.7 failure boundary. Then write and checkpoint a fresh
 bounded causal assist-entry evidence amendment before any implementation or
 Gazebo action. V8.7 remains closed and must not be retried.
+
+## Phase 08.8 M4.9 v8.8 correction plan — 2026-07-31
+
+The fixed v8.7 primary-repeat failure is committed:
+
+```text
+3616b68 phase 08.8: retain failed v8.7 primary repeats
+```
+
+The active Plan now defines v8.8 as a fresh schema-v12 causal assist-entry
+evidence correction. It changes no controller, supervisor, detector, fill,
+modified cost, launch, world, source, motion, ranking, time budget,
+simulation stop, final-zero, or cleanup behavior.
+
+Schema versions through v11 retain their existing interpretation. Schema v12
+uses the existing evaluator-only `0.15 s` handoff timeout at assist entry as
+well as exit. Before the first owned entry diagnostic it permits only finite,
+arithmetically valid, correctly saturated ordinary GESC with a fresh zero
+supervisor command, or valid zero/failsafe output. It then requires a fresh
+supervisor-only diagnostic within the bound and uninterrupted
+supervisor-only ownership through escape completion. True GESC plus nonzero
+supervisor, unknown/stale/late evidence, invalid arithmetic/saturation, or
+later fallback still fails.
+
+Fresh fixed inputs use:
+
+```text
+primary visible:    seed 19601
+primary repeats:    seeds 19611..19620
+secondary visible:  seed 19651
+secondary repeats:  seeds 19661..19665
+```
+
+The retained seed-`19514` bag is the immutable causal replay fixture. V8.8
+must prove schema v11 still fails it and schema v12 recognizes exactly one
+ordinary entry-transition diagnostic, a `13.125597 ms` handoff, and all
+`2,678` later supervisor-owned diagnostics. Adversarial late, additive,
+unknown, stale-zero, nonfinite, arithmetic, saturation, no-ownership, and
+fallback fixtures must fail.
+
+No Gazebo execution is authorized until the complete no-Gazebo
+qualification, validation report, Phase 08 checkpoint, and implementation
+commit pass. V8.7 remains closed; no v8.7 seed may be retried.
+
+## Current milestone
+
+**PHASE 08.8 M4.9 — V8.7 FAILURE COMMITTED / V8.8 CAUSAL ASSIST-ENTRY
+PLAN AMENDMENT SAVED / PLAN CHECKPOINT PENDING / NO GAZEBO AUTHORIZED.**
+
+## Next criterion
+
+Checkpoint and commit the exact v8.8 correction Plan and live-status
+boundary. Then implement schema-v12 evidence, tests, and the four fresh
+scenario inputs without launching Gazebo.
+
+## Phase 08.8 M4.9 v8.8 correction-plan checkpoint — 2026-07-31
+
+The fresh schema-v12 causal assist-entry Plan and live-status boundary
+received the required Phase 08 checkpoint against committed v8.7 failure
+HEAD `3616b68`.
+
+```text
+base HEAD:
+  3616b684da995b2af58f8e64cb4c658de3fbe61f
+active plan sha256 before this checkpoint note:
+  c6c16cdf8c8d4513171d1d2fde7d2793f730dd1033e955768ff3857518347dc5
+status sha256 before this checkpoint note:
+  00a34ac0665ea111b2e38c3daf08ba9f4f7231c515b8263f3b1919d43a469467
+checkpoint sha256 before this checkpoint note:
+  cb8a2d06bd6c0db4cea2089d300f7acf60dfc2f9a3b2b0e96d162fa985772178
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+active Gazebo/scenario/recorder/analyzer:
+  none
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.9 — V8.8 CAUSAL ASSIST-ENTRY PLAN CHECKPOINT PASS /
+PLAN COMMIT PENDING / NO GAZEBO AUTHORIZED.**
+
+## Next criterion
+
+Commit this exact Plan boundary. Then implement and qualify schema v12 plus
+fresh v8.8 scenarios entirely without Gazebo.

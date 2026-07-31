@@ -2520,3 +2520,199 @@ open-field layouts at simulator-relative `400/1600`. Physical stopping
 remains manual operator `Ctrl+C`. Three-light Gazebo execution, wall/obstacle
 behavior, arbitrary intensity/layout claims, physical motion, and Phase 09
 remain outside this correction.
+
+## Executed M4.8 repeat disposition and M4.9 v8.8 correction amendment
+
+### Fixed v8.7 primary-repeat disposition
+
+The sealed v8.7 primary population is closed as a fixed formal gate failure.
+Seeds `19511`, `19512`, `19513`, and `19514` executed exactly once. The first
+three passed all fourteen predicates. Seed `19514` completed the full
+scientific behavior but failed `supervisor_owned_escape_assist`; it was not
+retried, and seeds `19515..19520` were not dispatched.
+
+All four dispatched runs completed one local candidate, exactly one typed
+fill, one measured aligned assisted exit, ordinary post-recovery search, one
+strictly lower second raw-cost interval, `GOAL_REACHED`, and a later valid
+global-proximity sample. Recording, final zero, readiness false, and cleanup
+passed `4/4`.
+
+The complete message-level audit of seed `19514` found:
+
+```text
+one ordinary GESC diagnostic with zero supervisor contribution
+-> 13.125597 ms from recorded nonzero authority to first owned diagnostic
+-> 2,678 consecutive supervisor-owned diagnostics
+-> no later fallback
+-> ordinary causal assist-exit handoff
+```
+
+There was no diagnostic equal to GESC plus a nonzero supervisor command. The
+first sample is exactly the previous `ESCAPE_REPULSE` arbitration produced
+while the controller's separate state subscription had not yet consumed the
+externally recorded `ESCAPE_ASSIST` update. Schema v11 bounds the equivalent
+cross-topic settling at assist exit but still treats external bag order as
+controller-consumption order at assist entry.
+
+The fixed result and all four one-time analysis bundles are retained in:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_8_primary_repeats.md
+```
+
+V8.7 remains failed and closed. This diagnosis does not relabel it.
+
+### M4.9 objective
+
+Version v8.8 changes no controller, supervisor, detector, fill,
+modified-cost, launch, world, source, motion, ranking, timeout, final-zero,
+cleanup, or stop behavior. It adds a schema-v12 causal assist-entry evidence
+contract while retaining schema v11's causal assist-exit contract unchanged.
+
+This is a fresh formal-evidence version. It does not retry, reopen, mutate, or
+add to v8.7.
+
+### Schema-v12 causal assist-entry contract
+
+The existing predicate and evaluator-only timeout remain:
+
+```text
+supervisor_owned_escape_assist
+supervisor_owned_assist_handoff_timeout_sec: 0.15
+```
+
+No new launch/controller parameter is introduced. The same `0.15 s` bound
+now applies to both cross-topic entry and exit settling for schema v12.
+Schema versions through v11 retain their existing byte-for-behavior
+interpretation.
+
+For schema v12, all existing assist-state geometry, direction revision,
+measured exit, alignment, positive translation, suppressed GESC, command
+freshness, arithmetic, saturation, returned-state, returned-command, and
+post-exit causal requirements remain mandatory.
+
+Starting at the later of the first externally recorded `ESCAPE_ASSIST` state
+and first externally recorded nonzero supervisor authority command, the
+entry evidence must additionally prove:
+
+1. every diagnostic is finite, complete, arithmetically consistent, and
+   correctly saturated;
+2. before causal ownership, a diagnostic may be only:
+   - ordinary GESC with exactly zero supervisor contribution and a fresh
+     recorded zero supervisor command; or
+   - a zero/failsafe command with valid contribution arithmetic;
+3. a diagnostic whose combined command exactly matches a fresh nonzero
+   supervisor command occurs within `0.15 s` of the first recorded nonzero
+   authority command;
+4. every later diagnostic through the returned `SEARCH` boundary matches a
+   fresh supervisor command and retains supervisor-only ownership;
+5. at least one later nonzero GESC proposal is proven suppressed;
+6. at least one later supervisor command has positive linear translation;
+7. no diagnostic ever equals GESC plus a nonzero supervisor command; and
+8. the result records the entry-transition sample count, entry-handoff delay,
+   first-owned diagnostic stamp, steady owned sample count, and evidence
+   mode.
+
+An unrecognized transient, missing fresh zero-command support, invalid
+command, nonfinite value, contribution error, saturation error, true
+GESC-plus-nonzero-supervisor sum, handoff later than `0.15 s`, missing owned
+sample, or any fallback after ownership fails.
+
+This is not a general grace period and does not excuse additive assist or
+persistent previous-state behavior. It is a bounded proof of asynchronous
+delivery across the already-existing state, command, and diagnostic topics.
+
+### Fresh fixed inputs
+
+Create four schema-v12 scenarios:
+
+```text
+phase08_v8_8_primary_visible_probe.yaml
+  seed 19601
+  visible
+  runs root phase08_8_8_primary_probe
+
+phase08_v8_8_primary_repeats.yaml
+  seeds 19611 through 19620
+  headless
+  runs root phase08_8_8_primary_repeats
+
+phase08_v8_8_secondary_visible_probe.yaml
+  seed 19651
+  visible
+  runs root phase08_8_8_secondary_probe
+
+phase08_v8_8_secondary_repeats.yaml
+  seeds 19661 through 19665
+  headless
+  runs root phase08_8_8_secondary_repeats
+```
+
+Every source, start, intensity, topology, launch override, controller profile,
+Stage A/Stage B budget, evaluator-only `0.50 m` stop, forbidden state/event,
+final-zero rule, cleanup rule, first-failure rule, and claim boundary is
+copied from v8.7. Only schema/evidence semantics, versioned identities, roots,
+descriptions, and fresh seeds change.
+
+### No-Gazebo qualification
+
+Before any v8.8 Gazebo process:
+
+1. preserve every historical and v8-v8.7 scenario byte and result;
+2. prove schema versions through v11 retain their exact existing entry and
+   exit behavior;
+3. replay retained seed `19514` under its original schema-v11 resolved input
+   and prove it still fails on the first entry diagnostic;
+4. replay the same immutable records through a schema-v12 fixture and prove
+   exactly one recognized ordinary transition, a `13.125597 ms` entry
+   handoff, all `2,678` later assist diagnostics owned, and the existing
+   causal exit proof passes;
+5. prove schema v12 rejects late entry, unknown entry, a stale or missing
+   zero-command transition, GESC plus a nonzero supervisor command, nonfinite
+   data, contribution error, saturation error, missing ownership, and later
+   fallback;
+6. prove the shared handoff timeout remains evaluator-only and cannot enter
+   the launch graph;
+7. prove all four v8.8/v8.7 scenario pairs differ only in the declared
+   versioned evidence, identities, roots, descriptions, and seeds;
+8. run focused schema, runner, validator, analyzer, controller, supervisor,
+   observability, and legacy tests;
+9. run the broad ROS-independent suite, changed-file fatal lint, Python
+   compilation, XML/YAML parsing, isolated three-package build, installed
+   node construction, source/install parity, and all four installed dry-runs
+   without creating a run root; and
+10. validate Phase 08 context, run `git diff --check`, verify no active
+    runtime process, write a separate no-Gazebo qualification record, update
+    live status, checkpoint, and commit.
+
+No Gazebo process is authorized until that complete qualification,
+checkpoint, and implementation commit pass.
+
+### V8.8 runtime gates
+
+After a separate clean committed dispatch boundary:
+
+1. execute the primary visible probe once, with no ROS-domain monitoring and
+   no retry;
+2. require every v8.7 behavioral predicate plus schema-v12 causal entry and
+   exit ownership, complete recording, final zero, and uncontaminated
+   cleanup;
+3. analyze it exactly once and retain all nine plots;
+4. checkpoint and commit the result before primary repeats;
+5. execute ten primary repeats serially/headlessly, stopping at the first
+   failure with no retry;
+6. analyze every dispatched repeat exactly once after the population closes;
+7. only `10/10` authorizes the secondary visible probe;
+8. only a passing secondary visible probe authorizes five secondary repeats;
+9. analyze every dispatched secondary run exactly once; and
+10. only `5/5` secondary repeats authorizes M6.
+
+The sealed-run observation protocol from v8.7 remains mandatory. No external
+ROS/DDS participant may join an active v8.8 domain.
+
+The v8.8 claim remains limited to the same two fixed local-first, two-source,
+open-field layouts at simulator-relative `400/1600`. Physical stopping
+remains manual operator `Ctrl+C`. Three-light Gazebo execution, wall/obstacle
+behavior, arbitrary intensity/layout claims, physical motion, and Phase 09
+remain outside this correction.
