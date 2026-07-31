@@ -1941,3 +1941,343 @@ simulator-relative `400/1600` ratio. Active-fill transit is not proof that an
 arbitrary approach direction leads to an unseen stronger basin. Broader
 positions or intensities require the separately sealed M6 matrix; three lights
 remain untested in Gazebo.
+
+## Executed M4.6 disposition and M4.7 v8.6 correction amendment
+
+### Fixed v8.5 primary-repeat disposition
+
+The committed v8.5 primary population is closed. Exactly seeds
+`19311..19316` executed once under the sealed first-failure rule. Seeds
+`19311..19315` passed. Seed `19316` passed Stage A, exact one-fill
+cardinality, revision-one active-fill transit, and assisted local escape, but
+failed the independent `180.0 s` Stage B gate. Seeds `19317..19320` were not
+dispatched.
+
+The immutable report is:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_6_primary_repeats.md
+```
+
+The v8.5 selected direction was not revised or reversed. For seed `19316`, it
+was `(0.485035, 0.874495)`, with evaluator-only alignment `+0.943` against
+the fill-to-global direction. The physical escape occurred on the opposite
+side of the fill: the measured exit direction had dot product `-0.925`
+against the selected vector.
+
+The reason is command arbitration. In `ESCAPE_ASSIST`, the robust controller
+currently adds the oscillatory GESC command to the bounded supervisor
+direction command and saturates the sum. In the failed run:
+
+```text
+valid synchronized assist samples:                 2,860
+nonzero supervisor angular samples:                2,847
+|GESC angular| > |supervisor angular| samples:     2,640
+combined turn opposite supervisor samples:         1,605
+mean |GESC angular request|:                         7.095 rad/s
+mean |supervisor angular request|:                   0.398 rad/s
+nonzero supervisor linear samples:                  0
+```
+
+The GESC angular request repeatedly kept heading outside the supervisor drive
+cone. The nominal assist therefore supplied no linear translation; the robot
+escaped under the competing GESC command on a seed-dependent side of the
+fill.
+
+The failed run was still approaching the global after recovery. It reduced
+global distance by `1.979 m` in its final `60 s` with path efficiency
+`0.912`. A longer Stage B evidence clock could admit this trajectory, but
+would not correct the defeated direction owner or the observed actual-exit
+alignment range of `+0.960` through `-0.925`.
+
+The correction below is a fresh experiment version. It does not retry,
+relabel, mutate, or reopen v8.5.
+
+### M4.7 objective
+
+Version v8.6 adds one default-off supervisor-owned assisted-escape command
+mode:
+
+```text
+ordinary raw-plus-Gaussian SEARCH reaches candidate one
+-> create exactly one typed active fill
+-> freeze the direct onboard-history direction
+-> let Gaussian-plus-affine GESC initiate zero-supervisor REPULSE
+-> detect measured radial stall
+-> in ASSIST, keep computing and recording GESC cost/control diagnostics
+-> give the bounded supervisor command exclusive actuator authority
+-> rotate toward the frozen world-frame direction
+-> translate along that direction until measured exit plus hold
+-> clear direction, affine, and supervisor authority
+-> resume ordinary raw-plus-Gaussian SEARCH
+```
+
+This is a command-ownership correction, not GPS guidance, global navigation,
+wall avoidance, source-coordinate guidance, or a persistent post-recovery
+route.
+
+### Default-off command-owner contract
+
+Add:
+
+```text
+open_field_escape_supervisor_owned_assist_enabled: false
+```
+
+The new control is valid only when all v8.5 active-fill-transit prerequisites
+are true:
+
+```text
+algorithm profile:                            robust_gaussian_v1
+extremum classification:                      counted_candidates
+candidate-informed fill:                      enabled
+open-field escape assist:                     enabled
+open-field escape approach continuity:        enabled
+open-field escape active-fill transit:        enabled
+affine implementation:                        enabled
+operating bounds:                             disabled
+recenter:                                     disabled
+recoverable navigation:                       disabled
+post-recovery guidance:                       disabled
+```
+
+Historical defaults, V6, every v8-v8.5 input, and all prior scenarios retain
+their current command combination, weights, direction selection, launch
+arguments, event payloads, normalized bytes, and resolved behavior.
+
+When the new control is enabled:
+
+1. `ESCAPE_REPULSE` remains unchanged. The supervisor command remains zero;
+   GESC computes from weights `(raw, Gaussian, affine) = (0, 1, 1)` and
+   remains the actuator command owner.
+2. The existing measured `3.0 s / 0.05 m` stall rule alone enters
+   `ESCAPE_ASSIST`.
+3. In `ESCAPE_ASSIST`, modified cost and the GESC controller continue to
+   compute with weights `(0, 1, 1)` for observability and algorithm-state
+   continuity, but the controller's authorized unsaturated actuator command
+   is exactly the fresh supervisor command. The GESC command is not added to
+   it.
+4. The controller remains the sole `/cmd_vel` publisher. Supervisor
+   ownership means command arbitration inside that existing controller, not
+   a second publisher or bypass node.
+5. The supervisor uses the already latched revision-one world-frame
+   direction and existing odometry yaw. It rotates in place while heading is
+   outside the existing drive cone, then applies the existing bounded linear
+   command along the same direction.
+6. The active fill stays in typed memory and modified cost. It remains
+   excluded only from its own open-field command-sweep check. Every other
+   retained fill remains a hard command-sweep constraint.
+7. A missing, stale, nonfinite, mismatched, or unsafe supervisor command
+   follows the existing zero/failsafe path. The controller must never fall
+   back to the competing GESC command while enabled assist ownership is
+   active.
+8. `ControlDiagnostics` remains arithmetically honest:
+   `combined_command_unsaturated` is the authorized supervisor command,
+   `gesc_command_unsaturated` is the suppressed GESC proposal, and
+   `supervisor_contribution` is the complete correction
+   `combined - GESC`.
+9. At the first measured exit completion, explicit stop, terminal state,
+   reset, stale/fault path, or missing fill/history path, supervisor-owned
+   authority, safe direction, affine term, and weights clear under the
+   existing rules.
+10. The first returned `SEARCH` sample must again be `(1, 1, 0)`, have no
+    valid safe direction, have zero supervisor command, and authorize the
+    ordinary GESC command exactly as v8.5 does.
+11. Append enabled-only configuration evidence for supervisor-owned assist.
+    Do not add a source/global/evaluator coordinate or any hidden target.
+
+The supervisor may use wheel-odometry/IMU pose and yaw already permitted by
+the project. Vicon, GPS, declared light positions, room dimensions, and the
+evaluator-only global coordinate remain unavailable to controller runtime.
+
+### Formal command-ownership evidence
+
+Schema v10 adds the optional result predicate:
+
+```text
+supervisor_owned_escape_assist
+```
+
+When required, the authoritative validator must use recorded
+`/gesc_gaussian/supervisor_command`, `ControlDiagnostics`,
+`AlgorithmState`, odometry, and escape events to prove:
+
+1. at least one valid `ESCAPE_ASSIST` interval exists;
+2. every evaluated assist control sample has a fresh supervisor command;
+3. pre-saturation combined command equals the held fresh supervisor command
+   on all six axes within numerical tolerance;
+4. the recorded GESC proposal is independently finite and at least one
+   sample proves it was nonzero but did not leak into the combined command;
+5. supervisor contribution equals `combined - GESC`;
+6. the final command equals the existing saturation of the combined command;
+7. direction validity and revision one persist throughout assist;
+8. at least one positive supervisor linear command occurs before exit;
+9. the measured fill-to-exit unit vector has dot product at least `+0.80`
+   against the latched selected direction;
+10. the first post-exit `SEARCH` control sample returns to ordinary GESC
+    ownership with affine and supervisor authority cleared.
+
+Unmatched, stale, missing, nonfinite, zero-linear-only, GESC-leaking,
+wrong-direction, wrong-revision, or post-exit-persistent evidence fails the
+predicate. There is no evaluator/global-coordinate term in this predicate.
+
+### Relaxed simulation-only Stage B evidence budget
+
+Fresh v8.6 staged scenarios use:
+
+```text
+stage_a_timeout_sec:       360.0
+post_stage_a_timeout_sec:  300.0
+run_timeout_sec:           720.0
+wall_timeout_sec:          900.0
+```
+
+This does not change controller behavior, convergence detection, candidate
+ranking, physical stopping, or escape timing. It prevents the simulation
+evidence harness from terminating a healthy open-field search solely because
+a longer approach is needed after a valid local recovery. The physical
+contract remains manual operator `Ctrl+C`; there is no physical
+coordinate-distance stop or Stage B timer.
+
+The command-owner predicate remains mandatory. A run cannot pass merely by
+using the extra time.
+
+### Fresh fixed inputs
+
+Create four schema-v10 scenario files. Source declarations, starts,
+intensities, topology, candidate/fill/detector values, affine values, Stage A
+budget, simulation-only proximity stop, cleanup gates, and first-failure rules
+are copied from v8.5. Only the supervisor-owned assist correction, Stage B
+evidence budget, fresh identities/roots, and declared seeds change.
+
+```text
+phase08_v8_6_primary_visible_probe.yaml
+  seed 19316
+  visible
+  runs root phase08_8_6_primary_probe
+
+phase08_v8_6_primary_repeats.yaml
+  seeds 19411 through 19420
+  headless
+  runs root phase08_8_6_primary_repeats
+
+phase08_v8_6_secondary_visible_probe.yaml
+  seed 19451
+  visible
+  runs root phase08_8_6_secondary_probe
+
+phase08_v8_6_secondary_repeats.yaml
+  seeds 19461 through 19465
+  headless
+  runs root phase08_8_6_secondary_repeats
+```
+
+Seed `19316` is intentionally reused only in the fresh v8.6 visible
+correction probe so the committed v8.5 command-arbitration failure is a
+deterministic regression fixture. The scenario identity, schema, controller
+behavior, evidence root, and experiment version are new. This does not retry
+or alter the v8.5 result.
+
+The new profile explicitly sets:
+
+```text
+open_field_escape_approach_continuity_enabled:        true
+open_field_escape_active_fill_transit_enabled:        true
+open_field_escape_supervisor_owned_assist_enabled:    true
+modified_cost_enable_affine_bias:                     true
+modified_cost_affine_gain:                            0.50
+modified_cost_affine_decay_rate:                      0.0000005
+modified_cost_affine_max_age:                         35.0
+modified_cost_affine_direction_sign:                  1.0
+```
+
+No parameter sweep is authorized.
+
+### No-Gazebo qualification
+
+Before any v8.6 Gazebo process:
+
+1. freeze all historical and v8-v8.5 scenario bytes and prove the new switch
+   defaults false everywhere;
+2. replay the recorded seed-`19316` assist control fixtures with the switch
+   disabled, proving the existing v8.5 combined commands are unchanged;
+3. replay the same fixtures with the switch enabled, proving every assist
+   combined command equals the supervisor command and never the competing
+   GESC-plus-supervisor sum;
+4. prove REPULSE, SEARCH, VERIFY, DESIGN, terminal, reset, explicit-stop,
+   stale/fault, and legacy RECENTER arbitration remain unchanged;
+5. prove enabled ASSIST never falls back to GESC on a zero, stale, missing,
+   nonfinite, or unsafe supervisor command;
+6. prove existing command saturation, watchdog, final-zero, readiness, and
+   sole-`/cmd_vel`-publisher contracts remain intact;
+7. prove supervisor yaw gating produces rotate-only then positive bounded
+   linear motion toward the exact latched vector;
+8. prove all other retained fills remain hard command-sweep constraints;
+9. prove enabled-only configuration evidence contains command-owner
+   enablement but no source/global/evaluator field;
+10. prove schema-v10 dependency checks and the new formal predicate reject
+    missing, stale, leaked-GESC, zero-linear-only, wrong-revision,
+    wrong-exit-direction, and persistent-post-exit evidence;
+11. prove v8.6/v8.5 source pairs differ only in declared versioned fields,
+    the new switch, evidence budget, identities, roots, and seeds;
+12. run focused state-machine, supervisor, controller, modified-cost,
+    geometry, launch, schema, runner, validator, analyzer, observability, and
+    legacy tests;
+13. run the broad ROS-independent suite, fatal lint, Python compilation,
+    launch XML and YAML parsing, isolated three-package build, installed node
+    construction, source/install parity, all four installed dry-runs without
+    creating a run root, context validation, `git diff --check`, and inactive
+    process checks;
+14. write a separate v8.6 no-Gazebo qualification record, update live status,
+    checkpoint Phase 08, and commit the exact qualified implementation.
+
+No Gazebo process is authorized until the complete qualification,
+checkpoint, and implementation commit pass.
+
+### V8.6 runtime gates
+
+Only a clean committed qualification and separate committed dispatch boundary
+authorize one installed visible execution of
+`phase08_v8_6_primary_visible_probe.yaml`, seed `19316`.
+
+- A visible failure closes v8.6 immediately.
+- A visible pass must include the formal command-owner predicate, complete
+  analysis, all nine plots, a measured exit-alignment value, checkpoint, and
+  commit before primary repeats.
+- The ten fresh primary repeats execute serially/headlessly, stop at the
+  first behavioral, command-owner, recording, final-zero, or cleanup failure,
+  and never retry a seed.
+- Only `10/10` primary passes authorize the secondary visible probe.
+- Only a passing secondary visible probe authorizes five secondary repeats.
+- Only `5/5` secondary passes authorize any M6 broader-envelope
+  characterization.
+
+Every run continues to require:
+
+```text
+one distinct local candidate
+-> exactly one typed active fill
+-> one latched direct escape direction with no revision
+-> supervisor-owned measured assisted exit aligned with that direction
+-> ordinary SEARCH with affine and supervisor authority cleared
+-> distinct second candidate
+-> strict raw-cost interval improvement
+-> GOAL_REACHED
+-> later evaluator-only 0.50 m simulation proximity
+-> final zero, readiness false, complete recording, clean shutdown
+```
+
+### V8.6 claim boundary
+
+Even if every v8.6 gate passes, the result supports only reproducible
+behavior in the two fixed route-blocking, local-first, two-source open-field
+layouts at the simulator-relative `400/1600` ratio. Supervisor-owned assist
+proves deterministic execution of an onboard-history escape direction; it
+does not prove that this direction reveals an arbitrary unseen stronger
+source.
+
+Broader light positions or intensity ratios require the separately sealed M6
+matrix and may require deliberate exploration with persistent basin/route
+memory. Three lights remain untested in Gazebo. Wall/obstacle avoidance is
+out of scope, and physical stopping remains manual operator `Ctrl+C`.

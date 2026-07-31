@@ -13782,3 +13782,97 @@ RESULT COMMIT PENDING / GAZEBO PROHIBITED.**
 
 Stage and commit this exact v8.5 result boundary. Then verify the clean tree
 before writing the fresh v8.6 plan amendment.
+
+## Phase 08.8 M4.7 v8.6 correction amendment — 2026-07-31
+
+The fresh v8.6 plan amendment is now written against immutable v8.5 closeout
+commit:
+
+```text
+99924dc0c52c34590f03a530319f5af99f5c168c
+phase 08.8: retain failed v8.5 primary repeats
+```
+
+The amendment adds one default-off
+`open_field_escape_supervisor_owned_assist_enabled` contract. When enabled,
+REPULSE remains GESC-owned, but the existing controller gives the bounded
+supervisor command exclusive actuator authority in `ESCAPE_ASSIST`; the GESC
+proposal remains computed and recorded but cannot defeat the latched
+direction before saturation. Ordinary GESC ownership resumes at the first
+post-exit `SEARCH` sample.
+
+Schema v10 adds an explicit `supervisor_owned_escape_assist` result predicate
+using recorded supervisor commands, control diagnostics, state, odometry, and
+escape events. It must prove command ownership, nonzero bounded linear
+assistance, revision-one direction continuity, fill-to-exit alignment of at
+least `+0.80`, and complete authority clearing after exit. Extra time alone
+cannot pass the predicate.
+
+Fresh staged inputs retain the two fixed `400/1600` layouts and use a relaxed
+simulation-only Stage B evidence budget of `300.0 s`, `720.0 s` simulation
+run limit, and `900.0 s` wall limit. Physical behavior remains coordinate-free
+with manual operator `Ctrl+C`.
+
+The first visible v8.6 probe intentionally reuses deterministic seed `19316`
+under a fresh version/schema/root as a regression fixture for the committed
+v8.5 command-arbitration failure. Fresh primary repeats use `19411..19420`;
+secondary visible/repeats use `19451` and `19461..19465`.
+
+Plan:
+
+```text
+docs/codex/gesc_gaussian/plans/phase_08_8_plan.md
+SHA-256:
+  767e3e8ffb3dbfa6744048ceed275367e3028f4ac647e969c478466f621fa6ec
+```
+
+Plan-context validation passes. No production code, interface, launch graph,
+scenario input, test, installed artifact, or runtime evidence root has
+changed. No Gazebo or physical process is authorized.
+
+## Current milestone
+
+**PHASE 08.8 M4.7 — FRESH V8.6 SUPERVISOR-OWNED ASSIST AMENDMENT
+DRAFTED / PLAN CHECKPOINT PENDING / IMPLEMENTATION AND GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Checkpoint and commit the exact v8.6 amendment. Only that clean committed plan
+may authorize implementation and no-Gazebo qualification.
+
+## Phase 08.8 M4.7 v8.6 plan checkpoint — 2026-07-31
+
+The fresh supervisor-owned-assist correction amendment received the required
+Phase 08 checkpoint against immutable v8.5 result HEAD `99924dc`.
+
+```text
+base HEAD:
+  99924dc0c52c34590f03a530319f5af99f5c168c
+status sha256 before this checkpoint note:
+  3d8e660484027b4e0d0983f9d5d267caac5b5bcbce950dae766e1e0ddaf11fb5
+active plan sha256:
+  767e3e8ffb3dbfa6744048ceed275367e3028f4ac647e969c478466f621fa6ec
+unstaged plan/status diff sha256:
+  c7089b767f49e96b66251c1898c85bce4532b17fee5f98a554f146a28dc7ee31
+checkpoint sha256 before this checkpoint note:
+  d6de9137ef56b7487c1a0aa5ce27d06aa69db101dfbdb65c1a5febb40d432cf4
+unstaged and staged diff checks:
+  PASS
+plan context:
+  PASS
+```
+
+No production code, interface, launch graph, scenario, test, installed
+artifact, runtime evidence root, Gazebo process, or physical process changed
+during this plan checkpoint.
+
+## Current milestone
+
+**PHASE 08.8 M4.7 — FRESH V8.6 SUPERVISOR-OWNED ASSIST AMENDMENT /
+PLAN CHECKPOINT PASS / PLAN COMMIT PENDING / IMPLEMENTATION AND GAZEBO
+PROHIBITED.**
+
+## Next criterion
+
+Stage and commit this exact plan boundary, verify the clean tree, and then
+begin only the declared implementation and no-Gazebo qualification.
