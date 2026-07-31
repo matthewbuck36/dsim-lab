@@ -261,16 +261,25 @@ outputs on a recorded reference bag.
 
 ## Phase 08 - simulation validation, diagnosis, and freeze
 
-Terminal status as of 2026-07-30: Phase 08 is closed. The broad
-simulation-ready objective failed; no 70-unique-case acceptance denominator
-or simulation-ready tag exists. The final Phase 08.7 retrospective
-known-success reproduction produced `13/17` formal and `14/17` behavioral
-passes at simulator-relative `400/1600`, but it is not an unbiased robustness
-claim. Read the
-[whole-Phase-08 final report](validation/phase_08_final_report.md) and
-[final handoff](handoffs/phase_08_final_handoff.md) before Phase 09 planning.
-The detailed history below remains useful but its earlier active-subphase
-language is superseded by those closeout documents.
+Terminal status as of 2026-07-31: Phase 08 and the separately approved
+Phase 08.8 iteration are closed. The broad simulation-ready objective failed;
+no 70-unique-case acceptance denominator or simulation-ready tag exists. The
+final Phase 08.7 retrospective known-success reproduction produced `13/17`
+formal and `14/17` behavioral passes at simulator-relative `400/1600`, but it
+is not an unbiased robustness claim.
+
+Phase 08.8 then implemented an opt-in known-source-count policy. Its final
+primary fixed two-source layout passed one visible probe plus ten consecutive
+fresh-process repeats (`11/11` formal). Its one secondary run completed the
+scientific behavior but failed the frozen evaluator geometry contract; the
+secondary repeats, broad matrix, and three-light Gazebo work did not run.
+Read the
+[Phase 08.8 final report](validation/phase_08_8_final_report.md),
+[Phase 08.8 handoff](handoffs/phase_08_8_handoff.md),
+[whole-Phase-08 final report](validation/phase_08_final_report.md), and
+[earlier final handoff](handoffs/phase_08_final_handoff.md) before Phase 09
+planning. The detailed history below remains useful but its earlier
+active-subphase language is superseded by those closeout documents.
 
 Historical disposition: v1 and v2 are closed failed experiment versions. V1
 retains its incomplete large-matrix evidence. V2 retains ten activation

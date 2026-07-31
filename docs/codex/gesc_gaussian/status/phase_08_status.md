@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-31T03:09:19-07:00`
-Status: `PHASE 08 CLOSED AND COMMITTED; BROAD SIMULATION-READY OBJECTIVE FAILED; PHASE 09 PLAN REQUIRES SEPARATE REQUEST`
+Last verified: `2026-07-31T12:42:53-07:00`
+Status: `PHASE 08.8 M7 CLOSEOUT QUALIFIED AND CHECKPOINTED; PRIMARY 11/11 FORMAL PASS; SECONDARY FORMAL FAIL; COMMIT PENDING`
 
 ## Objective
 
@@ -18167,3 +18167,207 @@ Commit this exact fixed secondary result. Do not dispatch seed `19851`
 again, seeds `19861..19865`, or M6. Then perform no-Gazebo M7 bounded
 closeout: final report, handoff, final static validation, status close, and
 Phase 08 checkpoint.
+
+## Phase 08.8 M7 closeout drafting — 2026-07-31
+
+The fixed secondary result was committed at:
+
+```text
+6f42040b2166a5f0784926cf70706dcb68e1edd3
+phase 08.8: retain failed v8.10 secondary probe
+```
+
+The clean committed boundary preserves the independent primary visible and
+`10/10` primary-repeat passes. The secondary repeat seeds `19861..19865` and
+M6 remain prohibited and were not dispatched.
+
+M7 adds the following no-Gazebo closeout documents:
+
+```text
+docs/codex/gesc_gaussian/validation/phase_08_8_final_report.md
+docs/codex/gesc_gaussian/handoffs/phase_08_8_handoff.md
+```
+
+Navigation now points to this additive Phase 08.8 boundary while preserving
+the earlier whole-Phase-08 report through Phase 08.7.
+
+The report separates:
+
+```text
+primary fixed-layout formal result:       11/11 PASS
+secondary scientific behavior:             1/1 COMPLETE
+secondary formal result:                    0/1 FAIL
+secondary repeatability:                    NOT RUN
+v8.10 raw candidate ranking:              12/12 PASS
+v8.10 recording/final-zero/cleanup:       12/12 PASS
+v8.10 one-time analysis and plots:        12/12 and 108/108
+M6 broader matrix:                         NOT RUN
+three-light Gazebo:                        NOT RUN
+wall/obstacle claim:                       NONE
+physical automatic coordinate stop:       PROHIBITED
+physical motion:                           NOT RUN
+```
+
+No source, launch, scenario, test, world, retained run, analysis, or plot was
+changed while drafting M7. No Gazebo, ROS, analyzer, or physical process was
+started.
+
+## Current milestone
+
+**PHASE 08.8 M7 — FINAL REPORT AND HANDOFF WRITTEN / NAVIGATION UPDATED /
+FINAL STATIC VALIDATION AND MATERIAL CHECKPOINT PENDING / NO GAZEBO
+AUTHORIZED.**
+
+## Next criterion
+
+Run the bounded final static consistency, link, syntax, YAML/XML, focused
+regression, context, historical-preservation, artifact-presence, inactive
+runtime, and complete-diff checks. Record exact outcomes, checkpoint Phase
+08, inspect the complete closeout diff, and commit. Do not run Gazebo,
+secondary repeats, M6, three-light simulation, Phase 09 implementation, or
+physical hardware.
+
+## Phase 08.8 M7 final static qualification — 2026-07-31
+
+The no-Gazebo M7 closeout qualification passed against fixed empirical-result
+HEAD `6f42040`.
+
+Focused source-precedence regressions against the qualified v8.10 overlay:
+
+```text
+state machine + qualified dwell detector + all three recorder-CWD owners:
+  108 passed in 0.87 s
+  JUnit:
+    /tmp/phase08_8_m7_closeout_focused.xml
+  SHA-256:
+    4991a132462ebc1bbfb38dda1f2876e40a3502a0367b6dd65976a1a330ca226c
+
+schema-v1..v13 compatibility + all v8.10 scenarios + legacy behavior:
+  218 passed in 52.93 s
+  JUnit:
+    /tmp/phase08_8_m7_closeout_schema_legacy.xml
+  SHA-256:
+    6f7a210c42293c3f21ae812d46904326dc1a00531806cda3e81cae4b1168aab5
+```
+
+Static source and installation checks:
+
+```text
+Phase 08 implement context:                  PASS
+required Phase 00 documents:                PASS
+new Markdown links:                         12 checked / 0 missing
+changed Phase 08.8 Python source compile:   12/12
+v8.10 scenario YAML parse:                   4/4
+central launch XML parse:                    PASS
+source/install byte parity:                 10/10
+physical/shared launch coordinate-stop refs: 0
+scenario schema mode boundary:              simulation only
+known-count three-source state test:         present and passed
+git diff --check:                            PASS
+matching simulation/analysis/physical runtime: none
+Phase 08 or simulation-ready Git tag:        none
+```
+
+Read-only summary-owned evidence audit:
+
+```text
+retained v8.10 run directories:              12/12 present
+primary formal result:                       11/11
+secondary formal result:                      0/1
+controller ranked goal:                      12/12
+exact one created/typed/active cluster:      12/12
+schema-v13 branch selection:                 11 assisted + 1 direct
+authoritative completeness:                  12/12
+analysis failures:                            0
+analysis status:                             11 complete + 1 partial
+plots:                                      108/108
+SQLite PRAGMA quick_check:                   12/12 ok
+strict ranking margin range:                 0.094916 to 3.606003
+```
+
+The one partial analysis remains seed `19812`'s already documented optional
+generic state-duration sampling gap. Its critical inputs, formal result,
+scientific metrics, fresh validator, and nine plots remain complete.
+
+Historical-preservation hashes still match the v8.10 qualification:
+
+```text
+gazebo_empty.world:
+  3085542f9dc1d13fdf9368a24808a226908d1a2c5a7a4ffd07bc6f374ca14b43
+gesc_gaussian_validation.world:
+  8ecc1a231efec24401d74fef3cd5139d48c6029f88e71d044cefdf2fd14c5bef
+gesc_gaussian_corner_origin_validation.world:
+  88b10b39aa24a6430f6f031c750334ed34e6835e54c84de8d36f4cc6a26444bf
+phase_08_v6_selection.json:
+  dcdbf937fe3de0cab9449c2b01af79fd938e1d3f9791b4897937875d0747590d
+```
+
+The four v8.10 scenario hashes also remain exactly:
+
+```text
+primary visible:
+  c41eea1e6e10d8f736bb669fdf13db46eb8a6ed23b512a5827e8675d2d5c501b
+primary repeats:
+  cdb5e05339745d89afc632388af2e8bae45de75159c514f3d85832732361c796
+secondary visible:
+  a0f9c7032be4e2540e3937cd741c9271c7358bba48dd5e6d41a23208a488f3ed
+secondary repeats:
+  f7c54e8213f288b54051d69b06ae6ba1e75daf328763488ea970ebaffe550b3e
+```
+
+No source, launch, scenario, test, world, retained run, bag, analysis, or plot
+changed during M7. No Gazebo, ROS graph, analyzer, three-light, M6, Phase 09,
+or physical process ran.
+
+## Current milestone
+
+**PHASE 08.8 M7 — FINAL REPORT/HANDOFF COMPLETE / STATIC QUALIFICATION PASS /
+PRIMARY `11/11` FORMAL PASS / SECONDARY FIXED FORMAL FAIL / MATERIAL
+CHECKPOINT AND CLOSEOUT COMMIT PENDING.**
+
+## Next criterion
+
+Run `checkpoint_phase.sh 08`, inspect the generated checkpoint and complete
+six-file closeout diff, rerun context and whitespace checks, and commit the
+qualified Phase 08.8 closeout. Then write a post-commit receipt naming the
+exact commit and clean worktree. Do not dispatch any simulation or physical
+process.
+
+## Phase 08.8 M7 material checkpoint — 2026-07-31
+
+The qualified final report, handoff, navigation updates, static validation,
+and inactive runtime received the required Phase 08 material checkpoint:
+
+```text
+base HEAD:
+  6f42040b2166a5f0784926cf70706dcb68e1edd3
+status sha256 before this checkpoint note:
+  ea72e709a5ef2ff35617bded90d211bc8b8638d0e47059bdd87d70707c40696c
+active plan sha256:
+  9d7a7ea410c43dfc1e404c6bba30453dfd4d2d593fe74eb72c2648913246dcbb
+final report sha256:
+  1e2fba7fb8d7d0ed60b9975ff8f916178ea87593dc422ecd38c21dbc8fbe5c4d
+handoff sha256 after final EOF-whitespace correction:
+  55397d2e39aa322632b225b6936435e91586067e893027ccc64f6b07faee27cb
+checkpoint sha256 before this checkpoint note:
+  0d3a586a1d0e23299f8a63a582b50a462e04bc75b41d911fe64b3c070166f568
+unstaged and staged diff checks:
+  PASS
+Phase 08 implement context:
+  PASS
+active simulation/analysis/physical runtime:
+  none
+```
+
+## Current milestone
+
+**PHASE 08.8 M7 — CLOSEOUT QUALIFIED / MATERIAL CHECKPOINT PASS /
+PRIMARY `11/11` FORMAL PASS / SECONDARY FIXED FORMAL FAIL / BOUNDED
+CLOSEOUT COMMIT PENDING.**
+
+## Next criterion
+
+Stage only the six reviewed M7 files, inspect the cached diff and whitespace,
+and commit the qualified closeout. Then append a post-commit receipt and make
+the final bounded receipt commit. Do not launch Gazebo, ROS, an analyzer,
+Phase 09, or physical hardware.

@@ -122,15 +122,23 @@ docs/codex/gesc_gaussian/plans/phase_00_plan.md
 The Phase 00 Implement chat must read and verify that file before creating the
 audit documents.
 
-## Current checkpoint after Phase 08
+## Current checkpoint after Phase 08.8
 
 Phases 00-07.5 are implemented. Phase 08 is closed as a development and
 diagnostic phase; its broad simulation-ready objective failed. The final
 Phase 08.7 retained-success reproduction produced `13/17` formal and `14/17`
 behavioral passes under evidence-selected two-light conditions, not an
-unbiased acceptance denominator. Read first:
+unbiased acceptance denominator.
+
+The separately approved Phase 08.8 counted-source iteration subsequently
+qualified one fixed primary two-source layout at `11/11` formal passes. Its
+one secondary-layout run completed the scientific local-recovery-to-global
+behavior but failed a frozen evaluator-to-aggregate-basin geometry rule, so
+the secondary repeats and broader matrix did not run. Read first:
 
 ```text
+docs/codex/gesc_gaussian/validation/phase_08_8_final_report.md
+docs/codex/gesc_gaussian/handoffs/phase_08_8_handoff.md
 docs/codex/gesc_gaussian/validation/phase_08_final_report.md
 docs/codex/gesc_gaussian/handoffs/phase_08_final_handoff.md
 docs/codex/gesc_gaussian/status/phase_08_status.md
@@ -140,8 +148,9 @@ The next justified work is a separately reviewed Phase 09 physical-interface
 inventory and Plan centered first on the known-good two-light `1:4` response
 condition. Planning does not authorize hardware motion. Do not resume or
 relabel historical Phase 08 evidence, create a simulation-ready tag, infer
-three-light readiness, enable an automatic physical global-distance stop, or
-launch hardware without explicit Phase 09 authorization.
+secondary-layout or three-light readiness, enable an automatic physical
+global-distance stop, or launch hardware without explicit Phase 09
+authorization.
 
 ---
 
