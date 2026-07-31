@@ -19271,45 +19271,6 @@ diff; checkpoint Phase 08; and commit this exact boundary. Only then invoke
 the installed matrix once. Preserve every dispatched case and stop without a
 retry if any fixed case fails.
 
-## Phase 08.8 M8.9 v8.12 broad-matrix dispatch checkpoint — 2026-07-31
-
-The exact installed four-case serial, headless, first-failure-stop,
-one-time/no-retry boundary received the required Phase 08 checkpoint against
-visible-result HEAD `24170d2`.
-
-```text
-base HEAD:
-  24170d2ba9b6725f52ca071917c24636416b16e3
-status sha256 before this checkpoint note:
-  ac370eda26d49d5677734dcb2d67b946cd6dd906e9c3cc07fdc9e2bba17d87f4
-checkpoint sha256 before this checkpoint note:
-  79a1ac93cdde28e9e35a78f2fbd60aa48b1c13d54cf43b9a7bd4cdedb218e8f3
-installed/source scenario parity:
-  PASS
-installed/source scenario sha256:
-  311667e8c8d330732ea32c894bb78fed43b63cd23ef86f486ca25c86fe727bdc
-installed dry-run / unsupported:
-  4 / 0
-Phase 08 implement context / git diff check:
-  PASS / PASS
-active simulation/analysis/physical runtime:
-  none
-matrix root:
-  absent
-```
-
-## Current milestone
-
-**PHASE 08.8 M8.9 — V8.12 FOUR-CASE MATRIX BOUNDARY / INSTALLED DRY-RUN
-4/4 / DISPATCH CHECKPOINT PASS / DISPATCH COMMIT PENDING / MATRIX
-PROHIBITED.**
-
-## Next criterion
-
-Commit this exact two-file dispatch boundary. Then invoke the installed matrix
-once on domain `220`, preserve every dispatched result, and stop without a
-retry if any fixed case fails.
-
 ## Phase 08.8 M8.4 v8.11 broad-matrix dispatch checkpoint — 2026-07-31
 
 The exact installed four-case serial, headless, first-failure-stop,
@@ -20120,4 +20081,43 @@ DRY-RUN 4/4 / DISPATCH CHECKPOINT AND COMMIT PENDING / MATRIX PROHIBITED.**
 Validate source/install parity, root absence, inactive runtime, context, and
 diff; checkpoint Phase 08; and commit this exact boundary. Only then invoke
 the installed matrix once. Preserve every dispatched case and stop without a
+retry if any fixed case fails.
+
+## Phase 08.8 M8.9 v8.12 broad-matrix dispatch checkpoint — 2026-07-31
+
+The exact installed four-case serial, headless, first-failure-stop,
+one-time/no-retry boundary received the required Phase 08 checkpoint against
+visible-result HEAD `24170d2`.
+
+```text
+base HEAD:
+  24170d2ba9b6725f52ca071917c24636416b16e3
+status sha256 before this checkpoint note:
+  ac370eda26d49d5677734dcb2d67b946cd6dd906e9c3cc07fdc9e2bba17d87f4
+checkpoint sha256 before this checkpoint note:
+  79a1ac93cdde28e9e35a78f2fbd60aa48b1c13d54cf43b9a7bd4cdedb218e8f3
+installed/source scenario parity:
+  PASS
+installed/source scenario sha256:
+  311667e8c8d330732ea32c894bb78fed43b63cd23ef86f486ca25c86fe727bdc
+installed dry-run / unsupported:
+  4 / 0
+Phase 08 implement context / git diff check:
+  PASS / PASS
+active simulation/analysis/physical runtime:
+  none
+matrix root:
+  absent
+```
+
+## Current milestone
+
+**PHASE 08.8 M8.9 — V8.12 FOUR-CASE MATRIX BOUNDARY / INSTALLED DRY-RUN
+4/4 / DISPATCH CHECKPOINT PASS / DISPATCH COMMIT PENDING / MATRIX
+PROHIBITED.**
+
+## Next criterion
+
+Commit this exact two-file dispatch boundary. Then invoke the installed matrix
+once on domain `220`, preserve every dispatched result, and stop without a
 retry if any fixed case fails.
