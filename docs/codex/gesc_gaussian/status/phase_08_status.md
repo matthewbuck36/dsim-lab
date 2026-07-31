@@ -15289,3 +15289,165 @@ COMMIT PENDING / REPEATS NOT YET STARTED.**
 Commit this exact population boundary, then execute the installed suite once
 on isolated domain `232`, serially, without external ROS/DDS monitoring and
 without retries.
+
+## Phase 08.8 M4.8 fixed v8.7 primary-repeat disposition — 2026-07-31
+
+Dispatch boundary commit:
+
+```text
+308d8c9 phase 08.8: authorize v8.7 primary repeats
+```
+
+The fixed serial population executed seeds `19511`, `19512`, `19513`, and
+`19514` exactly once. Seeds `19511..19513` passed all `14` predicates. Seed
+`19514` completed the scientific behavior but failed the formal
+`supervisor_owned_escape_assist` predicate, so the runner stopped before seed
+`19515`. Seed `19514` was not retried, and seeds `19515..19520` were not
+dispatched.
+
+```text
+formal result:                       3/4 pass
+behavioral result:                   4/4 pass
+recording completeness:              4/4 pass
+cleanup:                             4/4 pass
+exact one-fill cardinality:          4/4 pass
+local recovery / Stage A:            4/4 pass
+strict raw candidate ranking:        4/4 pass
+post-recovery global proximity:      4/4 pass
+final readiness false / zero:        4/4 pass
+FAILSAFE / TIMEOUT:                  absent 4/4
+```
+
+The original runner completed normally and wrote:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_7_primary_repeats/scenario_summaries/
+  20260731T134126836619Z_phase08_v8_7_primary_repeats.yaml
+SHA-256:
+  fbf5ea9110fa1aef2fd585690a1bb9f7fa4658d6679e759eb8b93139c741c1ca
+```
+
+The interactive console channel detached while the suite remained active, so
+the outer shell return code was not recoverable. The process was not
+terminated, restarted, or replaced. The original sealed runner continued,
+closed at seed `19514`, retained all four results, and left no Gazebo,
+scenario, recorder, analyzer, or run-session process. The truncated console
+log is retained with SHA-256
+`b2a2d6ccff54427cac5c6bba8048c871e4fe021bd52087175fbbdceba01e1963`.
+
+Seed `19514` followed:
+
+```text
+SEARCH -> VERIFY -> DESIGN -> REPULSE -> ASSIST -> SEARCH ->
+VERIFY -> GOAL_HOLD
+```
+
+It completed Stage A at simulation time `173.919 s`, ranked the second raw
+candidate `0.9913900325777076` below the first candidate's retained lower
+bound, and reached a valid noninterpolated sample `0.112068 m` from the
+declared global at `293.803 s`. Its measured fill-to-exit direction alignment
+was `0.999671269`. Recording, final zero, readiness false, and cleanup all
+passed.
+
+The message-level audit proves the failed ownership predicate was not
+persistent additive control:
+
+```text
+recorded ESCAPE_ASSIST state:        1785506493834865483
+recorded nonzero authority command:  1785506493837615474
+first evaluated diagnostic:          1785506493841327810
+first supervisor-owned diagnostic:   1785506493851741071
+entry handoff from authority:         0.013125597 s
+ordinary transition diagnostics:     1
+GESC plus nonzero supervisor:         0
+steady supervisor-owned diagnostics: 2,678
+later ownership fallback:             0
+```
+
+The one transition diagnostic had combined command equal to GESC and exactly
+zero supervisor contribution. It is the controller's previous
+`ESCAPE_REPULSE` ownership before its separate state subscription consumed
+the externally recorded `ESCAPE_ASSIST` update. Every subsequent diagnostic
+through escape completion matched a fresh supervisor command and suppressed
+the nonzero GESC proposal. Schema v11 already uses bounded causal settling on
+assist exit but still assumes external bag order equals controller
+consumption order at assist entry. The fixed schema-v11 run remains failed;
+this diagnosis does not relabel it.
+
+The standard analyzer ran exactly once for every dispatched seed. All four
+invocations returned zero, had `analysis_failures=[]`, and produced all nine
+plots. Seeds `19512` and `19513` reported `complete`; seeds `19511` and
+`19514` reported `partial` only for optional generic analysis
+applicability/gap handling. No critical input, formal event, recording check,
+or plot is missing.
+
+Durable report:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_8_primary_repeats.md
+```
+
+Plots:
+
+```text
+<each retained run>/analysis/phase07/plots/
+```
+
+The fixed v8.7 primary gate is closed at `3/4` formal passes with four of ten
+seeds dispatched. The v8.7 secondary and broad gates are prohibited. A fresh
+evidence version may add a bounded causal entry-handoff proof while changing
+no controller, supervisor, detector, fill, modified cost, source, world,
+motion, ranking, timeout, cleanup, or stop behavior.
+
+## Current milestone
+
+**PHASE 08.8 M4.8 — FIXED V8.7 PRIMARY REPEAT GATE CLOSED FAIL /
+3/4 FORMAL AND 4/4 BEHAVIORAL PASSES / ENTRY-HANDOFF DEFECT DIAGNOSED /
+FAILURE CHECKPOINT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Checkpoint and commit the immutable v8.7 population, one-time analyses,
+plots, diagnosis, report, and status. Then write and checkpoint a separately
+versioned bounded causal assist-entry amendment. Do not retry any v8.7 seed or
+dispatch a v8.7 secondary gate.
+
+## Phase 08.8 M4.8 v8.7 primary-repeat failure checkpoint — 2026-07-31
+
+The immutable stopped population, three formal passes, one behavioral
+success/formal failure, four one-time analysis bundles, message-level causal
+diagnosis, durable report, and live status received the required Phase 08
+checkpoint against dispatch HEAD `308d8c9`.
+
+```text
+base HEAD:
+  308d8c9da8394c4efd7172ac911fb09b8d9dbd2b
+status sha256 before this checkpoint note:
+  7d412212e0d5a43580168189222a80ac4bc119f941f58564c47ea7731e36f118
+active plan sha256:
+  8c063ed44514bd9a84e0601f5cb73e56aeecabddce7cabda0d6c65fe80077694
+failure report sha256:
+  59ddabf3db5487fe7bcb83c017cb3b204b65f956d53ed5fababf37f0f0afc90f
+checkpoint sha256 before this checkpoint note:
+  f1629a904b2a5ee9c04cb374e040c59f7274e282dd29d1e1ae49a4adb3670b84
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+active Gazebo/scenario/recorder/analyzer:
+  none
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.8 — FIXED V8.7 PRIMARY REPEAT GATE CLOSED FAIL /
+3/4 FORMAL AND 4/4 BEHAVIORAL PASSES / ENTRY-HANDOFF DEFECT DIAGNOSED /
+FAILURE CHECKPOINT PASS / FAILURE COMMIT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Commit this exact v8.7 failure boundary. Then write and checkpoint a fresh
+bounded causal assist-entry evidence amendment before any implementation or
+Gazebo action. V8.7 remains closed and must not be retried.
