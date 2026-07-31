@@ -12259,3 +12259,109 @@ DISPATCH CHECKPOINT PASS / DISPATCH COMMIT PENDING / GAZEBO PROHIBITED.**
 
 Commit this exact two-document dispatch boundary. Only that clean committed
 state authorizes the fixed ten-run primary gate.
+
+## Phase 08.8 M4.2 fixed v8.3 primary-repeat result — 2026-07-30
+
+**FIXED POPULATION FAIL / FOUR OF FIVE DISPATCHED PASS / SEED `19115` STAGE B
+FAIL / FIVE LATER SEEDS NOT DISPATCHED / INFRASTRUCTURE COMPLETE / EVIDENCE
+RETAINED.**
+
+The committed headless population ran serially from dispatch HEAD `ec21cda` on
+ROS domain `229`. Exactly seeds `19111..19115` executed once. Seeds
+`19111..19114` passed the complete counted-candidate path, strict second
+candidate ranking, and the `0.50 m` post-recovery evaluator stop. Seed `19115`
+passed Stage A at simulation time `346.924 s`, created exactly one typed active
+fill, completed `ESCAPE_REPULSE -> ESCAPE_ASSIST -> SEARCH`, but did not find
+or rank candidate two within its independent `180.0 s` Stage B budget.
+
+```text
+seed       formal result   Stage A (s)   Stage B (s)   final global distance
+19111      PASS             191.010       115.294       0.141761 m
+19112      PASS             200.825       121.006       0.155023 m
+19113      PASS             202.227       133.382       0.119478 m
+19114      PASS             190.634       164.390       0.185826 m
+19115      FAIL             346.924       180.030       5.167727 m
+19116-20   NOT DISPATCHED
+```
+
+The runner stopped at the first formal failure with
+`stopped_early_reason: run_failure`; seed `19115` was not retried. All five
+executed recorders returned zero without timeout, authoritative completeness
+passed, final-zero and final-readiness-false passed, cleanup passed with no
+leftovers, and no Gazebo process remains.
+
+Retained summary:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_3_primary_repeats/
+  scenario_summaries/
+  20260731T070914746817Z_phase08_v8_3_primary_repeats.yaml
+SHA-256:
+  596b93d0fa07a63be2bc9b38691fb879b017ff8e1b5d21ade9bfffc8a99c2ec8
+```
+
+Complete report:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_2_primary_repeats.md
+```
+
+Cross-seed diagnosis isolates direction rather than fill strength. Seed
+`19115` used the same `3.557` fill amplitude and approximately the same
+candidate-one lower bound as three passing seeds. The offline dot product from
+fill center to assisted exit against fill center to the declared global was
+positive for all four passes (`+0.906`, `+0.751`, `+0.559`, `+0.159`) and
+exactly opposite for the failure (`-1.000`). It escaped through the
+arrival-side corridor and ended at `(0.11484, -0.40462) m`; it did not revisit
+the filled local.
+
+Both escape states currently exclude raw sensor cost. The Gaussian supplies
+radial repulsion but cannot distinguish which outward hemisphere contains the
+stronger unseen source; open-field assist freezes the radial side occupied at
+the stall sample. Merely weakening the fill or extending Stage B does not
+correct that symmetry defect.
+
+## Current milestone
+
+**PHASE 08.8 M4.2 — FIXED V8.3 PRIMARY POPULATION CLOSED FAIL / SECONDARY AND
+BROAD V8.3 DISPATCH PROHIBITED / RESULT CHECKPOINT PENDING.**
+
+## Next criterion
+
+Checkpoint and commit the immutable v8.3 failure report and status. Then save
+and review a fresh default-off amendment that restores a sensor-derived
+directional asymmetry during escape without source coordinates, Vicon, room
+geometry, global pose, route planning, or changes to historical behavior.
+No further Gazebo process is authorized until that correction passes complete
+no-Gazebo qualification, checkpointing, and a bounded commit.
+
+## Phase 08.8 M4.2 retained-result checkpoint — 2026-07-30
+
+The fixed-population failure, five immutable run records, complete diagnostic
+report, evidence hashes, plot paths, live status, and first-failure gate
+disposition received the required Phase 08 material checkpoint against
+dispatch HEAD `ec21cda`.
+
+```text
+status sha256:
+  1eeadf7fd8d9dd5ecf335692ebce679620ce39e7e086295e38e152d956747d2f
+unstaged diff sha256:
+  2d422673b46973bdffd3a7c2acad8456a9c59d44adceb5daf35277af664c3078
+diff check:
+  PASS
+```
+
+No Gazebo, scenario, recorder, analyzer, or physical process remained during
+the checkpoint.
+
+## Current milestone
+
+**PHASE 08.8 M4.2 — FIXED V8.3 PRIMARY POPULATION CLOSED FAIL / RETAINED
+RESULT CHECKPOINT PASS / RESULT COMMIT PENDING / ALL V8.3 DISPATCH
+PROHIBITED.**
+
+## Next criterion
+
+Commit this immutable result boundary and verify a clean tree. Only then may a
+fresh versioned correction amendment be saved and qualified without Gazebo.
