@@ -12813,3 +12813,84 @@ PROHIBITED.**
 Commit this exact result boundary and verify it. Then record, checkpoint, and
 commit the separate fixed-primary-repeat dispatch boundary before executing
 any of seeds `19211..19220`.
+
+## Phase 08.8 M4.4 fixed v8.4 primary-repeat dispatch boundary — 2026-07-30
+
+The immutable passing visible result was committed at:
+
+```text
+800274d
+phase 08.8: retain passing v8.4 primary probe
+```
+
+Post-commit verification passes: the worktree is clean, no matching Gazebo or
+scenario process is active, the repeat evidence root is absent, and the
+committed source scenario exactly matches the previously qualified isolated
+install.
+
+The passing visible gate authorizes this already committed fixed population:
+
+```text
+scenario:
+  phase08_v8_4_primary_repeats.yaml
+scenario SHA-256:
+  ef822e73c13f1e78d94c60ae10a11438caae8137507aae837495d84109699407
+case:
+  v8_4_primary_repeat_r1p5_a45_h25
+seeds:
+  19211..19220
+resolved runs:
+  10
+execution:
+  serial, headless, stop on first run or cleanup failure
+per-run limits:
+  540.0 s simulation, 720.0 s wall
+evidence root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_4_primary_repeats
+```
+
+No source, start, intensity, profile value, acceptance predicate, timeout,
+seed, cleanup rule, or stop rule may change during this gate. Each seed may
+execute at most once and every executed result must be retained. The first
+formal behavioral, infrastructure, recording, or cleanup failure closes the
+population immediately, leaves later seeds undispatched, and prohibits the
+secondary campaign. No retry is authorized.
+
+## Current milestone
+
+**PHASE 08.8 M4.4 — FIXED TEN-RUN V8.4 PRIMARY POPULATION DECLARED /
+DISPATCH CHECKPOINT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Checkpoint and commit this exact dispatch boundary. Then immediately reconfirm
+the clean tree, inactive runtime process set, absent evidence root, and
+source/install scenario parity before running the ten seeds serially and
+headlessly under the sealed first-failure rule.
+
+## Phase 08.8 M4.4 primary-repeat dispatch checkpoint — 2026-07-30
+
+The fixed ten-run population and first-failure dispatch contract received the
+required Phase 08 checkpoint against retained visible-result HEAD `800274d`.
+
+```text
+status sha256:
+  ab2ed1bc860ace3fe2333eb37bd147fcf94d97f938645f13118adf20a451a041
+unstaged diff sha256:
+  26a6dc3296d06d2087efa7876055f4d890f84e49f6dd20c639e5d6cb3df96b0e
+diff check:
+  PASS
+```
+
+No Gazebo, scenario, recorder, analyzer, or physical process ran while
+creating this checkpoint.
+
+## Current milestone
+
+**PHASE 08.8 M4.4 — FIXED TEN-RUN V8.4 PRIMARY POPULATION DECLARED /
+DISPATCH CHECKPOINT PASS / DISPATCH COMMIT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Commit this exact dispatch boundary. Only that later clean committed state
+authorizes the sealed ten-run primary gate.

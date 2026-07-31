@@ -1,37 +1,36 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-31T09:04:03+00:00
-Base HEAD: 8e9acef3ea0dc9e017ff66124f0a147fb15275a4
+Generated: 2026-07-31T09:05:26+00:00
+Base HEAD: 800274d8e48d5752e6276236ba369662c0aa4ace
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 034618a778f2c80f90f3a74a24905fac5a7f163127323e289110dfb89c9ebd4e
+Status sha256: ab2ed1bc860ace3fe2333eb37bd147fcf94d97f938645f13118adf20a451a041
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_8_plan.md
 Active subphase plan sha256: f8864cda6cda530cabb5b572d8cad86834de2a7e82bb69b382e04c6e3451018f
-Unstaged diff sha256: 410d62f55f54b9e268910cdf130b9f3ef661e4be33609f0b764bb0cdd8b43c9a
+Unstaged diff sha256: 26a6dc3296d06d2087efa7876055f4d890f84e49f6dd20c639e5d6cb3df96b0e
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 120]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 121]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
-?? docs/codex/gesc_gaussian/validation/phase_08_8_m4_3_primary_probe.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  34 ++-----
- docs/codex/gesc_gaussian/status/phase_08_status.md | 101 +++++++++++++++++++++
- 2 files changed, 110 insertions(+), 25 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 25 ++--------
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 54 ++++++++++++++++++++++
+ 2 files changed, 59 insertions(+), 20 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**PHASE 08.8 M4.3 — FIXED V8.4 PRIMARY VISIBLE PROBE FORMAL PASS /
-RESULT CHECKPOINT PENDING / PRIMARY REPEATS PROHIBITED.**
+**PHASE 08.8 M4.4 — FIXED TEN-RUN V8.4 PRIMARY POPULATION DECLARED /
+DISPATCH CHECKPOINT PENDING / GAZEBO PROHIBITED.**
 
 
 
