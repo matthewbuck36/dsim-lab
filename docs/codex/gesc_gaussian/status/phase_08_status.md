@@ -12365,3 +12365,79 @@ PROHIBITED.**
 
 Commit this immutable result boundary and verify a clean tree. Only then may a
 fresh versioned correction amendment be saved and qualified without Gazebo.
+
+## Phase 08.8 M4.3 v8.4 Plan amendment — 2026-07-30
+
+The immutable v8.3 failure boundary was committed at:
+
+```text
+ed49369
+phase 08.8: retain failed v8.3 primary repeats
+```
+
+The fresh v8.4 amendment is now saved in
+`docs/codex/gesc_gaussian/plans/phase_08_8_plan.md`. It adds one default-off,
+escape-scoped approach-continuity vector selected from the existing supervisor
+odometry history and frozen fill exit geometry. It does not add a route map,
+waypoint, source/global coordinate, Vicon input, room geometry, or persistent
+post-escape direction.
+
+The correction selects the newest recorded pose outside the fill's frozen exit
+radius, points from that pre-basin anchor toward the fill center, and chooses
+the most aligned existing fill-safe candidate. The robust affine term follows
+that typed direction only during `ESCAPE_REPULSE`/`ESCAPE_ASSIST`; ordinary
+`SEARCH` remains raw plus Gaussian with affine zero.
+
+Offline replay of all five retained v8.3 primary fill geometries produces
+positive evaluator-only initial selected/global alignments from `+0.883` to
+`+0.999`. At failed seed `19115`'s stall pose, the old radial alignment is
+about `-0.852`; revalidation of the frozen approach direction selects a safe
+tangent aligned `+0.472`. The global coordinate was used only to describe this
+offline diagnostic and is not an implementation input.
+
+Fresh v8.4 identities and seeds are fixed at `19201`, `19211..19220`, `19251`,
+and `19261..19265`. No v8.4 source or scenario has been implemented, and no
+Gazebo process is authorized.
+
+## Current milestone
+
+**PHASE 08.8 M4.3 — V8.4 APPROACH-CONTINUITY PLAN AMENDMENT SAVED /
+PLAN CHECKPOINT PENDING / IMPLEMENTATION NOT STARTED / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Validate and checkpoint this bounded amendment, inspect its exact diff, and
+commit the Plan boundary. Then implement and fully qualify v8.4 without
+Gazebo. Only a later qualified implementation checkpoint and commit may
+authorize a fresh visible probe.
+
+## Phase 08.8 M4.3 v8.4 Plan checkpoint — 2026-07-30
+
+The approach-continuity amendment and live status received the required
+preimplementation Phase 08 checkpoint against retained v8.3 result HEAD
+`ed49369`.
+
+```text
+active subphase plan sha256:
+  f489a657d6ac584d0a9f072dfdd7047e6f7c5780552025c2e76fa1ae5275b845
+status sha256:
+  585b22393afb07b12d771d6b77bc711cfdff540284f7b53e8a36e8f1e2fbb899
+unstaged diff sha256:
+  19707a7fded7c4bcf084634d4c2e8ef3f9703f9794607a068b99634b5146c0ad
+diff check:
+  PASS
+```
+
+No Gazebo, scenario, recorder, analyzer, or physical process ran while
+creating the checkpoint.
+
+## Current milestone
+
+**PHASE 08.8 M4.3 — V8.4 APPROACH-CONTINUITY PLAN CHECKPOINT PASS /
+PLAN COMMIT PENDING / IMPLEMENTATION NOT STARTED / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Commit this exact Plan boundary and verify a clean tree. Then implement the
+default-off correction and fresh v8.4 inputs, followed by every declared
+no-Gazebo qualification gate.

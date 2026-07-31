@@ -1355,3 +1355,307 @@ Before editing, the Implement chat must:
 
 If any of these assumptions is false, record the exact evidence and apply the
 Level A/B/C policy before proceeding.
+
+## Executed M4.2 disposition and M4.3 v8.4 correction amendment
+
+### Fixed v8.3 primary-repeat disposition
+
+The committed v8.3 primary population is closed. Exactly seeds
+`19111..19115` executed once under the sealed first-failure rule. Seeds
+`19111..19114` passed. Seed `19115` passed Stage A, candidate-informed fill
+creation, exact one-fill cardinality, and assisted escape, but failed the
+independent `180.0 s` Stage B gate. Seeds `19116..19120` were not dispatched.
+
+The immutable report is:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_2_primary_repeats.md
+```
+
+The retained cross-seed evidence rejects fill strength and timeout as the
+primary defect. The failed seed used the same approximately `3.557` fill
+amplitude as three passing seeds. Its assisted exit was aligned `-1.000`
+against the evaluator-only fill-to-global direction, while the four passes
+were aligned `+0.906`, `+0.751`, `+0.559`, and `+0.159`. It escaped through
+the start-side hemisphere and searched southwest without revisiting the filled
+local.
+
+Both v8.3 escape states suppress the raw sensor term. Gaussian repulsion is
+radially symmetric, and the open-field supervisor freezes whichever radial
+side the stochastic controller occupies when the stall sample arrives. The
+stronger unseen source therefore cannot break the outward-direction symmetry
+during that decision.
+
+Re-enabling raw cost alone is not adopted. Offline evaluation of the retained
+fill/stall geometries shows that immediate raw-plus-Gaussian descent is not
+uniformly aligned with the remaining stronger basin because the unfilled raw
+local attraction can still dominate near the fill center. Weakening the fill
+would reintroduce that basin; extending Stage B would permit more travel in an
+already wrong direction.
+
+The correction below is a fresh version. It does not mutate, retry, relabel,
+or reopen v8.3.
+
+### M4.3 objective
+
+Version v8.4 adds one bounded approach-continuity vector to the existing
+open-field escape. The vector uses only the odometry history already retained
+by the supervisor and the accepted fill geometry already available to the
+controller. It is not a global pose, route map, waypoint, source declaration,
+or evaluator input.
+
+The intended behavior is:
+
+```text
+ordinary raw-plus-Gaussian SEARCH reaches candidate one
+-> freeze one pre-basin approach-continuity vector
+-> use Gaussian plus bounded affine bias to leave through the forward
+   fill-safe hemisphere
+-> clear affine authority at the measured escape boundary
+-> resume ordinary raw-plus-Gaussian SEARCH
+-> rank candidate two from raw rotational evidence
+```
+
+This is deliberately narrower than a persistent dead-reckoning or traveled
+route system:
+
+- it summarizes existing pose history into one unit vector;
+- it is created only after a typed fill is accepted;
+- it is scoped to that one escape episode;
+- it is cleared on `SEARCH`, terminal state, reset, or fault;
+- it cannot select a waypoint or retain a route after escape;
+- it receives no source position, source role, global coordinate, room
+  dimension, Vicon pose, simulator truth, or proximity result.
+
+### Default-off controller contract
+
+Add:
+
+```text
+open_field_escape_approach_continuity_enabled: false
+```
+
+The new control is valid only when all of these are true:
+
+```text
+algorithm profile:                  robust_gaussian_v1
+extremum classification:            counted_candidates
+candidate-informed fill:            enabled
+open-field escape assist:           enabled
+affine implementation:              enabled
+operating bounds:                   disabled
+recenter:                           disabled
+recoverable navigation:             disabled
+post-recovery guidance:              disabled
+```
+
+Historical defaults, v8-v8.3 inputs, V6, and every prior scenario retain their
+existing weights, event payloads, selector behavior, launch arguments, and
+resolved bytes.
+
+When the new control is enabled:
+
+1. At the accepted fill transition, search the existing time-ordered
+   supervisor pose history from newest to oldest for the newest finite pose
+   strictly outside the frozen escape exit radius.
+2. Define the approach-continuity direction as the normalized vector from
+   that historical anchor to the frozen fill center. The history must contain
+   at least one qualified anchor and a nonzero finite displacement. Absence of
+   qualified evidence is an explicit run failure in v8.4; it may not silently
+   fall back to the failed radial-only policy.
+3. Store only the anchor, displacement, exit radius, age, and unit direction
+   for the active escape. Do not copy the trajectory into a new map or retain
+   it after escape.
+4. Select the existing hard fill-safe direction candidate with greatest
+   alignment to the frozen approach direction. A direct forward candidate is
+   preferred; when the robot is on the wrong side of the fill, a tangent in
+   the forward half-plane may be selected until a direct candidate becomes
+   safe.
+5. Freeze and revalidate the selected direction using the existing fill
+   avoidance geometry and revision contract. Any re-selection remains in the
+   same forward half-plane. No operating-bound or wall candidate enters this
+   open-field profile.
+6. Publish `(raw, Gaussian, affine) = (0, 1, 1)` in both
+   `ESCAPE_REPULSE` and `ESCAPE_ASSIST`. The existing robust modified-cost
+   owner binds its affine term to the typed safe direction and revision.
+7. Use the fixed affine values:
+
+   ```text
+   gain:            0.50
+   direction sign:  1.0
+   decay rate:      0.0000005 s^-1
+   maximum age:     35.0 s
+   ```
+
+   The state transition clears affine weight and the robust affine term at
+   the first measured escape completion or any terminal/reset path. There is
+   no post-recovery affine guidance.
+8. Keep supervisor translation zero during `ESCAPE_REPULSE`. If measured
+   radial progress still stalls, the existing finite `ESCAPE_ASSIST`
+   translation uses the same approach-continuity direction and existing
+   differential-drive limits.
+9. Preserve the frozen exit-radius/hold criterion and shared `35.0 s` escape
+   deadline. A direct `ESCAPE_REPULSE -> SEARCH` path and an assisted
+   `ESCAPE_REPULSE -> ESCAPE_ASSIST -> SEARCH` path are both valid.
+10. Append the qualified history anchor, displacement, age, exit radius,
+    frozen continuity vector, selected direction, selected rotation, and
+    direction revision to existing typed event/state evidence only when the
+    new feature is enabled.
+
+Raw sensor cost remains authoritative for candidate summaries and resumes with
+Gaussian memory in ordinary `SEARCH`. It is intentionally not mixed into the
+bounded escape state, where the affine term has the single role of breaking
+the Gaussian radial symmetry.
+
+### Retained-geometry prequalification
+
+The five v8.3 primary runs provide a fixed offline replay set. At their
+fill-acceptance poses, the proposed selector uses the newest recorded odometry
+pose outside the frozen `1.366771 m` exit radius. The following global
+alignments are evaluator-only diagnostics; the global coordinate cannot enter
+the implementation or runtime graph.
+
+| Seed | History anchor `(x,y)` | Frozen approach direction | Initial selected direction | Selected/global alignment |
+|---:|---:|---:|---:|---:|
+| 19111 | `(0.197, 0.017)` | `(0.518, 0.855)` | `(0.971, 0.238)` | `+0.883` |
+| 19112 | `(0.349, 0.062)` | `(0.706, 0.708)` | `(0.706, 0.708)` | `+0.998` |
+| 19113 | `(0.297, 0.035)` | `(0.729, 0.684)` | `(0.729, 0.684)` | `+0.995` |
+| 19114 | `(0.250, 0.025)` | `(0.706, 0.708)` | `(0.706, 0.708)` | `+0.999` |
+| 19115 | `(0.317, 0.039)` | `(0.428, 0.904)` | `(0.942, 0.336)` | `+0.934` |
+
+At seed `19115`'s later retained stall pose, the original radial direction is
+aligned about `-0.852` with the evaluator-only global direction. Revalidating
+the frozen approach vector at that same pose selects the fill-safe tangent
+`(-0.207, 0.978)`, aligned `+0.472`, rather than the failed southwest
+hemisphere. These numbers are diagnostic acceptance fixtures only.
+
+### Fresh fixed inputs
+
+Create four new scenario files. Every source declaration, start, intensity,
+topology, candidate policy, fill value, detector value, Stage A/Stage B
+budget, simulation-only stop, cleanup gate, and first-failure rule is copied
+from v8.3. Only the default-off approach-continuity/affine correction, fresh
+identities, fresh roots, and fresh seeds change.
+
+```text
+phase08_v8_4_primary_visible_probe.yaml
+  seed 19201
+  visible
+  runs root phase08_8_4_primary_probe
+
+phase08_v8_4_primary_repeats.yaml
+  seeds 19211 through 19220
+  headless
+  runs root phase08_8_4_primary_repeats
+
+phase08_v8_4_secondary_visible_probe.yaml
+  seed 19251
+  visible
+  runs root phase08_8_4_secondary_probe
+
+phase08_v8_4_secondary_repeats.yaml
+  seeds 19261 through 19265
+  headless
+  runs root phase08_8_4_secondary_repeats
+```
+
+The new profile explicitly sets:
+
+```text
+open_field_escape_approach_continuity_enabled: true
+modified_cost_enable_affine_bias:               true
+modified_cost_affine_gain:                      0.50
+modified_cost_affine_decay_rate:                0.0000005
+modified_cost_affine_max_age:                   35.0
+modified_cost_affine_direction_sign:            1.0
+```
+
+The scenario ablation `affine_assist_enabled` is `true`; recenter remains
+`false`. Scenario validation permits affine in counted open-field mode only
+for this explicit approach-continuity contract. A counted scenario with
+affine enabled but without the new flag remains rejected exactly as before.
+
+### No-Gazebo qualification
+
+Before any v8.4 Gazebo process:
+
+1. add pure history-selection tests for finite ordered history, newest
+   outside-exit anchor, strict boundary behavior, zero displacement,
+   nonfinite data, missing evidence, and deterministic direction;
+2. replay all five retained v8.3 fill-acceptance geometries and the seed
+   `19115` stall geometry exactly, proving the default-off radial result is
+   unchanged and the enabled selector stays fill-safe and forward;
+3. prove default state weights are unchanged and enabled
+   `ESCAPE_REPULSE`/`ESCAPE_ASSIST` weights are exactly `(0, 1, 1)`;
+4. prove one typed direction revision binds one affine term, no duplicate
+   term is stacked, and `SEARCH`, reset, fault, stale pose, missing fill, or
+   missing history clears authority;
+5. prove the supervisor command remains zero in `ESCAPE_REPULSE`, remains
+   bounded in `ESCAPE_ASSIST`, and the controller remains the sole
+   `/cmd_vel` publisher;
+6. prove event/state evidence contains the frozen anchor/vector only when the
+   feature is enabled and leaks no source/global/evaluator fields;
+7. prove scenario validation requires candidate-informed fill, open-field
+   assist, affine enablement, bounds off, recenter off, recoverable navigation
+   off, and post-recovery guidance off;
+8. prove every v8-v8.3 and historical normalized scenario remains byte- and
+   behavior-compatible, including the counted-mode affine rejection when the
+   new flag is absent;
+9. run focused state-machine, escape geometry, supervisor integration,
+   modified-cost, launch, schema, runner, validator, analyzer, observability,
+   and legacy tests;
+10. run the broad ROS-independent suite, fatal lint, Python compilation,
+    isolated three-package build, installed launch instantiation, source/install
+    parity, all four dry-runs without creating a run root, context validation,
+    `git diff --check`, and inactive-process checks;
+11. write a separate v8.4 no-Gazebo qualification record, update live status,
+    checkpoint Phase 08, and commit the exact qualified implementation.
+
+No parameter sweep or Gazebo tuning is authorized. A no-Gazebo failure must be
+corrected and requalified before runtime.
+
+### V8.4 runtime gates
+
+Only a clean committed qualification and separate committed dispatch boundary
+authorize one installed visible execution of
+`phase08_v8_4_primary_visible_probe.yaml`, seed `19201`.
+
+- A visible failure closes v8.4 immediately.
+- A visible pass must be analyzed, plotted, checkpointed, and committed before
+  the primary repeats.
+- The ten primary repeats run serially and headlessly, stop at the first
+  behavioral or cleanup failure, and never retry a seed.
+- Only a complete `10/10` primary population authorizes the secondary visible
+  probe.
+- Only a passing secondary visible probe authorizes the five secondary
+  repeats.
+- Only a complete `5/5` secondary population authorizes any broader-envelope
+  characterization.
+
+Every run continues to require:
+
+```text
+one distinct local candidate
+-> exactly one typed active fill
+-> completed local escape
+-> ordinary SEARCH with affine cleared
+-> distinct second candidate
+-> strict raw-cost interval improvement
+-> GOAL_REACHED
+-> later evaluator-only 0.50 m simulation proximity
+-> final zero, readiness false, complete recording, clean shutdown
+```
+
+The physical contract remains manual operator `Ctrl+C`. No coordinate-based
+physical stop, wall behavior, obstacle behavior, Vicon input, or global pose
+is introduced.
+
+### Claim boundary
+
+Even if all v8.4 gates pass, the result supports only the two fixed
+route-blocking, local-first, two-source open-field layouts at the
+simulator-relative `400/1600` ratio. Approach continuity is not proof that an
+arbitrary first basin lies between the start and the stronger basin. Broader
+positions or intensity ratios require the separately sealed M6 matrix, and
+three lights remain untested in Gazebo.
