@@ -849,6 +849,117 @@ failure closes that exact version and stops the corrected repeats. A pass
 authorizes the v8.1 primary repeat gate, followed by the v8.1 secondary gate.
 The original no-retry and first-failure rules remain in force.
 
+### Executed M3.1 disposition and approved M3.2 correction amendment
+
+The fixed v8.1 visible probe, seed `18901`, is closed as a retained behavioral
+failure. It passed recording, final-zero, cleanup, one-fill cardinality, local
+association, the required repulse stall, the new assisted departure, Stage A,
+and physical approach to `0.155960 m` from the declared evaluator global. It
+failed only because the controller rejected its second raw-cost candidate and
+therefore correctly withheld `GOAL_REACHED`.
+
+The retained raw bag resolves the discrepancy:
+
+```text
+strongest repeated local-basin raw cost:
+  approximately -2.8462
+strongest repeated global-basin raw cost:
+  -3.837209302
+raw ordering:
+  global is strictly lower than local
+controller's post-confirmation global estimate:
+  -0.021174297
+```
+
+The current estimator resets its rotation window on
+`SEARCH -> VERIFY_EXTREMUM`. The convergence confirmation arrived after the
+strong directional global-basin samples had already occurred, so its later
+six-second slice no longer represented the basin peak. This is an
+estimator-timing defect; no change to motion, source count, cost sign, fill
+behavior, or strict ranking is justified.
+
+The user's bounded-correction authority permits a new v8.2 version:
+
+1. Add `candidate_cost_pretrigger_rotations`, integer, default `0`.
+2. A value of `0` preserves v8.1 and every historical behavior exactly.
+3. When positive in counted-candidate mode, collect complete raw-cost
+   rotation-bin minima during the current `SEARCH` epoch.
+4. Retain only the latest configured number and freeze them when convergence
+   enters `VERIFY_EXTREMUM`.
+5. Continue collecting the normal complete verification rotations.
+6. Select the configured `candidate_cost_required_rotations` most negative
+   minima from the bounded frozen-plus-verification pool, then compute the
+   existing median/MAD interval.
+7. Reset both live and frozen history for every new search epoch; do not
+   retain route, position, or cross-candidate motion history.
+8. Report frozen pretrigger, verification, total available, and selected
+   rotation counts through existing `AlgorithmEvent` value arrays.
+9. Keep strict nonoverlap as the only terminal raw-cost comparison.
+
+The v8.2 fixed profile uses:
+
+```text
+candidate_cost_pretrigger_rotations: 6
+candidate_cost_required_rotations:   3
+candidate_cost_rotation_period_sec:  3.0
+candidate_cost_mad_scale:             3.0
+verification_max_sec:                12.0
+```
+
+The six pretrigger bins bound sensor history to `18.0 s`. The three selected
+minima require repeated evidence; one isolated sample cannot determine a
+candidate. The three `9.0 s` post-confirmation bins still fit inside the
+unchanged `12.0 s` verification budget. Raw cost remains authoritative.
+
+The new fixed inputs are:
+
+```text
+phase08_v8_2_primary_visible_probe.yaml
+  seed 19001
+  visible
+  runs root phase08_8_2_primary_probe
+
+phase08_v8_2_primary_repeats.yaml
+  seeds 19011 through 19020
+  headless
+  runs root phase08_8_2_primary_repeats
+
+phase08_v8_2_secondary_visible_probe.yaml
+  seed 19051
+  visible
+  runs root phase08_8_2_secondary_probe
+
+phase08_v8_2_secondary_repeats.yaml
+  seeds 19061 through 19065
+  headless
+  runs root phase08_8_2_secondary_repeats
+```
+
+Their source layouts, `400/1600` inputs, topology, start, assisted escape,
+Stage A and Stage B budgets, evaluator-only `0.50 m` stop, required path, and
+forbidden evidence match v8.1. Only the bounded raw-candidate estimator and
+fresh version identities/seeds change.
+
+Before another Gazebo process:
+
+- retain and commit the complete v8.1 failure record;
+- add pure raw-history selection, reset, backward-time, invalid-input, and
+  default-off tests;
+- add supervisor adapter tests proving raw rather than augmented cost enters
+  both pretrigger and verification histories;
+- add event-evidence, schema, launch, scenario, validator, and analyzer tests;
+- run focused, scenario, analyzer, and broad no-Gazebo suites;
+- perform a fresh isolated three-package build and installed graph
+  instantiation;
+- resolve all seventeen v8.2 cases without creating a run root;
+- verify controller/evaluator separation and every historical hash;
+- write a separate M3.2 no-Gazebo qualification record;
+- update live status, checkpoint Phase 08, and commit.
+
+Only then may `phase08_v8_2_primary_visible_probe.yaml` execute once. Failure
+closes v8.2 and stops later dispatch. A formal pass authorizes its ten primary
+repeats, then its secondary gate, under the unchanged no-retry rules.
+
 ### M4 — Ten consecutive primary repeats
 
 Only after M3 passes:

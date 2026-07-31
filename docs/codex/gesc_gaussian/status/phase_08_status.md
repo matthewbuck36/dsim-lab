@@ -11066,3 +11066,200 @@ Regenerate the checkpoint so it includes this checkpoint-status update, rerun
 the context and whitespace checks, inspect the final commit scope, and create
 the authorized bounded commit. Only then execute the fixed v8.1 primary
 visible probe exactly once.
+
+## Phase 08.8 M3.1 committed dispatch boundary — 2026-07-30
+
+The qualified, checkpointed v8.1 correction was committed at:
+
+```text
+4bdaba8 phase 08.8: qualify outward escape assist
+```
+
+Post-commit verification:
+
+```text
+branch:
+  feature/gesc-gaussian-robustness-v1
+tracked remote:
+  ahead 106
+worktree:
+  clean
+validate_phase_context.sh 08 implement:
+  PASS
+matching Gazebo/scenario/recorder/analyzer processes:
+  none
+```
+
+This authorizes exactly one installed visible execution of
+`phase08_v8_1_primary_visible_probe.yaml`. It does not authorize a retry of
+v8 or v8.1, primary repeats, secondary dispatch, or a broader matrix unless
+the preceding fixed gate passes.
+
+## Current milestone
+
+**PHASE 08.8 M3.1 — AUTHORIZED FOR ONE FIXED V8.1 PRIMARY VISIBLE
+DISPATCH.**
+
+## Next criterion
+
+Execute the installed v8.1 primary visible probe exactly once. Retain its
+complete recording, authoritative validation, analysis, plots, and cleanup
+evidence. Stop later dispatch if any fixed behavioral, evidence, final-zero,
+or cleanup gate fails.
+
+## Phase 08.8 M3.1 fixed v8.1 primary visible probe — 2026-07-30
+
+**FIXED EXPERIMENT FAIL / INFRASTRUCTURE COMPLETE / STAGE A PASS /
+RAW-CANDIDATE CHARACTERIZATION FAIL / RETAINED.**
+
+The one authorized installed execution of
+`phase08_v8_1_primary_visible_probe.yaml`, seed `18901`, ran once with the
+Gazebo GUI. It will not be retried or changed in place.
+
+Retained summary:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_1_primary_probe/scenario_summaries/20260731T050129680474Z_phase08_v8_1_primary_visible_probe.yaml
+```
+
+Retained run:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_1_primary_probe/2026-07-31/20260731T050130632538Z_simulation_phase08_v8_1_primary_visible_probe-v8_1_primary_probe_r1p5_a45_h25_18901-robust__c2e42fbd
+```
+
+Infrastructure:
+
+```text
+record process:
+  return_code 0
+  timed_out false
+recording complete:
+  true
+authoritative completeness:
+  PASS
+final-zero:
+  PASS
+cleanup:
+  PASS
+remaining nodes/processes:
+  none
+analyze_run:
+  exit 0
+  partial only because behavior failed
+  analysis failures none
+```
+
+Behavior:
+
+```text
+Stage A assisted local recovery:
+  PASS at simulation time 221.128 s
+fill cardinality:
+  PASS, exactly one cluster
+required ESCAPE_STALLED:
+  observed
+ESCAPE_ASSIST -> SEARCH:
+  PASS, stable assisted escape exit
+fill merge/supersession:
+  none
+failsafe/timeout event:
+  none
+terminal physical distance to evaluator global:
+  0.155960 m
+controller-ranked goal:
+  FAIL
+ranked-goal-gated Stage B:
+  FAIL
+terminal state:
+  SEARCH
+```
+
+The terminal comparison was rejected:
+
+```text
+retained local estimate:
+  -2.845372822
+post-confirmation second estimate:
+  -0.021174297 +/- 0.000304351
+decision:
+  counted candidate not strictly stronger; resume search
+```
+
+The bag proves the actual raw-field ordering was available:
+
+```text
+strongest repeated local-basin raw cost:
+  -2.846198587
+strongest repeated global-basin raw cost:
+  -3.837209302
+global source score:
+  1.0
+```
+
+The estimator reset its raw rotation window only after the convergence
+confirmation. It discarded the stronger repeated global-basin samples that
+preceded the event and characterized only a later weak directional slice.
+This is a detector-to-candidate-estimator timing defect, not an escape,
+topology, sign, wall, collision, recorder, or cleanup failure.
+
+Complete diagnosis and all plot/table paths:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m3_1_primary_probe.md
+```
+
+The v8.1 primary repeats, secondary cases, and broader matrix were not
+dispatched. No physical or three-light process occurred.
+
+## Phase 08.8 M3.2 versioned correction boundary — 2026-07-30
+
+The approved Plan now contains a new default-off, separately versioned v8.2
+correction. It retains six complete `SEARCH`-epoch raw rotation minima before
+confirmation, freezes them at `VERIFY_EXTREMUM`, combines them with three
+verification rotations, and applies the unchanged median/MAD strict
+comparison to the three most negative repeated minima.
+
+This bounded memory is raw-signal history only. It uses no route, pose,
+declared source position, source role, Vicon input, evaluator proximity, room
+geometry, waypoint, or planner. A zero default preserves v8.1 and all
+historical behavior.
+
+Fresh v8.2 scenario identities use seeds `19001`, `19011..19020`, `19051`, and
+`19061..19065`. No v8.2 Gazebo process is authorized until the correction,
+tests, fresh installed graph, all seventeen dry-run expansions, validation
+record, material checkpoint, and commit qualify.
+
+## Current milestone
+
+**PHASE 08.8 M3.1 — FIXED V8.1 PROBE FAILED AND RETAINED /
+M3.2 PLAN AMENDED /
+FAILURE EVIDENCE CHECKPOINT AND COMMIT PENDING /
+NO FURTHER GAZEBO AUTHORIZED.**
+
+## Next criterion
+
+Checkpoint and commit the complete v8.1 failure plus M3.2 amendment. Then
+implement and qualify the default-off pretrigger raw-rotation history without
+Gazebo. Only a successful M3.2 checkpoint and commit can authorize one new
+visible v8.2 probe.
+
+## Phase 08.8 M3.1 failure checkpoint — 2026-07-30
+
+The fixed v8.1 failure, complete retained-run diagnosis, plots/tables, and
+separately versioned M3.2 amendment received the required material checkpoint
+against base HEAD `4bdaba8`.
+
+## Current milestone
+
+**PHASE 08.8 M3.1 — FIXED FAILURE RETAINED AND CHECKPOINTED /
+M3.2 AMENDMENT RECORDED /
+COMMIT PENDING /
+GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Regenerate the checkpoint with this status, rerun context and whitespace
+checks, and commit the bounded evidence/amendment. Then begin M3.2
+implementation without Gazebo.
