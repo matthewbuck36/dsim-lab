@@ -344,6 +344,26 @@ V8_9_SECONDARY_REPEATS = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v8_9_secondary_repeats.yaml'
 )
+V8_10_PRIMARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_10_primary_visible_probe.yaml'
+)
+V8_10_PRIMARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_10_primary_repeats.yaml'
+)
+V8_10_SECONDARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_10_secondary_visible_probe.yaml'
+)
+V8_10_SECONDARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_10_secondary_repeats.yaml'
+)
 HISTORICAL_V2_ACTIVATION = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml'
@@ -1996,6 +2016,67 @@ def test_schema_v13_resolves_four_dual_topology_suites():
             )
 
 
+def test_schema_v13_resolves_four_v8_10_recorder_cwd_suites():
+    expected = {
+        V8_10_PRIMARY_VISIBLE_PROBE: (1, True, {19801}),
+        V8_10_PRIMARY_REPEATS: (10, False, set(range(19811, 19821))),
+        V8_10_SECONDARY_VISIBLE_PROBE: (1, True, {19851}),
+        V8_10_SECONDARY_REPEATS: (5, False, set(range(19861, 19866))),
+    }
+    direct = [
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'DESIGN_OR_MERGE_FILL',
+        'ESCAPE_REPULSE',
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'GOAL_HOLD',
+    ]
+    assisted = [
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'DESIGN_OR_MERGE_FILL',
+        'ESCAPE_REPULSE',
+        'ESCAPE_ASSIST',
+        'SEARCH',
+        'VERIFY_EXTREMUM',
+        'GOAL_HOLD',
+    ]
+    for path, (run_count, gui, seeds) in expected.items():
+        suite = load_suite(path)
+        runs, unsupported = expand_suite(suite)
+
+        assert unsupported == []
+        assert len(runs) == run_count
+        assert suite['schema_version'] == 13
+        assert suite['execution']['gazebo_gui'] is gui
+        assert {run['seed'] for run in runs} == seeds
+        for run in runs:
+            assert run['schema_version'] == 13
+            assert run['case_id'].startswith('v8_10_')
+            assert run['success']['controller'][
+                'required_state_paths'
+            ] == [direct, assisted]
+            assert 'escape_command_ownership' in (
+                run['success']['all_of']
+            )
+            assert 'supervisor_owned_escape_assist' not in (
+                run['success']['all_of']
+            )
+            assert 'ESCAPE_STALLED' not in (
+                run['success']['controller']['required_events']
+            )
+            assert 'ESCAPE_STALLED' not in (
+                run['success']['controller']['required_event_sequence']
+            )
+            assert (
+                run['success']['controller'][
+                    'supervisor_owned_assist_handoff_timeout_sec'
+                ]
+                == 0.15
+            )
+
+
 @pytest.mark.parametrize(
     ('v8_6_path', 'v8_7_path'),
     [
@@ -2279,6 +2360,44 @@ def test_v8_9_preserves_v8_8_runtime_inputs(v8_8_path, v8_9_path):
     equivalent_success['all_of'] = deepcopy(old_all_of)
     equivalent_success['controller'] = deepcopy(old_controller)
     equivalent_success['result_scopes'] = deepcopy(old_result_scopes)
+    assert equivalent == old
+
+
+@pytest.mark.parametrize(
+    ('v8_9_path', 'v8_10_path'),
+    [
+        (V8_9_PRIMARY_VISIBLE_PROBE, V8_10_PRIMARY_VISIBLE_PROBE),
+        (V8_9_PRIMARY_REPEATS, V8_10_PRIMARY_REPEATS),
+        (
+            V8_9_SECONDARY_VISIBLE_PROBE,
+            V8_10_SECONDARY_VISIBLE_PROBE,
+        ),
+        (V8_9_SECONDARY_REPEATS, V8_10_SECONDARY_REPEATS),
+    ],
+)
+def test_v8_10_preserves_v8_9_scientific_inputs(v8_9_path, v8_10_path):
+    old = yaml.safe_load(v8_9_path.read_text(encoding='utf-8'))
+    new = yaml.safe_load(v8_10_path.read_text(encoding='utf-8'))
+
+    assert old['schema_version'] == 13
+    assert new['schema_version'] == 13
+
+    equivalent = deepcopy(new)
+    equivalent['suite_id'] = old['suite_id']
+    equivalent['execution']['runs_root'] = old['execution']['runs_root']
+    equivalent['metadata'] = deepcopy(old['metadata'])
+    equivalent['frozen_profile']['profile_id'] = (
+        old['frozen_profile']['profile_id']
+    )
+    equivalent_case = equivalent['cases'][0]
+    old_case = old['cases'][0]
+    equivalent_case['case_id'] = old_case['case_id']
+    equivalent_case['description'] = old_case['description']
+    equivalent_case['seeds'] = deepcopy(old_case['seeds'])
+    equivalent_case['success']['controller']['contract_id'] = (
+        old_case['success']['controller']['contract_id']
+    )
+
     assert equivalent == old
 
 

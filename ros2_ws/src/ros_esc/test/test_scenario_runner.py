@@ -314,6 +314,26 @@ V8_9_SECONDARY_REPEATS = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v8_9_secondary_repeats.yaml'
 )
+V8_10_PRIMARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_10_primary_visible_probe.yaml'
+)
+V8_10_PRIMARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_10_primary_repeats.yaml'
+)
+V8_10_SECONDARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_10_secondary_visible_probe.yaml'
+)
+V8_10_SECONDARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_10_secondary_repeats.yaml'
+)
 
 
 def test_observed_local_recovery_binds_fill_to_local_convergence():
@@ -2781,6 +2801,10 @@ def test_v8_5_launch_binds_active_fill_transit_without_evaluator_controls(
         V8_9_PRIMARY_REPEATS,
         V8_9_SECONDARY_VISIBLE_PROBE,
         V8_9_SECONDARY_REPEATS,
+        V8_10_PRIMARY_VISIBLE_PROBE,
+        V8_10_PRIMARY_REPEATS,
+        V8_10_SECONDARY_VISIBLE_PROBE,
+        V8_10_SECONDARY_REPEATS,
     ],
 )
 def test_v8_6_launch_binds_supervisor_owner_without_evaluator_controls(
@@ -4562,6 +4586,7 @@ def test_live_boundary_stop_waits_for_state_and_required_event(monkeypatch):
     callbacks = {}
     dispatched = []
     executor_events = []
+    popen_kwargs = []
     signals = []
     wait_timeouts = []
     private_context = object()
@@ -4586,6 +4611,7 @@ def test_live_boundary_stop_waits_for_state_and_required_event(monkeypatch):
         def __init__(self, command, stdout, **unused_kwargs):
             self.command = command
             self.stdout = stdout
+            popen_kwargs.append(unused_kwargs)
             self.pid = 4321
             self.returncode = None
             stdout.write('boundary test\n')
@@ -4699,6 +4725,8 @@ def test_live_boundary_stop_waits_for_state_and_required_event(monkeypatch):
     ]
     assert result['stdout'] == 'boundary test\n'
     assert executor_events == ['created', 'added', 'removed', 'shutdown']
+    assert len(popen_kwargs) == 1
+    assert popen_kwargs[0]['cwd'] == runner.REPOSITORY_ROOT
 
 
 @pytest.mark.parametrize(
@@ -4714,6 +4742,7 @@ def test_live_global_stop_waits_for_stage_a_cardinality_and_near_odom(
     callbacks = {}
     dispatched = []
     executor_events = []
+    popen_kwargs = []
     signals = []
     wait_timeouts = []
     private_context = object()
@@ -4744,6 +4773,7 @@ def test_live_global_stop_waits_for_stage_a_cardinality_and_near_odom(
         def __init__(self, command, stdout, **unused_kwargs):
             self.command = command
             self.stdout = stdout
+            popen_kwargs.append(unused_kwargs)
             self.pid = 7321
             self.returncode = None
             stdout.write('global proximity test\n')
@@ -4863,6 +4893,42 @@ def test_live_global_stop_waits_for_stage_a_cardinality_and_near_odom(
         assert 'global_approach_sample_live' not in result
     assert result['stdout'] == 'global proximity test\n'
     assert executor_events == ['created', 'added', 'removed', 'shutdown']
+    assert len(popen_kwargs) == 1
+    assert popen_kwargs[0]['cwd'] == runner.REPOSITORY_ROOT
+
+
+def test_normal_record_process_uses_repository_root_from_arbitrary_cwd(
+    monkeypatch,
+    tmp_path,
+):
+    """Anchor the recorder child in the checkout, not the caller directory."""
+    captured = {}
+
+    class FakeProcess:
+        pid = 8123
+        returncode = 0
+
+        def communicate(self, timeout=None):
+            captured['timeout'] = timeout
+            return 'complete\n', None
+
+    def popen(command, **kwargs):
+        captured['command'] = command
+        captured['kwargs'] = kwargs
+        return FakeProcess()
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(runner.subprocess, 'Popen', popen)
+
+    result = runner.run_record_process(['record'], 7.0, 1.0)
+
+    assert captured['command'] == ['record']
+    assert captured['timeout'] == 7.0
+    assert captured['kwargs']['cwd'] == runner.REPOSITORY_ROOT
+    assert captured['kwargs']['start_new_session'] is True
+    assert result['return_code'] == 0
+    assert result['timed_out'] is False
+    assert result['stdout'] == 'complete\n'
 
 
 def test_v8_live_stop_requires_ranked_goal_and_later_near_odom(

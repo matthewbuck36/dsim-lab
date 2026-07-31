@@ -805,6 +805,7 @@ def _run_record_to_boundary(
         with tempfile.TemporaryFile(mode='w+t', encoding='utf-8') as output:
             process = subprocess.Popen(
                 command,
+                cwd=REPOSITORY_ROOT,
                 stdout=output,
                 stderr=subprocess.STDOUT,
                 text=True,
@@ -1199,6 +1200,7 @@ def _run_record_to_global_proximity(
         with tempfile.TemporaryFile(mode='w+t', encoding='utf-8') as output:
             process = subprocess.Popen(
                 command,
+                cwd=REPOSITORY_ROOT,
                 stdout=output,
                 stderr=subprocess.STDOUT,
                 text=True,
@@ -1371,6 +1373,7 @@ def run_record_process(
         )
     process = subprocess.Popen(
         command,
+        cwd=REPOSITORY_ROOT,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,

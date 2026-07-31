@@ -17032,3 +17032,174 @@ Commit this exact Plan boundary. Then implement the three recorder-child
 working-directory arguments, focused tests, and four fresh v8.10 scenarios.
 Do not start Gazebo before complete no-Gazebo qualification, checkpoint, and
 implementation commit.
+
+## Phase 08.8 M4.11 v8.10 no-Gazebo implementation qualification — 2026-07-31
+
+The narrow scenario-runner/recorder correction is implemented and qualified
+without Gazebo. All three `record_run` process owners now pass the already
+resolved checkout as:
+
+```text
+cwd=REPOSITORY_ROOT
+```
+
+Focused tests prove the normal, boundary-observed, and staged
+global-proximity child paths use that root while preserving process,
+timeout, private-context, signal, and lifecycle behavior. An arbitrary
+caller directory is not propagated.
+
+The four fresh schema-v13 inputs are:
+
+```text
+c41eea1e6e10d8f736bb669fdf13db46eb8a6ed23b512a5827e8675d2d5c501b
+  phase08_v8_10_primary_visible_probe.yaml
+cdb5e05339745d89afc632388af2e8bae45de75159c514f3d85832732361c796
+  phase08_v8_10_primary_repeats.yaml
+a0f9c7032be4e2540e3937cd741c9271c7358bba48dd5e6d41a23208a488f3ed
+  phase08_v8_10_secondary_visible_probe.yaml
+f7c54e8213f288b54051d69b06ae6ba1e75daf328763488ea970ebaffe550b3e
+  phase08_v8_10_secondary_repeats.yaml
+```
+
+Whole-document normalization proves only identities, descriptions, roots,
+and fresh seeds differ from v8.9. Controller behavior, sources,
+`400/1600` intensities, topology, schema-v13 evidence, Stage A/Stage B,
+evaluator-only `0.50 m` stop, final-zero, cleanup, and first-failure rules
+are unchanged.
+
+Final tests:
+
+```text
+targeted correction:
+  10 passed, 357 deselected in 1.31 s
+schema + runner:
+  366 passed, 1 skipped in 56.24 s
+focused controller/supervisor/detector/legacy:
+  310 passed in 8.50 s
+focused evidence/recording/analysis:
+  653 passed, 2 skipped in 133.17 s
+broad ROS-independent functional:
+  963 passed, 3 skipped in 141.73 s
+fatal changed-file lint:
+  PASS
+Python/YAML/XML/diff/context:
+  PASS
+```
+
+The broad skips are the unchanged copyright-template check and two explicit
+Gazebo opt-ins. Package-style lint reports only the inherited D202 in
+`run_scenario.py`.
+
+The read-only retained replay passes:
+
+```text
+seed 19616 original schema 12:
+  Stage A / ranking / proximity / assisted:
+  false / false / false / false
+same immutable bag with v8.10 schema 13:
+  direct ownership / Stage A / ranking / proximity:
+  true / true / true / true
+  states / controls / commands / mature progress:
+  466 / 3,010 / 466 / 407
+  exit distance / radius / alignment:
+  1.4011374666 / 1.3667708294 / 0.9475175293
+seed 19611:
+  assisted ownership passes schemas 12 and 13
+  entry / exit:
+  bounded_causal_schema_v12 / bounded_causal_schema_v11
+```
+
+Replay:
+
+```text
+/tmp/phase08_8_m4_11_v8_10_retained_replay.log
+b24fa96e9f0aadbaf57e618f1a82c9da8d16cd2b34e4e49b18b7a03bd6287ba5
+```
+
+Fresh installed qualification:
+
+```text
+root:
+  /tmp/phase08_8_v8_10_release_qual.VIowrN
+build:
+  3 packages finished in 11.8 s
+source/install parity:
+  10/10
+installed schema:
+  13, supported 1..13
+installed launch checks:
+  2/2 pass
+installed node construction:
+  4/4 expected bounded timeout 124, no startup error
+installed /tmp dry-runs:
+  primary visible / repeats:   1 / 10, zero unsupported
+  secondary visible / repeats: 1 / 5, zero unsupported
+fresh roots after dry-run:
+  absent 4/4
+```
+
+Durable qualification:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_11_no_gazebo_qualification.md
+```
+
+Historical V6, shifted worlds, v8-v8.9 scenarios, results, plots, and fixed
+failures remain unchanged and selectable. No Gazebo, scenario runner,
+recorder, analyzer, rosbag recorder, or physical process is active. Physical
+stopping remains manual operator `Ctrl+C`.
+
+## Current milestone
+
+**PHASE 08.8 M4.11 — V8.10 RECORDER-CWD IMPLEMENTATION / NO-GAZEBO
+QUALIFICATION PASS / IMPLEMENTATION CHECKPOINT PENDING / GAZEBO
+PROHIBITED.**
+
+## Next criterion
+
+Run the Phase 08 implementation checkpoint and commit the exact correction,
+tests, scenarios, qualification, and status. Then create a separate
+checkpointed and committed dispatch boundary for only installed visible seed
+`19801`.
+
+## Phase 08.8 M4.11 v8.10 implementation checkpoint — 2026-07-31
+
+The qualified three-path recorder working-directory correction, four fresh
+inputs, tests, retained replay, isolated build, installed dry-runs,
+no-Gazebo report, and live status received the required Phase 08 checkpoint
+against correction-plan HEAD `8edf6e3`.
+
+```text
+base HEAD:
+  8edf6e3a97ea09c5900eaa153f189ab2479d8cf5
+status sha256 before this checkpoint note:
+  dc50920ac746aa13eb8e7c092e0c0fe68c2ce2ac414b5dab8b8426145e9af646
+active plan sha256:
+  9d7a7ea410c43dfc1e404c6bba30453dfd4d2d593fe74eb72c2648913246dcbb
+no-Gazebo qualification sha256:
+  ad5aa62eb37c30fa56d8422cf8748f98509c066f6689d84664432a0eca4b221d
+checkpoint sha256 before this checkpoint note:
+  f40035903b6336c03caa4531c77b5e11d7830cd55bf523a12dc2afe544793e21
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+active runtime:
+  none
+fresh v8.10 run roots:
+  absent 4/4
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.11 — V8.10 RECORDER-CWD IMPLEMENTATION / NO-GAZEBO
+QUALIFICATION PASS / IMPLEMENTATION CHECKPOINT PASS / IMPLEMENTATION
+COMMIT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Commit this exact qualified implementation boundary. Then write, checkpoint,
+and commit a separate visible-dispatch authorization naming only the
+installed seed `19801`. Do not start Gazebo from the uncommitted
+implementation.
