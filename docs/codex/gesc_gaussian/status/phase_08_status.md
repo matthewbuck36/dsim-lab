@@ -11467,3 +11467,149 @@ Commit this post-commit dispatch record, verify a clean worktree and no stale
 runtime, and execute the installed v8.2 primary visible probe exactly once.
 Retain its recording, authoritative validation, analysis, plots, and cleanup
 evidence. Stop all later dispatch if any fixed gate fails.
+
+## Phase 08.8 M3.2 fixed v8.2 primary visible probe — 2026-07-30
+
+**FORMAL PASS / INFRASTRUCTURE COMPLETE / STAGE A PASS / EXACT ONE FILL /
+STRICT SECOND-CANDIDATE RAW RANKING PASS / STAGE B PASS / RETAINED.**
+
+The one authorized installed execution of
+`phase08_v8_2_primary_visible_probe.yaml`, seed `19001`, ran exactly once with
+the Gazebo GUI.
+
+Retained summary:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_2_primary_probe/
+  scenario_summaries/
+  20260731T054259986753Z_phase08_v8_2_primary_visible_probe.yaml
+```
+
+Retained run:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_2_primary_probe/
+  2026-07-31/
+  20260731T054300954593Z_simulation_phase08_v8_2_primary_visible_probe-v8_2_primary_probe_r1p5_a45_h25_19001-robust__7abc89e2
+```
+
+Infrastructure:
+
+```text
+record process:
+  return code 0
+  timed out false
+recording complete:
+  true
+authoritative completeness:
+  PASS
+final readiness false:
+  PASS
+final-zero:
+  PASS
+cleanup:
+  PASS
+remaining nodes/processes:
+  none
+analyze_run:
+  complete
+analysis failures:
+  none
+```
+
+Behavior:
+
+```text
+observed state path:
+  SEARCH
+  -> VERIFY_EXTREMUM
+  -> DESIGN_OR_MERGE_FILL
+  -> ESCAPE_REPULSE
+  -> ESCAPE_ASSIST
+  -> SEARCH
+  -> VERIFY_EXTREMUM
+  -> GOAL_HOLD
+
+Stage A:
+  PASS at simulation time 167.235 s
+fill cardinality:
+  PASS, exactly one cluster
+required ESCAPE_STALLED:
+  observed
+assisted departure:
+  PASS
+fill merge/supersession:
+  none
+failsafe/timeout:
+  none
+```
+
+Both candidate decisions report six frozen pretrigger rotations, three
+verification rotations, nine available rotations, and three selected repeated
+minima.
+
+Raw ranking:
+
+```text
+local candidate:
+  -2.8453728221821186
+global candidate:
+  -3.8372093023255816
+strict separation margin:
+  0.9918364801434629
+candidate ordinal:
+  2 of known total 2
+decision:
+  GOAL_REACHED
+```
+
+The ranked event preceded the first accepted evaluator proximity sample. That
+later noninterpolated sample was `0.139463 m` from `(3.5, 3.5)` at simulation
+time `289.805 s`. The final retained distance is `0.139441 m`. Stage B passed
+within its fixed `180.0 s` post-Stage-A budget.
+
+Complete report and all plot/table paths:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m3_2_primary_probe.md
+```
+
+Nine plots were generated under the retained run's
+`analysis/phase07/plots/`, including trajectory, candidate ranking, cost,
+components, state/events, weights, commands, radial escape, and Gaussian
+history.
+
+No primary repeat, secondary case, broader matrix, physical process, or
+three-light process has yet been dispatched.
+
+## Current milestone
+
+**PHASE 08.8 M3.2 — FIXED V8.2 PRIMARY VISIBLE PROBE PASSED /
+M3.2 EVIDENCE CHECKPOINT AND COMMIT PENDING /
+PRIMARY REPEATS NOT YET AUTHORIZED.**
+
+## Next criterion
+
+Checkpoint and commit the complete fixed-probe evidence. Then execute the ten
+precommitted primary repeats serially and headlessly from the same isolated
+install, stopping dispatch immediately on the first behavioral, evidence,
+final-zero, or cleanup failure.
+
+## Phase 08.8 M3.2 visible-pass checkpoint — 2026-07-30
+
+The complete fixed v8.2 visible-probe pass, retained run diagnosis, plot/table
+index, and M3.2 gate disposition received the required material checkpoint
+against base HEAD `551a626`.
+
+## Current milestone
+
+**PHASE 08.8 M3.2 — FIXED VISIBLE PASS RETAINED AND CHECKPOINTED /
+EVIDENCE COMMIT PENDING /
+PRIMARY REPEATS NOT YET AUTHORIZED.**
+
+## Next criterion
+
+Regenerate the checkpoint with this status, rerun context and whitespace
+checks, and commit the bounded M3.2 pass evidence. Only that clean committed
+boundary authorizes M4's sealed ten-run primary gate.
