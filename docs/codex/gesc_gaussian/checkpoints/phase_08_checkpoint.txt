@@ -1,35 +1,42 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-31T05:53:35+00:00
-Base HEAD: 5d1d54b6eafe06f891be5145148636428998240b
+Generated: 2026-07-31T06:21:39+00:00
+Base HEAD: 951d5f4c0a34930a7a3a731eff33d5eeb1b22819
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 24895cbb0f571a5938d482f86047a15ce6041000b2d55960192c2a87fd3b9bd4
+Status sha256: b17f9dc2e6b1b85a33124204511b28aea3d1c0efe569075ddfb11922a1af76e7
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_8_plan.md
-Active subphase plan sha256: 81727fdf83a3c664608429f5b385b6efdf60bd164ee8086a85ec2790e59514fa
-Unstaged diff sha256: abc329c3ddacb2831ea19190b0b9552c81fb096eed9fde2fcd13e783a4426e3c
-Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+Active subphase plan sha256: c6adefcb1032df982104d5f5e0a8624a70c9205e2391e56743d48a1e25e917f3
+Unstaged diff sha256: 71cf09b0b800b9b51fef5a8591a64ee75f0b945abd8d2e8cbe55ced8b4d735e7
+Staged diff sha256: d93fc9649b696097a96a31373aed80450991d34521f62e00701023d8a6f38779
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 110]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 111]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
- M docs/codex/gesc_gaussian/status/phase_08_status.md
+M  docs/codex/gesc_gaussian/plans/phase_08_8_plan.md
+M  docs/codex/gesc_gaussian/status/phase_08_status.md
+A  docs/codex/gesc_gaussian/validation/phase_08_8_m4_primary_repeats.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 26 +++-----------
- docs/codex/gesc_gaussian/status/phase_08_status.md | 41 ++++++++++++++++++++++
- 2 files changed, 46 insertions(+), 21 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 31 +++++++---------------
+ 1 file changed, 10 insertions(+), 21 deletions(-)
+ docs/codex/gesc_gaussian/plans/phase_08_8_plan.md  | 129 ++++++++++++
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 132 ++++++++++++
+ .../validation/phase_08_8_m4_primary_repeats.md    | 227 +++++++++++++++++++++
+ 3 files changed, 488 insertions(+)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**PHASE 08.8 M4 — AUTHORIZED FOR THE SEALED TEN-RUN V8.2 PRIMARY GATE.**
+**PHASE 08.8 M4 — V8.2 FAILURE AND V8.3 AMENDMENT CHECKPOINTED /
+EVIDENCE COMMIT PENDING /
+GAZEBO PROHIBITED.**
 
 
 

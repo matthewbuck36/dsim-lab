@@ -11654,3 +11654,135 @@ Commit this dispatch record, verify the dedicated M4 run root is absent and
 the worktree/runtime are clean, then execute the installed ten-case primary
 suite once. Analyze every completed recording and stop immediately on the
 first fixed failure.
+
+## Phase 08.8 M4 fixed v8.2 primary repeat gate — 2026-07-30
+
+**FIXED GATE FAILED / 1 OF 10 DISPATCHED / FIRST CASE FAILED STAGE B /
+REMAINING 9 NOT DISPATCHED / INFRASTRUCTURE COMPLETE / RETAINED.**
+
+The sealed `phase08_v8_2_primary_repeats.yaml` population began serial,
+headless execution from the qualified isolated install. Seed `19011`, the
+first fixed case, was executed once and was not retried. It failed Stage B, so
+the runner stopped immediately and seeds `19012` through `19020` did not run.
+
+Retained summary:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_2_primary_repeats/
+  scenario_summaries/
+  20260731T055403171613Z_phase08_v8_2_primary_repeats.yaml
+SHA-256:
+  d51eb7887ec39becfaf032c2209745da86179524ea0a7d79ff4bc88635974447
+```
+
+Retained run:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_2_primary_repeats/
+  2026-07-31/
+  20260731T055404130734Z_simulation_phase08_v8_2_primary_repeats-v8_2_primary_repeat_r1p5_a45_h25-robust_gaussian_v1_d33decfa
+```
+
+Infrastructure and Stage A:
+
+```text
+record return code / timed out: 0 / false
+recording completeness:         PASS
+final readiness false:          PASS
+final-zero:                     PASS
+cleanup / leftovers:            PASS / none
+analysis status:                partial because behavior failed
+analysis/recording failures:    none
+Stage A:                        PASS at 296.710 s
+fill cardinality:               exactly one
+escape stalled / assisted:      true / true
+escape success:                 true
+fill merge/supersession:        none
+in-readiness failsafe/timeout:  none
+```
+
+Stage B:
+
+```text
+fixed budget:                  180.0 s
+observed elapsed:              180.030 s
+controller GOAL_REACHED:      absent
+post-recovery proximity:      absent
+final global distance:        3.180001 m
+terminal state:               SEARCH
+```
+
+After the completed outward escape, the robot returned to the active filled
+local. The detector confirmed that same basin twice; the supervisor correctly
+rejected both confirmations as active-fill revisits.
+
+The retained local candidate lower bound was `-2.442228` cost units, but the
+accepted adaptive fill was only `0.10` high with
+`sigma_major=sigma_minor=0.169558 m`. The eight-second orientation-level basin
+window collapsed depth to the configured `0.02` minimum, whereas candidate
+classification retained repeated complete-rotation minima. This mismatch left
+the old raw attraction dominant after the finite assist. Gaussian contribution
+was `+0.10`, affine contribution was zero, and no wall, bound, collision,
+recenter, or failsafe caused the miss.
+
+Complete report, hashes, diagnosis, and all plot paths:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_primary_repeats.md
+```
+
+The fixed v8.2 repeat profile is closed. Its secondary and broad gates remain
+undispatched.
+
+## Approved Phase 08.8 M4.1 / v8.3 correction amendment — 2026-07-30
+
+The Plan's approved bounded-correction authority has been applied to a new
+v8.3 version. It will pass the already frozen rotation-stable local candidate
+interval through a versioned robust fill request and use its conservative
+negative raw-cost lower bound as a bounded amplitude floor. The existing
+adaptive estimator remains authoritative for center, covariance, association,
+and validation.
+
+The v8.3 profile will keep affine, recenter, recoverable navigation, operating
+bounds, walls, source coordinates, source roles, Vicon, and evaluator geometry
+outside controller motion. It will use an amplitude scale of `1.25`, a finite
+amplitude cap of `6.25`, a `0.50 m` sigma floor, and `exit_sigma=2.70`.
+Direct repulsion success or the existing finite outward assist will be
+accepted; a return to the filled candidate will not.
+
+No v8.3 Gazebo process is authorized until the implementation receives full
+no-Gazebo qualification, checkpoint, and committed dispatch boundary.
+
+## Current milestone
+
+**PHASE 08.8 M4 — V8.2 PRIMARY REPEAT GATE CLOSED FAILED /
+M4.1 V8.3 CORRECTION PLANNED /
+GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Checkpoint and commit the fixed v8.2 failure plus the v8.3 amendment. Then
+implement and qualify the default-off candidate-informed fill contract without
+Gazebo, checkpoint it, and commit it before authorizing one fresh v8.3 visible
+primary probe.
+
+## Phase 08.8 M4 failure/amendment material checkpoint — 2026-07-30
+
+The retained v8.2 fixed-gate failure, complete M4 report, and approved v8.3
+correction amendment received the required precommit material checkpoint
+against base HEAD `951d5f4`.
+
+No Gazebo, scenario, recorder, analyzer, or physical process ran while
+creating this checkpoint.
+
+## Current milestone
+
+**PHASE 08.8 M4 — V8.2 FAILURE AND V8.3 AMENDMENT CHECKPOINTED /
+EVIDENCE COMMIT PENDING /
+GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Commit the bounded failure/amendment evidence. Then implement and fully
+qualify M4.1 without Gazebo before any v8.3 dispatch can be authorized.

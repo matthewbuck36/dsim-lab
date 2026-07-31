@@ -1010,6 +1010,135 @@ recording/final-zero:         6/6
 cleanup/SQLite integrity:     6/6
 ```
 
+### Executed M4 disposition and approved M4.1 / v8.3 correction amendment
+
+The sealed v8.2 primary population is closed as a fixed gate failure. Seed
+`19011`, the first of ten serial cases, completed recording, authoritative
+validation, Stage A, exact one-fill cardinality, final-zero, analysis, and
+cleanup, but failed Stage B. The runner stopped immediately; seed `19011` was
+not retried and seeds `19012` through `19020` were not dispatched.
+
+After the finite assisted exit, ordinary GESC returned to the filled local and
+the detector confirmed it twice more. The supervisor correctly suppressed both
+revisits. The retained fill was only `0.10` cost units high with
+`sigma=0.169558 m`, while the candidate classifier's conservative repeated
+raw-cost lower bound was `-2.442228`. No wall, collision, recenter, bounds, or
+failsafe behavior caused the failure.
+
+The complete fixed result is retained in
+`phase_08_8_m4_primary_repeats.md`. The v8.2 secondary and broad gates are not
+dispatched.
+
+The approved execution amendment permits a separately versioned correction.
+M4.1 / v8.3 fixes the detector-to-fill signal-summary mismatch without adding
+affine guidance, dead-reckoned route memory, source coordinates, source roles,
+evaluator geometry, Vicon, room geometry, or another controller:
+
+1. Add `candidate_informed_fill_enabled`, boolean, default `False`, to the
+   existing supervisor and Gaussian-fill owners.
+2. When explicitly enabled in counted-candidate mode, the supervisor appends
+   its frozen rotation-stable candidate raw-cost summary to a versioned robust
+   create request. The request contains scientific signal evidence only; it
+   contains no pose, source, role, or evaluator declaration beyond the
+   convergence payload already used for fill creation.
+3. The Gaussian-fill owner validates the request version, finite interval,
+   repeated-rotation count, and consistency of
+   `lower = estimate - uncertainty`. Malformed or nonnegative minimization
+   evidence is rejected rather than silently weakened.
+4. Add `candidate_informed_fill_amplitude_scale`, positive double, default
+   `1.0`. When the feature is enabled, apply the conservative amplitude floor
+
+   ```text
+   amplitude floor =
+       candidate_informed_fill_amplitude_scale
+       * max(0, -candidate_raw_cost_lower)
+   ```
+
+   before the existing bounded design validation and escalation. The existing
+   `amplitude_max` remains a hard cap. Report the candidate interval, scale,
+   requested floor, applied floor, and cap status in the existing
+   `AlgorithmEvent` value arrays.
+5. Preserve the existing orientation-level basin estimator for center,
+   covariance, anisotropy, association, validation, and immutable fill
+   registry. The candidate evidence augments only the amplitude floor; it does
+   not replace the adaptive fill or use augmented cost for ranking.
+6. The v8.3 profile uses:
+
+   ```text
+   candidate_informed_fill_enabled:          True
+   candidate_informed_fill_amplitude_scale:  1.25
+   gaussian_fill_amplitude_max:              6.25
+   gaussian_fill_sigma_floor_m:              0.50
+   gaussian_fill_sigma_ceiling_m:            1.25
+   gaussian_fill_exit_sigma:                 2.70
+   ```
+
+   `6.25` is the finite `1.25 * 5 V` ceiling for the selected negative-voltage
+   cost convention. The `0.50 m` width floor prevents the last eight seconds
+   of a tight local orbit from collapsing persistent basin memory to the
+   failed `0.169558 m` footprint. With the observed covariance it preserves
+   approximately the same `1.36 m` exit radius as v8.2 rather than enlarging
+   the assisted travel requirement.
+7. A strong accepted fill may complete `ESCAPE_REPULSE -> SEARCH` before the
+   stall timer. The existing finite `ESCAPE_ASSIST` remains an allowed fallback
+   if repulsion stalls. Both paths are valid local recovery; `ESCAPE_STALLED`
+   is evidence only when the fallback actually runs and is no longer mandatory
+   for v8.3.
+8. The raw candidate history, strict final ranking, one-fill cardinality,
+   evaluator-only `0.50 m` simulation stop, physical `Ctrl+C` contract,
+   open-field mode, and all safety/completeness gates remain unchanged.
+
+The new fixed inputs are:
+
+```text
+phase08_v8_3_primary_visible_probe.yaml
+  seed 19101
+  visible
+  runs root phase08_8_3_primary_probe
+
+phase08_v8_3_primary_repeats.yaml
+  seeds 19111 through 19120
+  headless
+  runs root phase08_8_3_primary_repeats
+
+phase08_v8_3_secondary_visible_probe.yaml
+  seed 19151
+  visible
+  runs root phase08_8_3_secondary_probe
+
+phase08_v8_3_secondary_repeats.yaml
+  seeds 19161 through 19165
+  headless
+  runs root phase08_8_3_secondary_repeats
+```
+
+Every source declaration, start, intensity, topology, evidence predicate,
+Stage A/Stage B budget, and no-retry rule matches v8.2. Only the versioned
+candidate-to-fill amplitude/width correction, optional direct escape path,
+fresh identities, and fresh seeds change.
+
+Before another Gazebo process:
+
+- retain, checkpoint, and commit the complete v8.2 M4 failure;
+- add pure request-codec, interval-validation, amplitude-floor, cap, default-off,
+  and design-regression tests;
+- add supervisor adapter tests proving only raw candidate evidence enters the
+  versioned request;
+- add Gaussian adapter/event tests proving the floor is applied and reported;
+- add schema, launch, runner, validator, analyzer, and historical-default
+  regressions;
+- run focused, scenario, analyzer, and broad no-Gazebo suites;
+- perform a fresh isolated three-package build and installed graph
+  instantiation;
+- resolve every v8.3 fixed case without creating a run root;
+- write a separate M4.1 no-Gazebo qualification record;
+- update live status, checkpoint Phase 08, and commit.
+
+Only that committed boundary authorizes one execution of
+`phase08_v8_3_primary_visible_probe.yaml`. A failure closes v8.3 and prevents
+its repeats. A formal pass authorizes the fresh v8.3 ten-run primary gate, then
+the fresh v8.3 secondary gate under the unchanged first-failure rules.
+
 ### M6 — Bounded broader-envelope characterization
 
 Only after M5 passes, add and seal the approved broader
