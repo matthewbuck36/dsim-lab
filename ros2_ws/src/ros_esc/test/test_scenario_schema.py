@@ -222,6 +222,26 @@ V8_3_SECONDARY_REPEATS = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v8_3_secondary_repeats.yaml'
 )
+V8_4_PRIMARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_4_primary_visible_probe.yaml'
+)
+V8_4_PRIMARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_4_primary_repeats.yaml'
+)
+V8_4_SECONDARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_4_secondary_visible_probe.yaml'
+)
+V8_4_SECONDARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_4_secondary_repeats.yaml'
+)
 HISTORICAL_V2_ACTIVATION = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml'
@@ -1484,6 +1504,129 @@ def test_schema_v8_resolves_four_candidate_informed_fill_suites():
             assert 'FILL_REJECTED' in controller['forbidden_events']
             assert run['validation']['world'] is False
             assert run['validation']['contacts_enabled'] is False
+
+
+def test_schema_v8_resolves_four_approach_continuity_suites():
+    expected = {
+        V8_4_PRIMARY_VISIBLE_PROBE: (1, True, {19201}),
+        V8_4_PRIMARY_REPEATS: (10, False, set(range(19211, 19221))),
+        V8_4_SECONDARY_VISIBLE_PROBE: (1, True, {19251}),
+        V8_4_SECONDARY_REPEATS: (5, False, set(range(19261, 19266))),
+    }
+    for path, (run_count, gui, seeds) in expected.items():
+        suite = load_suite(path)
+        runs, unsupported = expand_suite(suite)
+
+        assert unsupported == []
+        assert len(runs) == run_count
+        assert suite['execution']['gazebo_gui'] is gui
+        assert {run['seed'] for run in runs} == seeds
+        for run in runs:
+            overrides = run['algorithm']['launch_overrides']
+            assert run['case_id'].startswith('v8_4_')
+            assert (
+                run['success']['controller']['contract_id']
+                == run['case_id']
+            )
+            assert (
+                overrides[
+                    'open_field_escape_approach_continuity_enabled'
+                ]
+                is True
+            )
+            assert overrides['open_field_escape_assist_enabled'] is True
+            assert overrides['candidate_informed_fill_enabled'] is True
+            assert overrides['operating_bounds_enabled'] is False
+            assert overrides['recoverable_navigation_enabled'] is False
+            assert overrides['post_recovery_guidance_enabled'] is False
+            assert overrides['modified_cost_affine_gain'] == 0.50
+            assert (
+                overrides['modified_cost_affine_decay_rate']
+                == 0.0000005
+            )
+            assert overrides['modified_cost_affine_max_age'] == 35.0
+            assert overrides['modified_cost_affine_direction_sign'] == 1.0
+            assert run['algorithm']['ablations'] == {
+                'gaussian_fill_enabled': True,
+                'affine_assist_enabled': True,
+                'recenter_enabled': False,
+            }
+            assert run['validation']['world'] is False
+            assert run['validation']['contacts_enabled'] is False
+
+
+@pytest.mark.parametrize(
+    ('mutation', 'match'),
+    [
+        (
+            lambda document, overrides: overrides.update(
+                {'open_field_escape_approach_continuity_enabled': 1}
+            ),
+            'must be true or false',
+        ),
+        (
+            lambda document, overrides: overrides.update(
+                {'candidate_informed_fill_enabled': False}
+            ),
+            'requires candidate-informed fill',
+        ),
+        (
+            lambda document, overrides: overrides.update(
+                {'open_field_escape_assist_enabled': False}
+            ),
+            'requires open-field escape assist',
+        ),
+        (
+            lambda document, overrides: document['cases'][0][
+                'algorithm'
+            ]['ablations'].update({'affine_assist_enabled': False}),
+            'requires algorithm.ablations.affine_assist_enabled',
+        ),
+        (
+            lambda document, overrides: overrides.pop(
+                'modified_cost_affine_direction_sign'
+            ),
+            'open-field escape approach continuity omits',
+        ),
+        (
+            lambda document, overrides: overrides.update(
+                {'operating_bounds_enabled': True}
+            ),
+            'must disable operating bounds',
+        ),
+        (
+            lambda document, overrides: document['cases'][0][
+                'algorithm'
+            ]['ablations'].update({'recenter_enabled': True}),
+            'requires affine, recenter',
+        ),
+        (
+            lambda document, overrides: overrides.update(
+                {'recoverable_navigation_enabled': True}
+            ),
+            'requires affine, recenter',
+        ),
+        (
+            lambda document, overrides: overrides.update(
+                {'post_recovery_guidance_enabled': True}
+            ),
+            'requires affine, recenter',
+        ),
+    ],
+)
+def test_schema_v8_rejects_incomplete_approach_continuity_contract(
+    tmp_path,
+    mutation,
+    match,
+):
+    document = yaml.safe_load(
+        V8_4_PRIMARY_VISIBLE_PROBE.read_text(encoding='utf-8')
+    )
+    overrides = document['frozen_profile']['launch_overrides']
+    mutation(document, overrides)
+
+    with pytest.raises(ValueError, match=match):
+        _load(tmp_path, document)
 
 
 @pytest.mark.parametrize(

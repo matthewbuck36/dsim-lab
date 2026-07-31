@@ -154,7 +154,9 @@ LAUNCH_OVERRIDES = {
     'candidate_informed_fill_amplitude_scale',
     'minimum_radial_progress_m',
     'open_field_escape_assist_enabled',
+    'open_field_escape_approach_continuity_enabled',
     'modified_cost_affine_decay_rate',
+    'modified_cost_affine_direction_sign',
     'modified_cost_affine_gain',
     'modified_cost_affine_max_age',
     'boundary_recovery_release_clearance_m',
@@ -413,6 +415,8 @@ SCHEMA_V8_LAUNCH_OVERRIDES = {
     'convergence_confirmation_policy',
     'extremum_classification_mode',
     'known_source_count',
+    'modified_cost_affine_direction_sign',
+    'open_field_escape_approach_continuity_enabled',
     'operating_bounds_enabled',
 }
 DIRECT_STAGED_RECOVERY_STATE_PATH = (
@@ -616,6 +620,15 @@ def _validate_correction_overrides(overrides, ablations, location):
             open_field_escape_assist_enabled,
             f'{location}.open_field_escape_assist_enabled',
         )
+    approach_continuity_enabled = overrides.get(
+        'open_field_escape_approach_continuity_enabled',
+        False,
+    )
+    if 'open_field_escape_approach_continuity_enabled' in overrides:
+        approach_continuity_enabled = _boolean(
+            approach_continuity_enabled,
+            f'{location}.open_field_escape_approach_continuity_enabled',
+        )
     candidate_informed_fill_enabled = overrides.get(
         'candidate_informed_fill_enabled',
         False,
@@ -640,6 +653,39 @@ def _validate_correction_overrides(overrides, ablations, location):
             raise ValueError(
                 f'{location} candidate-informed fill requires at least '
                 'two selected rotations'
+            )
+    if approach_continuity_enabled:
+        if classification_mode != 'counted_candidates':
+            raise ValueError(
+                f'{location} open-field escape approach continuity requires '
+                'counted-candidate classification'
+            )
+        if not candidate_informed_fill_enabled:
+            raise ValueError(
+                f'{location} open-field escape approach continuity requires '
+                'candidate-informed fill'
+            )
+        if not open_field_escape_assist_enabled:
+            raise ValueError(
+                f'{location} open-field escape approach continuity requires '
+                'open-field escape assist'
+            )
+        if not ablations['affine_assist_enabled']:
+            raise ValueError(
+                f'{location} open-field escape approach continuity requires '
+                'algorithm.ablations.affine_assist_enabled'
+            )
+        required_affine = {
+            'modified_cost_affine_decay_rate',
+            'modified_cost_affine_direction_sign',
+            'modified_cost_affine_gain',
+            'modified_cost_affine_max_age',
+        }
+        missing = sorted(required_affine - set(overrides))
+        if missing:
+            raise ValueError(
+                f'{location} open-field escape approach continuity omits: '
+                + ', '.join(missing)
             )
     if classification_mode == 'counted_candidates':
         required = {
@@ -676,7 +722,10 @@ def _validate_correction_overrides(overrides, ablations, location):
                 f'{location} counted candidates require robust search-epoch reset'
             )
         if (
-            ablations['affine_assist_enabled']
+            (
+                ablations['affine_assist_enabled']
+                and not approach_continuity_enabled
+            )
             or ablations['recenter_enabled']
             or overrides.get('recoverable_navigation_enabled', False)
             or overrides.get('post_recovery_guidance_enabled', False)
@@ -777,6 +826,11 @@ def _validate_correction_overrides(overrides, ablations, location):
             overrides['modified_cost_affine_decay_rate'],
             f'{location}.modified_cost_affine_decay_rate',
             positive=True,
+        )
+    if 'modified_cost_affine_direction_sign' in overrides:
+        _number(
+            overrides['modified_cost_affine_direction_sign'],
+            f'{location}.modified_cost_affine_direction_sign',
         )
     if 'modified_cost_affine_max_age' in overrides:
         _number(
@@ -2235,6 +2289,13 @@ def load_suite(path):
                 False,
             )
         )
+        approach_continuity_enabled = bool(
+            counted_open_field
+            and overrides.get(
+                'open_field_escape_approach_continuity_enabled',
+                False,
+            )
+        )
         if counted_open_field:
             expected_source_count = (
                 known_topology['expected_local_minima']
@@ -3261,12 +3322,23 @@ def load_suite(path):
                 valid_algorithm_contract = bool(
                     collision_expected is None
                     and ablations['gaussian_fill_enabled']
-                    and not ablations['affine_assist_enabled']
+                    and (
+                        ablations['affine_assist_enabled']
+                        == approach_continuity_enabled
+                    )
                     and not ablations['recenter_enabled']
                 )
                 algorithm_requirement = (
-                    'Gaussian fill with affine/recenter disabled and '
-                    'collision evaluation omitted as not applicable'
+                    (
+                        'Gaussian fill with approach-continuity affine '
+                        'enabled, recenter disabled, and collision evaluation '
+                        'omitted as not applicable'
+                    )
+                    if approach_continuity_enabled
+                    else (
+                        'Gaussian fill with affine/recenter disabled and '
+                        'collision evaluation omitted as not applicable'
+                    )
                 )
             else:
                 valid_algorithm_contract = bool(

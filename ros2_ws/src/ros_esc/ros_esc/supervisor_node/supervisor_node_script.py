@@ -24,6 +24,7 @@ from std_msgs.msg import Bool
 
 from ros_esc.deferred_signal_shutdown import DeferredSignalShutdown
 from ros_esc.supervisor_node.escape_recenter import (
+    approach_continuity_evidence,
     command_sweep_is_safe,
     DirectionConfig,
     DirectionSelection,
@@ -152,6 +153,11 @@ class SupervisorNode(Node):
                 open_field_escape_assist_enabled=bool(
                     self.get_parameter(
                         "open_field_escape_assist_enabled"
+                    ).value
+                ),
+                open_field_escape_approach_continuity_enabled=bool(
+                    self.get_parameter(
+                        "open_field_escape_approach_continuity_enabled"
                     ).value
                 ),
                 recenter_after_escape=bool(
@@ -521,6 +527,7 @@ class SupervisorNode(Node):
         self.active_fill_records = {}
         self.escape_tracker = None
         self.escape_pose_sequence = 0
+        self.escape_approach_continuity = None
         self.safe_direction = None
         self.safe_direction_revision = 0
         self.recenter_hold_tracker = None
@@ -624,6 +631,7 @@ class SupervisorNode(Node):
             "fill_design_timeout_sec": 5.0,
             "escape_max_sec": 20.0,
             "open_field_escape_assist_enabled": False,
+            "open_field_escape_approach_continuity_enabled": False,
             "escape_exit_hold_sec": 1.0,
             "stall_window_sec": 3.0,
             "minimum_radial_progress_m": 0.05,
@@ -1294,26 +1302,64 @@ class SupervisorNode(Node):
                 self._force_failsafe(now_sec, failure)
                 return
             geometry = self.escape_tracker.geometry
+            value_names = [
+                "initial_fill_id",
+                "escape_center_x_m",
+                "escape_center_y_m",
+                "escape_exit_radius_m",
+                "approach_x_m",
+                "approach_y_m",
+            ]
+            values = [
+                float(geometry.initial_fill_id),
+                geometry.center_x,
+                geometry.center_y,
+                geometry.exit_radius,
+                geometry.approach_x,
+                geometry.approach_y,
+            ]
+            continuity = self.escape_approach_continuity
+            if continuity is not None and self.safe_direction is not None:
+                value_names.extend(
+                    [
+                        "approach_continuity_enabled",
+                        "approach_corridor_anchor_x_m",
+                        "approach_corridor_anchor_y_m",
+                        "approach_corridor_anchor_stamp_sec",
+                        "approach_corridor_displacement_m",
+                        "approach_corridor_history_age_sec",
+                        "approach_corridor_exclusion_radius_m",
+                        "approach_corridor_direction_x",
+                        "approach_corridor_direction_y",
+                        "approach_selected_direction_x",
+                        "approach_selected_direction_y",
+                        "approach_selected_rotation_rad",
+                        "approach_direction_revision",
+                    ]
+                )
+                values.extend(
+                    [
+                        1.0,
+                        continuity.anchor_x,
+                        continuity.anchor_y,
+                        continuity.anchor_stamp_sec,
+                        continuity.displacement_m,
+                        continuity.history_age_sec,
+                        continuity.exclusion_radius_m,
+                        continuity.direction_x,
+                        continuity.direction_y,
+                        self.safe_direction.x,
+                        self.safe_direction.y,
+                        self.safe_direction.rotation_rad,
+                        float(self.safe_direction_revision),
+                    ]
+                )
             self._publish_event(
                 AlgorithmEvent.EVENT_ESCAPE_STARTED,
                 now_sec,
                 "Gaussian repulsion escape started",
-                [
-                    "initial_fill_id",
-                    "escape_center_x_m",
-                    "escape_center_y_m",
-                    "escape_exit_radius_m",
-                    "approach_x_m",
-                    "approach_y_m",
-                ],
-                [
-                    float(geometry.initial_fill_id),
-                    geometry.center_x,
-                    geometry.center_y,
-                    geometry.exit_radius,
-                    geometry.approach_x,
-                    geometry.approach_y,
-                ],
+                value_names,
+                values,
             )
 
         if transition.current == State.ESCAPE_ASSIST:
@@ -1488,8 +1534,28 @@ class SupervisorNode(Node):
         )
         self.escape_tracker.update(self.latest_pose)
         self.escape_pose_sequence = self.latest_pose_sequence
+        self.escape_approach_continuity = None
         self.safe_direction = None
         self.safe_direction_revision = 0
+        if (
+            self.machine.config
+            .open_field_escape_approach_continuity_enabled
+        ):
+            self.escape_approach_continuity = (
+                approach_continuity_evidence(
+                    tuple(self.pose_history),
+                    geometry.center,
+                    geometry.exit_radius,
+                )
+            )
+            if self.escape_approach_continuity is None:
+                return (
+                    "open-field escape approach continuity has no pose "
+                    "outside the frozen exit radius"
+                )
+            failure = self._ensure_open_field_escape_direction()
+            if failure is not None:
+                return failure
         self.stall_event_published = False
         return None
 
@@ -1601,7 +1667,7 @@ class SupervisorNode(Node):
         return None
 
     def _ensure_open_field_escape_direction(self):
-        """Select a hard-safe direction outward from the frozen fill center."""
+        """Select a hard-safe radial or approach-continuity direction."""
         if self.latest_pose is None or not self.latest_pose_valid:
             return "open-field escape assist requires a valid pose"
         if self.escape_tracker is None:
@@ -1609,13 +1675,25 @@ class SupervisorNode(Node):
         if self.bounds is not None:
             return "open-field escape assist cannot use operating bounds"
         position = self.latest_pose.position
-        preferred = (
-            position
-            - np.asarray(
-                self.escape_tracker.geometry.center,
-                dtype=np.float64,
-            )
+        continuity_enabled = bool(
+            self.machine.config
+            .open_field_escape_approach_continuity_enabled
         )
+        if continuity_enabled:
+            if self.escape_approach_continuity is None:
+                return (
+                    "open-field escape approach continuity has no frozen "
+                    "corridor evidence"
+                )
+            preferred = self.escape_approach_continuity.direction
+        else:
+            preferred = (
+                position
+                - np.asarray(
+                    self.escape_tracker.geometry.center,
+                    dtype=np.float64,
+                )
+            )
         if float(np.linalg.norm(preferred)) <= 1e-12:
             return "open-field escape direction is undefined at fill center"
         fills = self._active_fill_avoidances()
@@ -1637,7 +1715,12 @@ class SupervisorNode(Node):
                     self.safe_direction.candidate_index,
                 )
                 return None
-        selected = select_safe_direction(
+        selector = (
+            select_source_continuity_direction
+            if continuity_enabled
+            else select_safe_direction
+        )
+        selected = selector(
             position,
             preferred,
             fills,
@@ -2614,6 +2697,7 @@ class SupervisorNode(Node):
     def _reset_escape_attempt(self, preserve_post_recovery_recovery=False):
         self.escape_tracker = None
         self.escape_pose_sequence = 0
+        self.escape_approach_continuity = None
         self.safe_direction = None
         self.safe_direction_revision = 0
         self.recenter_hold_tracker = None
@@ -2957,6 +3041,14 @@ class SupervisorNode(Node):
             self.post_recovery_source_reversal_dot_threshold,
             self.post_recovery_source_bypass_clearance_m,
         ]
+        if (
+            self.machine.config
+            .open_field_escape_approach_continuity_enabled
+        ):
+            names.append(
+                "open_field_escape_approach_continuity_enabled"
+            )
+            values.append(1.0)
         self._publish_event(
             AlgorithmEvent.EVENT_CONFIGURATION,
             now_sec,
@@ -3035,7 +3127,12 @@ class SupervisorNode(Node):
         if (
             self.safe_direction is not None
             and (
-                self.machine.state in (State.ESCAPE_ASSIST, State.RECENTER)
+                self.machine.state
+                in (
+                    State.ESCAPE_REPULSE,
+                    State.ESCAPE_ASSIST,
+                    State.RECENTER,
+                )
                 or (
                     self.machine.state == State.SEARCH
                     and self.machine.post_recovery_guidance_active

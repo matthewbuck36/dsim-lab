@@ -1524,11 +1524,16 @@ the implementation or runtime graph.
 | 19114 | `(0.250, 0.025)` | `(0.706, 0.708)` | `(0.706, 0.708)` | `+0.999` |
 | 19115 | `(0.317, 0.039)` | `(0.428, 0.904)` | `(0.942, 0.336)` | `+0.934` |
 
-At seed `19115`'s later retained stall pose, the original radial direction is
-aligned about `-0.852` with the evaluator-only global direction. Revalidating
-the frozen approach vector at that same pose selects the fill-safe tangent
-`(-0.207, 0.978)`, aligned `+0.472`, rather than the failed southwest
-hemisphere. These numbers are diagnostic acceptance fixtures only.
+The preimplementation continuous-tangent diagnostic at seed `19115`'s later
+stall pose produced `(-0.207, 0.978)`, aligned `+0.472` with the
+evaluator-only global direction. M4.3 qualification corrected that value
+before dispatch: it is not one of the executable selector's fixed
+`45-degree` candidates. Exact replay at the first retained
+`ESCAPE_ASSIST` state/odometry sample gives old radial direction
+`(-0.960, -0.281)`, evaluator-only global alignment `-0.914`, and the actual
+fill-safe forward candidate `(-0.336, 0.942)`, alignment `+0.351`. The
+continuous-tangent value remains preliminary diagnostic evidence; the exact
+discrete replay is the acceptance fixture.
 
 ### Fresh fixed inputs
 

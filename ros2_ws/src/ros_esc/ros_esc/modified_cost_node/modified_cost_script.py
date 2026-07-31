@@ -593,6 +593,7 @@ class ModifiedCost2D(Node):
             state is not None
             and state.state
             in (
+                AlgorithmState.STATE_ESCAPE_REPULSE,
                 AlgorithmState.STATE_ESCAPE_ASSIST,
                 AlgorithmState.STATE_SEARCH,
             )

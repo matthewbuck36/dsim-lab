@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from ros_esc.supervisor_node.escape_recenter import (
+    ApproachContinuityEvidence,
     DirectionConfig,
     EscapeGeometry,
     EscapeProgressConfig,
@@ -15,6 +16,7 @@ from ros_esc.supervisor_node.escape_recenter import (
     Pose2D,
     PostRecoveryProgressConfig,
     PostRecoveryProgressTracker,
+    approach_continuity_evidence,
     projected_direction_progress,
     RecenterControlConfig,
     RecenterHoldTracker,
@@ -180,6 +182,203 @@ def test_post_recovery_tracker_ignores_duplicate_and_rejects_backward_time():
     assert duplicate.net_displacement_m == pytest.approx(0.1)
     with pytest.raises(ValueError, match="timestamps must increase"):
         tracker.update(pose(1.5, 1.2, 0.0))
+
+
+def test_approach_continuity_uses_newest_pose_strictly_outside_exit():
+    center = np.array([1.0, 1.0])
+    evidence = approach_continuity_evidence(
+        [
+            pose(0.0, -1.0, 1.0),
+            pose(1.0, -0.5, 1.0),
+            pose(2.0, 0.0, 1.0),
+            pose(3.0, 0.5, 1.0),
+        ],
+        center,
+        1.0,
+    )
+
+    assert evidence.anchor == pytest.approx([-0.5, 1.0])
+    assert evidence.anchor_stamp_sec == pytest.approx(1.0)
+    assert evidence.displacement_m == pytest.approx(1.5)
+    assert evidence.history_age_sec == pytest.approx(2.0)
+    assert evidence.direction == pytest.approx([1.0, 0.0])
+    assert evidence.exclusion_radius_m == pytest.approx(1.0)
+
+
+def test_approach_continuity_rejects_bad_history_and_missing_evidence():
+    assert approach_continuity_evidence([], [0.0, 0.0], 1.0) is None
+    assert approach_continuity_evidence(
+        [pose(0.0, 0.0, 0.0), pose(1.0, 0.5, 0.0)],
+        [0.0, 0.0],
+        1.0,
+    ) is None
+    with pytest.raises(ValueError, match="timestamps must increase"):
+        approach_continuity_evidence(
+            [pose(1.0, 2.0, 0.0), pose(1.0, 0.0, 0.0)],
+            [0.0, 0.0],
+            1.0,
+        )
+    with pytest.raises(ValueError, match="finite and positive"):
+        approach_continuity_evidence(
+            [pose(0.0, 2.0, 0.0)],
+            [0.0, 0.0],
+            0.0,
+        )
+    with pytest.raises(ValueError, match="displacement must be positive"):
+        ApproachContinuityEvidence(
+            anchor_x=0.0,
+            anchor_y=0.0,
+            anchor_stamp_sec=0.0,
+            direction_x=1.0,
+            direction_y=0.0,
+            displacement_m=0.0,
+            history_age_sec=0.0,
+            exclusion_radius_m=1.0,
+        )
+
+
+@pytest.mark.parametrize(
+    "center,current,anchor,expected_continuity,expected_radial",
+    [
+        (
+            [0.9063138817160753, 1.187088911496894],
+            [0.9074572187525843, 1.1858862198329585],
+            [0.19706456831241406, 0.01716688229276277],
+            [0.9712414607743503, 0.238096671276409],
+            [0.6889964737348437, -0.7247646922836064],
+        ),
+        (
+            [1.3150554594020005, 1.0298134346805476],
+            [1.3149823259225, 1.0301479155128903],
+            [0.34901700592311424, 0.061924829606774014],
+            [0.7064299821700579, 0.7077829330318807],
+            [-0.21360154392691805, 0.976920867026617],
+        ),
+        (
+            [1.2960568694674788, 0.9713325216094635],
+            [1.2957895816020304, 0.9724226694049221],
+            [0.2974907931237344, 0.034798152725139274],
+            [0.7293991768649621, 0.684088328206757],
+            [-0.23813171183223117, 0.9712328700264686],
+        ),
+        (
+            [1.2159934811154662, 0.9927434160879254],
+            [1.216355464277686, 0.9938346463446656],
+            [0.24976300129360293, 0.024695456966771282],
+            [0.7064420603695425, 0.7077708777145579],
+            [0.3148494834874919, 0.9491416136423793],
+        ),
+        (
+            [0.9024309599026483, 1.2748722127037169],
+            [0.9031537479081813, 1.2741645958174819],
+            [0.31732117094725015, 0.03934286786719746],
+            [0.9417105674149527, 0.3364241477941317],
+            [0.7145662868677917, -0.6995677391589588],
+        ),
+    ],
+)
+def test_v8_4_retained_fill_acceptance_replay_is_forward_and_fill_safe(
+    center,
+    current,
+    anchor,
+    expected_continuity,
+    expected_radial,
+):
+    exit_radius = 1.3667708293638696
+    avoidance = FillAvoidance(
+        1,
+        1,
+        center[0],
+        center[1],
+        1.618634254848744,
+    )
+    config = DirectionConfig(lookahead_m=0.50)
+    evidence = approach_continuity_evidence(
+        [
+            pose(0.0, anchor[0], anchor[1]),
+            pose(1.0, current[0], current[1]),
+        ],
+        center,
+        exit_radius,
+    )
+
+    continuity = select_source_continuity_direction(
+        current,
+        evidence.direction,
+        [avoidance],
+        config,
+        None,
+    )
+    radial = select_safe_direction(
+        current,
+        np.asarray(current) - np.asarray(center),
+        [avoidance],
+        config,
+        None,
+    )
+
+    assert continuity.direction == pytest.approx(expected_continuity)
+    assert radial.direction == pytest.approx(expected_radial)
+    assert np.dot(continuity.direction, evidence.direction) >= -1e-12
+    safe, unused_clearance = evaluate_direction_safety(
+        current,
+        continuity.direction,
+        [avoidance],
+        config,
+        None,
+    )
+    assert safe is True
+
+
+def test_v8_4_failed_seed_stall_replay_avoids_old_reverse_hemisphere():
+    center = np.array([0.9024309599026483, 1.2748722127037169])
+    anchor = np.array([0.31732117094725015, 0.03934286786719746])
+    stall = np.array([0.8512191620399492, 1.2598740198016434])
+    evidence = approach_continuity_evidence(
+        [pose(0.0, *anchor), pose(1.0, *stall)],
+        center,
+        1.3667708293638696,
+    )
+    avoidance = FillAvoidance(
+        1,
+        1,
+        center[0],
+        center[1],
+        1.618634254848744,
+    )
+    config = DirectionConfig(lookahead_m=0.50)
+
+    old_radial = select_safe_direction(
+        stall,
+        stall - center,
+        [avoidance],
+        config,
+        None,
+    )
+    selected = select_source_continuity_direction(
+        stall,
+        evidence.direction,
+        [avoidance],
+        config,
+        None,
+    )
+
+    assert old_radial.direction == pytest.approx(
+        [-0.9596900358585478, -0.2810605541050169]
+    )
+    assert selected.direction == pytest.approx(
+        [-0.33642414779413166, 0.9417105674149527]
+    )
+    assert np.dot(old_radial.direction, evidence.direction) < 0.0
+    assert np.dot(selected.direction, evidence.direction) > 0.0
+    safe, unused_clearance = evaluate_direction_safety(
+        stall,
+        selected.direction,
+        [avoidance],
+        config,
+        None,
+    )
+    assert safe is True
 
 
 def test_m4_5_retained_radius_two_rejects_exact_radial_reversal():

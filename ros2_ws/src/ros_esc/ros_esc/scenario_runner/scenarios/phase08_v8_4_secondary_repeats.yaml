@@ -1,0 +1,185 @@
+schema_version: 8
+suite_id: phase08_v8_4_secondary_repeats
+description: Five sealed fresh-process secondary repeats with candidate-informed persistent fill and bounded raw ranking.
+mode: simulation
+execution:
+  max_parallel_runs: 1
+  gazebo_gui: false
+  runs_root: /home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_4_secondary_repeats
+  preflight_timeout_sec: 150.0
+  run_timeout_sec: 540.0
+  wall_timeout_sec: 720.0
+  shutdown_grace_sec: 45.0
+  stop_on_run_failure: true
+  stop_on_cleanup_failure: true
+metadata:
+  experiment_version: phase08-v8.4-secondary-repeats
+  operator_notes: Precommitted seeds 19261 through 19265; no retry or parameter change after dispatch.
+level_map: {}
+defaults:
+  bounds_m: [-1.0, 5.0, -1.0, 5.0]
+  room_center_m: [2.0, 2.0]
+  validation_world: false
+  simulation_contacts_enabled: false
+  disturbances:
+    sensor_noise: {model: none, bound: 0.0}
+    sensor_delay_sec: 0.0
+    pose_delay_sec: 0.0
+frozen_profile:
+  profile_id: phase08_v8_4_counted_open_field_approach_continuity_v1
+  launch_overrides:
+    convergence_min_fill_periods: 2.0
+    convergence_state_gating_enabled: true
+    convergence_minimum_path_length_m: 0.20
+    convergence_maximum_path_efficiency: 0.50
+    convergence_confirmation_policy: qualified_dwell
+    convergence_confirmation_dwell_sec: 6.0
+    convergence_confirmation_exit_threshold_scale: 1.5
+    robust_search_epoch_reset_enabled: true
+    gaussian_fill_covariance_scale: 2.5
+    gaussian_fill_sigma_floor_m: 0.50
+    gaussian_fill_sigma_ceiling_m: 1.25
+    gaussian_fill_amplitude_depth_scale: 1.5
+    gaussian_fill_amplitude_max: 6.25
+    gaussian_fill_exit_sigma: 2.70
+    gaussian_fill_max_fills: 1
+    gaussian_fill_minimum_valid_samples: 40
+    gaussian_fill_reuse_retained_samples_on_redesign: true
+    extremum_classification_mode: counted_candidates
+    known_source_count: 2
+    candidate_cost_rotation_period_sec: 3.0
+    candidate_cost_required_rotations: 3
+    candidate_cost_pretrigger_rotations: 6
+    candidate_cost_mad_scale: 3.0
+    candidate_informed_fill_enabled: true
+    candidate_informed_fill_amplitude_scale: 1.25
+    operating_bounds_enabled: false
+    open_field_escape_assist_enabled: true
+    open_field_escape_approach_continuity_enabled: true
+    modified_cost_affine_gain: 0.50
+    modified_cost_affine_decay_rate: 0.0000005
+    modified_cost_affine_max_age: 35.0
+    modified_cost_affine_direction_sign: 1.0
+    post_recovery_guidance_enabled: false
+    recoverable_navigation_enabled: false
+    stall_window_sec: 3.0
+    minimum_radial_progress_m: 0.05
+    goal_score_threshold: 0.95
+    goal_score_rotation_period_sec: 3.0
+    goal_score_required_rotations: 2
+    goal_hold_sec: 3.0
+    undesired_score_hold_sec: 3.0
+    verification_max_sec: 12.0
+    fill_design_timeout_sec: 5.0
+    escape_max_sec: 35.0
+    escape_exit_hold_sec: 1.0
+    fill_avoidance_margin_m: 0.10
+    approach_history_window_sec: 0.5
+cases:
+  - case_id: v8_4_secondary_repeat_r1p5_a67p5_h25
+    family: open_field
+    acceptance_family: counted_two_source_open_field
+    acceptance_partition: validation
+    description: Sealed candidate-informed radius-1.5, 67.5-degree secondary repeat population.
+    status: executable_unverified
+    profiles: [robust_gaussian_v1]
+    seeds: [19261, 19262, 19263, 19264, 19265]
+    known_topology:
+      expected_local_minima: 1
+      expected_global_minima: 1
+    metric_applicability:
+      escape_attempt: true
+      escape_duration: true
+      orbit_count: true
+      revisit: false
+      delay: false
+      saturation: false
+    starts:
+      - {id: open_start, x_m: 0.0, y_m: 0.0, yaw_rad: 0.0}
+    sources:
+      - id: local
+        x_m: 0.5740251485476348
+        y_m: 1.38581929876693
+        relative_lumen_input: 400.0
+        evaluation_role: local_minimum
+      - id: global
+        x_m: 3.5
+        y_m: 3.5
+        relative_lumen_input: 1600.0
+        evaluation_role: goal
+    algorithm:
+      ablations:
+        gaussian_fill_enabled: true
+        affine_assist_enabled: true
+        recenter_enabled: false
+      launch_overrides: {}
+    success:
+      all_of: &all_of
+        - recording_complete
+        - cleanup_complete
+        - controller_goal
+        - ground_truth_goal
+        - expected_terminal_state
+        - required_state_path
+        - required_events
+        - required_event_sequence
+        - no_forbidden_states
+        - no_forbidden_events
+        - local_recovery_stage
+        - post_recovery_global_proximity
+        - fill_cardinality
+      controller:
+        contract_id: v8_4_secondary_repeat_r1p5_a67p5_h25
+        expected_verification_outcome: below_target_extremum
+        expected_terminal_state: GOAL_HOLD
+        reachability_argument: Candidate-informed Gaussian memory must prevent return to the filled local; finite outward assist remains an allowed fallback before ordinary GESC ranks source two.
+        required_state_path: &direct_path
+          - SEARCH
+          - VERIFY_EXTREMUM
+          - DESIGN_OR_MERGE_FILL
+          - ESCAPE_REPULSE
+          - SEARCH
+          - VERIFY_EXTREMUM
+          - GOAL_HOLD
+        required_state_paths:
+          - *direct_path
+          - [SEARCH, VERIFY_EXTREMUM, DESIGN_OR_MERGE_FILL, ESCAPE_REPULSE, ESCAPE_ASSIST, SEARCH, VERIFY_EXTREMUM, GOAL_HOLD]
+        required_events:
+          - CONVERGENCE_CONFIRMED
+          - FILL_CREATED
+          - ESCAPE_STARTED
+          - GOAL_REACHED
+        required_event_sequence:
+          - CONVERGENCE_CONFIRMED
+          - FILL_CREATED
+          - ESCAPE_STARTED
+          - CONVERGENCE_CONFIRMED
+          - GOAL_REACHED
+        forbidden_states: [RECENTER, FAILSAFE]
+        forbidden_events:
+          - FILL_REJECTED
+          - FILL_MERGED
+          - FILL_SUPERSEDED
+          - FILL_DESIGN_FAILED
+          - TIMEOUT
+          - FAILSAFE
+      ground_truth:
+        method: declared_global_proximity
+        global_source_id: global
+        proximity_radius_m: 0.50
+      staged_recovery:
+        local_source_ids: [local]
+        global_source_id: global
+        convergence_to_local_max_m: 0.60
+        convergence_to_global_min_m: 0.75
+        fill_to_convergence_max_m: 0.50
+        global_proximity_radius_m: 0.50
+        local_association_mode: declared_source
+        stage_a_timeout_sec: 360.0
+        post_stage_a_timeout_sec: 180.0
+      result_scopes:
+        full_lifecycle:
+          anchor_state: SEARCH
+          boundary_state: null
+          graceful_stop: false
+          all_of: *all_of

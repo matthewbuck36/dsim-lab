@@ -837,7 +837,7 @@ def test_robust_anisotropic_revision_replaces_without_double_count(monkeypatch):
         rclpy.shutdown()
 
 
-def test_robust_affine_binds_once_to_supervisor_direction_revision(monkeypatch):
+def test_robust_affine_binds_once_in_repulse_and_clears_in_search(monkeypatch):
     monkeypatch.setattr(
         sys,
         "argv",
@@ -867,7 +867,7 @@ def test_robust_affine_binds_once_to_supervisor_direction_revision(monkeypatch):
         assert not node.robust_affine_terms
 
         state = AlgorithmState()
-        state.state = AlgorithmState.STATE_ESCAPE_ASSIST
+        state.state = AlgorithmState.STATE_ESCAPE_REPULSE
         state.state_valid = True
         state.sensor_weight = 0.0
         state.gaussian_weight = 1.0
@@ -888,6 +888,9 @@ def test_robust_affine_binds_once_to_supervisor_direction_revision(monkeypatch):
         assert node._affine_bias_at_xy(0.0, 1.0) < 0.0
         assert node._affine_bias_at_xy(0.0, -1.0) > 0.0
 
+        node.algorithm_state_cb(state)
+        assert node.robust_affine_terms[1]["t0"] == first_start
+        state.state = AlgorithmState.STATE_ESCAPE_ASSIST
         node.algorithm_state_cb(state)
         assert node.robust_affine_terms[1]["t0"] == first_start
         state.state = AlgorithmState.STATE_SEARCH

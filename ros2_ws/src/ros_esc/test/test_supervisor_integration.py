@@ -14,6 +14,7 @@ from rclpy.node import Node
 from rclpy.parameter import Parameter
 from ros_esc.supervisor_node import supervisor_node_script
 from ros_esc.supervisor_node.escape_recenter import (
+    ApproachContinuityEvidence,
     DirectionConfig,
     EscapeGeometry,
     EscapeProgressTracker,
@@ -534,6 +535,12 @@ def test_open_field_disables_bounds_without_weakening_explicit_stop():
         ]
     )
     try:
+        node.event_publisher = Recorder()
+        node._publish_configuration_event(node._now_sec())
+        assert (
+            "open_field_escape_approach_continuity_enabled"
+            not in node.event_publisher.messages[-1].value_names
+        )
         node.latest_pose = Pose2D(
             node._now_sec(),
             100.0,
@@ -643,6 +650,165 @@ def test_open_field_escape_assist_commands_radially_outward_and_zeros_on_exit():
         assert node.current_supervisor_command.linear.x == 0.0
         assert node.command_publisher.messages[-1].linear.x == 0.0
         assert node.escape_tracker is None
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_v8_4_approach_continuity_is_published_only_for_active_escape():
+    rclpy.init()
+    node = SupervisorNode(
+        parameter_overrides=[
+            Parameter("operating_bounds_enabled", value=False),
+            Parameter("recenter_after_escape", value=False),
+            Parameter("open_field_escape_assist_enabled", value=True),
+            Parameter(
+                "open_field_escape_approach_continuity_enabled",
+                value=True,
+            ),
+            Parameter(
+                "extremum_classification_mode",
+                value="counted_candidates",
+            ),
+            Parameter("known_source_count", value=2),
+            Parameter("max_fill_clusters", value=1),
+            Parameter("candidate_informed_fill_enabled", value=True),
+        ]
+    )
+    node.state_publisher = Recorder()
+    node.command_publisher = Recorder()
+    node.event_publisher = Recorder()
+    try:
+        node._publish_configuration_event(1.0)
+        configuration = node.event_publisher.messages[-1]
+        configuration_evidence = dict(
+            zip(configuration.value_names, configuration.values)
+        )
+        assert (
+            configuration_evidence[
+                "open_field_escape_approach_continuity_enabled"
+            ]
+            == 1.0
+        )
+        anchor = Pose2D(0.0, -2.0, 0.0, 0.0)
+        current = Pose2D(1.0, 0.05, 0.0, 0.0)
+        node.pose_history.extend([anchor, current])
+        node.latest_pose = current
+        node.latest_pose_valid = True
+        node.latest_pose_sequence = 2
+        node.active_fill_records = {
+            1: {
+                "fill_id": 1,
+                "revision": 1,
+                "center": np.array([0.0, 0.0]),
+                "support_radius": 0.50,
+                "exit_radius": 1.25,
+            }
+        }
+        node.machine.state = State.ESCAPE_REPULSE
+        node.machine.active_escape_fill_id = 1
+        node.machine.escape_started_sec = 1.0
+        transition = Transition(
+            State.DESIGN_OR_MERGE_FILL,
+            State.ESCAPE_REPULSE,
+            "fill accepted; begin measured escape",
+        )
+
+        node._handle_transition(transition, 1.0)
+        node._publish_state_and_command(1.0)
+
+        assert isinstance(
+            node.escape_approach_continuity,
+            ApproachContinuityEvidence,
+        )
+        repulse = node.state_publisher.messages[-1]
+        assert repulse.state == AlgorithmState.STATE_ESCAPE_REPULSE
+        assert repulse.sensor_weight == 0.0
+        assert repulse.gaussian_weight == 1.0
+        assert repulse.affine_weight == 1.0
+        assert repulse.safe_direction_valid is True
+        assert repulse.safe_direction_revision == 1
+        assert node.command_publisher.messages[-1].linear.x == 0.0
+        assert node.command_publisher.messages[-1].angular.z == 0.0
+
+        started = next(
+            event
+            for event in node.event_publisher.messages
+            if event.event_type == AlgorithmEvent.EVENT_ESCAPE_STARTED
+        )
+        evidence = dict(zip(started.value_names, started.values))
+        assert evidence["approach_continuity_enabled"] == 1.0
+        assert evidence["approach_corridor_anchor_x_m"] == -2.0
+        assert evidence["approach_corridor_direction_x"] == 1.0
+        assert evidence["approach_direction_revision"] == 1.0
+        assert not any(
+            "global" in name or "source" in name
+            for name in started.value_names
+        )
+
+        node.machine.state = State.SEARCH
+        node._handle_transition(
+            Transition(
+                State.ESCAPE_REPULSE,
+                State.SEARCH,
+                "measured escape completed",
+            ),
+            2.0,
+        )
+        node._publish_state_and_command(2.0)
+        search = node.state_publisher.messages[-1]
+        assert node.escape_approach_continuity is None
+        assert node.safe_direction is None
+        assert search.safe_direction_valid is False
+        assert search.affine_weight == 0.0
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_v8_4_approach_continuity_fails_without_outside_history():
+    rclpy.init()
+    node = SupervisorNode(
+        parameter_overrides=[
+            Parameter("operating_bounds_enabled", value=False),
+            Parameter("recenter_after_escape", value=False),
+            Parameter("open_field_escape_assist_enabled", value=True),
+            Parameter(
+                "open_field_escape_approach_continuity_enabled",
+                value=True,
+            ),
+            Parameter(
+                "extremum_classification_mode",
+                value="counted_candidates",
+            ),
+            Parameter("known_source_count", value=2),
+            Parameter("max_fill_clusters", value=1),
+            Parameter("candidate_informed_fill_enabled", value=True),
+        ]
+    )
+    try:
+        current = Pose2D(1.0, 0.05, 0.0, 0.0)
+        node.pose_history.append(current)
+        node.latest_pose = current
+        node.latest_pose_valid = True
+        node.latest_pose_sequence = 1
+        node.active_fill_records = {
+            1: {
+                "fill_id": 1,
+                "revision": 1,
+                "center": np.array([0.0, 0.0]),
+                "support_radius": 0.50,
+                "exit_radius": 1.25,
+            }
+        }
+        node.machine.active_escape_fill_id = 1
+        node.machine.escape_started_sec = 1.0
+
+        assert node._begin_escape(1.0) == (
+            "open-field escape approach continuity has no pose outside "
+            "the frozen exit radius"
+        )
+        assert node.safe_direction is None
     finally:
         node.destroy_node()
         rclpy.shutdown()

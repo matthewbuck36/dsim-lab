@@ -12441,3 +12441,165 @@ PLAN COMMIT PENDING / IMPLEMENTATION NOT STARTED / GAZEBO PROHIBITED.**
 Commit this exact Plan boundary and verify a clean tree. Then implement the
 default-off correction and fresh v8.4 inputs, followed by every declared
 no-Gazebo qualification gate.
+
+## Phase 08.8 M4.3 v8.4 implementation qualification — 2026-07-30
+
+Plan boundary commit:
+
+```text
+31a90c9
+phase 08.8: plan v8.4 approach continuity
+```
+
+The default-off v8.4 correction and all four fresh fixed inputs are
+implemented. The supervisor now freezes one escape-scoped direction from the
+newest existing odometry-history pose strictly outside the accepted fill's
+frozen exit radius. It selects and revalidates the most aligned fill-safe
+forward candidate, publishes `(0, 1, 1)` weights through
+`ESCAPE_REPULSE`/`ESCAPE_ASSIST`, and clears the direction plus affine
+authority on measured escape completion, reset, or fault.
+
+The robust modified-cost owner accepts the typed direction/revision in both
+escape states. Supervisor translation remains zero in `ESCAPE_REPULSE`; the
+existing bounded translation is available only after measured stall. Ordinary
+`SEARCH` remains raw plus Gaussian with affine zero.
+
+The enabled escape/configuration evidence records the qualified history
+anchor, age, displacement, exit radius, continuity vector, selected direction,
+rotation, and revision. Default-off historical event payloads remain
+unchanged. No source/global coordinate, Vicon pose, room dimension, evaluator
+truth, proximity result, waypoint, route map, or persistent post-escape
+direction was introduced.
+
+Exact replay of all five retained v8.3 fill-acceptance geometries is
+fill-safe and forward. The exact failed-seed first-assist replay corrects the
+preliminary continuous-tangent diagnostic:
+
+```text
+old radial:
+  (-0.9596900359, -0.2810605541)
+enabled fixed candidate:
+  (-0.3364241478, 0.9417105674)
+evaluator-only global alignment:
+  -0.914 -> +0.351
+```
+
+The Plan now distinguishes the preliminary continuous tangent from the exact
+executable `45-degree` candidate fixture.
+
+Fresh identities:
+
+```text
+primary visible:
+  phase08_v8_4_primary_visible_probe.yaml
+  seed 19201
+primary repeats:
+  phase08_v8_4_primary_repeats.yaml
+  seeds 19211..19220
+secondary visible:
+  phase08_v8_4_secondary_visible_probe.yaml
+  seed 19251
+secondary repeats:
+  phase08_v8_4_secondary_repeats.yaml
+  seeds 19261..19265
+```
+
+Final source qualification:
+
+```text
+focused controller/geometry/supervisor/modified-cost/legacy:
+  285 passed
+focused schema/runner/validator/recording/analysis:
+  504 passed, 1 expected Gazebo-opt-in skip
+broad ROS-independent functional:
+  819 passed, 2 expected Gazebo-opt-in skips
+fatal changed-file lint:
+  PASS
+Python compilation, XML/YAML parse, git diff check:
+  PASS
+phase context:
+  PASS
+```
+
+Final fresh installed qualification:
+
+```text
+root:
+  /tmp/phase08_8_m4_3_release_qual
+build:
+  3 packages finished in 11.9 s
+source/install parity:
+  10/10
+installed supervisor construction:
+  expected bounded timeout 124; no error
+installed modified-cost construction:
+  expected bounded timeout 124; no error
+installed dry-runs:
+  1 + 10 + 1 + 5 resolved
+  0 unsupported
+  no configured run root created
+```
+
+V6, all historical scenarios/worlds, every fixed failed run, and retained
+plots/bags remain unchanged. The exact validation record is:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_3_no_gazebo_qualification.md
+```
+
+No Gazebo, recorder, analyzer, or physical process ran during implementation
+or qualification.
+
+Several bounded defects were found and corrected before runtime: missing
+repulse-state affine exposure, a duplicate staged-schema affine prohibition,
+copied v8.3 case labels, a preliminary non-executable tangent value, and
+unconditional configuration-event exposure. All affected gates were repeated
+on the exact final source.
+
+## Current milestone
+
+**PHASE 08.8 M4.3 — V8.4 IMPLEMENTED / NO-GAZEBO QUALIFICATION PASS /
+IMPLEMENTATION CHECKPOINT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Checkpoint and commit the exact qualified implementation plus validation
+record. Then create and commit a separate dispatch boundary. Only that clean
+installed boundary may authorize one visible primary probe at seed `19201`.
+No repeat or secondary dispatch is authorized.
+
+## Phase 08.8 M4.3 v8.4 implementation checkpoint — 2026-07-30
+
+The exact final implementation, four fixed inputs, tests, qualification
+record, Plan evidence correction, and live status received the required
+precommit Phase 08 material checkpoint against Plan HEAD `31a90c9`.
+
+```text
+status sha256:
+  04b1791b289f09de92d29ebeb7e20e8da6da3f24152bcd860d5f22554afbb8a3
+active subphase plan sha256:
+  f8864cda6cda530cabb5b572d8cad86834de2a7e82bb69b382e04c6e3451018f
+qualification record sha256:
+  3f523b9a9c022d9d0214d328d981349e9d83f14f40e153f7548c1c7aaa74f162
+staged implementation diff sha256:
+  dc4bf1a56333a24e2cfa55d298e6bcfbb1843cc14751e92fcec85096a8f54184
+unstaged and staged diff check:
+  PASS
+```
+
+No Gazebo, scenario, recorder, analyzer, or physical process ran during the
+checkpoint.
+
+## Current milestone
+
+**PHASE 08.8 M4.3 — V8.4 IMPLEMENTED / NO-GAZEBO QUALIFICATION PASS /
+IMPLEMENTATION CHECKPOINT PASS / IMPLEMENTATION COMMIT PENDING / GAZEBO
+PROHIBITED.**
+
+## Next criterion
+
+Commit this exact qualified implementation boundary and verify a clean tree.
+Then save, checkpoint, and commit a separate visible-probe dispatch boundary.
+Only that later boundary may authorize seed `19201`; repeats and secondary
+runs remain prohibited.

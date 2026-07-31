@@ -185,6 +185,120 @@ class EscapeGeometry:
 
 
 @dataclass(frozen=True)
+class ApproachContinuityEvidence:
+    """One escape-scoped direction derived from pre-basin pose history."""
+
+    anchor_x: float
+    anchor_y: float
+    anchor_stamp_sec: float
+    direction_x: float
+    direction_y: float
+    displacement_m: float
+    history_age_sec: float
+    exclusion_radius_m: float
+
+    def __post_init__(self):
+        values = (
+            self.anchor_x,
+            self.anchor_y,
+            self.anchor_stamp_sec,
+            self.direction_x,
+            self.direction_y,
+            self.displacement_m,
+            self.history_age_sec,
+            self.exclusion_radius_m,
+        )
+        if not all(math.isfinite(float(value)) for value in values):
+            raise ValueError("approach-continuity evidence must be finite")
+        if self.displacement_m <= 0.0:
+            raise ValueError(
+                "approach-continuity displacement must be positive"
+            )
+        if self.history_age_sec < 0.0:
+            raise ValueError(
+                "approach-continuity history age must be nonnegative"
+            )
+        if self.exclusion_radius_m <= 0.0:
+            raise ValueError(
+                "approach-continuity exclusion radius must be positive"
+            )
+        direction = np.array(
+            [self.direction_x, self.direction_y],
+            dtype=np.float64,
+        )
+        if not math.isclose(
+            float(np.linalg.norm(direction)),
+            1.0,
+            rel_tol=1e-9,
+            abs_tol=1e-9,
+        ):
+            raise ValueError(
+                "approach-continuity direction must be a unit vector"
+            )
+
+    @property
+    def anchor(self):
+        return np.array([self.anchor_x, self.anchor_y], dtype=np.float64)
+
+    @property
+    def direction(self):
+        return np.array(
+            [self.direction_x, self.direction_y],
+            dtype=np.float64,
+        )
+
+
+def approach_continuity_evidence(
+    history: Sequence[Pose2D],
+    fill_center,
+    exclusion_radius_m: float,
+):
+    """Freeze the newest qualified pre-basin approach direction.
+
+    The selected anchor is the newest recorded pose strictly outside the
+    frozen escape radius. The direction continues from that anchor toward the
+    accepted fill center. No source or evaluator geometry enters this helper.
+    """
+
+    center = _finite_vector(fill_center, "approach-continuity fill center")
+    if (
+        not math.isfinite(float(exclusion_radius_m))
+        or exclusion_radius_m <= 0.0
+    ):
+        raise ValueError(
+            "approach-continuity exclusion radius must be finite and positive"
+        )
+    ordered = tuple(history)
+    if not ordered:
+        return None
+    if any(
+        ordered[index].stamp_sec >= ordered[index + 1].stamp_sec
+        for index in range(len(ordered) - 1)
+    ):
+        raise ValueError(
+            "approach-continuity history timestamps must increase"
+        )
+    current_stamp = float(ordered[-1].stamp_sec)
+    for sample in reversed(ordered):
+        displacement = center - sample.position
+        displacement_m = float(np.linalg.norm(displacement))
+        if displacement_m <= exclusion_radius_m + _EPSILON:
+            continue
+        direction = displacement / displacement_m
+        return ApproachContinuityEvidence(
+            anchor_x=float(sample.x),
+            anchor_y=float(sample.y),
+            anchor_stamp_sec=float(sample.stamp_sec),
+            direction_x=float(direction[0]),
+            direction_y=float(direction[1]),
+            displacement_m=displacement_m,
+            history_age_sec=max(0.0, current_stamp - sample.stamp_sec),
+            exclusion_radius_m=float(exclusion_radius_m),
+        )
+    return None
+
+
+@dataclass(frozen=True)
 class EscapeProgressConfig:
     """Rolling radial-progress and stable-exit settings."""
 

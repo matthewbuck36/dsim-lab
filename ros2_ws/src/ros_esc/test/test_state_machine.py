@@ -165,6 +165,54 @@ def test_open_field_assist_is_opt_in_and_preserves_default_weights():
     assert assisted.weights == (0.0, 1.0, 0.0)
 
 
+def test_approach_continuity_is_opt_in_and_escape_scoped():
+    default = SupervisorStateMachine(config=counted_config())
+    assert (
+        default.config.open_field_escape_approach_continuity_enabled
+        is False
+    )
+    enabled = SupervisorStateMachine(
+        config=counted_config(
+            candidate_informed_fill_enabled=True,
+            open_field_escape_assist_enabled=True,
+            open_field_escape_approach_continuity_enabled=True,
+        )
+    )
+
+    enabled.state = State.ESCAPE_REPULSE
+    assert enabled.weights == (0.0, 1.0, 1.0)
+    enabled.state = State.ESCAPE_ASSIST
+    assert enabled.weights == (0.0, 1.0, 1.0)
+    enabled.state = State.SEARCH
+    assert enabled.weights == (1.0, 1.0, 0.0)
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {
+            "candidate_informed_fill_enabled": True,
+            "open_field_escape_approach_continuity_enabled": True,
+        },
+        {
+            "open_field_escape_assist_enabled": True,
+            "open_field_escape_approach_continuity_enabled": True,
+        },
+        {
+            "candidate_informed_fill_enabled": True,
+            "open_field_escape_assist_enabled": True,
+            "open_field_escape_approach_continuity_enabled": 1,
+        },
+    ],
+)
+def test_approach_continuity_rejects_incomplete_configuration(overrides):
+    with pytest.raises(
+        ValueError,
+        match="approach continuity|must be boolean",
+    ):
+        counted_config(**overrides)
+
+
 def test_candidate_informed_fill_is_default_off_and_counted_only():
     assert StateMachineConfig().candidate_informed_fill_enabled is False
     enabled = counted_config(candidate_informed_fill_enabled=True)

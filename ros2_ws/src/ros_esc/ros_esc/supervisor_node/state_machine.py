@@ -61,6 +61,7 @@ class StateMachineConfig:
     fill_design_timeout_sec: float = 5.0
     escape_max_sec: float = 20.0
     open_field_escape_assist_enabled: bool = False
+    open_field_escape_approach_continuity_enabled: bool = False
     recenter_after_escape: bool = True
     recenter_max_sec: float = 30.0
     max_fill_clusters: int = 0
@@ -178,6 +179,14 @@ class StateMachineConfig:
             raise ValueError(
                 "open_field_escape_assist_enabled must be boolean"
             )
+        if not isinstance(
+            self.open_field_escape_approach_continuity_enabled,
+            bool,
+        ):
+            raise ValueError(
+                "open_field_escape_approach_continuity_enabled must be "
+                "boolean"
+            )
         if self.open_field_escape_assist_enabled and (
             self.recenter_after_escape
             or self.post_recovery_guidance_enabled
@@ -187,6 +196,17 @@ class StateMachineConfig:
                 "open-field escape assist requires recenter, recoverable "
                 "navigation, and post-recovery guidance to be disabled"
             )
+        if self.open_field_escape_approach_continuity_enabled:
+            if not self.open_field_escape_assist_enabled:
+                raise ValueError(
+                    "open-field escape approach continuity requires "
+                    "open-field escape assist"
+                )
+            if not self.candidate_informed_fill_enabled:
+                raise ValueError(
+                    "open-field escape approach continuity requires "
+                    "candidate-informed fill"
+                )
         if (
             isinstance(self.post_recovery_retry_limit, bool)
             or not isinstance(self.post_recovery_retry_limit, int)
@@ -691,6 +711,11 @@ class SupervisorStateMachine:
 
         if self.state == State.SEARCH and self.post_recovery_guidance_active:
             return (1.0, 1.0, 1.0)
+        if (
+            self.state in (State.ESCAPE_REPULSE, State.ESCAPE_ASSIST)
+            and self.config.open_field_escape_approach_continuity_enabled
+        ):
+            return (0.0, 1.0, 1.0)
         if (
             self.state == State.ESCAPE_ASSIST
             and self.config.open_field_escape_assist_enabled
