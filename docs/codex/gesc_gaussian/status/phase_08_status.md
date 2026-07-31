@@ -17203,3 +17203,113 @@ Commit this exact qualified implementation boundary. Then write, checkpoint,
 and commit a separate visible-dispatch authorization naming only the
 installed seed `19801`. Do not start Gazebo from the uncommitted
 implementation.
+
+## Phase 08.8 M4.11 v8.10 primary-visible dispatch boundary — 2026-07-31
+
+The complete no-Gazebo-qualified implementation is committed:
+
+```text
+77dd443 phase 08.8: qualify v8.10 recorder cwd correction
+```
+
+The worktree was clean immediately after that commit. This boundary
+authorizes exactly one installed visible primary dispatch:
+
+```text
+installed scenario:
+  /tmp/phase08_8_v8_10_release_qual.VIowrN/install/ros_esc/share/
+  ros_esc/scenario_runner/scenarios/
+  phase08_v8_10_primary_visible_probe.yaml
+installed scenario SHA-256:
+  c41eea1e6e10d8f736bb669fdf13db46eb8a6ed23b512a5827e8675d2d5c501b
+seed:
+  19801
+GUI:
+  enabled
+ROS_DOMAIN_ID:
+  225
+scenario run timeout:
+  720.0 s
+scenario wall timeout:
+  900.0 s
+outer process bound:
+  960 s with bounded interrupt/kill escalation
+run root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_10_primary_probe
+attempts:
+  one
+retry:
+  prohibited
+```
+
+During the sealed run, observation is limited to OS process state and
+retained files. No external ROS/DDS participant may join domain `225`.
+After closure and cleanup, the exact `summary_path` emitted by the runner
+must be read. Its sole `run_directory` must be validated below the declared
+root and used verbatim for the one analyzer invocation; no run ID may be
+manually reconstructed.
+
+The finalized recorder metadata must identify working directory
+`/home/mattb/dsim-lab`, committed dispatch HEAD `77dd443`, and an initially
+clean tree. A behavioral, schema-v13 command-ownership,
+required-path/event, strict-ranking, global-proximity, recording, Git
+metadata, final-zero, readiness, analysis, or cleanup failure closes this
+visible gate.
+
+Only a formal pass and complete nine-plot analysis authorize the ten v8.10
+primary repeats. No repeat, secondary, three-light, broader, or physical
+execution is authorized by this boundary.
+
+## Current milestone
+
+**PHASE 08.8 M4.11 — V8.10 IMPLEMENTATION COMMITTED AT `77dd443` /
+PRIMARY VISIBLE SEED `19801` DISPATCH BOUNDARY WRITTEN / DISPATCH
+CHECKPOINT PENDING / GAZEBO NOT YET AUTHORIZED.**
+
+## Next criterion
+
+Checkpoint and commit this exact dispatch boundary. Verify the worktree is
+clean, installed scenario hash still matches, the run root remains absent,
+and no runtime process is active. Then execute seed `19801` exactly once
+with visible Gazebo and no ROS-domain monitoring.
+
+## Phase 08.8 M4.11 v8.10 primary-visible dispatch checkpoint — 2026-07-31
+
+The installed seed-`19801` one-time/no-retry visible-dispatch boundary
+received the required Phase 08 checkpoint against implementation HEAD
+`77dd443`.
+
+```text
+base HEAD:
+  77dd443a5e24f340b106a48c5ea4e4d8859c3040
+status sha256 before this checkpoint note:
+  63ff453d5e69a9bb61106d2917fda6408136805e428fa81ba0abc0318a46efad
+active plan sha256:
+  9d7a7ea410c43dfc1e404c6bba30453dfd4d2d593fe74eb72c2648913246dcbb
+installed scenario sha256:
+  c41eea1e6e10d8f736bb669fdf13db46eb8a6ed23b512a5827e8675d2d5c501b
+checkpoint sha256 before this checkpoint note:
+  8c8bcb4e9362588f86b24644fc2d9d676380fb266a7493591c8b680bb8d3e6f4
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+active runtime:
+  none
+primary visible run root:
+  absent
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.11 — V8.10 IMPLEMENTATION COMMITTED / PRIMARY VISIBLE
+SEED `19801` DISPATCH BOUNDARY CHECKPOINT PASS / DISPATCH COMMIT PENDING /
+GAZEBO NOT YET AUTHORIZED.**
+
+## Next criterion
+
+Commit this exact dispatch boundary. Reverify a clean worktree, installed
+scenario hash, absent root, and inactive runtime. Then dispatch visible seed
+`19801` exactly once on domain `225`, with no retry and no ROS-domain
+monitoring.
