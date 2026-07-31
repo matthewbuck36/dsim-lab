@@ -11937,3 +11937,58 @@ MATERIAL CHECKPOINT PASS / COMMIT PENDING / GAZEBO PROHIBITED.**
 Commit this exact qualified boundary, verify the commit and clean worktree,
 then record a separate committed dispatch boundary before executing the single
 visible primary probe at seed `19101`.
+
+## Phase 08.8 M4.1 qualified implementation commit — 2026-07-30
+
+The exact candidate-informed fill implementation, tests, four fresh v8.3
+scenario inputs, no-Gazebo qualification record, live status, and material
+checkpoint were committed at:
+
+```text
+ddcdbf621a26201ba4d3b8b5c2e3397372d4edec
+phase 08.8: qualify candidate-informed fill
+```
+
+The post-commit worktree is clean. The four v8.3 campaign roots remain absent,
+and no Gazebo process is active. This commit fixes the executable bytes for the
+single visible primary probe; it does not claim behavioral success.
+
+## Current milestone
+
+**PHASE 08.8 M4.1 — QUALIFIED V8.3 INPUT COMMITTED / DISPATCH CHECKPOINT
+PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Refresh the Phase 08 checkpoint against commit `ddcdbf6`, commit this dispatch
+record, reconfirm the clean process/evidence boundary, and then execute exactly
+one installed visible run of `phase08_v8_3_primary_visible_probe.yaml`, seed
+`19101`.
+
+## Phase 08.8 M4.1 committed-input dispatch checkpoint — 2026-07-30
+
+The dispatch record received a fresh Phase 08 checkpoint against committed
+implementation HEAD `ddcdbf6`.
+
+```text
+status sha256:
+  d2c72ec3adffbd56064d50b8d549e8878a2e1c1b867fb7611a5aed7f1ec5d9d8
+unstaged diff sha256:
+  f759c50011f3e9b1c6cb9c9a09b57cfb28035be11659dbc39179342d539af09f
+diff check:
+  PASS
+```
+
+No Gazebo, scenario, recorder, analyzer, or physical process ran while
+creating this checkpoint.
+
+## Current milestone
+
+**PHASE 08.8 M4.1 — QUALIFIED V8.3 INPUT COMMITTED / DISPATCH CHECKPOINT
+PASS / DISPATCH-RECORD COMMIT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Commit this exact two-document dispatch boundary. Then verify a clean tree,
+inactive Gazebo process set, absent primary evidence root, and isolated-install
+scenario parity before running the one authorized visible seed-`19101` probe.
