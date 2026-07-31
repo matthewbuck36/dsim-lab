@@ -17499,3 +17499,135 @@ PASS / RESULT COMMIT PENDING / PRIMARY REPEATS NOT YET AUTHORIZED.**
 Commit this exact visible result. Then write, checkpoint, and commit a
 separate serial/headless primary-repeat boundary for installed seeds
 `19811..19820`. Do not dispatch any repeat from an uncommitted boundary.
+
+## Phase 08.8 M4.11 v8.10 primary-repeat dispatch boundary — 2026-07-31
+
+The primary visible result is sealed in:
+
+```text
+de2e10a phase 08.8: pass v8.10 primary visible probe
+```
+
+The worktree was clean immediately after that commit. The formal visible
+pass authorizes this separate fixed primary-repeat boundary:
+
+```text
+installed scenario:
+  /tmp/phase08_8_v8_10_release_qual.VIowrN/install/ros_esc/share/
+  ros_esc/scenario_runner/scenarios/
+  phase08_v8_10_primary_repeats.yaml
+installed scenario SHA-256:
+  cdb5e05339745d89afc632388af2e8bae45de75159c514f3d85832732361c796
+seeds:
+  19811, 19812, 19813, 19814, 19815,
+  19816, 19817, 19818, 19819, 19820
+execution:
+  one installed suite invocation, serial, headless
+ROS_DOMAIN_ID:
+  226
+scenario run timeout:
+  720.0 s per run
+scenario wall timeout:
+  900.0 s per run
+outer suite bound:
+  9,600 s with bounded interrupt/kill escalation
+run root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_10_primary_repeats
+stop on first run or cleanup failure:
+  true
+retry:
+  prohibited
+```
+
+The installed scenario resolves exactly ten supported runs, uses no GUI,
+and retains the same fixed primary source layout, `400/1600` inputs,
+schema-v13 direct-or-assisted ownership contract, exact one-fill
+cardinality, Stage A/Stage B budgets, strict two-candidate raw ranking,
+evaluator-only `0.50 m` stop, forbidden states/events, final-zero rule, and
+cleanup rule as the passing visible probe.
+
+During the sealed suite, observation is limited to OS process state and
+retained files. No external ROS/DDS participant may join domain `226`.
+Dispatch stops at the first behavioral, formal, infrastructure, recording,
+metadata, or cleanup failure. An interrupted or failed seed is retained and
+is not retried; undispatched later seeds remain undispatched.
+
+After the population closes and cleanup is proven, analysis preparation
+must read this exact runner-emitted summary:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_10_primary_repeats/
+  phase08_v8_10_primary_repeats_summary.yaml
+```
+
+It must require the exact executed count and ordered case/seed identities,
+read every `run_directory` directly from the summary, verify each directory
+is below the fresh root and has a complete bag, and invoke `analyze_run`
+exactly once per dispatched complete run. No target may be selected by
+modification time or reconstructed from a run ID.
+
+Every finalized recorder metadata file must identify working directory and
+repository root `/home/mattb/dsim-lab`, the eventual clean committed
+repeat-dispatch HEAD, and no untracked path. A summary-target, analyzer,
+fresh-validator, or plot failure closes the population after the required
+one-time analyzer invocations; it is not repaired by rerunning analysis.
+
+Only a `10/10` formal population pass, complete one-time analysis of all ten
+runs, and uncontaminated cleanup authorize the secondary visible seed
+`19851`. No secondary repeat, three-light, broader, physical, or Phase 09
+execution is authorized by this boundary.
+
+## Current milestone
+
+**PHASE 08.8 M4.11 — V8.10 PRIMARY VISIBLE RESULT COMMITTED AT `de2e10a` /
+TEN-RUN PRIMARY-REPEAT BOUNDARY WRITTEN / REPEAT CHECKPOINT PENDING /
+PRIMARY REPEATS NOT YET AUTHORIZED.**
+
+## Next criterion
+
+Checkpoint and commit this exact repeat boundary. Reverify a clean
+worktree, unchanged installed scenario hash, absent repeat root, and
+inactive runtime. Then invoke the installed ten-run suite once from `/tmp`
+on domain `226`.
+
+## Phase 08.8 M4.11 v8.10 primary-repeat dispatch checkpoint — 2026-07-31
+
+The fixed ten-seed, one-invocation, serial/headless, stop-on-first-failure,
+no-retry primary-repeat boundary received the required Phase 08 checkpoint
+against primary-visible result HEAD `de2e10a`.
+
+```text
+base HEAD:
+  de2e10a6ce93f9d37b7cd9a06cfe562df5e87b54
+status sha256 before this checkpoint note:
+  8297eafa45d5e2a8befae16e6d7bfdbc6f59a77156d21c00f79f84b9a62633b2
+active plan sha256:
+  9d7a7ea410c43dfc1e404c6bba30453dfd4d2d593fe74eb72c2648913246dcbb
+checkpoint sha256 before this checkpoint note:
+  fa9f7eefd61545e647dfa616d8b057db506fd9fc0ba8bf7fc627cda8f6bf5bdd
+installed scenario sha256:
+  cdb5e05339745d89afc632388af2e8bae45de75159c514f3d85832732361c796
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+active runtime:
+  none
+primary-repeat run root:
+  absent
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.11 — V8.10 PRIMARY VISIBLE RESULT COMMITTED / TEN-RUN
+PRIMARY-REPEAT BOUNDARY CHECKPOINT PASS / REPEAT COMMIT PENDING / PRIMARY
+REPEATS NOT YET AUTHORIZED.**
+
+## Next criterion
+
+Commit this exact repeat boundary. Reverify a clean worktree, unchanged
+installed scenario hash, absent root, and inactive runtime. Then invoke the
+installed suite once from `/tmp` on domain `226`, with no retry and no
+ROS-domain monitoring.
