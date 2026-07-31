@@ -14479,3 +14479,143 @@ Stage and commit exactly this status plus checkpoint boundary. Then reconfirm
 the clean tree, inactive runtime process set, absent evidence root, and
 installed scenario parity before executing the one fixed serial/headless
 population. Do not dispatch the secondary probe or repeats.
+
+## Phase 08.8 M4.7 fixed v8.6 primary-repeat disposition — 2026-07-31
+
+Dispatch boundary commit:
+
+```text
+4207b73 phase 08.8: authorize v8.6 primary repeats
+```
+
+The sealed population stopped after seed `19411`, exactly as required. Seed
+`19411` was not retried, and seeds `19412..19420` were not dispatched.
+Runner return code was `1`; the outer `9,600 s` timeout did not fire.
+
+The run completed the intended behavior:
+
+```text
+record process:                         return 0 / no timeout
+recording completeness:                 PASS
+state path:                              SEARCH -> VERIFY -> DESIGN ->
+                                         REPULSE -> ASSIST -> SEARCH ->
+                                         VERIFY -> GOAL_HOLD
+Stage A:                                 PASS at 228.826 s
+fill cardinality:                        exactly one
+direction revision:                      one
+selected/actual-exit alignment:          0.994041292
+assist control samples:                  2,769
+fresh supervisor matches:                2,769
+nonzero GESC proposals suppressed:       2,769
+positive supervisor-linear samples:      2,058
+strict candidate separation margin:      0.9918364801434629
+GOAL_REACHED:                            PASS
+evaluator proximity:                     0.123633 m at 339.224 s
+Stage B:                                 110.398 s / 300.0 s
+FAILSAFE/TIMEOUT:                        absent
+final readiness false / commands zero:   PASS
+```
+
+It failed two of fourteen mandatory predicates:
+
+```text
+supervisor_owned_escape_assist:  FAIL
+cleanup_complete:                FAIL
+```
+
+The ownership failure was one cross-topic delivery-order sample. The first
+post-exit `SEARCH` state was recorded at `1785501942470570252`; zero
+supervisor command followed `0.777583 ms` later. One diagnostic `0.554917 ms`
+after that zero publication still reflected the prior assist command. The
+next diagnostic, `6.363998 ms` later, had combined command equal to GESC and
+zero supervisor contribution. All `13,069` subsequent diagnostics through
+the next state transition retained ordinary GESC ownership.
+
+The cleanup audit found no session process but did find
+`/_ros2cli_282407`. This was the external `ros2 topic echo --once` progress
+monitor issued on ROS domain `228` during the active sealed run. The runner
+correctly treated it as graph contamination. No future sealed run may be
+monitored by joining its ROS domain; use retained files and process state
+only. The cleanup predicate remains mandatory and unchanged.
+
+The standard analyzer ran exactly once after closure, returned zero, produced
+all expected tables and all nine plots, and reported
+`analysis_failures=[]`. Its `partial` summary is limited to one optional
+generic state-duration gap above `0.150 s`.
+
+Retained evidence:
+
+```text
+run:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+    phase08_8_6_primary_repeats/2026-07-31/
+    20260731T124148715876Z_simulation_phase08_v8_6_primary_repeats-
+    v8_6_primary_repeat_r1p5_a45_h25-robust_gaussian_v1_35b235c3
+scenario summary:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+    phase08_8_6_primary_repeats/scenario_summaries/
+    20260731T124147695682Z_phase08_v8_6_primary_repeats.yaml
+report:
+  docs/codex/gesc_gaussian/validation/
+    phase_08_8_m4_7_primary_repeats.md
+plots:
+  <run>/analysis/phase07/plots/
+```
+
+The fixed v8.6 repeat gate is closed at `0/1` formal passes with one of ten
+declared seeds dispatched. Its secondary and broader gates were not
+dispatched. This does not alter the independent passing v8.6 visible result
+or any historical evidence.
+
+## Current milestone
+
+**PHASE 08.8 M4.7 — FIXED V8.6 PRIMARY REPEAT GATE CLOSED FAIL / BEHAVIORAL
+OBJECTIVE REACHED / FORMAL HANDOFF AND CLEANUP FAILURES RETAINED / FAILURE
+CHECKPOINT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Checkpoint and commit the immutable v8.6 primary-repeat failure evidence.
+Then review and commit a separately versioned correction plan. Do not retry
+seed `19411`; do not dispatch v8.6 seed `19412` or any later v8.6 gate.
+
+## Phase 08.8 M4.7 v8.6 primary-repeat failure checkpoint — 2026-07-31
+
+The immutable stopped population, one retained behavioral success/formal
+failure, one-time analysis, complete plot bundle, diagnosis, report, and live
+status received the required Phase 08 checkpoint against dispatch HEAD
+`4207b73`.
+
+```text
+base HEAD:
+  4207b73fa900b941026fa30c75461b412a9fa89b
+status sha256 before this checkpoint note:
+  c9c7d157854482828a870ecd919669ec96dcbbdc2c9d8c6cedb49587f9687a25
+active plan sha256:
+  0e1494c96dfab88bf0c2640b1a1abfdaf5d976bd11be25f4c74ff593458404e9
+failure report sha256:
+  3653b165038b6e80cc40bd56d3b6c1a11a4d16feee1b0a21b0ddc3f74979ccbc
+unstaged tracked diff sha256:
+  49b7c22f0c2e4b11a5966c7a61f3146883e0bd714ea57af825871f70814e4aa5
+checkpoint sha256 before this checkpoint note:
+  5f77fd1abefee271ba3c57d2467202746e7a23a0c76e7a281de757e73e735c12
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+```
+
+No Gazebo, scenario, recorder, analyzer, rosbag recorder, or physical process
+remained during this failure checkpoint.
+
+## Current milestone
+
+**PHASE 08.8 M4.7 — FIXED V8.6 PRIMARY REPEAT GATE CLOSED FAIL / BEHAVIORAL
+OBJECTIVE REACHED / FORMAL HANDOFF AND CLEANUP FAILURES RETAINED / FAILURE
+CHECKPOINT PASS / FAILURE COMMIT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Stage and commit exactly this failure boundary. Then review and commit a
+separately versioned correction plan. Do not retry seed `19411`; do not
+dispatch v8.6 seed `19412` or any later v8.6 gate.
