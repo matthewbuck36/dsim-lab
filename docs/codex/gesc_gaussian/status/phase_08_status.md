@@ -19760,3 +19760,109 @@ Commit this exact qualified implementation boundary. Then write, validate,
 checkpoint, and commit a separate visible-dispatch boundary naming only the
 installed seed `20001`. Do not start Gazebo from an uncommitted or
 undispatched state.
+
+## Phase 08.8 M8.8 v8.12 visible-probe dispatch boundary — 2026-07-31
+
+The completely no-Gazebo-qualified implementation is committed:
+
+```text
+0263f1c phase 08.8: qualify v8.12 interior anchor fallback
+```
+
+The worktree was clean immediately after that commit. This boundary
+authorizes exactly one installed visible dispatch:
+
+```text
+installed scenario:
+  /tmp/phase08_8_v8_12_release_qual.HnEptF/install/ros_esc/share/
+  ros_esc/scenario_runner/scenarios/
+  phase08_v8_12_interior_anchor_visible_probe.yaml
+installed/source scenario sha256:
+  d4607649546f8301112a0cbbb5ded10a2a167146efed143dbfff64e4d5810c65
+case:
+  v8_12_interior_anchor_r1p25_a45_ratio1to3_20001
+case key:
+  5d8ed8295d910a52c28561e7d9f8172cb63d7158debef9eb7597b8befe285dbb
+seed:
+  20001
+ROS_DOMAIN_ID:
+  219
+ROS_LOCALHOST_ONLY:
+  1
+presentation:
+  visible Gazebo GUI
+attempts / retries:
+  1 / 0
+run root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_12_interior_anchor_probe
+```
+
+The installed runner must be invoked from `/tmp` with the isolated v8.12
+install first in the overlay, no source-worktree `PYTHONPATH`, and an explicit
+outer `1020 s` bound. The scenario retains its `720.0 s` simulation,
+`900.0 s` wall, and `45.0 s` shutdown-grace bounds.
+
+The run is one-time/no-retry. It must produce exactly one complete local
+recovery and one valid fill, an `ESCAPE_STARTED` event with
+`interior_farthest` mode `1` and displacement at least `0.50 m`, strict
+candidate-two raw-cost ranking, a graceful first post-recovery `0.50 m`
+global-proximity stop, complete recording, final zero, SQLite integrity, and
+clean scoped shutdown. Every formal predicate must pass. Any formal,
+recording, final-zero, integrity, or cleanup failure closes v8.12 without a
+retry or in-place tuning.
+
+Only after a complete formal pass may the summary-owned run be analyzed
+exactly once for all nine standard plots. The four-case matrix remains
+prohibited until the visible result and plots are retained, checkpointed, and
+committed.
+
+No Gazebo, scenario runner, recorder, analyzer, or physical process was
+started while writing this boundary. Both v8.12 run roots remain absent.
+
+## Current milestone
+
+**PHASE 08.8 M8.8 — V8.12 VISIBLE SEED `20001` BOUNDARY WRITTEN /
+DISPATCH CHECKPOINT AND COMMIT PENDING / GAZEBO AND MATRIX PROHIBITED.**
+
+## Next criterion
+
+Validate installed/source parity, root absence, inactive runtime, context,
+and diff; checkpoint Phase 08; and commit this exact one-run boundary. Only
+then invoke the installed visible suite once. Do not authorize or dispatch
+the matrix unless seed `20001` formally passes and is analyzed.
+
+## Phase 08.8 M8.8 v8.12 visible dispatch checkpoint — 2026-07-31
+
+The exact installed seed-`20001` visible, one-time/no-retry boundary received
+the required Phase 08 checkpoint against qualified implementation HEAD
+`0263f1c8ca32777a6ae42812c33660d2d52ea8d0`.
+
+```text
+status sha256 before this checkpoint note:
+  928bd90ca8f3661cdfcb060132a19c29088d2ddf986b5f50b38fa51a943b81e6
+checkpoint sha256 before this checkpoint note:
+  045e0e482c94f6dc9f1c49a2793d425e8f96bf1658a00675b2c1fc24ade05884
+installed/source scenario parity:
+  PASS
+installed/source scenario sha256:
+  d4607649546f8301112a0cbbb5ded10a2a167146efed143dbfff64e4d5810c65
+Phase 08 implement context / git diff check:
+  PASS / PASS
+active runtime:
+  none
+visible root / matrix root:
+  absent / absent
+```
+
+## Current milestone
+
+**PHASE 08.8 M8.8 — V8.12 VISIBLE SEED `20001` BOUNDARY /
+DISPATCH CHECKPOINT PASS / DISPATCH COMMIT PENDING / GAZEBO AND MATRIX
+PROHIBITED.**
+
+## Next criterion
+
+Commit this exact two-file dispatch boundary. Then invoke the installed
+visible suite once on domain `219`, preserve the result, and stop without a
+retry if any fixed gate fails.

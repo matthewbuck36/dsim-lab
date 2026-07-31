@@ -1,66 +1,36 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-31T23:10:55+00:00
-Base HEAD: 7c9d5e9ebc24aaf2595597bc4a85a7b179cfa860
+Generated: 2026-07-31T23:13:06+00:00
+Base HEAD: 0263f1c8ca32777a6ae42812c33660d2d52ea8d0
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: ef22273b621556d517fcbd8c14729cf8530f093b05d1185be9e26308ced05218
+Status sha256: 928bd90ca8f3661cdfcb060132a19c29088d2ddf986b5f50b38fa51a943b81e6
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_8_v8_12_plan.md
 Active subphase plan sha256: 1f028088939e0a71eceb755329e8e5238bcb6fdb3c4f0eda4901571c872c9cbb
-Unstaged diff sha256: d4961b225358fa41a145ff5a0f2d3429136c09d6418140c33e60de255e722a5b
+Unstaged diff sha256: bc4866be452a8702e41a5afe3e19a94294cc58a20215cf5278a8328a0be10c86
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 170]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 171]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
- M docs/codex/gesc_gaussian/plans/phase_08_8_v8_12_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/run_scenario.py
- M ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenario_schema.py
- M ros2_ws/src/ros_esc/ros_esc/supervisor_node/escape_recenter.py
- M ros2_ws/src/ros_esc/ros_esc/supervisor_node/state_machine.py
- M ros2_ws/src/ros_esc/ros_esc/supervisor_node/supervisor_node_script.py
- M ros2_ws/src/ros_esc/test/test_escape_recenter.py
- M ros2_ws/src/ros_esc/test/test_observability_contract.py
- M ros2_ws/src/ros_esc/test/test_scenario_runner.py
- M ros2_ws/src/ros_esc/test/test_scenario_schema.py
- M ros2_ws/src/ros_esc/test/test_state_machine.py
- M ros2_ws/src/ros_esc/test/test_supervisor_integration.py
- M ros2_ws/src/turtlebot3_rotating_sensor/launch/gazebo.launch.xml
-?? docs/codex/gesc_gaussian/validation/phase_08_8_m8_7_v8_12_no_gazebo_qualification.md
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v8_12_broad_matrix.yaml
-?? ros2_ws/src/ros_esc/ros_esc/scenario_runner/scenarios/phase08_v8_12_interior_anchor_visible_probe.yaml
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  47 +++--
- .../gesc_gaussian/plans/phase_08_8_v8_12_plan.md   |   7 +
- docs/codex/gesc_gaussian/status/phase_08_status.md | 133 +++++++++++++
- .../ros_esc/scenario_runner/run_scenario.py        | 176 ++++++++++++++++-
- .../ros_esc/scenario_runner/scenario_schema.py     | 155 +++++++++++++++
- .../ros_esc/supervisor_node/escape_recenter.py     | 127 ++++++++++--
- .../ros_esc/supervisor_node/state_machine.py       |  44 +++++
- .../supervisor_node/supervisor_node_script.py      |  60 ++++++
- ros2_ws/src/ros_esc/test/test_escape_recenter.py   | 155 +++++++++++++++
- .../ros_esc/test/test_observability_contract.py    |   4 +
- ros2_ws/src/ros_esc/test/test_scenario_runner.py   | 119 +++++++++++
- ros2_ws/src/ros_esc/test/test_scenario_schema.py   | 218 +++++++++++++++++++++
- ros2_ws/src/ros_esc/test/test_state_machine.py     |  87 ++++++++
- .../ros_esc/test/test_supervisor_integration.py    | 145 ++++++++++++++
- .../launch/gazebo.launch.xml                       |   4 +
- 15 files changed, 1433 insertions(+), 48 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 54 ++--------------
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 71 ++++++++++++++++++++++
+ 2 files changed, 76 insertions(+), 49 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**PHASE 08.8 M8.6-M8.7 — V8.12 INTERIOR APPROACH-ANCHOR FALLBACK
-IMPLEMENTED / NO-GAZEBO QUALIFICATION PASS / IMPLEMENTATION CHECKPOINT
-PENDING / GAZEBO PROHIBITED.**
+**PHASE 08.8 M8.8 — V8.12 VISIBLE SEED `20001` BOUNDARY WRITTEN /
+DISPATCH CHECKPOINT AND COMMIT PENDING / GAZEBO AND MATRIX PROHIBITED.**
 
 
 
