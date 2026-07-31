@@ -1,36 +1,45 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-31T23:29:34+00:00
-Base HEAD: 24170d2ba9b6725f52ca071917c24636416b16e3
+Generated: 2026-07-31T23:54:53+00:00
+Base HEAD: dd2185dba1b9e1f979a72cf1b5b4a960912ee35d
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: ac370eda26d49d5677734dcb2d67b946cd6dd906e9c3cc07fdc9e2bba17d87f4
+Status sha256: 29c8a106c80960a3b3a61ccd0e76affccbb1eeee0bdc2ab46e9ec8bf08774dd5
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_8_v8_12_plan.md
 Active subphase plan sha256: 1f028088939e0a71eceb755329e8e5238bcb6fdb3c4f0eda4901571c872c9cbb
-Unstaged diff sha256: d59f8ddf47253ff7502736c7b66b5517f8aff22ce2fe23b92ea9ed0cfa80bb91
-Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+Unstaged diff sha256: fcf0a38bc307b28f1aec9a5340bea98820d776dc3ebb6652365cd79d9fe32494
+Staged diff sha256: 8df3b3e0eb4eeec5a2a8c1af0731f3a102a8dbe98bc528cb6eeb47276f1bc37f
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 173]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 175]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
- M docs/codex/gesc_gaussian/status/phase_08_status.md
+M  docs/codex/gesc_gaussian/handoffs/phase_08_8_handoff.md
+M  docs/codex/gesc_gaussian/implementation_sequence.md
+M  docs/codex/gesc_gaussian/status/phase_08_status.md
+M  docs/codex/gesc_gaussian/validation/phase_08_8_final_report.md
+A  docs/codex/gesc_gaussian/validation/phase_08_8_m8_9_v8_12_broad_matrix.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 26 ++-----
- docs/codex/gesc_gaussian/status/phase_08_status.md | 91 ++++++++++++++++++++++
- 2 files changed, 96 insertions(+), 21 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 32 ++++++++--------------
+ 1 file changed, 11 insertions(+), 21 deletions(-)
+ .../gesc_gaussian/handoffs/phase_08_8_handoff.md   | 122 +++++++-
+ .../codex/gesc_gaussian/implementation_sequence.md |  22 +-
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 141 +++++++++
+ .../validation/phase_08_8_final_report.md          | 311 +++++++++++++++++++-
+ .../phase_08_8_m8_9_v8_12_broad_matrix.md          | 327 +++++++++++++++++++++
+ 5 files changed, 910 insertions(+), 13 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**PHASE 08.8 M8.9 — V8.12 FOUR-CASE MATRIX BOUNDARY WRITTEN / INSTALLED
-DRY-RUN 4/4 / DISPATCH CHECKPOINT AND COMMIT PENDING / MATRIX PROHIBITED.**
+**PHASE 08.8 M8.10 — TERMINAL CLOSEOUT QUALIFICATION PASS / V8.12 CLOSED /
+NO V8.13 / PHASE 08 CHECKPOINT AND CLOSEOUT COMMITS PENDING.**
 
 
 

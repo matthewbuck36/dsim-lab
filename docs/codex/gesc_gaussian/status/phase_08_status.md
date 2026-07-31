@@ -20121,3 +20121,181 @@ PROHIBITED.**
 Commit this exact two-file dispatch boundary. Then invoke the installed matrix
 once on domain `220`, preserve every dispatched result, and stop without a
 retry if any fixed case fails.
+
+## Phase 08.8 M8.9 v8.12 broad-matrix result — 2026-07-31
+
+The committed installed matrix boundary executed exactly once from clean
+dispatch HEAD `dd2185dba1b9e1f979a72cf1b5b4a960912ee35d`. The serial runner
+dispatched seed `20031`, classified it as a formal failure, and stopped before
+seeds `20032..20034` exactly as required. There was no retry, replacement, or
+tuning.
+
+```text
+summary:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_12_broad_matrix/scenario_summaries/
+  20260731T233137289914Z_phase08_v8_12_broad_matrix.yaml
+summary sha256:
+  01cd46bed898afbd229abd2c0fda6db4d0e70487f6cb7716c4a409aec3182216
+resolved / dispatched / retries:     4 / 1 / 0
+runner return / stop reason:         1 / run_failure
+formal predicates:                   13/14 PASS
+sole failed predicate:               escape_command_ownership
+exact failure:
+  direct measured fill-to-exit alignment is below 0.80
+Stage A / Stage B:                   PASS / PASS
+created / typed / active fills:      1 / 1 / 1
+anchor mode / displacement:          interior_farthest / 1.318197736 m
+escape branch / successes:           direct / 1
+candidate-two separation margin:     2.518884161
+first proximity / final distance:    0.127753592 / 0.127721319 m
+recording / final zero / cleanup:    PASS / PASS / PASS
+SQLite quick_check:                  ok
+```
+
+The direct branch cleared the `1.366770829 m` exit radius and reached
+`1.425082539 m` maximum radial distance. Its measured returned-`SEARCH` exit
+was `1.439287647 m` from the fill center, but its curved direction alignment
+was `0.735562525`, below the fixed `0.80` threshold by `0.064437475`
+(`42.6452` versus `36.8699` maximum degrees).
+
+This remains a formal acceptance failure. The completed local recovery,
+ordinary returned search, strict raw-cost ranking, `GOAL_HOLD`, and final
+global proximity remain scientific behavior evidence. No gate was weakened
+or reclassified.
+
+The exact run was analyzed once. Critical inputs, fresh and stored Phase 05
+validation, and `9/9` plots are complete with zero analysis failures. Analyzer
+status is `partial` only because one optional generic `state_durations` metric
+observed one state gap over `0.150 s`, independently of the formal failure.
+
+Durable result:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m8_9_v8_12_broad_matrix.md
+```
+
+No simulation, analysis, or physical process remains active. The v8.12 stop
+condition is reached. Seeds `20032..20034` remain undispatched, and no v8.13
+is authorized. Simulation stopping remains evaluator-only; physical arrival
+remains manual operator `Ctrl+C`.
+
+## Current milestone
+
+**PHASE 08.8 M8.10 — V8.12 TERMINAL CLOSEOUT / FIRST MATRIX CASE FORMAL
+13/14 FAIL WITH SCIENTIFIC LOCAL-TO-GLOBAL COMPLETION / REMAINING CASES NOT
+DISPATCHED / NO RETRY / NO V8.13 / CLOSEOUT QUALIFICATION, CHECKPOINT, AND
+COMMITS PENDING.**
+
+## Next criterion
+
+Recheck every dispatched result and undispatched definition, retained plots,
+historical preservation, context, diff, infrastructure, and inactive runtime.
+Then checkpoint Phase 08 and commit the bounded final report, handoff,
+navigation, result report, and live-status closeout. Do not start Gazebo or
+physical hardware.
+
+## Phase 08.8 M8.10 terminal closeout qualification — 2026-07-31
+
+The terminal no-Gazebo closeout rechecked the current documentation, retained
+v8.10-v8.12 fixed results, terminal bag and analysis, historical anchors,
+process boundary, and Git scope. No source, launch, scenario, world, test, run,
+bag, result, analysis, plot, simulator, ROS graph, analyzer, or physical
+execution changed after dispatch HEAD `dd2185d`.
+
+```text
+required Phase 00 audit documents:             PASS
+Phase 08 implement context:                    PASS
+changed paths outside Phase 08.8 docs:         0
+relative Markdown links:                       38/38
+staged git diff --check:                       PASS
+
+v8.10 retained results / plots:                12 / 108
+v8.11 retained results / plots:                 7 / 63
+v8.12 retained results / plots:                 2 / 18
+v8.12 matrix summary run entries:               1
+v8.12 matrix seed 20031 entries:                1
+v8.12 matrix seed 20032-20034 entries:           0
+terminal bag SQLite PRAGMA quick_check:         ok
+terminal analysis failures / plots:             0 / 9
+
+historical V6 / three world hashes:             unchanged / unchanged
+active simulation, analysis, or physical:      none
+```
+
+Document hashes before this qualification note:
+
+```text
+implementation_sequence.md:
+  bced1672af9e132341aeb3699b36c8535022e740a60d06df04a34feed91751cb
+phase_08_8_handoff.md:
+  4d66bf71e229920177323c93217dabc10ae126f3efc92d8c4b9d5ae2aca22ec1
+phase_08_status.md:
+  dd36d733374a75c3d481de7de77401b5f8dad4b7ec7c8aea00c34b7d4c609339
+phase_08_8_final_report.md:
+  552bdcf465de35ac76cc190547881d2f4ff9076dc6bacdd86c1e58699d80a55a
+phase_08_8_m8_9_v8_12_broad_matrix.md:
+  1923c697ef4491f3ee41603f023faf27d1af03d3030c22d676a35ae51739555e
+```
+
+Retained anchors remain:
+
+```text
+gazebo_empty.world:
+  3085542f9dc1d13fdf9368a24808a226908d1a2c5a7a4ffd07bc6f374ca14b43
+gesc_gaussian_validation.world:
+  8ecc1a231efec24401d74fef3cd5139d48c6029f88e71d044cefdf2fd14c5bef
+gesc_gaussian_corner_origin_validation.world:
+  88b10b39aa24a6430f6f031c750334ed34e6835e54c84de8d36f4cc6a26444bf
+phase_08_v6_selection.json:
+  dcdbf937fe3de0cab9449c2b01af79fd938e1d3f9791b4897937875d0747590d
+```
+
+## Current milestone
+
+**PHASE 08.8 M8.10 — TERMINAL CLOSEOUT QUALIFICATION PASS / V8.12 CLOSED /
+NO V8.13 / PHASE 08 CHECKPOINT AND CLOSEOUT COMMITS PENDING.**
+
+## Next criterion
+
+Run the Phase 08 material checkpoint, record its receipt, and commit this exact
+terminal result and closeout. Then record the clean post-commit receipt and
+complete the approved goal. Do not start Gazebo or physical hardware.
+
+## Phase 08.8 M8.10 terminal closeout checkpoint — 2026-07-31
+
+The terminal v8.12 result, one-time analysis, undispatched-case accounting,
+amended final report, handoff, navigation, historical preservation, and
+inactive runtime received the required Phase 08 material checkpoint against
+dispatch HEAD `dd2185d`.
+
+```text
+base HEAD:
+  dd2185dba1b9e1f979a72cf1b5b4a960912ee35d
+generated UTC:
+  2026-07-31T23:54:53+00:00
+status sha256 before this checkpoint note:
+  29c8a106c80960a3b3a61ccd0e76affccbb1eeee0bdc2ab46e9ec8bf08774dd5
+checkpoint sha256 before this checkpoint note:
+  dade9a29fdb4b1bc93d638093c388579970a2723a2bc8b09bc67dae21895ce92
+active subphase Plan sha256:
+  1f028088939e0a71eceb755329e8e5238bcb6fdb3c4f0eda4901571c872c9cbb
+Phase 08 implement context:
+  PASS
+staged and unstaged diff check:
+  PASS
+active simulation/analysis/physical runtime:
+  none
+```
+
+## Current milestone
+
+**PHASE 08.8 M8.10 — TERMINAL CLOSEOUT QUALIFICATION AND CHECKPOINT PASS /
+V8.12 CLOSED / NO V8.13 / CLOSEOUT COMMIT PENDING.**
+
+## Next criterion
+
+Commit this exact terminal boundary. Then verify the commit and clean
+worktree, add the bounded post-commit status receipt, commit that receipt, and
+complete the approved goal. Do not start Gazebo or physical hardware.

@@ -2,14 +2,17 @@
 
 ## Terminal disposition
 
-**PHASE 08.8 CLOSED / PRIMARY FIXED LAYOUT `11/11` FORMAL PASS /
-SECONDARY SCIENTIFIC PASS BUT FORMAL EVALUATOR FAIL / SECONDARY REPEATS
-AND BROADER MATRIX NOT RUN / NO PHYSICAL MOTION.**
+**PHASE 08.8 TERMINALLY CLOSED AFTER V8.12 / V8.10 PRIMARY FIXED LAYOUT
+`11/11` / V8.11 SECONDARY FIXED LAYOUT `6/6` / V8.12 VISIBLE `1/1` /
+V8.12 MATRIX FIRST CASE SCIENTIFICALLY COMPLETE BUT FORMAL `13/14` FAIL /
+REMAINING MATRIX CASES NOT RUN / NO V8.13 / NO PHYSICAL MOTION.**
 
 Read first:
 
 - [Phase 08.8 final report](../validation/phase_08_8_final_report.md)
 - [Phase 08.8 Plan](../plans/phase_08_8_plan.md)
+- [Phase 08.8 v8.12 Plan](../plans/phase_08_8_v8_12_plan.md)
+- [v8.12 terminal matrix result](../validation/phase_08_8_m8_9_v8_12_broad_matrix.md)
 - [Phase 08 live status](../status/phase_08_status.md)
 
 The earlier
@@ -17,6 +20,10 @@ The earlier
 the authoritative history through Phase 08.7. Phase 08.8 is an additive,
 separately versioned development iteration and does not relabel the earlier
 broad simulation-ready failure.
+
+The v8.10 empirical boundary retained below is its immutable historical
+snapshot. The [current terminal amendment](#current-v811v812-boundary) at the
+end of this handoff is authoritative for the completed Phase 08.8 goal.
 
 ## Final controller boundary
 
@@ -199,3 +206,112 @@ controller.
 The final report, this handoff, navigation updates, live-status closeout, and
 Phase 08 checkpoint are committed as a bounded closeout. The post-commit
 status receipt names the exact commit and clean worktree state.
+
+## Current v8.11/v8.12 boundary
+
+V8.11 corrected the evaluator-only shifted-basin association without passing
+source geometry into the controller. Its secondary visible seed `19901` and
+repeat seeds `19911..19915` passed `1/1 + 5/5`, including five direct escapes,
+one assisted escape, exact one-fill cardinality, strict raw-cost ranking, final
+global proximity, complete recording, final zero, cleanup, and `54/54` plots.
+
+That is now the qualified second fixed-layout simulation demonstration:
+
+```text
+start:        (0.0, 0.0)
+first lamp:   (0.5740251485, 1.3858192988)
+second lamp:  (3.5, 3.5)
+inputs:       400 / 1600 simulator-relative
+environment:  obstacle-free open field
+formal:       6/6
+```
+
+V8.11's first varied-matrix seed `19931` then failed before escape because no
+recorded approach pose lay outside the data-derived fill exit radius. V8.12
+added a default-off `interior_farthest` odometry-history fallback with a
+`0.50 m` minimum displacement. No-Gazebo qualification passed the full
+`1012 passed, 3 skipped` functional suite, retained-history replay, historical
+scenario/V6/world hashes, isolated install, graph construction, and installed
+scenario parity.
+
+The v8.12 visible seed `20001` passed `14/14`. It exercised an
+`interior_farthest` anchor, assisted local recovery, strict candidate-two raw
+ranking, and final global proximity at `0.116707 m`; all nine plots are
+retained.
+
+The one authorized v8.12 matrix invocation stopped on seed `20031`. That run
+completed the full scientific path:
+
+```text
+SEARCH -> VERIFY_EXTREMUM -> DESIGN_OR_MERGE_FILL -> ESCAPE_REPULSE
+-> SEARCH -> VERIFY_EXTREMUM -> GOAL_HOLD
+```
+
+It created one fill, used an `interior_farthest` anchor at `1.318198 m`,
+cleared the `1.366771 m` fill exit radius, strictly ranked candidate two by
+`2.518884`, and stopped `0.127721 m` from the global. Recording, final zero,
+readiness false, SQLite integrity, cleanup, one-time analysis, and all nine
+plots completed.
+
+It remains a formal `13/14` failure because the direct exit curved
+`42.6452 degrees` from its initial anchor direction while the frozen evaluator
+allowed at most `36.8699 degrees` (`0.735563 < 0.80`). This is one formal
+evidence-contract failure after successful behavior. Do not relabel it as a
+formal pass or weaken the fixed gate.
+
+The serial suite stopped as required:
+
+```text
+seed 20031:       dispatched once / formal fail / behavior complete / no retry
+seeds 20032-34:   not dispatched
+v8.12 matrix:     population gate not met
+```
+
+Reports:
+
+- [v8.11 secondary visible](../validation/phase_08_8_m8_3_v8_11_secondary_visible_probe.md)
+- [v8.11 secondary repeats](../validation/phase_08_8_m8_3_v8_11_secondary_repeats.md)
+- [v8.11 matrix failure](../validation/phase_08_8_m8_4_v8_11_broad_matrix.md)
+- [v8.12 no-Gazebo qualification](../validation/phase_08_8_m8_7_v8_12_no_gazebo_qualification.md)
+- [v8.12 visible pass](../validation/phase_08_8_m8_8_v8_12_visible_probe.md)
+- [v8.12 terminal matrix result](../validation/phase_08_8_m8_9_v8_12_broad_matrix.md)
+
+## Current usable simulation demonstrations
+
+Use only these exact repeatable populations for a confident claim:
+
+```text
+primary:
+  local (1.0606601718, 1.0606601718)
+  global (3.5, 3.5)
+  400 / 1600 simulator-relative
+  11/11 formal
+
+secondary:
+  local (0.5740251485, 1.3858192988)
+  global (3.5, 3.5)
+  400 / 1600 simulator-relative
+  6/6 formal under evaluator-only schema-v14 topology evidence
+```
+
+Both assume start `(0.0, 0.0)`, local-first encounter, known source count two,
+an obstacle-free open field, no controller access to light positions or roles,
+and evaluator-only coordinate stopping. The simulator-relative inputs are not
+a physical calibration.
+
+Do not claim arbitrary position/intensity robustness. The planned `1:5` and
+alternate-placement v8.12 cases were not run. Three-light Gazebo behavior,
+unknown source count, global-first return-to-best behavior, walls, obstacles,
+disturbances, and physical transfer remain unproven.
+
+## Current physical and next-phase rule
+
+There is no physical coordinate-based arrival stop. A future physical run
+continues until the operator judges the robot sufficiently close and presses
+`Ctrl+C`; final readiness false, zero command, recording finalization, and
+scoped cleanup remain mandatory.
+
+Phase 08.8 authorized no physical motion. V8.12 is final, and no v8.13 is
+planned or authorized. The next action is a separate Phase 09 Plan for static
+physical-interface and calibration qualification, followed by separate
+explicit authorization before any physical motion.

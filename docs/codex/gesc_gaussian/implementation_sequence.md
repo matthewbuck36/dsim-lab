@@ -284,15 +284,19 @@ The user subsequently authorized a bounded, additive Phase 08.8 continuation.
 V8.11 passed its corrected secondary visible probe plus five fresh-process
 repeats (`1/1 + 5/5` formal), then retained and closed its first fixed broad-
 matrix case when the supervisor could not find an approach-history pose outside
-the runtime fill exit radius. The active continuation is the
-[v8.12 interior-anchor Plan](plans/phase_08_8_v8_12_plan.md). It permits one
-legacy-default-off odometry-history correction, but no v8.12 Gazebo process
-until the complete no-Gazebo implementation boundary is qualified,
-checkpointed, committed, and separately authorized for dispatch. The
-[live Phase 08 status](status/phase_08_status.md) is authoritative for progress.
-The detailed history below remains useful, but its earlier active-subphase
-language is superseded by the closeout documents and then by this explicit
-goal continuation.
+the runtime fill exit radius. The separately approved
+[v8.12 interior-anchor Plan](plans/phase_08_8_v8_12_plan.md) then qualified a
+legacy-default-off odometry-history fallback. Its visible probe passed
+`14/14`; its first broad-matrix case completed local recovery, strict raw-cost
+ranking, and global proximity but failed one frozen direct-exit alignment
+predicate (`13/14`). The serial matrix stopped before its other three cases.
+V8.12 is terminally closed with no retry or v8.13. Read the
+[v8.12 terminal matrix report](validation/phase_08_8_m8_9_v8_12_broad_matrix.md),
+the amended [Phase 08.8 final report](validation/phase_08_8_final_report.md),
+the amended [Phase 08.8 handoff](handoffs/phase_08_8_handoff.md), and the
+[live Phase 08 status](status/phase_08_status.md) before separately planning
+Phase 09. The detailed history below remains useful, but all earlier
+active-subphase language is superseded by this terminal closeout.
 
 Historical disposition: v1 and v2 are closed failed experiment versions. V1
 retains its incomplete large-matrix evidence. V2 retains ten activation

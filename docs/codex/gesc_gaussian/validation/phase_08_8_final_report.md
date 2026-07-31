@@ -18,7 +18,12 @@ through Phase 08.7. This additive report covers the separately approved
 Phase 08.8 counted-source iteration, including every versioned correction,
 fixed empirical result, and the terminal v8.10 evidence.
 
-## Terminal disposition
+The v8.10 disposition below is preserved as its historical closeout snapshot.
+The current overall Phase 08.8 disposition is the
+[v8.11/v8.12 terminal amendment](#goal-continuation-terminal-amendment--v811-and-v812)
+at the end of this report.
+
+## V8.10 terminal snapshot
 
 **PHASE 08.8 IS CLOSED AS A FIXED-LAYOUT DEVELOPMENT AND REPRODUCIBILITY
 ITERATION. THE PRIMARY TWO-SOURCE LAYOUT PASSED ITS COMPLETE FORMAL GATE;
@@ -538,3 +543,307 @@ broad simulation-ready tag:                   NO-GO
 automatic physical coordinate stop:           PROHIBITED
 physical motion from this report alone:       NOT AUTHORIZED
 ```
+
+## Goal-continuation terminal amendment — v8.11 and v8.12
+
+Verified: 2026-07-31
+
+**PHASE 08.8 IS NOW TERMINALLY CLOSED AFTER V8.12. V8.11 QUALIFIED THE
+SECONDARY FIXED LAYOUT AT `1/1 + 5/5`; V8.12 PASSED ITS VISIBLE CORRECTIVE
+PROBE, THEN CLOSED WHEN THE FIRST BROAD-MATRIX CASE COMPLETED THE SCIENTIFIC
+LOCAL-TO-GLOBAL BEHAVIOR BUT FAILED ONE FROZEN FORMAL EXIT-ALIGNMENT
+PREDICATE. NO RETRY, REMAINING MATRIX CASE, V8.13, OR PHYSICAL RUN IS
+AUTHORIZED.**
+
+This amendment supersedes the overall Phase 08.8 disposition in the v8.10
+snapshot without altering any v8.10 result. Every fixed failure, bag, plot,
+scenario, world, V6 selection, and historical denominator remains unchanged.
+
+### Current empirical boundary
+
+The results must remain separated by fixed experiment version and layout:
+
+| Evidence population | Formal result | Scientific behavior | Disposition |
+|---|---:|---:|---|
+| v8.10 primary fixed `1:4` | `11/11` | `11/11` | qualified repeatable simulation demo |
+| v8.10 secondary fixed `1:4` | `0/1` | `1/1` | historical evaluator-geometry failure |
+| v8.11 secondary fixed `1:4` | `6/6` | `6/6` | qualified second fixed-layout demo |
+| v8.11 matrix seed `19931`, `1:3` | `0/1` | `0/1` | immediate pre-escape anchor failure; v8.11 closed |
+| v8.12 visible seed `20001`, `1:3` | `1/1` | `1/1` | corrective interior-anchor pass |
+| v8.12 matrix seed `20031`, `1:3` | `0/1` | `1/1` | formal alignment failure after complete behavior; v8.12 closed |
+| v8.12 matrix seeds `20032..20034` | not run | not run | withheld after first failure |
+
+These rows are not one pooled acceptance denominator: implementation and
+evidence contracts changed between v8.10, v8.11, and v8.12. The defensible
+repeatability claims are the exact v8.10 primary `11/11` population and the
+exact v8.11 secondary `6/6` population.
+
+### V8.11 outcome
+
+Schema v14 replaced the old individual-lamp distance gate with a predeclared,
+evaluator-only aggregate-field topology record. That correction never enters
+the launch command or controller graph. It allowed the already-observed
+shifted aggregate basin to be credited without exposing a source position,
+role, intensity, or global coordinate to control.
+
+The v8.11 secondary visible seed `19901` and headless seeds `19911..19915`
+passed every formal predicate:
+
+```text
+visible / repeats:                    1/1 + 5/5 PASS
+formal predicates:                   84/84 PASS
+exact one-fill local recoveries:      6/6
+strict candidate-two rankings:       6/6
+post-recovery global proximity:       6/6
+recording/final-zero/cleanup:          6/6
+one-time analyses / plots:             6 / 54
+escape branches:                       5 direct / 1 assisted
+final global distance range:          0.124299..0.185811 m
+```
+
+This establishes the requested second fixed two-source layout at the retained
+simulator-relative `400/1600` (`1:4`) condition. It also demonstrates both
+accepted local-recovery ownership branches.
+
+Reports:
+
+- [v8.11 secondary visible](phase_08_8_m8_3_v8_11_secondary_visible_probe.md)
+- [v8.11 secondary repeats](phase_08_8_m8_3_v8_11_secondary_repeats.md)
+
+The subsequent first broad-matrix seed `19931` created one valid fill but had
+no approach-history pose outside the runtime fill exit radius. It immediately
+entered `FAILSAFE` before a valid escape interval. The serial suite stopped;
+seeds `19932..19934` were not run. V8.11 remained failed for the varied matrix.
+
+Report:
+
+- [v8.11 broad-matrix failure](phase_08_8_m8_4_v8_11_broad_matrix.md)
+
+### V8.12 correction and visible result
+
+V8.12 added an opt-in, historical-default-off supervisor fallback:
+
+```text
+open_field_escape_interior_anchor_fallback_enabled:       false
+open_field_escape_interior_anchor_min_displacement_m:     0.50
+```
+
+If no pre-fill pose lies outside the frozen exit radius, enabled counted-source
+open-field runs may select the farthest finite odometry-history pose when its
+displacement is at least `0.50 m`. The original outside-radius anchor retains
+priority. Empty, nonfinite, unordered, degenerate, and below-minimum histories
+still fail safe. The controller uses only its existing odometry history, fill
+center, and fill radius; it receives no evaluator geometry or global data.
+
+No-Gazebo qualification passed `1012` functional tests with `3` unchanged
+skips, exact retained-bag replay, all `97/97` historical scenarios, V6/world
+hashes, a fresh isolated three-package install, installed graph construction,
+source/install parity, and both scenario dry-runs.
+
+The fresh visible seed `20001` then passed `14/14` predicates. It selected the
+`interior_farthest` anchor at `1.330955 m`, completed assisted recovery,
+strictly ranked candidate two by `0.648504`, and stopped `0.116707 m` from the
+global. Its exact run was analyzed once and retains all nine plots.
+
+Reports:
+
+- [v8.12 no-Gazebo qualification](phase_08_8_m8_7_v8_12_no_gazebo_qualification.md)
+- [v8.12 visible pass](phase_08_8_m8_8_v8_12_visible_probe.md)
+
+### V8.12 terminal matrix result
+
+The fixed v8.12 matrix was dispatched once, serially, with stop-on-first-fail
+and no retry. Only seed `20031` ran. It passed `13/14` predicates and completed:
+
+```text
+first candidate characterized
+-> exactly one typed fill created
+-> interior_farthest anchor selected at 1.318198 m
+-> direct local recovery completed
+-> ordinary SEARCH restored
+-> candidate two strictly ranked by 2.518884
+-> GOAL_HOLD
+-> first valid post-recovery proximity sample at 0.127754 m
+```
+
+Stage A, Stage B, fill cardinality, ranked goal, ground-truth goal, state/event
+path, forbidden-state/event absence, recording, final zero, readiness false,
+SQLite integrity, and cleanup all passed. The only formal failure was:
+
+```text
+escape_command_ownership:
+  direct measured fill-to-exit alignment is below 0.80
+```
+
+The direct route cleared the `1.366771 m` exit radius and reached
+`1.425083 m` maximum radial distance. Its measured returned-`SEARCH` exit was
+`1.439288 m` from the fill center, but GESC curved to an alignment of
+`0.735563`, or `42.6452 degrees`, against the initially selected direction.
+The fixed gate requires at least `0.80`, or at most `36.8699 degrees`.
+
+This is a formal evidence-contract failure alongside a completed scientific
+behavior. Direct GESC recovery is not a straight-line supervisor command; its
+raw, Gaussian, and affine terms may produce a curved but outward, radius-clearing
+exit. The retained evidence therefore shows that the algorithm escaped and
+converged while the prescriptive alignment gate rejected that trajectory.
+V8.12 remains formally failed because changing the gate after dispatch would
+invalidate the frozen experiment.
+
+The exact run was analyzed once and retains all nine plots. Analyzer status is
+`partial` solely because an optional generic state-duration metric observed one
+sampling gap over `0.150 s`; critical and scientific metrics, stored and fresh
+Phase 05 validation, and all plots are complete with no analysis failures.
+
+Report:
+
+- [v8.12 broad-matrix result](phase_08_8_m8_9_v8_12_broad_matrix.md)
+
+### What is qualified now
+
+Two exact obstacle-free, local-first, two-source layouts are repeatable at the
+simulator-relative `400/1600` (`1:4`) ratio:
+
+```text
+primary layout:
+  start (0.0, 0.0)
+  local (1.0606601718, 1.0606601718)
+  global (3.5, 3.5)
+  formal repeatability 11/11
+
+secondary layout:
+  start (0.0, 0.0)
+  local (0.5740251485, 1.3858192988)
+  global (3.5, 3.5)
+  formal repeatability 6/6 under schema-v14 topology evidence
+```
+
+For those exact fixed demonstrations, the selected controller treats the first
+extremum as unknown, characterizes raw rotational cost, creates one adaptive
+Gaussian fill, escapes it through a direct or assisted branch, resumes ordinary
+GESC, rejects the filled basin as a terminal candidate, ranks the second basin
+strictly lower, and converges near it.
+
+V8.12 additionally shows two fresh scientific local-to-global completions at
+the same `1:3` geometry, one formal pass and one formal alignment failure. That
+is useful development evidence, not a repeatability population.
+
+### What remains unproven
+
+- the planned four-case varied-layout/intensity matrix;
+- the `1:5` cases and alternate local placements in v8.12;
+- arbitrary or continuous light positions and intensity ratios;
+- three-light Gazebo behavior, despite known-count-three unit coverage;
+- unknown source count;
+- global-first encounter and return to a remembered best candidate;
+- noise, latency, saturation, wheel slip, uneven flooring, or physical-light
+  transfer;
+- walls, obstacles, or autonomous collision avoidance;
+- field-wide simulation readiness or a physical-readiness tag.
+
+The broad matrix gate is not met. No simulation-ready tag is created.
+
+### Plots and direct inspection
+
+The v8.12 visible and matrix runs each retain the standard nine plots under
+their exact `analysis/phase07/plots/` directories. The terminal matrix run is:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_12_broad_matrix/
+  2026-07-31/
+  20260731T233137972843Z_simulation_phase08_v8_12_broad_matrix-
+  v8_12_matrix_r1p25_a45_ratio1to3_20031-robust_gaussia_6efe976a/
+  analysis/phase07/plots/
+```
+
+Its trajectory, radial-escape, state-event, candidate-ranking, and cost plots
+were visually inspected. They show origin-to-local motion, one fill, a direct
+outward exit, curved transit, strict candidate separation, and a final orbit
+near the global.
+
+### Physical and phase boundary
+
+The simulation `0.50 m` global-proximity stop is evaluator-only and is never
+passed to the controller. It must not enter the physical launch path. During a
+future physical run, the robot continues until the operator decides it is
+sufficiently close and presses `Ctrl+C`, while shutdown still enforces:
+
+```text
+readiness false -> stop -> final zero -> recording finalization -> cleanup
+```
+
+Phase 08.8 authorized no physical motion, and none occurred.
+
+V8.12 is the final Phase 08.8 experiment version. There is no v8.13 under this
+goal. The next permitted work is a separately planned and authorized Phase 09
+boundary, beginning with static physical-interface, sensor calibration,
+operator-stop, recording, and launch-parity qualification before any physical
+motion.
+
+### Current final go/no-go
+
+```text
+v8.10 primary fixed-layout simulation demo:    GO / 11/11
+v8.11 secondary fixed-layout simulation demo:  GO / 6/6
+counted raw-cost ranking in those layouts:      GO
+v8.12 interior-anchor implementation:           QUALIFIED, default off
+v8.12 visible corrective run:                   GO / 1/1
+v8.12 varied-layout/intensity matrix:           NO-GO / first case formal fail
+remaining v8.12 cases:                          NOT RUN
+v8.13:                                          NOT PLANNED OR AUTHORIZED
+three-light Gazebo claim:                       NO-GO / NOT RUN
+broad simulation-ready tag:                     NO-GO
+automatic physical coordinate stop:             PROHIBITED
+physical motion from Phase 08.8:                 NOT AUTHORIZED
+Phase 09 planning:                              NEXT SEPARATE BOUNDARY
+```
+
+### M8.10 terminal closeout qualification
+
+The terminal closeout performed no new Gazebo, ROS graph, analyzer, or physical
+execution. Source and scenario code remained at committed dispatch HEAD
+`dd2185d`; the only pending paths were this report, the handoff, live status,
+navigation, and the new v8.12 result report. The complete v8.12 no-Gazebo
+implementation qualification therefore remains applicable and was not
+expensively rerun merely to close documentation.
+
+Fresh closeout checks passed:
+
+```text
+required Phase 00 audit documents:             PASS
+Phase 08 implement context:                    PASS
+changed paths outside Phase 08.8 docs:         0
+relative Markdown links:                       38/38
+git diff --check:                              PASS
+
+v8.10 retained results / plots:                12 / 108
+v8.11 retained results / plots:                 7 / 63
+v8.12 retained results / plots:                 2 / 18
+v8.12 matrix summary run entries:               1
+v8.12 matrix seed 20031 entries:                1
+v8.12 matrix seed 20032-20034 entries:           0
+terminal bag SQLite PRAGMA quick_check:         ok
+terminal analysis failures / plots:             0 / 9
+
+gazebo_empty.world hash:                       unchanged
+gesc_gaussian_validation.world hash:           unchanged
+corner-origin validation world hash:           unchanged
+Phase 08 V6 selection hash:                    unchanged
+active simulation, analysis, or physical:      none
+```
+
+Retained anchor hashes are still:
+
+```text
+gazebo_empty.world:
+  3085542f9dc1d13fdf9368a24808a226908d1a2c5a7a4ffd07bc6f374ca14b43
+gesc_gaussian_validation.world:
+  8ecc1a231efec24401d74fef3cd5139d48c6029f88e71d044cefdf2fd14c5bef
+gesc_gaussian_corner_origin_validation.world:
+  88b10b39aa24a6430f6f031c750334ed34e6835e54c84de8d36f4cc6a26444bf
+phase_08_v6_selection.json:
+  dcdbf937fe3de0cab9449c2b01af79fd938e1d3f9791b4897937875d0747590d
+```
+
+Every dispatched result and undispatched definition is accounted for. V8.12
+is closed without a retry, v8.13 is absent, and Phase 08.8 has no remaining
+authorized work.
