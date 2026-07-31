@@ -13,8 +13,8 @@ from ros_esc.scenario_runner import aggregate_field_truth
 import yaml
 
 
-SCHEMA_VERSION = 8
-SUPPORTED_SCHEMA_VERSIONS = {1, 2, 3, 4, 5, 6, 7, 8}
+SCHEMA_VERSION = 9
+SUPPORTED_SCHEMA_VERSIONS = {1, 2, 3, 4, 5, 6, 7, 8, 9}
 PROFILES = {'legacy', 'robust_gaussian_v1'}
 STATUSES = {'executable_unverified', 'unsupported'}
 FAMILIES = {
@@ -155,6 +155,7 @@ LAUNCH_OVERRIDES = {
     'minimum_radial_progress_m',
     'open_field_escape_assist_enabled',
     'open_field_escape_approach_continuity_enabled',
+    'open_field_escape_active_fill_transit_enabled',
     'modified_cost_affine_decay_rate',
     'modified_cost_affine_direction_sign',
     'modified_cost_affine_gain',
@@ -419,6 +420,9 @@ SCHEMA_V8_LAUNCH_OVERRIDES = {
     'open_field_escape_approach_continuity_enabled',
     'operating_bounds_enabled',
 }
+SCHEMA_V9_LAUNCH_OVERRIDES = {
+    'open_field_escape_active_fill_transit_enabled',
+}
 DIRECT_STAGED_RECOVERY_STATE_PATH = (
     'SEARCH',
     'VERIFY_EXTREMUM',
@@ -629,6 +633,15 @@ def _validate_correction_overrides(overrides, ablations, location):
             approach_continuity_enabled,
             f'{location}.open_field_escape_approach_continuity_enabled',
         )
+    active_fill_transit_enabled = overrides.get(
+        'open_field_escape_active_fill_transit_enabled',
+        False,
+    )
+    if 'open_field_escape_active_fill_transit_enabled' in overrides:
+        active_fill_transit_enabled = _boolean(
+            active_fill_transit_enabled,
+            f'{location}.open_field_escape_active_fill_transit_enabled',
+        )
     candidate_informed_fill_enabled = overrides.get(
         'candidate_informed_fill_enabled',
         False,
@@ -687,6 +700,11 @@ def _validate_correction_overrides(overrides, ablations, location):
                 f'{location} open-field escape approach continuity omits: '
                 + ', '.join(missing)
             )
+    if active_fill_transit_enabled and not approach_continuity_enabled:
+        raise ValueError(
+            f'{location} open-field escape active-fill transit requires '
+            'approach continuity'
+        )
     if classification_mode == 'counted_candidates':
         required = {
             'candidate_cost_mad_scale',
@@ -1908,6 +1926,30 @@ def load_suite(path):
     if schema_version < 8 and uses_schema_v8_fields:
         raise ValueError(
             'schema version 8 is required for counted open-field fields'
+        )
+    uses_schema_v9_fields = bool(
+        isinstance(raw_frozen_overrides, dict)
+        and SCHEMA_V9_LAUNCH_OVERRIDES & set(raw_frozen_overrides)
+    )
+    if isinstance(raw_cases, list):
+        for case in raw_cases:
+            if not isinstance(case, dict):
+                continue
+            raw_algorithm = case.get('algorithm', {})
+            raw_overrides = (
+                raw_algorithm.get('launch_overrides', {})
+                if isinstance(raw_algorithm, dict)
+                else {}
+            )
+            uses_schema_v9_fields = uses_schema_v9_fields or (
+                isinstance(raw_overrides, dict)
+                and bool(SCHEMA_V9_LAUNCH_OVERRIDES & set(raw_overrides))
+            )
+            if uses_schema_v9_fields:
+                break
+    if schema_version < 9 and uses_schema_v9_fields:
+        raise ValueError(
+            'schema version 9 is required for active-fill transit'
         )
     suite_id = _identifier(document.get('suite_id'), 'suite_id')
     if document.get('mode') != 'simulation':

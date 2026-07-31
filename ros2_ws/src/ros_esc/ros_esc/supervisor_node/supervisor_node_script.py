@@ -34,6 +34,7 @@ from ros_esc.supervisor_node.escape_recenter import (
     evaluate_direction,
     evaluate_direction_safety,
     FillAvoidance,
+    latch_direct_escape_direction,
     OperatingBounds,
     Pose2D,
     PostRecoveryProgressConfig,
@@ -158,6 +159,11 @@ class SupervisorNode(Node):
                 open_field_escape_approach_continuity_enabled=bool(
                     self.get_parameter(
                         "open_field_escape_approach_continuity_enabled"
+                    ).value
+                ),
+                open_field_escape_active_fill_transit_enabled=bool(
+                    self.get_parameter(
+                        "open_field_escape_active_fill_transit_enabled"
                     ).value
                 ),
                 recenter_after_escape=bool(
@@ -632,6 +638,7 @@ class SupervisorNode(Node):
             "escape_max_sec": 20.0,
             "open_field_escape_assist_enabled": False,
             "open_field_escape_approach_continuity_enabled": False,
+            "open_field_escape_active_fill_transit_enabled": False,
             "escape_exit_hold_sec": 1.0,
             "stall_window_sec": 3.0,
             "minimum_radial_progress_m": 0.05,
@@ -1094,6 +1101,12 @@ class SupervisorNode(Node):
             self.escape_tracker.update(self.latest_pose)
             self.escape_pose_sequence = self.latest_pose_sequence
 
+        if (
+            self.machine.state == State.ESCAPE_REPULSE
+            and self.machine.config
+            .open_field_escape_active_fill_transit_enabled
+        ):
+            return self._ensure_open_field_escape_direction()
         if self.machine.state == State.ESCAPE_ASSIST:
             if self.machine.config.open_field_escape_assist_enabled:
                 return self._update_open_field_escape_assist(now_sec)
@@ -1354,6 +1367,29 @@ class SupervisorNode(Node):
                         float(self.safe_direction_revision),
                     ]
                 )
+                if (
+                    self.machine.config
+                    .open_field_escape_active_fill_transit_enabled
+                ):
+                    value_names.extend(
+                        [
+                            "active_fill_transit_enabled",
+                            "active_fill_transit_excluded_fill_id",
+                            "active_fill_transit_other_fill_count",
+                        ]
+                    )
+                    values.extend(
+                        [
+                            1.0,
+                            float(geometry.initial_fill_id),
+                            float(
+                                len(
+                                    self
+                                    ._open_field_direction_avoidances()
+                                )
+                            ),
+                        ]
+                    )
             self._publish_event(
                 AlgorithmEvent.EVENT_ESCAPE_STARTED,
                 now_sec,
@@ -1584,6 +1620,23 @@ class SupervisorNode(Node):
             )
         return tuple(avoidances)
 
+    def _open_field_direction_avoidances(self):
+        """Exclude only the active mathematical fill for v8.5 transit."""
+        fills = self._active_fill_avoidances()
+        if not (
+            self.machine.config
+            .open_field_escape_active_fill_transit_enabled
+        ):
+            return fills
+        active_fill_id = self.machine.active_escape_fill_id
+        if active_fill_id is None:
+            return fills
+        return tuple(
+            fill
+            for fill in fills
+            if fill.fill_id != int(active_fill_id)
+        )
+
     def _ensure_safe_direction(self, recenter):
         if self.latest_pose is None or not self.latest_pose_valid:
             return "safe-direction selection requires a valid pose"
@@ -1697,6 +1750,49 @@ class SupervisorNode(Node):
         if float(np.linalg.norm(preferred)) <= 1e-12:
             return "open-field escape direction is undefined at fill center"
         fills = self._active_fill_avoidances()
+        if (
+            self.machine.config
+            .open_field_escape_active_fill_transit_enabled
+        ):
+            other_fills = self._open_field_direction_avoidances()
+            if (
+                self.machine.active_escape_fill_id is None
+                or len(fills) - len(other_fills) != 1
+            ):
+                return (
+                    "active-fill transit requires exactly one matching "
+                    "active escape fill"
+                )
+            selected = latch_direct_escape_direction(
+                position,
+                preferred,
+                other_fills,
+                self.direction_config,
+            )
+            if selected is None:
+                return (
+                    "latched open-field escape corridor intersects a "
+                    "retained fill"
+                )
+            if self.safe_direction is None:
+                self.safe_direction = selected
+                self.safe_direction_revision += 1
+                return None
+            if not np.allclose(
+                self.safe_direction.direction,
+                preferred,
+                rtol=0.0,
+                atol=1e-12,
+            ):
+                return "latched open-field escape direction changed"
+            self.safe_direction = DirectionSelection(
+                self.safe_direction.x,
+                self.safe_direction.y,
+                selected.clearance_m,
+                self.safe_direction.rotation_rad,
+                self.safe_direction.candidate_index,
+            )
+            return None
         if self.safe_direction is not None:
             safe, clearance = evaluate_direction(
                 position,
@@ -1768,7 +1864,7 @@ class SupervisorNode(Node):
             self.latest_pose.yaw,
             linear,
             self.supervisor_command_stale_sec,
-            self._active_fill_avoidances(),
+            self._open_field_direction_avoidances(),
             None,
         ):
             linear = 0.0
@@ -3047,6 +3143,14 @@ class SupervisorNode(Node):
         ):
             names.append(
                 "open_field_escape_approach_continuity_enabled"
+            )
+            values.append(1.0)
+        if (
+            self.machine.config
+            .open_field_escape_active_fill_transit_enabled
+        ):
+            names.append(
+                "open_field_escape_active_fill_transit_enabled"
             )
             values.append(1.0)
         self._publish_event(

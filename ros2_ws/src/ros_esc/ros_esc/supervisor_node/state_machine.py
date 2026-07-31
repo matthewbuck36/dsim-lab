@@ -62,6 +62,7 @@ class StateMachineConfig:
     escape_max_sec: float = 20.0
     open_field_escape_assist_enabled: bool = False
     open_field_escape_approach_continuity_enabled: bool = False
+    open_field_escape_active_fill_transit_enabled: bool = False
     recenter_after_escape: bool = True
     recenter_max_sec: float = 30.0
     max_fill_clusters: int = 0
@@ -187,6 +188,14 @@ class StateMachineConfig:
                 "open_field_escape_approach_continuity_enabled must be "
                 "boolean"
             )
+        if not isinstance(
+            self.open_field_escape_active_fill_transit_enabled,
+            bool,
+        ):
+            raise ValueError(
+                "open_field_escape_active_fill_transit_enabled must be "
+                "boolean"
+            )
         if self.open_field_escape_assist_enabled and (
             self.recenter_after_escape
             or self.post_recovery_guidance_enabled
@@ -207,6 +216,14 @@ class StateMachineConfig:
                     "open-field escape approach continuity requires "
                     "candidate-informed fill"
                 )
+        if (
+            self.open_field_escape_active_fill_transit_enabled
+            and not self.open_field_escape_approach_continuity_enabled
+        ):
+            raise ValueError(
+                "open-field escape active-fill transit requires "
+                "approach continuity"
+            )
         if (
             isinstance(self.post_recovery_retry_limit, bool)
             or not isinstance(self.post_recovery_retry_limit, int)

@@ -242,6 +242,26 @@ V8_4_SECONDARY_REPEATS = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v8_4_secondary_repeats.yaml'
 )
+V8_5_PRIMARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_5_primary_visible_probe.yaml'
+)
+V8_5_PRIMARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_5_primary_repeats.yaml'
+)
+V8_5_SECONDARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_5_secondary_visible_probe.yaml'
+)
+V8_5_SECONDARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_5_secondary_repeats.yaml'
+)
 HISTORICAL_V2_ACTIVATION = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml'
@@ -673,7 +693,7 @@ def test_checked_in_suites_validate_and_catalog_marks_gaps():
 @pytest.mark.parametrize(
     ('mutation', 'match'),
     [
-        (lambda doc: doc.update({'schema_version': 9}), 'schema_version'),
+        (lambda doc: doc.update({'schema_version': 10}), 'schema_version'),
         (
             lambda doc: doc.update({'mode': 'physical'}),
             'mode must be simulation',
@@ -1553,6 +1573,154 @@ def test_schema_v8_resolves_four_approach_continuity_suites():
             }
             assert run['validation']['world'] is False
             assert run['validation']['contacts_enabled'] is False
+
+
+def test_schema_v9_resolves_four_active_fill_transit_suites():
+    expected = {
+        V8_5_PRIMARY_VISIBLE_PROBE: (1, True, {19301}),
+        V8_5_PRIMARY_REPEATS: (10, False, set(range(19311, 19321))),
+        V8_5_SECONDARY_VISIBLE_PROBE: (1, True, {19351}),
+        V8_5_SECONDARY_REPEATS: (5, False, set(range(19361, 19366))),
+    }
+    for path, (run_count, gui, seeds) in expected.items():
+        suite = load_suite(path)
+        runs, unsupported = expand_suite(suite)
+
+        assert unsupported == []
+        assert len(runs) == run_count
+        assert suite['schema_version'] == 9
+        assert suite['execution']['gazebo_gui'] is gui
+        assert {run['seed'] for run in runs} == seeds
+        for run in runs:
+            overrides = run['algorithm']['launch_overrides']
+            assert run['schema_version'] == 9
+            assert run['case_id'].startswith('v8_5_')
+            assert (
+                run['success']['controller']['contract_id']
+                == run['case_id']
+            )
+            assert (
+                overrides[
+                    'open_field_escape_active_fill_transit_enabled'
+                ]
+                is True
+            )
+            assert (
+                overrides[
+                    'open_field_escape_approach_continuity_enabled'
+                ]
+                is True
+            )
+            assert overrides['open_field_escape_assist_enabled'] is True
+            assert overrides['candidate_informed_fill_enabled'] is True
+            assert overrides['operating_bounds_enabled'] is False
+            assert overrides['recoverable_navigation_enabled'] is False
+            assert overrides['post_recovery_guidance_enabled'] is False
+            assert overrides['modified_cost_affine_gain'] == 0.50
+            assert (
+                overrides['modified_cost_affine_decay_rate']
+                == 0.0000005
+            )
+            assert overrides['modified_cost_affine_max_age'] == 35.0
+            assert overrides['modified_cost_affine_direction_sign'] == 1.0
+            assert run['algorithm']['ablations'] == {
+                'gaussian_fill_enabled': True,
+                'affine_assist_enabled': True,
+                'recenter_enabled': False,
+            }
+            assert run['validation']['world'] is False
+            assert run['validation']['contacts_enabled'] is False
+
+
+@pytest.mark.parametrize(
+    ('v8_4_path', 'v8_5_path'),
+    [
+        (V8_4_PRIMARY_VISIBLE_PROBE, V8_5_PRIMARY_VISIBLE_PROBE),
+        (V8_4_PRIMARY_REPEATS, V8_5_PRIMARY_REPEATS),
+        (
+            V8_4_SECONDARY_VISIBLE_PROBE,
+            V8_5_SECONDARY_VISIBLE_PROBE,
+        ),
+        (V8_4_SECONDARY_REPEATS, V8_5_SECONDARY_REPEATS),
+    ],
+)
+def test_v8_5_inputs_only_add_active_fill_transit_and_fresh_identity(
+    v8_4_path,
+    v8_5_path,
+):
+    old = yaml.safe_load(v8_4_path.read_text(encoding='utf-8'))
+    new = yaml.safe_load(v8_5_path.read_text(encoding='utf-8'))
+
+    assert old['schema_version'] == 8
+    assert new['schema_version'] == 9
+    assert old['description'] == new['description']
+    assert old['level_map'] == new['level_map']
+    assert old['defaults'] == new['defaults']
+
+    old_execution = deepcopy(old['execution'])
+    new_execution = deepcopy(new['execution'])
+    old_execution.pop('runs_root')
+    new_execution.pop('runs_root')
+    assert old_execution == new_execution
+
+    old_overrides = deepcopy(
+        old['frozen_profile']['launch_overrides']
+    )
+    new_overrides = deepcopy(
+        new['frozen_profile']['launch_overrides']
+    )
+    assert new_overrides.pop(
+        'open_field_escape_active_fill_transit_enabled'
+    ) is True
+    assert old_overrides == new_overrides
+
+    old_case = deepcopy(old['cases'][0])
+    new_case = deepcopy(new['cases'][0])
+    old_case['case_id'] = 'normalized'
+    new_case['case_id'] = 'normalized'
+    old_case['seeds'] = ['normalized']
+    new_case['seeds'] = ['normalized']
+    old_case['success']['controller']['contract_id'] = 'normalized'
+    new_case['success']['controller']['contract_id'] = 'normalized'
+    assert old_case == new_case
+
+
+@pytest.mark.parametrize(
+    ('mutation', 'match'),
+    [
+        (
+            lambda document, overrides: document.update(
+                {'schema_version': 8}
+            ),
+            'schema version 9',
+        ),
+        (
+            lambda document, overrides: overrides.update(
+                {'open_field_escape_active_fill_transit_enabled': 1}
+            ),
+            'must be true or false',
+        ),
+        (
+            lambda document, overrides: overrides.update(
+                {'open_field_escape_approach_continuity_enabled': False}
+            ),
+            'active-fill transit requires approach continuity',
+        ),
+    ],
+)
+def test_schema_v9_rejects_invalid_active_fill_transit_contract(
+    tmp_path,
+    mutation,
+    match,
+):
+    document = yaml.safe_load(
+        V8_5_PRIMARY_VISIBLE_PROBE.read_text(encoding='utf-8')
+    )
+    overrides = document['frozen_profile']['launch_overrides']
+    mutation(document, overrides)
+
+    with pytest.raises(ValueError, match=match):
+        _load(tmp_path, document)
 
 
 @pytest.mark.parametrize(

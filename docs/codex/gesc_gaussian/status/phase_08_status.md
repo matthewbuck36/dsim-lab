@@ -1,6 +1,6 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-30T17:25:00-07:00`
+Last verified: `2026-07-31T03:07:12-07:00`
 Status: `PHASE 08 CLOSED AND COMMITTED; BROAD SIMULATION-READY OBJECTIVE FAILED; PHASE 09 PLAN REQUIRES SEPARATE REQUEST`
 
 ## Objective
@@ -13081,3 +13081,143 @@ PLAN COMMIT PENDING / IMPLEMENTATION NOT STARTED / GAZEBO PROHIBITED.**
 Commit this exact Plan boundary and verify a clean tree. Then implement the
 default-off correction and fresh v8.5 inputs, followed by every declared
 no-Gazebo qualification gate.
+
+## Phase 08.8 M4.5 v8.5 implementation qualification — 2026-07-31
+
+The v8.5 default-off active-fill corridor lock and four fresh schema-v9
+inputs are implemented. No Gazebo, scenario execution, recorder, analyzer,
+or physical process ran.
+
+Enabled v8.5 freezes the existing direct approach-history vector at revision
+one. The active Gaussian stays in modified cost and the typed registry but is
+excluded from direction and command-sweep hard avoidance only for its own
+escape. Every other retained fill remains a hard constraint. Repulse and
+assist revalidate the exact vector on every update and fail rather than
+reselect or reverse it. Measured completion, `SEARCH`, reset, terminal,
+explicit stop, and failsafe paths clear the authority.
+
+All eight retained primary geometries reproduce their default-off v8.4
+direction and produce the exact direct vector under v8.5. The seed `19212`
+fill-acceptance and former reversal geometries retain
+`(0.4015882066, 0.9158203494)` at direction revision one. A second
+intersecting fill fails explicitly. The active fill remains visible to the
+registry and modified-cost owner.
+
+Fresh fixed inputs and hashes:
+
+```text
+f8b7be764bb7d7024753cf64b8633944ff70055e9a4a88a97ab8e462b8a5ac6c
+  phase08_v8_5_primary_repeats.yaml
+39f807c055d5ea0217b6f3510ac34bb1a068316da4cc18841911f428371dae28
+  phase08_v8_5_primary_visible_probe.yaml
+141916047195f351ff78c524c02fafe6f3af81840a97b55d38148b69f26a8145
+  phase08_v8_5_secondary_repeats.yaml
+0749ba218bd79212f93946f8e55601e95727e195e8ef8fecd5d192e81a88ee70
+  phase08_v8_5_secondary_visible_probe.yaml
+```
+
+Exact qualification:
+
+```text
+focused controller:
+  301 passed in 8.71 s
+  /tmp/phase08_8_m4_5_focused_controller_final.xml
+  f2a4f6f25fe2359103f3bb5c963845ed3a3fce3f858e57c0cc8bed3ef84de4ad
+focused evidence:
+  541 passed, 2 skipped in 130.82 s
+  /tmp/phase08_8_m4_5_focused_evidence_final.xml
+  59d35ddcd54ff0dd56c29d72cdd4551ed154ff02a2b2019b7f959de6ceb7a23b
+broad ROS-independent:
+  842 passed, 2 skipped in 136.58 s
+  /tmp/phase08_8_m4_5_broad_functional_final.xml
+  92b429f0fb3aa453271c0d280289940106fde1f27bd71aac99b4d75c9539fee4
+```
+
+The two skips are the unchanged explicit Gazebo/recording opt-ins. Fatal
+changed-file lint, Python compilation, launch XML, four YAML parses, context
+validation, and `git diff --check` pass.
+
+The fresh isolated release build at
+`/tmp/phase08_8_m4_5_release_qual` finished all three packages in `12.7 s`.
+Source/install parity is `10/10`. Installed `--show-args` and
+`--print-description` expose and bind the switch. Default supervisor, fully
+enabled v8.5 supervisor, and robust modified-cost construction each reached
+the expected bounded timeout `124` without startup error.
+
+All four installed dry-runs resolve with no unsupported cases and do not
+create a run root:
+
+```text
+primary visible:    1 run,  seed 19301
+primary repeats:   10 runs, seeds 19311..19320
+secondary visible:  1 run,  seed 19351
+secondary repeats:  5 runs, seeds 19361..19365
+```
+
+The qualification caught and corrected two bounded pre-Gazebo issues. First,
+mechanical seed renumbering had also changed one digit in the secondary local
+source coordinate; both fresh secondary files now exactly retain v8.4
+`y_m=1.38581929876693`, and the four-pair freeze test plus broad suite pass.
+Second, per-tick exact-corridor revalidation was extended from assist to
+zero-command repulse. The superseded broad run remains recorded as
+`840 passed, 2 failed, 2 skipped`; no empirical attempt was affected.
+
+Complete record:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_5_no_gazebo_qualification.md
+```
+
+V6, v8-v8.4, all historical scenarios, worlds, failed evidence, bags, plots,
+and results remain unchanged and selectable. The four v8.5 evidence roots
+remain absent. No Gazebo or ROS runtime process remains.
+
+## Current milestone
+
+**PHASE 08.8 M4.5 — V8.5 IMPLEMENTED / COMPLETE NO-GAZEBO QUALIFICATION
+PASS / IMPLEMENTATION CHECKPOINT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Inspect the complete diff, checkpoint Phase 08, and commit the exact qualified
+implementation. Then save and commit a separate dispatch boundary for only
+the installed visible primary probe at seed `19301`. Do not dispatch repeats
+or any secondary case.
+
+## Phase 08.8 M4.5 v8.5 implementation checkpoint — 2026-07-31
+
+The complete qualified v8.5 implementation, four fresh inputs, tests, report,
+and live status received the required material Phase 08 checkpoint against
+Plan HEAD `f1dd5d6`.
+
+```text
+base HEAD:
+  f1dd5d6f75f118e359f5198b1f62cab374e85b48
+status sha256 before this checkpoint note:
+  2555a8a879e2fba5bbacb63c76abffa7da860d793f3f28768af1db4bd7101368
+qualification report sha256:
+  9600a4d181e456aece11ff9ab7de5f9d807a498972f4ef20103071c59f9b6f7c
+staged implementation diff sha256:
+  1800fc88e9fd203eae0f3c6d700f34a4114c4075e752cfe43412cd004fb0f5a9
+checkpoint sha256 before this checkpoint note:
+  ee7ca258142296956df63183632d40593ecb87733221048467b944e6f8c8513f
+unstaged and staged diff checks:
+  PASS
+```
+
+No Gazebo, scenario, recorder, analyzer, rosbag recorder, or physical process
+was active at checkpoint time. All v8.5 run roots remain absent.
+
+## Current milestone
+
+**PHASE 08.8 M4.5 — V8.5 IMPLEMENTED / NO-GAZEBO QUALIFICATION PASS /
+IMPLEMENTATION CHECKPOINT PASS / IMPLEMENTATION COMMIT PENDING / GAZEBO
+PROHIBITED.**
+
+## Next criterion
+
+Stage this checkpoint note and checkpoint file, commit the exact qualified
+implementation, and verify a clean tree. Then create a separate committed
+dispatch boundary authorizing only the installed visible primary seed
+`19301`.

@@ -914,6 +914,39 @@ def select_source_continuity_direction(
     return max(selections, key=score)
 
 
+def latch_direct_escape_direction(
+    position,
+    preferred,
+    other_fills: Sequence[FillAvoidance],
+    config=None,
+):
+    """Latch a direct open-field vector while excluding only its active fill.
+
+    ``other_fills`` must not contain the fill currently being escaped. The
+    active Gaussian remains a cost term; it is not a physical obstacle for
+    this direction check.
+    """
+
+    config = config or DirectionConfig()
+    preferred = _unit(preferred, "latched escape direction")
+    safe, clearance = evaluate_direction_safety(
+        position,
+        preferred,
+        other_fills,
+        config,
+        None,
+    )
+    if not safe:
+        return None
+    return DirectionSelection(
+        x=float(preferred[0]),
+        y=float(preferred[1]),
+        clearance_m=clearance,
+        rotation_rad=0.0,
+        candidate_index=0,
+    )
+
+
 def projected_direction_progress(anchor_position, current_position, direction):
     """Return finite signed displacement along a finite direction."""
 

@@ -541,6 +541,10 @@ def test_open_field_disables_bounds_without_weakening_explicit_stop():
             "open_field_escape_approach_continuity_enabled"
             not in node.event_publisher.messages[-1].value_names
         )
+        assert (
+            "open_field_escape_active_fill_transit_enabled"
+            not in node.event_publisher.messages[-1].value_names
+        )
         node.latest_pose = Pose2D(
             node._now_sec(),
             100.0,
@@ -756,6 +760,170 @@ def test_v8_4_approach_continuity_is_published_only_for_active_escape():
             2.0,
         )
         node._publish_state_and_command(2.0)
+        search = node.state_publisher.messages[-1]
+        assert node.escape_approach_continuity is None
+        assert node.safe_direction is None
+        assert search.safe_direction_valid is False
+        assert search.affine_weight == 0.0
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_v8_5_active_fill_transit_latches_direct_corridor_and_clears():
+    rclpy.init()
+    node = SupervisorNode(
+        parameter_overrides=[
+            Parameter("operating_bounds_enabled", value=False),
+            Parameter("recenter_after_escape", value=False),
+            Parameter("open_field_escape_assist_enabled", value=True),
+            Parameter(
+                "open_field_escape_approach_continuity_enabled",
+                value=True,
+            ),
+            Parameter(
+                "open_field_escape_active_fill_transit_enabled",
+                value=True,
+            ),
+            Parameter(
+                "extremum_classification_mode",
+                value="counted_candidates",
+            ),
+            Parameter("known_source_count", value=2),
+            Parameter("max_fill_clusters", value=1),
+            Parameter("candidate_informed_fill_enabled", value=True),
+        ]
+    )
+    node.state_publisher = Recorder()
+    node.command_publisher = Recorder()
+    node.event_publisher = Recorder()
+    try:
+        node._publish_configuration_event(1.0)
+        configuration = node.event_publisher.messages[-1]
+        configuration_evidence = dict(
+            zip(configuration.value_names, configuration.values)
+        )
+        assert (
+            configuration_evidence[
+                "open_field_escape_active_fill_transit_enabled"
+            ]
+            == 1.0
+        )
+
+        center = np.array([1.0694882817937204, 1.314024891709896])
+        anchor = Pose2D(
+            0.0,
+            0.5192862749000959,
+            0.05929134639020261,
+            0.0,
+        )
+        current = Pose2D(
+            1.0,
+            1.070101672495912,
+            1.3123173373351547,
+            0.0,
+        )
+        node.pose_history.extend([anchor, current])
+        node.latest_pose = current
+        node.latest_pose_valid = True
+        node.latest_pose_sequence = 2
+        node.active_fill_records = {
+            1: {
+                "fill_id": 1,
+                "revision": 1,
+                "center": center,
+                "support_radius": 1.518634254848744,
+                "exit_radius": 1.3667708293638696,
+            }
+        }
+        node.machine.state = State.ESCAPE_REPULSE
+        node.machine.active_escape_fill_id = 1
+        node.machine.escape_started_sec = 1.0
+        transition = Transition(
+            State.DESIGN_OR_MERGE_FILL,
+            State.ESCAPE_REPULSE,
+            "fill accepted; begin measured escape",
+        )
+
+        node._handle_transition(transition, 1.0)
+        expected = np.array([0.4015882065675672, 0.9158203493840072])
+        assert node.safe_direction.direction == pytest.approx(expected)
+        assert node.safe_direction_revision == 1
+        assert [
+            fill.fill_id for fill in node._active_fill_avoidances()
+        ] == [1]
+        assert node._open_field_direction_avoidances() == ()
+        assert node._prepare_geometry(1.5) is None
+        assert node.safe_direction.direction == pytest.approx(expected)
+        assert node.safe_direction_revision == 1
+
+        started = next(
+            event
+            for event in node.event_publisher.messages
+            if event.event_type == AlgorithmEvent.EVENT_ESCAPE_STARTED
+        )
+        evidence = dict(zip(started.value_names, started.values))
+        assert evidence["active_fill_transit_enabled"] == 1.0
+        assert evidence["active_fill_transit_excluded_fill_id"] == 1.0
+        assert evidence["active_fill_transit_other_fill_count"] == 0.0
+        assert evidence["approach_selected_direction_x"] == pytest.approx(
+            expected[0]
+        )
+        assert evidence["approach_selected_direction_y"] == pytest.approx(
+            expected[1]
+        )
+        assert not any(
+            "global" in name or "source" in name
+            for name in started.value_names
+        )
+
+        yaw = math.atan2(expected[1], expected[0])
+        after_reversal_geometry = Pose2D(
+            2.0,
+            -0.3808628950823218,
+            1.3271483177165915,
+            yaw,
+        )
+        node.latest_pose = after_reversal_geometry
+        node.latest_pose_sequence += 1
+        node.escape_tracker.update(after_reversal_geometry)
+        node.machine.state = State.ESCAPE_ASSIST
+        assert node._update_open_field_escape_assist(2.0) is None
+        assert node.safe_direction.direction == pytest.approx(expected)
+        assert node.safe_direction_revision == 1
+        assert node.current_supervisor_command.linear.x > 0.0
+
+        node.active_fill_records[2] = {
+            "fill_id": 2,
+            "revision": 1,
+            "center": (
+                after_reversal_geometry.position
+                + 0.25 * expected
+            ),
+            "support_radius": 0.10,
+            "exit_radius": 0.10,
+        }
+        assert {
+            fill.fill_id for fill in node._active_fill_avoidances()
+        } == {1, 2}
+        assert [
+            fill.fill_id
+            for fill in node._open_field_direction_avoidances()
+        ] == [2]
+        assert node._ensure_open_field_escape_direction() == (
+            "latched open-field escape corridor intersects a retained fill"
+        )
+
+        node.machine.state = State.SEARCH
+        node._handle_transition(
+            Transition(
+                State.ESCAPE_ASSIST,
+                State.SEARCH,
+                "measured escape completed",
+            ),
+            3.0,
+        )
+        node._publish_state_and_command(3.0)
         search = node.state_publisher.messages[-1]
         assert node.escape_approach_continuity is None
         assert node.safe_direction is None

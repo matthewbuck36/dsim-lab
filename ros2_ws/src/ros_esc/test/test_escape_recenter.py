@@ -24,6 +24,7 @@ from ros_esc.supervisor_node.escape_recenter import (
     command_sweep_is_safe,
     evaluate_direction,
     evaluate_direction_safety,
+    latch_direct_escape_direction,
     preferred_escape_direction,
     recent_approach,
     recenter_command,
@@ -379,6 +380,154 @@ def test_v8_4_failed_seed_stall_replay_avoids_old_reverse_hemisphere():
         None,
     )
     assert safe is True
+
+
+@pytest.mark.parametrize(
+    "center,current,anchor,expected_v8_4",
+    [
+        (
+            [0.9063138817160753, 1.187088911496894],
+            [0.9074572187525843, 1.1858862198329585],
+            [0.19706456831241406, 0.01716688229276277],
+            [0.9712414607743503, 0.238096671276409],
+        ),
+        (
+            [1.3150554594020005, 1.0298134346805476],
+            [1.3149823259225, 1.0301479155128903],
+            [0.34901700592311424, 0.061924829606774014],
+            [0.7064299821700579, 0.7077829330318807],
+        ),
+        (
+            [1.2960568694674788, 0.9713325216094635],
+            [1.2957895816020304, 0.9724226694049221],
+            [0.2974907931237344, 0.034798152725139274],
+            [0.7293991768649621, 0.684088328206757],
+        ),
+        (
+            [1.2159934811154662, 0.9927434160879254],
+            [1.216355464277686, 0.9938346463446656],
+            [0.24976300129360293, 0.024695456966771282],
+            [0.7064420603695425, 0.7077708777145579],
+        ),
+        (
+            [0.9024309599026483, 1.2748722127037169],
+            [0.9031537479081813, 1.2741645958174819],
+            [0.31732117094725015, 0.03934286786719746],
+            [0.9417105674149527, 0.3364241477941317],
+        ),
+        (
+            [0.9193437680003431, 1.206038462432671],
+            [0.9204599467913561, 1.205191387188364],
+            [0.21883897048812004, 0.03011067851068248],
+            [0.969370050048291, 0.24560477615342463],
+        ),
+        (
+            [1.1802901360361109, 1.000947632559398],
+            [1.1807017996123272, 1.0018878747455646],
+            [0.23788157417248793, 0.00987028910360638],
+            [0.6890895569114577, 0.724676191519751],
+        ),
+        (
+            [1.0694882817937204, 1.314024891709896],
+            [1.070101672495912, 1.3123173373351547],
+            [0.5192862749000959, 0.05929134639020261],
+            [0.9158203493840072, -0.40158820656756716],
+        ),
+    ],
+)
+def test_v8_5_retained_geometries_latch_direct_active_fill_transit(
+    center,
+    current,
+    anchor,
+    expected_v8_4,
+):
+    evidence = approach_continuity_evidence(
+        [pose(0.0, *anchor), pose(1.0, *current)],
+        center,
+        1.3667708293638696,
+    )
+    active = FillAvoidance(
+        1,
+        1,
+        center[0],
+        center[1],
+        1.618634254848744,
+    )
+    config = DirectionConfig(lookahead_m=0.50)
+
+    unchanged_v8_4 = select_source_continuity_direction(
+        current,
+        evidence.direction,
+        [active],
+        config,
+        None,
+    )
+    latched_v8_5 = latch_direct_escape_direction(
+        current,
+        evidence.direction,
+        [],
+        config,
+    )
+
+    assert unchanged_v8_4.direction == pytest.approx(expected_v8_4)
+    assert latched_v8_5.direction == pytest.approx(evidence.direction)
+    assert latched_v8_5.rotation_rad == pytest.approx(0.0)
+    assert latched_v8_5.candidate_index == 0
+
+
+def test_v8_5_failed_seed_direct_corridor_ignores_only_active_fill():
+    center = np.array([1.0694882817937204, 1.314024891709896])
+    current = np.array([1.070101672495912, 1.3123173373351547])
+    preferred = np.array([0.4015882065675672, 0.9158203493840072])
+    config = DirectionConfig(lookahead_m=0.50)
+    active = FillAvoidance(
+        1,
+        1,
+        center[0],
+        center[1],
+        1.618634254848744,
+    )
+
+    safe_with_active, unused_clearance = evaluate_direction_safety(
+        current,
+        preferred,
+        [active],
+        config,
+        None,
+    )
+    at_start = latch_direct_escape_direction(
+        current,
+        preferred,
+        [],
+        config,
+    )
+    after_old_reversal = latch_direct_escape_direction(
+        [-0.3808628950823218, 1.3271483177165915],
+        preferred,
+        [],
+        config,
+    )
+
+    assert safe_with_active is False
+    assert at_start.direction == pytest.approx(preferred)
+    assert after_old_reversal.direction == pytest.approx(preferred)
+
+    retained_other = FillAvoidance(
+        2,
+        2,
+        current[0] + 0.25 * preferred[0],
+        current[1] + 0.25 * preferred[1],
+        0.10,
+    )
+    assert (
+        latch_direct_escape_direction(
+            current,
+            preferred,
+            [retained_other],
+            config,
+        )
+        is None
+    )
 
 
 def test_m4_5_retained_radius_two_rejects_exact_radial_reversal():
