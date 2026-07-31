@@ -1664,3 +1664,280 @@ simulator-relative `400/1600` ratio. Approach continuity is not proof that an
 arbitrary first basin lies between the start and the stronger basin. Broader
 positions or intensity ratios require the separately sealed M6 matrix, and
 three lights remain untested in Gazebo.
+
+## Executed M4.4 disposition and M4.5 v8.5 correction amendment
+
+### Fixed v8.4 primary-repeat disposition
+
+The committed v8.4 primary population is closed. Exactly seeds `19211` and
+`19212` executed once under the sealed first-failure rule. Seed `19211`
+passed. Seed `19212` passed Stage A, exact one-fill cardinality, and assisted
+escape, but failed the independent `180.0 s` Stage B gate. Seeds
+`19213..19220` were not dispatched.
+
+The immutable report is:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_4_primary_repeats.md
+```
+
+The frozen onboard-history direction was not the failure. For seed `19212`,
+it was `(0.401588, 0.915820)`, with evaluator-only alignment `+0.911010`
+against fill center to the declared global. The active-fill hard-avoidance
+rule rejected that direct direction because the robot was approximately
+`0.001814 m` from the estimated fill center and the direct vector's radial
+projection was `-0.001317 m`.
+
+The selector chose tangent `(0.915820, -0.401588)`. During Gaussian-only
+repulsion the robot crossed to the other side of the estimated center.
+Revalidation changed the direction through
+`(-0.363617, 0.931549)` to `(-0.915820, 0.401588)`, the exact negative of the
+initial tangent. The robot completed a valid radial escape westward and ended
+`4.679383 m` from the global without a second candidate.
+
+This is not corrected by more Stage B time, less fill amplitude, or a larger
+affine gain. The supervisor changed the typed direction itself. The active
+Gaussian fill is mathematical basin memory rather than a physical obstacle,
+and the robot necessarily begins escape inside it.
+
+The correction below is a fresh version. It does not mutate, retry, relabel,
+or reopen v8.4.
+
+### M4.5 objective
+
+Version v8.5 adds one default-off active-fill corridor lock to the existing
+approach-continuity escape:
+
+```text
+ordinary raw-plus-Gaussian SEARCH reaches candidate one
+-> freeze the direct pre-basin approach-continuity vector
+-> keep the active Gaussian in modified cost
+-> do not treat that active mathematical fill as a solid obstacle
+-> latch the direct vector through REPULSE and any measured-stall ASSIST
+-> fail rather than reselect or reverse the vector
+-> clear the vector at measured escape completion
+-> resume ordinary raw-plus-Gaussian SEARCH
+```
+
+No source/global coordinate, Vicon pose, room geometry, wall model, waypoint,
+route map, or persistent post-recovery direction enters this contract.
+
+### Default-off controller contract
+
+Add:
+
+```text
+open_field_escape_active_fill_transit_enabled: false
+```
+
+The new control is valid only when all v8.4 approach-continuity prerequisites
+are true:
+
+```text
+algorithm profile:                            robust_gaussian_v1
+extremum classification:                      counted_candidates
+candidate-informed fill:                      enabled
+open-field escape assist:                     enabled
+open-field escape approach continuity:        enabled
+affine implementation:                        enabled
+operating bounds:                             disabled
+recenter:                                     disabled
+recoverable navigation:                       disabled
+post-recovery guidance:                       disabled
+```
+
+Historical defaults, v8-v8.4 inputs, V6, and every prior scenario retain
+their existing direction selection, revalidation, weights, event payloads,
+launch arguments, and resolved bytes.
+
+When the new control is enabled:
+
+1. Derive `ApproachContinuityEvidence` exactly as v8.4 does: the newest
+   existing supervisor-history pose strictly outside the frozen active-fill
+   exit radius points toward the accepted fill center.
+2. Latch that direct unit vector as the escape direction with revision one.
+   Do not rotate it to a tangent merely because the current pose is inside or
+   millimetrically offset from the active fill center.
+3. Keep the active Gaussian fill in `/cost_modified`; only remove that active
+   fill from collision-like direction eligibility for its own escape episode.
+   This does not deactivate, delete, weaken, or supersede the fill.
+4. Continue hard direction checks against every other retained active fill.
+   If the latched corridor is unsafe with respect to another fill, stale pose,
+   missing geometry, or nonfinite evidence, enter the existing explicit
+   failure path. Do not select an alternate direction.
+5. On every repulse/assist update, require the published safe direction to
+   equal the frozen direct vector within the existing numerical tolerance.
+   Direction revision must remain one. Any mismatch is an explicit failure;
+   no re-selection or accumulated turn is allowed.
+6. Continue publishing `(raw, Gaussian, affine) = (0, 1, 1)` in both
+   `ESCAPE_REPULSE` and `ESCAPE_ASSIST`. The robust affine term binds to the
+   same latched typed vector and revision.
+7. Keep supervisor translation zero in `ESCAPE_REPULSE`. If measured radial
+   progress stalls under the unchanged `3.0 s / 0.05 m` contract, the
+   existing bounded `ESCAPE_ASSIST` translation follows the same direct
+   vector.
+8. Preserve the same measured radial exit radius, `1.0 s` hold, and `35.0 s`
+   escape deadline.
+9. Clear the corridor, safe direction, affine term, and weights at the first
+   measured escape completion, terminal state, reset, stale/fault path, or
+   explicit stop. Ordinary `SEARCH` remains `(1, 1, 0)` with no supervisor
+   translation.
+10. Append active-fill-transit enablement, excluded active fill identity,
+    retained-other-fill count, latched vector, and revision to existing
+    escape/configuration evidence only when v8.5 is enabled. No
+    source/global/evaluator field may be added.
+
+This is not obstacle avoidance. The operating region remains explicitly open
+and obstacle-free. A Gaussian fill is not promoted to a physical collision
+object.
+
+### Retained-geometry prequalification
+
+The five retained v8.3 primary geometries and three executed v8.4 primary
+geometries provide eight immutable direct-corridor fixtures. Their direct
+approach vectors have evaluator-only fill-to-global alignments from
+approximately `+0.911` to `+1.000`. The global coordinate is used only to
+describe the offline relationship and cannot enter implementation or runtime.
+
+For the failed seed `19212` start geometry:
+
+```text
+robot-to-fill-center distance:
+  0.001814 m
+direct approach vector:
+  (0.401588, 0.915820)
+direct radial projection:
+  -0.001317 m
+initial Gaussian outward-gradient magnitude estimate:
+  0.025183 cost units/m
+fixed affine gradient magnitude:
+  0.500000 cost units/m
+```
+
+The direct affine gradient is approximately `19.85` times the estimated
+initial Gaussian outward gradient. This is a source-independent offline
+sanity check, not a behavioral pass prediction.
+
+The secondary fixed layout also satisfies the declared route-blocking
+geometry: nominal start-to-local and local-to-global directions have dot
+product approximately `+0.852`. That value is evaluator-only and not a
+controller input.
+
+### Fresh fixed inputs
+
+Create four new scenario files. Every source declaration, start, intensity,
+topology, candidate/fill/detector value, affine value, Stage A/Stage B budget,
+simulation-only stop, cleanup gate, and first-failure rule is copied from
+v8.4. Only the default-off active-fill transit correction, fresh identities,
+fresh roots, and fresh seeds change.
+
+```text
+phase08_v8_5_primary_visible_probe.yaml
+  seed 19301
+  visible
+  runs root phase08_8_5_primary_probe
+
+phase08_v8_5_primary_repeats.yaml
+  seeds 19311 through 19320
+  headless
+  runs root phase08_8_5_primary_repeats
+
+phase08_v8_5_secondary_visible_probe.yaml
+  seed 19351
+  visible
+  runs root phase08_8_5_secondary_probe
+
+phase08_v8_5_secondary_repeats.yaml
+  seeds 19361 through 19365
+  headless
+  runs root phase08_8_5_secondary_repeats
+```
+
+The new profile explicitly sets:
+
+```text
+open_field_escape_approach_continuity_enabled: true
+open_field_escape_active_fill_transit_enabled: true
+modified_cost_enable_affine_bias:               true
+modified_cost_affine_gain:                      0.50
+modified_cost_affine_decay_rate:                0.0000005
+modified_cost_affine_max_age:                   35.0
+modified_cost_affine_direction_sign:            1.0
+```
+
+### No-Gazebo qualification
+
+Before any v8.5 Gazebo process:
+
+1. replay all eight retained primary geometries, proving default-off v8.4
+   outputs remain unchanged and enabled v8.5 latches the exact direct vector;
+2. replay seed `19212` at fill acceptance, both revalidation samples, and
+   escape completion, proving the direction never changes or reverses;
+3. prove the active fill remains in modified cost and typed registry while it
+   is excluded only from its own direction-eligibility set;
+4. prove every other retained fill remains a hard eligibility constraint and
+   an intersecting corridor fails explicitly without alternate selection;
+5. prove direction revision remains one and robust modified cost maintains
+   exactly one affine term for that revision;
+6. prove REPULSE command remains zero, ASSIST remains bounded along the direct
+   vector, and the controller remains the sole `/cmd_vel` publisher;
+7. prove `SEARCH`, reset, terminal, explicit stop, stale pose, missing fill,
+   and missing history clear all authority;
+8. prove enabled-only event evidence contains the active-fill exclusion and
+   latched vector but no source/global/evaluator field;
+9. prove scenario validation requires the complete v8.4 contract and rejects
+   active-fill transit without approach continuity;
+10. prove every v8-v8.4 and historical normalized scenario remains byte- and
+    behavior-compatible;
+11. run focused state-machine, geometry, supervisor, modified-cost, launch,
+    schema, runner, validator, analyzer, observability, and legacy tests;
+12. run the broad ROS-independent suite, fatal lint, Python compilation,
+    isolated three-package build, installed node construction, source/install
+    parity, all four dry-runs without creating a run root, context validation,
+    `git diff --check`, and inactive-process checks;
+13. write a separate v8.5 no-Gazebo qualification record, update live status,
+    checkpoint Phase 08, and commit the exact qualified implementation.
+
+No parameter sweep or Gazebo tuning is authorized.
+
+### V8.5 runtime gates
+
+Only a clean committed qualification and separate committed dispatch boundary
+authorize one installed visible execution of
+`phase08_v8_5_primary_visible_probe.yaml`, seed `19301`.
+
+- A visible failure closes v8.5 immediately.
+- A visible pass must be analyzed, plotted, checkpointed, and committed before
+  primary repeats.
+- The ten primary repeats execute serially/headlessly, stop at the first
+  behavioral or cleanup failure, and never retry a seed.
+- Only `10/10` primary passes authorize the secondary visible probe.
+- Only a passing secondary visible probe authorizes five secondary repeats.
+- Only `5/5` secondary passes authorize any broader-envelope characterization.
+
+Every run continues to require:
+
+```text
+one distinct local candidate
+-> exactly one typed active fill
+-> one latched direct escape direction with no revision
+-> completed local escape
+-> ordinary SEARCH with affine cleared
+-> distinct second candidate
+-> strict raw-cost interval improvement
+-> GOAL_REACHED
+-> later evaluator-only 0.50 m simulation proximity
+-> final zero, readiness false, complete recording, clean shutdown
+```
+
+The physical contract remains manual operator `Ctrl+C`.
+
+### V8.5 claim boundary
+
+Even if all v8.5 gates pass, the result supports only the two fixed
+route-blocking, local-first, two-source open-field layouts at the
+simulator-relative `400/1600` ratio. Active-fill transit is not proof that an
+arbitrary approach direction leads to an unseen stronger basin. Broader
+positions or intensities require the separately sealed M6 matrix; three lights
+remain untested in Gazebo.

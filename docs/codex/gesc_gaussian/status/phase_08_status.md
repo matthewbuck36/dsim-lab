@@ -13009,3 +13009,75 @@ PROHIBITED.**
 Commit this immutable result boundary and verify a clean tree. Only then may a
 fresh versioned active-fill corridor-lock amendment be saved and qualified
 without Gazebo.
+
+## Phase 08.8 M4.5 v8.5 Plan amendment — 2026-07-30
+
+The immutable v8.4 failure boundary was committed at:
+
+```text
+546001f
+phase 08.8: retain failed v8.4 primary repeats
+```
+
+The fresh v8.5 amendment is now saved in
+`docs/codex/gesc_gaussian/plans/phase_08_8_plan.md`. It adds one default-off
+active-fill corridor lock to the existing approach-continuity escape.
+
+The direct onboard-history direction remains latched through repulse and any
+measured-stall assist. The active Gaussian stays in modified cost and the
+typed fill registry, but is not treated as a solid obstacle during its own
+escape. Every other retained fill remains a hard direction constraint. An
+unsafe corridor fails explicitly instead of selecting an alternate or
+reversing direction.
+
+The correction is scoped to the active escape and clears on measured
+completion, reset, terminal state, stale/fault path, or explicit stop. It adds
+no source/global coordinate, Vicon pose, room geometry, wall model, route map,
+waypoint, or persistent post-recovery direction.
+
+Fresh identities and seeds are fixed at `19301`, `19311..19320`, `19351`, and
+`19361..19365`. No v8.5 source or scenario has been implemented, and no
+Gazebo process is authorized.
+
+## Current milestone
+
+**PHASE 08.8 M4.5 — V8.5 ACTIVE-FILL CORRIDOR-LOCK PLAN AMENDMENT SAVED /
+PLAN CHECKPOINT PENDING / IMPLEMENTATION NOT STARTED / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Validate and checkpoint this bounded amendment, inspect its exact diff, and
+commit the Plan boundary. Then implement and fully qualify v8.5 without
+Gazebo. Only a later qualified implementation checkpoint and commit may
+authorize a fresh visible probe.
+
+## Phase 08.8 M4.5 v8.5 Plan checkpoint — 2026-07-30
+
+The active-fill corridor-lock amendment and live status received the required
+preimplementation Phase 08 checkpoint against retained v8.4 result HEAD
+`546001f`.
+
+```text
+active subphase plan sha256:
+  bf88830c4a039a456bf31d3d10835a3e6c6225063f1833b3710c751eb4b628df
+status sha256:
+  a4f27a47d3417968a0b5e5f7f5eec8be1db56de3871e514d576d102dc029af43
+unstaged diff sha256:
+  0aef609e105bdbcd84d5da98a6e885ea15fb54c634052dc36b4c157f1ea2384f
+diff check:
+  PASS
+```
+
+No Gazebo, scenario, recorder, analyzer, or physical process ran while
+creating the checkpoint.
+
+## Current milestone
+
+**PHASE 08.8 M4.5 — V8.5 ACTIVE-FILL CORRIDOR-LOCK PLAN CHECKPOINT PASS /
+PLAN COMMIT PENDING / IMPLEMENTATION NOT STARTED / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Commit this exact Plan boundary and verify a clean tree. Then implement the
+default-off correction and fresh v8.5 inputs, followed by every declared
+no-Gazebo qualification gate.
