@@ -12680,3 +12680,136 @@ Commit this exact two-document dispatch boundary. Then reconfirm the clean
 tree, inactive runtime process set, absent primary evidence root, installed
 scenario parity, and GUI display immediately before executing the one
 authorized seed-`19201` visible probe. All later dispatch remains prohibited.
+
+## Phase 08.8 M4.3 fixed v8.4 primary visible probe — 2026-07-30
+
+**FORMAL PASS / INFRASTRUCTURE COMPLETE / STAGE A PASS / EXACT ONE FILL /
+APPROACH-CONTINUITY ESCAPE PASS / STRICT SECOND-CANDIDATE RANKING PASS /
+STAGE B PASS / FINAL ZERO PASS / CLEANUP PASS.**
+
+The one authorized visible execution ran once from dispatch HEAD `8e9acef`;
+seed `19201` was not retried.
+
+```text
+scenario:
+  phase08_v8_4_primary_visible_probe.yaml
+case:
+  v8_4_primary_probe_r1p5_a45_h25_19201
+run:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_4_primary_probe/
+  2026-07-31/
+  20260731T084942744556Z_simulation_phase08_v8_4_primary_visible_probe-v8_4_primary_probe_r1p5_a45_h25_19201-robust__c341bb3f
+scenario summary:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_4_primary_probe/
+  scenario_summaries/
+  20260731T084941800046Z_phase08_v8_4_primary_visible_probe.yaml
+scenario summary sha256:
+  0ffebd184a0df830568d3031853ac576eee920d1a3d1fc48d2ed8323721c6c9c
+```
+
+The authoritative state path was:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> ESCAPE_ASSIST
+-> SEARCH
+-> VERIFY_EXTREMUM
+-> GOAL_HOLD
+```
+
+Stage A completed at simulation time `236.127 s`, within its fixed `360.0 s`
+budget. The first candidate was `0.305871 m` from the declared local; one
+typed active cluster was created at `(0.919344, 1.206038) m`; no fill was
+merged, superseded, or rejected.
+
+The v8.4 escape froze the onboard-history continuity vector
+`(0.511779, 0.859117)` and selected the fill-safe direction
+`(0.969370, 0.245605)`. Both escape states recorded weights `(0, 1, 1)`.
+The assisted escape completed in `29.193833 s`; on the first returned
+`SEARCH` sample the weights were `(1, 1, 0)` and the safe direction was
+invalid, proving that affine authority did not persist after recovery.
+
+The second candidate raw-cost interval was
+`[-3.8372093023255816, -3.8372093023255816]`, strictly below the first
+candidate's retained lower bound `-2.438816425126134`, with margin
+`1.3983928771994476`. The controller emitted `GOAL_REACHED` before the first
+valid evaluator-only proximity sample at simulation time `351.217 s`,
+position `(3.572528, 3.626830) m`, distance `0.146104 m`. Stage B took
+`115.090 s`, within its independent `180.0 s` budget. The final retained
+distance is `0.146083 m`.
+
+Recording, authoritative Phase 05 completeness, final readiness false,
+final-zero commands, and cleanup all pass. There was no in-readiness failsafe,
+timeout, recenter, forbidden state/event, or remaining process.
+
+The analyzer retained all nine plots and every table. Its top-level status is
+honestly `partial` with no analysis failures: contacts and generic aggregate
+truth metrics are intentionally unavailable for this open-field staged
+scenario, and one `0.20 s` state sample gap during post-recovery `SEARCH`
+invalidates only reconstructed duration totals. The authoritative scenario
+acceptance, transition/event sequences, candidate ranking, Stage A, Stage B,
+and completeness remain passed.
+
+Evidence hashes:
+
+```text
+5af1b2d8c53b51ae8e19946a3a93639582cc39c96a987eb6e546b4f681e6f3db  bag
+5bb9de40208460fed17e3aa381be983886fbfd51c52b29208ef8a3794d9b7f45  completeness
+9677a65b30778f560bfc7ce07627e057d9296e0bb3710e189ba35b7beebf4e5a  scenario result
+73ecfacc0b83e439e97f25a755cf87f1fe498fb3bfc8af002d093ca8c25eed76  analysis completeness
+8131fda72481894249e96721f6052c6781641723c87aa08a028ec902886c882d  summary metrics
+```
+
+Complete report:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_3_primary_probe.md
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.3 — FIXED V8.4 PRIMARY VISIBLE PROBE FORMAL PASS /
+RESULT CHECKPOINT PENDING / PRIMARY REPEATS PROHIBITED.**
+
+## Next criterion
+
+Checkpoint and commit this immutable visible-probe result. Then create,
+checkpoint, and commit a separate dispatch boundary for the fixed seeds
+`19211..19220`. Only that later clean committed boundary may authorize the
+headless serial repeat gate. Secondary and broad runs remain prohibited.
+
+## Phase 08.8 M4.3 visible-result material checkpoint — 2026-07-30
+
+The immutable formal pass, complete report, live status, evidence hashes, and
+plot paths received the required Phase 08 material checkpoint against
+committed dispatch HEAD `8e9acef`.
+
+```text
+status sha256:
+  034618a778f2c80f90f3a74a24905fac5a7f163127323e289110dfb89c9ebd4e
+validation report sha256:
+  4a037d8e6603df3718a76f769606f81e36416c042eedbbbc7ef098ac45d852ac
+unstaged diff sha256:
+  410d62f55f54b9e268910cdf130b9f3ef661e4be33609f0b764bb0cdd8b43c9a
+diff check:
+  PASS
+```
+
+No Gazebo, scenario, recorder, analyzer, or physical process remained during
+the checkpoint.
+
+## Current milestone
+
+**PHASE 08.8 M4.3 — FIXED V8.4 PRIMARY VISIBLE PROBE FORMAL PASS /
+RESULT CHECKPOINT PASS / RESULT COMMIT PENDING / PRIMARY REPEATS
+PROHIBITED.**
+
+## Next criterion
+
+Commit this exact result boundary and verify it. Then record, checkpoint, and
+commit the separate fixed-primary-repeat dispatch boundary before executing
+any of seeds `19211..19220`.
