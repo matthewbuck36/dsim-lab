@@ -254,6 +254,26 @@ V8_6_SECONDARY_REPEATS = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v8_6_secondary_repeats.yaml'
 )
+V8_7_PRIMARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_7_primary_visible_probe.yaml'
+)
+V8_7_PRIMARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_7_primary_repeats.yaml'
+)
+V8_7_SECONDARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_7_secondary_visible_probe.yaml'
+)
+V8_7_SECONDARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_7_secondary_repeats.yaml'
+)
 
 
 def test_observed_local_recovery_binds_fill_to_local_convergence():
@@ -778,11 +798,14 @@ def _owner_state(name):
     state.escape_center_x = 0.0
     state.escape_center_y = 0.0
     state.escape_geometry_valid = True
+    state.active_escape_fill_id_valid = True
     if name == 'SEARCH':
         state.sensor_weight = 1.0
         state.affine_weight = 0.0
         state.safe_direction_valid = False
         state.safe_direction_revision_valid = False
+        state.escape_geometry_valid = False
+        state.active_escape_fill_id_valid = False
     return state
 
 
@@ -1006,6 +1029,232 @@ def test_supervisor_owned_assist_evidence_rejects_direction_and_handoff():
     assert error is None
     assert passed is False
     assert 'ordinary GESC ownership' in evidence['reason']
+
+
+def _causal_supervisor_owner_fixture():
+    fixture = _supervisor_owner_fixture()
+    fixture['resolved'] = expand_suite(
+        load_suite(V8_7_PRIMARY_VISIBLE_PROBE)
+    )[0][0]
+    fixture['commands'].insert(
+        -1,
+        (
+            1_900_000_000,
+            _twist([0.15, 0.0, 0.0, 0.0, 0.0, 0.0]),
+        ),
+    )
+    fixture['diagnostics'].insert(
+        -1,
+        (
+            1_910_000_000,
+            _control_diagnostic(
+                [0.08, 0.0, 0.0, 0.0, 0.0, 0.2],
+                [0.15, 0.0, 0.0, 0.0, 0.0, 0.0],
+            ),
+        ),
+    )
+    fixture['diagnostics'].insert(
+        -1,
+        (
+            2_015_000_000,
+            _control_diagnostic(
+                [0.08, 0.0, 0.0, 0.0, 0.0, 0.2],
+                [0.15, 0.0, 0.0, 0.0, 0.0, 0.0],
+            ),
+        ),
+    )
+    return fixture
+
+
+def test_schema_v11_causal_handoff_accepts_one_proven_assist_tail():
+    fixture = _causal_supervisor_owner_fixture()
+    passed, evidence, error = _evaluate_supervisor_owner(fixture)
+
+    assert error is None
+    assert passed is True
+    assert evidence['post_exit_transition_control_sample_count'] == 1
+    assert evidence['post_exit_handoff_delay_sec'] == pytest.approx(0.02)
+    assert evidence['post_exit_handoff_timeout_sec'] == 0.15
+    assert evidence['post_exit_ordinary_control_sample_count'] == 1
+    assert (
+        evidence['post_exit_handoff_evidence_mode']
+        == 'bounded_causal_schema_v11'
+    )
+
+
+def test_schema_v11_causal_handoff_accepts_one_zero_failsafe_tail():
+    fixture = _causal_supervisor_owner_fixture()
+    tail = fixture['diagnostics'][-2][1]
+    tail.combined_command_unsaturated = [0.0] * 6
+    tail.supervisor_contribution = [
+        -value for value in tail.gesc_command_unsaturated
+    ]
+    tail.final_command = [0.0] * 6
+
+    passed, evidence, error = _evaluate_supervisor_owner(fixture)
+
+    assert error is None
+    assert passed is True
+    assert evidence['post_exit_transition_control_sample_count'] == 1
+
+
+def test_schema_v10_first_sample_rule_stays_unchanged():
+    fixture = _causal_supervisor_owner_fixture()
+    fixture['resolved'] = expand_suite(
+        load_suite(V8_6_PRIMARY_VISIBLE_PROBE)
+    )[0][0]
+
+    passed, evidence, error = _evaluate_supervisor_owner(fixture)
+
+    assert error is None
+    assert passed is False
+    assert 'ordinary GESC ownership' in evidence['reason']
+
+
+@pytest.mark.parametrize(
+    ('mutation', 'reason'),
+    [
+        (
+            lambda fixture: fixture['diagnostics'].__setitem__(
+                -1,
+                (
+                    2_200_000_000,
+                    fixture['diagnostics'][-1][1],
+                ),
+            ),
+            'exceeded its timeout',
+        ),
+        (
+            lambda fixture: fixture['diagnostics'].__setitem__(
+                -2,
+                (
+                    2_015_000_000,
+                    _control_diagnostic(
+                        [0.08, 0.0, 0.0, 0.0, 0.0, 0.2],
+                        [0.12, 0.0, 0.0, 0.0, 0.0, 0.0],
+                    ),
+                ),
+            ),
+            'unrecognized command',
+        ),
+        (
+            lambda fixture: fixture['commands'].__setitem__(
+                -1,
+                (
+                    fixture['commands'][-1][0],
+                    _twist([0.01, 0.0, 0.0, 0.0, 0.0, 0.0]),
+                ),
+            ),
+            'supervisor command is not zero',
+        ),
+        (
+            lambda fixture: fixture['resolved']['algorithm'][
+                'launch_overrides'
+            ].update({'supervisor_command_stale_sec': 0.10}),
+            'stale assist command',
+        ),
+    ],
+)
+def test_schema_v11_causal_handoff_rejects_invalid_boundary(
+    mutation,
+    reason,
+):
+    fixture = _causal_supervisor_owner_fixture()
+    mutation(fixture)
+
+    passed, evidence, error = _evaluate_supervisor_owner(fixture)
+
+    assert error is None
+    assert passed is False
+    assert reason in evidence['reason']
+
+
+def test_schema_v11_causal_handoff_rejects_later_authority_reappearance():
+    fixture = _causal_supervisor_owner_fixture()
+    fixture['diagnostics'].append((
+        2_030_000_000,
+        _control_diagnostic(
+            [0.08, 0.0, 0.0, 0.0, 0.0, 0.2],
+            [0.15, 0.0, 0.0, 0.0, 0.0, 0.0],
+        ),
+    ))
+
+    passed, evidence, error = _evaluate_supervisor_owner(fixture)
+
+    assert error is None
+    assert passed is False
+    assert 'reappeared after causal handoff' in evidence['reason']
+
+
+@pytest.mark.parametrize(
+    ('mutation', 'reason'),
+    [
+        (
+            lambda message: setattr(
+                message,
+                'combined_command_unsaturated',
+                [
+                    message.gesc_command_unsaturated[index]
+                    + [0.15, 0.0, 0.0, 0.0, 0.0, 0.0][index]
+                    for index in range(6)
+                ],
+            ),
+            'GESC leaked',
+        ),
+        (
+            lambda message: message.combined_command_unsaturated
+            .__setitem__(0, float('nan')),
+            'invalid command evidence',
+        ),
+        (
+            lambda message: message.supervisor_contribution
+            .__setitem__(0, message.supervisor_contribution[0] + 0.01),
+            'contribution is inconsistent',
+        ),
+        (
+            lambda message: message.final_command.__setitem__(0, 0.0),
+            'saturation is invalid',
+        ),
+    ],
+)
+def test_schema_v11_causal_handoff_rejects_corrupt_tail(
+    mutation,
+    reason,
+):
+    fixture = _causal_supervisor_owner_fixture()
+    tail = fixture['diagnostics'][-2][1]
+    mutation(tail)
+    if reason == 'GESC leaked':
+        tail.supervisor_contribution = [
+            tail.combined_command_unsaturated[index]
+            - tail.gesc_command_unsaturated[index]
+            for index in range(6)
+        ]
+        tail.final_command = list(tail.combined_command_unsaturated)
+        tail.final_command[0] = 0.1
+        tail.final_command[5] = max(
+            -0.5,
+            min(0.5, tail.final_command[5]),
+        )
+
+    passed, evidence, error = _evaluate_supervisor_owner(fixture)
+
+    assert error is None
+    assert passed is False
+    assert reason in evidence['reason']
+
+
+def test_schema_v11_causal_handoff_rejects_returned_escape_state():
+    fixture = _causal_supervisor_owner_fixture()
+    fixture['states'][-1][1].active_escape_fill_id_valid = True
+
+    passed, evidence, error = _evaluate_supervisor_owner(fixture)
+
+    assert error is None
+    assert passed is False
+    assert 'returned SEARCH state retained escape authority' in (
+        evidence['reason']
+    )
 
 
 def test_supervisor_owned_assist_predicate_gates_classification():
@@ -1830,6 +2079,10 @@ def test_v8_5_launch_binds_active_fill_transit_without_evaluator_controls(
         V8_6_PRIMARY_REPEATS,
         V8_6_SECONDARY_VISIBLE_PROBE,
         V8_6_SECONDARY_REPEATS,
+        V8_7_PRIMARY_VISIBLE_PROBE,
+        V8_7_PRIMARY_REPEATS,
+        V8_7_SECONDARY_VISIBLE_PROBE,
+        V8_7_SECONDARY_REPEATS,
     ],
 )
 def test_v8_6_launch_binds_supervisor_owner_without_evaluator_controls(
@@ -1870,6 +2123,9 @@ def test_v8_6_launch_binds_supervisor_owner_without_evaluator_controls(
             token.startswith('global_source_')
             or token.startswith('source_role_')
             or token.startswith('simulation_truth_')
+            or token.startswith(
+                'supervisor_owned_assist_handoff_timeout_sec:='
+            )
             or (
                 not token.startswith('light_')
                 and any(
@@ -3462,6 +3718,20 @@ def test_cleanup_compares_only_new_graph_and_exact_session(monkeypatch):
     assert evidence['passed'] is False
     assert evidence['remaining_new_nodes'] == ['/new_node']
     assert evidence['remaining_session_processes'][0]['session_id'] == 1234
+
+
+def test_cleanup_does_not_ignore_external_ros_cli_nodes(monkeypatch):
+    monkeypatch.setattr(
+        runner,
+        'ros_graph_nodes',
+        lambda: {'/baseline', '/_ros2cli_282407'},
+    )
+    monkeypatch.setattr(runner, 'session_processes', lambda unused: [])
+
+    evidence = cleanup_evidence({'/baseline'}, 1234, settle_sec=0.0)
+
+    assert evidence['passed'] is False
+    assert evidence['remaining_new_nodes'] == ['/_ros2cli_282407']
 
 
 @pytest.mark.parametrize(

@@ -282,6 +282,26 @@ V8_6_SECONDARY_REPEATS = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v8_6_secondary_repeats.yaml'
 )
+V8_7_PRIMARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_7_primary_visible_probe.yaml'
+)
+V8_7_PRIMARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_7_primary_repeats.yaml'
+)
+V8_7_SECONDARY_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_7_secondary_visible_probe.yaml'
+)
+V8_7_SECONDARY_REPEATS = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_7_secondary_repeats.yaml'
+)
 HISTORICAL_V2_ACTIVATION = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml'
@@ -713,7 +733,7 @@ def test_checked_in_suites_validate_and_catalog_marks_gaps():
 @pytest.mark.parametrize(
     ('mutation', 'match'),
     [
-        (lambda doc: doc.update({'schema_version': 11}), 'schema_version'),
+        (lambda doc: doc.update({'schema_version': 12}), 'schema_version'),
         (
             lambda doc: doc.update({'mode': 'physical'}),
             'mode must be simulation',
@@ -1804,6 +1824,161 @@ def test_schema_v10_resolves_four_supervisor_owned_assist_suites():
                 'ESCAPE_STALLED'
                 in run['success']['controller']['required_events']
             )
+
+
+def test_schema_v11_resolves_four_causal_handoff_suites():
+    expected = {
+        V8_7_PRIMARY_VISIBLE_PROBE: (1, True, {19501}),
+        V8_7_PRIMARY_REPEATS: (10, False, set(range(19511, 19521))),
+        V8_7_SECONDARY_VISIBLE_PROBE: (1, True, {19551}),
+        V8_7_SECONDARY_REPEATS: (5, False, set(range(19561, 19566))),
+    }
+    for path, (run_count, gui, seeds) in expected.items():
+        suite = load_suite(path)
+        runs, unsupported = expand_suite(suite)
+
+        assert unsupported == []
+        assert len(runs) == run_count
+        assert suite['schema_version'] == 11
+        assert suite['execution']['gazebo_gui'] is gui
+        assert {run['seed'] for run in runs} == seeds
+        for run in runs:
+            assert run['schema_version'] == 11
+            assert run['case_id'].startswith('v8_7_')
+            assert (
+                run['success']['controller'][
+                    'supervisor_owned_assist_handoff_timeout_sec'
+                ]
+                == 0.15
+            )
+            assert (
+                'supervisor_owned_assist_handoff_timeout_sec'
+                not in run['algorithm']['launch_overrides']
+            )
+
+
+@pytest.mark.parametrize(
+    ('v8_6_path', 'v8_7_path'),
+    [
+        (V8_6_PRIMARY_VISIBLE_PROBE, V8_7_PRIMARY_VISIBLE_PROBE),
+        (V8_6_PRIMARY_REPEATS, V8_7_PRIMARY_REPEATS),
+        (
+            V8_6_SECONDARY_VISIBLE_PROBE,
+            V8_7_SECONDARY_VISIBLE_PROBE,
+        ),
+        (V8_6_SECONDARY_REPEATS, V8_7_SECONDARY_REPEATS),
+    ],
+)
+def test_v8_7_preserves_v8_6_runtime_inputs(v8_6_path, v8_7_path):
+    old = yaml.safe_load(v8_6_path.read_text(encoding='utf-8'))
+    new = yaml.safe_load(v8_7_path.read_text(encoding='utf-8'))
+
+    assert old['schema_version'] == 10
+    assert new['schema_version'] == 11
+    assert old['defaults'] == new['defaults']
+    assert old['level_map'] == new['level_map']
+    assert (
+        old['frozen_profile']['launch_overrides']
+        == new['frozen_profile']['launch_overrides']
+    )
+    old_execution = deepcopy(old['execution'])
+    new_execution = deepcopy(new['execution'])
+    old_execution.pop('runs_root')
+    new_execution.pop('runs_root')
+    assert old_execution == new_execution
+
+    old_case = old['cases'][0]
+    new_case = new['cases'][0]
+    for key in (
+        'family',
+        'acceptance_family',
+        'acceptance_partition',
+        'status',
+        'profiles',
+        'known_topology',
+        'metric_applicability',
+        'starts',
+        'sources',
+        'algorithm',
+    ):
+        assert old_case[key] == new_case[key]
+    for key in ('all_of', 'ground_truth', 'staged_recovery'):
+        assert old_case['success'][key] == new_case['success'][key]
+    old_controller = deepcopy(old_case['success']['controller'])
+    new_controller = deepcopy(new_case['success']['controller'])
+    new_controller.pop('supervisor_owned_assist_handoff_timeout_sec')
+    for controller in (old_controller, new_controller):
+        controller.pop('contract_id')
+        controller.pop('reachability_argument')
+    assert old_controller == new_controller
+
+    equivalent = deepcopy(new)
+    equivalent['schema_version'] = old['schema_version']
+    equivalent['suite_id'] = old['suite_id']
+    equivalent['description'] = old['description']
+    equivalent['execution']['runs_root'] = old['execution']['runs_root']
+    equivalent['metadata'] = deepcopy(old['metadata'])
+    equivalent['frozen_profile']['profile_id'] = (
+        old['frozen_profile']['profile_id']
+    )
+    equivalent_case = equivalent['cases'][0]
+    old_case = old['cases'][0]
+    for name in ('case_id', 'description', 'seeds'):
+        equivalent_case[name] = deepcopy(old_case[name])
+    equivalent_controller = equivalent_case['success']['controller']
+    old_controller = old_case['success']['controller']
+    for name in ('contract_id', 'reachability_argument'):
+        equivalent_controller[name] = old_controller[name]
+    equivalent_controller.pop(
+        'supervisor_owned_assist_handoff_timeout_sec'
+    )
+    assert equivalent == old
+
+
+@pytest.mark.parametrize(
+    ('mutation', 'match'),
+    [
+        (
+            lambda document, controller: document.update(
+                {'schema_version': 10}
+            ),
+            'schema version 11',
+        ),
+        (
+            lambda document, controller: controller.pop(
+                'supervisor_owned_assist_handoff_timeout_sec'
+            ),
+            'must be numeric',
+        ),
+        (
+            lambda document, controller: controller.update({
+                'supervisor_owned_assist_handoff_timeout_sec': 0.20,
+            }),
+            'must equal 0.15',
+        ),
+        (
+            lambda document, controller: document['frozen_profile'][
+                'launch_overrides'
+            ].update({
+                'open_field_escape_supervisor_owned_assist_enabled': False,
+            }),
+            'requires schema version 11 supervisor-owned assist',
+        ),
+    ],
+)
+def test_schema_v11_rejects_invalid_causal_handoff_contract(
+    tmp_path,
+    mutation,
+    match,
+):
+    document = yaml.safe_load(
+        V8_7_PRIMARY_VISIBLE_PROBE.read_text(encoding='utf-8')
+    )
+    controller = document['cases'][0]['success']['controller']
+    mutation(document, controller)
+
+    with pytest.raises(ValueError, match=match):
+        _load(tmp_path, document)
 
 
 @pytest.mark.parametrize(

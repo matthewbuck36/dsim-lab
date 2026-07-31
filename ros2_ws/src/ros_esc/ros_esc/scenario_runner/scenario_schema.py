@@ -13,8 +13,8 @@ from ros_esc.scenario_runner import aggregate_field_truth
 import yaml
 
 
-SCHEMA_VERSION = 10
-SUPPORTED_SCHEMA_VERSIONS = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+SCHEMA_VERSION = 11
+SUPPORTED_SCHEMA_VERSIONS = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
 PROFILES = {'legacy', 'robust_gaussian_v1'}
 STATUSES = {'executable_unverified', 'unsupported'}
 FAMILIES = {
@@ -269,6 +269,7 @@ CONTROLLER_KEYS = {
     'expected_terminal_state', 'required_state_sequence', 'required_events',
     'forbidden_events', 'required_state_path', 'required_event_sequence',
     'required_state_paths', 'forbidden_states',
+    'supervisor_owned_assist_handoff_timeout_sec',
 }
 GROUND_TRUTH_KEYS = {'goal_source_ids', 'final_position_tolerance_m'}
 AGGREGATE_GROUND_TRUTH_KEYS = {
@@ -2024,6 +2025,30 @@ def load_suite(path):
         raise ValueError(
             'schema version 10 is required for supervisor-owned assist'
         )
+    uses_schema_v11_fields = False
+    if isinstance(raw_cases, list):
+        for case in raw_cases:
+            if not isinstance(case, dict):
+                continue
+            raw_success = case.get('success', {})
+            raw_controller = (
+                raw_success.get('controller', {})
+                if isinstance(raw_success, dict)
+                else {}
+            )
+            uses_schema_v11_fields = (
+                isinstance(raw_controller, dict)
+                and (
+                    'supervisor_owned_assist_handoff_timeout_sec'
+                    in raw_controller
+                )
+            )
+            if uses_schema_v11_fields:
+                break
+    if schema_version < 11 and uses_schema_v11_fields:
+        raise ValueError(
+            'schema version 11 is required for causal assist handoff evidence'
+        )
     suite_id = _identifier(document.get('suite_id'), 'suite_id')
     if document.get('mode') != 'simulation':
         raise ValueError('mode must be simulation')
@@ -2789,6 +2814,31 @@ def load_suite(path):
                 'forbidden_states': forbidden_states,
                 'forbidden_events': forbidden_events,
             }
+            handoff_timeout_name = (
+                'supervisor_owned_assist_handoff_timeout_sec'
+            )
+            if schema_version >= 11 and supervisor_owned_assist_enabled:
+                handoff_timeout = _number(
+                    controller.get(handoff_timeout_name),
+                    f'{controller_location}.{handoff_timeout_name}',
+                    positive=True,
+                )
+                if not math.isclose(
+                    handoff_timeout,
+                    0.15,
+                    rel_tol=0.0,
+                    abs_tol=1e-12,
+                ):
+                    raise ValueError(
+                        f'{controller_location}.{handoff_timeout_name} '
+                        'must equal 0.15'
+                    )
+                normalized_controller[handoff_timeout_name] = handoff_timeout
+            elif handoff_timeout_name in controller:
+                raise ValueError(
+                    f'{controller_location}.{handoff_timeout_name} requires '
+                    'schema version 11 supervisor-owned assist'
+                )
             if required_state_paths is not None:
                 normalized_controller[
                     'required_state_paths'

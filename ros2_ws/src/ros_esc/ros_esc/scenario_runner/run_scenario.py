@@ -2575,7 +2575,7 @@ def _supervisor_owned_escape_assist_evidence(
     supervisor_command_records,
     odometry_records,
 ):
-    """Prove v8.6 command ownership and measured aligned escape."""
+    """Prove schema-versioned command ownership and measured aligned escape."""
     enabled = bool(
         resolved.get('algorithm', {}).get('launch_overrides', {}).get(
             'open_field_escape_supervisor_owned_assist_enabled',
@@ -2776,6 +2776,7 @@ def _supervisor_owned_escape_assist_evidence(
     if not assist_diagnostics:
         return failed('assist interval has no control diagnostics')
 
+    proven_authority_command_stamps = set()
     for diagnostic_stamp, message in assist_diagnostics:
         gesc = _finite_command(message.gesc_command_unsaturated)
         combined = _finite_command(message.combined_command_unsaturated)
@@ -2840,10 +2841,12 @@ def _supervisor_owned_escape_assist_evidence(
                 'assist combined command has no fresh matching supervisor '
                 'command'
             )
-        raw_supervisor = min(
+        matched_supervisor = min(
             matching_commands,
             key=lambda item: (item[0], item[1] > diagnostic_stamp, item[1]),
-        )[2]
+        )
+        proven_authority_command_stamps.add(matched_supervisor[1])
+        raw_supervisor = matched_supervisor[2]
         expected_contribution = [
             combined[index] - gesc[index] for index in range(6)
         ]
@@ -2924,6 +2927,245 @@ def _supervisor_owned_escape_assist_evidence(
         or search_state.safe_direction_revision_valid
     ):
         return failed('first post-exit SEARCH state retained escape authority')
+
+    if resolved.get('schema_version', 1) >= 11:
+        next_state_index = next(
+            (
+                index
+                for index in range(
+                    post_search_index + 1,
+                    len(state_messages),
+                )
+                if (
+                    state_messages[index][1].state_valid
+                    and state_messages[index][1].state
+                    != AlgorithmState.STATE_SEARCH
+                )
+            ),
+            None,
+        )
+        search_end_stamp = (
+            state_messages[next_state_index][0]
+            if next_state_index is not None
+            else None
+        )
+
+        def in_returned_search(stamp):
+            return (
+                stamp >= search_stamp
+                and (
+                    search_end_stamp is None
+                    or stamp < search_end_stamp
+                )
+            )
+
+        returned_search_states = [
+            (stamp, message)
+            for stamp, message in state_messages
+            if in_returned_search(stamp)
+        ]
+        for unused_stamp, message in returned_search_states:
+            weights = [
+                float(message.sensor_weight),
+                float(message.gaussian_weight),
+                float(message.affine_weight),
+            ]
+            if (
+                not message.state_valid
+                or message.state != AlgorithmState.STATE_SEARCH
+                or not message.weights_valid
+                or weights != [1.0, 1.0, 0.0]
+                or message.active_escape_fill_id_valid
+                or message.escape_geometry_valid
+                or message.safe_direction_valid
+                or message.safe_direction_revision_valid
+            ):
+                return failed(
+                    'returned SEARCH state retained escape authority'
+                )
+
+        returned_search_commands = [
+            (stamp, message)
+            for stamp, message in commands
+            if in_returned_search(stamp)
+        ]
+        if not returned_search_commands:
+            return failed('post-exit SEARCH has no supervisor command')
+        for unused_stamp, message in returned_search_commands:
+            raw = _finite_command(_twist_command(message))
+            if raw is None or any(abs(value) > 1e-9 for value in raw):
+                return failed(
+                    'post-exit SEARCH supervisor command is not zero'
+                )
+        zero_command_stamp = returned_search_commands[0][0]
+
+        controller_evidence = resolved.get('success', {}).get(
+            'controller',
+            {},
+        )
+        handoff_timeout_sec = controller_evidence.get(
+            'supervisor_owned_assist_handoff_timeout_sec'
+        )
+        if (
+            isinstance(handoff_timeout_sec, bool)
+            or not isinstance(handoff_timeout_sec, (int, float))
+            or not math.isfinite(float(handoff_timeout_sec))
+            or float(handoff_timeout_sec) <= 0.0
+        ):
+            return failed(
+                'causal post-exit handoff timeout is unavailable'
+            )
+        handoff_timeout_sec = float(handoff_timeout_sec)
+        handoff_timeout_ns = handoff_timeout_sec * 1e9
+
+        returned_search_diagnostics = [
+            (stamp, message)
+            for stamp, message in diagnostic_records
+            if in_returned_search(stamp)
+        ]
+        if not returned_search_diagnostics:
+            return failed(
+                'post-exit SEARCH has no control diagnostic sample'
+            )
+
+        proven_authority_commands = [
+            (stamp, message)
+            for stamp, message in authority_commands
+            if stamp in proven_authority_command_stamps
+        ]
+        if not proven_authority_commands:
+            return failed('no assist command was proven by control evidence')
+        final_assist_command_stamp, final_assist_command_message = (
+            proven_authority_commands[-1]
+        )
+        final_assist_command = _finite_command(
+            _twist_command(final_assist_command_message)
+        )
+        if final_assist_command is None:
+            return failed('final assist command is invalid')
+
+        first_ordinary_stamp = None
+        transition_sample_count = 0
+        ordinary_sample_count = 0
+        zero = [0.0] * 6
+        for diagnostic_stamp, message in returned_search_diagnostics:
+            gesc = _finite_command(message.gesc_command_unsaturated)
+            combined = _finite_command(
+                message.combined_command_unsaturated
+            )
+            contribution = _finite_command(
+                message.supervisor_contribution
+            )
+            final = _finite_command(message.final_command)
+            if (
+                gesc is None
+                or combined is None
+                or contribution is None
+                or final is None
+                or not message.gesc_command_unsaturated_valid
+                or not message.combined_command_unsaturated_valid
+                or not message.supervisor_contribution_valid
+                or not message.final_command_valid
+            ):
+                return failed(
+                    'post-exit SEARCH has invalid command evidence'
+                )
+            expected_contribution = [
+                combined[index] - gesc[index]
+                for index in range(6)
+            ]
+            if not _commands_close(
+                contribution,
+                expected_contribution,
+            ):
+                return failed(
+                    'post-exit supervisor contribution is inconsistent'
+                )
+            saturated = _diagnostic_saturated_command(message, combined)
+            if saturated is None or not _commands_close(final, saturated):
+                return failed(
+                    'post-exit SEARCH final command saturation is invalid'
+                )
+
+            ordinary = (
+                _commands_close(combined, gesc)
+                and _commands_close(contribution, zero)
+            )
+            if ordinary:
+                if first_ordinary_stamp is None:
+                    first_ordinary_stamp = diagnostic_stamp
+                ordinary_sample_count += 1
+                continue
+
+            if first_ordinary_stamp is not None:
+                return failed(
+                    'supervisor authority reappeared after causal handoff'
+                )
+
+            zero_or_failsafe = _commands_close(combined, zero)
+            assist_age_ns = (
+                diagnostic_stamp - final_assist_command_stamp
+            )
+            held_final_assist = (
+                0.0 <= assist_age_ns <= stale_ns
+                and _commands_close(
+                    combined,
+                    final_assist_command,
+                )
+            )
+            if (
+                any(abs(value) > 1e-9 for value in gesc)
+                and _commands_close(
+                    combined,
+                    [
+                        final_assist_command[index] + gesc[index]
+                        for index in range(6)
+                    ],
+                )
+            ):
+                return failed(
+                    'GESC leaked during causal post-exit handoff'
+                )
+            if (
+                _commands_close(combined, final_assist_command)
+                and not held_final_assist
+            ):
+                return failed(
+                    'causal post-exit handoff retained a stale assist command'
+                )
+            if not zero_or_failsafe and not held_final_assist:
+                return failed(
+                    'causal post-exit handoff contains an '
+                    'unrecognized command'
+                )
+            transition_sample_count += 1
+
+        if first_ordinary_stamp is None:
+            return failed(
+                'post-exit SEARCH never restored ordinary GESC ownership'
+            )
+        handoff_delay_ns = first_ordinary_stamp - search_stamp
+        if handoff_delay_ns < 0 or handoff_delay_ns > handoff_timeout_ns:
+            return failed(
+                'causal post-exit handoff exceeded its timeout'
+            )
+        evidence.update({
+            'post_exit_supervisor_zero_bag_stamp': zero_command_stamp,
+            'post_exit_control_bag_stamp': first_ordinary_stamp,
+            'post_exit_transition_control_sample_count': (
+                transition_sample_count
+            ),
+            'post_exit_handoff_delay_sec': handoff_delay_ns * 1e-9,
+            'post_exit_handoff_timeout_sec': handoff_timeout_sec,
+            'post_exit_ordinary_control_sample_count': (
+                ordinary_sample_count
+            ),
+            'post_exit_ordinary_gesc_restored': True,
+            'post_exit_handoff_evidence_mode': (
+                'bounded_causal_schema_v11'
+            ),
+        })
+        return True, evidence, None
 
     zero_command_record = next(
         (

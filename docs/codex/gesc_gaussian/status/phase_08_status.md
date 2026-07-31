@@ -14706,3 +14706,187 @@ NO-GAZEBO QUALIFICATION PENDING / GAZEBO PROHIBITED.**
 Commit this exact Plan boundary. Then implement schema-v11 evidence and fresh
 scenarios, qualify entirely without Gazebo, checkpoint, and commit before any
 new runtime dispatch.
+
+## Phase 08.8 M4.8 v8.7 no-Gazebo qualification — 2026-07-31
+
+The evidence-only v8.7 correction and four fresh fixed inputs are implemented
+and qualified without Gazebo.
+
+Schema v11 retains every schema-v10 assisted-escape ownership requirement and
+adds one evaluator-only field:
+
+```text
+supervisor_owned_assist_handoff_timeout_sec: 0.15
+```
+
+The post-exit predicate now validates the complete returned-`SEARCH`
+interval. Every state must have weights `(1,1,0)` and no escape authority;
+every supervisor publication must be finite zero; every diagnostic must have
+valid contribution arithmetic and saturation. Before ordinary GESC ownership
+is causally observed, only ordinary GESC, zero/failsafe, or the final fresh
+assist command already proven by pre-exit control evidence is accepted.
+Ordinary ownership must occur within `0.15 s` and may never revert.
+
+Schema versions through v10 retain the original first-sample branch.
+Controller, supervisor, detector, fill, modified-cost, launch, world, motion,
+source, ranking, timeout, final-zero, and cleanup behavior are unchanged.
+
+The immutable seed-`19411` v8.6 bag was replayed read only:
+
+```text
+schema v10:
+  false
+  post-exit SEARCH did not restore ordinary GESC ownership
+schema v11:
+  true
+recognized transition samples:
+  1
+handoff delay:
+  0.007696498 s
+handoff deadline:
+  0.15 s
+ordinary diagnostics in complete recorded SEARCH interval:
+  13,109
+outcome_error:
+  null
+log:
+  /tmp/phase08_8_m4_8_seed19411_causal_replay.log
+SHA-256:
+  87072d0f2826605356e849f4e38b70b15a96cf07ffad09e82cd7da80183d00de
+```
+
+Whole-document pair normalization proves each fresh v8.7 scenario is equal
+to its v8.6 parent after removing only the declared schema/evidence field,
+version identities, root, descriptions, and seeds. Source geometry and
+intensities, start, all launch inputs, the one-fill/two-source contract,
+budgets, simulation stop, final-zero, cleanup, and first-failure rules are
+unchanged.
+
+Fresh inputs:
+
+```text
+f654f51a3cc445359b1f94c81512f25471d0c388267126bd8923791a1d2b542b
+  phase08_v8_7_primary_repeats.yaml
+5c5f40dd77005fea3f44faa1c7f425e709b245ffcd1279f9f7979505d3059910
+  phase08_v8_7_primary_visible_probe.yaml
+f555b99f892746a9898f9c71c5c428cf2c018ebdca15d9a83deddb764ec2cc8b
+  phase08_v8_7_secondary_repeats.yaml
+1424eb1ca3823f6481eac46481a7aa08a2480331e4e653313becac44702dba83
+  phase08_v8_7_secondary_visible_probe.yaml
+```
+
+Final no-Gazebo evidence:
+
+```text
+focused controller/supervisor/detector/geometry/legacy:
+  305 passed in 8.44 s
+focused schema/runner/validator/analyzer/recording:
+  582 passed, 1 skipped in 126.91 s
+broad ROS-independent:
+  893 passed, 3 skipped in 146.61 s
+complete schema/runner:
+  296 passed, 1 skipped in 55.76 s
+fatal changed-file lint:
+  PASS
+changed-Python compilation:
+  PASS
+XML and four YAML parses:
+  PASS
+Phase 08 implementation context:
+  PASS
+git diff --check:
+  PASS
+```
+
+The focused skip and two broad runtime skips are unchanged explicit Gazebo
+opt-ins. The additional broad skip is the repository copyright-template
+check. There are no failures or errors.
+
+A fresh isolated release build at:
+
+```text
+/tmp/phase08_8_v8_7_release_qual.krosar
+```
+
+finished all three packages in `14.6 s`. Source/install parity passes for
+`10/10` owners. Default supervisor, fully enabled counted-source supervisor
+with exact one-fill cardinality, robust affine modified-cost, and robust
+controller all constructed from the install on isolated ROS domain `230` and
+reached the expected bounded timeout `124`.
+
+All four installed dry-runs resolve the sealed `1 + 10 + 1 + 5` cases with
+zero unsupported cases and create no run root. The enabled supervisor-owner
+switch appears in every launch/record command. The evaluator-only handoff
+timeout appears in none.
+
+The complete durable record is:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_8_no_gazebo_qualification.md
+```
+
+Historical scenarios, V6, worlds, results, bags, plots, and fixed failures
+are unchanged. No Gazebo, scenario, recorder, analyzer, rosbag recorder, or
+physical process ran during qualification. At close, all v8.7 run roots are
+absent and no runtime process is active.
+
+Bounded corrections retained in the report include causal fixture repairs,
+advancing the unsupported-schema test from 11 to 12, strengthening the held
+tail to require a pre-exit proven command, correcting a pre-build shell
+wrapper, and supplying the omitted exact one-fill parameter to the installed
+construction probe. Every final gate passes.
+
+## Current milestone
+
+**PHASE 08.8 M4.8 — V8.7 SCHEMA-V11 CAUSAL HANDOFF IMPLEMENTED /
+NO-GAZEBO QUALIFICATION PASS / IMPLEMENTATION CHECKPOINT PENDING /
+GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Run the Phase 08 material-boundary checkpoint and commit exactly the qualified
+implementation, four fixed inputs, report, status, and checkpoint. Then write,
+checkpoint, and commit a separate visible-dispatch boundary before executing
+the installed primary visible seed `19501` once. Do not join the sealed run's
+ROS domain.
+
+## Phase 08.8 M4.8 v8.7 implementation checkpoint — 2026-07-31
+
+The complete schema-v11 implementation, causal replay, four fixed v8.7
+inputs, no-Gazebo qualification, report, and live status received the required
+Phase 08 material-boundary checkpoint against Plan HEAD `b8c11f1`.
+
+```text
+base HEAD:
+  b8c11f162d34383691f1c1e025394bca4e071e19
+status sha256 before this checkpoint note:
+  3fca103f8b3580b51b3b50de5b66e7b1938ff9f9014a6f41fe0d54968bbc21f2
+active plan sha256:
+  8c063ed44514bd9a84e0601f5cb73e56aeecabddce7cabda0d6c65fe80077694
+qualification report sha256:
+  42c6e51f0e5fabe625e0c51f5de14f4e41ffcc4638c15dc984ed8f3e9b2121bb
+unstaged tracked diff sha256:
+  b63c6b3fa2a643a8c407e3cf8c00707e443e84cbf14e9bd4adf6e4d40c81e60c
+checkpoint sha256 before this checkpoint note:
+  f1d2e6498c646f51ba90d4e9cdfa13043b3aed94c6d4fed7d0bda776a8a96711
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+```
+
+No Gazebo, scenario, recorder, analyzer, rosbag recorder, or physical process
+ran during this checkpoint. All four v8.7 run roots remain absent.
+
+## Current milestone
+
+**PHASE 08.8 M4.8 — V8.7 SCHEMA-V11 CAUSAL HANDOFF IMPLEMENTED /
+NO-GAZEBO QUALIFICATION PASS / IMPLEMENTATION CHECKPOINT PASS /
+IMPLEMENTATION COMMIT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Stage and commit exactly this qualified implementation boundary. Then create,
+checkpoint, and commit a separate visible-dispatch authority before executing
+installed primary visible seed `19501` once without any ROS-domain monitor.
