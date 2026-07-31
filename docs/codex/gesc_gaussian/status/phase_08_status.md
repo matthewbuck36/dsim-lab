@@ -13620,3 +13620,165 @@ DISPATCH CHECKPOINT PASS / DISPATCH COMMIT PENDING / GAZEBO PROHIBITED.**
 
 Stage and commit this exact dispatch boundary. Only that clean committed state
 authorizes the sealed ten-run primary gate.
+
+## Phase 08.8 M4.6 fixed v8.5 primary-repeat result — 2026-07-31
+
+**FIXED POPULATION FAIL / FIVE OF SIX DISPATCHED PASS / SEED `19316`
+STAGE B FAIL / FOUR LATER SEEDS NOT DISPATCHED / INFRASTRUCTURE COMPLETE /
+EVIDENCE AND PLOTS RETAINED.**
+
+The committed headless population ran serially from dispatch HEAD `89946b9`
+on ROS domain `231`. Exactly seeds `19311..19316` executed once. Seeds
+`19311..19315` passed the complete counted-candidate path, strict
+second-candidate ranking, and the `0.50 m` post-recovery evaluator stop. Seed
+`19316` passed Stage A, exactly one-fill cardinality, and assisted escape, but
+did not find or rank candidate two within its independent `180.0 s` Stage B
+budget.
+
+| Seed | Formal result | Stage A (s) | Stage B (s) | Final global distance |
+|---:|---|---:|---:|---:|
+| 19311 | PASS | 259.525 | 124.882 | 0.147096 m |
+| 19312 | PASS | 141.614 | 123.012 | 0.120690 m |
+| 19313 | PASS | 191.332 | 134.096 | 0.299232 m |
+| 19314 | PASS | 203.921 | 161.602 | 0.164801 m |
+| 19315 | PASS | 234.604 | 141.304 | 0.123232 m |
+| 19316 | FAIL | 177.532 | 180.030 | 2.149315 m |
+| 19317..19320 | NOT DISPATCHED | — | — | — |
+
+The runner stopped at the first formal failure with
+`stopped_early_reason: run_failure`; seed `19316` was not retried. Every
+recorder returned zero without timeout, authoritative completeness passed,
+final-zero and final-readiness-false passed, cleanup passed, and no Gazebo,
+scenario, recorder, analyzer, rosbag recorder, or physical process remains.
+
+Retained summary:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_5_primary_repeats/
+  scenario_summaries/
+  20260731T102730662971Z_phase08_v8_5_primary_repeats.yaml
+SHA-256:
+  b6f563206de201654264de12d2fadf694e0d34f0bf47cac9614271dd479484ea
+```
+
+Complete report:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_6_primary_repeats.md
+SHA-256:
+  73fa00d3599085aa22024de761f7f576ea451c32361eac6f2dd82c90943d9543
+```
+
+The standard analyzer was executed exactly once for all six retained runs and
+produced all nine plots for each. Seeds `19311`, `19313..19316` have complete
+analysis with no failures. Seed `19312` remains honestly `partial` with no
+analysis failure because one ordinary state sample gap invalidates only the
+generic reconstructed state-duration metric; its formal acceptance remains
+passed.
+
+The selected v8.5 direction did not change or reverse. For seed `19316`, it
+was `(0.485035, 0.874495)`, revision one, with evaluator-only alignment
+`+0.943` against the fill-to-global direction. The physical escape-completion
+pose was `(0.780608, -0.139229) m`; its radial exit direction had dot product
+`-0.925` against the selected direction and `-0.746` against the offline
+fill-to-global direction.
+
+The defect is command arbitration. V8.5 adds the oscillatory GESC command and
+bounded supervisor direction command before saturation. Across the failed
+seed's `2,860` synchronized assist samples:
+
+```text
+nonzero supervisor angular request samples:      2,847
+|GESC angular| > |supervisor angular| samples:   2,640
+combined turn opposite supervisor samples:       1,605
+mean |GESC angular request|:                       7.095 rad/s
+mean |supervisor angular request|:                 0.398 rad/s
+nonzero supervisor linear request samples:        0
+```
+
+The GESC angular request kept heading outside the supervisor's drive cone, so
+the nominal outward assist supplied no linear translation. The robot escaped
+under the competing GESC command on a seed-dependent side of the fill.
+Across all six runs, actual exit-direction dot product against the selected
+direction ranged from `+0.960` through `-0.925`.
+
+After the wrong-side exit, seed `19316` was not stuck. Ordinary affine-free
+search reduced global distance by `1.979 m` in the final `60 s` with path
+efficiency `0.912`; the scenario-only Stage B evidence clock expired while it
+was still approaching. More time could admit that one trajectory but would
+not correct the defeated supervisor direction. The next version must give
+the bounded supervisor exclusive command ownership during assist; Stage B
+may also be relaxed as evidence slack, not as the primary algorithmic fix.
+
+Failed-seed plot directory:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_5_primary_repeats/
+  2026-07-31/
+  20260731T110116556773Z_simulation_phase08_v8_5_primary_repeats-v8_5_primary_repeat_r1p5_a45_h25-robust_gaussian_v1_3d6091a5/
+  analysis/phase07/plots/
+```
+
+The directory contains `trajectory_sources_fills.png`,
+`candidate_ranking.png`, `cost.png`, `components.png`, `state_events.png`,
+`weights.png`, `command_saturation.png`, `radial_escape.png`, and
+`gaussian_history.png`. Identical plot filenames are retained under every
+executed run directory.
+
+This failure closes v8.5. It prohibits the v8.5 secondary probe, secondary
+repeats, broad characterization, three-light testing, and physical motion.
+It does not modify or relabel the passing visible probe or five passing repeat
+runs.
+
+## Current milestone
+
+**PHASE 08.8 M4.6 — FIXED V8.5 PRIMARY POPULATION CLOSED 5/6 /
+COMMAND-ARBITRATION DEFECT DIAGNOSED / RESULT CHECKPOINT PENDING /
+GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Checkpoint and commit this immutable v8.5 result and diagnosis. Then write and
+commit a fresh default-off v8.6 correction amendment before changing code or
+dispatching any Gazebo run.
+
+## Phase 08.8 M4.6 v8.5 primary-result checkpoint — 2026-07-31
+
+The immutable fixed-population failure, six retained run artifacts, six
+offline analysis bundles, complete report, live status, plot paths, and
+command-arbitration diagnosis received the required Phase 08 checkpoint
+against dispatch HEAD `89946b9`.
+
+```text
+base HEAD:
+  89946b9fb1e73386c02bb3584ad9dcca3cbb5b6e
+status sha256 before this checkpoint note:
+  1bea2465b22c9daaa7a076ba19daa60370bfc4320077bd0e657830e144389439
+validation report sha256:
+  73fa00d3599085aa22024de761f7f576ea451c32361eac6f2dd82c90943d9543
+tracked unstaged diff sha256:
+  8b532a901c2063e0068ce640b206f02452f8eae11b39f8cdc0a30fecb353bfb3
+combined status-plus-untracked-report diff sha256:
+  b153407700ab4e401eeb6654afe3571ab60d4eb627c91d2bc0703c00df0339f8
+checkpoint sha256 before this checkpoint note:
+  cce50e361b2a394ea32dc020e0966215a52071161668bd2d3cc161b24687afaf
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+```
+
+No Gazebo, scenario, recorder, analyzer, rosbag recorder, or physical process
+remained during this result checkpoint.
+
+## Current milestone
+
+**PHASE 08.8 M4.6 — FIXED V8.5 PRIMARY POPULATION CLOSED 5/6 /
+COMMAND-ARBITRATION DEFECT DIAGNOSED / RESULT CHECKPOINT PASS /
+RESULT COMMIT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Stage and commit this exact v8.5 result boundary. Then verify the clean tree
+before writing the fresh v8.6 plan amendment.
