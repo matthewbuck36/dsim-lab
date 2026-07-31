@@ -1,7 +1,7 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-31T12:42:53-07:00`
-Status: `PHASE 08.8 M7 CLOSEOUT QUALIFIED AND CHECKPOINTED; PRIMARY 11/11 FORMAL PASS; SECONDARY FORMAL FAIL; COMMIT PENDING`
+Last verified: `2026-07-31T12:44:26-07:00`
+Status: `PHASE 08.8 CLOSED; CLOSEOUT COMMITTED AT 4DEF990; PRIMARY 11/11 FORMAL PASS; SECONDARY FORMAL FAIL; BROAD CLAIM NOT ESTABLISHED`
 
 ## Objective
 
@@ -18371,3 +18371,65 @@ Stage only the six reviewed M7 files, inspect the cached diff and whitespace,
 and commit the qualified closeout. Then append a post-commit receipt and make
 the final bounded receipt commit. Do not launch Gazebo, ROS, an analyzer,
 Phase 09, or physical hardware.
+
+## Phase 08.8 committed closeout boundary — 2026-07-31
+
+The qualified final report, handoff, navigation updates, live-status
+qualification, and material checkpoint were committed at:
+
+```text
+4def9905189e9d2ee189212cd2c1629417982ab6
+phase 08.8: publish counted-source closeout
+```
+
+Immediately after that commit:
+
+```text
+worktree:                       clean
+branch:                         feature/gesc-gaussian-robustness-v1
+ahead of tracked remote:        160 commits
+Phase 08 implement context:     PASS
+git diff --check:               PASS
+final report SHA-256:
+  1e2fba7fb8d7d0ed60b9975ff8f916178ea87593dc422ecd38c21dbc8fbe5c4d
+final handoff SHA-256:
+  55397d2e39aa322632b225b6936435e91586067e893027ccc64f6b07faee27cb
+material checkpoint SHA-256:
+  0d3a586a1d0e23299f8a63a582b50a462e04bc75b41d911fe64b3c070166f568
+active simulation/analysis/physical runtime:
+  none
+```
+
+This commit closes the bounded Phase 08.8 iteration with:
+
+```text
+primary fixed layout:                  11/11 formal pass
+secondary visible:                      0/1 formal pass
+secondary scientific behavior:          1/1 complete
+secondary repeats:                      NOT RUN
+M6 broader matrix:                      NOT RUN
+three-light Gazebo:                     NOT RUN
+broad simulation readiness:            NOT ESTABLISHED
+automatic physical coordinate stop:    PROHIBITED
+physical motion:                        NOT RUN
+```
+
+No simulation-ready tag was created. No failed version was reopened or
+reclassified. V6 and all historical scenarios, worlds, results, and plots
+remain preserved.
+
+## Current milestone
+
+**PHASE 08.8 — CLOSED / FINAL REPORT AND HANDOFF COMMITTED AT `4DEF990` /
+PRIMARY FIXED LAYOUT `11/11` FORMAL PASS / SECONDARY SCIENTIFIC PASS BUT
+FORMAL EVALUATOR FAIL / BROAD CLAIM NOT ESTABLISHED / NO PHYSICAL MOTION.**
+
+## Next criterion
+
+Wait for a separate user request to plan Phase 09. Begin with a static
+physical-interface and sensor-response calibration inventory around the
+primary two-source `1:4` condition. Planning does not authorize hardware
+motion. Preserve manual operator `Ctrl+C`, final-zero, recording
+finalization, open-field assumptions, and scoped cleanup. Do not infer
+secondary-layout, arbitrary-intensity, three-light, wall, obstacle, or broad
+simulation readiness.
