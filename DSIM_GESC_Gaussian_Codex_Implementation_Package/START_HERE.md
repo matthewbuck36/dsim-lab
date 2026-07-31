@@ -122,29 +122,26 @@ docs/codex/gesc_gaussian/plans/phase_00_plan.md
 The Phase 00 Implement chat must read and verify that file before creating the
 audit documents.
 
-## Current checkpoint after Phase 08.2
+## Current checkpoint after Phase 08
 
-Phases 00-07.5 are implemented. Phase 08 v1 and v2 are closed failed historical
-evidence. Phase 08.1 completed its bounded diagnosis, implementation recovery,
-and two development-only runtime probes. Phase 08.2 corrected and validated
-recenter recovery in one separately versioned development probe. Read:
+Phases 00-07.5 are implemented. Phase 08 is closed as a development and
+diagnostic phase; its broad simulation-ready objective failed. The final
+Phase 08.7 retained-success reproduction produced `13/17` formal and `14/17`
+behavioral passes under evidence-selected two-light conditions, not an
+unbiased acceptance denominator. Read first:
 
 ```text
-docs/codex/gesc_gaussian/plans/phase_08_1_plan.md
-docs/codex/gesc_gaussian/handoffs/phase_08_1_handoff.md
-docs/codex/gesc_gaussian/plans/phase_08_2_plan.md
-docs/codex/gesc_gaussian/handoffs/phase_08_2_handoff.md
+docs/codex/gesc_gaussian/validation/phase_08_final_report.md
+docs/codex/gesc_gaussian/handoffs/phase_08_final_handoff.md
+docs/codex/gesc_gaussian/status/phase_08_status.md
 ```
 
-The calibrated-goal probe passed; the Phase 08.1 fill/escape prefix passed but
-timed out during recenter. Phase 08.2 preserved that evidence, corrected the
-recenter-only policy, and passed the fresh full
-`SEARCH -> VERIFY_EXTREMUM -> DESIGN_OR_MERGE_FILL -> ESCAPE_REPULSE ->
-RECENTER -> SEARCH` contract. Simulation readiness is still not established:
-the next justified work is a separately reviewed v3 acceptance Plan. Do not
-resume or relabel historical evidence, rerun completed probes unchanged, start
-v3 tuning/freeze/acceptance without that Plan, launch physical motion, or
-proceed to Phase 09.
+The next justified work is a separately reviewed Phase 09 physical-interface
+inventory and Plan centered first on the known-good two-light `1:4` response
+condition. Planning does not authorize hardware motion. Do not resume or
+relabel historical Phase 08 evidence, create a simulation-ready tag, infer
+three-light readiness, enable an automatic physical global-distance stop, or
+launch hardware without explicit Phase 09 authorization.
 
 ---
 

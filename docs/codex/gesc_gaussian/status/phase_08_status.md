@@ -1,18 +1,18 @@
 # Phase 08 Live Status
 
-Last verified: `2026-07-30T03:54:09-07:00`
-Status: `PHASE 08.7 M4.4 VISIBLE PROBE PASS; CONDITIONAL EIGHT-CASE SUITE DISPATCH PENDING`
+Last verified: `2026-07-30T17:18:00-07:00`
+Status: `PHASE 08 WHOLE-PHASE REPORT QUALIFIED; BROAD SIMULATION-READY OBJECTIVE FAILED; CHECKPOINT/COMMIT PENDING`
 
 ## Objective
 
-Demonstrate with exactly two lights that unchanged GESC can converge at the
-lower-output local light, create a Gaussian fill there, escape, recenter, and
-resume search. Sweep physical Philips Hue-compatible nominal ratios inside the
-`4 m x 4 m` laboratory envelope without steering or orienting the robot toward
-the local light. Preserve controller ownership, cost sign and units, canonical
-topics, selectable legacy behavior, original sensor rotation, and
-simulation/physical algorithm parity. Treat global convergence as secondary,
-defer three-light execution, and make no simulation-readiness claim.
+Retain the complete Phase 08 simulation-validation history, close the failed
+broad simulation-ready objective honestly, and identify the strongest bounded
+two-light evidence without relabeling failed versions. Preserve controller
+ownership, cost sign/units, canonical topics, selectable legacy behavior,
+historical worlds/scenarios/results, original sensor rotation, and
+simulation/physical algorithm parity. Keep three-light and physical execution
+outside Phase 08, and carry the user-required manual physical `Ctrl+C`
+termination policy into the Phase 09 planning boundary.
 
 ## Verified repository state
 
@@ -10354,3 +10354,170 @@ Reconstruct it from the current code, Git history, plans, status,
 checkpoints, handoffs, and retained validation artifacts. Do not infer
 Phase 09 implementation, three-light execution, or physical-hardware
 authorization from this M4.8 closeout.
+
+## Whole-Phase-08 final report and handoff
+
+The user requested the final report for the entirety of Phase 08. The report
+was reconstructed from the current implementation, Git history, every
+Phase 08 Plan, the version-specific handoffs, this live status, the current
+checkpoint, retained validation reports, and the final M4.8 evidence. No
+Gazebo, ROS scenario, analyzer, physical command, or hardware process was
+started.
+
+Authoritative closeout documents:
+
+```text
+docs/codex/gesc_gaussian/validation/phase_08_final_report.md
+SHA-256
+a884577d7d844f24b554f461543e15c9a2aa527f61e41f1c18141cea6a3a2306
+
+docs/codex/gesc_gaussian/handoffs/phase_08_final_handoff.md
+SHA-256
+a082e23b58345eb7d418822b409824122ffc185530d7285e6e16c6defb7f5727
+```
+
+The terminal whole-phase disposition is:
+
+```text
+Phase 08 development/diagnostic work:       CLOSED
+broad simulation-ready objective:           FAILED
+70-unique-case acceptance denominator:      NOT RUN
+simulation-ready tag:                        NOT CREATED
+three-light readiness:                       NOT ESTABLISHED
+physical hardware during Phase 08:           NOT RUN
+M4.8 known-success reproduction:             13/17 formal
+                                               14/17 behavioral
+```
+
+The report records the complete chronology:
+
+- v1's `81` training runs, failed 12-run exposed holdout, and safely stopped
+  partial 519-run pass;
+- v2's failed `1/10` mandatory activation gate;
+- Phase 08.1's detector/fill/verification/readiness corrections and mixed
+  two-probe diagnosis;
+- Phase 08.2's passing recenter-only development probe;
+- v3's contact, behavioral, executor, and recorder-finalization failures;
+- V4's safe direct-goal but unexercised robustness branch;
+- V5's `0/8` blocker-encounter result despite four complete recovery paths;
+- V6's selected H25 ratio, `1/3` full-record repeats, and `2/3` first-recovery
+  episodes;
+- Phase 08.7 M1-M4.7's shifted geometry, known topology, staged contract,
+  evidence corrections, successful probes, failed suites, and bounded
+  post-recovery diagnoses;
+- M4.8's final `13/17` formal, `14/17` behavioral, `17/17` final-zero,
+  cleanup, collision/forbidden, and SQLite result.
+
+The final Phase 09 proposal is deliberately narrow and non-authorizing:
+inventory and plan a two-light physical commissioning path around the
+simulator-relative `400/1600` or measured `1:4` response condition, starting
+with the radius-1.5, 45-degree layout and retaining the 67.5-degree layout as
+a secondary case. Three-light work remains deferred.
+
+The physical termination policy is explicit:
+
+```text
+automatic physical distance stop: PROHIBITED
+global distance:                  DIAGNOSTIC ONLY
+termination:                      OPERATOR CTRL+C WHEN SUFFICIENTLY CLOSE
+shutdown:                         readiness false -> stop -> final zero
+                                  -> bag finalization -> scoped cleanup
+```
+
+Navigation was updated so `START_HERE.md` and `implementation_sequence.md`
+point to the final report/handoff instead of the obsolete Phase 08.2/v3
+active-subphase boundary.
+
+Initial closeout document checks:
+
+```text
+report local Markdown links:     20 checked, 0 missing
+key terminal-claim assertions:   pass
+git diff --check:                pass
+```
+
+## Current milestone
+
+**PHASE 08 WHOLE-PHASE REPORT — WRITTEN /
+BROAD SIMULATION-READY OBJECTIVE FAILED /
+FINAL HANDOFF WRITTEN /
+CLOSEOUT VALIDATION AND CHECKPOINT PENDING.**
+
+### Next criterion
+
+Run the final source-to-report consistency audit, context validation, document
+link/parse checks, `git diff --check`, and historical-hash spot checks. Then
+write the material Phase 08 checkpoint, inspect the complete diff, and commit
+the closeout documents. Do not start Phase 09 implementation, Gazebo,
+three-light execution, or physical hardware.
+
+## Whole-Phase-08 report qualification
+
+The closeout documents passed the complete non-runtime qualification:
+
+```text
+validate_phase_context.sh 08 implement:
+  PASS; active subphase phase_08_7_plan.md
+
+validate_required_docs.sh:
+  PASS; all required Phase 00 audit documents exist
+
+report Markdown links:
+  20 checked, 0 missing
+
+source-to-report consistency:
+  PASS for v1, v2, 08.1, 08.2, v3, V4, V5, V6, and M4.8
+  PASS for machine-readable V6 selected_case=H25, selected_ratio=0.25
+  PASS for final report terminal values and manual Ctrl+C policy
+
+historical hash spot checks:
+  M4.8 report:
+    f385abf9030ad1f1cc2c26850cfda7b860da3a74df632a72b167ea306ee9c63a
+  M1 immutability manifest:
+    34f20a3bd66893be295c44f860e85645f6c9c182d82a658ee47bc785f3b42dba
+  historical world:
+    8ecc1a231efec24401d74fef3cd5139d48c6029f88e71d044cefdf2fd14c5bef
+  shifted world:
+    88b10b39aa24a6430f6f031c750334ed34e6835e54c84de8d36f4cc6a26444bf
+
+retained external root audit:
+  16 major roots checked, 0 missing
+
+matching Gazebo/scenario/recorder/validator/analyzer processes:
+  none
+
+matching Phase 08 or simulation-ready tag:
+  none
+
+tool Python compilation:
+  PASS
+
+git diff --check:
+  PASS
+```
+
+The first two ad hoc consistency-smoke invocations used overly literal
+assertions: one looked for `400` in the prose V6 report instead of the
+machine-readable selection file, and the next looked for the exact uppercase
+phrase `OPERATOR CTRL+C` rather than the report's explicit sentence
+`operator presses Ctrl+C`. Both stopped only on those test-script assertions.
+The corrected source-aware check above passed completely. These were
+closeout-test assertion mistakes, not documentation-content, algorithm, ROS,
+Gazebo, evidence, or product failures.
+
+No source, launch, scenario, algorithm, test, world, retained report, or
+external evidence artifact changed during report qualification.
+
+## Current milestone
+
+**PHASE 08 WHOLE-PHASE REPORT — QUALIFIED /
+FINAL HANDOFF COMPLETE /
+BROAD SIMULATION-READY OBJECTIVE FAILED /
+MATERIAL CHECKPOINT AND COMMIT PENDING.**
+
+### Next criterion
+
+Run `checkpoint_phase.sh 08`, inspect the resulting checkpoint and complete
+six-file closeout diff, rerun context and whitespace checks, and commit the
+report/handoff/navigation/status/checkpoint boundary. Do not run Gazebo,
+Phase 09 implementation, three-light simulation, or physical hardware.

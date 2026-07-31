@@ -261,6 +261,17 @@ outputs on a recorded reference bag.
 
 ## Phase 08 - simulation validation, diagnosis, and freeze
 
+Terminal status as of 2026-07-30: Phase 08 is closed. The broad
+simulation-ready objective failed; no 70-unique-case acceptance denominator
+or simulation-ready tag exists. The final Phase 08.7 retrospective
+known-success reproduction produced `13/17` formal and `14/17` behavioral
+passes at simulator-relative `400/1600`, but it is not an unbiased robustness
+claim. Read the
+[whole-Phase-08 final report](validation/phase_08_final_report.md) and
+[final handoff](handoffs/phase_08_final_handoff.md) before Phase 09 planning.
+The detailed history below remains useful but its earlier active-subphase
+language is superseded by those closeout documents.
+
 Historical disposition: v1 and v2 are closed failed experiment versions. V1
 retains its incomplete large-matrix evidence. V2 retains ten activation
 attempts and stopped before tuning at Gate 2. Neither may be resumed,
@@ -367,7 +378,10 @@ launch reliability only and does not alter controller or algorithm parameters.
 ## Phase 09 - physical integration
 
 Goal: inventory and then connect real adapters to the same canonical
-interfaces, only after simulation readiness and explicit hardware approval.
+interfaces. The Phase 09 inventory and Plan may be prepared after the closed
+Phase 08 report, but physical motion remains prohibited until the Plan
+explicitly resolves the failed broad simulation-readiness boundary and the
+user authorizes hardware execution.
 
 First required artifact:
 

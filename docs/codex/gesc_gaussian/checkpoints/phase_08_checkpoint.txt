@@ -1,46 +1,51 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-30T22:43:09+00:00
-Base HEAD: 7dbdd6606a3d775318d8c741a1fe83de8bd3808a
+Generated: 2026-07-31T00:13:34+00:00
+Base HEAD: 3696677b19ee8e54536186d60e119614c6eec44a
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 1cfa494d60789c1ed6915ecd81f1b0fafc34565414ebf1d9446eded2b37d35dc
+Status sha256: b7e9f134d479c44453368ba598300d7a6c51040e849fb45b7888057e35057b08
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_7_plan.md
 Active subphase plan sha256: 22b63bf0fff114b65b351f573139173ec0d85967704d6fb5d9da3781e215cece
-Unstaged diff sha256: 43705a6677b3e43efa72d98fcfa0400e18db25b554bf20b891aab1f1a091f485
+Unstaged diff sha256: d8e798849407a95fd8e86cf8d7456369ba2363a620a683f613adda973a1ed411
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 100]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 101]
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
+ M docs/codex/gesc_gaussian/implementation_sequence.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
+?? docs/codex/gesc_gaussian/handoffs/phase_08_final_handoff.md
+?? docs/codex/gesc_gaussian/validation/phase_08_final_report.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 34 +++-------------
- docs/codex/gesc_gaussian/status/phase_08_status.md | 47 ++++++++++++++++++++++
- 2 files changed, 52 insertions(+), 29 deletions(-)
+ .../START_HERE.md                                  |  33 ++--
+ .../checkpoints/phase_08_checkpoint.txt            |  37 +---
+ .../codex/gesc_gaussian/implementation_sequence.md |  16 +-
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 187 +++++++++++++++++++--
+ 4 files changed, 216 insertions(+), 57 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**Phase 08.7 M4.8 — CLOSED AND COMMITTED /
-17 EXACT REPRODUCTIONS RETAINED / 13 FORMAL PASS /
-14 BEHAVIORAL PASS / MOST THRESHOLD PASS /
-PHYSICAL AUTO-DISTANCE STOP PROHIBITED.**
+**PHASE 08 WHOLE-PHASE REPORT — QUALIFIED /
+FINAL HANDOFF COMPLETE /
+BROAD SIMULATION-READY OBJECTIVE FAILED /
+MATERIAL CHECKPOINT AND COMMIT PENDING.**
 
 ### Next criterion
 
-Begin the separately scoped whole-Phase-08 report only when requested.
-Reconstruct it from the current code, Git history, plans, status,
-checkpoints, handoffs, and retained validation artifacts. Do not infer
-Phase 09 implementation, three-light execution, or physical-hardware
-authorization from this M4.8 closeout.
+Run `checkpoint_phase.sh 08`, inspect the resulting checkpoint and complete
+six-file closeout diff, rerun context and whitespace checks, and commit the
+report/handoff/navigation/status/checkpoint boundary. Do not run Gazebo,
+Phase 09 implementation, three-light simulation, or physical hardware.
 
 
 This file describes the base HEAD and diff before the next commit; it is
