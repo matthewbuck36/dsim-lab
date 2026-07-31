@@ -18803,3 +18803,153 @@ Commit this exact two-file dispatch boundary. Then execute the installed
 seed `19901` once on domain `222` with visible Gazebo and no retry. Preserve
 the runner summary and all descendants whether the formal result passes or
 fails.
+
+## Phase 08.8 M8.3 v8.11 secondary-visible result — 2026-07-31
+
+The one authorized installed seed `19901` executed once and passed every
+formal gate.
+
+```text
+dispatch commit:
+  66c7e8e462dafe33e2cf5c3b6df4a14c60758940
+started / completed:
+  2026-07-31T21:00:56.130307Z / 2026-07-31T21:05:41.464572Z
+runner / recorder:
+  0 / 0
+attempts / retries:
+  1 / 0
+recording / completeness / final zero / cleanup:
+  PASS / PASS / PASS / PASS
+formal predicates:
+  14/14 PASS
+```
+
+The exact summary and summary-owned run are:
+
+```text
+summary:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_11_secondary_probe/scenario_summaries/
+  20260731T210056130307Z_phase08_v8_11_secondary_visible_probe.yaml
+summary sha256:
+  4f038f241e35d0e25de0a7e1f5b61b1fa01222f21f718b3c1e2cf7fccd13dd98
+run:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_11_secondary_probe/2026-07-31/
+  20260731T210056770365Z_simulation_phase08_v8_11_secondary_visible_probe-
+  v8_11_secondary_probe_r1p5_a67p5_h25_19901_c0544b8e
+```
+
+Observed behavior:
+
+```text
+state path:
+  SEARCH -> VERIFY_EXTREMUM -> DESIGN_OR_MERGE_FILL -> ESCAPE_REPULSE
+  -> SEARCH -> VERIFY_EXTREMUM -> GOAL_HOLD
+convergence / fill center:
+  (1.1937773, 1.8373593) / (1.1844564, 1.8233879) m
+fill-to-convergence:
+  0.0167952 m
+convergence-to-local diagnostic / lamp gate applied:
+  0.7667992 m / false
+created / typed / active fills:
+  1 / 1 / 1
+Stage A completion:
+  116.032 sim s
+escape branch / duration:
+  direct_repulse / 21.709817 s
+strict ranked-goal margin:
+  3.6023806470 raw-cost units
+Stage B sample time / distance:
+  237.412 sim s / 0.1858370 m
+final global distance:
+  0.1858108 m
+graceful proximity stop:
+  true
+```
+
+The topology hash is
+`eb749f0cb86f7b35231bdc308365f3008c6168df07b0188c03a97f339f364d71`.
+The local-lamp distance remains diagnostic while the measured
+convergence/fill association, topology qualification, exact cardinality,
+recovery path, strict ranking, and Stage B proximity all gate.
+
+The single analysis completed with fresh Phase 05 validation, no failures,
+SQLite `quick_check=ok`, unchanged raw bag hash, and all nine plots:
+
+```text
+analysis:
+  complete / failures []
+plots:
+  9/9
+analysis log:
+  /tmp/phase08_8_v8_11_secondary_visible_analysis.log
+analysis log sha256:
+  b69deff2b0b655a6149fa272716d0f176d083cb97c90bb872b19ed17a67bb74a
+```
+
+The trajectory, cost, and candidate-ranking plots were visually inspected
+and show the intended shifted-basin recovery, ordinary transit, global
+capture, and strict cost ordering.
+
+Durable result:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m8_3_v8_11_secondary_visible_probe.md
+```
+
+No Gazebo, runner, recorder, analyzer, rosbag recorder, or physical process
+remains active. No repeat or matrix case has been dispatched. Physical
+stopping remains manual operator `Ctrl+C`.
+
+## Current milestone
+
+**PHASE 08.8 M8.3 — V8.11 SECONDARY VISIBLE SEED `19901` FORMAL PASS /
+ONE-TIME ANALYSIS COMPLETE / 9/9 PLOTS / RESULT CHECKPOINT PENDING /
+REPEATS AND MATRIX PROHIBITED.**
+
+## Next criterion
+
+Run the Phase 08 result checkpoint and commit this exact visible evidence.
+Then write, checkpoint, and commit a separate one-time/no-retry dispatch
+boundary for installed seeds `19911..19915`. Do not start the repeat
+population before both commits exist.
+
+## Phase 08.8 M8.3 v8.11 secondary-visible result checkpoint — 2026-07-31
+
+The fixed seed-`19901` formal pass, one-time analysis, nine plots, durable
+result, live status, and inactive runtime received the required Phase 08
+result checkpoint against dispatch HEAD `66c7e8e`.
+
+```text
+base HEAD:
+  66c7e8e462dafe33e2cf5c3b6df4a14c60758940
+status sha256 before this checkpoint note:
+  f22bc3e847cf73dc8493935b52b645d7beb61d0b8c355f03ae70c1cc442890fd
+visible-result report sha256:
+  758e87c0fa5d72ee145b77a6ba2932f2adf774cd87ba23f25396e271499f5aa7
+checkpoint sha256 before this checkpoint note:
+  a83472d3617de29f349a28340d94f266da173a0ebe1aaf9d8f0708d152cbc13d
+Phase 08 implement context:
+  PASS
+git diff --check:
+  PASS
+active simulation/analysis/physical runtime:
+  none
+attempts / retries:
+  1 / 0
+formal predicates / plots:
+  14/14 / 9/9
+```
+
+## Current milestone
+
+**PHASE 08.8 M8.3 — V8.11 SECONDARY VISIBLE SEED `19901` FORMAL PASS /
+ONE-TIME ANALYSIS COMPLETE / 9/9 PLOTS / RESULT CHECKPOINT PASS /
+RESULT COMMIT PENDING / REPEATS AND MATRIX PROHIBITED.**
+
+## Next criterion
+
+Commit this exact visible-result boundary. Then write, checkpoint, and commit
+the fixed `19911..19915` repeat dispatch boundary before starting any repeat.
