@@ -16252,3 +16252,155 @@ PROHIBITED.**
 Commit this exact population boundary. Then execute the installed serial
 suite once on domain `223`, stopping on the runner's first failure with no
 retry.
+
+## Phase 08.8 M4.9 fixed v8.8 primary-repeat disposition — 2026-07-31
+
+The primary-repeat dispatch boundary is committed:
+
+```text
+5e69f11 phase 08.8: authorize v8.8 primary repeats
+```
+
+The installed ten-seed suite executed serially and headlessly on isolated
+domain `223` with no external ROS/DDS monitoring and no retry. Seeds
+`19611..19615` passed all fourteen predicates. Seed `19616` executed once,
+failed the fixed formal contract, and caused the runner to stop. Seeds
+`19617..19620` were not dispatched.
+
+```text
+resolved:             10
+executed:              6
+formal pass:           5
+formal fail:           1
+scientific behavior:   6/6 complete
+recording complete:    6/6
+cleanup pass:          6/6
+sqlite quick_check:    6/6 ok
+runner return code:    1, expected first-failure stop
+retry:                 none
+```
+
+Retained scenario summary:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_8_primary_repeats/scenario_summaries/
+  20260731T152229585403Z_phase08_v8_8_primary_repeats.yaml
+SHA-256:
+  088e54b95af59f4941be93b869c033e7e34a9ae9c61d42ca4b93f353c77aa6e9
+```
+
+Seed `19616` did not fail to navigate. It found the first/local candidate,
+created exactly one typed active fill, escaped that fill, resumed search,
+found the second candidate, ranked its raw-cost interval strictly below the
+first by `0.9888651478968238`, emitted `GOAL_REACHED`, and finished
+`0.104056 m` from the declared global.
+
+Its successful recovery was the architecture's direct branch:
+
+```text
+ESCAPE_REPULSE -> SEARCH
+```
+
+The fixed v8.8 evaluator and scenario required the fallback branch:
+
+```text
+ESCAPE_REPULSE -> ESCAPE_ASSIST -> SEARCH
+```
+
+Seed `19616` maintained measured radial progress above the fixed stall
+threshold, so it correctly emitted no `ESCAPE_STALLED` event and never
+entered `ESCAPE_ASSIST`. The direct interval lasted `23.328587 s`; its
+measured exit displacement was `1.401137 m` against a `1.366771 m` exit
+radius, with `0.947517529` alignment to the frozen revision-one direction.
+Across `3,015` synchronized repulse control samples, supervisor contribution
+was exactly zero and combined command equaled ordinary GESC exactly. No
+sample reported stalled.
+
+Stage A nevertheless accepted only the assisted topology whenever assist was
+enabled. It withheld its completion stamp, causing the required-path,
+required-event, local-recovery, ownership, controller-goal, ground-truth,
+and post-recovery predicates to cascade false. The live monitor then
+requested the fixed Stage A evidence stop at simulation time `360.256 s`,
+after controller-ranked `GOAL_REACHED` at `314.7 s`.
+
+This is an evaluator-topology integration defect. It is not a controller,
+supervisor, detector, fill, affine, raw-cost-ranking, or navigation defect.
+V8.8 remains formally failed and closed.
+
+The standard analyzer ran exactly once for each of the six dispatched runs
+after the population closed. All six invocations returned zero, reported
+`analysis_failures=[]`, passed fresh Phase 05 validation, produced all
+expected tables, and produced all nine plots with `analysis_status=complete`.
+Visual inspection of seed `19616` confirms local capture, one fill, monotonic
+direct radial escape, transit to the second source, strict candidate ranking,
+and final global capture.
+
+Durable report:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_9_primary_repeats.md
+SHA-256:
+  0f8b916e069e9b2f09d73c00ec2e82f0e7bb9f2262fb76bf85cf113c9153c216
+```
+
+At result close, no Gazebo, scenario runner, recorder, analyzer, rosbag
+recorder, or physical process is active. The v8.8 secondary visible probe,
+secondary repeats, broader matrix, three-light execution, and physical
+motion are prohibited.
+
+## Current milestone
+
+**PHASE 08.8 M4.9 — FIXED V8.8 PRIMARY POPULATION CLOSED / 5 OF 6
+DISPATCHED FORMAL PASSES / 6 OF 6 SCIENTIFIC BEHAVIORS COMPLETE /
+DIRECT-RECOVERY EVIDENCE-TOPOLOGY DEFECT DIAGNOSED / RESULT CHECKPOINT
+PENDING / ALL LATER V8.8 GATES PROHIBITED.**
+
+## Next criterion
+
+Run the Phase 08 result checkpoint and commit this immutable v8.8 failure.
+Then plan a separately versioned correction that accepts both declared
+recovery topologies while requiring positive geometry and command-ownership
+proof on the direct branch and retaining the complete schema-v12 ownership
+proof on the assisted branch. Do not relabel or retry v8.8.
+
+## Phase 08.8 M4.9 v8.8 primary-repeat failure checkpoint — 2026-07-31
+
+The immutable six-run population, stopped-early scenario summary, six
+per-run results, complete recordings, clean shutdown, six one-time analysis
+bundles, fifty-four plots, durable diagnosis, and live status received the
+required Phase 08 checkpoint against dispatch HEAD `5e69f11`.
+
+```text
+base HEAD:
+  5e69f11c380203ba28f609458e4c9795c330245a
+status sha256 before this checkpoint note:
+  46ec49efcd639ba489092b1a8463a45baf07d76c6702ceaeee663dd400533c92
+active plan sha256:
+  c761c3aec53531931abf3a1f0edfd2b9366bbcbef53cfa1266cdb8b2f1aa211d
+v8.8 failure report sha256:
+  0f8b916e069e9b2f09d73c00ec2e82f0e7bb9f2262fb76bf85cf113c9153c216
+unstaged diff sha256:
+  1899d2b6cbaa818918ac156cb0923bf304c9934f774f6a8c51991b18cacc6a9e
+checkpoint sha256 before this checkpoint note:
+  6d9a224b1b7e7954ebd3b3435ef56d07356fb128a2df5bfedc956ec1b2382b87
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+active Gazebo/scenario/recorder/analyzer:
+  none
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.9 — FIXED V8.8 PRIMARY POPULATION CLOSED AND
+CHECKPOINTED / 5 OF 6 FORMAL PASSES / 6 OF 6 SCIENTIFIC BEHAVIORS
+COMPLETE / RESULT COMMIT PENDING / ALL LATER V8.8 GATES PROHIBITED.**
+
+## Next criterion
+
+Commit this exact v8.8 failure boundary. Then add and checkpoint a separately
+versioned dual-topology evidence amendment before changing any evaluator or
+scenario input. Do not dispatch Gazebo from the uncommitted diagnosis.
