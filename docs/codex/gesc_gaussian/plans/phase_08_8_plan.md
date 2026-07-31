@@ -2716,3 +2716,283 @@ open-field layouts at simulator-relative `400/1600`. Physical stopping
 remains manual operator `Ctrl+C`. Three-light Gazebo execution, wall/obstacle
 behavior, arbitrary intensity/layout claims, physical motion, and Phase 09
 remain outside this correction.
+
+## Executed M4.9 disposition and M4.10 v8.9 dual-topology amendment
+
+### Fixed v8.8 primary-repeat disposition
+
+The sealed v8.8 primary population is closed as a fixed formal gate failure.
+Seeds `19611` through `19616` executed exactly once. Seeds `19611..19615`
+passed all fourteen predicates. Seed `19616` completed the full scientific
+behavior but failed the assist-only recovery topology. It was not retried,
+and seeds `19617..19620` were not dispatched.
+
+All six runs found the first/local candidate, created exactly one typed active
+fill, escaped that basin, found a distinct second candidate, ranked the second
+raw-cost interval strictly below the retained first-candidate bound, emitted
+`GOAL_REACHED`, and converged inside the fixed simulation-only `0.50 m`
+global-proximity radius. Recording, final zero, readiness false, and cleanup
+passed `6/6`.
+
+Seed `19616` followed:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> SEARCH
+-> VERIFY_EXTREMUM
+-> GOAL_HOLD
+```
+
+Its direct repulse lasted `23.328587 s`, exited `1.401137 m` from the frozen
+fill center against a `1.366771 m` exit radius, and aligned `0.947517529`
+with the frozen revision-one direction. Every mature radial-progress sample
+exceeded the `0.05 m` stall threshold. Across `3,015` synchronized repulse
+control samples, supervisor contribution was zero and combined command
+equaled ordinary GESC exactly. It therefore correctly emitted no
+`ESCAPE_STALLED` event and never invoked the fallback assist.
+
+The architecture already declares direct repulse completion and
+stall-triggered assist as two valid recovery branches. The v8.8 Stage A
+implementation instead selected only the assisted branch whenever assist was
+enabled, while the scenario also required `ESCAPE_ASSIST`,
+`ESCAPE_STALLED`, and `supervisor_owned_escape_assist` on every seed. Stage A
+withheld its completion stamp, which cascaded into controller-goal,
+ground-truth, ranking-scope, and global-proximity failures even though
+seed `19616` reached `GOAL_HOLD` and ended `0.104056 m` from the global.
+
+The fixed result and six one-time analysis bundles are retained in:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_9_primary_repeats.md
+```
+
+V8.8 remains failed and closed. Its secondary and broad gates remain
+prohibited.
+
+### M4.10 objective
+
+Version v8.9 changes no controller, supervisor, detector, fill, modified
+cost, launch argument, world, source, motion, ranking, timeout, final-zero,
+cleanup, or stop behavior. It adds a schema-v13 dual-topology recovery
+evidence contract that matches the already-designed conditional control
+flow:
+
+```text
+direct success:
+  ESCAPE_REPULSE -> SEARCH
+
+measured-stall fallback:
+  ESCAPE_REPULSE -> ESCAPE_ASSIST -> SEARCH
+```
+
+This is a fresh formal-evidence version. It does not retry, reopen, mutate,
+or add to v8.8.
+
+### Schema-v13 conditional command-ownership predicate
+
+Add the schema-v13-only result predicate:
+
+```text
+escape_command_ownership
+```
+
+It is valid only for the existing counted-candidate open-field profile with
+candidate-informed fill, approach-continuity affine escape, active-fill
+transit, supervisor-owned assist enabled, operating bounds disabled,
+recenter disabled, recoverable navigation disabled, and post-recovery
+guidance disabled.
+
+Schema versions through v12 retain their exact existing path selection,
+predicate set, normalization, live Stage A behavior, offline result behavior,
+and `supervisor_owned_escape_assist` interpretation.
+
+For schema v13, Stage A and full-lifecycle evidence accept exactly these two
+paths:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> SEARCH
+-> VERIFY_EXTREMUM
+-> GOAL_HOLD
+
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> ESCAPE_ASSIST
+-> SEARCH
+-> VERIFY_EXTREMUM
+-> GOAL_HOLD
+```
+
+The common required event sequence is:
+
+```text
+CONVERGENCE_CONFIRMED
+-> FILL_CREATED
+-> ESCAPE_STARTED
+-> CONVERGENCE_CONFIRMED
+-> GOAL_REACHED
+```
+
+`ESCAPE_STALLED` is required by the command state machine before the assist
+branch, forbidden on the direct branch, and not a common unconditional
+event.
+
+The new predicate is branch strict:
+
+1. If any valid `ESCAPE_ASSIST` interval occurs, the result must execute the
+   complete schema-v12 causal supervisor-ownership proof unchanged,
+   including entry and exit handoffs, fresh commands, suppressed nonzero
+   GESC, contribution arithmetic, saturation, revision-one geometry,
+   positive translation, measured exit, alignment, and returned ordinary
+   ownership. A failed assisted interval may not fall back to the direct
+   proof.
+2. If no valid `ESCAPE_ASSIST` interval occurs, the result must prove one
+   direct `ESCAPE_REPULSE -> SEARCH` recovery episode and all of the direct
+   evidence below.
+
+The direct branch must prove:
+
+1. exactly one matching `ESCAPE_STARTED` event supplies a finite positive
+   exit radius, finite center, unit selected direction, and revision one;
+2. every recorded repulse state through the returned `SEARCH` boundary
+   retains that center, direction, radius, revision, valid geometry, weights
+   `(raw, Gaussian, affine) = (0, 1, 1)`, and `failsafe=false`;
+3. no `ESCAPE_STALLED` event, stalled state sample, `ESCAPE_ASSIST` state, or
+   nonzero supervisor command occurs in the episode;
+4. at least one mature finite radial-progress sample meets or exceeds the
+   declared `minimum_radial_progress_m`, and the recorded radial distance
+   reaches the frozen exit radius;
+5. every evaluated repulse diagnostic is finite, complete, arithmetically
+   consistent, correctly saturated, has zero supervisor contribution, and
+   has combined command exactly equal to the GESC proposal;
+6. at least one repulse diagnostic has a nonzero GESC proposal, so the proof
+   cannot pass on an all-zero command interval;
+7. the first returned `SEARCH` boundary identifies
+   `ESCAPE_REPULSE -> SEARCH` stable exit, restores weights `(1,1,0)`, clears
+   safe direction and escape authority, and retains zero supervisor command;
+8. the first finite odometry sample at or immediately after that boundary
+   has positive fill-to-exit displacement, distance at least the frozen exit
+   radius, and unit-vector alignment at least `+0.80` against the frozen
+   selected direction; and
+9. the result records branch, interval stamps, repulse state/control counts,
+   mature progress count/range, exit radius, measured exit, distance,
+   alignment, ordinary-owner count, and evidence mode.
+
+Missing or conflicting geometry, revision change, insufficient distance,
+alignment below `+0.80`, missing mature progress, a stalled sample without
+assist, any assist state on the direct branch, nonzero supervisor command,
+GESC/supervisor addition, invalid command, nonfinite value, contribution
+error, saturation error, all-zero control, wrong returned weights, retained
+authority, or missing returned `SEARCH` fails.
+
+The direct branch is not a vacuous “assist not observed” pass. It is a
+positive measured recovery and command-ownership proof.
+
+### Fresh fixed inputs
+
+Create four schema-v13 scenarios:
+
+```text
+phase08_v8_9_primary_visible_probe.yaml
+  seed 19701
+  visible
+  runs root phase08_8_9_primary_probe
+
+phase08_v8_9_primary_repeats.yaml
+  seeds 19711 through 19720
+  headless
+  runs root phase08_8_9_primary_repeats
+
+phase08_v8_9_secondary_visible_probe.yaml
+  seed 19751
+  visible
+  runs root phase08_8_9_secondary_probe
+
+phase08_v8_9_secondary_repeats.yaml
+  seeds 19761 through 19765
+  headless
+  runs root phase08_8_9_secondary_repeats
+```
+
+Every source, start, intensity, topology, launch override, controller profile,
+Stage A/Stage B budget, evaluator-only `0.50 m` stop, forbidden state/event,
+final-zero rule, cleanup rule, first-failure rule, and claim boundary is
+copied from v8.8. Only schema/evidence semantics, the two declared recovery
+paths, common conditional-event contract, predicate identity, versioned
+identities, roots, descriptions, and fresh seeds change.
+
+### No-Gazebo qualification
+
+Before any v8.9 Gazebo process:
+
+1. preserve every historical and v8-v8.8 scenario byte and result;
+2. prove schema versions through v12 retain their exact existing behavior;
+3. replay retained seed `19616` through its original schema-v12 resolved
+   input and prove it remains failed on the assist-only topology;
+4. replay the same immutable messages through a schema-v13 fixture and prove
+   the direct branch passes with the retained state path, `3,015` ordinary
+   repulse diagnostics, zero supervisor contribution, `1.401137 m` measured
+   exit, `0.947517529` alignment, strict raw-cost ranking, and valid
+   post-recovery global proximity;
+5. replay retained passing assisted seed `19611` through schema v13 and prove
+   the new predicate selects the assisted branch while reproducing the
+   schema-v12 entry and schema-v11 exit evidence exactly;
+6. prove schema v13 rejects direct-path insufficient distance, low
+   alignment, missing/low progress, stalled-without-assist, nonzero
+   supervisor command, GESC-plus-supervisor command, all-zero control,
+   nonfinite data, arithmetic error, saturation error, geometry/revision
+   mismatch, missing returned cleanup, and any attempt to use direct proof
+   after entering assist;
+7. retain and rerun every schema-v12 assisted-branch negative fixture;
+8. prove all four v8.9/v8.8 scenario pairs differ only in the declared
+   versioned evidence, paths/events, predicate, identities, roots,
+   descriptions, and seeds;
+9. run focused schema, runner, validator, analyzer, controller, supervisor,
+   observability, and legacy tests;
+10. run the broad ROS-independent suite, changed-file fatal lint, Python
+    compilation, XML/YAML parsing, isolated three-package build, installed
+    node construction, source/install parity, and all four installed dry-runs
+    without creating a run root; and
+11. validate Phase 08 context, run `git diff --check`, verify no active
+    runtime process, write a separate no-Gazebo qualification record, update
+    live status, checkpoint, and commit.
+
+No Gazebo process is authorized until that complete qualification,
+checkpoint, and implementation commit pass.
+
+### V8.9 runtime gates
+
+After a separate clean committed dispatch boundary:
+
+1. execute the primary visible probe once, with no ROS-domain monitoring and
+   no retry;
+2. require every v8.8 behavioral predicate plus schema-v13 conditional
+   command ownership, complete recording, final zero, and uncontaminated
+   cleanup;
+3. analyze it exactly once and retain all nine plots;
+4. checkpoint and commit the result before primary repeats;
+5. execute ten primary repeats serially/headlessly, stopping at the first
+   failure with no retry;
+6. analyze every dispatched repeat exactly once after the population closes;
+7. only `10/10` authorizes the secondary visible probe;
+8. only a passing secondary visible probe authorizes five secondary repeats;
+9. analyze every dispatched secondary run exactly once; and
+10. only `5/5` secondary repeats authorizes M6.
+
+The sealed-run observation protocol from v8.8 remains mandatory. No external
+ROS/DDS participant may join an active v8.9 domain.
+
+The v8.9 claim remains limited to the same two fixed local-first, two-source,
+open-field layouts at simulator-relative `400/1600`. Physical stopping
+remains manual operator `Ctrl+C`. Three-light Gazebo execution, wall/obstacle
+behavior, arbitrary intensity/layout claims, physical motion, and Phase 09
+remain outside this correction.

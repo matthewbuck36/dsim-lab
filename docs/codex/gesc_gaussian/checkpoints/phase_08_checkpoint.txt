@@ -1,39 +1,39 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-31T16:14:22+00:00
-Base HEAD: 5e69f11c380203ba28f609458e4c9795c330245a
+Generated: 2026-07-31T16:17:44+00:00
+Base HEAD: ec1645c95793a7326e0409249a84f561f692bcca
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 46ec49efcd639ba489092b1a8463a45baf07d76c6702ceaeee663dd400533c92
+Status sha256: 18da28174837e6e4c8591d3129f8f669b2091c15015ce6e04ecf19ed619145bd
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_8_plan.md
-Active subphase plan sha256: c761c3aec53531931abf3a1f0edfd2b9366bbcbef53cfa1266cdb8b2f1aa211d
-Unstaged diff sha256: 1899d2b6cbaa818918ac156cb0923bf304c9934f774f6a8c51991b18cacc6a9e
+Active subphase plan sha256: 5dde1f6be543939e27145ac7fc0a0b32da47b2613b0e60901030652d95e24892
+Unstaged diff sha256: 3326dd5c37788096065a2da2a012da1cbee7feb6b39f7086326de6b1169ef779
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 146]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 147]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
+ M docs/codex/gesc_gaussian/plans/phase_08_8_plan.md
  M docs/codex/gesc_gaussian/status/phase_08_status.md
-?? docs/codex/gesc_gaussian/validation/phase_08_8_m4_9_primary_repeats.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            |  26 ++---
- docs/codex/gesc_gaussian/status/phase_08_status.md | 112 +++++++++++++++++++++
- 2 files changed, 118 insertions(+), 20 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            |  30 +--
+ docs/codex/gesc_gaussian/plans/phase_08_8_plan.md  | 280 +++++++++++++++++++++
+ docs/codex/gesc_gaussian/status/phase_08_status.md |  94 +++++++
+ 3 files changed, 381 insertions(+), 23 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**PHASE 08.8 M4.9 — FIXED V8.8 PRIMARY POPULATION CLOSED / 5 OF 6
-DISPATCHED FORMAL PASSES / 6 OF 6 SCIENTIFIC BEHAVIORS COMPLETE /
-DIRECT-RECOVERY EVIDENCE-TOPOLOGY DEFECT DIAGNOSED / RESULT CHECKPOINT
-PENDING / ALL LATER V8.8 GATES PROHIBITED.**
+**PHASE 08.8 M4.10 — V8.8 FAILURE COMMITTED / V8.9 SCHEMA-V13
+DUAL-TOPOLOGY CORRECTION PLANNED / PLAN CHECKPOINT PENDING / GAZEBO
+PROHIBITED.**
 
 
 

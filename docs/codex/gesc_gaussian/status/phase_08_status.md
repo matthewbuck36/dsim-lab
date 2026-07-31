@@ -16404,3 +16404,132 @@ COMPLETE / RESULT COMMIT PENDING / ALL LATER V8.8 GATES PROHIBITED.**
 Commit this exact v8.8 failure boundary. Then add and checkpoint a separately
 versioned dual-topology evidence amendment before changing any evaluator or
 scenario input. Do not dispatch Gazebo from the uncommitted diagnosis.
+
+## Phase 08.8 M4.10 v8.9 dual-topology correction plan — 2026-07-31
+
+The immutable v8.8 primary-repeat failure is committed:
+
+```text
+ec1645c phase 08.8: retain failed v8.8 primary repeats
+```
+
+The active Plan now defines v8.9 as a fresh schema-v13 evidence correction.
+It changes no controller, supervisor, detector, fill, modified cost, launch
+argument, world, source, motion, ranking, timeout, final-zero, cleanup, or
+stop behavior.
+
+Schema v13 adds:
+
+```text
+escape_command_ownership
+```
+
+and accepts exactly the two recovery topologies already declared by the
+architecture:
+
+```text
+direct:
+  ESCAPE_REPULSE -> SEARCH
+
+measured-stall fallback:
+  ESCAPE_REPULSE -> ESCAPE_ASSIST -> SEARCH
+```
+
+The predicate is conditional but nonvacuous. If assist occurs, the complete
+schema-v12 causal supervisor-ownership proof remains mandatory. If assist
+does not occur, the evaluator must positively prove frozen revision-one
+geometry, mature radial progress, no stall, zero supervisor command and
+contribution, ordinary GESC command ownership, valid arithmetic and
+saturation, a stable measured exit beyond the frozen radius, alignment at
+least `+0.80`, and returned-search cleanup. Entering assist permanently
+selects the assisted proof; a failed assisted interval cannot use the direct
+branch.
+
+The live Stage A monitor and offline Stage A evaluator will accept the same
+two exact paths only for schema v13. Schema versions through v12 retain their
+existing assisted-only interpretation when supervisor-owned assist is
+enabled.
+
+Fresh fixed inputs are:
+
+```text
+primary visible:  seed 19701
+primary repeats:  seeds 19711..19720
+secondary visible: seed 19751
+secondary repeats: seeds 19761..19765
+```
+
+The two fixed local-first, two-source, open-field `400/1600` layouts and
+every motion/configuration input remain unchanged. Physical stopping remains
+manual operator `Ctrl+C`.
+
+Before Gazebo, retained seed `19616` must remain failed under schema v12 and
+pass a schema-v13 direct-branch replay with its immutable message set.
+Retained assisted seed `19611` must select the schema-v13 assisted branch and
+reproduce its schema-v12 entry/exit evidence. Negative direct and assisted
+fixtures, focused/broad tests, isolated build, installed construction,
+source/install parity, and four installed dry-runs must all pass. The
+qualification requires a durable report, checkpoint, and implementation
+commit.
+
+Only a fresh passing visible primary probe authorizes v8.9 primary repeats.
+Only `10/10` primary repeats authorizes the secondary visible probe. Only a
+passing secondary visible probe authorizes five secondary repeats. Only
+`5/5` secondary repeats authorizes M6. Every dispatched run remains
+one-time/no-retry and the first failure closes its population.
+
+Active plan SHA-256:
+
+```text
+5dde1f6be543939e27145ac7fc0a0b32da47b2613b0e60901030652d95e24892
+```
+
+No Gazebo, scenario runner, recorder, analyzer, rosbag recorder, or physical
+process is active.
+
+## Current milestone
+
+**PHASE 08.8 M4.10 — V8.8 FAILURE COMMITTED / V8.9 SCHEMA-V13
+DUAL-TOPOLOGY CORRECTION PLANNED / PLAN CHECKPOINT PENDING / GAZEBO
+PROHIBITED.**
+
+## Next criterion
+
+Checkpoint and commit the exact v8.9 correction Plan and live-status
+boundary. Then implement and qualify the schema-v13 evaluator, tests, and
+fresh scenarios entirely without Gazebo.
+
+## Phase 08.8 M4.10 v8.9 correction-plan checkpoint — 2026-07-31
+
+The separately versioned dual-topology correction Plan and live-status
+boundary received the required Phase 08 checkpoint against v8.8 failure
+HEAD `ec1645c`.
+
+```text
+base HEAD:
+  ec1645c
+status sha256 before this checkpoint note:
+  18da28174837e6e4c8591d3129f8f669b2091c15015ce6e04ecf19ed619145bd
+active plan sha256:
+  5dde1f6be543939e27145ac7fc0a0b32da47b2613b0e60901030652d95e24892
+checkpoint sha256 before this checkpoint note:
+  b10ea7f755652a14105360afa31166ef7f1fc46ac2a1a8c79fb23bdd0eb313f6
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+active Gazebo/scenario/recorder/analyzer:
+  none
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.10 — V8.9 SCHEMA-V13 DUAL-TOPOLOGY CORRECTION PLAN /
+CHECKPOINT PASS / PLAN COMMIT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Commit this exact Plan boundary. Then implement schema-v13 direct and
+assisted command-ownership evidence, historical compatibility, tests, and
+fresh v8.9 scenarios. Gazebo remains prohibited until the complete
+no-Gazebo qualification is checkpointed and committed.
