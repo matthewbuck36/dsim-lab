@@ -15891,3 +15891,229 @@ GAZEBO PROHIBITED.**
 Commit this exact dispatch boundary. Then execute the installed visible
 seed-`19601` probe once on domain `225` without external ROS/DDS
 monitoring and with no retry.
+
+## Phase 08.8 M4.9 v8.8 primary visible result — 2026-07-31
+
+The dispatch boundary is committed:
+
+```text
+31bc585 phase 08.8: authorize v8.8 visible primary probe
+```
+
+The installed seed-`19601` primary probe executed exactly once on isolated
+domain `225` with Gazebo GUI enabled. It was not retried or externally
+monitored through ROS/DDS.
+
+The sealed runner and record process both returned zero. The run stopped on
+the first valid noninterpolated post-ranking odometry sample within the
+simulation-only `0.50 m` global-proximity radius. Recording, final readiness
+false, final commands zero, read-only sqlite quick check, and cleanup all
+pass. No new node or session process remained.
+
+Formal result:
+
+```text
+classification:                    PASS
+infrastructure:                    completed
+required predicates:               14/14 PASS
+Stage A local recovery:             PASS
+exact fill cardinality:             PASS, one cluster
+schema-v12 assist entry ownership:  PASS
+schema-v11 assist exit ownership:   PASS
+strict candidate ranking:           PASS
+Stage B global proximity:           PASS
+recording / final zero / cleanup:    PASS / PASS / PASS
+```
+
+The exact required state path occurred:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> ESCAPE_ASSIST
+-> SEARCH
+-> VERIFY_EXTREMUM
+-> GOAL_HOLD
+```
+
+Stage A completed at simulation time `222.212 s`:
+
+```text
+fill center:                  (1.038667, 1.321887) m
+convergence point:            (1.202823, 1.341585) m
+distance to declared local:   0.314848 m
+fill-to-convergence distance: 0.165334 m
+created / typed / active:     [1] / [1] / [1]
+merge or supersession:        none
+```
+
+The assisted exit passed:
+
+```text
+selected direction:       (0.406061599, 0.913845708)
+measured exit:            (1.485387, 2.724966) m
+fill-to-exit distance:     1.472478 m
+exit alignment:            0.993966806
+escape duration:          23.644374 s
+failsafe / timeout:        false / false
+```
+
+Schema-v12 entry evidence was direct on this fresh run:
+
+```text
+entry transition diagnostics:           0
+entry handoff:                           0.011493195 s
+entry bound:                             0.15 s
+steady owned diagnostics:               2,652
+fresh supervisor diagnostics:           2,652
+suppressed nonzero GESC diagnostics:     2,652
+positive linear supervisor diagnostics: 2,031
+entry evidence mode:                     bounded_causal_schema_v12
+```
+
+The post-exit causal proof also passed:
+
+```text
+transition diagnostics:          1
+ordinary-owner handoff:          0.012090783 s
+handoff bound:                   0.15 s
+ordinary post-exit diagnostics: 14,040
+later authority reappearance:    none
+evidence mode:                   bounded_causal_schema_v11
+```
+
+Candidate raw-cost ranking was strict:
+
+```text
+candidate one lower bound: -2.8453728221821186
+candidate two upper bound: -3.8372093023255816
+strict separation margin:   0.9918364801434629
+candidate two ordinal:       2
+filled candidates:           1
+known source count:          2
+decision:                    GOAL_REACHED
+```
+
+The first valid post-ranking global-proximity sample was:
+
+```text
+simulation time:      339.818 s
+position:             (3.574407, 3.611028) m
+declared global:      (3.5, 3.5) m
+distance:             0.133655 m
+interpolation:        none
+Stage B duration:     117.606 s
+Stage B budget:       300.0 s
+```
+
+The coordinate was evaluator-only and did not direct motion. Physical
+arrival remains manually operator-stopped with `Ctrl+C`.
+
+The standard analyzer ran exactly once after every run descendant closed.
+It returned zero, produced all nine plots and all expected tables, reported
+`analysis_failures=[]`, and passed fresh Phase 05 validation. Its overall
+status is `partial` only because one optional generic state-duration gap
+exceeded `0.150000 s`; no critical input or formal behavior evidence is
+missing.
+
+Retained paths:
+
+```text
+summary:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_8_primary_probe/scenario_summaries/
+  20260731T150756478627Z_phase08_v8_8_primary_visible_probe.yaml
+run:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_8_primary_probe/2026-07-31/
+  20260731T150757443879Z_simulation_phase08_v8_8_primary_visible_probe-
+  v8_8_primary_probe_r1p5_a45_h25_19601-robust__5c73451a
+plots:
+  <run>/analysis/plots/
+```
+
+Evidence hashes:
+
+```text
+summary:
+  c494dc23589c47b363a1af5e8cc1a2b280c7499fb096ca10a3ad000d3d523526
+scenario_result.yaml:
+  8f47afb3730276b41a81163566719ce14fc9b8a790b108bb1c5799b8726cab9c
+completeness.json:
+  a5a4e94003389d76487d583e403bbe4d2c502eb710b23eb168783f025f02d89a
+raw bag:
+  fe09b9602375af52b372200961ad5e2af62f5e51b353ef4df4b97ba7a1cdba8c
+analysis completeness:
+  f1572482e85bb5b22398a24cf4918e68b06267bb2b33d9b68a1ab016d68d107e
+analysis summary:
+  ecc153b302bc0a3b37971362f3b3a9c5ac4d31a8a7ef2fa51941eca9ddcef715
+```
+
+Durable report:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_9_primary_probe.md
+SHA-256:
+  2d9a890f91b67b35146a3acb2b822bb537c57accc158934c7d109c4498a4eb66
+```
+
+At result close, no Gazebo, scenario runner, recorder, analyzer, rosbag
+recorder, or physical process is active. The visible gate is a formal pass.
+The ten-run primary repeat gate remains prohibited until this exact result
+is checkpointed and committed and a separate repeat-population dispatch
+boundary is checkpointed and committed.
+
+## Current milestone
+
+**PHASE 08.8 M4.9 — V8.8 PRIMARY VISIBLE FORMAL PASS / 14 OF 14
+PREDICATES PASS / ALL NINE PLOTS RETAINED / RESULT CHECKPOINT PENDING /
+PRIMARY REPEATS PROHIBITED.**
+
+## Next criterion
+
+Run the Phase 08 result checkpoint and commit this immutable visible result.
+Then write, checkpoint, and commit the exact ten-seed v8.8 primary-repeat
+population before dispatching any repeat.
+
+## Phase 08.8 M4.9 v8.8 primary-visible result checkpoint — 2026-07-31
+
+The immutable seed-`19601` run, suite summary, formal scenario result,
+complete recording, clean shutdown, one-time analysis, nine plots, durable
+report, and live status received the required Phase 08 checkpoint against
+dispatch HEAD `31bc585`.
+
+```text
+base HEAD:
+  31bc585172b35cdad16ee15d350832e0f5a71ebc
+status sha256 before this checkpoint note:
+  0d1a811a4c01c7b7fb89b855a3c348c31980955267f2bac75ba4c930717eb073
+active plan sha256:
+  c761c3aec53531931abf3a1f0edfd2b9366bbcbef53cfa1266cdb8b2f1aa211d
+visible-result report sha256:
+  2d9a890f91b67b35146a3acb2b822bb537c57accc158934c7d109c4498a4eb66
+unstaged diff sha256:
+  cbb40f94eac9dbd7391a7ebd1c82f0342a07a40fce1f7309c36d53718e18ed65
+checkpoint sha256 before this checkpoint note:
+  9c8d9ef221a2acab157a98f6be6553c168399687e78761c20fd02bb67c7c9620
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+active Gazebo/scenario/recorder/analyzer:
+  none
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.9 — V8.8 PRIMARY VISIBLE FORMAL PASS / ALL NINE PLOTS
+RETAINED / RESULT CHECKPOINT PASS / RESULT COMMIT PENDING / PRIMARY
+REPEATS PROHIBITED.**
+
+## Next criterion
+
+Commit this exact visible-result boundary. Then write, checkpoint, and
+commit the exact ten-seed v8.8 primary-repeat population before dispatching
+any repeat.
