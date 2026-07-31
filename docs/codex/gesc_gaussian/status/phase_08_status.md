@@ -16933,3 +16933,102 @@ PENDING / ALL LATER V8.9 GATES PROHIBITED.**
 Commit this exact failed-result boundary. Then write and checkpoint the fresh
 v8.10 correction Plan before changing runner code or scenario inputs.
 Gazebo remains prohibited.
+
+## Phase 08.8 M4.11 v8.10 recorder-CWD correction plan — 2026-07-31
+
+The fixed v8.9 failure is committed:
+
+```text
+4690b3a phase 08.8: retain failed v8.9 primary probe
+```
+
+The active Plan now defines v8.10 as a fresh infrastructure-corrected
+experiment. It will pass the already-resolved `REPOSITORY_ROOT` as the child
+working directory in all three scenario-runner recorder owners:
+
+```text
+normal
+boundary-observed
+staged local-recovery/global-proximity
+```
+
+`record_run.py`, the controller, supervisor, detector, fills, affine term,
+costs, ranking, schema-v13 evidence, source model, world, motion behavior,
+timeouts, final-zero, cleanup, and physical path remain unchanged. Focused
+tests must prove all three child launches receive the checkout root while
+retaining existing process and lifecycle semantics.
+
+Four fresh schema-v13 inputs are planned:
+
+```text
+primary visible:     seed 19801 / root phase08_8_10_primary_probe
+primary repeats:     seeds 19811..19820 / root phase08_8_10_primary_repeats
+secondary visible:   seed 19851 / root phase08_8_10_secondary_probe
+secondary repeats:   seeds 19861..19865 / root phase08_8_10_secondary_repeats
+```
+
+They copy all v8.9 scientific inputs and gates. Only identities,
+descriptions, roots, and seeds change. Runtime domains are reserved as
+`225..228`.
+
+Analysis must read each `run_directory` from the exact runner-emitted
+scenario summary and may never manually reconstruct a run ID. Each complete
+run receives one analyzer invocation after population closure.
+
+No Gazebo process is authorized until the runner correction, tests, four
+fresh scenarios, complete regression envelope, isolated build,
+source/install parity, and installed `/tmp` dry-runs are documented,
+checkpointed, and committed. The first later dispatch boundary may authorize
+only visible seed `19801`.
+
+The v8.10 claim remains limited to the two fixed obstacle-free,
+two-source, local-first layouts at relative `400/1600`; it does not claim
+arbitrary layout/intensity or three-light robustness. Physical stopping
+remains manual operator `Ctrl+C`.
+
+## Current milestone
+
+**PHASE 08.8 M4.11 — V8.9 FAILURE COMMITTED / V8.10 RECORDER-CWD
+CORRECTION PLAN WRITTEN / PLAN CHECKPOINT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Checkpoint and commit the exact v8.10 correction Plan and status boundary.
+Then implement only the declared runner, tests, and fresh scenario inputs
+and complete the no-Gazebo qualification.
+
+## Phase 08.8 M4.11 v8.10 correction-plan checkpoint — 2026-07-31
+
+The fresh recorder-working-directory correction, three-path test contract,
+summary-owned analysis rule, four versioned inputs, no-Gazebo qualification,
+and gated runtime sequence received the required Phase 08 checkpoint against
+fixed-v8.9-result HEAD `4690b3a`.
+
+```text
+base HEAD:
+  4690b3abf8e8736ea6bdb6d1d255c780eb4b6047
+status sha256 before this checkpoint note:
+  3032d2c49a24def268f4da233742eb978dc0f145d630f44dcc403e696f2a44ec
+active plan sha256:
+  9d7a7ea410c43dfc1e404c6bba30453dfd4d2d593fe74eb72c2648913246dcbb
+checkpoint sha256 before this checkpoint note:
+  1fb7567fd04d0a85bb5311460318abf05f04507a6281f22967e57e7c42304d65
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+active runtime:
+  none
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.11 — V8.10 RECORDER-CWD CORRECTION PLAN / PLAN
+CHECKPOINT PASS / PLAN COMMIT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Commit this exact Plan boundary. Then implement the three recorder-child
+working-directory arguments, focused tests, and four fresh v8.10 scenarios.
+Do not start Gazebo before complete no-Gazebo qualification, checkpoint, and
+implementation commit.

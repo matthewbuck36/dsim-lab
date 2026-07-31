@@ -2996,3 +2996,217 @@ open-field layouts at simulator-relative `400/1600`. Physical stopping
 remains manual operator `Ctrl+C`. Three-light Gazebo execution, wall/obstacle
 behavior, arbitrary intensity/layout claims, physical motion, and Phase 09
 remain outside this correction.
+
+## Executed M4.10 disposition and M4.11 v8.10 recorder-CWD amendment
+
+### Fixed v8.9 primary-visible disposition
+
+The one authorized v8.9 primary-visible seed `19701` attempt is closed as a
+fixed pre-Gazebo infrastructure failure. The installed runner was invoked
+from `/tmp`; its staged global-proximity process owner launched `record_run`
+without a working directory; and the recorder's
+`git_state(Path.cwd())` metadata step failed because `/tmp` is not a Git
+checkout.
+
+The runner returned before Gazebo or the recording graph started. No bag or
+behavioral evidence exists, cleanup passed, and no runtime process remained.
+The one post-closure analyzer invocation also failed because its manually
+transcribed target omitted `_19701`. Seed `19701` is not retried, and no
+later v8.9 gate is dispatched. The immutable result is retained in:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_10_primary_probe.md
+```
+
+This failure does not alter the completed schema-v13 retained-replay
+qualification. It reveals a scenario-runner/recorder integration defect and
+an analysis-target transcription hazard, not a controller or evidence
+algorithm defect.
+
+### M4.11 objective
+
+Version v8.10 makes the installed scenario runner independent of the shell
+working directory and eliminates manual construction of analysis targets.
+It changes no controller, supervisor, detector, fill, affine term, modified
+cost, raw-cost ranking, launch argument, source, world, motion behavior,
+schema-v13 recovery evidence, Stage A/Stage B logic, simulation stop radius,
+final-zero rule, cleanup rule, or physical path.
+
+V8.10 is a fresh infrastructure-corrected experiment version. It does not
+retry, reopen, mutate, or add evidence to v8.9.
+
+### Recorder child working-directory correction
+
+`run_scenario.py` already resolves the live checkout into
+`REPOSITORY_ROOT`. Pass that exact absolute path as
+`cwd=REPOSITORY_ROOT` to the recorder child in all three owners:
+
+```text
+_run_record_to_boundary
+_run_record_to_global_proximity
+run_record_process
+```
+
+Do not change `record_run.py`, Git metadata semantics, process-group
+ownership, signal escalation, output capture, timeouts, private ROS context,
+or graceful-stop handling. The recorder remains the sole Phase 05 recorder
+and validator owner. Its recorded `working_directory` must now identify the
+checkout, and its Git metadata must describe the committed dispatch tree
+regardless of the runner caller's directory.
+
+Focused tests must intercept each `subprocess.Popen` owner and prove:
+
+1. the normal record path receives `cwd=REPOSITORY_ROOT`;
+2. the boundary-observed record path receives the same value;
+3. the staged local-recovery/global-proximity path receives the same value;
+4. every existing process, timeout, signal, lifecycle-cleanup, and return
+   contract remains unchanged; and
+5. an arbitrary caller working directory cannot be forwarded to
+   `record_run`.
+
+### Summary-owned analysis target
+
+Every v8.10 dispatch log must retain the exact `summary_path` emitted by the
+runner. After population closure and cleanup, analysis preparation must:
+
+1. read that exact summary rather than select a summary by modification time;
+2. require the expected executed-run count and case IDs;
+3. read each `run_directory` directly from the summary;
+4. verify that each directory is below the declared fresh v8.10 root and
+   contains the expected complete bag before invoking analysis; and
+5. invoke the analyzer exactly once per dispatched complete run, recording
+   its command, return code, log, artifact paths, and hashes.
+
+No run ID or run-directory suffix may be reconstructed manually. A missing,
+ambiguous, out-of-root, incomplete, or mismatched summary entry stops
+analysis and later dispatch. It is retained as an infrastructure failure and
+is not repaired by a second analyzer invocation.
+
+### Fresh fixed inputs
+
+Create four schema-v13 scenarios:
+
+```text
+phase08_v8_10_primary_visible_probe.yaml
+  seed 19801
+  visible
+  runs root phase08_8_10_primary_probe
+
+phase08_v8_10_primary_repeats.yaml
+  seeds 19811 through 19820
+  headless
+  runs root phase08_8_10_primary_repeats
+
+phase08_v8_10_secondary_visible_probe.yaml
+  seed 19851
+  visible
+  runs root phase08_8_10_secondary_probe
+
+phase08_v8_10_secondary_repeats.yaml
+  seeds 19861 through 19865
+  headless
+  runs root phase08_8_10_secondary_repeats
+```
+
+Every source, start, intensity, topology, controller override, Stage A/Stage B
+budget, schema-v13 conditional recovery path, evaluator-only `0.50 m` stop,
+forbidden state/event, final-zero rule, cleanup rule, and first-failure rule
+is copied from v8.9. Only versioned identities, descriptions, evidence
+roots, and fresh seeds change.
+
+The two fixed layouts remain:
+
+```text
+primary:
+  start (0.0, 0.0)
+  local (1.0606601717798214, 1.0606601717798212)
+  global (3.5, 3.5)
+secondary:
+  start (0.0, 0.0)
+  local (0.5740251485476348, 1.38581929876693)
+  global (3.5, 3.5)
+relative source inputs:
+  local/global = 400/1600
+known topology:
+  one local plus one global; maximum one active typed fill
+```
+
+### No-Gazebo qualification
+
+Before any v8.10 Gazebo process:
+
+1. preserve every historical and v8-v8.9 scenario, world, result, report,
+   plot, and failure unchanged;
+2. prove the production diff is limited to the three recorder-child
+   `cwd=REPOSITORY_ROOT` arguments plus the four fresh scenario inputs;
+3. prove normal, boundary, and staged recorder launches receive the resolved
+   checkout working directory and retain their existing lifecycle behavior;
+4. rerun schema-v13 direct and assisted retained replays and all schema-v12
+   compatibility and negative fixtures;
+5. prove all four v8.10/v8.9 scenario pairs differ only in versioned
+   identities, descriptions, roots, and fresh seeds;
+6. run focused schema, runner, validator, analyzer, controller, supervisor,
+   observability, recording, final-zero, shifted-world, V6, legacy, and
+   historical-immutability tests;
+7. run the broad ROS-independent suite, changed-file fatal lint, Python
+   compilation, XML/YAML parsing, and `git diff --check`;
+8. build `ros_esc_interfaces`, `ros_esc`, and
+   `turtlebot3_rotating_sensor` into a fresh isolated
+   `/tmp/phase08_8_v8_10_release_qual.*` root;
+9. prove source/install byte parity for the four scenarios and required
+   launch/runtime owners, then run all four installed dry-runs from `/tmp`;
+10. require exactly `1/10/1/5` supported resolved runs, the declared seeds,
+    fresh roots, unchanged bounded timings and predicates, and no run-root
+    creation;
+11. verify all four fresh roots are absent, no active ROS/Gazebo process
+    exists, and the worktree contains only the reviewed correction; and
+12. write a durable no-Gazebo qualification, update live status, checkpoint,
+    inspect, and commit.
+
+No Gazebo process is authorized until the complete qualification,
+checkpoint, and implementation commit pass. A separate clean committed
+dispatch boundary must then name only the installed visible seed `19801`.
+
+### V8.10 runtime gates
+
+Use isolated domains and log roots:
+
+```text
+primary visible:    ROS_DOMAIN_ID 225
+primary repeats:    ROS_DOMAIN_ID 226
+secondary visible:  ROS_DOMAIN_ID 227
+secondary repeats:  ROS_DOMAIN_ID 228
+```
+
+After the separate dispatch boundary:
+
+1. execute primary visible seed `19801` once with GUI, no external ROS/DDS
+   monitoring, and no retry;
+2. require complete recording/Git metadata, every v8.9 behavioral predicate,
+   schema-v13 conditional command ownership, final zero, and uncontaminated
+   cleanup;
+3. derive its run directory from the exact scenario summary, analyze it once,
+   and retain all nine plots;
+4. checkpoint and commit the result before primary repeats;
+5. execute seeds `19811..19820` serially/headlessly, stopping at the first
+   behavioral, formal, infrastructure, or cleanup failure with no retry;
+6. after population closure, analyze every dispatched complete run exactly
+   once from its exact summary-owned path;
+7. only `10/10` primary-repeat passes authorize secondary visible seed
+   `19851`;
+8. only a passing secondary visible probe authorizes seeds `19861..19865`;
+9. analyze each secondary run exactly once after its population closes; and
+10. only `5/5` secondary-repeat passes authorize M6.
+
+Every attempt is bounded by the unchanged scenario and wall timeouts. During
+sealed execution, observation is limited to OS process state and retained
+files; no external ROS/DDS participant may join an active domain.
+
+The v8.10 claim remains limited to two reproducible, fixed local-first,
+two-source, obstacle-free layouts at simulator-relative `400/1600`. It is
+not evidence for arbitrary light position or intensity, three lights,
+wall/obstacle behavior, or broad field robustness. The global coordinate
+remains evaluator-only. Physical motion remains prohibited in Phase 08, and
+the physical controller must continue until the operator presses `Ctrl+C`;
+no simulation proximity stop may enter the physical path.
