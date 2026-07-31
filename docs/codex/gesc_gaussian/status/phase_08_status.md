@@ -15762,3 +15762,132 @@ COMMIT PENDING / GAZEBO PROHIBITED.**
 Inspect and commit this exact implementation boundary. Then write,
 checkpoint, and commit a separate seed-`19601` visible-primary dispatch
 record before starting Gazebo.
+
+## Phase 08.8 M4.9 v8.8 visible-primary dispatch boundary — 2026-07-31
+
+The complete schema-v12 no-Gazebo implementation boundary is committed:
+
+```text
+1b56bd2 phase 08.8: qualify v8.8 causal assist entry evidence
+```
+
+The worktree is clean, Phase 08 implementation context passes, and no
+Gazebo, scenario runner, recorder, analyzer, rosbag recorder, or physical
+process is active. The fresh final release snapshot remains:
+
+```text
+/tmp/phase08_8_v8_8_release_final.L0zEGg
+```
+
+Source/install byte parity is exact for the one authorized scenario:
+
+```text
+e48f8f6fd1e2e8377f13d5e621ad6df2017b663b8f35a977d01af5d14605b5e1
+  phase08_v8_8_primary_visible_probe.yaml
+```
+
+The sealed dispatch is exactly:
+
+```text
+scenario:
+  /tmp/phase08_8_v8_8_release_final.L0zEGg/install/ros_esc/share/
+  ros_esc/scenario_runner/scenarios/
+  phase08_v8_8_primary_visible_probe.yaml
+suite:
+  phase08_v8_8_primary_visible_probe
+case:
+  v8_8_primary_probe_r1p5_a45_h25_19601
+seed:
+  19601
+profile:
+  robust_gaussian_v1
+Gazebo GUI:
+  true
+ROS_DOMAIN_ID:
+  225
+operator:
+  Codex
+run root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_8_primary_probe
+preflight timeout:
+  150.0 s
+scenario timeout:
+  720.0 s
+wall timeout:
+  900.0 s
+shutdown grace:
+  45.0 s
+stop on behavioral failure:
+  true
+stop on cleanup failure:
+  true
+retry:
+  prohibited
+```
+
+The run root is absent. No external ROS or DDS participant may join domain
+`225` while the sealed run is active. Observation is limited to OS process
+state and retained files. The standard analyzer may run exactly once only
+after the scenario and all descendants close.
+
+The probe must pass all declared behavioral predicates, including one local
+candidate, exactly one fill, completed Stage A, schema-v12 causal assist
+entry and schema-v11 causal exit ownership, ordinary post-recovery GESC,
+strictly lower second raw-cost interval, Stage B proximity, recording,
+final readiness false, final zero, and uncontaminated cleanup. It must then
+produce all nine plots. Any behavioral, evidence, recording, final-zero, or
+cleanup failure closes this visible gate with no retry and prohibits the
+primary repeats.
+
+No primary repeat, secondary probe, secondary repeat, broad matrix, or
+physical run is authorized by this boundary.
+
+## Current milestone
+
+**PHASE 08.8 M4.9 — V8.8 IMPLEMENTATION COMMITTED / VISIBLE PRIMARY
+SEED 19601 DECLARED / DISPATCH CHECKPOINT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Run the Phase 08 dispatch checkpoint, commit this exact record, and only
+then execute the installed visible seed-`19601` probe once on domain `225`
+without any external ROS/DDS monitoring.
+
+## Phase 08.8 M4.9 v8.8 visible-primary dispatch checkpoint — 2026-07-31
+
+The exact installed seed-`19601` GUI dispatch authority received the
+required Phase 08 checkpoint against implementation HEAD `1b56bd2`.
+
+```text
+base HEAD:
+  1b56bd2c31c26ccdf71a81cdb2999e87dc4fe1a2
+status sha256 before this checkpoint note:
+  0baa0a652c33f595ec6f4edc87bd99b8822f188e21182591ee801a849caa40be
+active plan sha256:
+  c761c3aec53531931abf3a1f0edfd2b9366bbcbef53cfa1266cdb8b2f1aa211d
+unstaged diff sha256:
+  a15c209e1624f82c5a2f7449beb29e210265b9af801b4a29778d11250472de62
+checkpoint sha256 before this checkpoint note:
+  b8e086a13faa7e6e2ff74e5d0383737cf929a99fc9a79ee084f0d458e62317f6
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+active Gazebo/scenario/recorder/analyzer:
+  none
+v8.8 primary-visible run root:
+  absent
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.9 — V8.8 IMPLEMENTATION COMMITTED / VISIBLE PRIMARY
+SEED 19601 DISPATCH CHECKPOINT PASS / DISPATCH-RECORD COMMIT PENDING /
+GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Commit this exact dispatch boundary. Then execute the installed visible
+seed-`19601` probe once on domain `225` without external ROS/DDS
+monitoring and with no retry.
