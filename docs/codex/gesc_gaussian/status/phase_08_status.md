@@ -17956,3 +17956,214 @@ GAZEBO NOT YET AUTHORIZED.**
 Commit this exact secondary-visible boundary. Reverify a clean worktree,
 unchanged installed scenario hash, absent run root, and inactive runtime.
 Then execute seed `19851` exactly once with visible Gazebo on domain `227`.
+
+## Phase 08.8 M4.11 v8.10 secondary-visible result — 2026-07-31
+
+The one authorized installed seed `19851` execution is closed as a fixed
+formal failure with no retry. The scientific local-recovery-to-global
+behavior completed, but the declared-source Stage A geometry produced a
+false negative.
+
+```text
+dispatch commit:
+  f3bfb1fcdd42c58e00581644a36ebe3fbdd2f9f2
+installed scenario sha256:
+  a0f9c7032be4e2540e3937cd741c9271c7358bba48dd5e6d41a23208a488f3ed
+started:
+  2026-07-31T19:14:32.804136Z
+completed:
+  2026-07-31T19:21:45.435149Z
+runner / recorder:
+  1 / 0
+recording / completeness / final zero / cleanup:
+  PASS / PASS / PASS / PASS
+formal predicates:
+  10/14 PASS
+```
+
+The exact summary and run are:
+
+```text
+summary:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_10_secondary_probe/
+  phase08_v8_10_secondary_visible_probe_summary.yaml
+summary sha256:
+  6857aaa727b63079aa3910ecbdd110f51ae9dc68f5a9b63295358d7976d1f4e1
+run:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_10_secondary_probe/2026-07-31/
+  20260731T191433826976Z_simulation_phase08_v8_10_secondary_visible_probe-
+  v8_10_secondary_probe_r1p5_a67p5_h25_19851_5cffc8a7
+```
+
+Recorder metadata identifies checkout working directory/repository root
+`/home/mattb/dsim-lab`, clean dispatch HEAD `f3bfb1f`, and no untracked
+path. Bag SQLite integrity passed, and no runtime descendant remains.
+
+The controller behavior was:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> SEARCH
+-> VERIFY_EXTREMUM
+-> GOAL_HOLD
+```
+
+Schema v13 selected the direct branch and passed command ownership:
+
+```text
+branch / evidence:
+  direct_repulse / bounded_direct_repulse_schema_v13
+repulse state / control samples:
+  438 / 2,833
+mature radial-progress samples:
+  378
+maximum radial distance / exit radius:
+  1.429333 / 1.366771 m
+fill-to-exit distance:
+  1.440018 m
+selected/actual alignment:
+  0.973428466
+returned SEARCH samples:
+  2,170
+ordinary GESC restored / supervisor authority cleared:
+  true / true
+```
+
+The four failed formal predicates share one evaluator root cause:
+
+```text
+local_recovery_stage:            false
+fill_cardinality:                false
+post_recovery_global_proximity:  false
+ground_truth_goal:               false
+```
+
+The detector's first observed convergence was
+`(1.1932522798, 1.8213642373)`. The one fill was
+`(1.1854262109, 1.8223420991)`, only `0.0078869239 m` from that convergence.
+The declared local lamp was `(0.5740251485, 1.3858192988)`, making the
+convergence and fill respectively `0.7570611822 m` and `0.7512412491 m`
+from the lamp. Both exceed the fixed declared-source association maximum
+`0.60 m`.
+
+The evaluator therefore left the one created/typed/active cluster
+unassigned, never credited Stage A or fill cardinality, and never opened
+Stage B. The controller nevertheless:
+
+```text
+completed direct local recovery:
+  approximately 115.6 sim s
+candidate-one raw lower:
+  -0.2312067119
+candidate-two interval:
+  [-3.8372093023, -3.8372093023]
+strict ranking margin:
+  3.6060025904
+GOAL_REACHED:
+  233.2 sim s
+final position:
+  (3.5843550796, 3.5634411591) m
+final global distance:
+  0.1055488518 m
+```
+
+The live evaluator waited until its Stage A timeout at `360.154 s`, then
+stopped the run. The shutdown `FAILSAFE` state occurred after readiness
+became false and is not a forbidden accepted-motion state.
+
+The one required analysis used the exact summary-owned run path:
+
+```text
+return code / status / failures:
+  0 / complete / []
+fresh Phase 05 validation:
+  PASS
+plots:
+  9/9
+analysis log:
+  /tmp/phase08_8_m4_11_v8_10_secondary_visible_analysis.log
+analysis log sha256:
+  1e016f46d4515e229b19a492cf74a8d3b360e3ae458181cddeecf5bd189ffbc2
+```
+
+The trajectory plot was visually inspected and confirms the shifted first
+basin, one fill, direct escape, ordinary transit, and global capture.
+
+The complete fixed result is:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m4_11_secondary_probe.md
+```
+
+This is an evaluator-geometry failure under the fixed contract, not a
+controller escape/ranking/convergence failure. It remains a formal failure.
+The v8.10 secondary repeats `19861..19865` and M6 broader matrix are not
+authorized. The independently passing primary visible run and `10/10`
+primary repeats remain valid.
+
+No physical motion occurred. The evaluator coordinate and simulation stop
+remain absent from the physical controller; physical stopping is manual
+operator `Ctrl+C`.
+
+## Current milestone
+
+**PHASE 08.8 M4.11 / M5 — V8.10 SECONDARY VISIBLE SEED `19851` FIXED
+FORMAL FAIL / SCIENTIFIC BEHAVIOR PASS / ONE-TIME ANALYSIS COMPLETE /
+SECONDARY REPEATS AND M6 PROHIBITED / RESULT CHECKPOINT PENDING.**
+
+## Next criterion
+
+Checkpoint and commit this fixed secondary result. Do not dispatch seed
+`19851` again, seeds `19861..19865`, or M6. Then perform no-Gazebo M7 bounded
+closeout: final report, handoff, final static validation, status close, and
+Phase 08 checkpoint.
+
+## Phase 08.8 M4.11 secondary-visible result checkpoint — 2026-07-31
+
+The fixed formal failure, successful scientific behavior, declared-source
+geometry diagnosis, one-time complete analysis, nine plots, and inactive
+runtime received the required Phase 08 checkpoint against committed
+secondary-dispatch HEAD `f3bfb1f`.
+
+```text
+base HEAD:
+  f3bfb1fcdd42c58e00581644a36ebe3fbdd2f9f2
+status sha256 before this checkpoint note:
+  17e21ee419f2ad6d3425030fe9387e0b916015c4bede0fae14542021cd379224
+active plan sha256:
+  9d7a7ea410c43dfc1e404c6bba30453dfd4d2d593fe74eb72c2648913246dcbb
+secondary report sha256:
+  329df4720ec8a7792238ae6b675cba3c7d6b370da0c0a82c3cb7d91bef71441f
+checkpoint sha256 before this checkpoint note:
+  4403cacf14c94ff52af38e310c96ae3c5c85ecc40c08b2bba6675d4a46c1135e
+summary sha256:
+  6857aaa727b63079aa3910ecbdd110f51ae9dc68f5a9b63295358d7976d1f4e1
+installed scenario sha256:
+  a0f9c7032be4e2540e3937cd741c9271c7358bba48dd5e6d41a23208a488f3ed
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+active runtime:
+  none
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.11 / M5 — V8.10 SECONDARY VISIBLE SEED `19851` FIXED
+FORMAL FAIL / SCIENTIFIC BEHAVIOR PASS / ONE-TIME ANALYSIS COMPLETE /
+RESULT CHECKPOINT PASS / RESULT COMMIT PENDING / SECONDARY REPEATS AND M6
+PROHIBITED.**
+
+## Next criterion
+
+Commit this exact fixed secondary result. Do not dispatch seed `19851`
+again, seeds `19861..19865`, or M6. Then perform no-Gazebo M7 bounded
+closeout: final report, handoff, final static validation, status close, and
+Phase 08 checkpoint.
