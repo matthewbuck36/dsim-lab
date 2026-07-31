@@ -17819,3 +17819,140 @@ PASS / RESULT COMMIT PENDING / SECONDARY VISIBLE NOT YET AUTHORIZED.**
 Commit this exact primary-repeat result. Then write, checkpoint, and commit
 a separate visible secondary-layout boundary naming only installed seed
 `19851`. Do not dispatch the secondary probe from an uncommitted boundary.
+
+## Phase 08.8 M4.11 v8.10 secondary-visible dispatch boundary — 2026-07-31
+
+The complete primary-repeat result is sealed in:
+
+```text
+512a898 phase 08.8: pass v8.10 primary repeats
+```
+
+The worktree was clean immediately after that commit. The `10/10` fixed
+primary population pass authorizes exactly one installed visible secondary
+dispatch:
+
+```text
+installed scenario:
+  /tmp/phase08_8_v8_10_release_qual.VIowrN/install/ros_esc/share/
+  ros_esc/scenario_runner/scenarios/
+  phase08_v8_10_secondary_visible_probe.yaml
+installed scenario SHA-256:
+  a0f9c7032be4e2540e3937cd741c9271c7358bba48dd5e6d41a23208a488f3ed
+seed:
+  19851
+case:
+  v8_10_secondary_probe_r1p5_a67p5_h25_19851
+GUI:
+  enabled
+ROS_DOMAIN_ID:
+  227
+scenario run timeout:
+  720.0 s
+scenario wall timeout:
+  900.0 s
+outer process bound:
+  960 s with bounded interrupt/kill escalation
+run root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_10_secondary_probe
+attempts:
+  one
+retry:
+  prohibited
+```
+
+The fixed secondary layout is:
+
+```text
+start:
+  (0.0, 0.0)
+local:
+  (0.5740251485476348, 1.38581929876693), input 400
+global:
+  (3.5, 3.5), input 1600
+known topology:
+  one local plus one global; maximum one active typed fill
+```
+
+Every controller override, schema-v13 direct-or-assisted ownership contract,
+Stage A/Stage B budget, strict raw ranking rule, evaluator-only `0.50 m`
+stop, forbidden state/event, final-zero rule, and cleanup rule is unchanged
+from the passing primary population.
+
+During the sealed run, observation is limited to OS process state and
+retained files. No external ROS/DDS participant may join domain `227`.
+After closure and cleanup, analysis must read the exact runner-emitted
+summary:
+
+```text
+/home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_10_secondary_probe/
+  phase08_v8_10_secondary_visible_probe_summary.yaml
+```
+
+Its sole `run_directory` must be validated below the declared root and used
+verbatim for exactly one analyzer invocation. No run ID may be manually
+reconstructed. The finalized recorder metadata must identify checkout
+working directory/repository root `/home/mattb/dsim-lab`, the eventual clean
+committed secondary-dispatch HEAD, and no untracked path.
+
+A behavioral, formal, infrastructure, metadata, recording, fresh-validator,
+plot, analysis-bundle, or cleanup failure closes this visible gate with no
+retry. Only a formal pass and complete nine-plot analysis authorize the five
+v8.10 secondary repeats `19861..19865`.
+
+No secondary repeat, three-light, broader, physical, or Phase 09 execution
+is authorized by this boundary.
+
+## Current milestone
+
+**PHASE 08.8 M4.11 — V8.10 PRIMARY REPEATS COMMITTED AT `512a898` /
+SECONDARY VISIBLE SEED `19851` BOUNDARY WRITTEN / DISPATCH CHECKPOINT
+PENDING / SECONDARY GAZEBO NOT YET AUTHORIZED.**
+
+## Next criterion
+
+Checkpoint and commit this exact secondary-visible boundary. Reverify a
+clean worktree, unchanged installed scenario hash, absent run root, and
+inactive runtime. Then execute seed `19851` exactly once with visible Gazebo
+on domain `227`.
+
+## Phase 08.8 M4.11 v8.10 secondary-visible dispatch checkpoint — 2026-07-31
+
+The installed seed-`19851` one-time/no-retry visible secondary boundary
+received the required Phase 08 checkpoint against primary-repeat result HEAD
+`512a898`.
+
+```text
+base HEAD:
+  512a8980efbb5c439a0e1b58c1eb95154ab5240d
+status sha256 before this checkpoint note:
+  ab3c43dde0386e761baa56631b29a647fdd62bb0b6ff1eea5dac77d428f6a2ea
+active plan sha256:
+  9d7a7ea410c43dfc1e404c6bba30453dfd4d2d593fe74eb72c2648913246dcbb
+checkpoint sha256 before this checkpoint note:
+  227f359e8f4db58f22cb89c360396abde02f5696441d11b5594d4397d92b53ee
+installed scenario sha256:
+  a0f9c7032be4e2540e3937cd741c9271c7358bba48dd5e6d41a23208a488f3ed
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+active runtime:
+  none
+secondary-visible run root:
+  absent
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.11 — V8.10 PRIMARY REPEATS COMMITTED / SECONDARY VISIBLE
+SEED `19851` BOUNDARY CHECKPOINT PASS / DISPATCH COMMIT PENDING / SECONDARY
+GAZEBO NOT YET AUTHORIZED.**
+
+## Next criterion
+
+Commit this exact secondary-visible boundary. Reverify a clean worktree,
+unchanged installed scenario hash, absent run root, and inactive runtime.
+Then execute seed `19851` exactly once with visible Gazebo on domain `227`.
