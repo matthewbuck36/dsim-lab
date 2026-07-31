@@ -19271,6 +19271,45 @@ diff; checkpoint Phase 08; and commit this exact boundary. Only then invoke
 the installed matrix once. Preserve every dispatched case and stop without a
 retry if any fixed case fails.
 
+## Phase 08.8 M8.9 v8.12 broad-matrix dispatch checkpoint — 2026-07-31
+
+The exact installed four-case serial, headless, first-failure-stop,
+one-time/no-retry boundary received the required Phase 08 checkpoint against
+visible-result HEAD `24170d2`.
+
+```text
+base HEAD:
+  24170d2ba9b6725f52ca071917c24636416b16e3
+status sha256 before this checkpoint note:
+  ac370eda26d49d5677734dcb2d67b946cd6dd906e9c3cc07fdc9e2bba17d87f4
+checkpoint sha256 before this checkpoint note:
+  79a1ac93cdde28e9e35a78f2fbd60aa48b1c13d54cf43b9a7bd4cdedb218e8f3
+installed/source scenario parity:
+  PASS
+installed/source scenario sha256:
+  311667e8c8d330732ea32c894bb78fed43b63cd23ef86f486ca25c86fe727bdc
+installed dry-run / unsupported:
+  4 / 0
+Phase 08 implement context / git diff check:
+  PASS / PASS
+active simulation/analysis/physical runtime:
+  none
+matrix root:
+  absent
+```
+
+## Current milestone
+
+**PHASE 08.8 M8.9 — V8.12 FOUR-CASE MATRIX BOUNDARY / INSTALLED DRY-RUN
+4/4 / DISPATCH CHECKPOINT PASS / DISPATCH COMMIT PENDING / MATRIX
+PROHIBITED.**
+
+## Next criterion
+
+Commit this exact two-file dispatch boundary. Then invoke the installed matrix
+once on domain `220`, preserve every dispatched result, and stop without a
+retry if any fixed case fails.
+
 ## Phase 08.8 M8.4 v8.11 broad-matrix dispatch checkpoint — 2026-07-31
 
 The exact installed four-case serial, headless, first-failure-stop,
@@ -19991,3 +20030,94 @@ PROHIBITED.**
 Commit this exact visible-result boundary. Then write, validate, checkpoint,
 and commit the fixed `20031..20034` matrix dispatch boundary before starting
 any matrix case.
+
+## Phase 08.8 M8.9 v8.12 broad-matrix dispatch boundary — 2026-07-31
+
+The fixed v8.12 visible result is committed:
+
+```text
+24170d2 phase 08.8: record v8.12 visible pass
+```
+
+The worktree was clean immediately afterward. This boundary authorizes one
+installed serial invocation containing exactly four fixed headless cases:
+
+```text
+installed scenario:
+  /tmp/phase08_8_v8_12_release_qual.HnEptF/install/ros_esc/share/
+  ros_esc/scenario_runner/scenarios/phase08_v8_12_broad_matrix.yaml
+installed/source scenario sha256:
+  311667e8c8d330732ea32c894bb78fed43b63cd23ef86f486ca25c86fe727bdc
+seeds:
+  20031, 20032, 20033, 20034
+ROS_DOMAIN_ID / ROS_LOCALHOST_ONLY:
+  220 / 1
+presentation / execution:
+  headless Gazebo / serial
+attempts / retries per case:
+  1 / 0
+run root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/phase08_8_12_broad_matrix
+```
+
+Frozen cases:
+
+| Seed | Local position m | Local/global input | Case key | Topology hash |
+|---:|---|---|---|---|
+| `20031` | `(0.8838834765, 0.8838834765)` | `533.3333333333 / 1600` (`1:3`) | `331c7bd7aca41ef2373d6c58300d8073b5185a4c9195254754709c6dfe86c868` | `da4e64008b2950c93ccbf08e31b6ead65c4fe6cc5791991965b9ceb156006bd6` |
+| `20032` | `(1.0606601718, 1.0606601718)` | `320 / 1600` (`1:5`) | `941720dabb4f49053e87ec64b2ba597003aee436bda1855e70032448da25db40` | `14f52589f05b2dc62f8b12122f823fb97b8e897b304462e37087c1100944560c` |
+| `20033` | `(0.7500000000, 1.2990381057)` | `533.3333333333 / 1600` (`1:3`) | `14dde5e389e4e6b767d93a34210633bbf76744c6d8b9fb49d3046a94b2160573` | `faafb05e4b004ef7d444c56badec3ea55f88107fcd052fef8c094782e7a82e26` |
+| `20034` | `(0.8750000000, 1.5155444566)` | `320 / 1600` (`1:5`) | `4e8006c1d102711de1cc31839cf0280ab3927a61f4a19bb75f9fd38e4e63ac64` | `47dd95926a4c9345770a0303ac83287c1f26a41afee108e6c6dc5d089e36837b` |
+
+All cases use start `(0.0, 0.0)`, global `(3.5, 3.5)` at input `1600`,
+schema v14, known source count two, evaluator-only topology qualification,
+the enabled `0.50 m` interior-anchor fallback, exact one-fill cardinality,
+accepted direct or strictly owned assisted recovery, strict raw ranking, and
+a post-recovery evaluator radius of `0.50 m`. The controller receives no
+source location, role, intensity, topology record, or evaluator coordinate.
+
+The installed dry-run was invoked from `/tmp` through the isolated release
+overlay. The final wrapper explicitly removed inherited parent-workspace
+prefixes, resolved all `4` runs and `0` unsupported cases, and created no run
+root:
+
+```text
+/tmp/phase08_8_v8_12_matrix_boundary_dry_run.log
+SHA-256:
+  3495f7c2bf000beed1541de8ac97ef653482358efea100652a508f555a89281e
+```
+
+Three earlier shell-wrapper preflights reached no scenario execution and
+created no run root. The first enabled nounset before sourcing ROS; the next
+two correctly detected inherited parent-workspace Python/prefix paths before
+the final wrapper removed them. Their retained log hashes are respectively
+`8e1897c5e8601d54ab323b996c58cf689eba7afb53430d60b2cd025a21083673`,
+`f6e36d719f9f3462d854506ba2ab0e7f81406bac7c0a5ca3929bd0e8c2876677`,
+and `f6e36d719f9f3462d854506ba2ab0e7f81406bac7c0a5ca3929bd0e8c2876677`.
+They are boundary-command corrections, not dispatched cases or retries.
+
+The runner must stop at the first formal or cleanup failure. It may not skip,
+retry, replace, or tune a case. The population gate is `4/4` formal passes,
+four complete recordings, final zeros and cleanups, four exact one-fill
+recoveries, four valid approach anchors, four strict rankings, four graceful
+proximity stops, SQLite integrity, one analysis per complete dispatched run,
+and `36/36` plots.
+
+The installed runner must be invoked from `/tmp` with the same sanitized
+isolated environment, under the scenario's finite `720.0 s` simulation,
+`900.0 s` wall, and `45.0 s` shutdown-grace limits plus an explicit outer
+`4200 s` timeout. No Gazebo, scenario runner, recorder, analyzer, rosbag
+recorder, or physical process was started while writing this boundary. The
+matrix root is absent. Physical stopping remains manual operator `Ctrl+C`.
+
+## Current milestone
+
+**PHASE 08.8 M8.9 — V8.12 FOUR-CASE MATRIX BOUNDARY WRITTEN / INSTALLED
+DRY-RUN 4/4 / DISPATCH CHECKPOINT AND COMMIT PENDING / MATRIX PROHIBITED.**
+
+## Next criterion
+
+Validate source/install parity, root absence, inactive runtime, context, and
+diff; checkpoint Phase 08; and commit this exact boundary. Only then invoke
+the installed matrix once. Preserve every dispatched case and stop without a
+retry if any fixed case fails.

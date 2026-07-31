@@ -1,38 +1,36 @@
 # Phase 08 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-07-31T23:25:27+00:00
-Base HEAD: 40940877a67920653cca2378c91336803cfd5761
+Generated: 2026-07-31T23:29:34+00:00
+Base HEAD: 24170d2ba9b6725f52ca071917c24636416b16e3
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_08_status.md
-Status sha256: 9c6fee1d703ddd0d88e501925eb485bd57a59d3d7046d71190d826b37802f154
+Status sha256: ac370eda26d49d5677734dcb2d67b946cd6dd906e9c3cc07fdc9e2bba17d87f4
 Plan: docs/codex/gesc_gaussian/plans/phase_08_plan.md
 Plan sha256: ed5672a7fc21b25201caa341328ad2ec4606fd56627f68fe660458b34c56d422
 Active subphase plan: docs/codex/gesc_gaussian/plans/phase_08_8_v8_12_plan.md
 Active subphase plan sha256: 1f028088939e0a71eceb755329e8e5238bcb6fdb3c4f0eda4901571c872c9cbb
-Unstaged diff sha256: 7d29fa0288b9d04bfc4fff8959a4a819ddfd3f7fa1b720124d5216b12a2f3d90
+Unstaged diff sha256: d59f8ddf47253ff7502736c7b66b5517f8aff22ce2fe23b92ea9ed0cfa80bb91
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 172]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 173]
  M docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
  M docs/codex/gesc_gaussian/status/phase_08_status.md
-?? docs/codex/gesc_gaussian/validation/phase_08_8_m8_8_v8_12_visible_probe.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_08_checkpoint.txt            | 25 ++-----
- docs/codex/gesc_gaussian/status/phase_08_status.md | 78 ++++++++++++++++++++++
- 2 files changed, 84 insertions(+), 19 deletions(-)
+ .../checkpoints/phase_08_checkpoint.txt            | 26 ++-----
+ docs/codex/gesc_gaussian/status/phase_08_status.md | 91 ++++++++++++++++++++++
+ 2 files changed, 96 insertions(+), 21 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**PHASE 08.8 M8.8 — V8.12 VISIBLE SEED `20001` FORMAL PASS / EXPECTED
-INTERIOR ANCHOR AND ASSISTED RECOVERY PASS / ONE-TIME ANALYSIS COMPLETE /
-9/9 PLOTS / RESULT CHECKPOINT PENDING / MATRIX PROHIBITED.**
+**PHASE 08.8 M8.9 — V8.12 FOUR-CASE MATRIX BOUNDARY WRITTEN / INSTALLED
+DRY-RUN 4/4 / DISPATCH CHECKPOINT AND COMMIT PENDING / MATRIX PROHIBITED.**
 
 
 
