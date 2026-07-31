@@ -16700,3 +16700,106 @@ Commit this exact qualified implementation boundary. Then write, checkpoint,
 and commit a separate dispatch authorization naming only the installed
 visible primary seed `19701`. Do not start Gazebo before both commits exist
 and the worktree is clean.
+
+## Phase 08.8 M4.10 v8.9 primary-visible dispatch boundary — 2026-07-31
+
+The complete no-Gazebo-qualified implementation is committed:
+
+```text
+270bba0 phase 08.8: qualify v8.9 dual recovery evidence
+```
+
+The worktree was clean immediately after that commit. This boundary
+authorizes exactly one installed visible primary dispatch:
+
+```text
+installed scenario:
+  /tmp/phase08_8_v8_9_release_qual.2fWDxv/install/ros_esc/share/
+  ros_esc/scenario_runner/scenarios/
+  phase08_v8_9_primary_visible_probe.yaml
+installed scenario SHA-256:
+  2131b9b77587c7326e31acb63a6922ce4fbd81655b711f0b119f1c97be4c736c
+seed:
+  19701
+GUI:
+  enabled
+ROS_DOMAIN_ID:
+  224
+scenario run timeout:
+  720.0 s
+scenario wall timeout:
+  900.0 s
+outer process bound:
+  960 s with bounded interrupt/kill escalation
+run root:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+  phase08_8_9_primary_probe
+attempts:
+  one
+retry:
+  prohibited
+```
+
+During the sealed run, observation is limited to OS process state and
+retained files. No external ROS/DDS participant may join domain `224`.
+After population closure and cleanup, the dispatched run must be analyzed
+exactly once and all nine plots retained.
+
+A behavioral, schema-v13 command-ownership, required-path/event,
+strict-ranking, global-proximity, recording, final-zero, readiness, or
+cleanup failure closes this visible gate. Only a formal pass authorizes the
+ten primary repeats. No repeat, secondary, three-light, broader, or physical
+execution is authorized by this boundary.
+
+## Current milestone
+
+**PHASE 08.8 M4.10 — V8.9 IMPLEMENTATION COMMITTED AT `270bba0` /
+PRIMARY VISIBLE SEED `19701` DISPATCH BOUNDARY WRITTEN / DISPATCH
+CHECKPOINT PENDING / GAZEBO NOT YET AUTHORIZED.**
+
+## Next criterion
+
+Checkpoint and commit this exact dispatch boundary. Verify the worktree is
+clean, the installed scenario hash still matches, the run root remains
+absent, and no runtime process is active. Then execute seed `19701` exactly
+once with visible Gazebo and no ROS-domain monitoring.
+
+## Phase 08.8 M4.10 v8.9 primary-visible dispatch checkpoint — 2026-07-31
+
+The installed seed-`19701` one-time/no-retry visible-dispatch boundary
+received the required Phase 08 checkpoint against implementation HEAD
+`270bba0`.
+
+```text
+base HEAD:
+  270bba0c5222b3562d4a2f4db5e5e388f65dbc79
+status sha256 before this checkpoint note:
+  5d3a565d5c633210a740615ab1724bc5f64fd3cf1fd50a23a836b8c34a796802
+active plan sha256:
+  5dde1f6be543939e27145ac7fc0a0b32da47b2613b0e60901030652d95e24892
+installed scenario sha256:
+  2131b9b77587c7326e31acb63a6922ce4fbd81655b711f0b119f1c97be4c736c
+checkpoint sha256 before this checkpoint note:
+  5c1fb40d0a8e0c3d9b83486b5a155dcdc1e0b9b5fe72d3b1c348e3a56438d8d7
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+active runtime:
+  none
+primary visible run root:
+  absent
+```
+
+## Current milestone
+
+**PHASE 08.8 M4.10 — V8.9 IMPLEMENTATION COMMITTED / PRIMARY VISIBLE
+SEED `19701` DISPATCH BOUNDARY CHECKPOINT PASS / DISPATCH COMMIT PENDING /
+GAZEBO NOT YET AUTHORIZED.**
+
+## Next criterion
+
+Commit this exact dispatch boundary. Reverify a clean worktree, installed
+scenario hash, absent root, and inactive runtime. Then dispatch visible seed
+`19701` exactly once on domain `224`, with no retry and no ROS-domain
+monitoring.
