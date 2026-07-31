@@ -62,6 +62,8 @@ class StateMachineConfig:
     escape_max_sec: float = 20.0
     open_field_escape_assist_enabled: bool = False
     open_field_escape_approach_continuity_enabled: bool = False
+    open_field_escape_interior_anchor_fallback_enabled: bool = False
+    open_field_escape_interior_anchor_min_displacement_m: float = 0.50
     open_field_escape_active_fill_transit_enabled: bool = False
     open_field_escape_supervisor_owned_assist_enabled: bool = False
     recenter_after_escape: bool = True
@@ -198,6 +200,27 @@ class StateMachineConfig:
                 "boolean"
             )
         if not isinstance(
+            self.open_field_escape_interior_anchor_fallback_enabled,
+            bool,
+        ):
+            raise ValueError(
+                "open_field_escape_interior_anchor_fallback_enabled must be "
+                "boolean"
+            )
+        interior_anchor_min = (
+            self.open_field_escape_interior_anchor_min_displacement_m
+        )
+        if (
+            isinstance(interior_anchor_min, bool)
+            or not isinstance(interior_anchor_min, (int, float))
+            or not math.isfinite(float(interior_anchor_min))
+            or float(interior_anchor_min) <= 0.0
+        ):
+            raise ValueError(
+                "open_field_escape_interior_anchor_min_displacement_m must "
+                "be finite and positive"
+            )
+        if not isinstance(
             self.open_field_escape_supervisor_owned_assist_enabled,
             bool,
         ):
@@ -241,6 +264,27 @@ class StateMachineConfig:
                 "open-field escape supervisor-owned assist requires "
                 "active-fill transit"
             )
+        if self.open_field_escape_interior_anchor_fallback_enabled:
+            if self.extremum_classification_mode != COUNTED_CANDIDATES:
+                raise ValueError(
+                    "open-field escape interior-anchor fallback requires "
+                    "counted-candidate classification"
+                )
+            if not self.open_field_escape_approach_continuity_enabled:
+                raise ValueError(
+                    "open-field escape interior-anchor fallback requires "
+                    "approach continuity"
+                )
+            if not self.open_field_escape_active_fill_transit_enabled:
+                raise ValueError(
+                    "open-field escape interior-anchor fallback requires "
+                    "active-fill transit"
+                )
+            if not self.open_field_escape_supervisor_owned_assist_enabled:
+                raise ValueError(
+                    "open-field escape interior-anchor fallback requires "
+                    "supervisor-owned assist"
+                )
         if (
             isinstance(self.post_recovery_retry_limit, bool)
             or not isinstance(self.post_recovery_retry_limit, int)

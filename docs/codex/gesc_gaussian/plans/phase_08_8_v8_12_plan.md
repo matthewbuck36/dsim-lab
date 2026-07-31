@@ -125,6 +125,13 @@ radius, direction, selected direction, revision, and active-fill fields remain
 authoritative. The configuration event records the enabled flag and minimum
 displacement. Historical default-off event payloads remain unchanged.
 
+The schema-v14 evaluator may additionally declare the optional
+`success.controller.expected_approach_anchor_mode` value `outside_radius` or
+`interior_farthest`. This is acceptance metadata only: it is never rendered
+into the launch command or controller graph. The visible corrective probe
+freezes `interior_farthest`; the varied matrix omits the field and accepts
+either valid, fully evidenced mode.
+
 ### Scenario/topology binding
 
 Add the two optional launch overrides to the existing schema-v14 owner. When

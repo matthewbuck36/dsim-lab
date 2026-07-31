@@ -349,6 +349,16 @@ V8_11_BROAD_MATRIX = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v8_11_broad_matrix.yaml'
 )
+V8_12_INTERIOR_ANCHOR_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_12_interior_anchor_visible_probe.yaml'
+)
+V8_12_BROAD_MATRIX = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_12_broad_matrix.yaml'
+)
 
 
 def test_observed_local_recovery_binds_fill_to_local_convergence():
@@ -1638,6 +1648,97 @@ def _evaluate_escape_owner(fixture):
     )
 
 
+def _enable_interior_anchor_fixture(fixture, mode=1.0):
+    overrides = fixture['resolved']['algorithm']['launch_overrides']
+    overrides.update({
+        'open_field_escape_interior_anchor_fallback_enabled': True,
+        'open_field_escape_interior_anchor_min_displacement_m': 0.50,
+    })
+    fixture['resolved']['schema_version'] = 14
+    fixture['resolved']['success']['controller'][
+        'expected_approach_anchor_mode'
+    ] = 'interior_farthest' if mode == 1.0 else 'outside_radius'
+    event = fixture['events'][0][1]
+    event.value_names.extend([
+        'approach_corridor_anchor_mode',
+        'approach_corridor_displacement_m',
+        'approach_corridor_exclusion_radius_m',
+        'approach_corridor_anchor_x_m',
+        'approach_corridor_anchor_y_m',
+        'approach_corridor_anchor_stamp_sec',
+        'approach_corridor_history_age_sec',
+        'approach_corridor_direction_x',
+        'approach_corridor_direction_y',
+    ])
+    if mode == 1.0:
+        event.values.extend([
+            1.0, 0.75, 1.0, -0.75, 0.0, 0.0, 1.0, 1.0, 0.0,
+        ])
+    else:
+        event.values.extend([
+            0.0, 1.25, 1.0, -1.25, 0.0, 0.0, 1.0, 1.0, 0.0,
+        ])
+    return fixture
+
+
+@pytest.mark.parametrize('mode', [0.0, 1.0])
+def test_schema_v14_escape_owner_binds_valid_approach_anchor(mode):
+    fixture = _enable_interior_anchor_fixture(
+        _direct_escape_owner_fixture(),
+        mode=mode,
+    )
+
+    passed, evidence, error = _evaluate_escape_owner(fixture)
+
+    assert error is None
+    assert passed is True
+    assert evidence['approach_anchor']['mode_value'] == mode
+    assert evidence['approach_anchor']['displacement_m'] >= 0.50
+
+
+@pytest.mark.parametrize(
+    ('mutation', 'reason'),
+    [
+        (
+            lambda fixture: fixture['events'][0][1].values.__setitem__(
+                -9, 2.0
+            ),
+            'mode must equal zero or one',
+        ),
+        (
+            lambda fixture: fixture['events'][0][1].values.__setitem__(
+                -8, 0.49
+            ),
+            'below the frozen minimum',
+        ),
+        (
+            lambda fixture: fixture['events'][0][1].value_names.pop(),
+            'names and values have different sizes',
+        ),
+        (
+            lambda fixture: fixture['resolved']['success']['controller']
+            .update({'expected_approach_anchor_mode': 'outside_radius'}),
+            'does not match expected',
+        ),
+    ],
+)
+def test_schema_v14_escape_owner_rejects_bad_approach_anchor(
+    mutation,
+    reason,
+):
+    fixture = _enable_interior_anchor_fixture(
+        _direct_escape_owner_fixture(),
+        mode=1.0,
+    )
+    mutation(fixture)
+
+    passed, evidence, error = _evaluate_escape_owner(fixture)
+
+    assert error is None
+    assert passed is False
+    assert reason in evidence['reason']
+
+
 def test_schema_v13_direct_escape_proves_geometry_and_ordinary_ownership():
     passed, evidence, error = _evaluate_escape_owner(
         _direct_escape_owner_fixture()
@@ -2823,6 +2924,8 @@ def test_v8_5_launch_binds_active_fill_transit_without_evaluator_controls(
         V8_11_SECONDARY_VISIBLE_PROBE,
         V8_11_SECONDARY_REPEATS,
         V8_11_BROAD_MATRIX,
+        V8_12_INTERIOR_ANCHOR_VISIBLE_PROBE,
+        V8_12_BROAD_MATRIX,
     ],
 )
 def test_v8_6_launch_binds_supervisor_owner_without_evaluator_controls(
@@ -2883,6 +2986,22 @@ def test_v8_6_launch_binds_supervisor_owner_without_evaluator_controls(
                 'topology' in token
                 or topology['result_sha256'] in token
                 or topology['source_list_sha256'] in token
+                for token in launch
+            )
+        if resolved['algorithm']['launch_overrides'].get(
+            'open_field_escape_interior_anchor_fallback_enabled',
+            False,
+        ):
+            assert (
+                'open_field_escape_interior_anchor_fallback_enabled:=True'
+                in launch
+            )
+            assert (
+                'open_field_escape_interior_anchor_min_displacement_m:=0.5'
+                in launch
+            )
+            assert not any(
+                token.startswith('expected_approach_anchor_mode:=')
                 for token in launch
             )
 

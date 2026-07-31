@@ -160,6 +160,8 @@
     <arg name="escape_max_sec" default="20.0"/>
     <arg name="open_field_escape_assist_enabled" default="False"/>
     <arg name="open_field_escape_approach_continuity_enabled" default="False"/>
+    <arg name="open_field_escape_interior_anchor_fallback_enabled" default="False"/>
+    <arg name="open_field_escape_interior_anchor_min_displacement_m" default="0.50"/>
     <arg name="open_field_escape_active_fill_transit_enabled" default="False"/>
     <arg name="open_field_escape_supervisor_owned_assist_enabled" default="False"/>
     <arg name="escape_exit_hold_sec" default="1.0"/>
@@ -859,6 +861,8 @@
             -p escape_max_sec:=$(var escape_max_sec)
             -p open_field_escape_assist_enabled:=$(var open_field_escape_assist_enabled)
             -p open_field_escape_approach_continuity_enabled:=$(var open_field_escape_approach_continuity_enabled)
+            -p open_field_escape_interior_anchor_fallback_enabled:=$(var open_field_escape_interior_anchor_fallback_enabled)
+            -p open_field_escape_interior_anchor_min_displacement_m:=$(var open_field_escape_interior_anchor_min_displacement_m)
             -p open_field_escape_active_fill_transit_enabled:=$(var open_field_escape_active_fill_transit_enabled)
             -p open_field_escape_supervisor_owned_assist_enabled:=$(var open_field_escape_supervisor_owned_assist_enabled)
             -p escape_exit_hold_sec:=$(var escape_exit_hold_sec)

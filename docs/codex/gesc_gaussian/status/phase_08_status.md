@@ -19587,3 +19587,176 @@ CODE AND GAZEBO PROHIBITED.**
 Commit this exact five-file Plan boundary. Then implement and completely
 qualify M8.6-M8.7 without Gazebo. Do not create a dispatch boundary or start
 v8.12 simulation before that implementation is checkpointed and committed.
+
+## Phase 08.8 M8.6-M8.7 v8.12 no-Gazebo qualification — 2026-07-31
+
+The Plan boundary is committed at:
+
+```text
+7c9d5e9 phase 08.8: plan v8.12 interior anchor fallback
+```
+
+The legacy-default-off odometry-only interior approach-anchor fallback is
+implemented in the existing supervisor owner. The newest pose strictly
+outside the frozen fill exit radius retains priority and mode `0`. Only when
+no outside pose exists and the fresh option is enabled may the helper select
+the earliest farthest finite history pose, require at least `0.50 m`, and
+emit mode `1`. Empty, nonfinite, unordered, degenerate, and below-minimum
+history remains failsafe.
+
+Schema v14 binds the option to counted-candidate recovery, approach
+continuity, active-fill transit, supervisor-owned assist, affine assistance,
+and a valid topology record whose start-to-local route meets the minimum. The
+optional expected mode is evaluator-only and is absent from controller launch
+arguments. No source, role, intensity, declared global, map, Vicon/GPS, wall
+sensor, or evaluator stop coordinate entered the controller.
+
+The exact seed-`19931` replay fixture proves:
+
+```text
+default-off evidence:          none
+enabled anchor mode:           interior_farthest
+displacement:                  1.3155651121858971 m
+direction:                     (0.8147816323190298,
+                                0.5797679636160810)
+outside-radius branch priority: retained
+```
+
+Fresh inputs and resolved case keys:
+
+```text
+phase08_v8_12_interior_anchor_visible_probe.yaml
+  sha256 d4607649546f8301112a0cbbb5ded10a2a167146efed143dbfff64e4d5810c65
+  seed 20001
+  key 5d8ed8295d910a52c28561e7d9f8172cb63d7158debef9eb7597b8befe285dbb
+
+phase08_v8_12_broad_matrix.yaml
+  sha256 311667e8c8d330732ea32c894bb78fed43b63cd23ef86f486ca25c86fe727bdc
+  seeds 20031..20034
+  keys 331c7bd7aca41ef2373d6c58300d8073b5185a4c9195254754709c6dfe86c868
+       941720dabb4f49053e87ec64b2ba597003aee436bda1855e70032448da25db40
+       14dde5e389e4e6b767d93a34210633bbf76744c6d8b9fb49d3046a94b2160573
+       4e8006c1d102711de1cc31839cf0280ab3927a61f4a19bb75f9fd38e4e63ac64
+```
+
+Final source qualification:
+
+```text
+helper/state/supervisor/observability:
+  240 passed in 6.55 s
+schema:
+  198 passed in 74.83 s
+schema + runner after fresh inputs:
+  396 passed, 1 skipped in 115.78 s
+sealed broad functional on valid localhost domain 218:
+  1012 passed, 3 skipped in 221.91 s
+fatal changed-file lint:
+  PASS
+Python/YAML/XML/diff/context:
+  PASS
+```
+
+The unfiltered broad collector reported only the repository-wide flake8 and
+pep257 wrappers. Two later functional attempts stopped after exactly `48`
+pure tests because invalid DDS domains `233` and `234` were assigned; the
+first ROS-node construction made the middleware exit without a pytest
+traceback. A valid-domain boundary passed `14/14`, followed by the complete
+sealed pass above. These command failures changed no source and are retained
+in the durable report.
+
+Read-only historical qualification:
+
+```text
+tracked scenarios at Plan HEAD:      97/97 byte-identical
+retained v8.11 artifact files:       248 hashed read-only
+v8.11 passing secondary bags:        6/6 outcomes unchanged
+v8.11 failed seed 19931 bag:         historical failure unchanged
+total retained replay:               7/7
+V6/world anchors:                    unchanged
+```
+
+Fresh installed qualification:
+
+```text
+root:
+  /tmp/phase08_8_v8_12_release_qual.HnEptF
+build:
+  3 packages finished in 11.9 s
+source/install parity:
+  8/8 PASS
+installed schema:
+  14, supported 1..14
+installed launch construction:
+  2/2 PASS
+installed node construction:
+  4/4 expected bounded timeout 124, no startup error
+installed dry-runs:
+  visible / matrix = 1 / 4, zero unsupported
+fresh roots after dry-run:
+  absent 2/2
+```
+
+Durable qualification:
+
+```text
+docs/codex/gesc_gaussian/validation/
+  phase_08_8_m8_7_v8_12_no_gazebo_qualification.md
+```
+
+No Gazebo, scenario runner, recorder, analyzer, controller, supervisor, or
+physical process is active. No v8.12 run root exists and no analyzer or plot
+was produced. Physical stopping remains manual operator `Ctrl+C`.
+
+## Current milestone
+
+**PHASE 08.8 M8.6-M8.7 — V8.12 INTERIOR APPROACH-ANCHOR FALLBACK
+IMPLEMENTED / NO-GAZEBO QUALIFICATION PASS / IMPLEMENTATION CHECKPOINT
+PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Run the Phase 08 material checkpoint, inspect the complete implementation,
+scenario, test, report, and status diff, and commit this exact qualified
+boundary. Then write, checkpoint, and commit a separate boundary authorizing
+only the installed visible seed `20001`. Do not start Gazebo from the
+uncommitted implementation.
+
+## Phase 08.8 M8.6-M8.7 v8.12 implementation checkpoint — 2026-07-31
+
+The default-off supervisor correction, two fresh inputs, expanded tests,
+retained read-only replay, isolated build, installed dry-runs, durable
+no-Gazebo qualification, and live status received the required Phase 08
+material checkpoint against Plan HEAD
+`7c9d5e9ebc24aaf2595597bc4a85a7b179cfa860`.
+
+```text
+status sha256 before this checkpoint note:
+  ef22273b621556d517fcbd8c14729cf8530f093b05d1185be9e26308ced05218
+active subphase plan sha256:
+  1f028088939e0a71eceb755329e8e5238bcb6fdb3c4f0eda4901571c872c9cbb
+no-Gazebo qualification sha256:
+  742b91a5d652117fda0aa3c7acf5a707408c20320428e231ef27ebb4e71304e5
+checkpoint sha256 before this checkpoint note:
+  dc56fe6f114310365b7327f6672ec8201ea04e8293c325e835e5251c7ec024ab
+unstaged and staged diff checks:
+  PASS
+Phase 08 implement context:
+  PASS
+active runtime:
+  none
+fresh v8.12 run roots:
+  absent 2/2
+```
+
+## Current milestone
+
+**PHASE 08.8 M8.6-M8.7 — V8.12 INTERIOR APPROACH-ANCHOR FALLBACK
+IMPLEMENTED / NO-GAZEBO QUALIFICATION PASS / IMPLEMENTATION CHECKPOINT PASS /
+IMPLEMENTATION COMMIT PENDING / GAZEBO PROHIBITED.**
+
+## Next criterion
+
+Commit this exact qualified implementation boundary. Then write, validate,
+checkpoint, and commit a separate visible-dispatch boundary naming only the
+installed seed `20001`. Do not start Gazebo from an uncommitted or
+undispatched state.

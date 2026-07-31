@@ -159,6 +159,8 @@ LAUNCH_OVERRIDES = {
     'minimum_radial_progress_m',
     'open_field_escape_assist_enabled',
     'open_field_escape_approach_continuity_enabled',
+    'open_field_escape_interior_anchor_fallback_enabled',
+    'open_field_escape_interior_anchor_min_displacement_m',
     'open_field_escape_active_fill_transit_enabled',
     'open_field_escape_supervisor_owned_assist_enabled',
     'modified_cost_affine_decay_rate',
@@ -274,6 +276,7 @@ CONTROLLER_KEYS = {
     'forbidden_events', 'required_state_path', 'required_event_sequence',
     'required_state_paths', 'forbidden_states',
     'supervisor_owned_assist_handoff_timeout_sec',
+    'expected_approach_anchor_mode',
 }
 GROUND_TRUTH_KEYS = {'goal_source_ids', 'final_position_tolerance_m'}
 AGGREGATE_GROUND_TRUTH_KEYS = {
@@ -432,6 +435,10 @@ SCHEMA_V9_LAUNCH_OVERRIDES = {
 }
 SCHEMA_V10_LAUNCH_OVERRIDES = {
     'open_field_escape_supervisor_owned_assist_enabled',
+}
+SCHEMA_V14_LAUNCH_OVERRIDES = {
+    'open_field_escape_interior_anchor_fallback_enabled',
+    'open_field_escape_interior_anchor_min_displacement_m',
 }
 DIRECT_STAGED_RECOVERY_STATE_PATH = (
     'SEARCH',
@@ -664,6 +671,27 @@ def _validate_correction_overrides(overrides, ablations, location):
                 'open_field_escape_supervisor_owned_assist_enabled'
             ),
         )
+    interior_anchor_fallback_enabled = overrides.get(
+        'open_field_escape_interior_anchor_fallback_enabled',
+        False,
+    )
+    if 'open_field_escape_interior_anchor_fallback_enabled' in overrides:
+        interior_anchor_fallback_enabled = _boolean(
+            interior_anchor_fallback_enabled,
+            (
+                f'{location}.'
+                'open_field_escape_interior_anchor_fallback_enabled'
+            ),
+        )
+    interior_anchor_min_name = (
+        'open_field_escape_interior_anchor_min_displacement_m'
+    )
+    if interior_anchor_min_name in overrides:
+        _number(
+            overrides[interior_anchor_min_name],
+            f'{location}.{interior_anchor_min_name}',
+            positive=True,
+        )
     candidate_informed_fill_enabled = overrides.get(
         'candidate_informed_fill_enabled',
         False,
@@ -732,6 +760,37 @@ def _validate_correction_overrides(overrides, ablations, location):
             f'{location} open-field escape supervisor-owned assist requires '
             'active-fill transit'
         )
+    if interior_anchor_fallback_enabled:
+        if interior_anchor_min_name not in overrides:
+            raise ValueError(
+                f'{location} open-field escape interior-anchor fallback '
+                f'requires {interior_anchor_min_name}'
+            )
+        if classification_mode != 'counted_candidates':
+            raise ValueError(
+                f'{location} open-field escape interior-anchor fallback '
+                'requires counted-candidate classification'
+            )
+        if not approach_continuity_enabled:
+            raise ValueError(
+                f'{location} open-field escape interior-anchor fallback '
+                'requires approach continuity'
+            )
+        if not active_fill_transit_enabled:
+            raise ValueError(
+                f'{location} open-field escape interior-anchor fallback '
+                'requires active-fill transit'
+            )
+        if not supervisor_owned_assist_enabled:
+            raise ValueError(
+                f'{location} open-field escape interior-anchor fallback '
+                'requires supervisor-owned assist'
+            )
+        if not ablations['affine_assist_enabled']:
+            raise ValueError(
+                f'{location} open-field escape interior-anchor fallback '
+                'requires algorithm.ablations.affine_assist_enabled'
+            )
     if classification_mode == 'counted_candidates':
         required = {
             'candidate_cost_mad_scale',
@@ -2088,6 +2147,33 @@ def load_suite(path):
             'schema version 13 is required for conditional escape '
             'command ownership'
         )
+    uses_schema_v14_fields = bool(
+        isinstance(raw_frozen_overrides, dict)
+        and SCHEMA_V14_LAUNCH_OVERRIDES & set(raw_frozen_overrides)
+    )
+    if isinstance(raw_cases, list):
+        for case in raw_cases:
+            if not isinstance(case, dict):
+                continue
+            raw_algorithm = case.get('algorithm', {})
+            raw_overrides = (
+                raw_algorithm.get('launch_overrides', {})
+                if isinstance(raw_algorithm, dict)
+                else {}
+            )
+            uses_schema_v14_fields = uses_schema_v14_fields or (
+                isinstance(raw_overrides, dict)
+                and bool(
+                    SCHEMA_V14_LAUNCH_OVERRIDES & set(raw_overrides)
+                )
+            )
+            if uses_schema_v14_fields:
+                break
+    if schema_version < 14 and uses_schema_v14_fields:
+        raise ValueError(
+            'schema version 14 is required for interior approach-anchor '
+            'fallback fields'
+        )
     suite_id = _identifier(document.get('suite_id'), 'suite_id')
     if document.get('mode') != 'simulation':
         raise ValueError('mode must be simulation')
@@ -2481,6 +2567,22 @@ def load_suite(path):
                 'open_field_escape_supervisor_owned_assist_enabled',
                 False,
             )
+        )
+        interior_anchor_fallback_enabled = bool(
+            counted_open_field
+            and overrides.get(
+                'open_field_escape_interior_anchor_fallback_enabled',
+                False,
+            )
+        )
+        interior_anchor_min_displacement_m = (
+            float(
+                overrides[
+                    'open_field_escape_interior_anchor_min_displacement_m'
+                ]
+            )
+            if interior_anchor_fallback_enabled
+            else None
         )
         if counted_open_field:
             expected_source_count = (
@@ -2878,6 +2980,26 @@ def load_suite(path):
                     f'{controller_location}.{handoff_timeout_name} requires '
                     'schema version 11 supervisor-owned assist'
                 )
+            anchor_mode_name = 'expected_approach_anchor_mode'
+            if anchor_mode_name in controller:
+                if (
+                    schema_version < 14
+                    or not interior_anchor_fallback_enabled
+                ):
+                    raise ValueError(
+                        f'{controller_location}.{anchor_mode_name} requires '
+                        'schema version 14 interior approach-anchor fallback'
+                    )
+                anchor_mode = str(controller[anchor_mode_name]).strip()
+                if anchor_mode not in {
+                    'outside_radius',
+                    'interior_farthest',
+                }:
+                    raise ValueError(
+                        f'{controller_location}.{anchor_mode_name} must be '
+                        'outside_radius or interior_farthest'
+                    )
+                normalized_controller[anchor_mode_name] = anchor_mode
             if required_state_paths is not None:
                 normalized_controller[
                     'required_state_paths'
@@ -3269,6 +3391,14 @@ def load_suite(path):
                 topology_qualification = staged_recovery.get(
                     'topology_qualification'
                 )
+                if (
+                    interior_anchor_fallback_enabled
+                    and association_mode != 'verified_trap'
+                ):
+                    raise ValueError(
+                        f'{staged_location}.topology_qualification is '
+                        'required by the interior approach-anchor fallback'
+                    )
                 if association_mode == 'verified_trap':
                     if not counted_open_field:
                         raise ValueError(
@@ -3294,6 +3424,15 @@ def load_suite(path):
                             f'{staged_location}.topology_qualification '
                             'requires direct source inputs'
                         )
+                    if (
+                        interior_anchor_fallback_enabled
+                        and topology_qualification is None
+                    ):
+                        raise ValueError(
+                            f'{staged_location}.topology_qualification is '
+                            'required by the interior approach-anchor '
+                            'fallback'
+                        )
                     normalized_staged_recovery[
                         'topology_qualification'
                     ] = (
@@ -3308,6 +3447,22 @@ def load_suite(path):
                             global_source_id,
                         )
                     )
+                    if interior_anchor_fallback_enabled:
+                        start_to_local_m = float(
+                            normalized_staged_recovery[
+                                'topology_qualification'
+                            ]['route']['start_to_local_m']
+                        )
+                        if (
+                            start_to_local_m
+                            < interior_anchor_min_displacement_m
+                        ):
+                            raise ValueError(
+                                f'{staged_location}.topology_qualification '
+                                'route.start_to_local_m must be at least '
+                                'open_field_escape_interior_anchor_'
+                                'min_displacement_m'
+                            )
                 elif topology_qualification is not None:
                     raise ValueError(
                         f'{staged_location}.topology_qualification requires '

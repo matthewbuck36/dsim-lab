@@ -272,6 +272,93 @@ def test_supervisor_owned_assist_is_default_off_and_requires_transit():
         )
 
 
+def test_interior_anchor_fallback_is_default_off_and_fully_scoped():
+    default = SupervisorStateMachine(config=counted_config())
+    assert (
+        default.config.open_field_escape_interior_anchor_fallback_enabled
+        is False
+    )
+    assert (
+        default.config
+        .open_field_escape_interior_anchor_min_displacement_m
+        == pytest.approx(0.50)
+    )
+    enabled = SupervisorStateMachine(
+        config=counted_config(
+            candidate_informed_fill_enabled=True,
+            open_field_escape_assist_enabled=True,
+            open_field_escape_approach_continuity_enabled=True,
+            open_field_escape_active_fill_transit_enabled=True,
+            open_field_escape_supervisor_owned_assist_enabled=True,
+            open_field_escape_interior_anchor_fallback_enabled=True,
+            open_field_escape_interior_anchor_min_displacement_m=0.75,
+        )
+    )
+    assert (
+        enabled.config.open_field_escape_interior_anchor_fallback_enabled
+        is True
+    )
+    assert (
+        enabled.config
+        .open_field_escape_interior_anchor_min_displacement_m
+        == pytest.approx(0.75)
+    )
+
+
+@pytest.mark.parametrize(
+    "overrides,reason",
+    [
+        (
+            {"open_field_escape_interior_anchor_fallback_enabled": 1},
+            "must be boolean",
+        ),
+        (
+            {
+                "open_field_escape_interior_anchor_fallback_enabled": True,
+            },
+            "requires approach continuity",
+        ),
+        (
+            {
+                "candidate_informed_fill_enabled": True,
+                "open_field_escape_assist_enabled": True,
+                "open_field_escape_approach_continuity_enabled": True,
+                "open_field_escape_interior_anchor_fallback_enabled": True,
+            },
+            "requires active-fill transit",
+        ),
+        (
+            {
+                "candidate_informed_fill_enabled": True,
+                "open_field_escape_assist_enabled": True,
+                "open_field_escape_approach_continuity_enabled": True,
+                "open_field_escape_active_fill_transit_enabled": True,
+                "open_field_escape_interior_anchor_fallback_enabled": True,
+            },
+            "requires supervisor-owned assist",
+        ),
+        (
+            {
+                "open_field_escape_interior_anchor_min_displacement_m": 0.0,
+            },
+            "finite and positive",
+        ),
+        (
+            {
+                "open_field_escape_interior_anchor_min_displacement_m": True,
+            },
+            "finite and positive",
+        ),
+    ],
+)
+def test_interior_anchor_fallback_rejects_incomplete_configuration(
+    overrides,
+    reason,
+):
+    with pytest.raises(ValueError, match=reason):
+        counted_config(**overrides)
+
+
 def test_candidate_informed_fill_is_default_off_and_counted_only():
     assert StateMachineConfig().candidate_informed_fill_enabled is False
     enabled = counted_config(candidate_informed_fill_enabled=True)

@@ -1,6 +1,7 @@
 """Deterministic numerical coverage for Phase 04 escape and recentering."""
 
 import math
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -204,6 +205,160 @@ def test_approach_continuity_uses_newest_pose_strictly_outside_exit():
     assert evidence.history_age_sec == pytest.approx(2.0)
     assert evidence.direction == pytest.approx([1.0, 0.0])
     assert evidence.exclusion_radius_m == pytest.approx(1.0)
+    assert evidence.anchor_mode == "outside_radius"
+
+
+def test_approach_continuity_interior_fallback_is_bounded_and_deterministic():
+    center = np.array([1.0, 1.0])
+    history = [
+        pose(0.0, 0.4, 1.0),
+        pose(1.0, 1.0, 0.4),
+        pose(2.0, 0.8, 1.0),
+    ]
+
+    evidence = approach_continuity_evidence(
+        history,
+        center,
+        1.0,
+        interior_anchor_fallback_enabled=True,
+        interior_anchor_min_displacement_m=0.60,
+    )
+
+    assert evidence.anchor == pytest.approx([0.4, 1.0])
+    assert evidence.anchor_stamp_sec == pytest.approx(0.0)
+    assert evidence.displacement_m == pytest.approx(0.60)
+    assert evidence.history_age_sec == pytest.approx(2.0)
+    assert evidence.direction == pytest.approx([1.0, 0.0])
+    assert evidence.anchor_mode == "interior_farthest"
+
+
+def test_approach_continuity_outside_anchor_has_priority_over_fallback():
+    evidence = approach_continuity_evidence(
+        [
+            pose(0.0, -1.0, 0.0),
+            pose(1.0, -0.75, 0.0),
+            pose(2.0, -2.0, 0.0),
+            pose(3.0, -0.25, 0.0),
+        ],
+        [0.0, 0.0],
+        1.0,
+        interior_anchor_fallback_enabled=True,
+        interior_anchor_min_displacement_m=0.50,
+    )
+
+    assert evidence.anchor == pytest.approx([-2.0, 0.0])
+    assert evidence.anchor_stamp_sec == pytest.approx(2.0)
+    assert evidence.anchor_mode == "outside_radius"
+
+
+def test_approach_continuity_interior_exact_tie_uses_earliest_history_pose():
+    evidence = approach_continuity_evidence(
+        [
+            pose(0.0, -0.6, 0.0),
+            pose(1.0, 0.6, 0.0),
+            pose(2.0, 0.1, 0.0),
+        ],
+        [0.0, 0.0],
+        1.0,
+        interior_anchor_fallback_enabled=True,
+        interior_anchor_min_displacement_m=0.50,
+    )
+
+    assert evidence.anchor == pytest.approx([-0.6, 0.0])
+    assert evidence.anchor_stamp_sec == pytest.approx(0.0)
+    assert evidence.direction == pytest.approx([1.0, 0.0])
+
+
+def test_v8_12_failed_seed_19931_critical_odometry_replay():
+    center = [1.0699606541859803, 0.7605913520944112]
+    radius = 1.3667708293638696
+    history = [
+        pose(0.0, 4.718067908752316e-06, 2.7129102748803485e-05),
+        pose(1.0, -0.0019376353428124755, -0.0021311540019673843),
+        pose(2.0, 1.069992273318767, 0.7620317121328785),
+    ]
+
+    assert approach_continuity_evidence(history, center, radius) is None
+    evidence = approach_continuity_evidence(
+        history,
+        center,
+        radius,
+        interior_anchor_fallback_enabled=True,
+        interior_anchor_min_displacement_m=0.50,
+    )
+
+    assert evidence.anchor == pytest.approx(
+        [-0.0019376353428124755, -0.0021311540019673843]
+    )
+    assert evidence.displacement_m == pytest.approx(1.3155651121858971)
+    assert evidence.direction == pytest.approx(
+        [0.8147816323190298, 0.579767963616081]
+    )
+    assert evidence.anchor_mode == "interior_farthest"
+
+
+def test_approach_continuity_interior_fallback_rejects_tiny_or_bad_history():
+    kwargs = {
+        "interior_anchor_fallback_enabled": True,
+        "interior_anchor_min_displacement_m": 0.50,
+    }
+    assert approach_continuity_evidence([], [0.0, 0.0], 1.0, **kwargs) is None
+    assert approach_continuity_evidence(
+        [pose(0.0, 0.49, 0.0), pose(1.0, 0.0, 0.0)],
+        [0.0, 0.0],
+        1.0,
+        **kwargs,
+    ) is None
+    with pytest.raises(ValueError, match="timestamps must increase"):
+        approach_continuity_evidence(
+            [pose(1.0, 0.6, 0.0), pose(1.0, 0.0, 0.0)],
+            [0.0, 0.0],
+            1.0,
+            **kwargs,
+        )
+    bad_pose = SimpleNamespace(
+        position=np.array([float("nan"), 0.0]),
+        stamp_sec=0.0,
+        x=float("nan"),
+        y=0.0,
+    )
+    with pytest.raises(ValueError, match="finite poses"):
+        approach_continuity_evidence(
+            [bad_pose],
+            [0.0, 0.0],
+            1.0,
+            **kwargs,
+        )
+    with pytest.raises(ValueError, match="must be boolean"):
+        approach_continuity_evidence(
+            [pose(0.0, 0.6, 0.0)],
+            [0.0, 0.0],
+            1.0,
+            interior_anchor_fallback_enabled=1,
+        )
+    with pytest.raises(ValueError, match="minimum displacement"):
+        approach_continuity_evidence(
+            [pose(0.0, 0.6, 0.0)],
+            [0.0, 0.0],
+            1.0,
+            interior_anchor_fallback_enabled=True,
+            interior_anchor_min_displacement_m=0.0,
+        )
+
+
+def test_approach_continuity_evidence_rejects_unknown_anchor_mode():
+    with pytest.raises(ValueError, match="anchor mode"):
+        ApproachContinuityEvidence(
+            anchor_x=0.0,
+            anchor_y=0.0,
+            anchor_stamp_sec=0.0,
+            direction_x=1.0,
+            direction_y=0.0,
+            displacement_m=1.0,
+            history_age_sec=0.0,
+            exclusion_radius_m=1.0,
+            anchor_mode="unknown",
+        )
 
 
 def test_approach_continuity_rejects_bad_history_and_missing_evidence():

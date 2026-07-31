@@ -9,6 +9,10 @@ import numpy as np
 
 
 _EPSILON = 1e-12
+_APPROACH_CONTINUITY_ANCHOR_MODES = (
+    "outside_radius",
+    "interior_farthest",
+)
 
 
 def _finite_vector(values, name):
@@ -196,6 +200,7 @@ class ApproachContinuityEvidence:
     displacement_m: float
     history_age_sec: float
     exclusion_radius_m: float
+    anchor_mode: str = "outside_radius"
 
     def __post_init__(self):
         values = (
@@ -222,6 +227,13 @@ class ApproachContinuityEvidence:
             raise ValueError(
                 "approach-continuity exclusion radius must be positive"
             )
+        mode = str(self.anchor_mode).strip().lower()
+        if mode not in _APPROACH_CONTINUITY_ANCHOR_MODES:
+            raise ValueError(
+                "approach-continuity anchor mode must be outside_radius "
+                "or interior_farthest"
+            )
+        object.__setattr__(self, "anchor_mode", mode)
         direction = np.array(
             [self.direction_x, self.direction_y],
             dtype=np.float64,
@@ -252,50 +264,135 @@ def approach_continuity_evidence(
     history: Sequence[Pose2D],
     fill_center,
     exclusion_radius_m: float,
+    *,
+    interior_anchor_fallback_enabled: bool = False,
+    interior_anchor_min_displacement_m: float = 0.50,
 ):
     """Freeze the newest qualified pre-basin approach direction.
 
     The selected anchor is the newest recorded pose strictly outside the
-    frozen escape radius. The direction continues from that anchor toward the
-    accepted fill center. No source or evaluator geometry enters this helper.
+    frozen escape radius. When the legacy-default-off fallback is enabled and
+    no outside pose exists, the farthest sufficiently displaced pose is used.
+    The direction continues from that anchor toward the accepted fill center.
+    No source or evaluator geometry enters this helper.
     """
 
     center = _finite_vector(fill_center, "approach-continuity fill center")
-    if (
-        not math.isfinite(float(exclusion_radius_m))
-        or exclusion_radius_m <= 0.0
-    ):
+    try:
+        exclusion_radius_m = float(exclusion_radius_m)
+    except (TypeError, ValueError) as exc:
         raise ValueError(
             "approach-continuity exclusion radius must be finite and positive"
+        ) from exc
+    if not math.isfinite(exclusion_radius_m) or exclusion_radius_m <= 0.0:
+        raise ValueError(
+            "approach-continuity exclusion radius must be finite and positive"
+        )
+    if not isinstance(interior_anchor_fallback_enabled, bool):
+        raise ValueError(
+            "approach-continuity interior-anchor fallback must be boolean"
+        )
+    if isinstance(interior_anchor_min_displacement_m, bool):
+        raise ValueError(
+            "approach-continuity interior-anchor minimum displacement must "
+            "be finite and positive"
+        )
+    try:
+        interior_anchor_min_displacement_m = float(
+            interior_anchor_min_displacement_m
+        )
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            "approach-continuity interior-anchor minimum displacement must "
+            "be finite and positive"
+        ) from exc
+    if (
+        not math.isfinite(interior_anchor_min_displacement_m)
+        or interior_anchor_min_displacement_m <= 0.0
+    ):
+        raise ValueError(
+            "approach-continuity interior-anchor minimum displacement must "
+            "be finite and positive"
         )
     ordered = tuple(history)
     if not ordered:
         return None
+    positions = []
+    stamps = []
+    for sample in ordered:
+        try:
+            positions.append(
+                _finite_vector(
+                    sample.position,
+                    "approach-continuity history position",
+                )
+            )
+            stamp = float(sample.stamp_sec)
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise ValueError(
+                "approach-continuity history samples must be finite poses"
+            ) from exc
+        if not math.isfinite(stamp):
+            raise ValueError(
+                "approach-continuity history timestamps must be finite"
+            )
+        stamps.append(stamp)
     if any(
-        ordered[index].stamp_sec >= ordered[index + 1].stamp_sec
+        stamps[index] >= stamps[index + 1]
         for index in range(len(ordered) - 1)
     ):
         raise ValueError(
             "approach-continuity history timestamps must increase"
         )
-    current_stamp = float(ordered[-1].stamp_sec)
-    for sample in reversed(ordered):
-        displacement = center - sample.position
-        displacement_m = float(np.linalg.norm(displacement))
-        if displacement_m <= exclusion_radius_m + _EPSILON:
-            continue
+    current_stamp = stamps[-1]
+
+    def evidence(index, displacement, displacement_m, mode):
+        sample = ordered[index]
         direction = displacement / displacement_m
         return ApproachContinuityEvidence(
             anchor_x=float(sample.x),
             anchor_y=float(sample.y),
-            anchor_stamp_sec=float(sample.stamp_sec),
+            anchor_stamp_sec=stamps[index],
             direction_x=float(direction[0]),
             direction_y=float(direction[1]),
             displacement_m=displacement_m,
-            history_age_sec=max(0.0, current_stamp - sample.stamp_sec),
+            history_age_sec=max(0.0, current_stamp - stamps[index]),
             exclusion_radius_m=float(exclusion_radius_m),
+            anchor_mode=mode,
         )
-    return None
+
+    for index, position in reversed(tuple(enumerate(positions))):
+        displacement = center - position
+        displacement_m = float(np.linalg.norm(displacement))
+        if displacement_m <= exclusion_radius_m + _EPSILON:
+            continue
+        return evidence(
+            index,
+            displacement,
+            displacement_m,
+            "outside_radius",
+        )
+
+    if not interior_anchor_fallback_enabled:
+        return None
+    farthest_index = 0
+    farthest_displacement = center - positions[0]
+    farthest_displacement_m = float(np.linalg.norm(farthest_displacement))
+    for index, position in enumerate(positions[1:], start=1):
+        displacement = center - position
+        displacement_m = float(np.linalg.norm(displacement))
+        if displacement_m > farthest_displacement_m:
+            farthest_index = index
+            farthest_displacement = displacement
+            farthest_displacement_m = displacement_m
+    if farthest_displacement_m < interior_anchor_min_displacement_m:
+        return None
+    return evidence(
+        farthest_index,
+        farthest_displacement,
+        farthest_displacement_m,
+        "interior_farthest",
+    )
 
 
 @dataclass(frozen=True)

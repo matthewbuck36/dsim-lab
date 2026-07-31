@@ -3970,6 +3970,136 @@ def _direct_escape_repulse_ownership_evidence(
     return True, evidence, None
 
 
+def _approach_anchor_evidence(resolved, event_messages):
+    """Validate schema-v14 odometry-anchor evidence when fallback is enabled."""
+    overrides = resolved.get('algorithm', {}).get('launch_overrides', {})
+    enabled = bool(
+        overrides.get(
+            'open_field_escape_interior_anchor_fallback_enabled',
+            False,
+        )
+    )
+    if not enabled:
+        return None, None, None
+
+    evidence = {'enabled': True}
+
+    def failed(reason):
+        return False, {**evidence, 'reason': reason}, None
+
+    try:
+        minimum_displacement_m = float(
+            overrides[
+                'open_field_escape_interior_anchor_min_displacement_m'
+            ]
+        )
+    except (KeyError, TypeError, ValueError):
+        return failed('interior approach-anchor minimum is malformed')
+    if (
+        not math.isfinite(minimum_displacement_m)
+        or minimum_displacement_m <= 0.0
+    ):
+        return failed('interior approach-anchor minimum is invalid')
+    evidence['minimum_displacement_m'] = minimum_displacement_m
+
+    escape_events = [
+        (stamp, message)
+        for stamp, message in event_messages
+        if message.event_type == AlgorithmEvent.EVENT_ESCAPE_STARTED
+    ]
+    evidence['escape_started_event_count'] = len(escape_events)
+    if len(escape_events) != 1:
+        return failed(
+            'interior approach-anchor contract requires exactly one '
+            'ESCAPE_STARTED event'
+        )
+    event_stamp, event = escape_events[0]
+    try:
+        values = _event_value_map(event)
+        mode_value = float(values['approach_corridor_anchor_mode'])
+        displacement_m = float(
+            values['approach_corridor_displacement_m']
+        )
+        exclusion_radius_m = float(
+            values['approach_corridor_exclusion_radius_m']
+        )
+        anchor = [
+            float(values['approach_corridor_anchor_x_m']),
+            float(values['approach_corridor_anchor_y_m']),
+        ]
+        anchor_stamp_sec = float(
+            values['approach_corridor_anchor_stamp_sec']
+        )
+        history_age_sec = float(
+            values['approach_corridor_history_age_sec']
+        )
+        direction = [
+            float(values['approach_corridor_direction_x']),
+            float(values['approach_corridor_direction_y']),
+        ]
+    except (KeyError, TypeError, ValueError) as exc:
+        return failed(
+            f'ESCAPE_STARTED approach-anchor evidence is malformed: {exc}'
+        )
+    if mode_value not in {0.0, 1.0}:
+        return failed('approach-anchor mode must equal zero or one')
+    mode = 'outside_radius' if mode_value == 0.0 else 'interior_farthest'
+    direction_norm = math.hypot(*direction)
+    numeric_values = [
+        displacement_m,
+        exclusion_radius_m,
+        *anchor,
+        anchor_stamp_sec,
+        history_age_sec,
+        *direction,
+        direction_norm,
+    ]
+    if (
+        not all(math.isfinite(value) for value in numeric_values)
+        or displacement_m <= 0.0
+        or exclusion_radius_m <= 0.0
+        or history_age_sec < 0.0
+        or not math.isclose(
+            direction_norm,
+            1.0,
+            rel_tol=0.0,
+            abs_tol=1e-9,
+        )
+    ):
+        return failed('approach-anchor geometry is invalid')
+    if (
+        mode == 'outside_radius'
+        and displacement_m <= exclusion_radius_m + 1e-12
+    ):
+        return failed('outside-radius anchor is not outside the exit radius')
+    if mode == 'interior_farthest':
+        if displacement_m > exclusion_radius_m + 1e-12:
+            return failed('interior anchor is outside the exit radius')
+        if displacement_m < minimum_displacement_m:
+            return failed('interior anchor is below the frozen minimum')
+    expected_mode = resolved.get('success', {}).get('controller', {}).get(
+        'expected_approach_anchor_mode'
+    )
+    if expected_mode is not None and mode != expected_mode:
+        return failed(
+            f'approach-anchor mode {mode} does not match expected '
+            f'{expected_mode}'
+        )
+    evidence.update({
+        'escape_started_bag_stamp': event_stamp,
+        'mode': mode,
+        'mode_value': mode_value,
+        'displacement_m': displacement_m,
+        'exclusion_radius_m': exclusion_radius_m,
+        'anchor_m': anchor,
+        'anchor_stamp_sec': anchor_stamp_sec,
+        'history_age_sec': history_age_sec,
+        'direction': direction,
+        'expected_mode': expected_mode,
+    })
+    return True, evidence, None
+
+
 def _escape_command_ownership_evidence(
     resolved,
     state_messages,
@@ -3989,6 +4119,34 @@ def _escape_command_ownership_evidence(
     )
     if not enabled:
         return None, None, None
+    (
+        anchor_passed,
+        anchor_evidence,
+        anchor_error,
+    ) = _approach_anchor_evidence(resolved, event_messages)
+    if anchor_error is not None:
+        return None, None, anchor_error
+    if anchor_passed is False:
+        return False, {
+            'branch': 'unqualified_anchor',
+            'assist_applicable': None,
+            'evidence_mode': 'conditional_escape_schema_v14',
+            'approach_anchor': anchor_evidence,
+            'reason': anchor_evidence.get(
+                'reason',
+                'schema-v14 approach-anchor proof failed',
+            ),
+        }, None
+
+    def with_anchor(result):
+        passed, branch_evidence, error = result
+        if anchor_evidence is not None and branch_evidence is not None:
+            branch_evidence = {
+                **branch_evidence,
+                'approach_anchor': anchor_evidence,
+            }
+        return passed, branch_evidence, error
+
     assist_observed = any(
         (
             message.state_valid
@@ -4022,14 +4180,16 @@ def _escape_command_ownership_evidence(
                     'schema-v12 assisted ownership proof failed',
                 )
             )
-        return passed, evidence, None
-    return _direct_escape_repulse_ownership_evidence(
-        resolved,
-        state_messages,
-        event_messages,
-        diagnostic_records,
-        supervisor_command_records,
-        odometry_records,
+        return with_anchor((passed, evidence, None))
+    return with_anchor(
+        _direct_escape_repulse_ownership_evidence(
+            resolved,
+            state_messages,
+            event_messages,
+            diagnostic_records,
+            supervisor_command_records,
+            odometry_records,
+        )
     )
 
 

@@ -161,6 +161,16 @@ class SupervisorNode(Node):
                         "open_field_escape_approach_continuity_enabled"
                     ).value
                 ),
+                open_field_escape_interior_anchor_fallback_enabled=bool(
+                    self.get_parameter(
+                        "open_field_escape_interior_anchor_fallback_enabled"
+                    ).value
+                ),
+                open_field_escape_interior_anchor_min_displacement_m=(
+                    self._positive_float(
+                        "open_field_escape_interior_anchor_min_displacement_m"
+                    )
+                ),
                 open_field_escape_active_fill_transit_enabled=bool(
                     self.get_parameter(
                         "open_field_escape_active_fill_transit_enabled"
@@ -643,6 +653,8 @@ class SupervisorNode(Node):
             "escape_max_sec": 20.0,
             "open_field_escape_assist_enabled": False,
             "open_field_escape_approach_continuity_enabled": False,
+            "open_field_escape_interior_anchor_fallback_enabled": False,
+            "open_field_escape_interior_anchor_min_displacement_m": 0.50,
             "open_field_escape_active_fill_transit_enabled": False,
             "open_field_escape_supervisor_owned_assist_enabled": False,
             "escape_exit_hold_sec": 1.0,
@@ -1375,6 +1387,18 @@ class SupervisorNode(Node):
                 )
                 if (
                     self.machine.config
+                    .open_field_escape_interior_anchor_fallback_enabled
+                ):
+                    value_names.append(
+                        "approach_corridor_anchor_mode"
+                    )
+                    values.append(
+                        0.0
+                        if continuity.anchor_mode == "outside_radius"
+                        else 1.0
+                    )
+                if (
+                    self.machine.config
                     .open_field_escape_active_fill_transit_enabled
                 ):
                     value_names.extend(
@@ -1588,9 +1612,25 @@ class SupervisorNode(Node):
                     tuple(self.pose_history),
                     geometry.center,
                     geometry.exit_radius,
+                    interior_anchor_fallback_enabled=(
+                        self.machine.config
+                        .open_field_escape_interior_anchor_fallback_enabled
+                    ),
+                    interior_anchor_min_displacement_m=(
+                        self.machine.config
+                        .open_field_escape_interior_anchor_min_displacement_m
+                    ),
                 )
             )
             if self.escape_approach_continuity is None:
+                if (
+                    self.machine.config
+                    .open_field_escape_interior_anchor_fallback_enabled
+                ):
+                    return (
+                        "open-field escape approach continuity has no "
+                        "qualified outside-radius or interior anchor"
+                    )
                 return (
                     "open-field escape approach continuity has no pose "
                     "outside the frozen exit radius"
@@ -3151,6 +3191,26 @@ class SupervisorNode(Node):
                 "open_field_escape_approach_continuity_enabled"
             )
             values.append(1.0)
+        if (
+            self.machine.config
+            .open_field_escape_interior_anchor_fallback_enabled
+        ):
+            names.extend(
+                [
+                    "open_field_escape_interior_anchor_fallback_enabled",
+                    (
+                        "open_field_escape_interior_anchor_"
+                        "min_displacement_m"
+                    ),
+                ]
+            )
+            values.extend(
+                [
+                    1.0,
+                    self.machine.config
+                    .open_field_escape_interior_anchor_min_displacement_m,
+                ]
+            )
         if (
             self.machine.config
             .open_field_escape_supervisor_owned_assist_enabled

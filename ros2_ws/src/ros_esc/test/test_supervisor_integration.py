@@ -542,6 +542,14 @@ def test_open_field_disables_bounds_without_weakening_explicit_stop():
             not in node.event_publisher.messages[-1].value_names
         )
         assert (
+            "open_field_escape_interior_anchor_fallback_enabled"
+            not in node.event_publisher.messages[-1].value_names
+        )
+        assert (
+            "open_field_escape_interior_anchor_min_displacement_m"
+            not in node.event_publisher.messages[-1].value_names
+        )
+        assert (
             "open_field_escape_active_fill_transit_enabled"
             not in node.event_publisher.messages[-1].value_names
         )
@@ -1069,6 +1077,143 @@ def test_v8_4_approach_continuity_fails_without_outside_history():
             "the frozen exit radius"
         )
         assert node.safe_direction is None
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+@pytest.mark.parametrize(
+    "center,anchor,current,radius,expected_mode,expected_direction",
+    [
+        (
+            np.array([1.0699606541859803, 0.7605913520944112]),
+            Pose2D(
+                0.0,
+                -0.0019376353428124755,
+                -0.0021311540019673843,
+                0.0,
+            ),
+            Pose2D(1.0, 1.069992273318767, 0.7620317121328785, 0.0),
+            1.3667708293638696,
+            1.0,
+            np.array([0.8147816323190298, 0.579767963616081]),
+        ),
+        (
+            np.array([0.0, 0.0]),
+            Pose2D(0.0, -2.0, 0.0, 0.0),
+            Pose2D(1.0, 0.05, 0.0, 0.0),
+            1.25,
+            0.0,
+            np.array([1.0, 0.0]),
+        ),
+    ],
+)
+def test_v8_12_interior_anchor_policy_starts_escape_with_mode_evidence(
+    center,
+    anchor,
+    current,
+    radius,
+    expected_mode,
+    expected_direction,
+):
+    rclpy.init()
+    node = SupervisorNode(
+        parameter_overrides=[
+            Parameter("operating_bounds_enabled", value=False),
+            Parameter("recenter_after_escape", value=False),
+            Parameter("open_field_escape_assist_enabled", value=True),
+            Parameter(
+                "open_field_escape_approach_continuity_enabled",
+                value=True,
+            ),
+            Parameter(
+                "open_field_escape_active_fill_transit_enabled",
+                value=True,
+            ),
+            Parameter(
+                "open_field_escape_supervisor_owned_assist_enabled",
+                value=True,
+            ),
+            Parameter(
+                "open_field_escape_interior_anchor_fallback_enabled",
+                value=True,
+            ),
+            Parameter(
+                "open_field_escape_interior_anchor_min_displacement_m",
+                value=0.50,
+            ),
+            Parameter(
+                "extremum_classification_mode",
+                value="counted_candidates",
+            ),
+            Parameter("known_source_count", value=2),
+            Parameter("max_fill_clusters", value=1),
+            Parameter("candidate_informed_fill_enabled", value=True),
+        ]
+    )
+    node.state_publisher = Recorder()
+    node.command_publisher = Recorder()
+    node.event_publisher = Recorder()
+    try:
+        node._publish_configuration_event(0.0)
+        configuration = node.event_publisher.messages[-1]
+        configuration_evidence = dict(
+            zip(configuration.value_names, configuration.values)
+        )
+        assert configuration_evidence[
+            "open_field_escape_interior_anchor_fallback_enabled"
+        ] == 1.0
+        assert configuration_evidence[
+            "open_field_escape_interior_anchor_min_displacement_m"
+        ] == pytest.approx(0.50)
+
+        node.pose_history.extend([anchor, current])
+        node.latest_pose = current
+        node.latest_pose_valid = True
+        node.latest_pose_sequence = 2
+        node.active_fill_records = {
+            1: {
+                "fill_id": 1,
+                "revision": 1,
+                "center": center,
+                "support_radius": radius + 0.15,
+                "exit_radius": radius,
+            }
+        }
+        node.machine.state = State.ESCAPE_REPULSE
+        node.machine.active_escape_fill_id = 1
+        node.machine.escape_started_sec = 1.0
+        transition = Transition(
+            State.DESIGN_OR_MERGE_FILL,
+            State.ESCAPE_REPULSE,
+            "fill accepted; begin measured escape",
+        )
+
+        node._handle_transition(transition, 1.0)
+        node._publish_state_and_command(1.0)
+
+        assert node.machine.state == State.ESCAPE_REPULSE
+        assert node.escape_approach_continuity.anchor_mode == (
+            "interior_farthest" if expected_mode == 1.0 else "outside_radius"
+        )
+        assert node.safe_direction.direction == pytest.approx(
+            expected_direction
+        )
+        assert node.state_publisher.messages[-1].state == (
+            AlgorithmState.STATE_ESCAPE_REPULSE
+        )
+        started = next(
+            event
+            for event in node.event_publisher.messages
+            if event.event_type == AlgorithmEvent.EVENT_ESCAPE_STARTED
+        )
+        evidence = dict(zip(started.value_names, started.values))
+        assert evidence["approach_corridor_anchor_mode"] == expected_mode
+        assert evidence["approach_corridor_displacement_m"] >= 0.50
+        assert not any(
+            event.event_type == AlgorithmEvent.EVENT_FAILSAFE
+            for event in node.event_publisher.messages
+        )
     finally:
         node.destroy_node()
         rclpy.shutdown()

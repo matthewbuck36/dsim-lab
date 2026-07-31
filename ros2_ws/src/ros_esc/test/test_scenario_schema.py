@@ -379,6 +379,16 @@ V8_11_BROAD_MATRIX = (
     / 'ros_esc/scenario_runner/scenarios/'
     'phase08_v8_11_broad_matrix.yaml'
 )
+V8_12_INTERIOR_ANCHOR_VISIBLE_PROBE = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_12_interior_anchor_visible_probe.yaml'
+)
+V8_12_BROAD_MATRIX = (
+    PACKAGE_ROOT
+    / 'ros_esc/scenario_runner/scenarios/'
+    'phase08_v8_12_broad_matrix.yaml'
+)
 HISTORICAL_V2_ACTIVATION = (
     PACKAGE_ROOT
     / 'ros_esc/scenario_runner/scenarios/phase08_v2_activation.yaml'
@@ -2136,6 +2146,51 @@ def test_schema_v14_resolves_topology_bound_secondary_and_matrix():
             assert topology['route']['forward_alignment'] >= 0.80
 
 
+def test_schema_v14_resolves_v8_12_visible_and_matrix_contracts():
+    expected = {
+        V8_12_INTERIOR_ANCHOR_VISIBLE_PROBE: (
+            1,
+            True,
+            {20001},
+        ),
+        V8_12_BROAD_MATRIX: (
+            4,
+            False,
+            {20031, 20032, 20033, 20034},
+        ),
+    }
+    for path, (run_count, gui, seeds) in expected.items():
+        suite = load_suite(path)
+        runs, unsupported = expand_suite(suite)
+
+        assert unsupported == []
+        assert len(runs) == run_count
+        assert suite['schema_version'] == 14
+        assert suite['execution']['gazebo_gui'] is gui
+        assert {run['seed'] for run in runs} == seeds
+        for run in runs:
+            overrides = run['algorithm']['launch_overrides']
+            topology = run['success']['staged_recovery'][
+                'topology_qualification'
+            ]
+            assert run['case_id'].startswith('v8_12_')
+            assert overrides[
+                'open_field_escape_interior_anchor_fallback_enabled'
+            ] is True
+            assert overrides[
+                'open_field_escape_interior_anchor_min_displacement_m'
+            ] == pytest.approx(0.50)
+            assert topology['route']['start_to_local_m'] >= 0.50
+            if run['seed'] == 20001:
+                assert run['success']['controller'][
+                    'expected_approach_anchor_mode'
+                ] == 'interior_farthest'
+            else:
+                assert 'expected_approach_anchor_mode' not in (
+                    run['success']['controller']
+                )
+
+
 def test_schema_v14_requires_bound_topology_for_verified_trap(tmp_path):
     document = yaml.safe_load(
         V8_11_SECONDARY_VISIBLE_PROBE.read_text(encoding='utf-8')
@@ -2169,6 +2224,169 @@ def test_schema_v14_rejects_topology_hash_and_mode_drift(tmp_path):
         'local_association_mode'
     ] = 'declared_source'
     with pytest.raises(ValueError, match='requires local_association_mode'):
+        _load(tmp_path, document)
+
+
+def test_schema_v14_binds_interior_anchor_fallback_to_topology_route(
+    tmp_path,
+):
+    document = yaml.safe_load(
+        V8_11_BROAD_MATRIX.read_text(encoding='utf-8')
+    )
+    overrides = document['frozen_profile']['launch_overrides']
+    overrides.update({
+        'open_field_escape_interior_anchor_fallback_enabled': True,
+        'open_field_escape_interior_anchor_min_displacement_m': 0.50,
+    })
+
+    suite = _load(tmp_path, document)
+    runs, unsupported = expand_suite(suite)
+
+    assert unsupported == []
+    assert len(runs) == 4
+    for run in runs:
+        resolved_overrides = run['algorithm']['launch_overrides']
+        topology = run['success']['staged_recovery'][
+            'topology_qualification'
+        ]
+        assert resolved_overrides[
+            'open_field_escape_interior_anchor_fallback_enabled'
+        ] is True
+        assert resolved_overrides[
+            'open_field_escape_interior_anchor_min_displacement_m'
+        ] == pytest.approx(0.50)
+        assert topology['route']['start_to_local_m'] >= 0.50
+
+
+def test_schema_v14_normalizes_expected_interior_anchor_mode(tmp_path):
+    document = yaml.safe_load(
+        V8_11_BROAD_MATRIX.read_text(encoding='utf-8')
+    )
+    document['frozen_profile']['launch_overrides'].update({
+        'open_field_escape_interior_anchor_fallback_enabled': True,
+        'open_field_escape_interior_anchor_min_displacement_m': 0.50,
+    })
+    document['cases'][0]['success']['controller'][
+        'expected_approach_anchor_mode'
+    ] = 'interior_farthest'
+
+    run = expand_suite(_load(tmp_path, document))[0][0]
+
+    assert run['success']['controller'][
+        'expected_approach_anchor_mode'
+    ] == 'interior_farthest'
+
+
+@pytest.mark.parametrize(
+    ('fallback_enabled', 'mode', 'match'),
+    [
+        (True, 'unknown', 'must be outside_radius or interior_farthest'),
+        (False, 'interior_farthest', 'requires schema version 14 interior'),
+    ],
+)
+def test_schema_v14_rejects_invalid_expected_anchor_mode(
+    tmp_path,
+    fallback_enabled,
+    mode,
+    match,
+):
+    document = yaml.safe_load(
+        V8_11_BROAD_MATRIX.read_text(encoding='utf-8')
+    )
+    if fallback_enabled:
+        document['frozen_profile']['launch_overrides'].update({
+            'open_field_escape_interior_anchor_fallback_enabled': True,
+            'open_field_escape_interior_anchor_min_displacement_m': 0.50,
+        })
+    document['cases'][0]['success']['controller'][
+        'expected_approach_anchor_mode'
+    ] = mode
+
+    with pytest.raises(ValueError, match=match):
+        _load(tmp_path, document)
+
+
+@pytest.mark.parametrize(
+    ('mutation', 'match'),
+    [
+        (
+            lambda document, overrides: document.update(
+                {'schema_version': 13}
+            ),
+            'schema version 14',
+        ),
+        (
+            lambda document, overrides: overrides.update({
+                'open_field_escape_interior_anchor_fallback_enabled': 1,
+            }),
+            'must be true or false',
+        ),
+        (
+            lambda document, overrides: overrides.pop(
+                'open_field_escape_interior_anchor_min_displacement_m'
+            ),
+            'requires open_field_escape_interior_anchor_min_displacement_m',
+        ),
+        (
+            lambda document, overrides: overrides.update({
+                'open_field_escape_interior_anchor_min_displacement_m': 0.0,
+            }),
+            'must be positive',
+        ),
+        (
+            lambda document, overrides: overrides.update({
+                'open_field_escape_approach_continuity_enabled': False,
+            }),
+            'requires approach continuity',
+        ),
+        (
+            lambda document, overrides: overrides.update({
+                'open_field_escape_active_fill_transit_enabled': False,
+            }),
+            'requires active-fill transit',
+        ),
+        (
+            lambda document, overrides: overrides.update({
+                'open_field_escape_supervisor_owned_assist_enabled': False,
+            }),
+            'requires supervisor-owned assist',
+        ),
+        (
+            lambda document, overrides: document['cases'][0]['algorithm'][
+                'ablations'
+            ].update({'affine_assist_enabled': False}),
+            'requires algorithm.ablations.affine_assist_enabled',
+        ),
+        (
+            lambda document, overrides: document['cases'][0]['success'][
+                'staged_recovery'
+            ].pop('topology_qualification'),
+            'required by the interior approach-anchor fallback',
+        ),
+        (
+            lambda document, overrides: overrides.update({
+                'open_field_escape_interior_anchor_min_displacement_m': 1.30,
+            }),
+            'route.start_to_local_m must be at least',
+        ),
+    ],
+)
+def test_schema_v14_rejects_invalid_interior_anchor_contract(
+    tmp_path,
+    mutation,
+    match,
+):
+    document = yaml.safe_load(
+        V8_11_BROAD_MATRIX.read_text(encoding='utf-8')
+    )
+    overrides = document['frozen_profile']['launch_overrides']
+    overrides.update({
+        'open_field_escape_interior_anchor_fallback_enabled': True,
+        'open_field_escape_interior_anchor_min_displacement_m': 0.50,
+    })
+    mutation(document, overrides)
+
+    with pytest.raises(ValueError, match=match):
         _load(tmp_path, document)
 
 
