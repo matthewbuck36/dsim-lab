@@ -15001,3 +15001,169 @@ GAZEBO NOT YET STARTED.**
 
 Commit this exact dispatch boundary, then execute installed visible seed
 `19501` once on isolated domain `231` with no ROS-domain monitor and no retry.
+
+## Phase 08.8 M4.8 v8.7 primary-visible result — 2026-07-31
+
+The one committed installed primary-visible seed `19501` execution ran once
+on isolated domain `231`, with Gazebo GUI visible and no external ROS/DDS
+monitor. It passed formally.
+
+```text
+scenario runner return code:      0
+record process return code:       0
+record timeout:                   false
+recording complete:               true
+cleanup complete:                 true
+remaining new nodes:              none
+remaining run-session processes:  none
+final readiness false:            true
+final commands zero:              true
+formal predicates:                14/14
+classification:                   passed
+```
+
+The required path was:
+
+```text
+SEARCH
+-> VERIFY_EXTREMUM
+-> DESIGN_OR_MERGE_FILL
+-> ESCAPE_REPULSE
+-> ESCAPE_ASSIST
+-> SEARCH
+-> VERIFY_EXTREMUM
+-> GOAL_HOLD
+```
+
+Stage A completed at simulation time `118.409 s` with exactly one created,
+typed, active fill. The local convergence point was
+`(1.201810,1.046505) m`; the accepted fill center was
+`(1.331634,1.073696) m`.
+
+The assisted escape selected direction `(0.677977943,0.735082246)`, exited at
+`(2.368352,2.115668) m`, and achieved measured fill-to-exit alignment
+`0.999283312`. It had `1,889` evaluated assist controls, `1,889` fresh
+matching supervisor commands, `1,889` suppressed nonzero GESC proposals, and
+`1,889` positive supervisor-linear samples.
+
+The fresh schema-v11 causal handoff passed without needing a transition tail:
+
+```text
+recognized transition samples:   0
+handoff delay:                    0.005919394 s
+handoff deadline:                 0.15 s
+ordinary post-exit samples:       13,316
+later authority reappearance:     none
+```
+
+Candidate two's exact raw interval `-3.8372093023255816` was strictly below
+candidate one's retained lower bound `-2.8823354819629783`, with margin
+`0.9548738203626033`. `GOAL_REACHED` preceded the evaluator-only proximity
+sample.
+
+Stage B completed at simulation time `230.405 s`, `111.996 s` after Stage A
+and within its `300.0 s` budget. The first valid sample was
+`(3.521410,3.610254) m`, `0.112314 m` from the declared global; final retained
+distance was `0.112286 m`.
+
+Retained evidence:
+
+```text
+run:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+    phase08_8_7_primary_probe/2026-07-31/
+    20260731T133025467173Z_simulation_phase08_v8_7_primary_visible_probe-
+    v8_7_primary_probe_r1p5_a45_h25_19501-robust__4b9033ba
+scenario summary:
+  /home/mattb/Experiments/GESC-Gaussian/runs/
+    phase08_8_7_primary_probe/scenario_summaries/
+    20260731T133024465291Z_phase08_v8_7_primary_visible_probe.yaml
+report:
+  docs/codex/gesc_gaussian/validation/
+    phase_08_8_m4_8_primary_probe.md
+```
+
+The standard analyzer ran exactly once after closure, returned zero, and
+reported:
+
+```text
+analysis_status:       complete
+analysis_failures:     []
+controller_success:    true
+fill count:            1
+escape successes:      1/1
+failsafe:              false
+timeout:               false
+escape time:           17.863802 s
+path length:           13.513125 m
+goal convergence time: 229.772090 s
+plots:                 9/9
+```
+
+Plot directory:
+
+```text
+<run>/analysis/phase07/plots/
+```
+
+The trajectory, candidate-ranking, and cost plots were visually inspected.
+They show the expected local capture, one fill, northeast escape and transit,
+global capture, and strict second-candidate raw-cost improvement. All nine
+plots and machine-readable tables are retained.
+
+No Gazebo, scenario, recorder, analyzer, rosbag recorder, or run-session
+process remains. The physical contract is unchanged: manual operator
+`Ctrl+C`, with no coordinate-based physical stop.
+
+## Current milestone
+
+**PHASE 08.8 M4.8 — V8.7 PRIMARY VISIBLE SEED 19501 FORMAL PASS /
+ANALYSIS COMPLETE / NINE PLOTS RETAINED / RESULT CHECKPOINT PENDING /
+PRIMARY REPEATS PROHIBITED.**
+
+## Next criterion
+
+Checkpoint and commit this immutable passing visible result. Then create,
+checkpoint, and commit a separate exact ten-seed primary-repeat dispatch
+boundary before any repeat runs.
+
+## Phase 08.8 M4.8 v8.7 primary-visible result checkpoint — 2026-07-31
+
+The immutable formal pass, one-time complete analysis, nine plots, report,
+and live status received the required Phase 08 checkpoint against dispatch
+HEAD `0b0fb68`.
+
+```text
+base HEAD:
+  0b0fb68dd18d1302fbb9ee68a166c819b3dbb7db
+status sha256 before this checkpoint note:
+  7ce12647de2f910473e14db5e186c64ef4e310c3660e6cfeaac71e41d4468821
+active plan sha256:
+  8c063ed44514bd9a84e0601f5cb73e56aeecabddce7cabda0d6c65fe80077694
+visible report sha256:
+  4533fb3bd201d112d24bc2d20e727697959fac239bf8a22a14589cb33ee87e41
+unstaged tracked diff sha256:
+  a0871438164cc4644d5aa32d2f51d871edba9d5b8ab5fddd437a261168b74dbf
+checkpoint sha256 before this checkpoint note:
+  0a2af847426e6804bde1f7d96a842cc370fe51b96230e6d8889a2b2c123322df
+unstaged and staged diff checks:
+  PASS
+phase context:
+  PASS
+```
+
+No Gazebo, scenario, recorder, analyzer, rosbag recorder, or run-session
+process remained during this result checkpoint.
+
+## Current milestone
+
+**PHASE 08.8 M4.8 — V8.7 PRIMARY VISIBLE SEED 19501 FORMAL PASS /
+ANALYSIS COMPLETE / NINE PLOTS RETAINED / RESULT CHECKPOINT PASS /
+RESULT COMMIT PENDING / PRIMARY REPEATS PROHIBITED.**
+
+## Next criterion
+
+Commit this exact visible result. Then create, checkpoint, and commit a
+separate exact ten-seed primary-repeat dispatch boundary before executing the
+headless population serially with first-failure stop and no ROS-domain
+monitor.
