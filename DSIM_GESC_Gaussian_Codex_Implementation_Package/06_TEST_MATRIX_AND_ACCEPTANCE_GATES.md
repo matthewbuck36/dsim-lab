@@ -265,6 +265,23 @@ All simulation-ready requirements, plus:
 7. A dry run records a complete bag.
 8. Dr. Nili or the designated lab supervisor authorizes progression.
 
+### Phase 09 selected-scenario readiness amendment
+
+The gate above remains the historical requirement for a broad physical-ready
+or robustness claim. It is not a prerequisite for no-hardware planning,
+source integration, static tests, or launch/configuration preparation in the
+local physical snapshot.
+
+For the current selected-scenario light demonstration, later physical motion
+may proceed only after a reviewed Phase 09 handoff, separate explicit user
+authorization, and the applicable live checks in
+`10_PHYSICAL_EXPERIMENT_READINESS.md`. The initial target is limited to the
+repeatable v8.10 primary and v8.11 secondary two-source layouts. Vicon/GPS are
+not controller inputs; the permitted live inputs are the rotating
+photoresistor, wheel odometry, required IMU data, and configured source count.
+Physical arrival is manual operator `Ctrl+C`. This amendment creates no broad
+simulation-ready or physical-ready tag.
+
 ## Physical progression
 
 1. Stationary sensor calibration.

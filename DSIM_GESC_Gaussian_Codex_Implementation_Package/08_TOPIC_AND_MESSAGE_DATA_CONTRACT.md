@@ -105,8 +105,9 @@ Required concepts:
 ```text
 canonical pose
 canonical velocity
-Vicon pose if physical
-odometry
+wheel odometry for physical control
+IMU data required by the physical stack
+Vicon pose only as an optional evaluation/recording topic, never control
 TF
 room bounds
 room center

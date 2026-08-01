@@ -27,6 +27,24 @@ This document resolves the uncertainties from the meetings into one adopted impl
 6. **Primary implementation environment:** Gazebo first, physical TurtleBot only after simulation gates.
 7. **Repository policy:** preserve and extend existing `dsim-lab` conventions.
 
+### Phase 09 selected-scenario amendment
+
+The broad Phase 08 simulation-ready gate was not achieved and must not be
+relabeled. The user nevertheless accepts the repeatable v8.10 primary
+(`11/11`) and v8.11 secondary (`6/6`) two-source layouts as sufficient for a
+selected-scenario physical demonstration. This authorizes Phase 09 planning
+and no-hardware implementation in the local physical snapshot without a broad
+`simulation_ready=true` tag.
+
+This amendment does not authorize physical motion. Live Pi transfer and robot
+motion require separate explicit authorization, live calibration,
+emergency-stop and final-zero verification, complete recording, and an
+operator-managed open test field. The controller may use the rotating
+photoresistor, wheel odometry, required IMU data, and configured source count;
+it may not use GPS, Vicon, source coordinates/roles/intensities, room
+dimensions, or a coordinate-based physical arrival stop. Vicon may be retained
+only for external recording and evaluation.
+
 ## Interpretation of the three cost components
 
 The controller uses:

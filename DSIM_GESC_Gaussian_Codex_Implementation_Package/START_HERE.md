@@ -130,11 +130,14 @@ Phase 08.7 retained-success reproduction produced `13/17` formal and `14/17`
 behavioral passes under evidence-selected two-light conditions, not an
 unbiased acceptance denominator.
 
-The separately approved Phase 08.8 counted-source iteration subsequently
-qualified one fixed primary two-source layout at `11/11` formal passes. Its
-one secondary-layout run completed the scientific local-recovery-to-global
-behavior but failed a frozen evaluator-to-aggregate-basin geometry rule, so
-the secondary repeats and broader matrix did not run. Read first:
+The separately approved Phase 08.8 counted-source iterations subsequently
+qualified the primary fixed two-source layout at `11/11` formal passes and the
+secondary fixed two-source layout at `6/6` formal passes. V8.12 qualified the
+default-off interior approach-anchor fallback and passed its visible probe.
+Its first broad-matrix case completed the scientific local-recovery-to-global
+behavior but failed one frozen direct-exit alignment predicate at `13/14`, so
+the remaining three cases did not run. V8.12 is terminally closed; there is no
+v8.13 and no broad simulation-ready claim. Read first:
 
 ```text
 docs/codex/gesc_gaussian/validation/phase_08_8_final_report.md
@@ -142,15 +145,22 @@ docs/codex/gesc_gaussian/handoffs/phase_08_8_handoff.md
 docs/codex/gesc_gaussian/validation/phase_08_final_report.md
 docs/codex/gesc_gaussian/handoffs/phase_08_final_handoff.md
 docs/codex/gesc_gaussian/status/phase_08_status.md
+docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt
 ```
 
-The next justified work is a separately reviewed Phase 09 physical-interface
-inventory and Plan centered first on the known-good two-light `1:4` response
-condition. Planning does not authorize hardware motion. Do not resume or
-relabel historical Phase 08 evidence, create a simulation-ready tag, infer
-secondary-layout or three-light readiness, enable an automatic physical
-global-distance stop, or launch hardware without explicit Phase 09
-authorization.
+The user accepts the selected primary and secondary evidence as sufficient for
+Phase 09 physical-interface integration. The next work is a separately
+reviewed, no-hardware Plan and static implementation under
+`/home/mattb/physical_TB3_files_snapshot/pi/ros2_ws/src`, centered first on the
+known-good two-light `1:4` response condition. A historical broad
+`simulation_ready=true` tag is not required for that snapshot-only work.
+
+Planning or snapshot implementation does not authorize live Pi access or
+hardware motion. Do not resume or relabel historical Phase 08 evidence, infer
+arbitrary layout/intensity or three-light readiness, route Vicon/GPS into the
+controller, enable an automatic physical global-distance stop, or launch
+hardware without separate explicit physical-motion authorization and the live
+Phase 09 readiness gate.
 
 ---
 

@@ -1,0 +1,142 @@
+# Phase 09 Shared-Lab Legacy Compatibility Evidence
+
+Verified: `2026-08-01T03:06:56Z`
+
+Result: `PASS — STATIC/OFFLINE ONLY; NO HARDWARE`
+
+## Compatibility amendment
+
+The user requires the shared laboratory TurtleBot3 to retain every
+pre-existing ESC method and its Bash entry point. The initial M3 draft had
+extended `light_gesc_gaussian_fill_experiment.launch.xml` in place. That draft
+was not accepted as the final compatibility boundary.
+
+The selected Phase 09 graph now lives only in:
+
+```text
+turtlebot3_vehicle_nodes/launch/
+  phase09_gesc_gaussian_counted_two_source.launch.xml
+```
+
+The new
+`gesc_gaussian_counted_two_source_voltage.bash` wrapper and the physical
+`record_run` target contract reference that file. The pre-existing
+`gesc_gaussian_fill_full_rotation_voltage.bash` still references the old
+launch. No other pre-existing wrapper references the Phase 09 launch.
+
+## Baseline preservation
+
+The verified M0 archive was the restore source:
+
+```text
+/home/mattb/physical_TB3_files_snapshot/phase09_backups/
+  20260801T021552Z/ros2_ws_src.tar.gz
+archive SHA-256:
+  8109c5c47789ce1d2bb2cf69ba82f6901b054193989c488fefcfb9cf507404b8
+```
+
+The old GESC+Gaussian launch was restored from that archive with
+`tar --same-permissions` and matches the M0 digest:
+
+```text
+542f26cc86f3ee06a8d6a6c8ee8a397fbadf2d8fc64aa39fcdf15eef8326bfaf
+```
+
+An exact `sha256sum -c` pass covered all baseline legacy assets involved in
+operator selection:
+
+| Asset class | Baseline files | Result |
+|---|---:|---|
+| Bash entry points | 26 | all hashes match M0 |
+| launch files | 8 | all hashes match M0 |
+| controller/filter/rotation configuration files | 6 | all hashes match M0 |
+| total | 40 | `PASS` |
+
+The new Phase 09 wrapper is the 27th Bash file and is intentionally not part of
+the M0 hash set. All 27 Bash files pass `bash -n`.
+
+## Wrapper and launch audit
+
+`test_phase09_physical_launch.py` now provides a self-contained shared-lab
+guard. It freezes all 26 pre-existing wrapper hashes plus the old launch hash,
+checks shell syntax, requires exactly one launch target per wrapper, resolves
+that launch in the package, parses its XML, checks supplied launch argument
+names, and proves that the old and selected wrappers target different files.
+
+One inherited acoustic spelling mismatch was found: all six acoustic wrappers
+pass `input_encoder_data_to_filter=True`, while their unchanged launch declares
+`input_encoder_data_into_filter=True`. This predates Phase 09. It is currently
+behavior-neutral because every wrapper requests `True` and the effective
+declared default is already `True`; ROS 2 `--show-args` also accepted the
+existing invocation. The wrappers and launch were left byte-identical rather
+than silently rewriting shared-lab entry points. The regression guard permits
+only this exact historical case.
+
+After the isolated build, `ros2 launch ... --show-args` resolved every unique
+launch named by a Bash entry point:
+
+```text
+acoustic_esc_experiment.launch.xml
+light_esc_experiment.launch.xml
+light_gesc_gaussian_fill_experiment.launch.xml
+light_hbesc_gaussian_fill_experiment.launch.xml
+phase09_gesc_gaussian_counted_two_source.launch.xml
+rotating_frame.launch.xml
+```
+
+The retained output is:
+
+```text
+/tmp/phase09_compat_build.zdGQKP/show_args.log
+```
+
+The new Phase 09 launch contains no Vicon relay, legacy CSV collector,
+`odometry_node`, broad `pkill`, evaluator geometry, or second `/cmd_vel`
+owner. The restored old launch retains its historical behavior only for its
+historical wrapper.
+
+## Package/API regression evidence
+
+The backup and current `setup.py` files were parsed as Python AST. All 12
+pre-existing `ros_esc` console entry points remain present in the current 15;
+all 7 pre-existing `turtlebot3_vehicle_nodes` entry points remain present in
+the current 7.
+
+The photoresistor owner retains its historical three positional arguments:
+timekeeper topic, output topic, and `Voltage|Resistance`. A direct parser test
+now proves both old modes retain `/dev/ttyUSB0`, `9600`, `0.50 s`, legacy-only
+publication, no calibration, and no source score as their defaults. Phase 09
+flags are additive.
+
+Isolated build root:
+
+```text
+/tmp/phase09_compat_build.zdGQKP
+```
+
+Results:
+
+```text
+colcon build, ros_esc_interfaces + ros_esc + turtlebot3_vehicle_nodes:
+  3 packages passed in 12.6 s
+focused installed-overlay tests after the CLI regression was added:
+  69 passed in 0.87 s
+```
+
+The focused collection covers shared parity, physical recorder safety,
+photoresistor compatibility/semantics, and launch/wrapper compatibility.
+Shared-runtime source files were not changed by this amendment, so the earlier
+M2 `300 passed` shared-owner result and `34 passed` repository legacy result
+remain applicable.
+
+An attempted rerun of repository `test_legacy_behavior.py` against the
+physical overlay failed during collection because that simulation test imports
+the deliberately excluded `Multi_Light_Source_Cost`. This is the already
+documented physical-overlay limitation, not a failed legacy behavior assertion;
+the attempt did not start nodes or hardware and was not relabeled as a pass.
+
+## Nonclaims
+
+No Bash wrapper, launch graph, ROS node, serial device, sensor, motor, servo,
+lamp, SSH/SSHFS path, or live Pi was executed. Shell syntax, XML construction,
+package discovery, and `--show-args` do not prove live hardware readiness.

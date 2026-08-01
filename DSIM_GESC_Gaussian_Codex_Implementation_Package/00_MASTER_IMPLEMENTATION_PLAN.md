@@ -286,7 +286,12 @@ v2 design, not a permanent cap. A future acceptance sample must be
 predeclared, stratified, and reported with uncertainty; it must not be selected
 after observing results.
 
-No physical trial before the gate in `06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md` is satisfied.
+The broad physical-ready contract in
+`06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md` remains the requirement for a broad
+robustness claim. The approved Phase 09 selected-scenario amendment permits
+no-hardware snapshot integration without that broad tag. Later physical motion
+still requires the Phase 09 selected-scenario live-readiness checklist,
+separate explicit user authorization, and a frozen low-speed progression.
 
 ---
 
@@ -298,12 +303,23 @@ Run controlled light-source experiments using the same algorithm and data interf
 
 ## Requirements
 
-- Vicon and physical sensor adapters feed the canonical topics.
+- Implement first in the source-only physical snapshot at
+  `/home/mattb/physical_TB3_files_snapshot/pi/ros2_ws/src`.
+- Photoresistor, wheel odometry, and required IMU adapters feed the canonical
+  topics.
+- Vicon/GPS remain evaluation-only and do not enter controller logic or
+  stopping.
+- Preserve the selected Phase 08 counted-candidate, adaptive Gaussian, and
+  temporary affine-assistance behavior without forking the algorithm.
 - Required-topic validation passes.
 - Zero-command safety is tested.
 - New lamps and calibration are documented.
-- Start with low-speed one-source tests.
-- Progress to two-source cases.
+- Physical arrival remains manual operator `Ctrl+C`.
+- Treat the field as open, obstacle-free, and operator-managed; autonomous
+  wall/obstacle avoidance is outside the current claim.
+- Complete static snapshot qualification before any live Pi transfer.
+- Start later authorized motion with stationary and low-speed one-source
+  commissioning, then progress to the two selected two-source cases.
 - Do not change parameters mid-matrix without creating a new experiment version.
 - Every run is bagged and has metadata.
 

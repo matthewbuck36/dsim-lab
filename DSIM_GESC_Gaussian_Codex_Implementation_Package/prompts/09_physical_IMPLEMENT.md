@@ -1,71 +1,184 @@
-You are implementing one bounded phase in the existing `dsim-lab` Git repository.
+You are implementing the approved Phase 09 Plan in the local physical
+TurtleBot3 source snapshot. This implementation is strictly no-hardware and
+must not mount, write to, launch, or command the physical Raspberry Pi or
+TurtleBot3.
 
-Read:
-- `DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md`
-- the phase specification named in this prompt,
-- `docs/codex/gesc_gaussian/plans/phase_09_plan.md`
-- `docs/codex/gesc_gaussian/implementation_sequence.md`
-- `docs/codex/gesc_gaussian/knowledge_bridge_phase_00_05.md`
-- the Phase 05.5 bridge/handoff, latest simulation-readiness handoff, and older handoffs only when a current claim depends on them.
+## Recover the durable boundary
 
-Before editing, initialize the live status, verify it against Git, and run:
+Read completely:
+
+- `AGENTS.md`;
+- `DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md`;
+- `DSIM_GESC_Gaussian_Codex_Implementation_Package/01_RESEARCH_DECISIONS_AND_ASSUMPTIONS.md`;
+- `DSIM_GESC_Gaussian_Codex_Implementation_Package/07_CODEX_WORKFLOW_AND_CONTEXT_RETENTION.md`;
+- `DSIM_GESC_Gaussian_Codex_Implementation_Package/10_PHYSICAL_EXPERIMENT_READINESS.md`;
+- `docs/codex/gesc_gaussian/plans/phase_09_plan.md`;
+- `docs/codex/gesc_gaussian/status/phase_09_status.md`, if already present;
+- `docs/codex/gesc_gaussian/validation/phase_08_8_final_report.md`;
+- `docs/codex/gesc_gaussian/handoffs/phase_08_8_handoff.md`;
+- `docs/codex/gesc_gaussian/status/phase_08_status.md`; and
+- `docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt`.
+
+Inspect current code, Git state, the saved Plan, and the physical snapshot
+before editing. The saved Plan is authoritative unless current evidence
+requires a bounded, documented correction under the Level A/B/C policy.
+
+Initialize the live status without overwriting a nonempty file, then run:
 
 ```bash
 DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/init_phase_status.sh 09
 DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh 09 implement
 ```
 
-The saved Phase 09 plan is the authoritative handoff from Plan mode. Verify its
-claims against the current repository and prior implementation handoffs before
-editing. Apply the Level A/B/C policy in
-`07_CODEX_WORKFLOW_AND_CONTEXT_RETENTION.md`. Missing physical authorization,
-safety prerequisites, or compatible adapters is a Level A stop.
+The historical absence of a broad `simulation_ready=true` tag does not block
+the approved selected-scenario snapshot implementation. It also does not
+become a passing Phase 08 claim. Missing Plan/status context, an interface or
+ownership conflict, loss of simulation/physical parity, or any attempt to
+command hardware remains a stop.
 
-Long-run continuity:
-- Maintain `docs/codex/gesc_gaussian/status/phase_09_status.md` throughout execution.
-- Record exact evidence continuously and run `checkpoint_phase.sh 09` at material, safety-critical, or independently reviewable boundaries.
-- After compaction or interruption, reread the plan/status, inspect Git status and diff, and resume from the next incomplete criterion.
-- Bound long commands and retain verbose logs by path rather than in chat.
-- Do not repeat a recorded failed approach or restructure validated milestone work without failing-test evidence.
+## Exact edit and hardware boundary
 
-Rules:
-1. Follow the repository's existing conventions exactly.
-2. Reuse and modify current nodes/classes where practical.
-3. Keep legacy behavior selectable.
-4. Do not silently change cost sign, units, public topics, or physical/simulation semantics.
-5. Offline/read-only adapter and safety preparation is allowed before the simulation-ready tag. Physical motion requires the tag, explicit user authorization, audited stop path, and readiness preflight.
-6. Add focused tests for every new behavior.
-7. Run the repository-standard format/lint/build/test commands relevant to changed packages.
-8. Keep changes coherent, reviewable, owner-aligned, and independently tested; split only at meaningful review/test boundaries.
-9. Update documentation and parameter references.
-10. Write the required phase handoff under `docs/codex/gesc_gaussian/handoffs/`.
-11. End with Git status, tests, unresolved issues, and a recommended commit message.
-12. Report global baseline trend, focused/new tests, diff/syntax/import/style checks, exact skips/unexecuted tests, and final totals.
+Implement physical source changes only under:
 
+```text
+/home/mattb/physical_TB3_files_snapshot/pi/ros2_ws/src
+```
 
-# Phase 09 implementation: physical integration and readiness workflow
+Keep Phase 09 Plan, status, validation, manifests, checkpoints, and handoff in
+`/home/mattb/dsim-lab/docs/codex/gesc_gaussian/`.
 
-Offline adapter, metadata, test, and safety/readiness implementation may
-proceed without commanding hardware. Proceed with physical motion only when
-the simulation-ready tag, explicit user approval, audited emergency-stop path,
-and live readiness preflight all exist.
+The snapshot is not Git-controlled. Before its first edit:
 
-Implementation tasks:
-1. Wire physical sensor/Vicon adapters to the same canonical topics.
-2. Do not fork the algorithm.
-3. Add physical preflight and readiness checks.
-4. Add source-score calibration workflow.
-5. Add low-speed physical parameter profile.
-6. Add emergency-stop and zero-command verification.
-7. Add complete recording workflow.
-   Compose the existing Phase 05 `record_run` workflow, manifest, run format,
-   readiness gate, and validator; do not create a second recorder.
-8. Add operator-facing checklist and run notes.
-9. Perform only the explicitly authorized staged tests.
-10. Preserve every bag and metadata file.
+1. create the approved recoverable source backup;
+2. record an exact source inventory and SHA-256 manifest;
+3. prove `/home/mattb/tb3-pi` is not mounted or accessed; and
+4. record the baseline paths and hashes in the live Phase 09 status.
+
+Do not edit `/home/mattb/tb3-pi`, use SSH/SSHFS, command motors, invoke a
+physical launch, or perform a physical sensor test. Do not copy generated
+`build`, `install`, `log`, cache, editor, Git-metadata, or runtime content.
+
+## Required implementation contract
+
+Integrate the current terminal, cumulative Phase 08 counted-source GESC +
+adaptive Gaussian behavior through v8.12 into the existing physical owners.
+Reuse or extend the snapshot's `ros_esc`, `ros_esc_interfaces`, and
+`turtlebot3_vehicle_nodes`; do not create a parallel algorithm or duplicate
+controller/recorder stack.
+
+The TurtleBot3 is shared laboratory equipment. Preserve every pre-existing ESC
+Bash run file, historical launch, and legacy configuration byte-for-byte
+against the sealed baseline. Do not extend the historical
+`light_gesc_gaussian_fill_experiment.launch.xml` in place. Put the selected
+Phase 09 orchestration in a new dedicated launch and point only the new managed
+Phase 09 wrapper and physical recorder target contract at it. A change that
+breaks or silently reroutes any legacy wrapper is a hard compatibility stop.
+
+### Cumulative v8.12 source-selection rule
+
+Do not cherry-pick, blend, or independently merge v8.10, v8.11, and v8.12.
+They are successive experiment/evidence versions in one cumulative Git
+history. V8.10 retained the counted-candidate profile; v8.11 changed the
+simulation evaluator/schema without changing core runtime owners; and v8.12
+added the `interior_farthest` odometry-history fallback to the three existing
+supervisor files. The shared core runtime did not change between qualifying
+v8.12 commit `0263f1c` and Phase 08 terminal commit `c04c222`.
+
+Port the current terminal shared runtime files exactly and prove their
+source-to-snapshot hashes. Do not copy the v8.11 simulation evaluator or its
+source geometry into physical control. The selected physical wrapper must
+explicitly set:
+
+```text
+open_field_escape_interior_anchor_fallback_enabled=True
+open_field_escape_interior_anchor_min_displacement_m=0.50
+```
+
+Keep the shared node/launch default `False` for legacy and nonselected paths;
+the original `outside_radius` anchor retains priority. Preserve the historical
+v8.12 `13/14` formal result, while implementing the complete scientific
+behavior the user accepted. Stop if the saved Plan or implementation diff
+selects an older runtime boundary, disables the fallback in the selected
+wrapper, or introduces evaluator geometry into control.
+
+Preserve:
+
+- rotating photoresistor raw minimization cost and timestamp semantics;
+- wheel odometry and permitted IMU inputs;
+- known source count and counted-candidate raw-cost ranking;
+- adaptive typed Gaussian fill lifecycle and exact one-fill behavior for two
+  sources;
+- temporary affine/approach-continuity assistance, including the v8.12
+  interior-anchor fallback explicitly enabled by the selected physical wrapper
+  while remaining default-off for legacy/nonselected paths, plus direct and
+  assisted escape paths;
+- persistent Gaussian memory after affine assistance is cleared;
+- legacy profile selection plus byte-identical legacy Bash/launch/config entry
+  points;
+- canonical topics, public message semantics, cost sign/units, and the sole
+  physical `/cmd_vel` owner;
+- Phase 05 recording/final-zero contract; and
+- simulation/physical algorithm parity.
+
+Do not add GPS, Vicon, source position/role/intensity, room dimensions, global
+coordinates, SLAM, route planning, autonomous wall avoidance, or a physical
+coordinate-distance stop to control. Vicon files may remain for external
+evaluation, but no Vicon value may affect control or stopping.
+
+Physical arrival remains operator `Ctrl+C`. The selected field assumption is
+open, obstacle-free, and human-managed. A future physical run must still prove
+stale-input stop, readiness false, final-zero ordering, recorder finalization,
+emergency stop, and scoped cleanup before motion is authorized.
+
+## Execution discipline
+
+Work one Plan milestone at a time. Before moving on:
+
+- run the milestone's focused static/offline tests;
+- record exact commands, outcomes, skips, and retained paths in
+  `docs/codex/gesc_gaussian/status/phase_09_status.md`;
+- inspect snapshot and repository diffs for unintended scope;
+- run `bash -n` for every Bash entry point, resolve every wrapper launch and
+  supplied argument, run installed `--show-args` for every unique referenced
+  launch, and verify all pre-existing wrapper/launch/config hashes;
+- update the before/after snapshot manifest and recoverable patch evidence;
+- run `checkpoint_phase.sh 09` at material boundaries; and
+- create only bounded, authorized `dsim-lab` commits for durable Phase 09
+  documentation/manifests. Never imply that external snapshot files were
+  captured by Git unless a retained patch or manifest proves them.
+
+Use bounded host-side checks only: static imports where dependencies exist,
+unit tests, syntax/YAML/XML parsing, interface comparison, launch construction
+without hardware, source-package builds that are compatible with the host,
+and recorder/configuration validation. Report Pi-only, hardware-only, serial,
+GPIO, Arduino, motor, live-topic, emergency-stop, and physical-motion checks as
+unexecuted—not passed.
+
+Do not weaken acceptance or safety checks merely to make host qualification
+green. Preserve every failed attempt and distinguish source integration,
+static readiness, and physical readiness.
+
+## Required closeout
 
 Write:
-- `docs/codex/gesc_gaussian/handoffs/phase_09_handoff.md`
 
-Recommended commit message:
-`phase 09: integrate physical light-source experiment workflow`
+```text
+docs/codex/gesc_gaussian/handoffs/phase_09_handoff.md
+```
+
+Also retain the final snapshot inventory, before/after SHA-256 manifests,
+reviewable source patch/diff, static validation report, future SSHFS transfer
+manifest, Pi backup/rollback procedure, and exact hardware-deferred checklist.
+The static report must include shared-lab legacy hash, entry-point, Bash syntax,
+and wrapper-to-launch compatibility evidence.
+
+Close Phase 09 snapshot implementation only when the declared static criteria
+pass, every skip is explicit, the snapshot is recoverable, runtime is inactive,
+the live status and checkpoint are current, and Git plus external snapshot
+state are reported. Do not declare physical readiness or run the robot.
+
+Recommended bounded commit message:
+
+```text
+phase 09: integrate physical snapshot workflow
+```

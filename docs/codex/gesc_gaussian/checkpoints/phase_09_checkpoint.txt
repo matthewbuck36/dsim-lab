@@ -1,0 +1,67 @@
+# Phase 09 checkpoint
+
+Checkpoint kind: precommit material-boundary snapshot
+Generated: 2026-08-01T03:49:49+00:00
+Base HEAD: c04c222dfeac525197bf0542cbde64f1421dc664
+Branch: feature/gesc-gaussian-robustness-v1
+Status: docs/codex/gesc_gaussian/status/phase_09_status.md
+Status sha256: ba8c338713e3d0f71952d78047e70e7f58de69f8590af1c0d9a2f6e88d8c74ba
+Plan: docs/codex/gesc_gaussian/plans/phase_09_plan.md
+Plan sha256: 0edfeb3b6bbe3d38be6a35365e56eac8a83531265c81459216aec66eaa684e31
+Unstaged diff sha256: acf6cb1568543ed94383c07e2c060b205a8f866dbf127a8ac3a9aab3095f1cec
+Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+
+## Git state
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 177]
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/00_MASTER_IMPLEMENTATION_PLAN.md
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/01_RESEARCH_DECISIONS_AND_ASSUMPTIONS.md
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/08_TOPIC_AND_MESSAGE_DATA_CONTRACT.md
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/10_PHYSICAL_EXPERIMENT_READINESS.md
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_IMPLEMENT.md
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_PLAN.md
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh
+?? docs/codex/gesc_gaussian/checkpoints/phase_09_checkpoint.txt
+?? docs/codex/gesc_gaussian/handoffs/phase_09_handoff.md
+?? docs/codex/gesc_gaussian/plans/phase_09_plan.md
+?? docs/codex/gesc_gaussian/status/phase_09_status.md
+?? docs/codex/gesc_gaussian/validation/phase_09_legacy_compatibility.md
+?? docs/codex/gesc_gaussian/validation/phase_09_pi_transfer_and_rollback.md
+?? docs/codex/gesc_gaussian/validation/phase_09_shared_source_manifest.tsv
+?? docs/codex/gesc_gaussian/validation/phase_09_snapshot.patch
+?? docs/codex/gesc_gaussian/validation/phase_09_snapshot_after.sha256
+?? docs/codex/gesc_gaussian/validation/phase_09_snapshot_backup_receipt.md
+?? docs/codex/gesc_gaussian/validation/phase_09_snapshot_before.sha256
+?? docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv
+?? docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_before.tsv
+?? docs/codex/gesc_gaussian/validation/phase_09_static_qualification.md
+?? docs/codex/gesc_gaussian/validation/phase_09_transfer_manifest.txt
+
+## Diff check
+unstaged and staged: pass
+
+## Changed-file summary
+ .../00_MASTER_IMPLEMENTATION_PLAN.md               |  24 +-
+ .../01_RESEARCH_DECISIONS_AND_ASSUMPTIONS.md       |  18 ++
+ .../06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md         |  17 ++
+ .../08_TOPIC_AND_MESSAGE_DATA_CONTRACT.md          |   5 +-
+ .../10_PHYSICAL_EXPERIMENT_READINESS.md            | 155 +++++++----
+ .../START_HERE.md                                  |  34 ++-
+ .../prompts/09_physical_IMPLEMENT.md               | 233 ++++++++++++-----
+ .../prompts/09_physical_PLAN.md                    | 285 +++++++++++++++------
+ .../tools/validate_phase_context.sh                |  51 ++--
+ 9 files changed, 585 insertions(+), 237 deletions(-)
+
+## Current milestone snapshot
+## Current milestone
+
+- Milestone: M7 — sealed no-hardware snapshot handoff.
+- Implementation complete: `yes`
+- Next acceptance criterion: none inside M0-M7. Any continuation begins at M8
+  read-only live-Pi comparison under separate explicit user authorization.
+
+
+
+This file describes the base HEAD and diff before the next commit; it is
+not a claim that the eventual commit contains itself or that tests passed.
