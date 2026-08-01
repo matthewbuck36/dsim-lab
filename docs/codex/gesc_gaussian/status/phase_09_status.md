@@ -1,6 +1,6 @@
 # Phase 09 Live Status
 
-Last verified: `2026-08-01T03:49:09+00:00`
+Last verified: `2026-08-01T03:52:43+00:00`
 Status: `COMPLETE — SNAPSHOT STATIC INTEGRATION PASS; HARDWARE DEFERRED`
 
 ## Objective
@@ -351,9 +351,8 @@ and nonselected defaults remain disabled.
    requires separate explicit authorization.
 2. M9 stationary calibration and any hardware motion remain deferred and
    require another explicit authorization after M8.
-3. The authorized bounded Phase 09 closeout commit and post-commit receipt are
-   the only remaining repository-cleanup actions. Push remains a separate user
-   choice.
+3. Git cleanup is complete through the bounded closeout and receipt commits
+   recorded below. Push remains a separate user choice.
 
 ## Stop conditions
 
@@ -369,3 +368,59 @@ and nonselected defaults remain disabled.
 Before further changes, reread the plan and this file, inspect Git status and
 the current diff, identify the next incomplete acceptance criterion, and
 continue only from that verified state.
+
+## Phase 09 M7 closeout post-commit receipt — 2026-08-01
+
+The bounded no-hardware snapshot integration and its durable recovery evidence
+were committed:
+
+```text
+5b4c162047e2bae4c8f9fc742fa5ebd0c322e6f5
+  phase 09: close no-hardware snapshot integration
+```
+
+Immediate post-commit verification:
+
+```text
+branch:
+  feature/gesc-gaussian-robustness-v1
+ahead of matching origin branch:
+  178 commits
+tracked and untracked worktree changes:
+  none
+Phase 09 implement context validator:
+  PASS
+all 339 sealed snapshot hashes:
+  PASS
+active simulation/analysis/physical runtime:
+  none
+handoff sha256:
+  92031a21ec791cdc416619b86e2aceeb0afb707c54cf8f9b260ba73544dc0541
+checkpoint sha256 in the closeout commit:
+  984e06849d4f027057622dc64182cb3e7fe3be8438bbfb01246fbb4c3ae73a24
+snapshot patch sha256:
+  8d56261f6857ff0f6f1bd83021202d32a3a13a0242fa7a9cb5011153b4393d1b
+after-file manifest sha256:
+  af470b19b3aae91518e45fd093dcbe6874f67cccdd4ca6cf26213659c865afe4
+```
+
+The final staged generic whitespace check identified only the exact recovery
+payload: historical source whitespace represented inside
+`phase_09_snapshot.patch`, plus the intentionally empty final symlink-target
+column in both inventory TSVs. One unrelated extra blank line at the end of
+the backup receipt was corrected before commit. The staged check excluding
+only those three byte-preservation artifacts passed, their sealed hashes were
+unchanged, and the immediate clean-tree `git diff --check` passed. Do not
+normalize those recovery files; doing so would change the reviewed patch or
+inventory contract.
+
+## Current milestone
+
+**PHASE 09 M7 COMPLETE / SNAPSHOT STATIC INTEGRATION PASS / SHARED-LAB LEGACY
+COMPATIBILITY PRESERVED / CLOSEOUT COMMITTED / HARDWARE DEFERRED.**
+
+## Next criterion
+
+There is no remaining M0-M7 criterion. M8 live-Pi read-only comparison may
+begin only under separate explicit authorization. Transfer and M9 hardware
+commissioning each retain their own later authorization boundaries.
