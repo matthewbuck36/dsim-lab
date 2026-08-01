@@ -141,9 +141,9 @@ ros_esc/ros_esc/experiment_recording	d	775	4096
 ros_esc/ros_esc/experiment_recording/__init__.py	f	664	72	
 ros_esc/ros_esc/experiment_recording/experiment_metadata.yaml	f	664	505	
 ros_esc/ros_esc/experiment_recording/qos_overrides.yaml	f	664	91	
-ros_esc/ros_esc/experiment_recording/record_run.py	f	664	112170	
+ros_esc/ros_esc/experiment_recording/record_run.py	f	664	132573	
 ros_esc/ros_esc/experiment_recording/topic_manifest.yaml	f	664	9809	
-ros_esc/ros_esc/experiment_recording/validate_run.py	f	664	35365	
+ros_esc/ros_esc/experiment_recording/validate_run.py	f	664	41120	
 ros_esc/ros_esc/filter_node	d	775	4096	
 ros_esc/ros_esc/filter_node/README.md	f	664	16012	
 ros_esc/ros_esc/filter_node/__init__.py	f	664	0	
@@ -242,7 +242,7 @@ ros_esc/test	d	775	4096
 ros_esc/test/test_copyright.py	f	664	962	
 ros_esc/test/test_flake8.py	f	664	884	
 ros_esc/test/test_pep257.py	f	664	803	
-ros_esc/test/test_phase09_physical_recording.py	f	664	13244	
+ros_esc/test/test_phase09_physical_recording.py	f	664	28176	
 ros_esc/test/test_phase09_shared_parity.py	f	664	2762	
 ros_esc_interfaces	d	775	4096	
 ros_esc_interfaces/.gitignore	f	664	3443	
@@ -266,7 +266,7 @@ ros_esc_interfaces/srv	d	775	4096
 ros_esc_interfaces/srv/README.md	f	664	95	
 turtlebot3_vehicle_nodes	d	775	4096	
 turtlebot3_vehicle_nodes/.gitignore	f	664	3443	
-turtlebot3_vehicle_nodes/README.md	f	664	6200	
+turtlebot3_vehicle_nodes/README.md	f	664	7091	
 turtlebot3_vehicle_nodes/bash_scripts	d	775	4096	
 turtlebot3_vehicle_nodes/bash_scripts/README.md	f	664	123	
 turtlebot3_vehicle_nodes/bash_scripts/acoustic_esc_experiments	d	775	4096	
@@ -291,8 +291,8 @@ turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values/
 turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values/forward_tuning_voltage.bash	f	775	1095	
 turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values/gesc_bnf_rotation_voltage.bash	f	775	1103	
 turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values/gesc_full_rotation_voltage.bash	f	775	1315	
-turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values/gesc_gaussian_counted_two_source_voltage.bash	f	755	7516	
 turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values/gesc_gaussian_fill_full_rotation_voltage.bash	f	775	2662	
+turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values/gesc_gaussian_two_source_voltage.bash	f	755	11829	
 turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values/hbesc_full_rotation_voltage.bash	f	775	1106	
 turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values/hbesc_gaussian_fill_full_rotation_voltage.bash	f	777	2633	
 turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values/lie_bracket_voltage.bash	f	775	1089	
@@ -363,11 +363,11 @@ turtlebot3_vehicle_nodes/data_acquisition_subpackages/photoresistor_scripts/phot
 turtlebot3_vehicle_nodes/data_acquisition_subpackages/photoresistor_scripts/test_connection.py	f	664	1079	
 turtlebot3_vehicle_nodes/launch	d	775	4096	
 turtlebot3_vehicle_nodes/launch/acoustic_esc_experiment.launch.xml	f	664	3197	
+turtlebot3_vehicle_nodes/launch/gesc_gaussian_two_source.launch.xml	f	664	27730	
 turtlebot3_vehicle_nodes/launch/light_esc_experiment.launch.xml	f	664	3239	
 turtlebot3_vehicle_nodes/launch/light_gesc_gaussian_fill_experiment.launch.xml	f	664	10602	
 turtlebot3_vehicle_nodes/launch/light_hbesc_gaussian_fill_experiment.launch.xml	f	664	10592	
 turtlebot3_vehicle_nodes/launch/nodes.launch.xml	f	664	4111	
-turtlebot3_vehicle_nodes/launch/phase09_gesc_gaussian_counted_two_source.launch.xml	f	664	27730	
 turtlebot3_vehicle_nodes/launch/rotating_frame.launch.xml	f	664	1243	
 turtlebot3_vehicle_nodes/launch/sound_profile.launch.xml	f	664	861	
 turtlebot3_vehicle_nodes/launch/vehicle_bringup.launch.py	f	664	738	
@@ -383,7 +383,7 @@ turtlebot3_vehicle_nodes/test	d	775	4096
 turtlebot3_vehicle_nodes/test/test_copyright.py	f	664	962	
 turtlebot3_vehicle_nodes/test/test_flake8.py	f	664	884	
 turtlebot3_vehicle_nodes/test/test_pep257.py	f	664	803	
-turtlebot3_vehicle_nodes/test/test_phase09_physical_launch.py	f	664	23208	
+turtlebot3_vehicle_nodes/test/test_phase09_physical_launch.py	f	664	24674	
 turtlebot3_vehicle_nodes/test/test_photoresistor_adapter.py	f	664	7533	
 turtlebot3_vehicle_nodes/turtlebot3_rotating_sensor_model.jpg	f	664	2283060	
 turtlebot3_vehicle_nodes/turtlebot3_vehicle_nodes	d	775	4096	

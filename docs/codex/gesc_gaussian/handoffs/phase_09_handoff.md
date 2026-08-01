@@ -40,8 +40,8 @@ The user's shared-robot requirement is enforced structurally:
 - all 26 pre-existing Bash entry points, all 8 legacy launches, and 6 legacy
   controller/filter/rotation configs retain their M0 hashes;
 - the selected graph exists only in
-  `phase09_gesc_gaussian_counted_two_source.launch.xml`;
-- only the new `gesc_gaussian_counted_two_source_voltage.bash` and the physical
+  `gesc_gaussian_two_source.launch.xml`;
+- only the new `gesc_gaussian_two_source_voltage.bash` and the physical
   recorder target contract point to that new launch;
 - all 27 Bash files pass syntax and static launch/argument checks; and
 - all original package console entry points remain present.
@@ -209,3 +209,96 @@ the user authorized bounded Phase 09 closeout and receipt commits so the
 repository could return to a clean worktree. The exact closeout commit is
 recorded in the post-commit receipt in `phase_09_status.md`. No push is
 authorized by that cleanup request.
+
+## M7.1 final operator handoff
+
+Verified: `2026-08-01T05:00:08Z`
+
+The M7.1 amendment supersedes the current-snapshot M6 counts and M7 recovery
+digests above while preserving them as historical evidence. The final selected
+manual entry point is:
+
+```text
+~/ros2_ws/src/turtlebot3_vehicle_nodes/bash_scripts/
+  light_esc_experiments/voltage_cost_values/
+  gesc_gaussian_two_source_voltage.bash
+```
+
+After M8 transfer and M9 commissioning have each been separately authorized
+and completed, its command shape is:
+
+```bash
+~/ros2_ws/src/turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values/gesc_gaussian_two_source_voltage.bash \
+  --scenario primary \
+  --serial-device /dev/serial/by-id/REVIEWED_DEVICE
+```
+
+Use `--scenario secondary` for the separately reviewed secondary metadata and
+optionally pass `--calibration-file PATH` or `--runs-root PATH`. The default
+run root is:
+
+```text
+~/Experiments/GESC-Gaussian/runs/phase09_physical
+```
+
+The shipped calibration/profile/metadata inputs are intentionally
+motion-blocking, so the example is not currently a motion-ready command.
+
+### What one accepted run records
+
+The wrapper launches `gesc_gaussian_two_source.launch.xml` only through the
+existing managed `ros_esc record_run`. It prints the unique run directory at
+startup and completion, creates one sqlite3 rosbag, and retains the legacy raw
+cost, augmented cost, filter, command, `/cmd_vel`, `/odom`, timekeeper, and
+encoder streams. The same bag adds typed source/cost breakdown, GESC/control
+diagnostics, algorithm state/events, Gaussian fills, readiness, `/imu`, and the
+declared optional GESC/Gaussian support streams.
+
+The terminal receives the managed child output plus a bounded one-second
+summary of readiness, voltage/raw cost, cost components, filter output,
+algorithm state/fill/failsafe, pose, final `vx`/`wz`, and maximum data age. The
+tee is asynchronous and bounded: `console.log` is written first, so a slow or
+failed display cannot block callback processing or authoritative capture. On
+shutdown the terminal also reports completeness PASS/FAIL, the first bounded
+set of failures, and the run directory.
+
+The unique run directory additionally retains metadata, resolved topics and
+parameters, notes, console output, `completeness.json`, Git or explicit
+non-Git provenance, and validated SHA-256 copies of every file-backed input in
+`configuration/manifest.yaml`. This includes calibration, profile, scenario,
+used controller/filter/rotation configs, their immutable templates, selected
+wrapper/launch, topic manifest, and QoS contract. The validator recomputes the
+hashes. No legacy CSV collector, `ros2 topic echo`, or second recorder is
+started; the sqlite3 bag and retained run files are authoritative.
+
+### Final static evidence
+
+| Gate | M7.1 result |
+|---|---:|
+| isolated three-package build | PASS, `13.1 s` |
+| Phase 09 focused qualification | `93 passed` |
+| shared-core regressions | `272 passed` |
+| inherited recording | `70 passed, 1 skipped` |
+| compatible observability | `13 passed, 2 deselected` |
+| repository legacy behavior | `34 passed` |
+| installed wrapper launch descriptions | `6 passed` |
+| legacy selection hashes | `26` wrappers + `8` launches + `6` configs PASS |
+| independent algorithm/wrapper/recorder reviews | no unresolved defect found |
+
+The regenerated current-snapshot receipts are:
+
+```text
+after regular-file manifest:
+  3bca5cf1845311a2cedc40081f055f1bb51333184a195488f823c130fee33373
+after inventory/modes:
+  522a1440de034c1538181db9792214432c237d162b323ba065542da582c7f37c
+51-path patch:
+  c92d0f96578ca28883b8c173f05411ca1a4b8d6e68cccd4e4f6b1ae667066723
+51-path transfer manifest:
+  5f60d69adc5d0feb87cb2fa2dd7c16cdc3bab846d3ec84fee181cb1dce9661f5
+```
+
+Fresh forward reconstruction reproduces `339` hashes and `425` inventory
+entries; reverse reconstruction reproduces `306` M0 hashes and `389` baseline
+entries. M8 live-Pi comparison/transfer and M9 hardware commissioning remain
+`NOT RUN`; this remains a static snapshot pass, not `PHYSICAL READY`.

@@ -61,12 +61,91 @@ The existing
 `light_gesc_gaussian_fill_experiment.launch.xml` and every pre-existing Bash
 wrapper must therefore remain byte-for-byte equal to the M0 snapshot manifest.
 Phase 09 uses a new dedicated
-`phase09_gesc_gaussian_counted_two_source.launch.xml`; only the new managed
+`gesc_gaussian_two_source.launch.xml`; only the new managed
 Phase 09 wrapper and the physical recorder target contract may reference it.
 Static qualification must check every Bash file with `bash -n`, verify each
 wrapper's launch arguments against the launch description it names, and prove
 the baseline hashes for all pre-existing wrappers and the old launch. This
 amendment supersedes later wording that says to extend the old launch in place.
+
+### M7.1 operator-entry, recording, and final-audit amendment
+
+On 2026-07-31, after the sealed M7 snapshot closeout, the user requested one
+final full implementation audit and simpler operator-facing names. This is a
+bounded Level B continuation of the no-hardware snapshot milestone. It does
+not authorize the live Pi, serial devices, a ROS hardware graph, calibration,
+motors, the rotating frame, lamps, or motion.
+
+The new-only selected entry point becomes:
+
+```text
+turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/
+  voltage_cost_values/gesc_gaussian_two_source_voltage.bash
+```
+
+and it launches:
+
+```text
+turtlebot3_vehicle_nodes/launch/gesc_gaussian_two_source.launch.xml
+```
+
+The superseded Phase 09-only names must be absent from the final snapshot and
+installed package. This rename does not alter any M0 asset: all 26 historical
+Bash files, eight historical launches, six historical controller/filter/
+rotation configurations, and their launch mappings remain byte-identical.
+
+The existing `ros_esc record_run` remains the sole recorder, readiness owner,
+and shutdown/completeness owner. The selected wrapper must continue to create
+one unique date/run-ID directory and one sqlite3 rosbag containing the legacy
+sensor, encoder, odometry, filter, and command streams plus the typed
+GESC/Gaussian cost, filter, control, state, event, fill, readiness, IMU, and
+supporting streams declared by `topic_manifest.yaml`. It must retain metadata,
+resolved topics, resolved parameters, `console.log`, notes, and
+`completeness.json`; it must not start the legacy CSV collector or a second
+recorder.
+
+Because the source-only physical workspace is not necessarily a Git checkout,
+each selected run must additionally retain byte-for-byte copies and SHA-256
+provenance for every file-backed input that determines the run: calibration,
+selected profile, scenario metadata, controller, filter, and rotation
+configuration, plus the selected wrapper/launch and recorder topic/QoS
+contracts. The wrapper may create new-only temporary controller/rotation
+copies solely to resolve the reviewed workspace's dynamic Python-object paths;
+both used copies and their immutable templates must be retained, and temporary
+copies must be removed after the managed run. These copies live inside the
+same unique run directory under a configuration subdirectory with a
+machine-readable manifest. Invalid,
+missing, duplicate, or ambiguous evidence-file inputs must fail before rosbag
+or the target graph starts. This is the rosbag-era replacement for the legacy
+collector's configuration text in `comments.txt`; it does not add a second
+recorder or claim CSV-format compatibility.
+
+For operator visibility, the selected wrapper must opt into terminal streaming
+from the existing recorder and a bounded one-second live summary. The terminal
+summary is diagnostic only and must report readiness, source voltage/raw cost,
+augmented-cost components, filter output, algorithm state/fill count, pose,
+and final `vx`/`wz` when available. The same lines remain in `console.log`, and
+all authoritative data remain in the rosbag. Simulation and legacy defaults
+remain unchanged unless their callers explicitly opt in.
+
+The final audit must also prove `record_run` can capture provenance when its
+working directory is a Git checkout and can start safely with explicit
+`git.available=false` provenance when the physical workspace is not a Git
+checkout. A missing Git worktree must not abort a physical run before bag or
+target startup. The run directory must be printed at startup as well as at
+completion so interrupted evidence is discoverable.
+
+M7.1 acceptance requires focused tests for the non-Git fallback, retained and
+hashed configuration evidence, terminal tee, rate-limited diagnostic
+rendering, renamed target coupling, exact bag topic superset, run-directory
+artifacts, shutdown/final-zero/completeness behavior, and absent superseded
+installed names. Repeat the isolated three-package build,
+all Phase 09 tests, shared/core/recording/legacy regressions, every Bash syntax
+check, every wrapper launch-argument check, and the legacy M0 hash guard. Then
+regenerate the 51-path transfer manifest, 339-file after hashes, 425-entry
+after inventory, reviewable patch, forward/reverse recovery proof, status,
+qualification evidence, handoff, and checkpoint. Preserve all earlier M7
+results as historical evidence rather than silently relabeling them.
 
 ## Objective
 
@@ -379,9 +458,9 @@ S/turtlebot3_vehicle_nodes/config_files/gesc_gaussian/
 S/turtlebot3_vehicle_nodes/config_files/controller_config_files/
   phase09_gesc_controller_full_rotation_voltage.json
 S/turtlebot3_vehicle_nodes/launch/
-  phase09_gesc_gaussian_counted_two_source.launch.xml
+  gesc_gaussian_two_source.launch.xml
 S/turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/
-  voltage_cost_values/gesc_gaussian_counted_two_source_voltage.bash
+  voltage_cost_values/gesc_gaussian_two_source_voltage.bash
 S/turtlebot3_vehicle_nodes/test/test_photoresistor_adapter.py
 S/turtlebot3_vehicle_nodes/test/test_phase09_physical_launch.py
 S/ros_esc/test/test_phase09_shared_parity.py
@@ -891,7 +970,7 @@ timeout --signal=INT --kill-after=5s 60s python3 -m compileall -q \
   /home/mattb/physical_TB3_files_snapshot/pi/ros2_ws/src/ros_esc/ros_esc \
   /home/mattb/physical_TB3_files_snapshot/pi/ros2_ws/src/turtlebot3_vehicle_nodes/turtlebot3_vehicle_nodes
 
-timeout --signal=INT --kill-after=5s 30s python3 -c "import xml.etree.ElementTree as ET; ET.parse('/home/mattb/physical_TB3_files_snapshot/pi/ros2_ws/src/turtlebot3_vehicle_nodes/launch/phase09_gesc_gaussian_counted_two_source.launch.xml')"
+timeout --signal=INT --kill-after=5s 30s python3 -c "import xml.etree.ElementTree as ET; ET.parse('/home/mattb/physical_TB3_files_snapshot/pi/ros2_ws/src/turtlebot3_vehicle_nodes/launch/gesc_gaussian_two_source.launch.xml')"
 
 timeout --signal=INT --kill-after=5s 30s python3 -c "import pathlib,yaml; files=sorted(pathlib.Path('/home/mattb/physical_TB3_files_snapshot/pi/ros2_ws/src/turtlebot3_vehicle_nodes/config_files/gesc_gaussian').glob('*.yaml')); assert files; [yaml.safe_load(p.read_text()) for p in files]"
 
@@ -911,7 +990,7 @@ timeout --signal=INT --kill-after=5s 300s python3 -m pytest -q \
   /home/mattb/physical_TB3_files_snapshot/pi/ros2_ws/src/turtlebot3_vehicle_nodes/test/test_phase09_physical_launch.py
 
 timeout --signal=INT --kill-after=5s 60s ros2 launch \
-  turtlebot3_vehicle_nodes phase09_gesc_gaussian_counted_two_source.launch.xml \
+  turtlebot3_vehicle_nodes gesc_gaussian_two_source.launch.xml \
   --show-args
 
 timeout --signal=INT --kill-after=5s 30s git diff --check

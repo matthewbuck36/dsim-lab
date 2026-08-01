@@ -1,6 +1,6 @@
 # Phase 09 Shared-Lab Legacy Compatibility Evidence
 
-Verified: `2026-08-01T03:06:56Z`
+Verified: `2026-08-01T05:00:08Z`
 
 Result: `PASS — STATIC/OFFLINE ONLY; NO HARDWARE`
 
@@ -15,11 +15,11 @@ The selected Phase 09 graph now lives only in:
 
 ```text
 turtlebot3_vehicle_nodes/launch/
-  phase09_gesc_gaussian_counted_two_source.launch.xml
+  gesc_gaussian_two_source.launch.xml
 ```
 
 The new
-`gesc_gaussian_counted_two_source_voltage.bash` wrapper and the physical
+`gesc_gaussian_two_source_voltage.bash` wrapper and the physical
 `record_run` target contract reference that file. The pre-existing
 `gesc_gaussian_fill_full_rotation_voltage.bash` still references the old
 launch. No other pre-existing wrapper references the Phase 09 launch.
@@ -80,7 +80,7 @@ acoustic_esc_experiment.launch.xml
 light_esc_experiment.launch.xml
 light_gesc_gaussian_fill_experiment.launch.xml
 light_hbesc_gaussian_fill_experiment.launch.xml
-phase09_gesc_gaussian_counted_two_source.launch.xml
+gesc_gaussian_two_source.launch.xml
 rotating_frame.launch.xml
 ```
 
@@ -137,6 +137,32 @@ the attempt did not start nodes or hardware and was not relabeled as a pass.
 
 ## Nonclaims
 
-No Bash wrapper, launch graph, ROS node, serial device, sensor, motor, servo,
-lamp, SSH/SSHFS path, or live Pi was executed. Shell syntax, XML construction,
-package discovery, and `--show-args` do not prove live hardware readiness.
+No legacy Bash wrapper, launch graph, ROS node, serial device, sensor, motor,
+servo, lamp, SSH/SSHFS path, or live Pi was executed. The selected new-only
+wrapper was invoked only as an inert preflight with deliberately motion-blocking
+templates; it exited `2` before `record_run`, launch, device access, or temporary
+runtime input retention. Shell syntax, XML construction, package discovery,
+and `--show-args` do not prove live hardware readiness.
+
+## M7.1 final revalidation
+
+The final operator-entry/recording amendment changed only Phase 09-owned paths.
+The fresh qualification reconfirmed:
+
+| Guard | Result |
+|---|---:|
+| pre-existing Bash wrapper hashes | `26/26` M0-identical |
+| pre-existing launch hashes | `8/8` M0-identical |
+| pre-existing controller/filter/rotation configuration hashes | `6/6` M0-identical |
+| all current Bash files | `27/27` pass `bash -n` |
+| unique installed wrapper launch descriptions | `6/6` pass `--show-args` |
+| repository legacy behavior | `34 passed` |
+
+The selected wrapper and launch are installed only under
+`gesc_gaussian_two_source_voltage.bash` and
+`gesc_gaussian_two_source.launch.xml`; both superseded Phase 09-only names are
+absent. Static graph and wrapper audits still find one `/cmd_vel` owner, one
+managed `record_run`, no legacy CSV collector on the selected path, and no
+rerouting of a historical wrapper. The selected wrapper's new live diagnostic
+subscriptions are passive and opt-in; its bounded terminal tee and additional
+hashed evidence capture do not change a legacy caller's recorder defaults.

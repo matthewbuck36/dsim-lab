@@ -74,6 +74,34 @@ Phase 09 orchestration in a new dedicated launch and point only the new managed
 Phase 09 wrapper and physical recorder target contract at it. A change that
 breaks or silently reroutes any legacy wrapper is a hard compatibility stop.
 
+### Final operator-entry and recording contract
+
+Name the selected new-only Bash entry point exactly
+`gesc_gaussian_two_source_voltage.bash` and its selected new-only launch
+exactly `gesc_gaussian_two_source.launch.xml`. Remove the superseded Phase
+09-only installed names rather than leaving ambiguous aliases. This rename may
+not touch any historical wrapper, launch, or configuration.
+
+Keep `ros2 run ros_esc record_run` as the only recorder, readiness owner, and
+shutdown/completeness owner. The selected wrapper must opt into a terminal tee
+and a bounded one-second live diagnostic summary while the same output remains
+in `console.log`. The summary should include readiness, voltage/raw cost,
+augmented-cost components, filter output, algorithm state/fill count, pose, and
+final `vx`/`wz` when those inputs are available. Do not add `ros2 topic echo`,
+the legacy CSV collector, or another bag process.
+
+Each selected run must automatically create one unique run directory and one
+sqlite3 rosbag containing all legacy sensor/encoder/odometry/filter/command/
+timekeeper streams plus the typed GESC/Gaussian diagnostics. Retain metadata,
+resolved topics/parameters, notes, console output, completeness evidence, and
+validated SHA-256 copies of the calibration, selected profile, scenario
+metadata, controller, filter, and rotation files under that same run
+directory, together with the selected wrapper/launch and recorder topic/QoS
+contracts. Print the run directory at startup and completion. Preserve full
+Git provenance when available, but record an explicit nonfatal
+`git.available=false` state when the source-only physical workspace is not a
+Git checkout.
+
 ### Cumulative v8.12 source-selection rule
 
 Do not cherry-pick, blend, or independently merge v8.10, v8.11, and v8.12.

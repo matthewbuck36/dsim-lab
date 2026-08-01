@@ -26,9 +26,10 @@ snapshot after inventory/modes:
 ```
 
 The transfer manifest contains exactly 51 paths. It deliberately includes the
-new Phase 09 launch and does not include the historical
-`light_gesc_gaussian_fill_experiment.launch.xml`; that old launch and its Bash
-entry point remain untouched.
+new `gesc_gaussian_two_source.launch.xml` and its new-only manual entry point,
+`gesc_gaussian_two_source_voltage.bash`. It does not include the historical
+`light_gesc_gaussian_fill_experiment.launch.xml` or its Bash entry point; both
+remain untouched. The superseded Phase 09-only names are not transfer targets.
 
 ## Stop-before-write checks
 
@@ -105,7 +106,18 @@ reviewed command without `--dry-run`; it never adds `--delete`.
 5. Run Pi-compatible syntax, interface, pure-helper, wrapper hash/argument, and
    launch `--show-args` checks. Do not launch a node, open serial, or move any
    mechanism.
-6. Record exact skips and resource limitations. A build pass is not motion
+6. Require the exact selected wrapper/launch names to be installed and both
+   superseded Phase 09-only names to be absent. Require `record_run --help` to
+   expose `--evidence-file`, `--stream-console`, and
+   `--live-diagnostics-period-sec`.
+7. Run only the inert selected-wrapper preflight with the shipped
+   motion-blocking templates. It must exit `2` before device/ROS access and
+   leave no temporary `phase09_gesc_gaussian.*` directory. This does not
+   authorize a commissioned wrapper run.
+8. Recheck the exact pre-transfer hashes for all 26 legacy wrappers, eight
+   legacy launches, and six legacy configurations after the scoped build and
+   preflight.
+9. Record exact skips and resource limitations. A build pass is not motion
    authorization.
 
 ## Rollback
@@ -131,6 +143,6 @@ classification cannot be proven, rollback stops for review.
 
 ## Current nonexecution evidence
 
-During M0-M7, `/home/mattb/tb3-pi` was not a mountpoint. No SSH/SSHFS, live-Pi
-read, transfer, on-Pi build, serial access, ROS hardware launch, or physical
-process was executed.
+During M0-M7.1, `/home/mattb/tb3-pi` was not a mountpoint. No SSH/SSHFS,
+live-Pi read, transfer, on-Pi build, serial access, ROS hardware launch, or
+physical process was executed.

@@ -114,7 +114,7 @@ acoustic_esc_experiment.launch.xml
 light_esc_experiment.launch.xml
 light_gesc_gaussian_fill_experiment.launch.xml
 light_hbesc_gaussian_fill_experiment.launch.xml
-phase09_gesc_gaussian_counted_two_source.launch.xml
+gesc_gaussian_two_source.launch.xml
 rotating_frame.launch.xml
 ```
 
@@ -212,3 +212,133 @@ No acceptance threshold was weakened to hide it.
 Live-Pi comparison/transfer (M8) and stationary/motion commissioning (M9) are
 `NOT RUN`. This M6 result is not `PHYSICAL READY` and authorizes no hardware
 action.
+
+## M7.1 final operator-entry and recording qualification
+
+Verified: `2026-08-01T05:00:08Z`
+
+Result: `PASS — FINAL SNAPSHOT STATIC/OFFLINE QUALIFICATION; HARDWARE DEFERRED`
+
+This is a fresh qualification of the M7.1 amendment, not a relabeling of the
+historical M6 results above. Generated build, install, log, and bytecode output
+was isolated under:
+
+```text
+/tmp/phase09_m71_final.bmS5g9
+```
+
+The three-package build completed in `13.1 s`. Tests were run in fresh
+processes with bytecode/cache output kept outside the snapshot:
+
+| Collection | Result |
+|---|---:|
+| Phase 09 parity, recording, adapter, wrapper, launch, configuration, and legacy guards | `93 passed in 1.72 s` |
+| shared core/state-machine/Gaussian regressions | `272 passed in 8.20 s` |
+| inherited Phase 05 recording regressions | `70 passed, 1 skipped in 2.88 s` |
+| physical-compatible observability | `13 passed, 2 deselected in 2.36 s` |
+| repository legacy behavior | `34 passed in 3.73 s` |
+
+The inherited skip is the existing opt-in visible-Gazebo recording smoke; it
+was not enabled for this no-hardware snapshot pass. One first legacy command
+sourced a stale repository install and stopped during collection. The corrected
+fresh source-owner invocation above passed all `34` tests; the environment
+attempt is not represented as a behavior pass or failure.
+
+Fresh installed-overlay checks proved:
+
+- `gesc_gaussian_two_source_voltage.bash` and
+  `gesc_gaussian_two_source.launch.xml` are installed;
+- both superseded Phase 09-only names are absent;
+- all six unique launch descriptions referenced by wrappers pass
+  `ros2 launch ... --show-args`;
+- all 27 wrappers pass `bash -n`, including guarded failures for each of the
+  four valued options when its value is omitted;
+- the installed selected wrapper's inert probe exits `2` at the deliberate
+  motion-readiness gate, never reaches the ROS target, and leaves the count of
+  its exact temporary-directory prefix at `0 -> 0`; and
+- `record_run --help` exposes the additive evidence-file, terminal-streaming,
+  and live-diagnostic options.
+
+### Final algorithm and ownership audit
+
+All 27 declared shared runtime/interface/config paths match the terminal
+cumulative Phase 08 v8.12 source boundary byte-for-byte. The selected profile
+enables the reviewed single-fill, counted two-source behavior and its opt-in
+`interior_farthest` fallback at `0.50 m`; the shared and legacy defaults keep
+that fallback disabled. Source cost remains `raw_cost = -voltage` in volts.
+The selected graph retains one source-cost owner, one modified-cost/filter/
+fill/supervisor/controller chain, one `/cmd_vel` owner, and one recorder. The
+only controller changes relative to the shared algorithm are the reviewed
+physical speed ceilings of `0.05 m/s` and `0.30 rad/s`.
+
+Three independent final read-only reviews covered the algorithm/parity
+boundary, wrapper/launch/Ctrl+C lifecycle, and recorder/validator/data path.
+After the bounded terminal-queue and truncated-option corrections, none found
+an unresolved defect. This is strong static/offline evidence; it is not a
+claim that unrun hardware behavior is bug-free.
+
+### Recording and live terminal contract
+
+The selected wrapper invokes only `ros2 run ros_esc record_run`. Each accepted
+run creates one unique run directory and one sqlite3 rosbag. The physical bag
+retains the legacy raw and augmented costs, filter output, command array,
+`/cmd_vel`, `/odom`, timekeeper, and encoder streams. It additionally retains
+typed source/cost breakdown, GESC/control diagnostics, algorithm state/events,
+Gaussian fills, recording readiness, `/imu`, and the declared optional
+convergence, supervisor, bias, history, and transform streams. It does not
+start the historical CSV collector, `ros2 topic echo`, or a second recorder.
+
+The selected wrapper opts into a one-second passive terminal summary and an
+asynchronous bounded terminal tee. The durable `console.log` write occurs
+first; a slow or broken terminal cannot block ROS callback processing or child
+output capture. The live summary reports readiness, voltage/raw cost, raw/
+Gaussian/affine/augmented cost, filter output, algorithm state/fill/failsafe,
+pose, final `vx`/`wz`, and maximum input age as data become available. The
+sqlite3 bag and retained files remain authoritative even if display lines are
+dropped under terminal saturation.
+
+Each physical run validates, copies, and SHA-256 hashes the exact metadata,
+calibration, selected profile, used controller/filter/rotation inputs,
+selected wrapper/launch, topic manifest, and QoS contract under
+`configuration/manifest.yaml`. The immutable controller/rotation templates
+are retained as additional evidence. The validator recomputes those hashes
+and fails completeness for missing, escaped, duplicate, or corrupted evidence.
+Git provenance remains complete in a worktree; a source-only Pi workspace is
+recorded explicitly as `git.available=false` instead of aborting before bag
+startup. The run path is printed at startup and completion, followed by a
+bounded PASS/FAIL completeness summary.
+
+### M7.1 reseal and recovery proof
+
+The snapshot still has exactly `339` regular files and `425` inventory entries,
+with zero symlinks or generated roots. Its delta from M0 is exactly the frozen
+transfer manifest: `33` new, `18` modified, `0` deleted, and no unexpected
+path. The regenerated recovery receipts are:
+
+```text
+transfer manifest, 51 paths:
+  5f60d69adc5d0feb87cb2fa2dd7c16cdc3bab846d3ec84fee181cb1dce9661f5
+after regular-file manifest, 339 rows:
+  3bca5cf1845311a2cedc40081f055f1bb51333184a195488f823c130fee33373
+after inventory/modes, 425 rows:
+  522a1440de034c1538181db9792214432c237d162b323ba065542da582c7f37c
+Git-format snapshot patch, 51 paths and 21,950 lines:
+  c92d0f96578ca28883b8c173f05411ca1a4b8d6e68cccd4e4f6b1ae667066723
+```
+
+A second fresh same-permissions M0 extraction accepted the patch. Applying the
+after mode inventory reproduced all `339` hashes and all `425` inventory
+entries. Reverse application plus the before mode inventory reproduced all
+`306` M0 hashes and all `389` baseline inventory entries. The temporary patch
+and proof roots were moved to Trash after verification; the real snapshot was
+never a patch target.
+
+The final authored-file `git diff --check` passes when the recovery patch and
+inventory TSVs are excluded. Those generated artifacts deliberately preserve
+historical source whitespace and an empty final symlink-target column; they
+must not be normalized independently of the sealed recovery contract. A clean
+post-commit worktree has no Git diff to check.
+
+M8 live-Pi comparison/transfer and M9 stationary/motion commissioning remain
+`NOT RUN`. Therefore M7.1 closes as a static snapshot pass, not `PHYSICAL
+READY`, and authorizes no live-Pi, serial, actuator, lamp, or motion action.

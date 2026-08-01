@@ -96,6 +96,30 @@ launch file and point only a new managed Phase 09 wrapper at it. Plan static
 `bash -n`, wrapper-to-launch argument resolution, installed `--show-args`,
 entry-point preservation, and baseline hash checks for every legacy wrapper.
 
+### Final operator-entry and recording authority
+
+The selected new-only manual entry point is exactly
+`gesc_gaussian_two_source_voltage.bash`, and its selected new-only launch is
+exactly `gesc_gaussian_two_source.launch.xml`. Do not retain aliases under the
+superseded Phase 09-only names, and do not rename or alter any historical
+wrapper or launch.
+
+Plan the existing `ros_esc record_run` as the sole recorder. One selected run
+must automatically create one unique run directory and one sqlite3 rosbag that
+contains the legacy sensor, encoder, odometry, filter, command, and timekeeper
+streams plus the additional typed GESC/Gaussian diagnostics. The same run
+directory must retain metadata, resolved topics/parameters, notes, console
+output, completeness evidence, and hashed byte-for-byte copies of the exact
+calibration/profile/scenario/controller/filter/rotation inputs plus the
+selected wrapper/launch and recorder topic/QoS contracts. Do not plan a second
+recorder or promise legacy CSV-format equivalence.
+
+Plan an opt-in terminal tee and a bounded one-second diagnostics summary for
+the selected wrapper only. Preserve complete Git provenance when available,
+but explicitly support the normal physical case where the source-only Pi
+workspace is not a Git checkout. The run directory must be visible at startup
+so evidence remains findable after an interrupted manual run.
+
 ## Exact physical snapshot boundary
 
 The physical Pi-home snapshot is:

@@ -1,7 +1,7 @@
 # Phase 09 Live Status
 
-Last verified: `2026-08-01T03:52:43+00:00`
-Status: `COMPLETE — SNAPSHOT STATIC INTEGRATION PASS; HARDWARE DEFERRED`
+Last verified: `2026-08-01T05:08:14+00:00`
+Status: `COMPLETE — M7.1 FINAL SNAPSHOT STATIC INTEGRATION PASS; HARDWARE DEFERRED`
 
 ## Objective
 
@@ -15,7 +15,8 @@ and nonselected defaults remain disabled.
 ## Verified repository state
 
 - Branch: `feature/gesc-gaussian-robustness-v1`
-- HEAD: `c04c222dfeac525197bf0542cbde64f1421dc664`
+- Terminal Phase 08 source reference: `c04c222dfeac525197bf0542cbde64f1421dc664`.
+- Pre-M7.1 closeout HEAD: `1c01aa3` (`phase 09: seal snapshot integration receipt`).
 - Working tree at start: intentionally dirty with nine pre-existing modified
   implementation-package files and the approved Phase 09 Plan untracked; no
   overlap with snapshot source edits. The generated Phase 09 status and M0
@@ -58,8 +59,8 @@ and nonselected defaults remain disabled.
 - M2 isolated two-package build: PASS. Shared-owner focused tests: `300
   passed`; compatible observability subset: `13 passed, 2 deselected`;
   unchanged repository legacy regression: `34 passed`.
-- Current snapshot delta is 35 declared files, zero paths outside the frozen
-  transfer manifest, and zero generated roots.
+- At the M2 checkpoint the snapshot delta was 35 declared files, with zero
+  paths outside the then-frozen transfer manifest and zero generated roots.
 - M3 extended the existing photoresistor owner with exact finite protocol
   parsing, preserved `raw_cost=-V`, bounded serial shutdown, stable-device and
   calibration gating, and dual legacy/typed physical publication. The
@@ -144,7 +145,7 @@ and nonselected defaults remain disabled.
   byte-identical legacy wrappers/launches/configurations so compaction or a
   fresh run cannot silently revert the shared-lab compatibility boundary.
 
-## Current milestone
+## Historical M7 milestone
 
 - Milestone: M7 — sealed no-hardware snapshot handoff.
 - Implementation complete: `yes`
@@ -414,7 +415,7 @@ unchanged, and the immediate clean-tree `git diff --check` passed. Do not
 normalize those recovery files; doing so would change the reviewed patch or
 inventory contract.
 
-## Current milestone
+## Historical M7 closeout milestone
 
 **PHASE 09 M7 COMPLETE / SNAPSHOT STATIC INTEGRATION PASS / SHARED-LAB LEGACY
 COMPATIBILITY PRESERVED / CLOSEOUT COMMITTED / HARDWARE DEFERRED.**
@@ -424,3 +425,139 @@ COMPATIBILITY PRESERVED / CLOSEOUT COMMITTED / HARDWARE DEFERRED.**
 There is no remaining M0-M7 criterion. M8 live-Pi read-only comparison may
 begin only under separate explicit authorization. Transfer and M9 hardware
 commissioning each retain their own later authorization boundaries.
+
+## Phase 09 M7.1 operator-entry and recording amendment — 2026-08-01
+
+The user requested a final implementation audit, renamed the new-only selected
+wrapper to `gesc_gaussian_two_source_voltage.bash`, renamed its new-only launch
+to `gesc_gaussian_two_source.launch.xml`, and requested useful live terminal
+diagnostics while retaining complete recording in the existing recorder.
+
+Initial read-only audit confirmed that the cumulative terminal v8.12 shared
+algorithm parity and M0 legacy hash guards still pass. It also found one real
+physical-startup defect: the then-current `record_run.git_state(Path.cwd())`
+required the Pi workspace to be a Git checkout, but the reviewed source-only
+snapshot has no Git metadata. That call could fail before rosbag or the target
+started. M7.1 added and tested an explicit non-Git provenance fallback without
+weakening capture when Git is available.
+
+The same audit confirmed that subprocess output was retained only in
+`console.log`, so the invoking terminal was nearly silent. M7.1 added an
+opt-in, bounded asynchronous tee and rate-limited summaries inside the existing
+recorder. It does not start `ros2 topic echo`, the legacy CSV collector, or a
+second recorder. The sqlite3 rosbag remains authoritative and declares both
+the legacy streams and the additional GESC/Gaussian typed diagnostics.
+
+The recording audit also found that the legacy collector embedded the exact
+controller/filter/rotation inputs in its `comments.txt`, whereas the managed
+rosbag run resolved ROS parameters but did not preserve every file-backed
+physical input. M7.1 added validated, hashed evidence-file copies for the
+calibration, selected profile, scenario metadata, controller, filter, rotation,
+wrapper, launch, topic manifest, and QoS files under the same unique run
+directory. This preserves reproducibility without reviving the legacy CSV
+recorder.
+
+## M7.1 implementation and final audit
+
+- Renamed only the two Phase 09-owned operator paths to
+  `gesc_gaussian_two_source_voltage.bash` and
+  `gesc_gaussian_two_source.launch.xml`; the superseded names are absent from
+  source, installed assets, manifests, and documentation.
+- Preserved byte-for-byte parity for all 27 declared terminal v8.12 shared
+  runtime/interface/config paths. The selected profile retains the counted
+  two-source,
+  maximum-one-fill behavior and enables only the cumulative v8.12
+  `interior_farthest` fallback at `0.50 m`; shared and legacy defaults remain
+  disabled.
+- Retained `raw_cost=-voltage` in volts, one source-cost owner, one cost/filter/
+  fill/supervisor/controller chain, one `/cmd_vel` owner, and one recorder.
+- Fixed non-Git physical startup with explicit `git.available=false`
+  provenance while preserving commit/branch/diff/untracked hashing when Git is
+  available; unexpected Git errors remain fatal.
+- Added mandatory, unique, in-run configuration evidence with source and
+  retained SHA-256 verification. The physical validator now recomputes every
+  required retained hash and treats missing, escaped, duplicate, or corrupted
+  evidence as a completeness failure.
+- Added selected-only one-second passive diagnostics and terminal streaming.
+  `console.log` is written before a nonblocking, bounded 256-line terminal
+  queue, so a slow/broken display cannot block the ROS executor or managed
+  process capture.
+- Added exact CLI guard coverage for truncated valued options and retained
+  cleanup for only the two new temporary runtime configuration copies.
+
+Final source receipts:
+
+```text
+wrapper:
+  19871669f078b76d4a44a796624e2daf8d4cc3acf66c500fba2efacf54fe24fb
+launch:
+  a099bb8f4968861c4434e88e0cc7a140e7fe7ab7fae3cc628fb1dac15b6f630f
+record_run.py:
+  c885d2e43857a7158da318d9f84122a8908954ef4c93e4c415b4cbddf7a438ae
+validate_run.py:
+  d788b57818ef864e2024c6056c3c0768b933ec8d418f3f1e91332932e9c24b93
+```
+
+Three independent final reviews of algorithm parity/ownership,
+wrapper-launch-Ctrl+C lifecycle, and recorder-validator-data behavior found no
+unresolved defect after the bounded corrections. This is not a claim about
+unrun hardware.
+
+## M7.1 clean qualification and reseal
+
+Fresh root: `/tmp/phase09_m71_final.bmS5g9`.
+
+```text
+isolated ros_esc_interfaces + ros_esc + turtlebot3_vehicle_nodes build:
+  PASS, 3 packages in 13.1 s
+Phase 09 focused:
+  93 passed in 1.72 s
+shared core:
+  272 passed in 8.20 s
+inherited recording:
+  70 passed, 1 skipped in 2.88 s
+compatible observability:
+  13 passed, 2 deselected in 2.36 s
+repository legacy behavior:
+  34 passed in 3.73 s
+```
+
+The skip is the existing opt-in visible-Gazebo recording smoke. A first legacy
+attempt sourced a stale repository install and stopped during collection; the
+fresh corrected source-owner invocation above passed all 34 tests. All six
+unique installed wrapper launch descriptions pass `--show-args`; the inert
+selected wrapper exits `2` before device/ROS access and leaves zero temporary
+configuration directories.
+
+The final snapshot remains `339` regular files and `425` inventory entries,
+with zero symlinks/generated roots. Its exact M0 delta is `33` new plus `18`
+modified, `0` deleted, and equals the sorted unique 51-path transfer manifest.
+
+```text
+transfer manifest:
+  5f60d69adc5d0feb87cb2fa2dd7c16cdc3bab846d3ec84fee181cb1dce9661f5
+after regular-file manifest:
+  3bca5cf1845311a2cedc40081f055f1bb51333184a195488f823c130fee33373
+after inventory/modes:
+  522a1440de034c1538181db9792214432c237d162b323ba065542da582c7f37c
+51-path, 21,950-line patch:
+  c92d0f96578ca28883b8c173f05411ca1a4b8d6e68cccd4e4f6b1ae667066723
+```
+
+Fresh forward application plus after modes reproduces all 339 hashes and 425
+entries. Reverse application plus before modes reproduces all 306 M0 hashes
+and 389 entries. Temporary proof roots were moved to Trash; the real snapshot
+was never the patch target.
+
+## Current milestone
+
+**PHASE 09 M7.1 COMPLETE / FINAL SNAPSHOT STATIC INTEGRATION PASS /
+SHARED-LAB LEGACY COMPATIBILITY PRESERVED / HARDWARE DEFERRED.**
+
+## Next criterion
+
+There is no remaining M0-M7.1 snapshot criterion. The bounded repository
+closeout commit is the final administrative action under the user's prior
+clean-tree authorization. M8 live-Pi read-only comparison may begin only under
+separate explicit authorization; transfer and M9 hardware commissioning retain
+their own later authorization boundaries.

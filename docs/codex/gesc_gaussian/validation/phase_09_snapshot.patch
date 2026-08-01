@@ -1793,10 +1793,10 @@ index 0000000000000000000000000000000000000000..fdf98558060ec03a2f222de45ee39569
 +  depth: 10
 diff --git a/ros_esc/ros_esc/experiment_recording/record_run.py b/ros_esc/ros_esc/experiment_recording/record_run.py
 new file mode 100644
-index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d6240ca1f922
+index 0000000000000000000000000000000000000000..da269880a438013616305ad8037420c90fea59df
 --- /dev/null
 +++ b/ros_esc/ros_esc/experiment_recording/record_run.py
-@@ -0,0 +1,2982 @@
+@@ -0,0 +1,3561 @@
 +#!/usr/bin/env python3
 +
 +"""Run one motion-gated experiment and record its complete ROS interface."""
@@ -1809,7 +1809,9 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +import math
 +import os
 +from pathlib import Path
++import queue
 +import re
++import shutil
 +import signal
 +import socket
 +import subprocess
@@ -1855,6 +1857,23 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +    "physical": {"robust_gaussian_v1"},
 +}
 +RUN_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
++EVIDENCE_LABEL_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_-]{0,63}$")
++PHYSICAL_REQUIRED_EVIDENCE_LABELS = (
++    "metadata",
++    "calibration",
++    "selected_profile",
++    "controller",
++    "filter",
++    "rotation",
++    "wrapper",
++    "launch",
++    "topic_manifest",
++    "qos_overrides",
++)
++LIVE_DIAGNOSTIC_ALIASES = (
++    "cost_breakdown",
++    "gesc_diagnostics",
++)
 +REQUIRED_METADATA = (
 +    "experiment_version",
 +    "operator",
@@ -1953,7 +1972,7 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +    'ros2',
 +    'launch',
 +    'turtlebot3_vehicle_nodes',
-+    'phase09_gesc_gaussian_counted_two_source.launch.xml',
++    'gesc_gaussian_two_source.launch.xml',
 +)
 +PHYSICAL_CANONICAL_TARGET_VALUES = {
 +    'algorithm_profile': 'robust_gaussian_v1',
@@ -2025,6 +2044,313 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +        encoding="utf-8",
 +    )
 +    os.replace(temporary, path)
++
++
++def _sha256_file(path):
++    """Return a streaming SHA-256 digest for one regular file."""
++
++    digest = hashlib.sha256()
++    with Path(path).open("rb") as stream:
++        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
++            digest.update(chunk)
++    return digest.hexdigest()
++
++
++def resolve_evidence_files(specifications, required_labels=()):
++    """Validate labeled evidence inputs before any child process starts."""
++
++    resolved = []
++    labels = set()
++    paths = set()
++    for specification in specifications:
++        value = str(specification)
++        if "=" not in value:
++            raise ValueError(
++                "evidence file must use LABEL=PATH syntax: " + value
++            )
++        label, requested = value.split("=", 1)
++        if not EVIDENCE_LABEL_PATTERN.fullmatch(label):
++            raise ValueError(f"invalid evidence-file label: {label!r}")
++        if label in labels:
++            raise ValueError(f"duplicate evidence-file label: {label}")
++        if not requested:
++            raise ValueError(f"evidence-file path is empty: {label}")
++        requested_path = Path(requested).expanduser()
++        try:
++            resolved_path = requested_path.resolve(strict=True)
++        except OSError as exc:
++            raise ValueError(
++                f"evidence file is unavailable: {label}={requested}"
++            ) from exc
++        if not resolved_path.is_file():
++            raise ValueError(
++                f"evidence file is not a regular file: {label}={requested}"
++            )
++        try:
++            with resolved_path.open("rb"):
++                pass
++        except OSError as exc:
++            raise ValueError(
++                f"evidence file is unreadable: {label}={requested}"
++            ) from exc
++        if resolved_path in paths:
++            raise ValueError(
++                "duplicate resolved evidence-file path: "
++                + str(resolved_path)
++            )
++        labels.add(label)
++        paths.add(resolved_path)
++        resolved.append({
++            "label": label,
++            "requested_path": requested,
++            "resolved_path": str(resolved_path),
++        })
++    missing = sorted(set(required_labels) - labels)
++    if missing:
++        raise ValueError(
++            "required evidence-file labels are missing: " + ", ".join(missing)
++        )
++    return resolved
++
++
++def capture_evidence_files(run_directory, resolved_files, required_labels=()):
++    """Copy and hash immutable run inputs into the unique run directory."""
++
++    run_directory = Path(run_directory).resolve()
++    configuration_directory = run_directory / "configuration"
++    configuration_directory.mkdir()
++    retained = []
++    for item in resolved_files:
++        label = item["label"]
++        source = Path(item["resolved_path"])
++        destination_directory = configuration_directory / label
++        destination_directory.mkdir()
++        destination = destination_directory / source.name
++        temporary = destination.with_name(destination.name + ".tmp")
++        source_hash = _sha256_file(source)
++        shutil.copyfile(source, temporary)
++        os.replace(temporary, destination)
++        retained_hash = _sha256_file(destination)
++        if retained_hash != source_hash:
++            raise RuntimeError(
++                f"evidence-file hash changed during capture: {label}"
++            )
++        retained.append({
++            **item,
++            "retained_path": str(destination.relative_to(run_directory)),
++            "size_bytes": destination.stat().st_size,
++            "sha256": retained_hash,
++        })
++    document = {
++        "schema_version": 1,
++        "captured_at_utc": _iso_now(),
++        "required_labels": list(required_labels),
++        "files": retained,
++    }
++    manifest_path = configuration_directory / "manifest.yaml"
++    atomic_yaml(manifest_path, document)
++    return document
++
++
++def validate_physical_evidence_coupling(
++    resolved_files,
++    metadata_input_path,
++    metadata_input,
++    target,
++):
++    """Prove retained physical inputs are the exact inputs being launched."""
++
++    by_label = {
++        item["label"]: Path(item["resolved_path"])
++        for item in resolved_files
++    }
++    assignments = {
++        str(token).split(":=", 1)[0]: str(token).split(":=", 1)[1]
++        for token in target
++        if ":=" in str(token)
++    }
++    assignment_labels = {
++        "calibration": "photoresistor_calibration_file",
++        "controller": "controller_config_filepath",
++        "filter": "filter_config_filepath",
++        "rotation": "rotate_frame_config_filepath",
++    }
++    missing_arguments = sorted(
++        argument
++        for argument in assignment_labels.values()
++        if argument not in assignments
++    )
++    if missing_arguments:
++        raise ValueError(
++            "physical target is missing evidence-coupled arguments: "
++            + ", ".join(missing_arguments)
++        )
++    expected_paths = {"metadata": Path(metadata_input_path)}
++    expected_paths.update({
++        label: Path(assignments[argument])
++        for label, argument in assignment_labels.items()
++    })
++    mismatches = []
++    for label, expected in expected_paths.items():
++        try:
++            expected_resolved = expected.expanduser().resolve(strict=True)
++        except OSError as exc:
++            raise ValueError(
++                f"physical launched input is unavailable: {label}={expected}"
++            ) from exc
++        if by_label[label] != expected_resolved:
++            mismatches.append(label)
++    fixed_names = {
++        "selected_profile": "phase09_selected_profile.yaml",
++        "wrapper": "gesc_gaussian_two_source_voltage.bash",
++        "launch": "gesc_gaussian_two_source.launch.xml",
++    }
++    for label, expected_name in fixed_names.items():
++        if by_label[label].name != expected_name:
++            mismatches.append(label)
++    parameter_names = {
++        Path(str(value)).name
++        for value in metadata_input.get("parameter_files", ())
++    }
++    if by_label["selected_profile"].name not in parameter_names:
++        mismatches.append("selected_profile metadata.parameter_files")
++    if mismatches:
++        raise ValueError(
++            "physical evidence files do not match launched inputs: "
++            + ", ".join(sorted(set(mismatches)))
++        )
++
++
++def _finite_value(value):
++    try:
++        number = float(value)
++    except (TypeError, ValueError):
++        return None
++    return number if math.isfinite(number) else None
++
++
++def _first_message_value(message, field, valid_field=None):
++    if message is None:
++        return None
++    if valid_field is not None and not bool(getattr(message, valid_field, False)):
++        return None
++    values = getattr(message, field, ())
++    if not values:
++        return None
++    return _finite_value(values[0])
++
++
++def _format_live_value(value):
++    return "n/a" if value is None else f"{value:.3f}"
++
++
++def _safe_terminal_line(line, stream=None):
++    """Write one best-effort terminal line without endangering evidence."""
++
++    stream = sys.stdout if stream is None else stream
++    try:
++        stream.write(str(line).rstrip() + "\n")
++        stream.flush()
++        return True
++    except (BrokenPipeError, OSError, ValueError):
++        return False
++
++
++def select_live_diagnostic_entries(entries_by_alias, period_sec):
++    """Select passive subscriptions only when terminal summaries are enabled."""
++
++    if float(period_sec) <= 0.0:
++        return []
++    return [
++        entries_by_alias[alias]
++        for alias in LIVE_DIAGNOSTIC_ALIASES
++        if alias in entries_by_alias
++    ]
++
++
++def format_live_diagnostics(messages, observed_at, ready, now=None):
++    """Render one bounded, non-authoritative operator diagnostic line."""
++
++    now = time.monotonic() if now is None else float(now)
++    source = messages.get("source_cost")
++    cost = messages.get("cost_breakdown")
++    gesc = messages.get("gesc_diagnostics")
++    legacy_filter = messages.get("filter_output_legacy")
++    state = messages.get("algorithm_state")
++    pose = messages.get("pose")
++    control = messages.get("control_diagnostics")
++
++    voltage = _first_message_value(
++        source, "raw_sensor_value", "raw_sensor_valid"
++    )
++    raw_cost = _first_message_value(source, "raw_cost", "raw_cost_valid")
++    cost_raw = _first_message_value(cost, "raw_cost", "raw_cost_valid")
++    gaussian = _first_message_value(
++        cost, "gaussian_cost", "gaussian_cost_valid"
++    )
++    affine = _first_message_value(cost, "affine_cost", "affine_cost_valid")
++    augmented = _first_message_value(
++        cost, "augmented_cost", "augmented_cost_valid"
++    )
++    filter_output = _first_message_value(gesc, "filter_output", "valid")
++    if filter_output is None:
++        filter_output = _first_message_value(legacy_filter, "data")
++
++    state_name = "n/a"
++    fill_count = "n/a"
++    failsafe = "n/a"
++    if state is not None:
++        if bool(getattr(state, "state_valid", False)):
++            state_name = str(getattr(state, "state_name", "n/a")) or "n/a"
++        if bool(getattr(state, "active_fill_count_valid", False)):
++            fill_count = str(int(getattr(state, "active_fill_count", 0)))
++        if bool(getattr(state, "failsafe_valid", False)):
++            failsafe = str(bool(getattr(state, "failsafe", False))).lower()
++
++    x_value = None
++    y_value = None
++    try:
++        position = pose.pose.pose.position
++        x_value = _finite_value(position.x)
++        y_value = _finite_value(position.y)
++    except AttributeError:
++        pass
++
++    vx_value = None
++    wz_value = None
++    if control is not None and bool(
++        getattr(control, "final_command_valid", False)
++    ):
++        command = getattr(control, "final_command", ())
++        if len(command) == 6:
++            vx_value = _finite_value(command[0])
++            wz_value = _finite_value(command[5])
++
++    ages = []
++    for observed in observed_at.values():
++        observed_value = _finite_value(observed)
++        if observed_value is not None:
++            age = _finite_value(now - observed_value)
++            if age is not None:
++                ages.append(max(0.0, age))
++    max_age = max(ages) if ages else None
++    return (
++        f"ready={str(bool(ready)).lower()} "
++        f"voltage={_format_live_value(voltage)}V "
++        f"raw_cost={_format_live_value(raw_cost)} | "
++        "cost(raw/gaussian/affine/augmented)="
++        f"{_format_live_value(cost_raw)}/"
++        f"{_format_live_value(gaussian)}/"
++        f"{_format_live_value(affine)}/"
++        f"{_format_live_value(augmented)} | "
++        f"filter={_format_live_value(filter_output)} | "
++        f"state={state_name} fills={fill_count} failsafe={failsafe} | "
++        f"pose=({_format_live_value(x_value)},"
++        f"{_format_live_value(y_value)})m | "
++        f"cmd(vx/wz)=({_format_live_value(vx_value)},"
++        f"{_format_live_value(wz_value)}) | "
++        f"max_age={_format_live_value(max_age)}s"
++    )
 +
 +
 +def topic_evidence_contract_errors(entry):
@@ -2704,10 +3030,52 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +    """Capture commit/branch/dirty state and deterministic dirty-tree hash."""
 +
 +    requested_root = Path(repository_root).resolve()
-+    root = Path(subprocess.run(
-+        ["git", "rev-parse", "--show-toplevel"],
-+        cwd=requested_root, check=True, capture_output=True, text=True,
-+    ).stdout.strip()).resolve()
++    if not requested_root.is_dir():
++        raise FileNotFoundError(
++            f"Git provenance root is not a directory: {requested_root}"
++        )
++    try:
++        discovery = subprocess.run(
++            ["git", "rev-parse", "--show-toplevel"],
++            cwd=requested_root,
++            check=False,
++            capture_output=True,
++            text=True,
++            env={**os.environ, "LC_ALL": "C"},
++        )
++    except FileNotFoundError:
++        return {
++            "available": False,
++            "requested_root": str(requested_root),
++            "repository_root": None,
++            "commit": None,
++            "branch": None,
++            "detached": None,
++            "dirty": None,
++            "diff_hash_sha256": None,
++            "untracked_paths": [],
++            "unavailable_reason": "git executable is unavailable",
++        }
++    if discovery.returncode != 0:
++        error = discovery.stderr.strip()
++        if (
++            "not a git repository" in error.lower()
++            or "must be run in a work tree" in error.lower()
++        ):
++            return {
++                "available": False,
++                "requested_root": str(requested_root),
++                "repository_root": None,
++                "commit": None,
++                "branch": None,
++                "detached": None,
++                "dirty": None,
++                "diff_hash_sha256": None,
++                "untracked_paths": [],
++                "unavailable_reason": error,
++            }
++        discovery.check_returncode()
++    root = Path(discovery.stdout.strip()).resolve()
 +
 +    def git(*arguments, text=True):
 +        return subprocess.run(
@@ -2741,6 +3109,8 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +        digest.update(file_hash.hexdigest().encode("ascii"))
 +        digest.update(b"\0")
 +    return {
++        "available": True,
++        "requested_root": str(requested_root),
 +        "repository_root": str(root),
 +        "commit": commit,
 +        "branch": branch,
@@ -3108,6 +3478,9 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +        required_controllers=(),
 +        mode=None,
 +        algorithm_profile=None,
++        diagnostic_entries=(),
++        live_diagnostics_period_sec=0.0,
++        live_diagnostics_callback=None,
 +    ):
 +        super().__init__("gesc_gaussian_recording_coordinator")
 +        self._state_lock = threading.RLock()
@@ -3129,6 +3502,9 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +        self.heartbeat_messages = {
 +            entry['alias']: None for entry in heartbeat_entries
 +        }
++        self.diagnostic_observed_at = {}
++        self.diagnostic_messages = {}
++        self.live_diagnostics_callback = live_diagnostics_callback
 +        self.heartbeat_stale_sec = float(heartbeat_stale_sec)
 +        self.mode = mode
 +        self.algorithm_profile = algorithm_profile
@@ -3144,6 +3520,22 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +                    get_message(entry['type']),
 +                    entry['topic'],
 +                    partial(self._record_heartbeat, alias),
++                    10,
++                )
++            )
++        self.diagnostic_subscriptions = []
++        heartbeat_aliases = set(self.heartbeat_messages)
++        for entry in diagnostic_entries:
++            alias = entry['alias']
++            if alias in heartbeat_aliases:
++                continue
++            self.diagnostic_observed_at[alias] = None
++            self.diagnostic_messages[alias] = None
++            self.diagnostic_subscriptions.append(
++                self.create_subscription(
++                    get_message(entry['type']),
++                    entry['topic'],
++                    partial(self._record_diagnostic, alias),
 +                    10,
 +                )
 +            )
@@ -3164,6 +3556,11 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +            ControlDiagnostics, ZERO_TOPICS[2], self._diagnostics_callback, 10
 +        )
 +        self.create_timer(1.0 / max(1e-6, ready_rate_hz), self.publish_ready)
++        if live_diagnostics_period_sec > 0.0:
++            self.create_timer(
++                live_diagnostics_period_sec,
++                self._emit_live_diagnostics,
++            )
 +        self.publish_ready()
 +
 +    def publish_ready(self):
@@ -3227,6 +3624,41 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +                            'error': error,
 +                        })
 +                        known_errors.add(error)
++
++    def _record_diagnostic(self, alias, message):
++        with self._state_lock:
++            self.diagnostic_observed_at[alias] = time.monotonic()
++            self.diagnostic_messages[alias] = message
++
++    def _emit_live_diagnostics(self):
++        callback = self.live_diagnostics_callback
++        if callback is None:
++            return
++        with self._state_lock:
++            messages = {
++                **self.heartbeat_messages,
++                **self.diagnostic_messages,
++            }
++            messages['control_diagnostics'] = getattr(
++                self,
++                'latest_control_diagnostics',
++                None,
++            )
++            observed_at = {
++                **self.heartbeat_observed_at,
++                **self.diagnostic_observed_at,
++            }
++            observed_at['control_diagnostics'] = getattr(
++                self,
++                'latest_control_diagnostics_observed_at',
++                None,
++            )
++            ready = bool(self.ready)
++        try:
++            callback(format_live_diagnostics(messages, observed_at, ready))
++        except Exception:
++            # Operator display is never part of readiness or command control.
++            return
 +
 +    def begin_operational_epoch(self):
 +        """Require fresh heartbeat receipts after graph preflight."""  # noqa: Q000
@@ -3499,6 +3931,9 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +
 +    def _diagnostics_callback(self, message):
 +        self._record_command(ZERO_TOPICS[2], message.final_command)
++        with self._state_lock:
++            self.latest_control_diagnostics = message
++            self.latest_control_diagnostics_observed_at = time.monotonic()
 +
 +    def final_zero_after(self, monotonic_time):
 +        with self._state_lock:
@@ -3516,11 +3951,58 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +        self._lock = threading.Lock()
 +        self._threads = []
 +        self.fatal_lines = []
++        self._terminal_stream = None
++        self._terminal_queue = None
++        self._terminal_thread = None
++        self._terminal_failed = False
++        self._terminal_sentinel = object()
++
++    def enable_terminal(self, stream=None):
++        """Tee future durable lines to an operator terminal when available."""
++
++        self._terminal_stream = sys.stdout if stream is None else stream
++        self._terminal_queue = queue.Queue(maxsize=256)
++
++        def consume_terminal():
++            while True:
++                rendered = self._terminal_queue.get()
++                if rendered is self._terminal_sentinel:
++                    return
++                try:
++                    self._terminal_stream.write(rendered)
++                    self._terminal_stream.flush()
++                except (BrokenPipeError, OSError, ValueError):
++                    self._terminal_failed = True
++                    return
++
++        self._terminal_thread = threading.Thread(
++            target=consume_terminal,
++            daemon=True,
++        )
++        self._terminal_thread.start()
++
++    def _enqueue_terminal(self, rendered):
++        if self._terminal_queue is None or self._terminal_failed:
++            return
++        try:
++            self._terminal_queue.put_nowait(rendered)
++            return
++        except queue.Full:
++            pass
++        try:
++            self._terminal_queue.get_nowait()
++        except queue.Empty:
++            return
++        try:
++            self._terminal_queue.put_nowait(rendered)
++        except queue.Full:
++            return
 +
 +    def log(self, source, line):
 +        timestamp = _iso_now()
++        rendered = f"[{timestamp}] [{source}] {line.rstrip()}\n"
 +        with self._lock:
-+            self._stream.write(f"[{timestamp}] [{source}] {line.rstrip()}\n")
++            self._stream.write(rendered)
 +            lowered = line.lower()
 +            if source == "target" and (
 +                "process has died" in lowered
@@ -3528,6 +4010,7 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +                or "rclerror" in lowered
 +            ):
 +                self.fatal_lines.append(line.rstrip())
++        self._enqueue_terminal(rendered)
 +
 +    def attach(self, source, process):
 +        def consume():
@@ -3540,6 +4023,10 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +    def close(self):
 +        for thread in self._threads:
 +            thread.join(timeout=2.0)
++        if self._terminal_queue is not None:
++            self._enqueue_terminal(self._terminal_sentinel)
++        if self._terminal_thread is not None:
++            self._terminal_thread.join(timeout=2.0)
 +        self._stream.close()
 +
 +
@@ -4165,6 +4652,24 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +        "--runs-root", default="~/Experiments/GESC-Gaussian/runs"
 +    )
 +    parser.add_argument("--manifest", default=str(_default_asset("topic_manifest.yaml")))
++    parser.add_argument(
++        "--evidence-file",
++        action="append",
++        default=[],
++        metavar="LABEL=PATH",
++        help="retain and hash one labeled file-backed run input",
++    )
++    parser.add_argument(
++        "--stream-console",
++        action="store_true",
++        help="tee managed subprocess and recorder lines to this terminal",
++    )
++    parser.add_argument(
++        "--live-diagnostics-period-sec",
++        type=float,
++        default=0.0,
++        help="emit a passive operator summary at this period; zero disables",
++    )
 +    parser.add_argument("--run-id")
 +    parser.add_argument("--storage-id", default="sqlite3")
 +    parser.add_argument("--duration-sec", type=float, default=0.0)
@@ -4195,6 +4700,18 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +            'contract'
 +        )
 +    metadata_input = load_metadata_input(arguments.metadata_input, arguments.mode)
++    live_diagnostics_period_sec = float(
++        getattr(arguments, "live_diagnostics_period_sec", 0.0)
++    )
++    if (
++        not math.isfinite(live_diagnostics_period_sec)
++        or live_diagnostics_period_sec < 0.0
++        or 0.0 < live_diagnostics_period_sec < 0.1
++    ):
++        raise ValueError(
++            "--live-diagnostics-period-sec must be zero or at least 0.1"
++        )
++    stream_console = bool(getattr(arguments, "stream_console", False))
 +    target = list(arguments.target)
 +    if target and target[0] == "--":
 +        target.pop(0)
@@ -4210,6 +4727,10 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +        entries_by_alias[alias]
 +        for alias in heartbeat_aliases
 +    ]
++    diagnostic_entries = select_live_diagnostic_entries(
++        entries_by_alias,
++        live_diagnostics_period_sec,
++    )
 +    required_node_parameters = dict(
 +        operational_config.get('required_node_parameters', {})
 +    )
@@ -4226,6 +4747,30 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +        raise ValueError('requested storage backend is not allowed by the manifest')
 +    if arguments.storage_id not in rosbag2_py.get_registered_writers():
 +        raise ValueError(f'rosbag writer is unavailable: {arguments.storage_id}')
++    qos_overrides = _default_asset("qos_overrides.yaml")
++    evidence_specifications = list(
++        getattr(arguments, "evidence_file", ())
++    )
++    required_evidence_labels = ()
++    if arguments.mode == "physical":
++        required_evidence_labels = PHYSICAL_REQUIRED_EVIDENCE_LABELS
++        evidence_specifications = [
++            f"metadata={arguments.metadata_input}",
++            f"topic_manifest={arguments.manifest}",
++            f"qos_overrides={qos_overrides}",
++            *evidence_specifications,
++        ]
++    resolved_evidence_files = resolve_evidence_files(
++        evidence_specifications,
++        required_evidence_labels,
++    )
++    if arguments.mode == "physical":
++        validate_physical_evidence_coupling(
++            resolved_evidence_files,
++            arguments.metadata_input,
++            metadata_input,
++            target,
++        )
 +    run_id = validate_run_id(
 +        arguments.run_id or generate_run_id(arguments.mode, metadata_input["scenario_id"])
 +    )
@@ -4242,6 +4787,13 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +        f"# Run notes: {run_id}\n\n{metadata_input['operator_notes']}\n",
 +        encoding="utf-8",
 +    )
++    configuration_evidence = None
++    if resolved_evidence_files:
++        configuration_evidence = capture_evidence_files(
++            run_directory,
++            resolved_evidence_files,
++            required_evidence_labels,
++        )
 +
 +    metadata = dict(metadata_input)
 +    metadata.update({
@@ -4269,6 +4821,8 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +            ),
 +            'operational_readiness_required': bool(operational_config),
 +            'readiness_ever_true': False,
++            "stream_console": stream_console,
++            "live_diagnostics_period_sec": live_diagnostics_period_sec,
 +            'preflight_timeout_sec': float(
 +                arguments.preflight_timeout_sec
 +            ),
@@ -4276,6 +4830,12 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +            "completeness_passed": False,
 +        },
 +    })
++    if configuration_evidence is not None:
++        metadata["configuration_evidence"] = {
++            "manifest_path": "configuration/manifest.yaml",
++            "required_labels": list(required_evidence_labels),
++            "files": configuration_evidence["files"],
++        }
 +    atomic_yaml(run_directory / "metadata.yaml", metadata)
 +    atomic_json(run_directory / "completeness.json", {
 +        "schema_version": 1, "run_id": run_id, "passed": False,
@@ -4284,6 +4844,9 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +    })
 +
 +    console = _ConsoleCapture(run_directory / "console.log")
++    if stream_console:
++        console.enable_terminal()
++    console.log("record_run", f"run directory: {run_directory}")
 +    bag_process = None
 +    target_process = None
 +    node = None
@@ -4324,13 +4887,15 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +            ),
 +            mode=arguments.mode,
 +            algorithm_profile=metadata_input['algorithm_profile'],
++            diagnostic_entries=diagnostic_entries,
++            live_diagnostics_period_sec=live_diagnostics_period_sec,
++            live_diagnostics_callback=partial(console.log, "live"),
 +        )
 +        executor = SingleThreadedExecutor()
 +        executor.add_node(node)
 +        spin_thread = threading.Thread(target=executor.spin, daemon=True)
 +        spin_thread.start()
 +
-+        qos_overrides = _default_asset("qos_overrides.yaml")
 +        bag_command = build_bag_command(
 +            arguments.storage_id, bag_directory, entries, qos_overrides
 +        )
@@ -4762,7 +5327,21 @@ index 0000000000000000000000000000000000000000..056d7a7072f3c26e38ee75856884d624
 +    report = validate_run_directory(run_directory, write_report=True)
 +    metadata["recording"]["completeness_passed"] = bool(report["passed"])
 +    atomic_yaml(run_directory / "metadata.yaml", metadata)
-+    print(str(run_directory))
++    outcome = "PASS" if report["passed"] else "FAIL"
++    report_failures = list(report.get("failures", ()))
++    failures = "; ".join(report_failures[:3]) or "none"
++    if len(report_failures) > 3:
++        failures += f"; plus {len(report_failures) - 3} more"
++    final_console = _ConsoleCapture(run_directory / "console.log")
++    if stream_console:
++        final_console.enable_terminal()
++    final_console.log(
++        "record_run",
++        f"completeness={outcome} failures={failures} "
++        f"run_directory={run_directory}",
++    )
++    final_console.close()
++    _safe_terminal_line(run_directory)
 +    return 0 if report["passed"] else 1
 +
 +
@@ -4866,15 +5445,16 @@ index 0000000000000000000000000000000000000000..7857ae6e00fef2c8347ee92fca1888f0
 +  - {alias: tf_static, topic: /tf_static, type: tf2_msgs/msg/TFMessage, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
 diff --git a/ros_esc/ros_esc/experiment_recording/validate_run.py b/ros_esc/ros_esc/experiment_recording/validate_run.py
 new file mode 100644
-index 0000000000000000000000000000000000000000..39ac67576ed9d68339e510fbcde61d6efa621f44
+index 0000000000000000000000000000000000000000..2e6c2698e0ad3164f281525e9c6ffc8a98029ede
 --- /dev/null
 +++ b/ros_esc/ros_esc/experiment_recording/validate_run.py
-@@ -0,0 +1,995 @@
+@@ -0,0 +1,1136 @@
 +#!/usr/bin/env python3
 +
 +"""Offline run-completeness validator for unified GESC/Gaussian recordings."""
 +
 +import argparse
++import hashlib
 +import json
 +import math
 +from pathlib import Path
@@ -4888,6 +5468,7 @@ index 0000000000000000000000000000000000000000..39ac67576ed9d68339e510fbcde61d6e
 +from .record_run import (
 +    DEFAULT_TIMESTAMP_ORDERING,
 +    MULTI_PUBLISHER_TIMESTAMP_ORDERING,
++    PHYSICAL_REQUIRED_EVIDENCE_LABELS,
 +    REQUIRED_METADATA,
 +    VALID_PROFILES_BY_MODE,
 +    atomic_json,
@@ -5232,6 +5813,112 @@ index 0000000000000000000000000000000000000000..39ac67576ed9d68339e510fbcde61d6e
 +    return yaml.safe_load(Path(path).read_text(encoding="utf-8"))
 +
 +
++def _retained_sha256(path):
++    digest = hashlib.sha256()
++    with Path(path).open("rb") as stream:
++        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
++            digest.update(chunk)
++    return digest.hexdigest()
++
++
++def configuration_evidence_errors(run_directory, metadata):
++    """Return physical retained-input completeness and integrity faults."""
++
++    if metadata.get("mode") != "physical":
++        return []
++    evidence = metadata.get("configuration_evidence")
++    if not isinstance(evidence, dict):
++        return ["physical configuration_evidence metadata is missing"]
++    manifest_relative = evidence.get("manifest_path")
++    if not isinstance(manifest_relative, str) or not manifest_relative:
++        return ["physical configuration evidence manifest path is missing"]
++    run_directory = Path(run_directory).resolve()
++    try:
++        manifest_path = (run_directory / manifest_relative).resolve(strict=True)
++        manifest_path.relative_to(run_directory)
++    except (OSError, ValueError):
++        return ["physical configuration evidence manifest escapes or is missing"]
++    try:
++        manifest = _load_yaml(manifest_path)
++    except (OSError, yaml.YAMLError) as exc:
++        return [f"physical configuration evidence manifest unreadable: {exc}"]
++    if not isinstance(manifest, dict) or manifest.get("schema_version") != 1:
++        return ["physical configuration evidence manifest schema is invalid"]
++
++    errors = []
++    required = set(PHYSICAL_REQUIRED_EVIDENCE_LABELS)
++    metadata_required = evidence.get("required_labels")
++    if (
++        not isinstance(metadata_required, list)
++        or any(not isinstance(label, str) for label in metadata_required)
++        or set(metadata_required) != required
++    ):
++        errors.append(
++            "metadata physical configuration evidence required labels changed"
++        )
++    declared_required = manifest.get("required_labels")
++    if (
++        not isinstance(declared_required, list)
++        or any(not isinstance(label, str) for label in declared_required)
++        or set(declared_required) != required
++    ):
++        errors.append("physical configuration evidence required labels changed")
++    files = manifest.get("files")
++    if not isinstance(files, list):
++        return [*errors, "physical configuration evidence files are invalid"]
++    labels = []
++    retained_paths = []
++    for item in files:
++        if not isinstance(item, dict):
++            errors.append("physical configuration evidence entry is invalid")
++            continue
++        label = item.get("label")
++        retained_relative = item.get("retained_path")
++        if not isinstance(label, str):
++            errors.append("physical configuration evidence label is invalid")
++            continue
++        labels.append(label)
++        if not isinstance(retained_relative, str) or not retained_relative:
++            errors.append(f"physical evidence retained path is invalid: {label}")
++            continue
++        retained_paths.append(retained_relative)
++        try:
++            retained_path = (
++                run_directory / retained_relative
++            ).resolve(strict=True)
++            retained_path.relative_to(run_directory)
++        except (OSError, ValueError):
++            errors.append(
++                f"physical evidence retained path escapes or is missing: {label}"
++            )
++            continue
++        if not retained_path.is_file():
++            errors.append(f"physical evidence is not a regular file: {label}")
++            continue
++        if retained_path.stat().st_size != item.get("size_bytes"):
++            errors.append(f"physical evidence size mismatch: {label}")
++        try:
++            retained_hash = _retained_sha256(retained_path)
++        except OSError as exc:
++            errors.append(f"physical evidence unreadable: {label}: {exc}")
++            continue
++        if retained_hash != item.get("sha256"):
++            errors.append(f"physical evidence SHA-256 mismatch: {label}")
++    if len(labels) != len(set(labels)):
++        errors.append("physical configuration evidence labels are duplicated")
++    if len(retained_paths) != len(set(retained_paths)):
++        errors.append("physical configuration retained paths are duplicated")
++    missing = sorted(required - set(labels))
++    if missing:
++        errors.append(
++            "physical configuration evidence labels are missing: "
++            + ", ".join(missing)
++        )
++    if evidence.get("files") != files:
++        errors.append("metadata configuration evidence differs from manifest")
++    return errors
++
++
 +def _read_bag(bag_directory, expected_types, report):
 +    storage_options = rosbag2_py.StorageOptions(
 +        uri=str(bag_directory), storage_id="sqlite3"
@@ -5300,6 +5987,39 @@ index 0000000000000000000000000000000000000000..39ac67576ed9d68339e510fbcde61d6e
 +    _check(
 +        report, "notes_present", notes_path.is_file() and notes_path.stat().st_size > 0,
 +        "notes.md is missing or empty",
++    )
++    git = metadata.get("git", {})
++    git_available = git.get("available") if isinstance(git, dict) else None
++    git_valid = isinstance(git, dict)
++    if metadata.get("mode") == "physical":
++        git_valid = isinstance(git_available, bool)
++    if git_valid and git_available is True:
++        git_valid = git_valid and all(
++            git.get(name) is not None
++            for name in (
++                "repository_root",
++                "commit",
++                "dirty",
++                "diff_hash_sha256",
++            )
++        )
++    elif git_valid and git_available is False:
++        git_valid = git_valid and bool(git.get("unavailable_reason"))
++    _check(
++        report,
++        "git_provenance_valid",
++        git_valid,
++        "Git provenance is neither a complete worktree capture nor an "
++        "explicit unavailable state",
++        git,
++    )
++    evidence_errors = configuration_evidence_errors(run_directory, metadata)
++    _check(
++        report,
++        "configuration_evidence_valid",
++        not evidence_errors,
++        "retained physical configuration evidence is incomplete or corrupt",
++        evidence_errors,
 +    )
 +
 +    resolved = {}
@@ -17164,15 +17884,18 @@ index 7080a44ab975ebf80cb2b1637a758ed9e2fe0cc9..66b50941c89b6d8c3a5262cebcf17c3f
  )
 diff --git a/ros_esc/test/test_phase09_physical_recording.py b/ros_esc/test/test_phase09_physical_recording.py
 new file mode 100644
-index 0000000000000000000000000000000000000000..3a0c170454cb5e769c60cd5a8288c6f561597375
+index 0000000000000000000000000000000000000000..b89e6886ebf153d189e55918f948a858fe426fd6
 --- /dev/null
 +++ b/ros_esc/test/test_phase09_physical_recording.py
-@@ -0,0 +1,389 @@
+@@ -0,0 +1,849 @@
 +"""Focused offline tests for Phase 09 physical recording/readiness."""
 +
 +import copy
++import io
 +from pathlib import Path
++import subprocess
 +import threading
++import time
 +from types import SimpleNamespace
 +
 +import pytest
@@ -17182,6 +17905,7 @@ index 0000000000000000000000000000000000000000..3a0c170454cb5e769c60cd5a8288c6f5
 +from ros_esc.experiment_recording import record_run as recorder
 +from ros_esc.experiment_recording.record_run import (
 +    PHYSICAL_CANONICAL_TARGET_VALUES,
++    PHYSICAL_REQUIRED_EVIDENCE_LABELS,
 +    PHYSICAL_TARGET_PREFIX,
 +    REQUIRED_PHYSICAL_NODE_PARAMETERS,
 +    RecordingCoordinator,
@@ -17193,9 +17917,16 @@ index 0000000000000000000000000000000000000000..3a0c170454cb5e769c60cd5a8288c6f5
 +    required_node_parameter_errors,
 +    required_parameter_snapshot_errors,
 +    resolve_operational_heartbeat_aliases,
++    capture_evidence_files,
++    format_live_diagnostics,
++    git_state,
++    resolve_evidence_files,
++    select_live_diagnostic_entries,
++    validate_physical_evidence_coupling,
 +    validate_operational_target_coupling,
 +)
 +from ros_esc.experiment_recording.validate_run import (
++    configuration_evidence_errors,
 +    source_cost_semantics_valid,
 +)
 +
@@ -17293,6 +18024,39 @@ index 0000000000000000000000000000000000000000..3a0c170454cb5e769c60cd5a8288c6f5
 +    by_alias = {entry["alias"]: entry for entry in manifest["topics"]}
 +    assert by_alias["imu"]["modes"] == ["physical"]
 +    assert "physical" in by_alias["encoder"]["modes"]
++
++
++def test_physical_bag_is_the_legacy_stream_superset_with_typed_diagnostics():
++    manifest = load_manifest(MANIFEST)
++    physical_aliases = {
++        entry['alias']
++        for entry in recorder.applicable_topics(manifest, 'physical')
++    }
++    legacy_streams = {
++        'raw_cost_legacy',
++        'augmented_cost_legacy',
++        'filter_output_legacy',
++        'command_array_final',
++        'command_final',
++        'pose',
++        'timekeeper',
++        'encoder',
++    }
++    typed_additions = {
++        'source_cost',
++        'cost_breakdown',
++        'gesc_diagnostics',
++        'control_diagnostics',
++        'algorithm_state',
++        'algorithm_events',
++        'gaussian_fills',
++        'recording_ready',
++        'imu',
++    }
++
++    assert manifest['storage_id'] == 'sqlite3'
++    assert legacy_streams <= physical_aliases
++    assert typed_additions <= physical_aliases
 +
 +
 +def test_manifest_rejects_physical_bypass_or_time_drift(tmp_path):
@@ -17557,6 +18321,422 @@ index 0000000000000000000000000000000000000000..3a0c170454cb5e769c60cd5a8288c6f5
 +    }
 +    assert coordinator.final_zero_after(4.0) is True
 +    assert coordinator.final_zero_after(4.15) is False
++
++
++def test_git_state_non_worktree_is_explicit_and_nonfatal(tmp_path):
++    state = git_state(tmp_path)
++
++    assert state["available"] is False
++    assert state["requested_root"] == str(tmp_path.resolve())
++    assert state["repository_root"] is None
++    assert state["commit"] is None
++    assert "not a git repository" in state["unavailable_reason"].lower()
++
++
++def test_git_state_missing_executable_is_explicit_and_nonfatal(
++    tmp_path,
++    monkeypatch,
++):
++    def missing_git(*_args, **_kwargs):
++        raise FileNotFoundError("git")
++
++    monkeypatch.setattr(recorder.subprocess, "run", missing_git)
++    state = git_state(tmp_path)
++
++    assert state["available"] is False
++    assert state["unavailable_reason"] == "git executable is unavailable"
++
++
++def test_git_state_unexpected_discovery_failure_remains_fatal(
++    tmp_path,
++    monkeypatch,
++):
++    failure = subprocess.CompletedProcess(
++        ["git", "rev-parse"],
++        2,
++        stdout="",
++        stderr="unexpected Git failure",
++    )
++    monkeypatch.setattr(recorder.subprocess, "run", lambda *_a, **_k: failure)
++
++    with pytest.raises(subprocess.CalledProcessError):
++        git_state(tmp_path)
++
++
++def test_git_state_preserves_dirty_and_untracked_hashing(tmp_path):
++    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
++    subprocess.run(
++        ["git", "config", "user.email", "test@example.com"],
++        cwd=tmp_path,
++        check=True,
++    )
++    subprocess.run(
++        ["git", "config", "user.name", "Test"],
++        cwd=tmp_path,
++        check=True,
++    )
++    tracked = tmp_path / "tracked.txt"
++    tracked.write_text("tracked\n", encoding="utf-8")
++    subprocess.run(["git", "add", "tracked.txt"], cwd=tmp_path, check=True)
++    subprocess.run(
++        ["git", "commit", "-qm", "initial"],
++        cwd=tmp_path,
++        check=True,
++    )
++
++    clean = git_state(tmp_path)
++    tracked.write_text("changed\n", encoding="utf-8")
++    dirty = git_state(tmp_path)
++    (tmp_path / "new.txt").write_text("one\n", encoding="utf-8")
++    untracked = git_state(tmp_path)
++
++    assert clean["available"] is True
++    assert clean["dirty"] is False
++    assert dirty["dirty"] is True
++    assert untracked["untracked_paths"] == ["new.txt"]
++    assert len({
++        clean["diff_hash_sha256"],
++        dirty["diff_hash_sha256"],
++        untracked["diff_hash_sha256"],
++    }) == 3
++
++
++def test_evidence_capture_is_exact_labeled_and_hashed(tmp_path):
++    first_dir = tmp_path / "first"
++    second_dir = tmp_path / "second"
++    first_dir.mkdir()
++    second_dir.mkdir()
++    first = first_dir / "config.json"
++    second = second_dir / "config.json"
++    first.write_bytes(b"first\x00config\n")
++    second.write_bytes(b"second config\n")
++    resolved = resolve_evidence_files(
++        [f"first={first}", f"second={second}"],
++        required_labels=("first", "second"),
++    )
++    run_directory = tmp_path / "run"
++    run_directory.mkdir()
++    manifest = capture_evidence_files(
++        run_directory,
++        resolved,
++        required_labels=("first", "second"),
++    )
++
++    assert [item["label"] for item in manifest["files"]] == [
++        "first",
++        "second",
++    ]
++    for item, expected in zip(manifest["files"], (first, second)):
++        retained = run_directory / item["retained_path"]
++        assert retained.read_bytes() == expected.read_bytes()
++        assert item["size_bytes"] == len(expected.read_bytes())
++        assert len(item["sha256"]) == 64
++    assert (run_directory / "configuration/manifest.yaml").is_file()
++
++
++def test_evidence_resolution_rejects_unsafe_duplicate_or_missing_inputs(
++    tmp_path,
++):
++    source = tmp_path / "input.yaml"
++    source.write_text("value: 1\n", encoding="utf-8")
++    with pytest.raises(ValueError, match="invalid evidence-file label"):
++        resolve_evidence_files([f"../bad={source}"])
++    with pytest.raises(ValueError, match="duplicate evidence-file label"):
++        resolve_evidence_files([f"config={source}", f"config={source}"])
++    with pytest.raises(ValueError, match="duplicate resolved evidence-file"):
++        resolve_evidence_files([f"first={source}", f"second={source}"])
++    with pytest.raises(ValueError, match="unavailable"):
++        resolve_evidence_files([f"missing={tmp_path / 'missing.yaml'}"])
++    with pytest.raises(ValueError, match="not a regular file"):
++        resolve_evidence_files([f"directory={tmp_path}"])
++
++
++def _physical_evidence_fixture(tmp_path):
++    names = {
++        "metadata": "phase09_primary_metadata.yaml",
++        "calibration": "phase09_photoresistor_calibration.yaml",
++        "selected_profile": "phase09_selected_profile.yaml",
++        "controller": "phase09_controller.json",
++        "filter": "phase09_filter.json",
++        "rotation": "phase09_rotation.json",
++        "wrapper": "gesc_gaussian_two_source_voltage.bash",
++        "launch": "gesc_gaussian_two_source.launch.xml",
++        "topic_manifest": "topic_manifest.yaml",
++        "qos_overrides": "qos_overrides.yaml",
++    }
++    paths = {}
++    for label, name in names.items():
++        directory = tmp_path / label
++        directory.mkdir()
++        path = directory / name
++        path.write_text(f"{label}\n", encoding="utf-8")
++        paths[label] = path
++    resolved = resolve_evidence_files(
++        [f"{label}={paths[label]}" for label in names],
++        PHYSICAL_REQUIRED_EVIDENCE_LABELS,
++    )
++    metadata = {
++        "parameter_files": ["config/phase09_selected_profile.yaml"],
++    }
++    target = _physical_target(
++        photoresistor_calibration_file=str(paths["calibration"]),
++        controller_config_filepath=str(paths["controller"]),
++        filter_config_filepath=str(paths["filter"]),
++        rotate_frame_config_filepath=str(paths["rotation"]),
++    )
++    return paths, resolved, metadata, target
++
++
++def test_physical_evidence_must_match_the_launched_inputs(tmp_path):
++    paths, resolved, metadata, target = _physical_evidence_fixture(tmp_path)
++    validate_physical_evidence_coupling(
++        resolved,
++        paths["metadata"],
++        metadata,
++        target,
++    )
++
++    wrong = tmp_path / "wrong-filter.json"
++    wrong.write_text("wrong\n", encoding="utf-8")
++    target = [
++        f"filter_config_filepath:={wrong}"
++        if str(token).startswith("filter_config_filepath:=")
++        else token
++        for token in target
++    ]
++    with pytest.raises(ValueError, match="do not match launched inputs"):
++        validate_physical_evidence_coupling(
++            resolved,
++            paths["metadata"],
++            metadata,
++            target,
++        )
++
++
++def test_physical_configuration_evidence_is_a_completeness_gate(tmp_path):
++    _paths, resolved, _metadata, _target = _physical_evidence_fixture(tmp_path)
++    run_directory = tmp_path / "run"
++    run_directory.mkdir()
++    captured = capture_evidence_files(
++        run_directory,
++        resolved,
++        PHYSICAL_REQUIRED_EVIDENCE_LABELS,
++    )
++    metadata = {
++        "mode": "physical",
++        "configuration_evidence": {
++            "manifest_path": "configuration/manifest.yaml",
++            "required_labels": list(PHYSICAL_REQUIRED_EVIDENCE_LABELS),
++            "files": captured["files"],
++        },
++    }
++    assert configuration_evidence_errors(run_directory, metadata) == []
++
++    retained = run_directory / captured["files"][0]["retained_path"]
++    retained.write_text("corrupt\n", encoding="utf-8")
++    assert any(
++        "mismatch" in error
++        for error in configuration_evidence_errors(run_directory, metadata)
++    )
++
++
++def test_console_capture_tees_complete_lines_and_survives_broken_terminal(
++    tmp_path,
++):
++    terminal = io.StringIO()
++    log_path = tmp_path / "console.log"
++    console = recorder._ConsoleCapture(log_path)
++    console.enable_terminal(terminal)
++    console.log("target", "healthy line")
++    console.close()
++    assert "[target] healthy line" in terminal.getvalue()
++    assert "[target] healthy line" in log_path.read_text(encoding="utf-8")
++
++    class BrokenTerminal:
++        def write(self, _value):
++            raise BrokenPipeError("closed")
++
++        def flush(self):
++            raise AssertionError("flush must not follow a failed write")
++
++    broken_path = tmp_path / "broken.log"
++    console = recorder._ConsoleCapture(broken_path)
++    console.enable_terminal(BrokenTerminal())
++    console.log("record_run", "first durable line")
++    console.log("record_run", "second durable line")
++    console.close()
++    text = broken_path.read_text(encoding="utf-8")
++    assert "first durable line" in text
++    assert "second durable line" in text
++
++
++def test_slow_terminal_cannot_block_durable_logging_or_ros_callbacks(tmp_path):
++    started = threading.Event()
++    release = threading.Event()
++
++    class SlowTerminal:
++        def write(self, _value):
++            started.set()
++            release.wait(timeout=5.0)
++
++        def flush(self):
++            return None
++
++    log_path = tmp_path / "slow-terminal.log"
++    console = recorder._ConsoleCapture(log_path)
++    console.enable_terminal(SlowTerminal())
++    began = time.monotonic()
++    console.log("live", "passive diagnostic")
++    elapsed = time.monotonic() - began
++    assert started.wait(timeout=1.0)
++    began = time.monotonic()
++    console.log("heartbeat", "still durable")
++    second_elapsed = time.monotonic() - began
++    release.set()
++    console.close()
++
++    assert elapsed < 0.1
++    assert second_elapsed < 0.1
++    text = log_path.read_text(encoding="utf-8")
++    assert "passive diagnostic" in text
++    assert "still durable" in text
++
++
++def test_live_diagnostic_summary_is_complete_and_non_authoritative():
++    messages = {
++        "source_cost": SimpleNamespace(
++            raw_sensor_valid=True,
++            raw_sensor_value=[2.5],
++            raw_cost_valid=True,
++            raw_cost=[-2.5],
++        ),
++        "cost_breakdown": SimpleNamespace(
++            raw_cost_valid=True,
++            raw_cost=[-2.5],
++            gaussian_cost_valid=True,
++            gaussian_cost=[1.0],
++            affine_cost_valid=True,
++            affine_cost=[0.25],
++            augmented_cost_valid=True,
++            augmented_cost=[-1.25],
++        ),
++        "gesc_diagnostics": SimpleNamespace(
++            valid=True,
++            filter_output=[0.4],
++        ),
++        "algorithm_state": SimpleNamespace(
++            state_valid=True,
++            state_name="ESCAPE_ASSIST",
++            active_fill_count_valid=True,
++            active_fill_count=1,
++            failsafe_valid=True,
++            failsafe=False,
++        ),
++        "pose": _pose(_stamp()),
++        "control_diagnostics": SimpleNamespace(
++            final_command_valid=True,
++            final_command=[0.05, 0.0, 0.0, 0.0, 0.0, -0.3],
++        ),
++    }
++    messages["pose"].pose.pose.position.x = 1.25
++    messages["pose"].pose.pose.position.y = -0.5
++    line = format_live_diagnostics(
++        messages,
++        {name: 9.5 for name in messages},
++        ready=True,
++        now=10.0,
++    )
++
++    assert "ready=true voltage=2.500V raw_cost=-2.500" in line
++    assert "-2.500/1.000/0.250/-1.250" in line
++    assert "filter=0.400" in line
++    assert "state=ESCAPE_ASSIST fills=1 failsafe=false" in line
++    assert "pose=(1.250,-0.500)m" in line
++    assert "cmd(vx/wz)=(0.050,-0.300)" in line
++    assert "max_age=0.500s" in line
++
++    missing = format_live_diagnostics(
++        {"source_cost": SimpleNamespace(
++            raw_sensor_valid=True,
++            raw_sensor_value=[float("nan")],
++            raw_cost_valid=False,
++            raw_cost=[],
++        )},
++        {"source_cost": "invalid"},
++        ready=False,
++        now=10.0,
++    )
++    assert "ready=false voltage=n/aV raw_cost=n/a" in missing
++    assert "nan" not in missing.lower()
++
++
++def test_passive_diagnostics_do_not_change_operational_heartbeats_or_commands():
++    coordinator = object.__new__(RecordingCoordinator)
++    coordinator._state_lock = threading.RLock()
++    coordinator.diagnostic_observed_at = {"cost_breakdown": None}
++    coordinator.diagnostic_messages = {"cost_breakdown": None}
++    coordinator.heartbeat_observed_at = {"source_cost": 1.0}
++    coordinator.heartbeat_messages = {"source_cost": object()}
++    heartbeat_before = dict(coordinator.heartbeat_observed_at)
++    message = object()
++
++    coordinator._record_diagnostic("cost_breakdown", message)
++
++    assert coordinator.diagnostic_messages["cost_breakdown"] is message
++    assert coordinator.heartbeat_observed_at == heartbeat_before
++
++
++def test_record_run_cli_keeps_legacy_defaults_and_supports_selected_visibility():
++    parser = recorder._parser()
++    base = parser.parse_args([
++        "--mode",
++        "physical",
++        "--metadata-input",
++        "/tmp/metadata.yaml",
++        "--",
++        "ros2",
++        "launch",
++        "package",
++        "launch.xml",
++    ])
++    assert base.stream_console is False
++    assert base.live_diagnostics_period_sec == 0.0
++    assert base.evidence_file == []
++
++    selected = parser.parse_args([
++        "--mode",
++        "physical",
++        "--metadata-input",
++        "/tmp/metadata.yaml",
++        "--stream-console",
++        "--live-diagnostics-period-sec",
++        "1.0",
++        "--evidence-file",
++        "calibration=/tmp/calibration.yaml",
++        "--",
++        "ros2",
++        "launch",
++        "package",
++        "launch.xml",
++    ])
++    assert selected.stream_console is True
++    assert selected.live_diagnostics_period_sec == 1.0
++    assert selected.evidence_file == [
++        "calibration=/tmp/calibration.yaml"
++    ]
++
++
++def test_passive_diagnostic_subscriptions_are_opt_in():
++    entries = {
++        'cost_breakdown': {'alias': 'cost_breakdown'},
++        'gesc_diagnostics': {'alias': 'gesc_diagnostics'},
++    }
++
++    assert select_live_diagnostic_entries(entries, 0.0) == []
++    assert [
++        entry['alias']
++        for entry in select_live_diagnostic_entries(entries, 1.0)
++    ] == ['cost_breakdown', 'gesc_diagnostics']
 diff --git a/ros_esc/test/test_phase09_shared_parity.py b/ros_esc/test/test_phase09_shared_parity.py
 new file mode 100644
 index 0000000000000000000000000000000000000000..faa9bff31e6e7e462e683dcaa959ee1e0db0f171
@@ -17934,10 +19114,10 @@ index 1992d53323384f11b6587270be9d92d63931fa0b..c11ca5a5210926124faeb41c853dfe22
    <test_depend>ament_lint_auto</test_depend>
    <test_depend>ament_lint_common</test_depend>
 diff --git a/turtlebot3_vehicle_nodes/README.md b/turtlebot3_vehicle_nodes/README.md
-index 7dc2de052b7901afe1ade66716806bccdde5b8b9..c3f147ad9e2d46def4711b13615bfd8f765ef248 100644
+index 7dc2de052b7901afe1ade66716806bccdde5b8b9..8cbbd1175ec6143756ed42ecb4409aaa649fd089 100644
 --- a/turtlebot3_vehicle_nodes/README.md
 +++ b/turtlebot3_vehicle_nodes/README.md
-@@ -2,6 +2,26 @@
+@@ -2,6 +2,45 @@
  
  This package enables ESC testing with a turtlebot with a rotating sensor frame. This package includes several ROS2 nodes built specifically to work with the sensors and servo motors used in the vehicle construction. Please use the turtlebot launch file to configure and start and experiment. This package is intended to be used with ros_esc, ros_esc_interfaces, and extremum-seeking packages from the DSIM Lab Gitlab.
  
@@ -17945,10 +19125,29 @@ index 7dc2de052b7901afe1ade66716806bccdde5b8b9..c3f147ad9e2d46def4711b13615bfd8f
 +
 +The selected physical workflow uses the existing launch and node owners with
 +the cumulative Phase 08 runtime through v8.12. The new
-+`gesc_gaussian_counted_two_source_voltage.bash` wrapper selects either the
++`gesc_gaussian_two_source_voltage.bash` wrapper selects either the
 +primary or secondary evaluation metadata, requires a stable serial
 +device-by-id and reviewed calibration, and runs the launch inside the sole
 +`ros_esc record_run` readiness/recording owner.
++
++The managed run prints its unique output directory and a one-second diagnostic
++summary in the same terminal. Its sqlite3 rosbag retains every legacy physical
++sensor/filter/control/odometry stream plus the typed GESC/Gaussian diagnostics;
++the run directory also contains logs, completeness evidence, resolved ROS
++state, and hashed copies of the exact reviewed input files.
++
++After the calibration/readiness file has been completed and reviewed, invoke
++the selected workflow manually with:
++
++```bash
++bash "$(ros2 pkg prefix --share turtlebot3_vehicle_nodes)/bash_scripts/light_esc_experiments/voltage_cost_values/gesc_gaussian_two_source_voltage.bash" \
++  --scenario primary \
++  --serial-device /dev/serial/by-id/REVIEWED_DEVICE
++```
++
++Use `--scenario secondary` for the second selected layout. `Ctrl+C` requests a
++managed stop, final zero, bag finalization, completeness validation, and scoped
++cleanup.
 +
 +The checked-in Phase 09 calibration is intentionally uncalibrated and blocks
 +the wrapper. Do not mark it motion-ready from simulator values. Live Pi
@@ -17964,7 +19163,7 @@ index 7dc2de052b7901afe1ade66716806bccdde5b8b9..c3f147ad9e2d46def4711b13615bfd8f
  ![Visualization of the turtlebot vehicle with a rotating sensor frame.](/turtlebot3_rotating_sensor_model.jpg)
  
  ## Author Information
-@@ -83,20 +103,9 @@ user@machine:~$ ros2 launch turtlebot3_vehicle_nodes light_esc_experiment.launch
+@@ -83,20 +122,9 @@ user@machine:~$ ros2 launch turtlebot3_vehicle_nodes light_esc_experiment.launch
  
  The user has the ability to set and alter parameters before starting an experiment. These can be passed in as additional command line arguments when launching the launch xml file. Launch command examples written as bash scripts can be found in the [bash scripts](bash_scripts) directory.
  
@@ -17991,12 +19190,12 @@ index 7dc2de052b7901afe1ade66716806bccdde5b8b9..c3f147ad9e2d46def4711b13615bfd8f
 +readiness-false, stop, final-zero, bag-finalization, and descendant-cleanup
 +sequence to finish. Do not use broad process-name `pkill -9` commands; they
 +can bypass final-zero evidence and affect unrelated ROS processes.
-diff --git a/turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values/gesc_gaussian_counted_two_source_voltage.bash b/turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values/gesc_gaussian_counted_two_source_voltage.bash
+diff --git a/turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values/gesc_gaussian_two_source_voltage.bash b/turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values/gesc_gaussian_two_source_voltage.bash
 new file mode 100755
-index 0000000000000000000000000000000000000000..18efcc670193686961f88810aa0144ea9bf1d5b5
+index 0000000000000000000000000000000000000000..b52a7e2b7d448d5ac434c4e742066ee030d9df11
 --- /dev/null
-+++ b/turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values/gesc_gaussian_counted_two_source_voltage.bash
-@@ -0,0 +1,210 @@
++++ b/turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values/gesc_gaussian_two_source_voltage.bash
+@@ -0,0 +1,316 @@
 +#!/usr/bin/env bash
 +
 +# Phase 09 selected physical entry point. The operator ends a run with Ctrl+C.
@@ -18013,6 +19212,14 @@ index 0000000000000000000000000000000000000000..18efcc670193686961f88810aa0144ea
 +PHASE09_WORKSPACE="${PHASE09_ROS2_WS:-${HOME}/ros2_ws}"
 +
 +while (($#)); do
++    case "$1" in
++        --scenario|--serial-device|--calibration-file|--runs-root)
++            if (($# < 2)) || [[ -z "$2" ]]; then
++                usage
++                exit 2
++            fi
++            ;;
++    esac
 +    case "$1" in
 +        --scenario)
 +            PHASE09_SCENARIO="${2:-}"
@@ -18059,25 +19266,111 @@ index 0000000000000000000000000000000000000000..18efcc670193686961f88810aa0144ea
 +set -u
 +
 +PHASE09_TURTLEBOT_SHARE="$(ros2 pkg prefix --share turtlebot3_vehicle_nodes)"
++PHASE09_ROS_ESC_SHARE="$(ros2 pkg prefix --share ros_esc)"
 +if [[ -z "$PHASE09_CALIBRATION_FILE" ]]; then
 +    PHASE09_CALIBRATION_FILE="$PHASE09_TURTLEBOT_SHARE/config_files/gesc_gaussian/phase09_photoresistor_calibration.yaml"
 +fi
 +PHASE09_METADATA_FILE="$PHASE09_TURTLEBOT_SHARE/config_files/gesc_gaussian/phase09_${PHASE09_SCENARIO}_metadata.yaml"
-+PHASE09_CONTROLLER_CONFIG="$PHASE09_TURTLEBOT_SHARE/config_files/controller_config_files/phase09_gesc_controller_full_rotation_voltage.json"
++PHASE09_SELECTED_PROFILE="$PHASE09_TURTLEBOT_SHARE/config_files/gesc_gaussian/phase09_selected_profile.yaml"
++PHASE09_CONTROLLER_CONFIG_TEMPLATE="$PHASE09_TURTLEBOT_SHARE/config_files/controller_config_files/phase09_gesc_controller_full_rotation_voltage.json"
 +PHASE09_FILTER_CONFIG="$PHASE09_WORKSPACE/src/ros_esc/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json"
-+PHASE09_ROTATION_CONFIG="$PHASE09_WORKSPACE/src/ros_esc/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation.json"
++PHASE09_ROTATION_CONFIG_TEMPLATE="$PHASE09_WORKSPACE/src/ros_esc/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation.json"
++PHASE09_CONTROLLER_OBJECT="$PHASE09_WORKSPACE/src/ros_esc/ros_esc/controller_node/controller_objects/turtlebot_vehicle.py"
++PHASE09_ROTATION_OBJECT="$PHASE09_WORKSPACE/src/ros_esc/ros_esc/rotate_frame_node/spin_profile_objects/spin_profile_objects.py"
++PHASE09_WRAPPER_FILE="$(readlink -f "${BASH_SOURCE[0]}")"
++PHASE09_LAUNCH_FILE="$PHASE09_TURTLEBOT_SHARE/launch/gesc_gaussian_two_source.launch.xml"
++PHASE09_TOPIC_MANIFEST="$PHASE09_ROS_ESC_SHARE/experiment_recording/topic_manifest.yaml"
++PHASE09_QOS_OVERRIDES="$PHASE09_ROS_ESC_SHARE/experiment_recording/qos_overrides.yaml"
 +
 +for PHASE09_REQUIRED_FILE in \
 +    "$PHASE09_CALIBRATION_FILE" \
 +    "$PHASE09_METADATA_FILE" \
-+    "$PHASE09_CONTROLLER_CONFIG" \
++    "$PHASE09_SELECTED_PROFILE" \
++    "$PHASE09_CONTROLLER_CONFIG_TEMPLATE" \
 +    "$PHASE09_FILTER_CONFIG" \
-+    "$PHASE09_ROTATION_CONFIG"; do
++    "$PHASE09_ROTATION_CONFIG_TEMPLATE" \
++    "$PHASE09_CONTROLLER_OBJECT" \
++    "$PHASE09_ROTATION_OBJECT" \
++    "$PHASE09_WRAPPER_FILE" \
++    "$PHASE09_LAUNCH_FILE" \
++    "$PHASE09_TOPIC_MANIFEST" \
++    "$PHASE09_QOS_OVERRIDES"; do
 +    if [[ ! -f "$PHASE09_REQUIRED_FILE" ]]; then
 +        echo "Missing reviewed Phase 09 input: $PHASE09_REQUIRED_FILE" >&2
 +        exit 2
 +    fi
 +done
++
++PHASE09_RUNTIME_CONFIG_DIR="$(mktemp -d /tmp/phase09_gesc_gaussian.XXXXXX)"
++PHASE09_CONTROLLER_CONFIG="$PHASE09_RUNTIME_CONFIG_DIR/phase09_gesc_controller_full_rotation_voltage.json"
++PHASE09_ROTATION_CONFIG="$PHASE09_RUNTIME_CONFIG_DIR/full_rotation.json"
++cleanup_phase09_runtime_configs() {
++    rm -f -- "$PHASE09_CONTROLLER_CONFIG" "$PHASE09_ROTATION_CONFIG"
++    rmdir -- "$PHASE09_RUNTIME_CONFIG_DIR"
++}
++trap cleanup_phase09_runtime_configs EXIT
++
++python3 - \
++    "$PHASE09_CONTROLLER_CONFIG_TEMPLATE" \
++    "$PHASE09_ROTATION_CONFIG_TEMPLATE" \
++    "$PHASE09_CONTROLLER_CONFIG" \
++    "$PHASE09_ROTATION_CONFIG" \
++    "$PHASE09_CONTROLLER_OBJECT" \
++    "$PHASE09_ROTATION_OBJECT" <<'PY'
++import json
++import pathlib
++import sys
++
++controller_template = pathlib.Path(sys.argv[1])
++rotation_template = pathlib.Path(sys.argv[2])
++controller_output = pathlib.Path(sys.argv[3])
++rotation_output = pathlib.Path(sys.argv[4])
++controller_object = pathlib.Path(sys.argv[5]).resolve()
++rotation_object = pathlib.Path(sys.argv[6]).resolve()
++
++controller = json.loads(controller_template.read_text(encoding="utf-8"))
++controller["filepath"] = str(controller_object)
++controller_output.write_text(
++    json.dumps(controller, indent=4) + "\n",
++    encoding="utf-8",
++)
++rotation = json.loads(rotation_template.read_text(encoding="utf-8"))
++rotation["velocity_controller"]["filepath"] = str(rotation_object)
++rotation_output.write_text(
++    json.dumps(rotation, indent=4) + "\n",
++    encoding="utf-8",
++)
++PY
++
++PHASE09_CONFIG_REFERENCE_CHECK="$({
++    python3 - \
++        "$PHASE09_CONTROLLER_CONFIG" \
++        "$PHASE09_ROTATION_CONFIG" <<'PY'
++import json
++import pathlib
++import sys
++
++for config_name in sys.argv[1:]:
++    config_path = pathlib.Path(config_name).resolve()
++    document = json.loads(config_path.read_text(encoding="utf-8"))
++    if "filepath" in document:
++        referenced = document["filepath"]
++    elif "velocity_controller" in document:
++        referenced = document["velocity_controller"].get("filepath")
++    else:
++        referenced = None
++    if not isinstance(referenced, str) or not referenced:
++        raise SystemExit(f"Missing object filepath in {config_path}")
++    resolved = pathlib.Path(referenced).expanduser().resolve()
++    if not resolved.is_file():
++        raise SystemExit(
++            f"Configured object file is unavailable: {config_path} -> {resolved}"
++        )
++PY
++} 2>&1)" || {
++    echo "$PHASE09_CONFIG_REFERENCE_CHECK" >&2
++    exit 2
++}
 +
 +PHASE09_SOURCE_SCORE_ENABLED="$({
 +    python3 - \
@@ -18117,12 +19410,24 @@ index 0000000000000000000000000000000000000000..18efcc670193686961f88810aa0144ea
 +    exit 2
 +fi
 +
-+exec ros2 run ros_esc record_run \
++ros2 run ros_esc record_run \
 +    --mode physical \
 +    --metadata-input "$PHASE09_METADATA_FILE" \
 +    --runs-root "$PHASE09_RUNS_ROOT" \
++    --manifest "$PHASE09_TOPIC_MANIFEST" \
++    --stream-console \
++    --live-diagnostics-period-sec 1.0 \
++    --evidence-file "calibration=$PHASE09_CALIBRATION_FILE" \
++    --evidence-file "selected_profile=$PHASE09_SELECTED_PROFILE" \
++    --evidence-file "controller=$PHASE09_CONTROLLER_CONFIG" \
++    --evidence-file "controller_template=$PHASE09_CONTROLLER_CONFIG_TEMPLATE" \
++    --evidence-file "filter=$PHASE09_FILTER_CONFIG" \
++    --evidence-file "rotation=$PHASE09_ROTATION_CONFIG" \
++    --evidence-file "rotation_template=$PHASE09_ROTATION_CONFIG_TEMPLATE" \
++    --evidence-file "wrapper=$PHASE09_WRAPPER_FILE" \
++    --evidence-file "launch=$PHASE09_LAUNCH_FILE" \
 +    -- \
-+    ros2 launch turtlebot3_vehicle_nodes phase09_gesc_gaussian_counted_two_source.launch.xml \
++    ros2 launch turtlebot3_vehicle_nodes gesc_gaussian_two_source.launch.xml \
 +    sensor_name:=Photoresistor \
 +    sensor_datatype:=Voltage \
 +    sensor_units:=Volts \
@@ -18562,11 +19867,11 @@ index 0000000000000000000000000000000000000000..c65eab02304690dc7533146d0704dbe5
 +  broad_simulation_ready: false
 +  physical_ready: false
 +  arbitrary_layout_or_intensity_robustness: false
-diff --git a/turtlebot3_vehicle_nodes/launch/phase09_gesc_gaussian_counted_two_source.launch.xml b/turtlebot3_vehicle_nodes/launch/phase09_gesc_gaussian_counted_two_source.launch.xml
+diff --git a/turtlebot3_vehicle_nodes/launch/gesc_gaussian_two_source.launch.xml b/turtlebot3_vehicle_nodes/launch/gesc_gaussian_two_source.launch.xml
 new file mode 100644
 index 0000000000000000000000000000000000000000..4ceac3ea5aa0adb99e37f09a50c760b79d9c2a1a
 --- /dev/null
-+++ b/turtlebot3_vehicle_nodes/launch/phase09_gesc_gaussian_counted_two_source.launch.xml
++++ b/turtlebot3_vehicle_nodes/launch/gesc_gaussian_two_source.launch.xml
 @@ -0,0 +1,459 @@
 +<?xml version="1.0"?>
 +
@@ -19086,10 +20391,10 @@ index 7fe5d75cd825585aeb7e4122d20b42947b184bfd..75fdf236c4b873f3b20cf231e013c279
      entry_points={
 diff --git a/turtlebot3_vehicle_nodes/test/test_phase09_physical_launch.py b/turtlebot3_vehicle_nodes/test/test_phase09_physical_launch.py
 new file mode 100644
-index 0000000000000000000000000000000000000000..44001a12b6fc4394a7b36891774c5e1e3c4c7d41
+index 0000000000000000000000000000000000000000..67b685875d1962f312586b9e65c3757d6beb6240
 --- /dev/null
 +++ b/turtlebot3_vehicle_nodes/test/test_phase09_physical_launch.py
-@@ -0,0 +1,514 @@
+@@ -0,0 +1,565 @@
 +"""Static ownership, safety, and shared-lab compatibility checks."""
 +
 +import hashlib
@@ -19106,7 +20411,7 @@ index 0000000000000000000000000000000000000000..44001a12b6fc4394a7b36891774c5e1e
 +
 +PACKAGE_ROOT = Path(__file__).resolve().parents[1]
 +LAUNCH_PATH = (
-+    PACKAGE_ROOT / "launch/phase09_gesc_gaussian_counted_two_source.launch.xml"
++    PACKAGE_ROOT / "launch/gesc_gaussian_two_source.launch.xml"
 +)
 +LEGACY_LAUNCH_PATH = (
 +    PACKAGE_ROOT / "launch/light_gesc_gaussian_fill_experiment.launch.xml"
@@ -19119,7 +20424,7 @@ index 0000000000000000000000000000000000000000..44001a12b6fc4394a7b36891774c5e1e
 +SELECTED_WRAPPER = (
 +    PACKAGE_ROOT
 +    / "bash_scripts/light_esc_experiments/voltage_cost_values/"
-+    "gesc_gaussian_counted_two_source_voltage.bash"
++    "gesc_gaussian_two_source_voltage.bash"
 +)
 +LEGACY_GAUSSIAN_WRAPPER = (
 +    PACKAGE_ROOT
@@ -19364,9 +20669,24 @@ index 0000000000000000000000000000000000000000..44001a12b6fc4394a7b36891774c5e1e
 +    assert "set -euo pipefail" in text
 +    assert "--mode physical" in text
 +    assert "--metadata-input \"$PHASE09_METADATA_FILE\"" in text
++    assert "--stream-console" in text
++    assert "--live-diagnostics-period-sec 1.0" in text
++    for label in (
++        "calibration",
++        "selected_profile",
++        "controller",
++        "filter",
++        "rotation",
++        "wrapper",
++        "launch",
++    ):
++        assert f'--evidence-file "{label}=$PHASE09_' in text
++    assert 'PHASE09_SELECTED_PROFILE=' in text
++    assert 'PHASE09_TOPIC_MANIFEST=' in text
++    assert 'PHASE09_QOS_OVERRIDES=' in text
 +    assert (
 +        "ros2 launch turtlebot3_vehicle_nodes "
-+        "phase09_gesc_gaussian_counted_two_source.launch.xml"
++        "gesc_gaussian_two_source.launch.xml"
 +    ) in text
 +    assert "algorithm_profile:=robust_gaussian_v1" in text
 +    assert "use_pde_extensions:=True" in text
@@ -19394,6 +20714,24 @@ index 0000000000000000000000000000000000000000..44001a12b6fc4394a7b36891774c5e1e
 +        "global_source",
 +    ):
 +        assert evaluator_only not in launch_command
++
++
++def test_selected_wrapper_reports_truncated_valued_options():
++    for option in (
++        '--scenario',
++        '--serial-device',
++        '--calibration-file',
++        '--runs-root',
++    ):
++        result = subprocess.run(
++            ['bash', str(SELECTED_WRAPPER), option],
++            check=False,
++            capture_output=True,
++            text=True,
++            timeout=5,
++        )
++        assert result.returncode == 2
++        assert 'usage:' in result.stderr
 +
 +
 +def test_preexisting_launch_and_wrappers_are_byte_identical_to_m0():
@@ -19454,9 +20792,27 @@ index 0000000000000000000000000000000000000000..44001a12b6fc4394a7b36891774c5e1e
 +    legacy_text = LEGACY_GAUSSIAN_WRAPPER.read_text(encoding="utf-8")
 +    selected_text = SELECTED_WRAPPER.read_text(encoding="utf-8")
 +    assert "light_gesc_gaussian_fill_experiment.launch.xml" in legacy_text
-+    assert "phase09_gesc_gaussian_counted_two_source.launch.xml" not in legacy_text
-+    assert "phase09_gesc_gaussian_counted_two_source.launch.xml" in selected_text
++    assert "gesc_gaussian_two_source.launch.xml" not in legacy_text
++    assert "gesc_gaussian_two_source.launch.xml" in selected_text
 +    assert "light_gesc_gaussian_fill_experiment.launch.xml" not in selected_text
++
++
++def test_superseded_phase09_names_are_absent():
++    old_names = (
++        "phase09_gesc_gaussian_" + "counted_two_source.launch.xml",
++        "gesc_gaussian_" + "counted_two_source_voltage.bash",
++    )
++    for path in PACKAGE_ROOT.rglob("*"):
++        if (
++            not path.is_file()
++            or "__pycache__" in path.parts
++            or ".pytest_cache" in path.parts
++        ):
++            continue
++        if path.suffix == ".pyc":
++            continue
++        text = path.read_text(encoding="utf-8", errors="ignore")
++        assert all(old_name not in text for old_name in old_names), path
 +
 +
 +def _assignment_matches(actual, expected):
