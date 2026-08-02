@@ -162,6 +162,43 @@ controller, enable an automatic physical global-distance stop, or launch
 hardware without separate explicit physical-motion authorization and the live
 Phase 09 readiness gate.
 
+### Current Phase 09 M8B checkpoint
+
+Phase 09 M0-M7.1 completed and statically qualified the source-only snapshot.
+On 2026-08-01, under separate explicit user authorization, historical M8A
+verified a scoped live-Pi rollback backup and transferred the then-reviewed 51
+source/configuration paths. M8B now adds the selected-only Vicon evaluation
+evidence path, stationary no-actuation preflight/approval contract, strict
+calibration evidence, and single-entry operator workflow. The M8B snapshot
+implementation, host-side isolated build/regression qualification, and reviewed
+real-Pi source sync passed. The verified rollback backup is
+`/home/mattb/tb3-pi/phase09_backups/20260802T031409Z_m8b`; snapshot and Pi
+match `345/345` regular-file hashes and `432/432` inventory entries. This is
+source parity, not an on-Pi build or hardware result.
+
+Wheel/IMU-backed `/odom` is the sole algorithm pose. Vicon is required for an
+accepted selected two-source run only as evaluation evidence on
+`/gesc_gaussian/evaluation/vicon_pose` and
+`/gesc_gaussian/evaluation/vicon_status`; it can gate evidence completeness but
+cannot affect controller, fill, escape, ranking, or stopping calculations.
+Legacy ESC wrappers, launches, configurations, Vicon paths, and rotating-frame
+paths remain isolated from the selected Phase 09 owners.
+
+No direct on-Pi command, build, launch, serial/GPIO access, live Vicon identity,
+calibration, actuator command, emergency-stop rehearsal, or motion has run.
+Resume from the current Phase 09 Plan/status/handoff and
+`docs/codex/gesc_gaussian/validation/phase_09_pi_transfer_receipt.md`. Follow
+the exact next sequence: separate on-Pi build/installed-static gate; create
+mutable calibration and primary/secondary metadata copies under
+`${XDG_CONFIG_HOME:-$HOME/.config}/dsim-lab/phase09`; uncalibrated/readiness-
+false/no-actuation `--stationary-preflight`; review and
+`--approve-stationary RUN_DIR --reviewer NAME` against the same metadata bytes;
+independent emergency-stop then safe nontranslating/final-zero rehearsal;
+calibration; `--check-only`; then the bare
+`gesc_gaussian_two_source_voltage.bash` with assigned operator/observer and
+typed `RUN`. The bare wrapper is the eventual normal primary entry point, not a
+currently authorized physical command.
+
 ---
 
 ## Non-negotiable rules

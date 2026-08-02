@@ -403,25 +403,52 @@ launch reliability only and does not alter controller or algorithm parameters.
 
 ## Phase 09 - physical integration
 
-Goal: inventory and then connect real adapters to the same canonical
-interfaces. The Phase 09 inventory and Plan may be prepared after the closed
-Phase 08 report, but physical motion remains prohibited until the Plan
-explicitly resolves the failed broad simulation-readiness boundary and the
-user authorizes hardware execution.
+Current state: M0-M7.1 integrated and statically qualified the cumulative
+terminal v8.12 algorithm in the local physical snapshot. Historical M8A then
+verified a live-Pi rollback backup and copied its exact reviewed
+source/configuration set under explicit user authorization. M8B snapshot work
+adds selected-only Vicon evaluation evidence, stationary no-actuation
+preflight/approval, strict calibration evidence, and the final operator entry
+workflow. The M8B snapshot implementation, host-side qualification, and
+reviewed real-Pi source sync passed. The verified rollback root is
+`/home/mattb/tb3-pi/phase09_backups/20260802T031409Z_m8b`; snapshot and Pi
+match `345/345` regular-file hashes and `432/432` inventory entries. This is
+source-transfer evidence only, not an on-Pi build or hardware pass.
 
-First required artifact:
+The selected new-only manual entry point is
+`gesc_gaussian_two_source_voltage.bash`, targeting
+`gesc_gaussian_two_source.launch.xml`. It builds only
+`ros_esc_interfaces`, `ros_esc`, and `turtlebot3_vehicle_nodes` before
+sourcing, then delegates recording/readiness/final-zero ownership to the
+existing `ros_esc record_run`. Historical wrappers and launches remain
+separate and unchanged.
 
-- `docs/codex/gesc_gaussian/phase09_physical_interface_inventory.md`.
+Wheel/IMU-backed `/odom` is the sole algorithm pose. Vicon is required only as
+selected-trial evaluation evidence on the canonical Phase 09 pose/status
+topics. It may gate recorder readiness and completeness, but it cannot affect
+control, fill placement, escape, ranking, or stopping.
 
-The current checkout does not provide exact Vicon, photoresistor, physical
-launch, or hardware command paths. The Phase 09 Plan must stop instead of
-guessing if the authoritative physical checkout is unavailable.
+Resume from:
 
-No algorithm fork is permitted. Only audited adapter/launch files may differ
-from simulation.
-Physical readiness must reverify final zero under the audited physical stop
-path; it may not assume that simulation SIGINT evidence alone proves hardware
-safety.
+- `docs/codex/gesc_gaussian/plans/phase_09_plan.md`;
+- `docs/codex/gesc_gaussian/status/phase_09_status.md`;
+- `docs/codex/gesc_gaussian/handoffs/phase_09_handoff.md`; and
+- `docs/codex/gesc_gaussian/validation/phase_09_pi_transfer_receipt.md`.
+
+No on-Pi build/source, installed launch check, ROS graph, serial/GPIO device,
+live Vicon identity, calibration, actuator command, emergency-stop rehearsal,
+or motion has passed. Continue in this exact order: (1) separate no-launch
+on-Pi build/installed-static gate, currently `NOT RUN`; (2) mutable calibration
+and primary/secondary metadata copies under
+`${XDG_CONFIG_HOME:-$HOME/.config}/dsim-lab/phase09`; (3)
+`--stationary-preflight` while uncalibrated/readiness false/no actuation; (4)
+review the PASS and run `--approve-stationary RUN_DIR --reviewer NAME` against
+the same hash-coupled metadata bytes; (5) independent emergency-stop then safe
+nontranslating/final-zero rehearsal; (6) calibration; (7) `--check-only`; and
+(8) the bare `gesc_gaussian_two_source_voltage.bash` for the primary scenario
+with assigned operator/observer and typed `RUN`. The bare wrapper is the
+eventual normal primary entry point. No algorithm fork is permitted, and
+simulation or host-static evidence cannot prove hardware safety.
 
 ## Phase 10 - final documentation
 

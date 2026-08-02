@@ -342,3 +342,159 @@ post-commit worktree has no Git diff to check.
 M8 live-Pi comparison/transfer and M9 stationary/motion commissioning remain
 `NOT RUN`. Therefore M7.1 closes as a static snapshot pass, not `PHYSICAL
 READY`, and authorizes no live-Pi, serial, actuator, lamp, or motion action.
+
+## M8A transfer-time wrapper correction and mounted-source requalification
+
+Verified: `2026-08-01T23:21:44Z`
+
+The user required the manually invoked Phase 09 Bash file to build and source
+its workspace. The M7.1 wrapper only verified and sourced a pre-existing
+install. A bounded correction now changes to the workspace, builds exactly
+`ros_esc_interfaces`, `ros_esc`, and `turtlebot3_vehicle_nodes`, verifies
+`install/setup.bash`, and sources it before resolving installed assets. The
+change has an `MBuck 2026-08-01` explanation comment and a test enforcing
+build-before-source order. The physical package README documents the behavior.
+
+The corrected snapshot collection reports `93 passed in 1.49 s`. The final
+mounted-Pi-source collection reports `93 passed in 28.34 s`; its caches and
+temporary files were redirected to
+`/tmp/phase09_pi_final_full_retry.4Cft1g`. A direct mounted-source parity/launch
+subset reports `44 passed`. All 27 Bash files pass `bash -n`; Python compileall
+and parsing of 11 XML, 7 YAML, and 68 JSON documents pass. No on-Pi build,
+installed overlay, launch, ROS graph, serial device, or physical mechanism ran.
+
+Both snapshot and Pi match all 339 final file hashes and all 425 expected
+type/mode/size entries. The final manifest-scoped dry run is empty, and the
+40-path historical operator-selection set remains M0-identical. The updated
+patch reproduces all 339 final hashes forward and all 306 M0 hashes in reverse.
+
+The authored-document diff check passes when the generated checkpoint,
+recovery patch, and full-mode inventory TSV are excluded. The generic check
+reports only the three intentional empty final TSV fields and the checkpoint's
+three verbatim echoes of those fields; no authored source or prose finding is
+present.
+
+```text
+after-file manifest:
+  1d86d9ebceffbef49df06a53470f972f1897fc7488fd0fa315abd2a47004cd36
+after inventory:
+  8eacf7b7f36cd67979688cf168ae5fd3c4e8274ebdffa149e76b12c737c647ee
+51-path patch:
+  8985b4b2f5a33383a9abe4b6dc48a48a999c4da9dec5dfc24b88e9b324708939
+```
+
+See `phase_09_pi_transfer_receipt.md` for the backup and rollback evidence.
+
+## M8B final host qualification
+
+Verified: `2026-08-02T03:09:13Z`
+
+Result: `PASS — EVALUATION-ONLY VICON, STAGED ROTATION, STATIONARY PREFLIGHT,
+RECORDING, AND SINGLE-ENTRY SOURCE QUALIFIED ON HOST; HARDWARE DEFERRED`
+
+This is a fresh host qualification after the M8B implementation and final
+adversarial review. It did not execute a command on the Pi, start the physical
+ROS graph, contact Vicon Tracker, open serial/GPIO/OpenCR, run calibration, or
+command either actuator. The isolated build root was:
+
+```text
+/tmp/phase09_m8b_final3.DhSBng
+```
+
+The final source was built after all production corrections. All three
+packages completed in `13.0 s`:
+
+```text
+ros_esc_interfaces       PASS
+ros_esc                  PASS
+turtlebot3_vehicle_nodes PASS
+```
+
+Every test process disabled bytecode and the pytest cache. Results:
+
+| Collection | Result |
+|---|---:|
+| final Phase 09 parity, physical recording, rotation, Vicon, launch/wrapper, and calibration adapter | `309 passed in 5.09 s` |
+| physical recorder/validator adversarial contract alone | `137 passed` |
+| Phase 09 Vicon protocol alone | `58 passed` |
+| shared core/state-machine/Gaussian regressions | `272 passed in 7.53 s` |
+| inherited Phase 05 recording regressions | `70 passed, 1 skipped in 2.85 s` |
+| physical-compatible observability | `13 passed, 2 deselected in 0.85 s` |
+| repository legacy behavior in its correct source overlay | `34 passed in 2.71 s` |
+
+The one skip remains the opt-in visible-Gazebo recording smoke and was not
+enabled for this physical source-only gate. The two observability exclusions
+are the known simulation cost-owner cases absent by design from the physical
+package. A first local command replaced, rather than prepended, `PYTHONPATH`
+and failed collection because it hid `/opt/ros/humble`'s `rclpy`; the corrected
+fresh commands above prepended the snapshot sources and passed. No behavior
+pass is claimed for that environment mistake.
+
+The final independent audits and counterexamples prove:
+
+- strict JSON wire types, normalized identity, nonce/session/script hashes,
+  finite pose values, subject/segment identity, session continuity, and
+  advancing Vicon packet and Tracker-frame evidence;
+- at least two same-session status samples per readiness epoch, with Vicon
+  retained only on evaluation topics and `/odom` retained as every algorithm
+  pose input;
+- passive `WAITING_AUTHORIZATION` evidence before any rotation GPIO owner may
+  initialize, a permanent pre-gate nonzero-command latch, and an exact
+  authorization-revoked terminal zero status;
+- no base readiness before the selected rotation and data planes are ready;
+- stationary-preflight no-authorization/no-actuation behavior for the full
+  hold interval;
+- exact operational heartbeat requirements in the retained physical manifest,
+  bounded start, interior, and end gaps across the complete readiness-true
+  interval, including zero-command `GOAL_HOLD`;
+- final-zero dwell while rosbag remains active both before and after target
+  termination; and
+- immutable calibration provenance: real readable sqlite3 bag, resolved
+  serial/firmware configuration, calculation schema, raw negative-voltage
+  sign, rotation/sample cardinality, median/MAD intervals, and artifact hashes.
+
+Installed-overlay checks passed for all six typed interfaces, all six unique
+wrapper launch descriptions with `--show-args`, the selected wrapper/launch,
+and ten installed source/share copies. The install exposes `15` `ros_esc` and
+`10` vehicle-node executables. A first comparison used an incorrect assumed
+extra `ros_esc/` share subdirectory and stopped before reporting a result; the
+correct installed layout then passed `10/10` byte comparisons.
+
+Static and preservation gates:
+
+| Gate | Result |
+|---|---:|
+| Bash syntax | `27/27` |
+| structured files | `11 XML + 7 YAML + 68 JSON = 86/86` |
+| critical Python `E9,F63,F7,F82` | `111/111` files |
+| formal legacy operator-selection assets | `40/40` M0-identical |
+| expanded legacy configuration set | `68/68` M0-identical |
+| generated/cache paths in snapshot source | `0` |
+
+The final snapshot recovery seal is `345` regular files and `432` complete
+inventory entries, with `39` new, `18` modified, `0` deleted, and `0`
+symlinks relative to M0. The exact receipts are:
+
+```text
+transfer manifest, 57 paths:
+  f015285fa8b618f985d7257ac1471fe02c61e4ba17bc4701457ba36411931ff6
+after regular-file manifest, 345 rows:
+  97af95a46bc8161f83a6776d609eb2480c0af0584b09ac62d5d60b9f2f638053
+after inventory/modes, 432 rows:
+  602c2c9fa1f31fa7bd29692a07127e65b72c8570b1dcb6273226367db38643d2
+57-path, 31,986-line patch:
+  6fd166368449f33cff85d5e1422a414199171b27d8420e9ea1364cb2f5090885
+```
+
+A fresh same-permissions M0 extraction passed forward patch checks and matched
+all `345/345` hashes plus `432/432` inventory entries. Reverse application
+matched all `306/306` M0 hashes and `389/389` baseline entries. Four reverse
+warnings reproduce inherited M0 trailing whitespace exactly; they are not
+patch corruption. This is strong source/static evidence, not `PHYSICAL READY`.
+
+The authored-document diff check passes when the generated recovery patch,
+full-mode inventory, and verbatim checkpoint are excluded. The generic
+`git diff --check` reports only sealed recovery representation: 14 patch lines
+that preserve source bytes, 22 changed inventory rows with the intentionally
+empty symlink-target column, and 36 checkpoint echoes of those findings. No
+authored prose or source outside that generated evidence fails the check.

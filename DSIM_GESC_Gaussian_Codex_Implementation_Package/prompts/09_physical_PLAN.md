@@ -104,10 +104,18 @@ exactly `gesc_gaussian_two_source.launch.xml`. Do not retain aliases under the
 superseded Phase 09-only names, and do not rename or alter any historical
 wrapper or launch.
 
+The selected manual Bash entry point must change to the reviewed ROS 2
+workspace, build exactly `ros_esc_interfaces`, `ros_esc`, and
+`turtlebot3_vehicle_nodes`, verify the resulting `install/setup.bash`, and
+source it before resolving installed package assets. Preserve this behavior
+with a build-before-source regression assertion. This requirement applies only
+to the new Phase 09 wrapper and must not alter any historical wrapper.
+
 Plan the existing `ros_esc record_run` as the sole recorder. One selected run
 must automatically create one unique run directory and one sqlite3 rosbag that
 contains the legacy sensor, encoder, odometry, filter, command, and timekeeper
-streams plus the additional typed GESC/Gaussian diagnostics. The same run
+streams plus the additional typed GESC/Gaussian diagnostics and both required
+evaluation-only Vicon pose/status streams. The same run
 directory must retain metadata, resolved topics/parameters, notes, console
 output, completeness evidence, and hashed byte-for-byte copies of the exact
 calibration/profile/scenario/controller/filter/rotation inputs plus the
@@ -115,10 +123,56 @@ selected wrapper/launch and recorder topic/QoS contracts. Do not plan a second
 recorder or promise legacy CSV-format equivalence.
 
 Plan an opt-in terminal tee and a bounded one-second diagnostics summary for
-the selected wrapper only. Preserve complete Git provenance when available,
+the selected wrapper only, with wheel/IMU odometry and Vicon evaluation data
+unambiguously labeled. Preserve complete Git provenance when available,
 but explicitly support the normal physical case where the source-only Pi
 workspace is not a Git checkout. The run directory must be visible at startup
 so evidence remains findable after an interrupted manual run.
+
+### M8B continuation amendment
+
+<!-- MBuck 2026-08-01: Preserve the approved M8B control/evaluation and commissioning order across fresh planning runs. -->
+
+For an M8B continuation, read the current Phase 09 Plan, status, handoff, and
+transfer receipt before treating the older snapshot-only wording below as the
+active boundary. The M8B snapshot implementation, host-side qualification, and
+reviewed real-Pi source sync have passed. The current receipt records backup
+`/home/mattb/tb3-pi/phase09_backups/20260802T031409Z_m8b`, `345/345` matching
+regular-file hashes, and `432/432` matching inventory entries. A dated,
+user-authorized, reviewed SSHFS source-only transfer does not authorize an
+on-Pi command, build, ROS graph, serial/GPIO access, Vicon commissioning,
+actuator, calibration, or
+motion, and it is not standing authority for a later transfer.
+
+Freeze this architecture in every continuation:
+
+- wheel/IMU-backed `/odom` is the sole algorithm pose;
+- Vicon is required accepted-trial evaluation evidence only on
+  `/gesc_gaussian/evaluation/vicon_pose` (`PoseStamped`) and
+  `/gesc_gaussian/evaluation/vicon_status` (`String`);
+- Vicon identity, session, advancing sequence/Tracker frame, occlusion,
+  freshness, and run coverage may gate recorder readiness/completeness but may
+  never enter controller, fill, escape, ranking, or stopping calculations;
+- historical Vicon/odometry, rotation, launch, configuration, and Bash paths
+  remain byte-identical; and
+- the bare `gesc_gaussian_two_source_voltage.bash` is the eventual normal
+  primary-run entry point and still requires the assigned operator/observer
+  plus typed `RUN`.
+
+Plan future commissioning in this exact order: (1) a separate bounded on-Pi
+build/source and installed-static gate, currently `NOT RUN`; (2) create mutable
+calibration and primary/secondary metadata copies under
+`${XDG_CONFIG_HOME:-$HOME/.config}/dsim-lab/phase09`; (3)
+run `--stationary-preflight` while uncalibrated, readiness false, and no base
+or rotating-frame actuation is possible; (4) review the retained PASS and run
+`--approve-stationary RUN_DIR --reviewer NAME` against the exact same
+hash-coupled metadata bytes; (5) test the independent emergency stop, then run
+a separately authorized safe nontranslating/final-zero rehearsal; (6) perform
+and retain real calibration; (7) run `--check-only`; and (8) invoke the bare
+wrapper for the primary scenario and type `RUN` only after the displayed live
+conditions pass. Do not claim `PHYSICAL READY`, completed calibration, a live
+Vicon identity, an on-Pi build, a ROS graph, or motion without retained direct
+evidence.
 
 ## Exact physical snapshot boundary
 
@@ -139,9 +193,11 @@ It contains the existing `ros_esc`, `ros_esc_interfaces`, and
 Plan a recoverable pre-edit backup, source manifest, and SHA-256 baseline
 before any later implementation edit.
 
-Do not mount, read from, or write to `/home/mattb/tb3-pi` in this Phase 09
-Plan or snapshot implementation. That path is reserved for a later,
-separately authorized SSHFS transfer after the robot is available.
+The original Plan and snapshot-only implementation must not mount, read from,
+or write to `/home/mattb/tb3-pi`. Any later SSHFS comparison or source-only
+transfer requires its own explicit current authorization, exact manifest,
+pre-write rollback backup, reviewed dry run, and receipt; the prompt itself is
+not authorization.
 
 ## Controller and experiment constraints
 
@@ -155,8 +211,9 @@ The physical controller may consume only:
 
 It may not consume GPS, Vicon pose, source coordinates, source roles, declared
 lamp intensities, room dimensions, a global start position, or evaluator
-proximity. Vicon may be recorded later for external evaluation only; it must
-not enter control, classification, fill design, escape direction, or stopping.
+proximity. Vicon is required on separate canonical topics for selected-trial
+evaluation evidence and recorder completeness only; it must not enter control,
+classification, fill design, escape direction, ranking, or stopping.
 
 Preserve the Phase 08 algorithm contract:
 
@@ -200,7 +257,8 @@ Plan one reviewable milestone at a time, including:
 2. current `dsim-lab` versus snapshot package/interface/launch audit;
 3. exact current terminal cumulative v8.12 algorithm-source integration,
    without version cherry-picking or a simulation/physical fork;
-4. photoresistor, odometry, IMU, command, stop, and readiness adapters;
+4. photoresistor, odometry, IMU, required evaluation-only Vicon, command, stop,
+   and readiness adapters;
 5. a dedicated Phase 09 launch/configuration with conservative inactive
    defaults and byte-identical historical launches/wrappers;
 6. source-response calibration and the two selected scenario definitions;
@@ -209,9 +267,12 @@ Plan one reviewable milestone at a time, including:
 9. host-side static tests, syntax/interface checks, launch construction, and
    build checks that are possible without the Pi;
 10. explicit hardware-required checks that must remain unexecuted;
-11. later SSHFS read-only diff, Pi backup, scoped source transfer, on-Pi build,
-    and rollback procedure; and
-12. exact stop conditions, checkpoints, commits, and handoff evidence.
+11. later SSHFS read-only diff, Pi backup, scoped source transfer, and rollback
+    procedure, with the separate on-Pi build/installed-static gate explicitly
+    distinguished from host or mounted-source checks;
+12. the exact M8B/M9 site-copy, stationary preflight/approval, emergency-stop,
+    nontranslating rehearsal, calibration, check-only, and bare-run order; and
+13. exact stop conditions, checkpoints, commits, and handoff evidence.
 
 Do not plan a blind whole-home mirror. The later transfer must use a reviewed
 source/configuration manifest and exclude generated `build`, `install`, `log`,
@@ -231,5 +292,9 @@ compatibility strategy, milestone sequence, tests and commands, checkpoint
 boundaries, stop conditions, risks, hardware-deferred checks, SSHFS transfer
 boundary, and assumptions requiring implementation-time verification.
 
-End after the Plan, context validation result, Git state, and a clear statement
-that no snapshot source, live Pi file, or physical process was changed.
+For an initial planning-only run, end after the Plan, context validation
+result, Git state, and a clear statement that no snapshot source, live Pi file,
+or physical process was changed. For a separately authorized M8B continuation,
+report only the exact source/evidence actions actually verified, distinguish
+host-side from on-Pi results, and retain every unrun build, Vicon, ROS,
+calibration, safety, mechanism, and motion gate as `NOT RUN`.

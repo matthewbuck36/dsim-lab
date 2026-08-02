@@ -1,7 +1,11 @@
 You are implementing the approved Phase 09 Plan in the local physical
-TurtleBot3 source snapshot. This implementation is strictly no-hardware and
-must not mount, write to, launch, or command the physical Raspberry Pi or
-TurtleBot3.
+TurtleBot3 source snapshot, or recovering a later dated continuation recorded
+by the Plan/status/handoff. The original M0-M7 implementation is strictly
+no-hardware. This prompt alone never authorizes mounting or writing the
+physical Raspberry Pi, executing a Pi command, launching ROS, accessing a
+device, actuating a mechanism, calibrating, or moving the TurtleBot3; only a
+current explicit user authorization may open the exact bounded continuation
+described below.
 
 ## Recover the durable boundary
 
@@ -58,6 +62,29 @@ Do not edit `/home/mattb/tb3-pi`, use SSH/SSHFS, command motors, invoke a
 physical launch, or perform a physical sensor test. Do not copy generated
 `build`, `install`, `log`, cache, editor, Git-metadata, or runtime content.
 
+### M8B continuation boundary
+
+<!-- MBuck 2026-08-01: A fresh continuation must recover M8B state and preserve the exact commissioning order. -->
+
+The paragraph above is the original M0-M7 snapshot-only boundary. For an M8B
+continuation, first read the current Phase 09 Plan, status, handoff, and Pi
+transfer receipt. The M8B snapshot implementation, host-side qualification,
+and reviewed real-Pi source sync passed. The receipt records backup
+`/home/mattb/tb3-pi/phase09_backups/20260802T031409Z_m8b`, `345/345` matching
+regular-file hashes, and `432/432` matching inventory entries. Only a current
+explicit user authorization may permit another reviewed SSHFS source-only
+comparison/transfer. In that case, create and verify a new scoped rollback
+backup before write, transfer only exact manifest paths with no delete behavior
+or generated/runtime content,
+and require target hashes plus an empty final dry run. Do not execute a command
+on the Pi, build/source there, start ROS, open serial/GPIO, start Vicon live,
+command a mechanism, calibrate, operate lamps, or move the robot under source-
+transfer authority.
+
+The first future Pi-executed software gate is a separate bounded on-Pi
+build/source and installed-static check. It is currently `NOT RUN`; a host
+build or host test that reads SSHFS-mounted files cannot satisfy it.
+
 ## Required implementation contract
 
 Integrate the current terminal, cumulative Phase 08 counted-source GESC +
@@ -82,18 +109,27 @@ exactly `gesc_gaussian_two_source.launch.xml`. Remove the superseded Phase
 09-only installed names rather than leaving ambiguous aliases. This rename may
 not touch any historical wrapper, launch, or configuration.
 
+The selected manual Bash entry point must change to the reviewed ROS 2
+workspace, run `colcon build --packages-select ros_esc_interfaces ros_esc
+turtlebot3_vehicle_nodes`, verify `install/setup.bash`, and then source that
+workspace before resolving installed package assets. Add an explanatory
+`MBuck <date>` comment and a regression assertion that build precedes source.
+Do not add this behavior to, or otherwise edit, a historical wrapper.
+
 Keep `ros2 run ros_esc record_run` as the only recorder, readiness owner, and
 shutdown/completeness owner. The selected wrapper must opt into a terminal tee
 and a bounded one-second live diagnostic summary while the same output remains
 in `console.log`. The summary should include readiness, voltage/raw cost,
-augmented-cost components, filter output, algorithm state/fill count, pose, and
+augmented-cost components, filter output, algorithm state/fill count,
+wheel/IMU odometry, unambiguously labeled Vicon evaluation pose/status, and
 final `vx`/`wz` when those inputs are available. Do not add `ros2 topic echo`,
 the legacy CSV collector, or another bag process.
 
 Each selected run must automatically create one unique run directory and one
 sqlite3 rosbag containing all legacy sensor/encoder/odometry/filter/command/
-timekeeper streams plus the typed GESC/Gaussian diagnostics. Retain metadata,
-resolved topics/parameters, notes, console output, completeness evidence, and
+timekeeper streams plus the typed GESC/Gaussian diagnostics and both required
+evaluation-only Vicon streams. Retain metadata, resolved topics/parameters,
+notes, console output, completeness evidence, and
 validated SHA-256 copies of the calibration, selected profile, scenario
 metadata, controller, filter, and rotation files under that same run
 directory, together with the selected wrapper/launch and recorder topic/QoS
@@ -101,6 +137,45 @@ contracts. Print the run directory at startup and completion. Preserve full
 Git provenance when available, but record an explicit nonfatal
 `git.available=false` state when the source-only physical workspace is not a
 Git checkout.
+
+### Evaluation-only Vicon and commissioning contract
+
+Wheel/IMU-backed `/odom` is the sole pose input to every controller,
+supervisor, PDE/history, modified-cost, fill-placement, and escape owner. Vicon
+is required evidence for an accepted selected two-source run, but only as
+`geometry_msgs/msg/PoseStamped` on
+`/gesc_gaussian/evaluation/vicon_pose` plus a canonical `std_msgs/msg/String`
+status heartbeat on `/gesc_gaussian/evaluation/vicon_status`. Require reviewed
+subject/segment identity, exact server-script hash, protocol/session,
+advancing packet sequence and Tracker frame, nonocclusion, finite normalized
+pose, freshness, and run coverage. These may gate recorder readiness and
+offline completeness; no Vicon value may be remapped, forwarded, or copied
+into `/odom`, motion, fill, ranking, escape, or stopping logic. Keep all legacy
+Vicon/odometry sources and launches byte-identical.
+
+Keep shipped calibration/profile/scenario templates inert. Create mutable
+calibration and primary/secondary metadata copies under
+`${XDG_CONFIG_HOME:-$HOME/.config}/dsim-lab/phase09` before the stationary
+preflight; keep the selected profile frozen. `--stationary-preflight` runs
+while uncalibrated with readiness false, selects a passive Phase-09-only
+timekeeper instead of the servo command owner, never authorizes motion, and
+fails on any base/rotation
+actuation or robust lifecycle advance. It must not self-certify. After an
+operator reviews the retained offline PASS,
+`--approve-stationary RUN_DIR --reviewer NAME` may set the persistent gate only
+when it consumes the exact same site-metadata bytes and retained hash-coupled
+evidence.
+
+Future execution order is immutable: (1) separate on-Pi build/installed-static
+gate; (2) calibration and primary/secondary metadata site copies; (3)
+uncalibrated/readiness-false/no-actuation
+`--stationary-preflight`; (4) review plus hash-coupled
+`--approve-stationary RUN_DIR --reviewer NAME`; (5) independent emergency-stop
+test followed by a separately authorized safe nontranslating/final-zero
+rehearsal; (6) real retained calibration; (7) `--check-only`; and (8) the bare
+`gesc_gaussian_two_source_voltage.bash` for the primary scenario with assigned
+operator/observer and typed `RUN`. The bare wrapper is the eventual normal
+primary entry point; there is no noninteractive motion bypass.
 
 ### Cumulative v8.12 source-selection rule
 
@@ -150,8 +225,9 @@ Preserve:
 
 Do not add GPS, Vicon, source position/role/intensity, room dimensions, global
 coordinates, SLAM, route planning, autonomous wall avoidance, or a physical
-coordinate-distance stop to control. Vicon files may remain for external
-evaluation, but no Vicon value may affect control or stopping.
+coordinate-distance stop to control. Required Vicon evaluation evidence stays
+on its separate pose/status topics; no Vicon value may affect control, fill,
+escape, ranking, or stopping.
 
 Physical arrival remains operator `Ctrl+C`. The selected field assumption is
 open, obstacle-free, and human-managed. A future physical run must still prove
@@ -182,6 +258,10 @@ and recorder/configuration validation. Report Pi-only, hardware-only, serial,
 GPIO, Arduino, motor, live-topic, emergency-stop, and physical-motion checks as
 unexecuted—not passed.
 
+Label host builds and tests as host-side. Label checks that merely read the
+SSHFS tree as host-mounted-source checks. Neither is an on-Pi build, installed
+static check, live ROS graph, or hardware result.
+
 Do not weaken acceptance or safety checks merely to make host qualification
 green. Preserve every failed attempt and distinguish source integration,
 static readiness, and physical readiness.
@@ -195,10 +275,11 @@ docs/codex/gesc_gaussian/handoffs/phase_09_handoff.md
 ```
 
 Also retain the final snapshot inventory, before/after SHA-256 manifests,
-reviewable source patch/diff, static validation report, future SSHFS transfer
-manifest, Pi backup/rollback procedure, and exact hardware-deferred checklist.
-The static report must include shared-lab legacy hash, entry-point, Bash syntax,
-and wrapper-to-launch compatibility evidence.
+reviewable source patch/diff, static validation report, reviewed SSHFS transfer
+manifest and receipt when authorized, Pi backup/rollback procedure, and exact
+hardware-deferred checklist. The static report must include shared-lab legacy
+hash, entry-point, Bash syntax, wrapper-to-launch compatibility, `/odom` versus
+Vicon isolation, and stationary no-actuation evidence.
 
 Close Phase 09 snapshot implementation only when the declared static criteria
 pass, every skip is explicit, the snapshot is recoverable, runtime is inactive,

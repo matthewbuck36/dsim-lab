@@ -166,3 +166,60 @@ managed `record_run`, no legacy CSV collector on the selected path, and no
 rerouting of a historical wrapper. The selected wrapper's new live diagnostic
 subscriptions are passive and opt-in; its bounded terminal tee and additional
 hashed evidence capture do not change a legacy caller's recorder defaults.
+
+## M8A live-Pi preservation result
+
+Before transfer, the physical Pi matched all 306 sealed M0 source-file hashes,
+not only the transfer overlap. The historical operator-selection subset was
+also checked explicitly: all 26 Bash wrappers, all eight baseline launches,
+and all six baseline files under
+`turtlebot3_vehicle_nodes/config_files` matched their M0 bytes and modes.
+That six-file count consists of the complete baseline contents of that package
+directory; the broader 306-file check separately covers every actual
+`ros_esc` adaptive/gradient controller, filter, and rotation configuration.
+
+After the 51-path transfer and the selected-wrapper build/source correction,
+the same 40-path selection check remains `40/40 PASS`, all 27 current Bash
+files pass `bash -n`, and the mounted-source parity/launch suite reports `44
+passed`. Only the new Phase 09 wrapper, its test, and the physical package
+README changed for the correction. No historical wrapper, launch, or
+configuration was copied or edited.
+
+## M8B Vicon/rotation/recording preservation result
+
+The final M8B audit reconstructed the legacy boundary directly from the M0
+archive rather than assuming the M8A result still applied:
+
+| Preserved boundary | Result |
+|---|---:|
+| all pre-existing Bash wrappers | `26/26` hash-identical |
+| all pre-existing launches | `8/8` hash-identical |
+| baseline vehicle configuration assets | `6/6` hash/mode/size-identical |
+| expanded paths beneath configuration directories in all three packages | `68/68` hash/mode/size-identical |
+| repository legacy behavior | `34 passed` |
+| every current Bash entry point | `27/27` passes `bash -n` |
+| unique installed wrapper launches | `6/6` passes `--show-args` |
+
+The historical generic odometry/Vicon relay, seven-float Vicon server/client,
+rotate-frame node, encoder, data collector, controller/filter configurations,
+and their historical launch/wrapper selections remain M0-identical. M8B adds
+only selected-path owners: an identity-bearing evaluation-only Vicon pair, a
+recorder-gated rotation owner, a passive stationary timekeeper, and their
+focused tests. The dedicated M8B launch cannot publish Vicon as `/odom`; all
+controller, supervisor, modified-cost, history, fill, and escape pose
+arguments remain exactly `/odom`.
+
+The shared controller, cost/modified-cost, filter, supervisor, PDE/history,
+Gaussian-fill, encoder, and core algorithm sources still match the selected
+cumulative Phase 08 boundary. Physical robustness is provided by the additive
+selected launch, wrapper, adapter options, and existing sole recorder. Legacy
+callers retain their old defaults and do not opt into the Phase 09 readiness,
+rotation-authorization, Vicon-evidence, stationary, or expanded recording
+contracts.
+
+The final snapshot has `345` reviewed files and the mounted Pi matches all
+`345/345` hashes and `432/432` type/mode/size inventory entries. This makes the
+snapshot preservation proof transitive to the transferred source. The Pi's
+four pre-existing cache directories and six `.pyc` files were excluded and
+left unchanged. No on-Pi build, installed legacy experiment, ROS graph, serial
+device, GPIO, servo, or motor was executed by this compatibility gate.

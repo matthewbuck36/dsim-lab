@@ -1,80 +1,137 @@
 # Phase 09 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-08-01T05:08:25+00:00
-Base HEAD: 1c01aa39dcfeb75039a6ca6744a9f1fa492014f5
+Generated: 2026-08-02T03:29:08+00:00
+Base HEAD: 3900c119a84a191a424ced8dfa6a5cc03b99703e
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_09_status.md
-Status sha256: 4a69bcfbd6b78dc533b8a46f87269c0f42aedd5563dafdbe14509f8f4036cd9c
+Status sha256: 15dda83b5bb17c227e6b2c9ce9e6032a5cf62223bd90d5face12781a38ecc3cf
 Plan: docs/codex/gesc_gaussian/plans/phase_09_plan.md
-Plan sha256: e81fb6e69c3b9ddda59b0d1ef32088179c56fd8ab63e42e5d86b18dc5286fafa
-Unstaged diff sha256: 16e0d58bd6e20945942be944bcb56567238a100eab3d713dc1082f68184dcfda
+Plan sha256: fd18011c246db045bd49b50274707af6a67356e3e2ed53910262c6cec75352ac
+Unstaged diff sha256: 6b6a56d89701882c1b2161cd4c304f35e6adf3715acfa9825a4431c1455aa84c
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 179]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 180]
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/10_PHYSICAL_EXPERIMENT_READINESS.md
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md
  M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_IMPLEMENT.md
  M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_PLAN.md
  M docs/codex/gesc_gaussian/checkpoints/phase_09_checkpoint.txt
  M docs/codex/gesc_gaussian/handoffs/phase_09_handoff.md
+ M docs/codex/gesc_gaussian/implementation_sequence.md
  M docs/codex/gesc_gaussian/plans/phase_09_plan.md
  M docs/codex/gesc_gaussian/status/phase_09_status.md
  M docs/codex/gesc_gaussian/validation/phase_09_legacy_compatibility.md
  M docs/codex/gesc_gaussian/validation/phase_09_pi_transfer_and_rollback.md
- M docs/codex/gesc_gaussian/validation/phase_09_shared_source_manifest.tsv
  M docs/codex/gesc_gaussian/validation/phase_09_snapshot.patch
  M docs/codex/gesc_gaussian/validation/phase_09_snapshot_after.sha256
  M docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv
  M docs/codex/gesc_gaussian/validation/phase_09_static_qualification.md
  M docs/codex/gesc_gaussian/validation/phase_09_transfer_manifest.txt
+?? docs/codex/gesc_gaussian/validation/phase_09_pi_transfer_receipt.md
 
 ## Diff check
-fail — seven changed inventory rows have the intentional empty final
-symlink-target field represented by a trailing tab. See the qualified check
-below; no authored source or prose path fails.
+fail
+docs/codex/gesc_gaussian/validation/phase_09_snapshot.patch:23417: trailing whitespace.
++ 
+docs/codex/gesc_gaussian/validation/phase_09_snapshot.patch:23423: trailing whitespace.
++ 
+docs/codex/gesc_gaussian/validation/phase_09_snapshot.patch:23434: trailing whitespace.
++ 
+docs/codex/gesc_gaussian/validation/phase_09_snapshot.patch:23703: trailing whitespace.
++ 
+docs/codex/gesc_gaussian/validation/phase_09_snapshot.patch:23707: trailing whitespace.
++ 
+docs/codex/gesc_gaussian/validation/phase_09_snapshot.patch:23715: trailing whitespace.
++ 
+docs/codex/gesc_gaussian/validation/phase_09_snapshot.patch:23717: trailing whitespace.
++ 
+docs/codex/gesc_gaussian/validation/phase_09_snapshot.patch:23795: trailing whitespace.
++ 
+docs/codex/gesc_gaussian/validation/phase_09_snapshot.patch:23798: trailing whitespace.
++ 
+docs/codex/gesc_gaussian/validation/phase_09_snapshot.patch:23800: trailing whitespace.
++ 
+docs/codex/gesc_gaussian/validation/phase_09_snapshot.patch:23814: trailing whitespace.
++ 
+docs/codex/gesc_gaussian/validation/phase_09_snapshot.patch:25449: trailing whitespace.
++ 
+docs/codex/gesc_gaussian/validation/phase_09_snapshot.patch:25464: trailing whitespace.
++ 
+docs/codex/gesc_gaussian/validation/phase_09_snapshot.patch:25473: trailing whitespace.
++         (os.path.join('share', package_name, 'launch'), 
+docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv:144: trailing whitespace.
++ros_esc/ros_esc/experiment_recording/record_run.py	f	664	194254	
+docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv:145: trailing whitespace.
++ros_esc/ros_esc/experiment_recording/topic_manifest.yaml	f	664	11531	
+docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv:146: trailing whitespace.
++ros_esc/ros_esc/experiment_recording/validate_run.py	f	664	74797	
+docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv:245: trailing whitespace.
++ros_esc/test/test_phase09_physical_recording.py	f	664	96832	
+docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv:269: trailing whitespace.
++turtlebot3_vehicle_nodes/README.md	f	664	9472	
+docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv:295: trailing whitespace.
++turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values/gesc_gaussian_two_source_voltage.bash	f	755	24263	
+docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv:315: trailing whitespace.
++turtlebot3_vehicle_nodes/config_files/gesc_gaussian/phase09_photoresistor_calibration.yaml	f	664	2461	
+docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv:316: trailing whitespace.
++turtlebot3_vehicle_nodes/config_files/gesc_gaussian/phase09_primary_metadata.yaml	f	664	2984	
+docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv:317: trailing whitespace.
++turtlebot3_vehicle_nodes/config_files/gesc_gaussian/phase09_secondary_metadata.yaml	f	664	2988	
+docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv:366: trailing whitespace.
++turtlebot3_vehicle_nodes/launch/gesc_gaussian_two_source.launch.xml	f	664	30628	
+docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv:381: trailing whitespace.
++turtlebot3_vehicle_nodes/setup.py	f	664	3218	
+docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv:386: trailing whitespace.
++turtlebot3_vehicle_nodes/test/test_phase09_physical_launch.py	f	664	31104	
+docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv:387: trailing whitespace.
++turtlebot3_vehicle_nodes/test/test_phase09_rotation_gate.py	f	664	18309	
+docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv:388: trailing whitespace.
++turtlebot3_vehicle_nodes/test/test_phase09_vicon_evidence.py	f	664	19350	
+docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv:389: trailing whitespace.
++turtlebot3_vehicle_nodes/test/test_photoresistor_adapter.py	f	664	39578	
+docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv:390: trailing whitespace.
++turtlebot3_vehicle_nodes/tools	d	775	4096	
+docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv:391: trailing whitespace.
++turtlebot3_vehicle_nodes/tools/phase09_vicon_evidence_server.py	f	664	11346	
+docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv:415: trailing whitespace.
++turtlebot3_vehicle_nodes/turtlebot3_vehicle_nodes/odometry_node/phase09_vicon_evidence_node.py	f	664	19953	
+docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv:421: trailing whitespace.
++turtlebot3_vehicle_nodes/turtlebot3_vehicle_nodes/photoresistor_node/photoresistor_adapter.py	f	664	57611	
+docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv:422: trailing whitespace.
++turtlebot3_vehicle_nodes/turtlebot3_vehicle_nodes/photoresistor_node/photoresistor_node_script.py	f	664	10517	
+docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv:427: trailing whitespace.
++turtlebot3_vehicle_nodes/turtlebot3_vehicle_nodes/rotate_frame_node/phase09_rotation_node.py	f	664	16160	
+docs/codex/gesc_gaussian/validation/phase_09_snapshot_inventory_after.tsv:428: trailing whitespace.
++turtlebot3_vehicle_nodes/turtlebot3_vehicle_nodes/rotate_frame_node/phase09_stationary_timekeeper_node.py	f	664	3170	
+
 
 ## Changed-file summary
- .../prompts/09_physical_IMPLEMENT.md               |   28 +
- .../prompts/09_physical_PLAN.md                    |   24 +
- .../checkpoints/phase_09_checkpoint.txt            |   55 +-
- .../gesc_gaussian/handoffs/phase_09_handoff.md     |   97 +-
- docs/codex/gesc_gaussian/plans/phase_09_plan.md    |   89 +-
- docs/codex/gesc_gaussian/status/phase_09_status.md |  151 ++-
- .../validation/phase_09_legacy_compatibility.md    |   40 +-
- .../phase_09_pi_transfer_and_rollback.md           |   26 +-
- .../validation/phase_09_shared_source_manifest.tsv |    8 +-
- .../validation/phase_09_snapshot.patch             | 1430 +++++++++++++++++++-
- .../validation/phase_09_snapshot_after.sha256      |   14 +-
- .../phase_09_snapshot_inventory_after.tsv          |   14 +-
- .../validation/phase_09_static_qualification.md    |  132 +-
- .../validation/phase_09_transfer_manifest.txt      |    4 +-
- 14 files changed, 2005 insertions(+), 107 deletions(-)
-
-## Qualified generated-artifact diff check
-
-The generic check above reports the intentional empty final symlink-target
-column in newly regenerated inventory rows. The authored-file check excluding
-only the recovery patch and before/after inventory TSVs passes. Those three
-machine-generated byte-preservation artifacts must not be normalized
-independently of the sealed hash/inventory contract.
-
-```text
-authored-file git diff --check: PASS
-shared runtime/interface/config parity: 27/27 PASS
-snapshot after hashes: 339/339 PASS
-snapshot after inventory: 425/425 PASS
-patch headers: 51 PASS
-superseded selected names: 0 PASS
-Phase 09 implement context: PASS
-live-Pi mount: absent
-related runtime processes: none
-```
+ .../10_PHYSICAL_EXPERIMENT_READINESS.md            |    86 +-
+ .../START_HERE.md                                  |    37 +
+ .../prompts/09_physical_IMPLEMENT.md               |   105 +-
+ .../prompts/09_physical_PLAN.md                    |    91 +-
+ .../checkpoints/phase_09_checkpoint.txt            |   140 +-
+ .../gesc_gaussian/handoffs/phase_09_handoff.md     |   271 +-
+ .../codex/gesc_gaussian/implementation_sequence.md |    65 +-
+ docs/codex/gesc_gaussian/plans/phase_09_plan.md    |   392 +-
+ docs/codex/gesc_gaussian/status/phase_09_status.md |   340 +-
+ .../validation/phase_09_legacy_compatibility.md    |    57 +
+ .../phase_09_pi_transfer_and_rollback.md           |    78 +-
+ .../validation/phase_09_snapshot.patch             | 15682 +++++++++++++++----
+ .../validation/phase_09_snapshot_after.sha256      |    36 +-
+ .../phase_09_snapshot_inventory_after.tsv          |    37 +-
+ .../validation/phase_09_static_qualification.md    |   156 +
+ .../validation/phase_09_transfer_manifest.txt      |     6 +
+ 16 files changed, 14449 insertions(+), 3130 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**PHASE 09 M7.1 COMPLETE / FINAL SNAPSHOT STATIC INTEGRATION PASS /
-SHARED-LAB LEGACY COMPATIBILITY PRESERVED / HARDWARE DEFERRED.**
+**M8B SNAPSHOT AND PI SOURCE PARITY PASS / EVALUATION-ONLY VICON AND STAGED
+ROTATION STATIC CONTRACT PASS / LEGACY SELECTION PRESERVED / ON-PI BUILD NOT
+RUN / NOT PHYSICAL READY.**
 
 
 

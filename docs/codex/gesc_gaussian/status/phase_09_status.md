@@ -1,14 +1,15 @@
 # Phase 09 Live Status
 
-Last verified: `2026-08-01T05:08:14+00:00`
-Status: `COMPLETE — M7.1 FINAL SNAPSHOT STATIC INTEGRATION PASS; HARDWARE DEFERRED`
+Last verified: `2026-08-02T03:19:15+00:00`
+Status: `M8B SOURCE IMPLEMENTATION, HOST QUALIFICATION, AND PI SOURCE SYNC PASS — ON-PI BUILD AND HARDWARE DEFERRED`
 
 ## Objective
 
 Integrate the current terminal cumulative Phase 08 runtime through v8.12 into
-the local physical TurtleBot3 source snapshot, preserve shared algorithm
-parity and legacy selection, and statically qualify the selected physical
-wrapper without accessing the live Pi or running hardware. The selected
+the local physical TurtleBot3 source snapshot and the user-mounted Pi source,
+preserve shared algorithm parity and legacy selection, and statically qualify
+the selected physical wrapper without executing a command on the Pi or running
+hardware. The selected
 wrapper enables the v8.12 interior-anchor fallback at `0.50 m`; shared legacy
 and nonselected defaults remain disabled.
 
@@ -27,8 +28,9 @@ and nonselected defaults remain disabled.
 - Snapshot baseline: 306 regular files, 389 inventory entries, zero symlinks,
   zero nested `.git` directories, three packages (`ros_esc`,
   `ros_esc_interfaces`, `turtlebot3_vehicle_nodes`).
-- Reserved live-Pi mount: absent; matching ROS/Gazebo/SSHFS/serial/physical
-  processes: none.
+- During M0-M7.1 the reserved live-Pi mount was absent. During M8A it is the
+  user-mounted read-write SSHFS source at `/home/mattb/tb3-pi`; no direct Pi
+  command or physical process was started.
 - Implement context validator: PASS.
 - M0 checkpoint:
   `docs/codex/gesc_gaussian/checkpoints/phase_09_checkpoint.txt`.
@@ -182,6 +184,7 @@ and nonselected defaults remain disabled.
 - `docs/codex/gesc_gaussian/validation/phase_09_snapshot_after.sha256`
 - `docs/codex/gesc_gaussian/validation/phase_09_snapshot.patch`
 - `docs/codex/gesc_gaussian/validation/phase_09_pi_transfer_and_rollback.md`
+- `docs/codex/gesc_gaussian/validation/phase_09_pi_transfer_receipt.md`
 - `docs/codex/gesc_gaussian/handoffs/phase_09_handoff.md`
 - snapshot `config_files/gesc_gaussian/phase09_*.yaml` inert templates
 - snapshot photoresistor owner, physical launch, physical package metadata,
@@ -198,7 +201,9 @@ and nonselected defaults remain disabled.
   recorder parameter-service preflight.
 - The Level B amendment is implemented, and the completed M6 isolated
   build/static gate plus final focused revalidation pass.
-- M8 live-Pi transfer and M9 hardware commissioning remain deferred.
+- At the M7.1 decision boundary, M8 and M9 remained deferred. M8A has since
+  completed the scoped source transfer only; on-Pi build and M9 remain
+  deferred.
 - The snapshot is non-Git state. Archive, manifests, patch, and reverse proof
   are mandatory recovery evidence; no snapshot file is described as committed.
 
@@ -348,17 +353,24 @@ and nonselected defaults remain disabled.
 
 ## Remaining work
 
-1. M8 live-Pi read-only comparison/backup/transfer remains deferred and
-   requires separate explicit authorization.
-2. M9 stationary calibration and any hardware motion remain deferred and
-   require another explicit authorization after M8.
-3. Git cleanup is complete through the bounded closeout and receipt commits
-   recorded below. Push remains a separate user choice.
+1. M8B implementation, host qualification, rollback backup, scoped source
+   transfer, and snapshot/Pi parity are complete.
+2. The on-Pi build, installed-overlay checks, and inert selected-wrapper
+   preflight remain unexecuted; the wrapper now performs the required build
+   when a later authorized operator invocation occurs.
+3. M9 must create mutable site copies, complete and separately approve the
+   no-actuation stationary preflight, test the independent e-stop, complete a
+   nontranslating/final-zero rehearsal, then calibrate before `--check-only`
+   and the bare normal wrapper may pass.
+4. Every live Vicon, serial, ROS graph, calibration, actuation, and motion step
+   remains deferred and requires its appropriate authorization. Any Git push
+   also remains a separate user choice.
 
 ## Stop conditions
 
-- Stop before any live-Pi access, SSH/SSHFS, serial access, ROS hardware
-  launch, motor/servo command, or physical process.
+- The authorized SSHFS source transfer is complete. Stop before any further
+  remote/on-Pi command, build, source, ROS graph, serial access, motor/servo
+  command, calibration, or physical process without a new authorization.
 - Stop for a missing/invalid backup, snapshot overlap, cost sign/unit/topic
   change, controller-visible evaluator geometry/Vicon, duplicate owner,
   shared-runtime parity loss, legacy-selection loss, or final-zero/readiness
@@ -549,7 +561,7 @@ entries. Reverse application plus before modes reproduces all 306 M0 hashes
 and 389 entries. Temporary proof roots were moved to Trash; the real snapshot
 was never the patch target.
 
-## Current milestone
+## Historical M7.1 milestone
 
 **PHASE 09 M7.1 COMPLETE / FINAL SNAPSHOT STATIC INTEGRATION PASS /
 SHARED-LAB LEGACY COMPATIBILITY PRESERVED / HARDWARE DEFERRED.**
@@ -561,3 +573,297 @@ closeout commit is the final administrative action under the user's prior
 clean-tree authorization. M8 live-Pi read-only comparison may begin only under
 separate explicit authorization; transfer and M9 hardware commissioning retain
 their own later authorization boundaries.
+
+## Phase 09 M8A live-Pi source transfer — 2026-08-01
+
+The user mounted `pi@192.168.1.36:/home/pi` at `/home/mattb/tb3-pi` and
+explicitly authorized applying the completed snapshot changes to the physical
+Pi source tree. The mount was already read-write. No direct SSH command, Pi
+build/source, ROS launch, serial access, mechanism command, or motion ran.
+
+### Read-only preflight and overlap result
+
+- Pi source packages: the expected `ros_esc`, `ros_esc_interfaces`, and
+  `turtlebot3_vehicle_nodes` only.
+- Pi baseline hashes: `306/306` M0 files PASS.
+- Pi baseline metadata: `389/389` type/mode/size entries PASS.
+- Transfer classification: 51 unique paths = 18 existing M0-identical targets
+  plus 33 absent new targets; zero overlap/source errors.
+- Independent second audit: same result.
+- Legacy selection assets: 26 wrappers + 8 launches + 6 baseline physical
+  package configuration assets = `40/40` M0 hash/mode PASS. The complete
+  baseline also proves all `ros_esc` controller/filter/rotation configs.
+- Existing out-of-manifest generated state: four `__pycache__` directories and
+  six `.pyc` files. They were excluded and remain untouched.
+- Pi `.bashrc` evidence: ROS 2 Humble, Burger model, domain ID 36.
+- SSHFS capacity before transfer: approximately 1.5 GiB free.
+
+### Backup and transfer
+
+The exact rollback root is:
+
+```text
+/home/mattb/tb3-pi/phase09_backups/20260801T230325Z
+```
+
+It contains all 18 pre-transfer files, the 33-path absent list, sealed
+manifests, and a verified archive. Backup checks: `18/18` file hashes,
+`18/18` extracted archive hashes, and `25/25` backup-manifest entries PASS.
+
+```text
+backup manifest:
+  17859e95c590c78abc8fb015229d825ae7f10d167d1ac86afb20d24e283f2561
+existing-target archive:
+  d3ccc408259b172162927c2da47db2ff5fc7ab0484b99d32511c1533a8b38366
+```
+
+The first dry run used the Plan's plain `rsync -a` shape and showed unnecessary
+existing-directory time/group updates. It wrote nothing. The reviewed Level B
+transfer-hygiene correction added `--omit-dir-times --no-owner --no-group`.
+Its dry run and transfer resolved to 18 modified files, 33 new files, three
+required new directories, zero deletions, and zero unrelated changes.
+
+### Manual-wrapper build/source correction
+
+The transfer audit found that M7.1's selected wrapper sourced an existing
+install but did not run the build expected by the user's manual Bash workflow.
+The bounded correction changed only three existing manifest paths:
+
+- selected wrapper: commented `MBuck 2026-08-01` three-package build before
+  source;
+- selected wrapper regression: exact package set and build-before-source
+  assertion; and
+- physical package README: operator behavior documented.
+
+The full snapshot Phase 09 collection passed `93` tests after the correction,
+then the same three files were copied through the existing no-delete manifest.
+The final snapshot-to-Pi dry run is empty. No historical entry point changed.
+
+### Final evidence
+
+```text
+snapshot hashes: 339/339 PASS
+Pi hashes: 339/339 PASS
+snapshot inventory: 425/425 PASS
+Pi inventory: 425/425 PASS
+post-transfer legacy selection: 40/40 PASS
+all Pi Bash entry points: 27/27 bash -n PASS
+direct mounted-source Phase 09 tests: 93 passed in 28.34 s
+direct parity/launch subset: 44 passed
+Python compileall: PASS
+structured parse: 11 XML, 7 YAML, 68 JSON PASS
+final generated Pi state: unchanged at four cache dirs/six pyc files
+```
+
+One earlier direct full-test invocation returned only progress output through
+the command-yield boundary and no final captured status. It was not treated as
+a pass or failure; the fresh fully captured retry above passed `93/93`.
+
+Resealed evidence:
+
+```text
+transfer manifest:
+  5f60d69adc5d0feb87cb2fa2dd7c16cdc3bab846d3ec84fee181cb1dce9661f5
+after-file manifest:
+  1d86d9ebceffbef49df06a53470f972f1897fc7488fd0fa315abd2a47004cd36
+after inventory:
+  8eacf7b7f36cd67979688cf168ae5fd3c4e8274ebdffa149e76b12c737c647ee
+51-path patch:
+  8985b4b2f5a33383a9abe4b6dc48a48a999c4da9dec5dfc24b88e9b324708939
+aligned Phase 09 Plan prompt:
+  e103301417819a3d2231ee37d80bd30de333a0c8010b97d521917ab05eab5fdd
+aligned Phase 09 Implement prompt:
+  c46b8a43e2f59fa16ac2446e7864fb4c4d31a60df033824d94482722bfe5ea60
+```
+
+Forward patch recovery reproduces all 339 final hashes; reverse recovery
+reproduces all 306 M0 hashes. Exact commands and rollback boundaries are in
+`docs/codex/gesc_gaussian/validation/phase_09_pi_transfer_receipt.md`.
+
+## Historical M8A milestone
+
+**LIVE-PI SOURCE TRANSFER PASS / SNAPSHOT-PI BYTE PARITY PASS / LEGACY
+SELECTION PRESERVED / ON-PI BUILD NOT RUN / HARDWARE AND MOTION DEFERRED.**
+
+## Historical next M8 criterion
+
+Under separate authorization, run the three-package build on the Pi, installed
+launch/interface/entry-point checks, and only the motion-blocked wrapper
+preflight. Do not start a ROS graph or access a device as part of that gate.
+
+## Phase 09 M8B evaluation-only Vicon and single-entry amendment — 2026-08-01
+
+The user clarified that the selected algorithm must continue to use
+wheel/IMU-backed `/odom` exclusively, while Vicon is required only for
+ground-truth collection, trajectory analysis, and evidence completeness. The
+local Vicon SOP requires Vicon Tracker and its Python server to be ready before
+the robot-side experiment starts. The ONR report separately describes Vicon as
+the system used to capture position data for plotted experimental trajectories.
+
+The accepted M8B boundary is therefore:
+
+- all controller, supervisor, PDE/history, modified-cost, Gaussian-fill, and
+  escape pose inputs remain `/odom`;
+- Vicon publishes only as `geometry_msgs/msg/PoseStamped` to
+  `/gesc_gaussian/evaluation/vicon_pose` and is recorded as a required physical
+  evidence heartbeat;
+- recorder readiness may fail closed on missing/stale Vicon evidence, but no
+  Vicon value enters a control calculation;
+- every legacy odometry/Vicon source remains byte-identical; a new
+  Phase-09-only evidence publisher is isolated inside the existing odometry
+  package and cannot publish `/odom`;
+- the dedicated Phase 09 wrapper defaults to the primary scenario, resolves
+  the commissioned serial device from calibration, requires one typed per-run
+  safety/Vicon confirmation, and retains a run-specific metadata copy;
+- `--check-only` audits configuration without a ROS graph, device, Vicon
+  client, run directory, or command; and
+- historical wrappers, launches, configurations, and their mappings remain
+  byte-identical.
+
+Current authorization covers planning/evidence updates, offline snapshot
+source/configuration edits and tests, and a separately backed-up, scoped
+SSHFS source transfer after qualification. It does not authorize a direct
+SSH/on-Pi command, workspace build on the Pi, ROS hardware graph, serial/GPIO
+access, Vicon client execution, calibration, lamps, rotating mechanism, or
+motion.
+
+### M8B implementation and host qualification
+
+The fresh pre-edit snapshot backup remains at:
+
+```text
+/home/mattb/physical_TB3_files_snapshot/phase09_backups/
+  20260802T001406Z_m8b_preedit
+```
+
+It contains the 339-file before manifest, 425-entry inventory, 41 MiB archive,
+and retained checks proving the current snapshot, mounted Pi reviewed paths,
+and a same-permissions archive extraction each match all `339/339` sealed M8A
+hashes. Archive SHA-256:
+`dfe7cc95b70c33f7d99ef65b32c1bdba136df17ced251f4525f304125e416136`.
+The temporary extraction was moved to Trash after verification.
+
+The final implementation adds only selected-path Vicon evidence, staged
+rotation authorization, the passive stationary timekeeper, stricter physical
+calibration/metadata, the sole recorder/validator extensions, and regression
+guards. It retains wheel/IMU-backed `/odom` as the only algorithm pose and
+records Vicon only as required evaluation evidence. The wrapper's eventual
+normal entry remains the bare
+`gesc_gaussian_two_source_voltage.bash`, with primary-scenario and commissioned
+serial defaults plus one typed `RUN operator | observer` confirmation.
+
+The final adversarial pass corrected bounded evidence defects before source
+freeze:
+
+- coercible bool/string Vicon identity, pose, status-age, and rotation-command
+  fields are now rejected as wrong wire types;
+- Vicon readiness requires at least two same-session advancing samples;
+- rotation requires fresh passive `WAITING_AUTHORIZATION` evidence before
+  GPIO ownership, permanently latches any pre-gate nonzero command, and
+  requires an exact revoked-authorization terminal zero status;
+- invalid `ControlDiagnostics.final_command_valid=false` cannot establish
+  final zero, and the recorder keeps rosbag active for stable zero dwell before
+  and after target termination;
+- operational evidence covers the full readiness-true interval, including
+  zero-command holds, and enforces each retained `0.6 s` bound at both
+  endpoints and every interior gap; and
+- offline validation independently freezes all 12 physical operational
+  manifest aliases so a retained artifact cannot remove its own gap check.
+
+Final host evidence under `/tmp/phase09_m8b_final3.DhSBng`:
+
+```text
+fresh three-package host build: PASS in 13.0 s
+Phase 09 focused: 309 passed in 5.09 s
+shared core: 272 passed in 7.53 s
+inherited recording: 70 passed, 1 skipped in 2.85 s
+physical-compatible observability: 13 passed, 2 deselected in 0.85 s
+repository legacy behavior: 34 passed in 2.71 s
+Bash syntax: 27/27 PASS
+structured parse: 11 XML + 7 YAML + 68 JSON PASS
+critical Python lint: 111/111 files PASS
+formal legacy selection: 40/40 M0-identical
+expanded legacy configuration set: 68/68 M0-identical
+```
+
+The skip is the opt-in visible-Gazebo recording smoke. The two exclusions are
+simulation cost-owner tests deliberately absent from physical packaging. An
+initial local test command overwrote `PYTHONPATH` and hid `rclpy`; the corrected
+fresh process prepended source paths and produced the result above. No hardware
+or behavior result is claimed for the environment-only failed collection.
+
+### M8B snapshot seal and live-Pi source sync
+
+Final recovery evidence:
+
+```text
+snapshot: 345 regular files / 432 inventory entries / 0 symlinks
+M0 delta: 39 new + 18 modified + 0 deleted = 57 paths
+transfer manifest:
+  f015285fa8b618f985d7257ac1471fe02c61e4ba17bc4701457ba36411931ff6
+after-file manifest:
+  97af95a46bc8161f83a6776d609eb2480c0af0584b09ac62d5d60b9f2f638053
+after inventory:
+  602c2c9fa1f31fa7bd29692a07127e65b72c8570b1dcb6273226367db38643d2
+57-path patch:
+  6fd166368449f33cff85d5e1422a414199171b27d8420e9ea1364cb2f5090885
+forward hashes/inventory: 345/345 and 432/432 PASS
+reverse M0 hashes/inventory: 306/306 and 389/389 PASS
+```
+
+The mounted Pi first matched M8A (`339/339`, `425/425`). The reviewed M8B dry
+run contained 15 existing replacements, six new files, one new directory, and
+zero deletions. The verified rollback root is:
+
+```text
+/home/mattb/tb3-pi/phase09_backups/20260802T031409Z_m8b
+archive:
+  a88dab7d51832f634558af9f886767a82c19c60ae7ff9a4b1c38764444a6fdbc
+backup manifest:
+  c2fc028ba28bfb4244e706256a7b84c08654a112398987be808ae331bd7cb459
+```
+
+The actual itemization matched the dry run. Both the final manifest-scoped and
+complete source-tree dry runs are empty. The Pi matches all `345/345` final
+hashes and `432/432` type/mode/size entries. Its four pre-existing cache
+directories and six `.pyc` files remain unchanged. No command, build, source,
+ROS graph, serial/GPIO device, Vicon client, calibration, actuator, or motion
+ran on the Pi.
+
+The authored-document `git diff --check` passes when the generated recovery
+patch, full-mode inventory, and checkpoint are excluded. The generic check's
+remaining findings are confined to those byte-preservation artifacts: 14
+patch lines, 22 changed inventory rows with an empty symlink-target column,
+and their 36 verbatim checkpoint echoes. They must not be normalized apart
+from the sealed recovery contract.
+
+## Current milestone
+
+**M8B SNAPSHOT AND PI SOURCE PARITY PASS / EVALUATION-ONLY VICON AND STAGED
+ROTATION STATIC CONTRACT PASS / LEGACY SELECTION PRESERVED / ON-PI BUILD NOT
+RUN / NOT PHYSICAL READY.**
+
+## Exact next workflow
+
+1. Under separate authorization, run the bounded three-package build on the
+   Pi and inspect the installed interfaces, entry points, launch arguments,
+   and `--check-only` behavior. Do not start the graph or access a device in
+   this gate.
+2. Create mutable site calibration and primary/secondary metadata copies under
+   `${XDG_CONFIG_HOME:-$HOME/.config}/dsim-lab/phase09` before stationary
+   preflight; leave the installed selected profile frozen.
+3. With live serial and evaluation-only Vicon data but calibration still
+   unreviewed, run `--stationary-preflight`; readiness and both actuation gates
+   remain false.
+4. Review the retained PASS, then hash-couple the same site metadata bytes with
+   `--approve-stationary RUN_DIR --reviewer NAME`.
+5. Test the independent emergency stop, then run the separately authorized
+   nontranslating/final-zero rehearsal.
+6. Perform and independently review the rotating-photoresistor calibration.
+7. Run `--check-only` until the complete commissioning audit passes.
+8. Only then run bare `gesc_gaussian_two_source_voltage.bash` for the primary
+   scenario and type `RUN operator | observer` when the floor, e-stop, and
+   Vicon server are ready.
+
+Steps 1-8 are not completed merely because the source is synchronized. M8B is
+not a live Vicon, hardware, calibration, or motion pass.

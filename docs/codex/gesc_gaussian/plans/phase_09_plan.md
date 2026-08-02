@@ -147,6 +147,164 @@ after inventory, reviewable patch, forward/reverse recovery proof, status,
 qualification evidence, handoff, and checkpoint. Preserve all earlier M7
 results as historical evidence rather than silently relabeling them.
 
+### M8A live-Pi transfer and manual-entry amendment
+
+On 2026-08-01 the user mounted the real Pi home at `/home/mattb/tb3-pi` and
+explicitly authorized applying the reviewed Phase 09 snapshot changes to the
+physical source tree. That authorization covers source/configuration transfer
+and host-side static checks only; it does not authorize a remote/on-Pi command,
+ROS launch, serial access, calibration, mechanism actuation, or motion.
+
+The user's manual workflow additionally requires the selected
+`gesc_gaussian_two_source_voltage.bash` entry point to perform its own bounded
+three-package build and then source the resulting workspace. The live-transfer
+audit found that M7.1 only sourced an already-built workspace. The bounded
+correction adds a commented build of exactly `ros_esc_interfaces`, `ros_esc`,
+and `turtlebot3_vehicle_nodes` before source, documents the behavior, and adds
+a build-before-source regression assertion. It changes only three existing
+Phase 09 transfer-manifest paths and does not touch a historical wrapper,
+launch, or configuration.
+
+M8A must retain the original 51-path transfer scope, create and verify the
+scoped live-Pi rollback backup before writing, suppress unrelated parent-
+directory/owner/group metadata changes, require zero final snapshot-to-Pi dry-
+run differences, reseal the snapshot hashes/inventory/patch, and record every
+unrun on-Pi/hardware gate honestly. The exact receipt is
+`docs/codex/gesc_gaussian/validation/phase_09_pi_transfer_receipt.md`.
+
+### M8B evaluation-only Vicon and single-entry commissioning amendment
+
+On 2026-08-01 the user clarified the required physical data boundary after
+reviewing `DSIM - TurtleBot3 Vicon Setup.pdf` and the ONR interim report. The
+TurtleBot wheel/IMU-backed `/odom` stream remains the only pose input to the
+controller, supervisor, PDE/history, modified-cost, Gaussian-fill placement,
+and escape logic. Vicon is required ground-truth/evaluation evidence for a
+selected two-source trial, but it must be published as
+`geometry_msgs/msg/PoseStamped` on the separate canonical topic
+`/gesc_gaussian/evaluation/vicon_pose` and must never be remapped,
+forwarded, or copied into an algorithm pose input. A missing, malformed, or
+stale Vicon stream may keep recorder readiness false or close an evidence-
+incomplete run; Vicon data may not determine velocity, fill placement,
+candidate ranking, stopping geometry, or any other control calculation.
+
+This is a bounded Level B physical evidence and operator-UX correction. It
+supersedes the earlier statements that Vicon is optional, not required by the
+selected manifest, and absent from the selected launch. The existing generic
+`odometry_node_script.py`, its legacy Vicon/dead-reckoning CLI, and both legacy
+Vicon client/server sources remain byte-identical. The historical native
+seven-float UDP packet cannot prove subject identity, segment identity,
+occlusion state, or advancing Tracker frames and is therefore not sufficient
+for selected-trial evidence. Add an independent Phase-09-only Windows Vicon
+server plus `phase09_vicon_evidence_node` inside the existing odometry package.
+The versioned JSON protocol requires an explicit commissioned subject and
+segment, client nonce, server session identifier, strictly advancing packet
+sequence and Tracker frame number, translation/rotation occlusion flags,
+finite millimetre pose, and a normalized quaternion. Wrong identity, malformed
+or nonfinite data, occlusion, duplicate/regressing frame or sequence, session
+change, or stale input fails closed. The Pi uses its ROS receipt time for the
+pose stamp and converts millimetres to metres exactly once.
+
+The evidence node publishes the evaluation pose as
+`geometry_msgs/msg/PoseStamped` and a canonical JSON status heartbeat as
+`std_msgs/msg/String` on `/gesc_gaussian/evaluation/vicon_status`. The status
+retains protocol/session/sequence/frame/identity/occlusion and rejection
+counters so a stationary but advancing Tracker stream is distinguishable from
+a frozen replay. Both topics are required physical evidence. The dedicated
+Phase 09 launch receives inert Vicon defaults and starts only these selected
+owners when the selected wrapper explicitly enables them. The different topics
+and `PoseStamped` type provide defense in depth against an accidental `/odom`
+control remap. Every historical launch, Bash wrapper, configuration, topic
+mapping, source owner, and legacy entry point remains byte-identical.
+
+The selected physical manifest and sole `record_run` owner must require fresh,
+finite pose and valid advancing status heartbeats in physical mode, record both
+in the same sqlite3 rosbag, show wheel/IMU odometry and Vicon evaluation data
+with unambiguous labels in the live terminal summary, and validate identity,
+session continuity, frame/sequence progression, occlusion state, and run-
+interval coverage offline. Metadata must state `role: evaluation_only`,
+`required: true`, the canonical topics, reviewed Vicon endpoint, versioned
+protocol, subject, segment, server-script hash, and `algorithm_visible: false`.
+The actual subject and segment are not present in either supplied PDF and must
+remain null in shipped templates until discovered with Tracker live. Static
+target-coupling tests must prove that all four algorithm pose arguments remain
+exactly `/odom` while Vicon appears only in the evaluation node, recorder
+contract, live diagnostics, and metadata.
+
+The calibration gate is immutable rather than self-declared. It freezes the
+exact Arduino protocol, `9600` baud, firmware SHA-256, zero parser errors with a
+nonzero denominator, strictly increasing sample timestamps, maximum sample gap
+below `0.50 s`, the selected three-second rotation window, at least five
+complete encoder-confirmed rotations per condition, the exact 4.0 target and
+`[3.6, 4.4]` bounds, retained median/MAD/`3*MAD` calculations, strictly
+separated strong/weak raw-cost intervals, path-plus-SHA evidence, and a valid
+UTC calibration review. Shipped calibration and scenario templates remain
+entirely inert; no PDF-derived or synthetic measurement may be written into
+them.
+
+The laboratory operator workflow is also frozen here. The shipped templates
+must never be edited in place. Before the first stationary preflight, create
+mutable copies of the calibration and primary/secondary scenario metadata
+under `${XDG_CONFIG_HOME:-$HOME/.config}/dsim-lab/phase09`; the same site
+metadata bytes used by that preflight are later hash-coupled to the separate
+approval. The selected audit profile remains the installed frozen input, not
+a mutable commissioning file.
+After the ordered commissioning gates below have populated and reviewed the
+site calibration and readiness fields, running
+`gesc_gaussian_two_source_voltage.bash` with no arguments is the normal primary
+scenario entry point and reads the reviewed stable serial device from the
+calibration document. `--scenario secondary` and explicit path overrides
+remain available only for separately reviewed use. Immediately before a real
+run, the wrapper must require the typed `RUN` confirmation covering the
+assigned operator and observer, clear/open floor, independent emergency stop,
+and ready Vicon server. It then creates a temporary run-specific metadata copy
+containing those per-run attestations; neither the inert source templates nor
+the reviewed persistent site copy is silently marked ready. `record_run`
+retains the exact run metadata, site inputs, and immutable scenario template as
+evidence. There is no noninteractive motion bypass.
+
+Add `--check-only` so an operator can perform the bounded build/source and
+configuration/commissioning audit without creating run metadata, opening a
+serial device, starting the Vicon client, launching ROS nodes, or publishing a
+command. It must list any remaining one-time commissioning blockers and state
+that live Vicon, ROS ownership, final-zero, and physical checks are still
+deferred to the appropriate authorized rehearsal. The user's current request
+authorizes offline-snapshot source/configuration changes plus a reviewed,
+backed-up SSHFS source transfer; it does not authorize an on-Pi command, ROS
+graph, serial/GPIO access, calibration, lamp operation, mechanism actuation, or
+robot motion.
+
+Add a separately explicit `--stationary-preflight` commissioning mode to close
+the historical `stationary_graph_verified` ordering gap. It requires a named
+operator and observer plus a `PREFLIGHT` attestation and consumes the mutable
+site metadata copy created before this step. It retains a run-specific copy but
+does not mutate the site metadata; every motion-readiness boolean remains
+false. It launches a Phase-09-only passive real-time timekeeper instead of the
+servo-command owner and invokes `record_run` for a fixed finite window with
+readiness held false.
+The recorder must never call its authorization method in this mode, must fail
+on any nonzero base command or robust lifecycle advance, and must retain full
+graph, parameter, odom, IMU, source, Vicon, recording, shutdown, and final-zero
+evidence. Offline validation uses the explicit stationary hold interval and
+requires that readiness was never true. A retained PASS must be reviewed and
+hash-coupled before a separate approval action may set the persistent
+`stationary_graph_verified` field; the approval must verify the exact same
+site-metadata bytes used by the preflight, and the preflight must not
+self-certify its own gate. The passive timekeeper and special recorder mode are
+selected-only and leave every legacy rotate-frame path unchanged.
+
+M8B acceptance requires a fresh pre-edit snapshot backup, focused unit tests
+proving legacy Vicon and rotation sources remain unchanged, versioned UDP/JSON
+schema and identity checks, clean retry/shutdown, malformed/nonfinite/
+occluded/frozen-stream rejection, evaluation-topic isolation, pose/status
+heartbeat readiness and revocation, stationary-preflight no-authorization and
+no-actuation selection, offline semantics/coverage, live diagnostic labels,
+strict calibration mutation tests, wrapper defaults/check-only/PREFLIGHT/RUN/
+runtime-metadata behavior, exact legacy hash guards, all Bash syntax and
+wrapper-launch argument checks, an isolated three-package host build, the
+complete Phase 09 regression set, updated snapshot recovery evidence, a fresh
+scoped Pi backup, zero-difference final snapshot-to-Pi dry run, status/handoff/
+checkpoint updates, and explicit retention of every unrun on-Pi/hardware gate.
+
 ## Objective
 
 Integrate the selected counted-candidate GESC plus adaptive Gaussian behavior
@@ -328,8 +486,10 @@ existing record_run
   -> /gesc_gaussian/stop_requested
   -> final readiness false, final zero, bag finalization, scoped cleanup
 
-scenario coordinates, lamp roles/settings, optional Vicon
+scenario coordinates and lamp roles/settings
   -> recorder/evaluator metadata only
+required Vicon PoseStamped + advancing identity/status heartbeat
+  -> evaluation evidence and recorder readiness/completeness only
   -X-> controller, supervisor, fill design, escape direction, or stopping
 ```
 
@@ -467,6 +627,28 @@ S/ros_esc/test/test_phase09_shared_parity.py
 S/ros_esc/test/test_phase09_physical_recording.py
 ```
 
+M8B extends that original scope only through the existing owners and the
+following selected-only files. It modifies the selected wrapper/launch,
+photoresistor calibration helper and inert site templates, package entry-point
+metadata, and the existing `record_run.py`, `validate_run.py`, and
+`topic_manifest.yaml` recorder contract. It creates:
+
+```text
+S/turtlebot3_vehicle_nodes/tools/phase09_vicon_evidence_server.py
+S/turtlebot3_vehicle_nodes/turtlebot3_vehicle_nodes/odometry_node/
+  phase09_vicon_evidence_node.py
+S/turtlebot3_vehicle_nodes/turtlebot3_vehicle_nodes/rotate_frame_node/
+  phase09_rotation_node.py
+S/turtlebot3_vehicle_nodes/turtlebot3_vehicle_nodes/rotate_frame_node/
+  phase09_stationary_timekeeper_node.py
+S/turtlebot3_vehicle_nodes/test/test_phase09_vicon_evidence.py
+S/turtlebot3_vehicle_nodes/test/test_phase09_rotation_gate.py
+```
+
+These are evaluation-evidence, selected-rotation authorization, and passive
+stationary owners, not duplicate controller, odometry, legacy rotation,
+recorder, or validator owners.
+
 The existing `light_gesc_gaussian_fill_experiment.launch.xml`, its
 `gesc_gaussian_fill_full_rotation_voltage.bash` entry point, every other
 pre-existing Bash wrapper, Vicon client/server files, generic odometry relay,
@@ -501,11 +683,16 @@ remain outside Git; their exact path and hash go in the receipt/status.
 
 ### Explicitly out of scope for modification
 
+The following list is the original M0-M7 snapshot boundary. The dated M8A/M8B
+amendments supersede only the explicitly reviewed selected-only source and
+evidence paths; they do not broaden modification authority elsewhere.
+
 - all `dsim-lab/ros2_ws/src` simulation or shared source in this selected
   snapshot implementation;
 - all Phase 08 scenarios, reports, bags, plots, status, handoffs, and commits;
-- `/home/mattb/tb3-pi` and every live-Pi file;
-- snapshot Vicon clients/servers and their launch paths;
+- `/home/mattb/tb3-pi` and every live-Pi file, except a separately authorized,
+  receipt-backed M8 source-only transfer;
+- legacy snapshot Vicon clients/servers and their launch paths;
 - snapshot Arduino firmware;
 - generated `build`, `install`, `log`, cache, editor, Git-metadata, and runtime
   paths; and
@@ -530,13 +717,18 @@ remain outside Git; their exact path and hash go in the receipt/status.
 | `/gesc_gaussian/supervisor_command` | `geometry_msgs/msg/Twist` | existing supervisor owner |
 | `/gesc_gaussian/recording_ready` | `std_msgs/msg/Bool` | sole `record_run` readiness owner |
 | `/gesc_gaussian/stop_requested` | `std_msgs/msg/Bool` | recorder/operator stop input |
-| `/odom` | `nav_msgs/msg/Odometry` | TurtleBot wheel/IMU-backed pose; control input |
+| `/odom` | `nav_msgs/msg/Odometry` | TurtleBot wheel/IMU-backed pose; sole algorithm pose input |
 | `/imu` | `sensor_msgs/msg/Imu` | TurtleBot evidence/readiness heartbeat; exact live owner must be verified |
 | `/cmd_vel` | `geometry_msgs/msg/Twist` | sole existing `ros_esc` controller output |
+| `/gesc_gaussian/evaluation/vicon_pose` | `geometry_msgs/msg/PoseStamped` | required selected-trial evaluation evidence; never an algorithm input |
+| `/gesc_gaussian/evaluation/vicon_status` | `std_msgs/msg/String` | required identity/session/sequence/frame/occlusion/freshness evidence |
 
-Optional Vicon may later be recorded on a clearly evaluation-only topic not
-named `/odom`. It is never required by the selected manifest and may not be
-remapped to a control topic.
+Vicon is required evidence for an accepted selected two-source trial, but it
+is evaluation-only. It is required by the physical manifest and recorder
+readiness/completeness contract on the two canonical evaluation topics above;
+it may not be remapped, forwarded, or copied to `/odom` or any other control
+input. A missing or invalid Vicon stream prevents an evidence-complete run; it
+does not become an alternative localization source.
 
 ### Photoresistor extension
 
@@ -767,7 +959,10 @@ schema/version fields, serial-device placeholder, and empty measurement/hash
 fields. Host qualification validates the schema only; it must not fill live
 values or mark calibration complete.
 
-After separate hardware authorization, calibration proceeds without base
+Calibration is step 6 of the exact M9 sequence; it may begin only after the
+separate on-Pi installed-static gate, site-copy creation, retained stationary
+preflight plus hash-coupled approval, and independent emergency-stop/
+nontranslating final-zero rehearsal have passed. It then proceeds without base
 translation:
 
 1. record dark/ambient and room-light conditions;
@@ -1038,77 +1233,84 @@ Actions:
 - report the result as either `SNAPSHOT STATIC INTEGRATION PASS — HARDWARE
   DEFERRED` or an honest failure. Never report `PHYSICAL READY`.
 
-### M8 — Later live-Pi read-only comparison and scoped transfer
+### M8 — Live-Pi source-transfer history and M8B follow-on
 
-This milestone is deferred until the robot is available and the user gives
-separate live-Pi/transfer authorization.
+The original 51-path M8A source/configuration transfer is retained as
+historical evidence in the transfer receipt. M8B adds reviewed selected-only
+Vicon, stationary-preflight, calibration-evidence, recorder, validator, and
+operator-entry paths to the snapshot. The M8B snapshot changes and host-side
+qualification passed. The later scoped real-Pi M8B source synchronization also
+passed under explicit user authorization: the verified rollback backup is
+`/home/mattb/tb3-pi/phase09_backups/20260802T031409Z_m8b`, snapshot and Pi
+match `345/345` regular-file hashes and `432/432` inventory entries, and the
+final scoped dry run is empty. These are source-transfer results only, as
+recorded in the live status and transfer receipt.
 
-1. Confirm host, user, SSH key, Pi home, ROS distribution, TurtleBot model,
-   disk space, and maintenance window.
-2. Mount the live Pi read-only at `/home/mattb/tb3-pi`; compare only
-   `ros2_ws/src` and the reviewed transfer-manifest paths.
-3. Stop if the Pi has unreviewed changes overlapping any transfer path, if its
-   package/API versions differ materially, or if the read-only comparison
-   cannot be retained.
-4. Before any write, create and hash a live-Pi backup under a UTC-named path
-   outside `ros2_ws/src`, covering every existing transfer target plus a list
-   of files that will be newly created.
-5. Remount read-write only after explicit confirmation. Run a checksum-based
-   `rsync --dry-run --itemize-changes --files-from=... --relative` with no
-   `--delete`, review it, then run the same scoped command without `--dry-run`.
-6. Defense-in-depth excludes are:
+Any M8B source synchronization must repeat the M8A controls: resolve the exact
+mounted source root, compare only reviewed manifest paths, stop on overlapping
+Pi changes, create and verify a new UTC-scoped rollback backup before writing,
+use checksum-based `rsync --dry-run --itemize-changes --files-from=...` with no
+delete behavior, exclude generated/editor/runtime/Git content, transfer only
+the reviewed source/configuration set, rehash every target, and require an
+empty final dry run. There is no whole-home mirror, recursive delete, blind
+snapshot overwrite, remote command, ROS launch, serial/GPIO access, mechanism
+actuation, or motion in this transfer boundary.
 
-   ```text
-   build/
-   install/
-   log/
-   __pycache__/
-   .pytest_cache/
-   *.pyc
-   .git/
-   .gitignore transfer is allowed only when explicitly listed
-   editor swap/backup files
-   bags, runtime logs, sockets, lock files, and device files
-   ```
+The separate on-Pi build/source and installed-static gate has not run. It is
+the first future commissioning action below, not evidence that can be inferred
+from a host build or a host reading the SSHFS tree.
 
-7. Recompute live hashes and require equality with the reviewed snapshot-after
-   manifest for every transferred file.
-8. Build the three packages on the Pi under an explicit timeout; do not launch
-   the physical graph. Run only Pi-compatible static/unit/launch-description
-   checks.
-9. Record the on-Pi build result, all skips, and exact rollback command. A build
-   pass still does not authorize motion.
-
-There is no whole-home mirror, recursive delete, or blind snapshot overwrite.
-
-Rollback restores the exact pre-transfer files from the live-Pi backup,
-removes only manifest-declared newly created paths after verifying their names,
-rebuilds the three packages, and rechecks hashes. If the backup/rollback
-rehearsal cannot be proven without risk, transfer does not proceed.
+Rollback restores the exact pre-transfer files from the applicable live-Pi
+backup and removes only manifest-declared additions after their names are
+verified. If the backup, transfer scope, parity, or rollback evidence cannot be
+proven without risk, synchronization stops and no commissioning gate begins.
 
 ### M9 — Later hardware commissioning and selected trials
 
-This milestone requires another explicit user authorization after M8 and a
-reviewed live-readiness checklist. Run in this order, stopping at the first
-failure:
+Every item below remains `NOT RUN` until its retained evidence says otherwise.
+The milestone requires the applicable separate user authorization and a
+reviewed live-readiness checklist. Run in this exact order, stopping at the
+first failure:
 
-1. stationary graph/recorder/source/odom/IMU validation with readiness held
-   false;
-2. separate tested emergency-stop method;
-3. wheels-lifted or otherwise nontranslating command/final-zero rehearsal, if
-   mechanically approved;
-4. stationary rotating-photoresistor calibration and frozen response bands;
-5. low-speed one-source commissioning, reported only as calibration;
-6. one low-speed local fill/direct-or-assisted escape trial;
-7. primary selected two-source scenario; and
-8. secondary selected two-source scenario only after the primary fully passes.
+1. Run a separate bounded on-Pi build/source and installed-static gate with no
+   ROS graph, serial device, actuator, or motion. This gate is currently
+   `NOT RUN`; host-side builds do not satisfy it.
+2. Create mutable calibration and primary/secondary scenario-metadata copies
+   under
+   `${XDG_CONFIG_HOME:-$HOME/.config}/dsim-lab/phase09`. Never commission by
+   editing the installed inert templates; keep the installed selected profile
+   frozen.
+3. Run `gesc_gaussian_two_source_voltage.bash --stationary-preflight` while the
+   site calibration remains uncalibrated, readiness remains false, and the
+   selected passive timekeeper permits no base or rotating-frame actuation.
+4. Review the retained stationary run and offline `PASS`, then execute
+   `gesc_gaussian_two_source_voltage.bash --approve-stationary RUN_DIR
+   --reviewer NAME`. Approval must consume the same metadata bytes used by the
+   preflight and remain hash-coupled to that retained evidence.
+5. Test the independent emergency-stop method, then perform a separately
+   authorized, mechanically safe nontranslating command/final-zero rehearsal.
+6. Perform the stationary rotating-photoresistor calibration, retain the real
+   sqlite3 bag/calculation/configuration hashes, and freeze the accepted
+   response bands. A synthetic or PDF-derived value is forbidden.
+7. Run `gesc_gaussian_two_source_voltage.bash --check-only` against the
+   reviewed site inputs. A pass is a configuration/static gate only; it does
+   not prove the live graph, Vicon stream, final-zero path, or motion safety.
+8. For the first selected primary two-source experiment, run the bare
+   `gesc_gaussian_two_source_voltage.bash`, verify the assigned operator and
+   observer shown by the wrapper, and type `RUN` only after all live prompts
+   are true. The bare wrapper is the eventual normal primary entry point.
 
-Every invocation uses `record_run --mode physical`, immutable metadata, a
-unique run ID, complete bag, manual operator `Ctrl+C`, final-zero validation,
-SQLite integrity, and scoped descendant cleanup. A safety, ownership,
+Every stationary or experiment invocation uses the existing
+`record_run --mode physical`, immutable/hash-coupled metadata, a unique run ID,
+one complete sqlite3 bag, manual operator `Ctrl+C` for physical arrival,
+final-zero validation, SQLite integrity, and scoped descendant cleanup. Vicon
+is required evaluation-only evidence, while wheel/IMU-backed `/odom` remains
+the sole algorithm pose. A safety, ownership, identity/session/freshness,
 stale-input, recording, final-zero, emergency-stop, cleanup, strict-ranking,
 or one-fill failure stops progression. Failed bags are retained and never
-retried under the same experiment version.
+retried under the same experiment version. The secondary selected scenario is
+considered only after a fully accepted primary run and a separately reviewed
+progression decision.
 
 ## Checkpoints and commit boundaries
 
@@ -1119,7 +1321,8 @@ retried under the same experiment version.
 | M4 safety/recording | adapter/launch tests, physical heartbeat faults, Ctrl+C/final-zero fakes | Phase 09 | `phase 09: integrate physical snapshot workflow` |
 | M6 static qualification | isolated build, imports, tests, XML/YAML, manifest/diff checks | Phase 09 | `phase 09: qualify physical snapshot integration` |
 | M7 handoff | before/after/reverse proof, final report, inactive runtime, explicit deferrals | Phase 09 | `phase 09: close no-hardware snapshot integration` |
-| future M8 transfer | read-only diff, Pi backup, scoped transfer, hashes, on-Pi build, rollback | Phase 09 continuation | separate transfer receipt commit |
+| M8 source transfer | read-only diff, Pi backup, scoped transfer, hashes, empty final dry run, rollback; no on-Pi command | Phase 09 continuation | separate transfer receipt commit |
+| future M9 installed-static gate | bounded on-Pi build/source and installed checks; no graph/device/actuation | Phase 09 continuation | separate commissioning evidence commit |
 
 The non-Git snapshot is never described as committed. Git commits retain its
 reviewed manifests, hashes, patch, receipts, status, checkpoint, and handoff.
@@ -1137,7 +1340,8 @@ All must pass:
 - negative voltage remains the raw minimization cost in volts;
 - physical typed source messages are finite, timestamped, single-channel, and
   source mode physical;
-- every algorithm pose consumer uses `/odom`; Vicon is absent from control;
+- every algorithm pose consumer uses wheel/IMU-backed `/odom`; Vicon is
+  required selected-trial evaluation evidence and remains absent from control;
 - required IMU is recorded/heartbeat-gated without becoming a localization
   input;
 - selected profile has known source count two and exactly one fill;
@@ -1149,14 +1353,15 @@ All must pass:
 - no source coordinate, role, lamp setting, room dimension, global start,
   evaluator topology, or proximity stop reaches the controller graph;
 - exactly one `/cmd_vel`, readiness, recorder, and validator owner exists;
-- missing/stale/invalid sensor, odom, IMU, filter, supervisor, or recorder
-  evidence forces readiness false/stop/zero;
+- missing/stale/invalid sensor, odom, IMU, Vicon evaluation, filter,
+  supervisor, or recorder evidence forces readiness false/stop/zero;
 - manual SIGINT ordering and all three final-zero forms pass offline tests;
 - isolated host build, interface generation, compilation, imports, selected
   tests, launch-description construction, YAML/XML, diff, and manifest checks
   pass;
 - uncalibrated configuration remains motion-blocking;
-- all Pi/hardware tests are listed as unexecuted; and
+- all on-Pi build, live ROS, device, calibration, and hardware tests are listed
+  as unexecuted; and
 - final status/handoff clearly say static snapshot integration only.
 
 ## Explicit hardware-deferred checks
@@ -1164,7 +1369,8 @@ All must pass:
 These cannot pass during snapshot implementation:
 
 - live Pi OS/ROS/Python/package versions and CPU/memory/disk capacity;
-- actual source state on the Pi and absence of overlapping user changes;
+- Pi-side installed artifacts and absence of any post-sync source divergence
+  at the later build boundary;
 - stable serial device-by-id, dialout permissions, Arduino firmware/protocol,
   voltage range, sample rate, parser error rate, and disconnect behavior;
 - rotating encoder zero, direction, full-rotation period, and sample coverage;
@@ -1180,7 +1386,9 @@ These cannot pass during snapshot implementation:
   intervals, and 1:4 calibration;
 - stationary, lifted-wheel, one-source, local-recovery, primary, and secondary
   trials; and
-- optional Vicon recording isolation, if Vicon is later used at all.
+- required Vicon subject/segment identity, server-script hash, protocol/session,
+  advancing sequence/frame, nonoccluded pose, timestamp/freshness, full run
+  coverage, and strict evaluation-only isolation.
 
 Each remains `NOT RUN`, not `PASS`, in the Phase 09 handoff.
 
@@ -1223,7 +1431,7 @@ or claim readiness. A new version requires a separately reviewed plan.
 | Risk | Mitigation/gate |
 |---|---|
 | Snapshot has no Git history | verified archive, before/after manifests, patch, extraction and reverse-patch proof |
-| Live Pi may have diverged | future read-only manifest diff; stop on overlaps before write |
+| Pi may diverge after the proven M8B source sync | recheck the final manifest and stop on overlap before the on-Pi build |
 | Simulation package has Pi-incompatible dependencies | physical packaging manifest excludes Gazebo/scenario/analysis dependencies while shared runtime hashes stay equal |
 | `/dev/ttyUSB0` may conflict with lidar or enumerate differently | require reviewed `/dev/serial/by-id/...`; live preflight stops on collision/change |
 | Current sensor rate is about 5 Hz | measure actual rate; require complete 3 s rotation windows and no stale gap before readiness |
@@ -1248,8 +1456,8 @@ or claim readiness. A new version requires a separately reviewed plan.
 - the selected open field can safely reproduce the full-scale coordinates;
 - a stable device-by-id exists for the Arduino without conflicting with lidar
   or OpenCR;
-- the user will supply separate authorization for live read-only comparison,
-  transfer, no-motion hardware checks, and motion as distinct boundaries; and
+- the user will supply separate authorization for the on-Pi build, no-motion
+  hardware checks, calibration, and motion as distinct future boundaries; and
 - an independent emergency-stop method and a second observer are available
   before any floor trial.
 
@@ -1258,9 +1466,13 @@ not silently infer a replacement.
 
 ## Plan completion statement
 
-If the user approves it, this Plan scopes future work to edits under the local
-snapshot source root and durable Phase 09 evidence under `dsim-lab`, after the
-implementation preflight passes. It does not authorize `/home/mattb/tb3-pi`,
-SSH/SSHFS, the physical robot, serial devices, lamps, motors, or ROS hardware
-processes. Physical arrival remains manual operator `Ctrl+C`, and the broad
-Phase 08 failure and nonclaims remain unchanged.
+The original Plan authorized local snapshot edits only. Later dated amendments
+record the separately authorized M8A transfer and the approved M8B
+snapshot/host-side implementation. They do not create standing authorization
+for another Pi write or any on-Pi command. At this continuation boundary, M8B
+snapshot/host qualification and the reviewed real-Pi M8B source synchronization
+have passed, while the on-Pi build/installed-static gate, ROS graph,
+serial/GPIO access, Vicon commissioning, calibration, lamps, mechanisms,
+emergency-stop rehearsal, and motion all remain `NOT RUN`. Physical arrival
+remains manual operator `Ctrl+C`, and the broad Phase 08 failure and nonclaims
+remain unchanged.
