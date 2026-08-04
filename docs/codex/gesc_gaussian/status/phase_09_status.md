@@ -1,7 +1,7 @@
 # Phase 09 Live Status
 
-Last verified: `2026-08-02T03:19:15+00:00`
-Status: `M8B SOURCE IMPLEMENTATION, HOST QUALIFICATION, AND PI SOURCE SYNC PASS — ON-PI BUILD AND HARDWARE DEFERRED`
+Last verified: `2026-08-04T01:17:29+00:00`
+Status: `M8C ONE-COMMAND SOURCE CONTRACT, HOST QUALIFICATION, AND PI SOURCE PARITY PASS — LIVE HARDWARE NOT RUN BY CODEX`
 
 ## Objective
 
@@ -353,6 +353,9 @@ and nonselected defaults remain disabled.
 
 ## Remaining work
 
+The four items in this subsection are the historical M8B sequence and are
+superseded by the current M8C milestone at the end of this file.
+
 1. M8B implementation, host qualification, rollback backup, scoped source
    transfer, and snapshot/Pi parity are complete.
 2. The on-Pi build, installed-overlay checks, and inert selected-wrapper
@@ -367,6 +370,9 @@ and nonselected defaults remain disabled.
    also remains a separate user choice.
 
 ## Stop conditions
+
+These are the historical M8B agent-execution limits. They do not add an
+operator gate to the current human-run M8C lab procedure.
 
 - The authorized SSHFS source transfer is complete. Stop before any further
   remote/on-Pi command, build, source, ROS graph, serial access, motor/servo
@@ -837,13 +843,13 @@ patch lines, 22 changed inventory rows with an empty symlink-target column,
 and their 36 verbatim checkpoint echoes. They must not be normalized apart
 from the sealed recovery contract.
 
-## Current milestone
+## Historical M8B terminal milestone (superseded by M8C)
 
 **M8B SNAPSHOT AND PI SOURCE PARITY PASS / EVALUATION-ONLY VICON AND STAGED
 ROTATION STATIC CONTRACT PASS / LEGACY SELECTION PRESERVED / ON-PI BUILD NOT
 RUN / NOT PHYSICAL READY.**
 
-## Exact next workflow
+## Historical M8B next workflow (superseded; do not execute)
 
 1. Under separate authorization, run the bounded three-package build on the
    Pi and inspect the installed interfaces, entry points, launch arguments,
@@ -867,3 +873,92 @@ RUN / NOT PHYSICAL READY.**
 
 Steps 1-8 are not completed merely because the source is synchronized. M8B is
 not a live Vicon, hardware, calibration, or motion pass.
+
+## M8C lab-SOP one-command simplification — 2026-08-03
+
+<!-- MBuck 2026-08-03: Replace the M8B commissioning ceremony with the existing lab SOP and one selected wrapper; preserve M8B results above as history. -->
+
+The user approved a simpler physical-test contract matching the attached
+`DSIM - TurtleBot3 Vicon Setup.pdf` and the lab's unchanged
+`vicon-tracker-server.py`. The historical M8B progression above remains useful
+as provenance, but it is no longer an operator procedure and must not block the
+selected experiment.
+
+Current operator contract:
+
+- on the Windows Vicon computer, follow the lab SOP, make sure Vicon Tracker is
+  streaming, and run the unchanged `vicon-tracker-server.py`;
+- on the Pi, invoke bare `gesc_gaussian_two_source_voltage.bash` from its normal
+  `voltage_cost_values` Bash directory;
+- the selected wrapper builds only `ros_esc_interfaces`, `ros_esc`, and
+  `turtlebot3_vehicle_nodes`, sources the workspace, and starts `pigpiod` only
+  when it is not already running;
+- no separate build command, site-configuration copy, calibration approval,
+  stationary preflight, `--check-only`, typed `RUN`, subject/segment selection,
+  server-file SHA-256, handoff authorization, or `PHYSICAL READY` tag is part of
+  the operator path;
+- wheel/IMU-backed `/odom` remains the sole algorithm pose;
+- the legacy Vicon `7f` stream is converted by the existing odometry owner to
+  `nav_msgs/msg/Odometry` on
+  `/gesc_gaussian/evaluation/vicon_odom` for passive evaluation only;
+- absent, stale, or incomplete Vicon evidence must remain visible in terminal
+  diagnostics and retained validation, but may never inhibit, stop, steer, rank,
+  or otherwise gate robot motion; and
+- operator `Ctrl+C` remains the normal end condition. The managed shutdown must
+  command readiness false/final zero, retain the zero dwell in the bag, finalize
+  the bag and metadata, run bounded validation, and print the retained run
+  directory.
+
+The selected experiment remains an exploratory physical test of the cumulative
+terminal v8.12 algorithm, not a claim of broad physical robustness. Normal lab
+safety still applies: clear the floor, arrange the two lamps, keep the robot in
+view, and remain ready to press `Ctrl+C`.
+
+### Current evidence state
+
+- M8B host qualification, rollback evidence, and snapshot/Pi parity above remain
+  valid historical evidence.
+- M8C snapshot source edits are complete: `16` reviewed replacements and three
+  obsolete Phase-09-only JSON/stationary-gate files removed. Every other M8B
+  source path, including all legacy ESC selections and the historical Vicon
+  client/server, is byte-identical.
+- The final isolated host build passed all three selected packages in `12.6 s`.
+  The focused M8C suite reports `196 passed`; the functional package suites
+  report `153 passed, 3 deselected` and `71 passed, 3 deselected`.
+- All `27` Bash files pass syntax. Nine changed Python files, nine XML files,
+  seven YAML files, and 68 JSON files parse. The selected launch
+  `--show-args` check passes.
+- The real wrapper's host-only `--check-only` path rebuilt all three packages in
+  `12.6 s` and passed with scenario `primary` and `/dev/ttyUSB0`, without
+  starting pigpio, serial, Vicon, a ROS graph, the recorder, or motion.
+- Snapshot recovery artifacts are retained at
+  `/home/mattb/physical_TB3_files_snapshot/phase09_backups/20260804T003650Z_m8c_pre_simplification`
+  and
+  `/home/mattb/physical_TB3_files_snapshot/phase09_backups/20260804T010757Z_m8c_post_simplification`.
+- The reviewed Pi rollback is
+  `/home/mattb/tb3-pi/phase09_backups/20260804T011049Z_m8c_pre_simplification`.
+  The final snapshot and Pi match `342/342` regular-file hashes and `430/430`
+  inventory entries; the final checksum dry run is empty.
+- No on-Pi build, ROS graph, live Vicon connection, serial/GPIO access, lamp
+  response, actuator command, or robot motion has been run by Codex for M8C.
+
+## Current milestone
+
+**M8C LAB-SOP ONE-COMMAND SOURCE CONTRACT PASS / HOST QUALIFICATION PASS /
+SNAPSHOT-TO-PI PARITY PASS / LEGACY SELECTION PRESERVED / NO LIVE HARDWARE RUN
+BY CODEX.**
+
+## Exact next workflow
+
+1. In the human-operated lab session, follow the attached Vicon SOP, start the
+   unchanged Windows `vicon-tracker-server.py`, arrange the two lamps, and clear
+   the floor.
+2. SSH to the Pi and invoke bare `gesc_gaussian_two_source_voltage.bash` from
+   its normal `voltage_cost_values` directory. The wrapper performs its own
+   build/source and conditional `pigpiod` startup; no additional repository
+   gate or authorization file is required.
+3. Watch the printed run directory and one-second diagnostics. Keep the robot
+   in view and press `Ctrl+C` if the behavior or hardware is not acceptable.
+4. On normal completion or interruption, wait for final-zero/rosbag validation
+   and retain the run directory. Diagnose any evaluation-incomplete Vicon or
+   physical behavior result from that evidence.

@@ -1,12 +1,13 @@
-# Phase 09 Host Static/Offline Qualification
+# Phase 09 Host Static/Offline Qualification (M0-M8C)
 
-Date: `2026-07-31` (`America/Los_Angeles`)
+Last verified: `2026-08-03` (`America/Los_Angeles`)
 
-Result: `PASS — SNAPSHOT STATIC INTEGRATION; HARDWARE DEFERRED`
+Current result: `PASS — M8C ONE-COMMAND SOURCE CONTRACT AND HOST QUALIFICATION; LIVE HARDWARE NOT RUN`
 
-This report covers the declared Phase 09 M6 host-only gates. It does not cover
-the live Pi, serial devices, sensors, TurtleBot/OpenCR, motors, rotating frame,
-lamps, floor motion, or physical emergency stop.
+The earlier sections preserve the M6-M8B host qualifications. The final M8C
+section is the current result and supersedes their operator-gate assumptions.
+This report does not claim an on-Pi build, live ROS graph, Vicon connection,
+serial/GPIO/OpenCR access, motors, rotating frame, lamps, or floor motion.
 
 ## Qualification root
 
@@ -498,3 +499,78 @@ full-mode inventory, and verbatim checkpoint are excluded. The generic
 that preserve source bytes, 22 changed inventory rows with the intentionally
 empty symlink-target column, and 36 checkpoint echoes of those findings. No
 authored prose or source outside that generated evidence fails the check.
+
+## M8C lab-SOP simplification host qualification
+
+Verified: `2026-08-04T01:17:29+00:00`
+
+Result: `PASS — ONE-COMMAND SOURCE CONTRACT, LEGACY VICON TRANSPORT, RECORDING,
+AND LEGACY SELECTION QUALIFIED ON HOST; HARDWARE NOT RUN`
+
+The supplied lab SOP and unchanged `/home/mattb/Downloads/vicon-tracker-server.py`
+were compared with the selected physical implementation. The server binds UDP
+`192.168.1.6:12346`, accepts the ordinary client greeting, selects Tracker's
+first subject/segment, and transmits native seven-float xyz/xyzw packets with
+millimetre positions. Its SHA-256 is
+`9844266129777b9199ac37d0c2827db139ab0fa734bfb6499b13a17cbdf756a0`;
+that value was used only as an internal unchanged-source check and is not an
+operator input or runtime gate.
+
+M8C removed the incompatible Phase-09-only JSON Vicon server/client and the
+stationary-timekeeper gate from the selected source. It changed 16 reviewed
+files and deleted exactly those three Phase-09-only files. A complete comparison
+with the pre-M8C snapshot found no other source change. The historical
+`vicon_server.py` and `odometry_node_script.py` retained SHA-256 values
+`7e92f63ead57e26ffafc82a2013826a41fe4de291a6e9feba2d1e0812545d0e3`
+and `adef42ebc39779a0c182ff6443ff657ec409443c63fe6bb445d5de821c2bf370`.
+All 26 historical Bash wrappers and eight historical launches therefore remain
+byte-identical through the prior M8B/M0 legacy proof.
+
+Final host checks:
+
+| Check | Result |
+|---|---:|
+| isolated build of `ros_esc_interfaces`, `ros_esc`, and `turtlebot3_vehicle_nodes` | `3/3 PASS in 12.6 s` |
+| focused physical recording/launch/Vicon/rotation/photoresistor suite | `196 passed in 2.64 s` |
+| `ros_esc` functional suite with inherited package-wide style tests excluded | `153 passed, 3 deselected in 1.99 s` |
+| vehicle-node functional suite with inherited package-wide style tests excluded | `71 passed, 3 deselected in 1.45 s` |
+| Bash syntax | `27/27 PASS` |
+| changed Python AST parsing | `9/9 PASS` |
+| XML/YAML/JSON parsing | `9 + 7 + 68 PASS` |
+| installed selected launch `--show-args` | `PASS` |
+| actual selected wrapper `--check-only` in a clean temporary workspace | `PASS; 3 packages in 12.6 s` |
+| generated/cache directories in sealed snapshot source | `0` |
+
+The final isolated build root is
+`/tmp/phase09_m8c_final_build.iNMyzI`. The wrapper check workspace is
+`/tmp/phase09_m8c_final_wrapper.I9bmi1`. The wrapper check resolved scenario
+`primary`, installed primary metadata, and `/dev/ttyUSB0`, then exited before
+pigpio, serial, Vicon, a ROS graph, the recorder, or motion.
+
+One first focused invocation against raw source failed collection because the
+generated `ros_esc_interfaces` Python module was not in that process's
+environment. The clean three-package overlay above was then built and the same
+collection passed `196/196`; this was an environment setup attempt, not a
+behavior failure. An exploratory full `ros_esc` package run also retained the
+known inherited package-wide `ament_flake8` and `ament_pep257` failures while
+all 153 functional tests passed. M8C does not rewrite unrelated historical
+style debt.
+
+The selected physical contract proven statically is:
+
+- `/odom` is the sole algorithm pose across controller, PDE/history, Gaussian
+  fill, ranking, escape, and stopping paths;
+- the historical seven-float Vicon client publishes evaluation-only
+  `nav_msgs/msg/Odometry` on `/gesc_gaussian/evaluation/vicon_odom`;
+- Vicon is recorded and diagnosed but omitted from every startup/runtime motion
+  heartbeat;
+- raw uncalibrated photoresistor input publishes typed `raw_cost = -voltage`,
+  while normalized score remains optional/invalid until calibrated;
+- the bare wrapper builds, sources, conditionally starts `pigpiod`, and starts
+  exactly one `ros_esc record_run` owner; and
+- `Ctrl+C`, final readiness false, final zero, rosbag finalization, and retained
+  completeness evidence remain managed by the existing recorder.
+
+No Pi command, on-Pi build, ROS graph, Vicon socket, serial/GPIO/OpenCR access,
+lamp response, mechanism actuation, or robot motion was exercised by this host
+qualification.

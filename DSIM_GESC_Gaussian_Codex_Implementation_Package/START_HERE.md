@@ -155,14 +155,14 @@ reviewed, no-hardware Plan and static implementation under
 known-good two-light `1:4` response condition. A historical broad
 `simulation_ready=true` tag is not required for that snapshot-only work.
 
-Planning or snapshot implementation does not authorize live Pi access or
-hardware motion. Do not resume or relabel historical Phase 08 evidence, infer
-arbitrary layout/intensity or three-light readiness, route Vicon/GPS into the
-controller, enable an automatic physical global-distance stop, or launch
-hardware without separate explicit physical-motion authorization and the live
-Phase 09 readiness gate.
+Planning or snapshot implementation alone does not authorize Codex to start a
+live Pi graph or hardware motion. Do not resume or relabel historical Phase 08
+evidence, infer arbitrary layout/intensity or three-light readiness, route
+Vicon/GPS into the controller, or enable an automatic physical global-distance
+stop. The current M8C procedure below separately defines the human-operated lab
+run and requires no repository readiness tag or authorization file.
 
-### Current Phase 09 M8B checkpoint
+### Historical Phase 09 M8B checkpoint (superseded by M8C)
 
 Phase 09 M0-M7.1 completed and statically qualified the source-only snapshot.
 On 2026-08-01, under separate explicit user authorization, historical M8A
@@ -198,6 +198,35 @@ calibration; `--check-only`; then the bare
 `gesc_gaussian_two_source_voltage.bash` with assigned operator/observer and
 typed `RUN`. The bare wrapper is the eventual normal primary entry point, not a
 currently authorized physical command.
+
+### Current Phase 09 M8C checkpoint — 2026-08-03
+
+<!-- MBuck 2026-08-03: Current physical operator path follows the lab SOP and one bare selected wrapper. -->
+
+The attached `DSIM - TurtleBot3 Vicon Setup.pdf` is the controlling lab setup
+procedure. On Windows, run the unchanged `vicon-tracker-server.py`; on the Pi,
+run bare `gesc_gaussian_two_source_voltage.bash` from the selected
+`voltage_cost_values` Bash directory. The wrapper owns the selected
+three-package build/source step, starts `pigpiod` only if absent, launches the
+managed recorder/graph, prints the run directory, and shows live diagnostics.
+
+The current operator path has no separate build, site configuration,
+calibration approval, stationary preflight, `--check-only`, typed `RUN`, Vicon
+subject/segment entry, server-file SHA-256, handoff approval, or
+`PHYSICAL READY` tag. Wheel/IMU-backed `/odom` remains the sole algorithm pose;
+legacy `7f` Vicon data is passive evaluation-only
+`/gesc_gaussian/evaluation/vicon_odom`. Vicon absence must be visible and makes
+evaluation incomplete, but never gates motion.
+
+Pressing `Ctrl+C` is the normal experiment stop. The recorder/wrapper must retain
+readiness-false and final-zero evidence through a stable bag dwell, finalize and
+validate the run, and print its retained directory. M8C source implementation,
+host validation, snapshot reseal, and reviewed Pi transfer passed with exact
+`342/342` file-hash and `430/430` inventory parity. The current rollback is
+`/home/mattb/tb3-pi/phase09_backups/20260804T011049Z_m8c_pre_simplification`.
+Codex did not perform an on-Pi build or live hardware run; the next step is the
+ordinary human-operated lab SOP and bare wrapper, with no additional repository
+gate.
 
 ---
 

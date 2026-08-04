@@ -1476,3 +1476,93 @@ serial/GPIO access, Vicon commissioning, calibration, lamps, mechanisms,
 emergency-stop rehearsal, and motion all remain `NOT RUN`. Physical arrival
 remains manual operator `Ctrl+C`, and the broad Phase 08 failure and nonclaims
 remain unchanged.
+
+### M8C lab-SOP one-command simplification amendment — 2026-08-03
+
+The user supplied the laboratory Vicon SOP and the actual unchanged Windows
+`vicon-tracker-server.py`, then explicitly corrected the M8B commissioning
+model. The selected experiment is not to require a separate on-Pi build step,
+site configuration copies, calibration approval, a stationary-preflight
+review, operator/observer attestation, subject/segment entry, a server-file
+SHA-256, a handoff approval, or a `PHYSICAL READY` tag before motion. The
+selected Bash wrapper itself owns the three-package build and workspace source.
+After the ordinary room/Vicon/TurtleBot setup in the lab SOP, any operator must
+be able to start the selected experiment with the bare wrapper and stop it with
+`Ctrl+C`.
+
+This explicit amendment supersedes the M8B/M9 manual-authorization sequence and
+the matching motion-blocking acceptance criteria. It authorizes the bounded
+snapshot implementation, host qualification, and backed-up source-only SSHFS
+synchronization needed to implement that operator workflow. It does not ask
+Codex to start a ROS graph, access serial/GPIO, illuminate lamps, actuate the
+sensor frame, or move the robot during this implementation pass.
+
+The supplied server is the existing laboratory protocol:
+
+- it binds UDP `192.168.1.6:12346` and waits for one ordinary client greeting;
+- it selects Tracker's first subject and uses that same name as the segment;
+- it sends native `struct.pack('7f')` packets containing millimetre xyz and an
+  xyzw quaternion at approximately 10 Hz; and
+- it contains no identity, segment, sequence, Tracker-frame, occlusion, JSON,
+  metadata, or hash fields.
+
+Accordingly, M8C shall leave the supplied server and all historical
+Vicon/odometry sources byte-identical, remove the incompatible Phase-09 JSON
+server/client protocol from the selected path, and launch the existing
+`odometry_node --odom_method vicon` client on an evaluation-only
+`nav_msgs/msg/Odometry` topic. Wheel/IMU-backed `/odom` remains the sole pose
+used by the controller, supervisor, PDE/history, modified cost, Gaussian-fill,
+escape, ranking, and stopping logic. The Vicon topic is recorded and displayed
+for trajectory evaluation only.
+
+The selected bare wrapper shall:
+
+1. default to the primary two-source scenario and `/dev/ttyUSB0`;
+2. build exactly `ros_esc_interfaces`, `ros_esc`, and
+   `turtlebot3_vehicle_nodes`, then source `install/setup.bash`;
+3. start `pigpiod` through `sudo` only when the daemon is not already running;
+4. require no typed confirmation or separately edited readiness/calibration
+   artifact;
+5. start the sole `ros_esc record_run` owner, which opens the sqlite3 rosbag
+   before its automatic ROS/data-plane startup synchronization releases the
+   selected graph;
+6. stream the managed child output and one-second diagnostics in the same
+   terminal; and
+7. use ordinary `Ctrl+C` for readiness false, stop request, final-zero dwell,
+   rosbag finalization, offline completeness reporting, and scoped cleanup.
+
+The automatic recorder/graph sequencing is not a user authorization gate and
+requires no separate command or retained approval. It waits only for actual
+control dependencies before sensor rotation/base readiness begins. Vicon is
+launched, recorded, and shown in terminal diagnostics but is never a startup or
+runtime motion heartbeat: missing or interrupted Vicon is retained as visibly
+incomplete evaluation evidence rather than being allowed to block, enter, or
+steer the algorithm. Algorithm-critical freshness and final-zero protections
+remain automatic.
+
+Uncalibrated physical voltage remains usable as the algorithm's raw input with
+the established `raw_cost = -voltage` convention. Calibration and normalized
+source score remain optional future analysis features, not prerequisites for
+the counted-candidate v8.12 two-source controller. The fixed speed ceilings,
+one `/cmd_vel` owner, one recorder/validator owner, source/role/coordinate
+isolation, selected v8.12 parameters, and every historical Bash/launch/config
+selection remain unchanged.
+
+M8C acceptance requires:
+
+- an internal source-preservation check that the attached
+  `vicon-tracker-server.py` remains unchanged (never an operator key or runtime
+  input);
+- a wire-contract regression proving the selected client consumes the existing
+  seven-float server format without operator identity/hash inputs;
+- a bare-wrapper regression proving build-before-source, no typed/manual
+  commissioning prompt, default `/dev/ttyUSB0`, automatic `pigpiod` handling,
+  and exactly one managed recorder/launch path;
+- recording/validation tests for raw uncalibrated physical cost, separate
+  `/odom` and evaluation-only Vicon odometry, console diagnostics, Ctrl+C,
+  final zero, sqlite3 integrity, and retained run artifacts;
+- the focused Phase 09, shared recording/core, Bash/XML/YAML/Python, selected
+  launch, and legacy M0 hash regressions; and
+- a fresh snapshot backup, reviewed source-only Pi backup/transfer, exact
+  post-transfer parity, updated status/handoff/operator directions, and a clean
+  repository closeout.

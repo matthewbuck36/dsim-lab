@@ -1,25 +1,27 @@
-# Phase 09 Future Pi Transfer and Rollback Procedure
+# Phase 09 Pi Transfer and Rollback Procedure (M8A-M8C)
 
-Status: `M8B SOURCE TRANSFER EXECUTED — ON-PI BUILD AND M9 HARDWARE DEFERRED`
+Status: `M8C REVIEWED SOURCE TRANSFER AND EXACT PARITY PASS — LIVE HARDWARE NOT RUN`
 
-The source/configuration transfer was completed on 2026-08-01 under explicit
-user authorization. Its exact preflight, backup, scoped-copy, post-transfer
-hashes, wrapper build/source correction, static tests, and remaining deferrals
-are recorded in `phase_09_pi_transfer_receipt.md`. The SSHFS mount was already
-read-write when the authorized comparison began; every pre-write operation was
-read-only, and no source write occurred until the backup and itemized dry run
-passed. The actual transfer added no deletion flag and suppressed unrelated
-owner/group and existing-directory timestamp changes.
+M8C source transfer completed on 2026-08-03 local time after a complete Pi
+source archive and an itemized checksum dry run. It intentionally replaced 16
+reviewed files, removed three obsolete Phase-09-only gate/protocol files, and
+removed six generated `.pyc` files. Snapshot/Pi parity is `342/342` hashes and
+`430/430` inventory entries with an empty final dry run. The current rollback
+is the full verified archive documented in the M8C amendment at the end of this
+file and in `phase_09_pi_transfer_receipt.md`.
 
-The original procedure below remains the rollback contract. Its on-Pi build,
-installed-overlay checks, inert wrapper preflight, and every hardware gate have
-not run. Do not infer their completion from the source-transfer pass.
+No on-Pi build, installed-overlay check, ROS graph, serial/GPIO access, Vicon
+connection, actuator, lamp response, or robot motion was run by Codex. The
+human operator's current lab procedure requires no additional repository
+authorization or readiness tag; the bare wrapper performs its build/source at
+the start of that later run.
 
-This was the reviewed M8 procedure. Its source-transfer portion is now covered
-by the user's explicit authorization and the receipt above. It still does not
-authorize an on-Pi command, launch, serial access, calibration, actuation, or
-motion. M9 hardware commissioning requires another authorization after the
-remaining M8 build/static-installed checks close.
+## Historical M8A/M8B additive procedure (superseded by M8C)
+
+The sections below preserve the earlier no-delete, 57-path additive procedure
+and its commissioning assumptions as historical recovery evidence. They are
+not the current operator workflow or current rollback. Continue to the M8C
+full-source simplification amendment for the current procedure.
 
 ## Frozen local inputs
 
@@ -196,3 +198,31 @@ Mounted-source proof then matched all `345/345` reviewed file hashes and all
 non-generated paths. The four pre-existing cache directories and six `.pyc`
 files remained unchanged and excluded. The exact full receipt remains in
 `phase_09_pi_transfer_receipt.md`.
+
+## M8C full-source simplification amendment
+
+M8C supersedes the earlier 57-path additive transfer because the reviewed
+simplification intentionally removes three Phase-09-only gate/protocol files
+and generated caches. Before using deletion, the complete mounted Pi source was
+archived and verified at:
+
+```text
+/home/mattb/tb3-pi/phase09_backups/
+  20260804T011049Z_m8c_pre_simplification/source_before.tar
+SHA-256:
+  e5b91307030e85ea0787e35b52a41cff3d4e1399242c687e9f789aa7fe5109fd
+```
+
+The reviewed checksum dry run and actual transfer were identical. The command
+used `--delete` only against the exact source root, with owner/group/timestamp
+updates disabled, after confirming 16 replacements, the three intended source
+deletions, and six generated `.pyc` deletions. The final full checksum dry run
+was empty and snapshot/Pi hashes plus inventory match exactly.
+
+If M8C must be rolled back, stop all related processes, verify the archive hash,
+and extract that full archive back into the exact mounted source root. M8C added
+no new source path, so extraction restores all 16 prior files, the three removed
+Phase-09-only files, and the backed-up cache state. Recompute and require the
+retained `source_before.sha256` and `source_before.inventory.tsv`; do not run a
+graph or hardware as part of rollback verification. The exact receipt and
+pre/post hashes are in `phase_09_pi_transfer_receipt.md`.

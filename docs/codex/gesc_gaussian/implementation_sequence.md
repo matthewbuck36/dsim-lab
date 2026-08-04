@@ -403,7 +403,8 @@ launch reliability only and does not alter controller or algorithm parameters.
 
 ## Phase 09 - physical integration
 
-Current state: M0-M7.1 integrated and statically qualified the cumulative
+Historical M8B state (superseded by the M8C subsection below): M0-M7.1
+integrated and statically qualified the cumulative
 terminal v8.12 algorithm in the local physical snapshot. Historical M8A then
 verified a live-Pi rollback backup and copied its exact reviewed
 source/configuration set under explicit user authorization. M8B snapshot work
@@ -435,7 +436,8 @@ Resume from:
 - `docs/codex/gesc_gaussian/handoffs/phase_09_handoff.md`; and
 - `docs/codex/gesc_gaussian/validation/phase_09_pi_transfer_receipt.md`.
 
-No on-Pi build/source, installed launch check, ROS graph, serial/GPIO device,
+Historical M8B continuation (superseded by M8C): no on-Pi build/source,
+installed launch check, ROS graph, serial/GPIO device,
 live Vicon identity, calibration, actuator command, emergency-stop rehearsal,
 or motion has passed. Continue in this exact order: (1) separate no-launch
 on-Pi build/installed-static gate, currently `NOT RUN`; (2) mutable calibration
@@ -449,6 +451,34 @@ nontranslating/final-zero rehearsal; (6) calibration; (7) `--check-only`; and
 with assigned operator/observer and typed `RUN`. The bare wrapper is the
 eventual normal primary entry point. No algorithm fork is permitted, and
 simulation or host-static evidence cannot prove hardware safety.
+
+### Current M8C lab-SOP operator workflow — 2026-08-03
+
+M8C retains the M8B qualification/rollback/parity record above but supersedes
+its operator gate sequence. Follow the attached lab SOP: prepare Vicon Tracker,
+run the unchanged Windows `vicon-tracker-server.py`, clear and arrange the test
+area, then SSH to the Pi and invoke bare
+`gesc_gaussian_two_source_voltage.bash`. The wrapper builds the three selected
+packages, sources the workspace, starts `pigpiod` only if absent, launches the
+sole managed recorder/graph, announces the run directory, and prints bounded
+live diagnostics.
+
+No separate build, site copies, calibration approval, stationary preflight,
+`--check-only`, typed `RUN`, Vicon subject/segment entry, server SHA-256,
+handoff authorization, or `PHYSICAL READY` tag belongs in the current operator
+path. `/odom` is still the sole algorithm pose. The existing legacy `7f` Vicon
+transport supplies passive `nav_msgs/msg/Odometry` on
+`/gesc_gaussian/evaluation/vicon_odom`; absence or staleness is visible and
+makes evaluation incomplete, but never gates or alters motion.
+
+Operator `Ctrl+C` starts managed readiness-false/final-zero shutdown, keeps the
+bag active through the zero dwell, finalizes and validates the run, and reports
+the retained directory. All legacy ESC entry points remain isolated. M8C
+implementation, host validation, snapshot reseal, and reviewed Pi transfer pass
+with exact `342/342` file-hash and `430/430` inventory parity. Codex did not run
+an on-Pi build or live hardware. The next action is the human-operated lab SOP
+and bare wrapper, not a separate commissioning or repository-authorization
+sequence.
 
 ## Phase 10 - final documentation
 

@@ -177,6 +177,45 @@ rehearsal; (6) real retained calibration; (7) `--check-only`; and (8) the bare
 operator/observer and typed `RUN`. The bare wrapper is the eventual normal
 primary entry point; there is no noninteractive motion bypass.
 
+### M8C lab-SOP one-command implementation amendment
+
+<!-- MBuck 2026-08-03: Supersede the M8B commissioning gates with the established lab SOP and one bare wrapper. -->
+
+This M8C amendment is controlling wherever it conflicts with the historical
+M8B commissioning text in this prompt. Retain M8B qualification, backup,
+transfer, parity, and failed/unrun evidence, but remove its operator gates from
+the selected runtime.
+
+Implement the normal human workflow from the attached
+`DSIM - TurtleBot3 Vicon Setup.pdf`: the operator prepares Vicon Tracker and
+runs the unchanged Windows `vicon-tracker-server.py`, then invokes bare
+`gesc_gaussian_two_source_voltage.bash` on the Pi. That wrapper must build
+exactly `ros_esc_interfaces`, `ros_esc`, and `turtlebot3_vehicle_nodes`, source
+the result, start `pigpiod` only if absent, start the sole selected managed
+recorder/launch, announce the run directory, and display bounded one-second
+diagnostics. It must not require a separate build command, site configuration,
+calibration approval, stationary preflight, `--check-only`, typed `RUN`, Vicon
+subject/segment entry, server-file SHA-256, handoff authorization, or a
+`PHYSICAL READY` tag.
+
+Leave `vicon-tracker-server.py` untouched. Reuse its legacy `struct.pack('7f')`
+transport and the existing odometry owner to expose Vicon only as
+`nav_msgs/msg/Odometry` on `/gesc_gaussian/evaluation/vicon_odom`. Wheel/IMU
+`/odom` remains the sole algorithm pose. Do not retain the M8B custom JSON
+evidence protocol or pose/status readiness gate in the selected graph. Missing,
+stale, or incomplete Vicon must remain visible in live output and make retained
+evaluation evidence incomplete, but it must never inhibit or stop motion.
+
+Preserve the existing managed `Ctrl+C` shutdown: readiness false, stop/final
+zero, rosbag coverage through the zero dwell, finalization, bounded validation,
+and retained run-directory output. Store the legacy streams, typed
+GESC/Gaussian diagnostics, and evaluation-only Vicon odometry in the same
+sqlite3 bag. Preserve every historical ESC wrapper/launch/configuration and its
+owner selection. Do not run live hardware during this implementation task.
+Record M8C validation and transfer outcomes only after direct verification; the
+current Phase 09 status/handoff now contain the completed host and Pi-parity
+results.
+
 ### Cumulative v8.12 source-selection rule
 
 Do not cherry-pick, blend, or independently merge v8.10, v8.11, and v8.12.

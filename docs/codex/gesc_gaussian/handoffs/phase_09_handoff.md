@@ -1,17 +1,26 @@
-# Phase 09 Handoff — Physical Snapshot Static Integration
+# Phase 09 Handoff — Physical Source Integration and Lab-SOP Entry
 
-Date: `2026-08-01` (`America/Los_Angeles`)
+Date: `2026-08-03` (`America/Los_Angeles`)
 
-Current outcome: `M8B SNAPSHOT/HOST QUALIFICATION AND REAL-PI SOURCE SYNC PASS — ON-PI BUILD AND HARDWARE NOT RUN`
+Current outcome: `M8C ONE-COMMAND SOURCE CONTRACT, HOST QUALIFICATION, AND REAL-PI SOURCE PARITY PASS — LIVE HARDWARE NOT RUN BY CODEX`
 
-This is not `PHYSICAL READY`. M0-M7.1 performed no live-Pi action. The
-historical M8A continuation used the user-mounted SSHFS source tree for backup
-and scoped file transfer only. M8B snapshot implementation, host-side
-qualification, fresh rollback backup, and reviewed real-Pi source sync have
-now passed with exact snapshot/Pi parity. No direct Pi command, on-Pi
-build/source, ROS graph, serial device, live Vicon
-identity, sensor, motor, servo, rotating frame, lamp, floor trial, calibration,
-or emergency stop was used.
+The current human operator follows the attached lab Vicon SOP and invokes bare
+`gesc_gaussian_two_source_voltage.bash`; no repository readiness tag,
+authorization file, typed confirmation, site copy, calibration approval,
+subject/segment value, or hash key is required. M8C implementation, host
+qualification, recovery backup, and reviewed SSHFS source transfer passed with
+exact `342/342` regular-file and `430/430` inventory parity. No direct Pi
+command, on-Pi build/source, ROS graph, serial/GPIO access, live Vicon
+connection, sensor, motor, servo, rotating frame, lamp, floor trial, or robot
+motion was run by Codex.
+
+## Historical M0-M8B implementation record (superseded by M8C)
+
+The implementation record from this heading through the M8B terminal boundary
+is retained for provenance. Its JSON Vicon pose/status, inert calibration,
+stationary-preflight, typed-authorization, and readiness-tag procedures are not
+the current operator contract. The controlling handoff is the M8C amendment at
+the end of this file.
 
 ## What was integrated
 
@@ -497,3 +506,82 @@ Only after a complete accepted primary run may the secondary scenario be
 considered under a separately reviewed progression decision. At this handoff,
 all eight future actions remain unexecuted and this repository must not be
 described as `PHYSICAL READY`.
+
+## M8C lab-SOP one-command handoff amendment — 2026-08-03
+
+<!-- MBuck 2026-08-03: Supersede the M8B operator gate sequence without erasing its implementation and transfer history. -->
+
+The M8B sequence immediately above is retained as historical evidence, but it
+is no longer the current operator workflow. The user approved alignment with
+the attached `DSIM - TurtleBot3 Vicon Setup.pdf` and the existing, unchanged
+Windows `vicon-tracker-server.py`.
+
+The current human-operated lab sequence is:
+
+1. Follow the lab SOP to prepare Vicon Tracker and the room. On the Windows
+   Vicon computer, run the unchanged `vicon-tracker-server.py` and leave its
+   console visible.
+2. SSH to the Pi and run the bare selected wrapper:
+
+   ```bash
+   cd ~/ros2_ws/src/turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values
+   ./gesc_gaussian_two_source_voltage.bash
+   ```
+
+3. Keep the robot in view on a clear floor. Watch the wrapper's run-directory
+   announcement and live one-second diagnostics.
+4. Press `Ctrl+C` in the robot terminal to end the run. Wait for the managed
+   final-zero dwell, rosbag/metadata finalization, bounded validation, and final
+   run-directory report before stopping the Windows server.
+
+The wrapper itself owns the selected three-package build/source sequence and
+starts `pigpiod` only if it is absent. There is no separate build command,
+stationary preflight, site-configuration copy, calibration approval,
+`--check-only`, typed `RUN`, Vicon subject/segment entry, server-script SHA-256,
+handoff authorization, or readiness tag in this operator path.
+
+Control/evaluation separation remains mandatory:
+
+- wheel/IMU-backed `/odom` is the sole pose used by the GESC/Gaussian
+  algorithm;
+- the existing legacy `7f` Vicon transport feeds passive evaluation
+  `nav_msgs/msg/Odometry` on `/gesc_gaussian/evaluation/vicon_odom` only; and
+- missing or stale Vicon is reported live and makes evaluation evidence
+  incomplete, but it never gates, stops, or changes robot motion.
+
+The recorder remains the sole selected-run bag/finalization owner. It must keep
+the existing legacy streams plus typed GESC/Gaussian diagnostics and the
+evaluation-only Vicon odometry in the same sqlite3 bag, with live terminal
+diagnostics, final readiness false/final zero, zero dwell, integrity checks, and
+the retained run directory.
+
+M8C implementation, host validation, recovery reseal, and reviewed live-Pi
+source transfer are complete. The exact results are:
+
+```text
+isolated host build: 3/3 packages PASS in 12.6 s
+focused M8C tests: 196 passed
+ros_esc functional tests: 153 passed, 3 deselected
+vehicle-node functional tests: 71 passed, 3 deselected
+Bash syntax: 27/27 PASS
+structured parsing: 9 changed Python + 9 XML + 7 YAML + 68 JSON PASS
+selected wrapper --check-only: PASS; 3 packages rebuilt in 12.6 s
+selected launch --show-args: PASS
+snapshot/Pi hashes: 342/342 PASS
+snapshot/Pi inventory: 430/430 PASS
+final checksum dry run: empty
+```
+
+Snapshot recovery artifacts are under
+`/home/mattb/physical_TB3_files_snapshot/phase09_backups/20260804T003650Z_m8c_pre_simplification`
+and
+`/home/mattb/physical_TB3_files_snapshot/phase09_backups/20260804T010757Z_m8c_post_simplification`.
+The current Pi rollback is
+`/home/mattb/tb3-pi/phase09_backups/20260804T011049Z_m8c_pre_simplification`.
+
+No on-Pi build, ROS graph, serial/GPIO access, Vicon connection, lamp
+experiment, actuator command, or robot motion was performed by Codex. The next
+step is the four-step human-operated lab sequence above; it requires no extra
+Phase 09 authorization file, readiness tag, subject/segment input, or hash key.
+The first physical runs remain exploratory selected two-source tests of the
+cumulative terminal v8.12 algorithm, not broad physical-robustness claims.

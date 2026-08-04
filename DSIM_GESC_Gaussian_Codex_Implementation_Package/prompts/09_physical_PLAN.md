@@ -174,6 +174,41 @@ conditions pass. Do not claim `PHYSICAL READY`, completed calibration, a live
 Vicon identity, an on-Pi build, a ROS graph, or motion without retained direct
 evidence.
 
+### M8C lab-SOP one-command amendment
+
+<!-- MBuck 2026-08-03: Make the attached lab SOP and bare selected wrapper the controlling operator workflow. -->
+
+This M8C amendment supersedes every conflicting M8B/M9 operator-gate statement
+in this prompt. Preserve M8B source-integration, validation, backup, transfer,
+and parity results as historical evidence, but do not carry its commissioning
+ceremony into the current design.
+
+Plan the normal human-operated experiment exactly around the attached
+`DSIM - TurtleBot3 Vicon Setup.pdf`: prepare Vicon Tracker on the Windows
+computer, run the unchanged `vicon-tracker-server.py`, prepare a clear floor and
+the two lamps, SSH to the Pi, and invoke bare
+`gesc_gaussian_two_source_voltage.bash`. The wrapper must build the selected
+three ROS packages, source the workspace, start `pigpiod` only if absent, start
+the one managed recorder/launch, print the run directory, and show bounded live
+diagnostics. Do not require a separate build, site copies, calibration approval,
+stationary preflight, `--check-only`, typed `RUN`, subject/segment input,
+server-script SHA-256, handoff authorization, or a `PHYSICAL READY` tag.
+
+Keep wheel/IMU-backed `/odom` as the sole algorithm pose. Reuse the existing
+legacy `7f` Vicon transport and existing odometry owner to publish passive
+evaluation `nav_msgs/msg/Odometry` on
+`/gesc_gaussian/evaluation/vicon_odom`. Vicon loss, staleness, or incompleteness
+must be conspicuous in live diagnostics and retained evaluation evidence, but
+must never gate, stop, steer, rank, or otherwise alter motion.
+
+Operator `Ctrl+C` is the normal stop. Preserve automatic readiness-false,
+final-zero, bag zero-dwell, finalization, bounded validation, and run-directory
+reporting inside the wrapper/recorder without adding operator approvals. Keep
+all legacy ESC Bash and launch entry points working. This planning or
+implementation work must not itself launch physical hardware; report M8C
+implementation, host validation, source transfer, and hardware results only
+after they actually occur.
+
 ## Exact physical snapshot boundary
 
 The physical Pi-home snapshot is:

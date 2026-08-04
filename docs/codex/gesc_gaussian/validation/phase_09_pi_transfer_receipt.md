@@ -1,16 +1,18 @@
-# Phase 09 Live-Pi Source Transfer Receipt (M8A and M8B)
+# Phase 09 Live-Pi Source Transfer Receipt (M8A-M8C)
 
-Verified: `2026-08-01T23:21:44Z`
+Verified: `2026-08-04T01:17:29+00:00`
 
-Result: `PASS — SOURCE TRANSFER AND HOST-SIDE STATIC QUALIFICATION ONLY`
+Result: `PASS — M8C SOURCE TRANSFER AND EXACT SNAPSHOT/PI PARITY; LIVE HARDWARE NOT RUN`
 
 The sections through “Deferred gates” are the immutable M8A receipt. The M8B
-additive receipt at the end supersedes its 339-file/51-path current-state
-figures while preserving the historical transfer evidence.
+additive receipt supersedes its 339-file/51-path figures, and the M8C receipt at
+the end supersedes both current-state figures while preserving their historical
+transfer evidence.
 
-This receipt does not claim an on-Pi build, ROS graph startup, serial access,
-stationary commissioning, calibration, emergency-stop rehearsal, or physical
-motion. None of those actions ran.
+No on-Pi build, ROS graph startup, Vicon connection, serial/GPIO access,
+actuation, lamp response, or physical motion was run by Codex. The current
+human-operated M8C workflow has no separate stationary/calibration/authorization
+ceremony.
 
 ## Authorization and target
 
@@ -314,3 +316,97 @@ test results are recorded in `phase_09_static_qualification.md`.
 
 The SSHFS mount remains mounted for the user. This receipt is source parity,
 not `PHYSICAL READY`.
+
+## M8C lab-SOP simplification source transfer
+
+Verified: `2026-08-04T01:17:29+00:00`
+
+Result: `PASS — REVIEWED M8C SOURCE TRANSFER AND EXACT SNAPSHOT/PI PARITY; LIVE
+HARDWARE NOT RUN`
+
+The user explicitly authorized applying the reviewed M8C simplification to the
+already-mounted physical Pi source. The mount was verified read-write as
+`pi@192.168.1.36:/home/pi` at `/home/mattb/tb3-pi`. All actions were host-side
+filesystem operations through SSHFS; no command was executed on the Pi.
+
+The offline snapshot was backed up before editing at:
+
+```text
+/home/mattb/physical_TB3_files_snapshot/phase09_backups/
+  20260804T003650Z_m8c_pre_simplification
+
+regular files: 345
+inventory entries: 433
+source_before.sha256 SHA-256:
+  0e668401fb92b5a5c194c14512057f3d3484f0ae67bc991544025c497f59e26e
+source_before.inventory.tsv SHA-256:
+  ec0df064bd6949bd164568b36a629d2f60aaac0d76bb3d136f971b5274037189
+source_before.tar SHA-256:
+  e59731df38105518df3c1483230b798a2d537e3d223a467f6953b9bb293361fd
+```
+
+The post-M8C snapshot seal is:
+
+```text
+/home/mattb/physical_TB3_files_snapshot/phase09_backups/
+  20260804T010757Z_m8c_post_simplification
+
+regular files: 342
+inventory entries: 430
+source_after.sha256 SHA-256:
+  a0de693b05f829bafb5d0f52e11afaba9f9e35bf3e767f1e4dd08f107cd47abc
+source_after.inventory.tsv SHA-256:
+  cd3a9d7417ae6b8da8cf4af3886cac6d103f756adc72bc4c8ea129f87b8803fa
+source_after.tar SHA-256:
+  523f315c3743b8c01a9f854a249c494707b2c925aa56c411e8bd2405c859b103
+```
+
+Before transfer, a complete Pi source archive, regular-file manifest, and
+type/mode/size inventory were created and verified at:
+
+```text
+/home/mattb/tb3-pi/phase09_backups/
+  20260804T011049Z_m8c_pre_simplification
+
+regular files: 351
+inventory entries: 443
+source_before.sha256 SHA-256:
+  8bf9474559775a6c0772d60a438e0c94b806e7453d8e3d8136806442df032188
+source_before.inventory.tsv SHA-256:
+  cbe0feb9b48eac2d703032c02cc9883510ec506283bdc1daab26488a8a8fb82e
+source_before.tar SHA-256:
+  e5b91307030e85ea0787e35b52a41cff3d4e1399242c687e9f789aa7fe5109fd
+```
+
+The checksum dry run and actual itemization were byte-identical. They contained
+exactly 16 reviewed file replacements, deletion of the three obsolete
+Phase-09-only JSON Vicon/stationary-gate files, and cleanup of six generated
+`.pyc` files in four `__pycache__` directories. No other file was added,
+replaced, or deleted. File timestamps and owner/group metadata were excluded
+from the transfer contract; source bytes, modes, paths, and deletions were
+checked.
+
+Final parity:
+
+```text
+snapshot regular-file hashes: 342
+Pi regular-file hashes:       342/342 PASS
+snapshot inventory entries:  430
+Pi inventory entries:        430/430 PASS
+unexpected generated/cache roots in Pi source: 0
+final checksum dry-run bytes: 0
+after-manifest SHA-256 on snapshot and Pi:
+  a0de693b05f829bafb5d0f52e11afaba9f9e35bf3e767f1e4dd08f107cd47abc
+after-inventory SHA-256 on snapshot and Pi:
+  cd3a9d7417ae6b8da8cf4af3886cac6d103f756adc72bc4c8ea129f87b8803fa
+```
+
+The retained `transfer_dry_run.txt` and `transfer_apply.txt` both hash to
+`e74459c4571a72e114628df5dfd0214fc8f78b7f45751e6ad498f9e380d4a4c3`.
+The empty final dry run hashes to the standard empty-file SHA-256
+`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+No on-Pi build, installed-overlay check, ROS graph, Vicon connection, serial or
+GPIO access, actuator command, lamp response, or robot motion was run. The
+wrapper intentionally performs the on-Pi build/source at the beginning of the
+later human-operated experiment. The SSHFS mount was left mounted for the user.
