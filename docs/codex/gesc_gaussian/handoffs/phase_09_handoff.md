@@ -2,14 +2,15 @@
 
 Date: `2026-08-03` (`America/Los_Angeles`)
 
-Current outcome: `M8C ONE-COMMAND SOURCE CONTRACT, HOST QUALIFICATION, AND REAL-PI SOURCE PARITY PASS — LIVE HARDWARE NOT RUN BY CODEX`
+Current outcome: `M8D FAMILIAR CSV EXPORT, HOST QUALIFICATION, AND REAL-PI SOURCE PARITY PASS — LIVE HARDWARE NOT RUN BY CODEX`
 
 The current human operator follows the attached lab Vicon SOP and invokes bare
 `gesc_gaussian_two_source_voltage.bash`; no repository readiness tag,
 authorization file, typed confirmation, site copy, calibration approval,
-subject/segment value, or hash key is required. M8C implementation, host
-qualification, recovery backup, and reviewed SSHFS source transfer passed with
-exact `342/342` regular-file and `430/430` inventory parity. No direct Pi
+subject/segment value, or hash key is required. M8D retains that M8C operator
+contract and adds automatic familiar CSV export after bag finalization. Host
+qualification, recovery backups, and reviewed SSHFS source transfer passed with
+exact `343/343` regular-file and `431/431` inventory parity. No direct Pi
 command, on-Pi build/source, ROS graph, serial/GPIO access, live Vicon
 connection, sensor, motor, servo, rotating frame, lamp, floor trial, or robot
 motion was run by Codex.
@@ -585,3 +586,83 @@ step is the four-step human-operated lab sequence above; it requires no extra
 Phase 09 authorization file, readiness tag, subject/segment input, or hash key.
 The first physical runs remain exploratory selected two-source tests of the
 cumulative terminal v8.12 algorithm, not broad physical-robustness claims.
+
+## M8D familiar runtime CSV handoff amendment — 2026-08-03
+
+<!-- MBuck 2026-08-03: Preserve one authoritative bag while restoring familiar CSV-shaped run artifacts for the selected experiment. -->
+
+M8D answers the final operator-data requirement without changing the launch
+graph: after the existing recorder finalizes the selected run's sole sqlite3
+rosbag, its existing `validate_run` owner atomically and idempotently derives
+the familiar headerless CSV files in that same reported run root. There is no
+live CSV collector, second recorder, parallel logging process, or modification
+to a historical ESC wrapper.
+
+The retained run directory now has this output contract:
+
+| Artifact | Meaning |
+|---|---|
+| `encoder.csv` | `encoder` alias as `[timestamp, angle]` |
+| `cost_value.csv` | augmented `/cost_modified` as `[timestamp, augmented_cost]` |
+| `filter_value.csv` | timestamp plus exactly two legacy filter values |
+| `control_value.csv` | timestamp plus exactly six final-command values |
+| `odometry.csv` | evaluation-only Vicon in legacy xyz/quaternion columns |
+| `raw_cost_value.csv` | raw physical objective with `raw_cost = -voltage` |
+| `algorithm_odometry.csv` | the algorithm's `/odom` pose, separate from Vicon |
+| `legacy_csv_manifest.json` | aliases/topics, semantics, rows, sizes, hashes, and bounded errors |
+
+Write-enabled final validation requires all required CSV views to be complete;
+an incomplete export is retained and reported as a completeness failure. Dry
+validation remains non-mutating and warns that it skipped export. Revalidation
+replaces each derived file instead of appending duplicate rows. The columns are
+compatible with the legacy low-level plotting reader, but the older one-level
+`Test_*` directory browser does not automatically discover the selected
+wrapper's nested date/run hierarchy; give the retained run directory directly
+to the lower-level reader.
+
+Implementation scope was exactly:
+
+```text
+modified  ros_esc/ros_esc/experiment_recording/validate_run.py
+modified  ros_esc/test/test_phase09_physical_recording.py
+new       ros_esc/ros_esc/experiment_recording/legacy_csv_export.py
+```
+
+The pre-transfer snapshot and Pi recovery roots are, respectively:
+
+```text
+/home/mattb/physical_TB3_files_snapshot/phase09_backups/20260804T023735Z_m8d_legacy_csv_export
+/home/mattb/tb3-pi/phase09_backups/20260804T023735Z_m8d_legacy_csv_export
+```
+
+The verified post-change snapshot seal is
+`/home/mattb/physical_TB3_files_snapshot/phase09_backups/20260804T030145Z_m8d_post_legacy_csv_export`;
+its source manifest, inventory, and archive SHA-256 values are respectively
+`49f969c72021242f25eaa4b2b87993904a9c0a5decd79278385d1d35bcf5b9af`,
+`88b84d44dd478a09da610f75f9caf98619b71d5017f2f3d5a123cbd8f18a5bf7`,
+and `e713a243daa6c5e687494798fd0ed76096d5000904108716bf2106f22c95a23c`.
+
+The scoped no-delete SSHFS transfer finished with `343/343` full-tree regular
+file hashes and `431/431` type/mode/size entries matching, with no source cache
+files or symlinks. Qualification results were:
+
+```text
+source five-file Phase 09 regression: 209 passed
+isolated selected-package build: 3 packages finished in 12.6 s
+installed-overlay five-file Phase 09 regression: 209 passed
+ros_esc functional regression: 159 passed (3 inherited style tests excluded)
+vehicle functional regression: 71 passed (3 inherited style tests excluded)
+mounted-source recording regression: 131 passed
+mounted-source remaining Phase 09 regression: 78 passed
+```
+
+The first shell attempt set `-u` before ROS setup and stopped because
+`AMENT_TRACE_SETUP_FILES` was unset; sourcing ROS first and then enabling
+`set -u` passed. No source defect or behavior failure was involved.
+
+No on-Pi build/source, ROS graph, live Vicon connection, calibration, safety
+rehearsal, serial/GPIO access, lamp response, actuator command, or robot motion
+was performed for M8D. The next action remains the M8C human-operated lab SOP
+and bare wrapper. On shutdown, wait for the final-zero dwell, bag finalization,
+validation, and automatic CSV export before taking the reported run directory
+for analysis.

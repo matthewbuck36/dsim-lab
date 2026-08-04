@@ -2,11 +2,13 @@
 
 <!-- MBuck 2026-08-03: Align the selected physical run with the established lab Vicon SOP and a single Bash entry point. -->
 
-This is the current Phase 09 M8C operator procedure. It supersedes the earlier
-M8B commissioning sequence that required separate site files, stationary
-preflight/approval, `--check-only`, typed authorization, Vicon identity fields,
-and file hashes. Those M8B requirements remain in historical status and handoff
-records only; the selected wrapper does not consult them.
+This is the current Phase 09 M8C operator procedure with the M8D familiar-CSV
+recording amendment. It supersedes the earlier M8B commissioning sequence that
+required separate site files, stationary preflight/approval, `--check-only`,
+typed authorization, Vicon identity fields, and file hashes. Those M8B
+requirements remain in historical status and handoff records only; the selected
+wrapper does not consult them. M8D changes retained output only and adds no
+operator gate or hardware-readiness claim.
 
 The intended experiment is a human-supervised, exploratory physical test of the
 cumulative terminal v8.12 GESC + Gaussian algorithm in a clear, open room with
@@ -108,6 +110,44 @@ GESC/Gaussian diagnostics and `/gesc_gaussian/evaluation/vicon_odom`. It should
 also retain console output, resolved metadata/configuration, notes,
 completeness/integrity results, and shutdown evidence.
 
+The exact selected-wrapper runtime directory is:
+
+```text
+${HOME}/turtlebot_rotating_sensor_tests/gesc_gaussian_two_source/
+  <UTC-date>/<run-id>/
+```
+
+The terminal summaries remain live during recording. The CSV files are created
+only after a clean shutdown has finalized the authoritative sqlite3 rosbag and
+the existing `record_run` finalizer begins final validation. The export is
+atomic and idempotent, and missing or malformed required output makes final
+validation fail. Do not stop the terminal while this finalization is running.
+
+After successful finalization, the same run directory should contain these
+headerless, familiar-format files:
+
+- `encoder.csv`: `[timestamp, angle]`;
+- `cost_value.csv`: `[timestamp, augmented cost]` from `/cost_modified`;
+- `filter_value.csv`: `[timestamp, two filter values]`;
+- `control_value.csv`: `[timestamp, six command-array values]`; and
+- `odometry.csv`: `[timestamp, x, y, z, qw, qx, qy, qz]` using the legacy
+  Vicon/evaluation plotting meaning.
+
+The additional selected-algorithm files are `raw_cost_value.csv`, containing
+`[timestamp, raw_cost]` with `raw_cost=-voltage`, and
+`algorithm_odometry.csv`, containing
+`[timestamp, x, y, z, qw, qx, qy, qz]` from algorithm `/odom`.
+`legacy_csv_manifest.json` records the source aliases/topics, semantics, row
+counts, byte sizes, SHA-256 hashes, and bounded export errors.
+
+The old `extract_test_data` column reader can consume these files directly, but
+its top-level `Test_*` browser does not auto-discover this nested directory and
+the exporter does not fabricate `comments.txt`. The one rosbag remains the sole
+recorder and source of truth; there is no second recorder or live CSV collector.
+This M8D exception supersedes the earlier no-CSV-equivalence statement only for
+the selected wrapper's post-bag output. Legacy wrappers, nodes, launches, and
+their runtime behavior remain unchanged.
+
 Vicon absence is an evaluation-quality warning, not a robot-motion fault. A
 photoresistor, `/odom`, required IMU, controller, recorder, or command-path fault
 may still trigger the algorithm's automatic zero-command behavior.
@@ -117,7 +157,8 @@ may still trigger the algorithm's automatic zero-command behavior.
 1. Press `Ctrl+C` once in the Pi experiment terminal.
 2. Wait for the wrapper to report readiness false, the managed stop/final-zero
    sequence, recorded zero dwell, rosbag finalization, bounded validation, and
-   the final retained run directory.
+   the final retained run directory. Confirm that validation reports the M8D
+   CSV export complete before closing the terminal.
 3. Only after Pi cleanup completes, stop `vicon-tracker-server.py` on Windows.
 4. Keep the run directory whether the behavior succeeded, was interrupted, or
    exposed a hardware/algorithm issue.

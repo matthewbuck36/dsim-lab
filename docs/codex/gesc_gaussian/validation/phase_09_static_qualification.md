@@ -1,11 +1,11 @@
-# Phase 09 Host Static/Offline Qualification (M0-M8C)
+# Phase 09 Host Static/Offline Qualification (M0-M8D)
 
-Last verified: `2026-08-03` (`America/Los_Angeles`)
+Last verified: `2026-08-03T20:01:53-07:00`
 
-Current result: `PASS — M8C ONE-COMMAND SOURCE CONTRACT AND HOST QUALIFICATION; LIVE HARDWARE NOT RUN`
+Current result: `PASS — M8D FAMILIAR CSV EXPORT AND HOST QUALIFICATION; LIVE HARDWARE NOT RUN`
 
-The earlier sections preserve the M6-M8B host qualifications. The final M8C
-section is the current result and supersedes their operator-gate assumptions.
+The earlier sections preserve the M6-M8C host qualifications. The final M8D
+section is the current result and retains M8C's operator contract.
 This report does not claim an on-Pi build, live ROS graph, Vicon connection,
 serial/GPIO/OpenCR access, motors, rotating frame, lamps, or floor motion.
 
@@ -574,3 +574,84 @@ The selected physical contract proven statically is:
 No Pi command, on-Pi build, ROS graph, Vicon socket, serial/GPIO/OpenCR access,
 lamp response, mechanism actuation, or robot motion was exercised by this host
 qualification.
+
+## M8D familiar runtime CSV export qualification
+
+Verified: `2026-08-03T20:01:53-07:00`
+
+Result: `PASS — ATOMIC POST-FINALIZATION CSV EXPORT, VALIDATION INTEGRATION,
+LEGACY ISOLATION, AND SNAPSHOT/PI SOURCE PARITY QUALIFIED; HARDWARE NOT RUN`
+
+M8D added `legacy_csv_export.py` to the existing experiment-recording owner and
+changed only `validate_run.py` plus its Phase 09 recording regression. The
+sole sqlite3 rosbag remains authoritative. Write-enabled validation derives
+the familiar files only after bag finalization, writes them atomically, and
+replaces them idempotently on repeat validation. It neither starts the legacy
+live CSV collector nor creates a second recorder.
+
+Static and synthetic-bag tests cover the following exact output views:
+
+- `encoder.csv`: timestamp and encoder angle;
+- `cost_value.csv`: timestamp and augmented `/cost_modified` value;
+- `filter_value.csv`: timestamp plus exactly two filter values;
+- `control_value.csv`: timestamp plus exactly six command values;
+- `odometry.csv`: evaluation-only Vicon timestamp, xyz, and qw/qx/qy/qz;
+- `raw_cost_value.csv`: timestamp and `raw_cost = -voltage`;
+- `algorithm_odometry.csv`: algorithm `/odom` timestamp, xyz, and
+  qw/qx/qy/qz; and
+- `legacy_csv_manifest.json`: source resolution, semantics, row counts, byte
+  sizes, hashes, and bounded errors.
+
+The validation contract rejects missing/malformed required views as incomplete.
+Dry validation performs no writes and emits an explicit warning. Timestamp
+normalization, exact array widths, atomic replacement, repeated-validation
+idempotence, and the recorder's finalizer-to-validator integration are covered
+by the recording tests. The familiar columns remain compatible with the
+legacy low-level plotting reader. Its one-level `Test_*` discovery browser does
+not traverse the selected wrapper's nested dated run root, an honest UI
+limitation rather than a CSV-format defect.
+
+Final bounded checks:
+
+| Check | Result |
+|---|---:|
+| source focused/full five-file Phase 09 suite | `209 passed` |
+| isolated build of the three selected packages | `3 packages finished in 12.6 s` |
+| installed-overlay five-file Phase 09 suite | `209 passed` |
+| installed `ros_esc` functional suite, excluding three inherited package-wide style meta-tests | `159 passed` |
+| installed vehicle-node functional suite, excluding three inherited package-wide style meta-tests | `71 passed` |
+| mounted Pi-source recording suite | `131 passed` |
+| mounted Pi-source remaining Phase 09 suite | `78 passed` |
+| snapshot/Pi full-tree regular-file hashes | `343/343 PASS` |
+| snapshot/Pi type/mode/size inventory | `431/431 PASS` |
+| generated source caches / source symlinks | `0 / 0` |
+
+A final independent read-only review found no functional or blocking issue in
+the exporter, validator integration, or tests. It confirmed the exact legacy
+row widths, timestamp normalization, `0664` output-mode behavior, per-file
+atomic replace-not-append writes, finalizer invocation, explicit dry-validation
+warning, legacy-wrapper isolation, and the documented plotting-browser scope.
+
+The isolated build root was `/tmp/phase09_m8d_final.ex4Zpg`; installed imports
+resolved from that overlay, and both the installed and mounted-source test
+passes used the resulting generated interfaces rather than unbuilt source.
+
+One attempted command enabled shell nounset before ROS setup and stopped when
+the setup script referenced unset `AMENT_TRACE_SETUP_FILES`. The corrected
+command sourced ROS first, then enabled `set -u`, and passed. This is retained
+as an environment-ordering attempt, not a product-test failure. Exploratory
+package-wide style meta-tests remain inherited debt and were not weakened or
+rewritten by M8D.
+
+The scoped SSHFS transfer replaced two files and added one, used no delete
+behavior, and retained verified pre-transfer recovery copies at:
+
+```text
+/home/mattb/physical_TB3_files_snapshot/phase09_backups/20260804T023735Z_m8d_legacy_csv_export
+/home/mattb/tb3-pi/phase09_backups/20260804T023735Z_m8d_legacy_csv_export
+```
+
+No on-Pi build/source, ROS graph, Vicon/calibration session, safety rehearsal,
+serial/GPIO/OpenCR access, lamp response, actuation, or motion was exercised by
+this qualification. M8D therefore strengthens static/runtime-data readiness
+without claiming a hardware pass.

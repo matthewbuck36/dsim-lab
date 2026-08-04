@@ -228,6 +228,41 @@ Codex did not perform an on-Pi build or live hardware run; the next step is the
 ordinary human-operated lab SOP and bare wrapper, with no additional repository
 gate.
 
+### Current Phase 09 M8D recording amendment — 2026-08-03
+
+<!-- MBuck 2026-08-03: Add familiar post-bag CSVs without adding a recorder or changing any legacy experiment path. -->
+
+For the selected wrapper, the runtime data directory is
+`${HOME}/turtlebot_rotating_sensor_tests/gesc_gaussian_two_source/<UTC-date>/<run-id>/`.
+The terminal diagnostics described above remain live while the sole managed
+sqlite3 rosbag records. The familiar headerless CSVs are not live streams: after
+a clean `Ctrl+C` shutdown finalizes the authoritative bag, the existing
+`record_run` finalizer invokes their atomic, idempotent export as part of final
+validation. An incomplete export makes that validation fail.
+
+The post-bag export writes these familiar files into the same run directory:
+
+- `encoder.csv`: `[timestamp, angle]`;
+- `cost_value.csv`: `[timestamp, augmented cost]` from `/cost_modified`;
+- `filter_value.csv`: `[timestamp, two filter values]`;
+- `control_value.csv`: `[timestamp, six command-array values]`; and
+- `odometry.csv`: `[timestamp, x, y, z, qw, qx, qy, qz]`, retaining the legacy
+  Vicon/evaluation plotting semantics.
+
+It also writes `raw_cost_value.csv` as `[timestamp, raw_cost]`, where
+`raw_cost=-voltage`, and `algorithm_odometry.csv` as
+`[timestamp, x, y, z, qw, qx, qy, qz]` from the algorithm's `/odom` input.
+`legacy_csv_manifest.json` records each mapping, row count, file hash, and any
+export error. The existing `extract_test_data` column reader can consume these
+files directly. Its old top-level `Test_*` browser does not automatically find
+the nested run directories, and no synthetic `comments.txt` is created.
+
+The rosbag remains the sole recorder and source of truth; M8D adds no second
+recorder or live CSV collector. This selected-only post-bag compatibility
+amendment supersedes the earlier no-CSV-equivalence statement only for these
+exports. Every legacy wrapper, launch, node, and experiment path remains
+unchanged, and no safety or hardware-readiness claim is broadened.
+
 ---
 
 ## Non-negotiable rules

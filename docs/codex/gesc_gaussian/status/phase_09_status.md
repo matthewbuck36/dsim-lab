@@ -1,7 +1,7 @@
 # Phase 09 Live Status
 
-Last verified: `2026-08-04T01:17:29+00:00`
-Status: `M8C ONE-COMMAND SOURCE CONTRACT, HOST QUALIFICATION, AND PI SOURCE PARITY PASS — LIVE HARDWARE NOT RUN BY CODEX`
+Last verified: `2026-08-03T20:01:53-07:00`
+Status: `M8D FAMILIAR CSV EXPORT, HOST QUALIFICATION, AND PI SOURCE PARITY PASS — LIVE HARDWARE NOT RUN BY CODEX`
 
 ## Objective
 
@@ -942,11 +942,89 @@ view, and remain ready to press `Ctrl+C`.
 - No on-Pi build, ROS graph, live Vicon connection, serial/GPIO access, lamp
   response, actuator command, or robot motion has been run by Codex for M8C.
 
+## M8D familiar runtime CSV export — 2026-08-03
+
+<!-- MBuck 2026-08-03: Derive familiar CSVs from the finalized authoritative bag; do not add a live collector or second recorder. -->
+
+The selected wrapper now automatically writes familiar, headerless CSV files
+into its retained run root after the sole sqlite3 rosbag finalizes. The export
+runs inside the existing `validate_run` owner and is atomic and idempotent; it
+does not alter the selected launch graph, add a live CSV collector, or affect
+any legacy ESC wrapper.
+
+Finalized run artifacts now include:
+
+- `encoder.csv`: `[timestamp, angle]` from the `encoder` alias;
+- `cost_value.csv`: `[timestamp, augmented_cost]` from
+  `augmented_cost_legacy` (`/cost_modified`);
+- `filter_value.csv`: timestamp plus the exact two-value legacy filter row;
+- `control_value.csv`: timestamp plus the exact six-value final-command row;
+- `odometry.csv`: evaluation-only Vicon in the legacy
+  `[timestamp, x, y, z, qw, qx, qy, qz]` layout;
+- `raw_cost_value.csv`: legacy raw cost with `raw_cost = -voltage`;
+- `algorithm_odometry.csv`: the algorithm's independent `/odom` pose; and
+- `legacy_csv_manifest.json`: resolved sources, semantics, row counts, file
+  sizes, SHA-256 values, and bounded export errors.
+
+Final write-enabled validation requires the export to be complete. Dry
+validation does not mutate the run directory and prints a warning that CSV
+export was skipped. The CSV columns are compatible with the legacy low-level
+plot reader; its one-level `Test_*` browser does not auto-discover the selected
+wrapper's nested dated run root, so a retained run directory must be supplied
+directly to that reader.
+
+M8D changed exactly two existing snapshot/Pi source files,
+`validate_run.py` and `test_phase09_physical_recording.py`, and added
+`legacy_csv_export.py`. Scoped SSHFS transfer used no delete behavior.
+Pre-transfer recovery artifacts are retained at:
+
+```text
+/home/mattb/physical_TB3_files_snapshot/phase09_backups/20260804T023735Z_m8d_legacy_csv_export
+/home/mattb/tb3-pi/phase09_backups/20260804T023735Z_m8d_legacy_csv_export
+```
+
+The verified post-change source seal is retained at
+`/home/mattb/physical_TB3_files_snapshot/phase09_backups/20260804T030145Z_m8d_post_legacy_csv_export`.
+Its 343-file manifest hashes to
+`49f969c72021242f25eaa4b2b87993904a9c0a5decd79278385d1d35bcf5b9af`,
+its 431-entry inventory hashes to
+`88b84d44dd478a09da610f75f9caf98619b71d5017f2f3d5a123cbd8f18a5bf7`,
+and its verified source archive hashes to
+`e713a243daa6c5e687494798fd0ed76096d5000904108716bf2106f22c95a23c`.
+
+Current M8D evidence:
+
+- source focused/full five-file Phase 09 regression: `209 passed`;
+- isolated build: all three selected packages finished in `12.6 s`;
+- installed-overlay five-file Phase 09 regression: `209 passed`;
+- `ros_esc` functional regression: `159 passed` with the three inherited style
+  meta-tests excluded;
+- vehicle-node functional regression: `71 passed` with its three inherited
+  style meta-tests excluded;
+- mounted Pi-source recording regression: `131 passed`; the remaining Phase 09
+  files then passed `78` tests;
+- exact snapshot/Pi parity: `343/343` regular-file hashes and `431/431`
+  type/mode/size inventory entries; and
+- generated cache files and source-tree symlinks: `0`.
+
+The first attempted test shell enabled `set -u` before sourcing ROS and stopped
+on the setup script's unset `AMENT_TRACE_SETUP_FILES`. Reordering the shell to
+source ROS before enabling `set -u` passed; this was a shell-environment attempt,
+not a source or behavior failure.
+
+The first retained-manifest verification attempt ran from the repository root
+instead of the source root, so all relative paths were reported missing. The
+same manifest then passed all 343 entries from its correct source root; the
+archive hash check also passed. No source changed during that correction.
+
+No on-Pi build/source, live Vicon connection, calibration, safety rehearsal,
+serial/GPIO access, lamp response, actuation, or robot motion was run for M8D.
+
 ## Current milestone
 
-**M8C LAB-SOP ONE-COMMAND SOURCE CONTRACT PASS / HOST QUALIFICATION PASS /
-SNAPSHOT-TO-PI PARITY PASS / LEGACY SELECTION PRESERVED / NO LIVE HARDWARE RUN
-BY CODEX.**
+**M8D FAMILIAR CSV EXPORT PASS / M8C LAB-SOP ONE-COMMAND CONTRACT RETAINED /
+HOST QUALIFICATION PASS / SNAPSHOT-TO-PI PARITY PASS / LEGACY SELECTION
+PRESERVED / NO LIVE HARDWARE RUN BY CODEX.**
 
 ## Exact next workflow
 
@@ -960,5 +1038,6 @@ BY CODEX.**
 3. Watch the printed run directory and one-second diagnostics. Keep the robot
    in view and press `Ctrl+C` if the behavior or hardware is not acceptable.
 4. On normal completion or interruption, wait for final-zero/rosbag validation
-   and retain the run directory. Diagnose any evaluation-incomplete Vicon or
-   physical behavior result from that evidence.
+   and the automatic familiar CSV export, then retain the reported run
+   directory. Diagnose any evaluation-incomplete Vicon, CSV-export
+   incompleteness, or physical behavior result from that evidence.

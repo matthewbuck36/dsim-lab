@@ -209,6 +209,40 @@ implementation work must not itself launch physical hardware; report M8C
 implementation, host validation, source transfer, and hardware results only
 after they actually occur.
 
+### M8D familiar post-bag CSV amendment
+
+<!-- MBuck 2026-08-03: Preserve familiar physical CSV outputs without adding a live collector or second recorder. -->
+
+For the selected wrapper only, plan the runtime root as
+`${HOME}/turtlebot_rotating_sensor_tests/gesc_gaussian_two_source/<UTC-date>/<run-id>/`.
+The one sqlite3 rosbag remains the sole recorder and source of truth. After that
+bag cleanly finalizes, plan the existing `record_run` final validation path to
+atomically and idempotently export these headerless familiar files into the same
+run directory:
+
+- `encoder.csv`: `[timestamp, angle]`;
+- `cost_value.csv`: `[timestamp, augmented cost]` from `/cost_modified`;
+- `filter_value.csv`: `[timestamp, two filter values]`;
+- `control_value.csv`: `[timestamp, six command-array values]`; and
+- `odometry.csv`: `[timestamp, x, y, z, qw, qx, qy, qz]` with legacy
+  Vicon/evaluation plotting semantics.
+
+Also plan `raw_cost_value.csv` as `[timestamp, raw_cost]`, with
+`raw_cost=-voltage`, and `algorithm_odometry.csv` as
+`[timestamp, x, y, z, qw, qx, qy, qz]` from algorithm `/odom`. Require
+`legacy_csv_manifest.json` to retain source mappings and semantics, row counts,
+byte sizes, SHA-256 hashes, and bounded export errors. Export incompleteness
+must fail final validation.
+
+Do not add a second bag process or live CSV collector. Terminal diagnostics
+remain live while the bag records; CSVs appear only after clean shutdown and bag
+finalization. The old `extract_test_data` column reader may consume the files
+directly, but do not promise automatic discovery by its top-level `Test_*`
+browser and do not fabricate `comments.txt`. This M8D amendment supersedes the
+earlier no-CSV-equivalence statement only for this selected wrapper's post-bag
+export. Keep all legacy wrappers, nodes, launches, and experiment behavior
+unchanged, and do not broaden any safety or hardware-readiness claim.
+
 ## Exact physical snapshot boundary
 
 The physical Pi-home snapshot is:

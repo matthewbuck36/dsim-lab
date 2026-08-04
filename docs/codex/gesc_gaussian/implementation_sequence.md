@@ -480,6 +480,50 @@ an on-Pi build or live hardware. The next action is the human-operated lab SOP
 and bare wrapper, not a separate commissioning or repository-authorization
 sequence.
 
+### Current M8D familiar runtime CSV export — 2026-08-03
+
+M8D retains the M8C one-command operator and control/evaluation contracts while
+adding the familiar CSV artifacts requested for analysis. The existing
+`record_run` process remains the sole selected recorder and rosbag finalization
+owner. Its existing `validate_run` stage now reads the finalized authoritative
+bag and atomically, idempotently writes these headerless files in the same
+reported run root:
+
+- `encoder.csv` (`[timestamp, angle]`);
+- `cost_value.csv` (augmented `/cost_modified`);
+- `filter_value.csv` (timestamp plus two filter values);
+- `control_value.csv` (timestamp plus six command values);
+- `odometry.csv` (evaluation-only Vicon in legacy xyz/quaternion columns);
+- `raw_cost_value.csv` (`raw_cost = -voltage`);
+- `algorithm_odometry.csv` (algorithm `/odom`, separate from Vicon); and
+- `legacy_csv_manifest.json` (resolved sources, semantics, counts, sizes,
+  hashes, and bounded errors).
+
+Final write-enabled validation requires a complete export; dry validation does
+not write and warns that export was skipped. Revalidation replaces the derived
+files instead of appending. This does not revive the historical live CSV
+collector, add a second recorder, or change any legacy ESC wrapper/launch. The
+file columns work with the legacy low-level reader, although its one-level
+`Test_*` browser does not automatically discover the selected wrapper's nested
+date/run hierarchy.
+
+The bounded implementation replaced `validate_run.py` and
+`test_phase09_physical_recording.py`, added `legacy_csv_export.py`, and was
+transferred snapshot-to-Pi with no deletes. Source and installed-overlay Phase
+09 suites each passed `209` tests; the isolated three-package build completed
+in `12.6 s`; functional package regressions passed `159` `ros_esc` and `71`
+vehicle tests with inherited style meta-tests excluded; mounted-source suites
+passed `131 + 78` tests. Final source parity is `343/343` file hashes and
+`431/431` inventory entries with no caches or symlinks. Recovery copies are
+under the timestamped `20260804T023735Z_m8d_legacy_csv_export` directories in
+both snapshot and Pi `phase09_backups` roots.
+
+No on-Pi build/source, Vicon/calibration session, safety rehearsal, ROS graph,
+serial/GPIO access, actuation, or motion was run for M8D. Resume with the same
+human-operated M8C lab SOP and bare wrapper; after `Ctrl+C` or normal
+completion, wait for final zero, bag finalization, validation, and CSV export
+before collecting the reported run directory.
+
 ## Phase 10 - final documentation
 
 Goal: update real repository documentation using verified prior artifacts.

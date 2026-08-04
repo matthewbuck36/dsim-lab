@@ -1,14 +1,13 @@
-# Phase 09 Pi Transfer and Rollback Procedure (M8A-M8C)
+# Phase 09 Pi Transfer and Rollback Procedure (M8A-M8D)
 
-Status: `M8C REVIEWED SOURCE TRANSFER AND EXACT PARITY PASS — LIVE HARDWARE NOT RUN`
+Status: `M8D REVIEWED CSV-EXPORT TRANSFER AND EXACT PARITY PASS — LIVE HARDWARE NOT RUN`
 
-M8C source transfer completed on 2026-08-03 local time after a complete Pi
-source archive and an itemized checksum dry run. It intentionally replaced 16
-reviewed files, removed three obsolete Phase-09-only gate/protocol files, and
-removed six generated `.pyc` files. Snapshot/Pi parity is `342/342` hashes and
-`430/430` inventory entries with an empty final dry run. The current rollback
-is the full verified archive documented in the M8C amendment at the end of this
-file and in `phase_09_pi_transfer_receipt.md`.
+M8D source transfer completed on 2026-08-03 local time after exact scoped
+backups and an itemized checksum dry run. It replaced two reviewed files, added
+one reviewed exporter, and deleted nothing. Snapshot/Pi parity is `343/343`
+hashes and `431/431` inventory entries with an empty final scoped dry run. The
+current rollback is the scoped M8D procedure at the end of this file; the full
+M8C archive remains the recovery point for the earlier simplification only.
 
 No on-Pi build, installed-overlay check, ROS graph, serial/GPIO access, Vicon
 connection, actuator, lamp response, or robot motion was run by Codex. The
@@ -226,3 +225,46 @@ Phase-09-only files, and the backed-up cache state. Recompute and require the
 retained `source_before.sha256` and `source_before.inventory.tsv`; do not run a
 graph or hardware as part of rollback verification. The exact receipt and
 pre/post hashes are in `phase_09_pi_transfer_receipt.md`.
+
+## M8D scoped CSV-export amendment
+
+<!-- MBuck 2026-08-03: Make the latest rollback exact for the post-bag CSV exporter. -->
+
+M8D transferred exactly two existing files and one absent-before file, with
+checksums and relative paths enabled and without `--delete`:
+
+```text
+existing-before:
+  ros_esc/ros_esc/experiment_recording/validate_run.py
+  ros_esc/test/test_phase09_physical_recording.py
+absent-before:
+  ros_esc/ros_esc/experiment_recording/legacy_csv_export.py
+```
+
+Matching verified pre-transfer evidence is retained at:
+
+```text
+/home/mattb/physical_TB3_files_snapshot/phase09_backups/
+  20260804T023735Z_m8d_legacy_csv_export
+/home/mattb/tb3-pi/phase09_backups/
+  20260804T023735Z_m8d_legacy_csv_export
+```
+
+For an M8D-only rollback, stop related processes and use the backup associated
+with the tree being restored. Verify `backup_manifest.sha256`, restore only the
+two `existing_paths_before.txt` entries to their exact relative paths, and
+remove only the single normalized path in `new_paths_before.txt`. Do not remove
+any directory recursively and do not use a wildcard, whole-home copy, or
+`rsync --delete`. Recompute the scoped hashes and require the two restored
+values below while proving the exporter absent:
+
+```text
+edc0e2a7924ba2cb5d1b368ffc018477c449869d7eeccbf179d36691a237baa8  validate_run.py
+3f775bd434b454faa76326ce5006310b115e8785ada94f187af9269c49118ae8  test_phase09_physical_recording.py
+```
+
+This rolls back only M8D and returns to the sealed M8C source state. It does not
+undo M8C. If a broader rollback is required, complete this M8D rollback first,
+then follow the retained M8C archive procedure. Neither rollback verification
+requires or authorizes a ROS graph, Vicon connection, serial/GPIO access, or
+physical motion.

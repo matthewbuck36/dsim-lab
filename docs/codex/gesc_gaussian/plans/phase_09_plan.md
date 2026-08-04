@@ -1566,3 +1566,62 @@ M8C acceptance requires:
 - a fresh snapshot backup, reviewed source-only Pi backup/transfer, exact
   post-transfer parity, updated status/handoff/operator directions, and a clean
   repository closeout.
+
+### M8D familiar runtime CSV export amendment — 2026-08-03
+
+<!-- MBuck 2026-08-03: Add familiar post-run CSV artifacts without reviving the historical live CSV collector or adding a second recorder. -->
+
+The user additionally requires the selected GESC+Gaussian two-source run to
+leave the familiar CSV files in the same retained runtime data directory as its
+bag and validation evidence. M8D extends the existing `validate_run` owner so
+that, after the sole sqlite3 rosbag has finalized, validation reads that bag and
+atomically materializes the CSV views. It does not start a live CSV collector,
+create a second recorder, change any historical wrapper, or make CSV files an
+independent source of truth.
+
+The selected wrapper run root shall contain these headerless familiar files:
+
+| File | Bag source and columns |
+|---|---|
+| `encoder.csv` | `encoder`: `[timestamp, angle]` |
+| `cost_value.csv` | `augmented_cost_legacy` (`/cost_modified`): `[timestamp, augmented_cost]` |
+| `filter_value.csv` | `filter_output_legacy`: timestamp plus exactly two values |
+| `control_value.csv` | `command_array_final`: timestamp plus exactly six values |
+| `odometry.csv` | evaluation-only Vicon odometry in the legacy `[timestamp, x, y, z, qw, qx, qy, qz]` layout |
+
+M8D also retains algorithm-specific evidence beside those files:
+
+- `raw_cost_value.csv` records the legacy raw-cost view with
+  `raw_cost = -voltage`;
+- `algorithm_odometry.csv` records the algorithm's `/odom` pose independently
+  of evaluation-only Vicon; and
+- `legacy_csv_manifest.json` records resolved aliases/topics, semantics, row
+  counts, file sizes, SHA-256 values, and bounded export errors.
+
+Export is idempotent and per-file atomic: repeated final validation replaces
+the derived files rather than appending duplicate rows. Final validation now
+requires a complete export and may fail the run's completeness result when a
+required input is absent or malformed. Read-only/dry validation deliberately
+does not write CSVs and emits an explicit warning. The familiar files are
+column-compatible with the legacy low-level plotting reader, but the old
+one-level `Test_*` browser does not automatically discover this selected
+wrapper's nested dated run root; operators may consume a run directory
+directly without changing or misleading the legacy browser.
+
+The bounded source change is two replacements
+(`validate_run.py` and `test_phase09_physical_recording.py`) plus one new owner
+module (`legacy_csv_export.py`). Pre-transfer recovery copies are retained at
+`/home/mattb/physical_TB3_files_snapshot/phase09_backups/20260804T023735Z_m8d_legacy_csv_export`
+and
+`/home/mattb/tb3-pi/phase09_backups/20260804T023735Z_m8d_legacy_csv_export`.
+The reviewed SSHFS synchronization must transfer only those three paths with no
+delete behavior and finish with exact snapshot/Pi source parity.
+
+M8D acceptance requires focused source and installed-overlay recording tests,
+the full five-file Phase 09 regression set, functional `ros_esc` and vehicle
+node regressions with inherited package-wide style meta-tests reported
+separately, a clean isolated three-package build, mounted-source revalidation,
+and exact full-tree hash/inventory parity with no generated caches or symlinks.
+These are static/source-transfer gates only. No on-Pi build/source, Vicon or
+calibration session, safety rehearsal, serial/GPIO access, actuation, or motion
+is authorized or claimed by this amendment.

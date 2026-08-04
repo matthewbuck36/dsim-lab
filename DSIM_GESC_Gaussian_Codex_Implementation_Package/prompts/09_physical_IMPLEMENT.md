@@ -123,7 +123,7 @@ in `console.log`. The summary should include readiness, voltage/raw cost,
 augmented-cost components, filter output, algorithm state/fill count,
 wheel/IMU odometry, unambiguously labeled Vicon evaluation pose/status, and
 final `vx`/`wz` when those inputs are available. Do not add `ros2 topic echo`,
-the legacy CSV collector, or another bag process.
+a live legacy CSV collector, or another bag process.
 
 Each selected run must automatically create one unique run directory and one
 sqlite3 rosbag containing all legacy sensor/encoder/odometry/filter/command/
@@ -215,6 +215,41 @@ owner selection. Do not run live hardware during this implementation task.
 Record M8C validation and transfer outcomes only after direct verification; the
 current Phase 09 status/handoff now contain the completed host and Pi-parity
 results.
+
+### M8D familiar post-bag CSV implementation amendment
+
+<!-- MBuck 2026-08-03: Export familiar physical CSVs from the finalized authoritative bag without changing legacy owners. -->
+
+For the selected wrapper only, retain the runtime root
+`${HOME}/turtlebot_rotating_sensor_tests/gesc_gaussian_two_source/<UTC-date>/<run-id>/`.
+Keep its one sqlite3 rosbag as the sole recorder and source of truth. After a
+clean shutdown finalizes that bag, extend the existing `record_run` finalizer's
+validation path to atomically and idempotently export the following headerless
+files into the same run directory:
+
+- `encoder.csv`: `[timestamp, angle]`;
+- `cost_value.csv`: `[timestamp, augmented cost]` from `/cost_modified`;
+- `filter_value.csv`: `[timestamp, two filter values]`;
+- `control_value.csv`: `[timestamp, six command-array values]`; and
+- `odometry.csv`: `[timestamp, x, y, z, qw, qx, qy, qz]`, preserving legacy
+  Vicon/evaluation plotting semantics.
+
+Additionally export `raw_cost_value.csv` as `[timestamp, raw_cost]`, where
+`raw_cost=-voltage`, and `algorithm_odometry.csv` as
+`[timestamp, x, y, z, qw, qx, qy, qz]` from algorithm `/odom`. Write
+`legacy_csv_manifest.json` with the alias/topic mappings and semantics, row
+counts, byte sizes, SHA-256 hashes, and bounded errors. Treat any incomplete
+required export as a final-validation failure.
+
+Do not start a second bag process or live CSV collector. Keep the selected
+terminal diagnostics live while recording and make clear that CSVs appear only
+after clean shutdown and bag finalization. Preserve direct compatibility with
+the old `extract_test_data` column reader, but do not alter its top-level
+`Test_*` browser to discover nested run directories and do not fabricate
+`comments.txt`. This amendment supersedes the earlier no-CSV-equivalence text
+only for the selected wrapper's post-bag export. Keep every legacy wrapper,
+node, launch, and runtime behavior unchanged, and do not weaken or broaden any
+safety or hardware-readiness boundary.
 
 ### Cumulative v8.12 source-selection rule
 

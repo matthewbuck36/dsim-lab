@@ -1,17 +1,18 @@
-# Phase 09 Live-Pi Source Transfer Receipt (M8A-M8C)
+# Phase 09 Live-Pi Source Transfer Receipt (M8A-M8D)
 
-Verified: `2026-08-04T01:17:29+00:00`
+Verified: `2026-08-04T03:01:45+00:00`
 
-Result: `PASS — M8C SOURCE TRANSFER AND EXACT SNAPSHOT/PI PARITY; LIVE HARDWARE NOT RUN`
+Result: `PASS — M8D CSV EXPORT SOURCE TRANSFER AND EXACT SNAPSHOT/PI PARITY; LIVE HARDWARE NOT RUN`
 
 The sections through “Deferred gates” are the immutable M8A receipt. The M8B
-additive receipt supersedes its 339-file/51-path figures, and the M8C receipt at
-the end supersedes both current-state figures while preserving their historical
-transfer evidence.
+additive receipt supersedes its 339-file/51-path figures, and the M8C receipt
+supersedes both earlier current-state figures. The M8D receipt now supersedes
+only the current source count, parity, and rollback target while preserving
+every earlier transfer record.
 
 No on-Pi build, ROS graph startup, Vicon connection, serial/GPIO access,
 actuation, lamp response, or physical motion was run by Codex. The current
-human-operated M8C workflow has no separate stationary/calibration/authorization
+human-operated M8D workflow has no separate stationary/calibration/authorization
 ceremony.
 
 ## Authorization and target
@@ -410,3 +411,84 @@ No on-Pi build, installed-overlay check, ROS graph, Vicon connection, serial or
 GPIO access, actuator command, lamp response, or robot motion was run. The
 wrapper intentionally performs the on-Pi build/source at the beginning of the
 later human-operated experiment. The SSHFS mount was left mounted for the user.
+
+## M8D familiar-CSV export source transfer
+
+<!-- MBuck 2026-08-03: Add the reviewed post-rosbag CSV exporter without changing any legacy wrapper. -->
+
+Verified: `2026-08-04T03:01:45+00:00`
+
+Result: `PASS — TWO REVIEWED REPLACEMENTS, ONE REVIEWED ADDITION, AND EXACT
+SNAPSHOT/PI PARITY; LIVE HARDWARE NOT RUN`
+
+M8D adds familiar headerless CSV output to the selected
+`gesc_gaussian_two_source` run directory after the one authoritative rosbag is
+finalized. It does not add a recorder, live CSV subscriber, launch process, or
+legacy-wrapper change. The exact source scope was:
+
+```text
+replace ros_esc/ros_esc/experiment_recording/validate_run.py
+replace ros_esc/test/test_phase09_physical_recording.py
+add     ros_esc/ros_esc/experiment_recording/legacy_csv_export.py
+```
+
+Before either tree was changed, the two replacement files and the absent-before
+addition were recorded and verified under these matching rollback roots:
+
+```text
+/home/mattb/physical_TB3_files_snapshot/phase09_backups/
+  20260804T023735Z_m8d_legacy_csv_export
+/home/mattb/tb3-pi/phase09_backups/
+  20260804T023735Z_m8d_legacy_csv_export
+backup_manifest.sha256 SHA-256:
+  d34575f0b0eefec3ca3a3ee13ccf4ef58678b9444cc1d4d5d37e4382cfbb93a8
+```
+
+The transfer used checksum comparison, relative paths, and disabled
+owner/group/directory-timestamp updates. It did not use `--delete`. The actual
+itemization contained only the three paths above; its final scoped dry run was
+empty. Their final SHA-256 values are:
+
+```text
+380e7bc7d18ef6481b473c0c18b8199931e96a66f8622286bc7651ebea3b4ea6  legacy_csv_export.py
+ed8c582f4500048c28f8611f0b1e565406d9a0d8fbcb094dd04962b9af69a22d  validate_run.py
+8dd8b76eb1a22684d31d4ff14e67920f8262fa2da7252a0fdaa463efa965a78d  test_phase09_physical_recording.py
+```
+
+Generated Python and pytest caches were removed only from the offline snapshot
+before the final comparison. The Pi already had none. Complete byte and
+type/mode/size parity then passed:
+
+```text
+snapshot regular-file hashes: 343
+Pi regular-file hashes:       343/343 PASS
+snapshot inventory entries:  431
+Pi inventory entries:        431/431 PASS
+source cache files/directories: 0/0 on both trees
+source symlinks:                0 on both trees
+final scoped checksum dry run:  empty
+```
+
+The post-M8D snapshot seal is:
+
+```text
+/home/mattb/physical_TB3_files_snapshot/phase09_backups/
+  20260804T030145Z_m8d_post_legacy_csv_export
+source_after.sha256 SHA-256:
+  49f969c72021242f25eaa4b2b87993904a9c0a5decd79278385d1d35bcf5b9af
+source_after.inventory.tsv SHA-256:
+  88b84d44dd478a09da610f75f9caf98619b71d5017f2f3d5a123cbd8f18a5bf7
+source_after.tar SHA-256:
+  e713a243daa6c5e687494798fd0ed76096d5000904108716bf2106f22c95a23c
+```
+
+The 343-file manifest and archive both revalidated successfully. The first
+manifest check was invoked from the repository rather than the source root and
+therefore reported every relative path missing; rerunning the same retained
+manifest from the sealed source root passed all 343 entries. This was a
+verification-command working-directory correction, not a source change.
+
+No on-Pi build/source command, installed-overlay check, ROS graph, Vicon
+connection, serial/GPIO access, actuator command, lamp response, or physical
+motion was run. The selected wrapper remains responsible for the later on-Pi
+build and source.
