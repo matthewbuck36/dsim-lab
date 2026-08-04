@@ -1,18 +1,18 @@
 # Phase 09 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-08-04T03:08:29+00:00
-Base HEAD: 6f6f5b1f0f4e6fa0194b5a77d16d0b3fb9ed0cdf
+Generated: 2026-08-04T23:49:49+00:00
+Base HEAD: 363170db2101be3503744f0b46490b4c066940a0
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_09_status.md
-Status sha256: 65951580f74747dde5883c75db26b9c4301a1086ef8c45527b49322305dbf210
+Status sha256: 75239d04e8d93d3f719181ad2cb1ce0e1f9927f7148ad8f6520524fa5c94917f
 Plan: docs/codex/gesc_gaussian/plans/phase_09_plan.md
-Plan sha256: b0cae99a6b2f2f6113ad699874b41512cd2e8e29289f6ad91d18d81caff22ae9
-Unstaged diff sha256: bcefe29c4d44555bf20afadefc2852bf122ddbc9ece7783290878c5ca57be950
+Plan sha256: 940d97d10dd060420b7d4dd7f3ac58225c7d025a2cf3902db27087afc571196d
+Unstaged diff sha256: 22c5dfea41ea1e56a5826c3e1eafbf8c645aae67c54d60d3a67583cb3cd3a075
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 182]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 183]
  M DSIM_GESC_Gaussian_Codex_Implementation_Package/10_PHYSICAL_EXPERIMENT_READINESS.md
  M DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md
  M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_IMPLEMENT.md
@@ -22,34 +22,30 @@ Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852
  M docs/codex/gesc_gaussian/implementation_sequence.md
  M docs/codex/gesc_gaussian/plans/phase_09_plan.md
  M docs/codex/gesc_gaussian/status/phase_09_status.md
- M docs/codex/gesc_gaussian/validation/phase_09_pi_transfer_and_rollback.md
- M docs/codex/gesc_gaussian/validation/phase_09_pi_transfer_receipt.md
- M docs/codex/gesc_gaussian/validation/phase_09_static_qualification.md
+?? docs/codex/gesc_gaussian/validation/phase_09_pi_runtime_repair.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../10_PHYSICAL_EXPERIMENT_READINESS.md            | 53 ++++++++++--
- .../START_HERE.md                                  | 35 ++++++++
- .../prompts/09_physical_IMPLEMENT.md               | 37 ++++++++-
- .../prompts/09_physical_PLAN.md                    | 34 ++++++++
- .../checkpoints/phase_09_checkpoint.txt            | 37 ++-------
- .../gesc_gaussian/handoffs/phase_09_handoff.md     | 89 +++++++++++++++++++-
- .../codex/gesc_gaussian/implementation_sequence.md | 44 ++++++++++
- docs/codex/gesc_gaussian/plans/phase_09_plan.md    | 59 +++++++++++++
- docs/codex/gesc_gaussian/status/phase_09_status.md | 93 +++++++++++++++++++--
- .../phase_09_pi_transfer_and_rollback.md           | 60 ++++++++++++--
- .../validation/phase_09_pi_transfer_receipt.md     | 96 ++++++++++++++++++++--
- .../validation/phase_09_static_qualification.md    | 91 ++++++++++++++++++--
- 12 files changed, 658 insertions(+), 70 deletions(-)
+ .../10_PHYSICAL_EXPERIMENT_READINESS.md            |  57 ++++++--
+ .../START_HERE.md                                  |  34 +++++
+ .../prompts/09_physical_IMPLEMENT.md               |  43 ++++++
+ .../prompts/09_physical_PLAN.md                    |  34 +++++
+ .../checkpoints/phase_09_checkpoint.txt            |  41 +-----
+ .../gesc_gaussian/handoffs/phase_09_handoff.md     | 101 ++++++++++++-
+ .../codex/gesc_gaussian/implementation_sequence.md |  36 +++++
+ docs/codex/gesc_gaussian/plans/phase_09_plan.md    |  63 ++++++++
+ docs/codex/gesc_gaussian/status/phase_09_status.md | 162 ++++++++++++++++++++-
+ 9 files changed, 510 insertions(+), 61 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**M8D FAMILIAR CSV EXPORT PASS / M8C LAB-SOP ONE-COMMAND CONTRACT RETAINED /
-HOST QUALIFICATION PASS / SNAPSHOT-TO-PI PARITY PASS / LEGACY SELECTION
-PRESERVED / NO LIVE HARDWARE RUN BY CODEX.**
+**M8E CLEAN ON-PI BUILD AND CHECK-ONLY PASS / INSTALLED-SOURCE PARITY PASS /
+SELECTED DEVICE AND NO-LIDAR BASE SEPARATION PASS / LEGACY SELECTION PRESERVED /
+NO ROS GRAPH OR MOTION RUN / PI CLOCK CORRECTION REQUIRED BEFORE FIRST REAL
+RUN.**
 
 
 

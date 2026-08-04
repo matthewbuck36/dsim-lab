@@ -365,3 +365,46 @@ Recommended bounded commit message:
 ```text
 phase 09: integrate physical snapshot workflow
 ```
+
+### M8E real-Pi runtime-repair continuation — 2026-08-04
+
+<!-- MBuck 2026-08-04: Preserve the repaired source-underlay/build/device path and the successful nonlaunching Pi evidence. -->
+
+For a current M8E continuation, read the Plan, status, handoff, operator
+checklist, and
+`docs/codex/gesc_gaussian/validation/phase_09_pi_runtime_repair.md`. The first
+bare attempt is retained failed commissioning evidence and must not be retried
+or relabeled. It failed before readiness because the wrapper omitted the
+established `~/turtlebot3_ws` underlay and selected installed Python was stale;
+no robot command or motion occurred.
+
+The corrected selected wrapper must continue to:
+
+- source `/opt/ros/humble` then `~/turtlebot3_ws/install/setup.bash`;
+- build only `ros_esc_interfaces`, `ros_esc`, and
+  `turtlebot3_vehicle_nodes` with `--symlink-install`;
+- construct the selected no-lidar base and complete experiment launch before
+  any recorder or hardware access;
+- require installed Python/source parity;
+- verify distinct readable/writable photoresistor and OpenCR devices;
+- preserve `/odom` as the sole algorithm pose and Vicon as evaluation-only;
+- retain the restored historical sound-profile entry point; and
+- leave every historical ESC wrapper/launch/config path unchanged.
+
+The human-operated on-Pi `--check-only` is now completed: three packages passed
+in `1 min 39 s`, installed parity passed with `63 + 21` Python files, device
+separation and both launch constructions passed, and no serial, pigpio, Vicon,
+ROS graph, recorder, or motion started. Following the earlier power cycle,
+source parity was `345/345` files and `433/433` inventory entries with all three
+build return codes zero; the final strengthened check-only was captured after
+the Pi was back online. Do not erase this evidence or demand it again for every
+run.
+
+Before the first real experiment, correct the Pi's absolute clock once and
+verify it against the operator computer; the check-only timestamp was about
+seven hours behind UTC. Then follow the attached Vicon lab SOP and invoke the
+bare wrapper. Do not add authorization files, typed confirmations, hash keys,
+manual handoff gates, or a separate build command. A real run must still prove
+live sensor protocol, `/odom`/IMU, Vicon evidence, motion, Ctrl+C/final zero,
+bag finalization, validation, familiar CSV export, and physical two-light
+behavior. Preserve unsuccessful physical evidence honestly.

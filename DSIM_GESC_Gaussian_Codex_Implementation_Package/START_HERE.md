@@ -263,6 +263,40 @@ amendment supersedes the earlier no-CSV-equivalence statement only for these
 exports. Every legacy wrapper, launch, node, and experiment path remains
 unchanged, and no safety or hardware-readiness claim is broadened.
 
+### Current Phase 09 M8E Pi runtime checkpoint — 2026-08-04
+
+<!-- MBuck 2026-08-04: Retain the real-Pi clean-build/check-only evidence and selected no-lidar device separation. -->
+
+The first bare selected attempt is retained as failed commissioning evidence.
+It never reached readiness or motion because the wrapper omitted the Pi's
+established `~/turtlebot3_ws` underlay and selected installed Python was stale.
+M8E repaired that runtime path without changing any `ros_esc` algorithm source
+or historical ESC launch/wrapper.
+
+The wrapper now restores the source underlay, performs a selected three-package
+`--symlink-install` build, constructs both selected launches, verifies
+installed-source parity, and checks distinct photoresistor `/dev/ttyUSB0` and
+OpenCR `/dev/ttyACM0`. A new selected-only base helper starts OpenCR plus the
+standard state publisher without LDS-02 because the open-field algorithm has
+no `/scan` consumer. The historical full vehicle bringup remains unchanged.
+The exact missing historical sound-profile module was also restored so clean
+builds preserve that legacy entry point.
+
+The human-operated Pi `--check-only` passed all three packages in `1 min 39 s`,
+installed parity (`ros_esc=63`, `turtlebot3_vehicle_nodes=21`), device
+separation, and launch construction. It did not start pigpio, open serial,
+connect Vicon, create a ROS graph, record, actuate, or move the robot. Following
+the earlier power cycle, the mounted source still matches the snapshot
+`345/345` files and `433/433` inventory entries, with all three build return
+codes zero; the final strengthened check-only was captured after the Pi was
+back online.
+
+Read the authoritative validation at
+`docs/codex/gesc_gaussian/validation/phase_09_pi_runtime_repair.md`. Before the
+first real run only, correct the Pi's approximately seven-hour absolute clock
+error and compare time with the operator computer. Then follow the M8C lab SOP
+and invoke the bare wrapper; the successful check-only is not a repeated gate.
+
 ---
 
 ## Non-negotiable rules

@@ -367,3 +367,37 @@ or physical process was changed. For a separately authorized M8B continuation,
 report only the exact source/evidence actions actually verified, distinguish
 host-side from on-Pi results, and retain every unrun build, Vicon, ROS,
 calibration, safety, mechanism, and motion gate as `NOT RUN`.
+
+### Current M8E runtime-repair planning boundary — 2026-08-04
+
+<!-- MBuck 2026-08-04: Recover the accepted on-Pi check-only result without treating it as a physical experiment. -->
+
+For any continuation after M8E, first read
+`docs/codex/gesc_gaussian/validation/phase_09_pi_runtime_repair.md`. The first
+bare wrapper attempt is retained failed commissioning evidence: omitted
+`~/turtlebot3_ws` underlay plus stale selected installs prevented readiness,
+and no motion occurred. Do not rerun, delete, or relabel that run merely to
+obtain a clean result.
+
+The accepted repair is selected-only and legacy-preserving. It restores the
+established TurtleBot3 source underlay before a three-package
+`--symlink-install` build, verifies installed-source parity, uses distinct
+photoresistor `/dev/ttyUSB0` and OpenCR `/dev/ttyACM0`, and starts the selected
+base without lidar because this open-field algorithm has no `/scan` consumer.
+All historical ESC wrappers and launch files remain unchanged. The exact
+historical sound-profile module is restored so clean rebuilds preserve that
+legacy entry point.
+
+The operator-run `--check-only` passed all three packages in `1 min 39 s`,
+installed Python parity (`ros_esc=63`, `turtlebot3_vehicle_nodes=21`), and both
+launch constructions without opening serial, starting pigpio/Vicon/ROS/
+recording, or moving the robot. Final snapshot/Pi parity is `345/345` files and
+`433/433` inventory entries. Do not plan another repository authorization
+ceremony or require repeated check-only before ordinary runs.
+
+One OS prerequisite remains: correct and verify the Pi's absolute clock once;
+it printed Pacific wall-clock numbers as UTC and was about seven hours behind.
+Only after that correction should planning proceed to the attached lab SOP and
+bare wrapper. Retain actual sensor, odometry, Vicon, command, final-zero, bag,
+CSV, and physical two-light behavior as unverified until a real run proves
+them.

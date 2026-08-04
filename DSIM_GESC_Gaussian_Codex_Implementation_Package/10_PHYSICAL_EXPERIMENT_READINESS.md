@@ -1,14 +1,15 @@
 # Physical GESC + Gaussian Two-Source Operator Checklist
 
-<!-- MBuck 2026-08-03: Align the selected physical run with the established lab Vicon SOP and a single Bash entry point. -->
+<!-- MBuck 2026-08-04: Align the selected physical run with the established lab Vicon SOP, repaired Pi runtime, and a single Bash entry point. -->
 
 This is the current Phase 09 M8C operator procedure with the M8D familiar-CSV
-recording amendment. It supersedes the earlier M8B commissioning sequence that
-required separate site files, stationary preflight/approval, `--check-only`,
-typed authorization, Vicon identity fields, and file hashes. Those M8B
-requirements remain in historical status and handoff records only; the selected
-wrapper does not consult them. M8D changes retained output only and adds no
-operator gate or hardware-readiness claim.
+recording amendment and M8E real-Pi runtime repair. It supersedes the earlier
+M8B commissioning sequence that required separate site files, stationary
+preflight/approval, `--check-only`, typed authorization, Vicon identity fields,
+and file hashes. Those M8B requirements remain in historical status and
+handoff records only; the selected wrapper does not consult them. The one
+successful M8E `--check-only` was a diagnostic/qualification run, not a new
+per-experiment operator gate.
 
 The intended experiment is a human-supervised, exploratory physical test of the
 cumulative terminal v8.12 GESC + Gaussian algorithm in a clear, open room with
@@ -33,11 +34,31 @@ type/mode/size inventory entries. The M8C Pi rollback is:
   20260804T011049Z_m8c_pre_simplification
 ```
 
-The wrapper's host-only `--check-only` path rebuilt all three selected packages
-and passed without opening hardware. No on-Pi build, live ROS graph, Vicon
-connection, serial/GPIO access, actuator command, lamp response, or robot motion
-was run by Codex. Those are exercised for the first time by the human-operated
-lab procedure below, not by another repository authorization gate.
+M8D added familiar post-bag CSV output and ended at `343/343` source hashes and
+`431/431` inventory entries. M8E then repaired the real-Pi underlay and stale
+install path, restored the historical sound-profile source owner, and added a
+selected-only no-lidar OpenCR/odometry helper. The human operator completed a
+clean on-Pi `--check-only`: all three packages built in `1 min 39 s`, installed
+Python parity passed (`63 + 21` files), device separation and launch
+construction passed, and no pigpio, serial, Vicon, ROS graph, recorder, or
+motion started. Following the earlier power cycle, snapshot/Pi parity is
+`345/345` files and `433/433` inventory entries with all three build return
+codes zero; the final strengthened check-only was captured after the Pi was
+back online.
+
+M8E rollback evidence is retained at:
+
+```text
+/home/mattb/tb3-pi/phase09_backups/
+  20260804T224607Z_m8e_runtime_repair
+```
+
+The full result is
+`docs/codex/gesc_gaussian/validation/phase_09_pi_runtime_repair.md`. The only
+remaining one-time OS correction is the Pi clock: it currently represents
+Pacific wall-clock numbers as UTC and is about seven hours behind absolute
+time. Correct and verify it before the first real run so bag/run timestamps are
+valid.
 
 ## Before the run
 
@@ -50,6 +71,9 @@ lab procedure below, not by another repository authorization gate.
 - [ ] Clear the floor and keep the robot within sight and reach of the person
   supervising the run.
 - [ ] Keep the robot terminal focused so `Ctrl+C` is immediately available.
+- [ ] Before the first real run only, verify that the corrected Pi time matches
+  the operator computer. Do not repeat this as a repository authorization
+  ceremony once time synchronization is working.
 
 No separate build command, site-configuration copy, stationary preflight,
 calibration approval, `--check-only`, typed `RUN`, subject/segment entry,
@@ -68,8 +92,13 @@ cd ~/ros2_ws/src/turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/vol
 
 The selected wrapper is responsible for:
 
-- building exactly `ros_esc_interfaces`, `ros_esc`, and
-  `turtlebot3_vehicle_nodes`, then sourcing `install/setup.bash`;
+- sourcing `/opt/ros/humble`, the established `~/turtlebot3_ws` underlay, and
+  then building exactly `ros_esc_interfaces`, `ros_esc`, and
+  `turtlebot3_vehicle_nodes` with `--symlink-install`;
+- constructing both selected launches, verifying installed-source parity, and
+  checking distinct photoresistor/OpenCR devices before hardware access;
+- bringing up OpenCR motors plus wheel/IMU `/odom` without the unused lidar,
+  leaving `/dev/ttyUSB0` exclusively available to the photoresistor;
 - starting `pigpiod` only when it is not already running;
 - launching the dedicated `gesc_gaussian_two_source` graph without changing any
   legacy ESC Bash file or launch;

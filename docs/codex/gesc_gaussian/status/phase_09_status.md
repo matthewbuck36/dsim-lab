@@ -1,15 +1,15 @@
 # Phase 09 Live Status
 
-Last verified: `2026-08-03T20:01:53-07:00`
-Status: `M8D FAMILIAR CSV EXPORT, HOST QUALIFICATION, AND PI SOURCE PARITY PASS — LIVE HARDWARE NOT RUN BY CODEX`
+Last verified: `2026-08-04T16:49:41-07:00`
+Status: `M8E ON-PI CHECK-ONLY PASS, CLEAN BUILD, AND PI SOURCE PARITY PASS — PI CLOCK CORRECTION REQUIRED BEFORE FIRST REAL RUN`
 
 ## Objective
 
 Integrate the current terminal cumulative Phase 08 runtime through v8.12 into
 the local physical TurtleBot3 source snapshot and the user-mounted Pi source,
-preserve shared algorithm parity and legacy selection, and statically qualify
-the selected physical wrapper without executing a command on the Pi or running
-hardware. The selected
+preserve shared algorithm parity and legacy selection, and qualify the selected
+physical wrapper through an explicitly authorized, nonlaunching on-Pi
+`--check-only` without opening hardware or commanding motion. The selected
 wrapper enables the v8.12 interior-anchor fallback at `0.50 m`; shared legacy
 and nonselected defaults remain disabled.
 
@@ -1041,3 +1041,155 @@ PRESERVED / NO LIVE HARDWARE RUN BY CODEX.**
    and the automatic familiar CSV export, then retain the reported run
    directory. Diagnose any evaluation-incomplete Vicon, CSV-export
    incompleteness, or physical behavior result from that evidence.
+
+## M8E real-Pi runtime repair and check-only — 2026-08-04
+
+<!-- MBuck 2026-08-04: Repair the real-Pi startup path, force a clean selected-package build, and preserve every historical experiment entry point. -->
+
+The first bare wrapper attempt is retained as failed commissioning evidence at:
+
+```text
+/home/pi/turtlebot_rotating_sensor_tests/gesc_gaussian_two_source/
+  2026-08-04/
+  20260804T152851316144Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_df84804a
+```
+
+It started the recorder but failed before readiness because the wrapper omitted
+the Pi's established `~/turtlebot3_ws` underlay and the selected installed
+Python copies were stale. `turtlebot3_bringup` was unresolved, the installed
+photoresistor console entry rejected the current serial flags, readiness stayed
+false, and no command or motion occurred. The run was shut down and retained.
+
+M8E corrected the bounded runtime path:
+
+- the wrapper resolves its own evidence path before changing directory;
+- it sources `/opt/ros/humble` and then
+  `/home/pi/turtlebot3_ws/install/setup.bash` before the selected build;
+- it builds exactly the three selected packages with `--symlink-install`;
+- it constructs the selected base and experiment launches before recorder
+  ownership and verifies installed Python/source parity;
+- it requires distinct readable/writable photoresistor and OpenCR devices;
+- a selected-only no-lidar helper retains OpenCR motors and wheel/IMU `/odom`
+  while avoiding the historical photoresistor/LDS-02 `/dev/ttyUSB0` collision;
+  all historical launches retain the complete unchanged vehicle bringup; and
+- the missing historical `sound_profile_experiment_node_script.py` was
+  restored byte-for-byte from the retained generated install so a clean build
+  does not break that legacy launch/entry point.
+
+M8E changed no `ros_esc` algorithm source. Six existing selected/documentation/
+test files were replaced and two files were added. The scoped snapshot-to-Pi
+transfer used no delete behavior. Pre-repair rollback roots are:
+
+```text
+/home/mattb/physical_TB3_files_snapshot/phase09_backups/20260804T224607Z_m8e_runtime_repair
+/home/mattb/tb3-pi/phase09_backups/20260804T224607Z_m8e_runtime_repair
+```
+
+The Pi backup contains the moved stale selected build/install state under
+`generated_before`; it remains recovery evidence and is not the corrected
+install.
+
+Final host qualification:
+
+```text
+Phase 09 implement context: PASS
+Bash/Python/XML syntax: PASS
+focused wrapper/launch/compatibility: 22 passed
+isolated selected build: 3 packages PASS in 15.1 s
+selected base and complete launch --show-args: PASS
+installed-overlay Phase 09/device suite: 233 passed
+vehicle functional suite: 74 passed
+new selected helper focused flake8: PASS
+```
+
+The operator repaired the pre-existing interrupted `linux-firmware` package
+configuration. Final package-manager evidence was `dpkg` exit zero, empty
+`dpkg --audit`, passing `apt-get check`, running kernel
+`5.15.0-1079-raspi`, and no reboot requirement. The
+`ros-humble-turtlebot3-bringup` APT package remains absent by design; the lab
+source underlay is the accepted owner.
+
+The operator then confirmed:
+
+```text
+usb-1a86_USB_Serial-if00-port0 -> /dev/ttyUSB0
+usb-ROBOTIS_OpenCR_Virtual_ComPort_in_FS_Mode_FFFFFFFEFFFF-if00 -> /dev/ttyACM0
+```
+
+and ran the strengthened `--check-only`. The intentionally moved stale install
+prefixes produced one-time missing-prefix warnings before the clean rebuild.
+The final result was:
+
+```text
+ros_esc_interfaces: PASS in 1 min 20 s
+ros_esc: PASS in 11.8 s
+turtlebot3_vehicle_nodes: PASS in 5.32 s
+3 packages: PASS in 1 min 39 s
+installed Python parity: PASS (ros_esc=63, turtlebot3_vehicle_nodes=21)
+scenario: primary
+turtlebot3 underlay: /home/pi/turtlebot3_ws/install/setup.bash
+turtlebot3 model: burger
+photoresistor: /dev/ttyUSB0
+OpenCR: /dev/ttyACM0
+selected lidar: disabled
+launch construction: PASS
+pigpio/serial/Vicon/ROS graph/recorder/motion: NOT STARTED
+```
+
+Earlier in the same commissioning sequence, the low-battery robot was powered
+down. The stale SSHFS mount was detached without deleting data, the Pi was
+powered from the wall and booted, and the source was remounted. Post-power-cycle
+verification reports `345/345` source hashes, `433/433` type/mode/size entries,
+all three `colcon_build.rc` files zero, current install links, and the rollback
+backup present. The final strengthened check-only output above was captured
+after the Pi was back online.
+
+The final M8E source seal is:
+
+```text
+/home/mattb/physical_TB3_files_snapshot/phase09_backups/
+  20260804T234034Z_m8e_post_runtime_repair
+```
+
+with zero source caches/symlinks and these SHA-256 values:
+
+```text
+source manifest: 5469c772d0649d42cee3581d207d19a29a16d6df1f13d30620e1a10ce301c66d
+inventory:       3775454cb80812501495c4315b6ce696302960d580ba7750d550be3a9bfb6fd2
+verified archive: 2a2b81cef6e1156890191e0667795c9ddfbca111cffa5e9d88fc2a9e3bdb659a
+```
+
+Full evidence and rollback details are in
+`docs/codex/gesc_gaussian/validation/phase_09_pi_runtime_repair.md`.
+
+### Clock finding
+
+The successful check printed `2026-08-04T16:27:57+00:00`, while the operator
+and host were at approximately `16:27` Pacific (`23:27 UTC`). The Pi had been
+manually assigned local wall-clock numbers while configured for UTC, leaving
+its absolute clock about seven hours behind. This did not affect check-only
+logic, but it would corrupt rosbag/run timestamps and must be corrected once
+before the first real experiment. Do not treat this as a recurring repository
+authorization gate.
+
+## Current milestone
+
+**M8E CLEAN ON-PI BUILD AND CHECK-ONLY PASS / INSTALLED-SOURCE PARITY PASS /
+SELECTED DEVICE AND NO-LIDAR BASE SEPARATION PASS / LEGACY SELECTION PRESERVED /
+NO ROS GRAPH OR MOTION RUN / PI CLOCK CORRECTION REQUIRED BEFORE FIRST REAL
+RUN.**
+
+## Exact next workflow after M8E
+
+1. Inspect `timedatectl status` and `date --iso-8601=seconds`, then correct the
+   Pi timezone/time synchronization once and verify its absolute time against
+   the operator computer.
+2. Follow the attached Vicon SOP, start the unchanged Windows
+   `vicon-tracker-server.py`, arrange the two lamps, clear the floor, and keep
+   `Ctrl+C` immediately available.
+3. Invoke bare `gesc_gaussian_two_source_voltage.bash`. The successful M8E
+   check-only does not need to be repeated before each experiment.
+4. Watch the printed run directory and one-second diagnostics. Stop if sensor,
+   odometry, command, rotation, or physical behavior is unacceptable.
+5. After `Ctrl+C`, wait for readiness false, final-zero dwell, bag finalization,
+   validation, familiar CSV export, and the final retained run directory.

@@ -524,6 +524,42 @@ human-operated M8C lab SOP and bare wrapper; after `Ctrl+C` or normal
 completion, wait for final zero, bag finalization, validation, and CSV export
 before collecting the reported run directory.
 
+### Current M8E real-Pi runtime repair — 2026-08-04
+
+M8E retains the cumulative v8.12 algorithm and M8C/M8D operator/data contracts.
+It repairs the real-Pi execution environment exposed by the first failed bare
+attempt: source the established `~/turtlebot3_ws` underlay, force a selected
+three-package `--symlink-install` build, construct both selected launches, and
+verify installed Python/source parity before hardware access.
+
+The selected base now launches OpenCR and the state publisher without LDS-02.
+This keeps wheel/IMU `/odom` and motor ownership while avoiding contention with
+the historical photoresistor `/dev/ttyUSB0`; the open-field algorithm has no
+scan consumer. Every historical ESC launch remains unchanged. M8E also
+restores the exact sound-profile module already required by the historical
+package entry point, preventing a clean-build legacy regression.
+
+Host qualification passed `22` focused tests, a `15.1 s` three-package build,
+both selected launch constructions, `233` installed-overlay tests, `74`
+vehicle functional tests, and focused helper flake8. The human-operated on-Pi
+check-only passed the three-package clean build in `1 min 39 s`, installed
+parity (`63 + 21` files), distinct `/dev/ttyUSB0` and `/dev/ttyACM0`, and both
+launch constructions. It started no pigpio, serial, Vicon, graph, recorder, or
+motion.
+
+Following the earlier power cycle, source parity remained `345/345` hashes and
+`433/433` inventory entries with all selected build return codes zero. The
+final strengthened check-only was captured after the Pi was back online.
+Recovery and final seal roots are timestamped
+`20260804T224607Z_m8e_runtime_repair` and
+`20260804T234034Z_m8e_post_runtime_repair`; the controlling validation is
+`docs/codex/gesc_gaussian/validation/phase_09_pi_runtime_repair.md`.
+
+Before the first real run, correct the Pi absolute clock once; its check-only
+timestamp was approximately seven hours behind UTC. Then follow the ordinary
+M8C lab SOP and bare wrapper. Actual sensor, odometry, Vicon, command, motion,
+Ctrl+C/final-zero, bag, CSV, and physical search behavior remain unverified.
+
 ## Phase 10 - final documentation
 
 Goal: update real repository documentation using verified prior artifacts.

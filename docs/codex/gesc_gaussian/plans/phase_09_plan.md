@@ -1625,3 +1625,66 @@ and exact full-tree hash/inventory parity with no generated caches or symlinks.
 These are static/source-transfer gates only. No on-Pi build/source, Vicon or
 calibration session, safety rehearsal, serial/GPIO access, actuation, or motion
 is authorized or claimed by this amendment.
+
+### M8E real-Pi runtime-repair amendment — 2026-08-04
+
+<!-- MBuck 2026-08-04: Convert the first real-Pi startup failure into a bounded, legacy-preserving runtime repair and nonlaunching on-Pi qualification. -->
+
+The user subsequently authorized the reviewed snapshot changes on the mounted
+Pi, a human-operated `--check-only`, package-manager repair, and the normal
+physical experiment workflow. M8E records the bounded correction required by
+the first bare-wrapper attempt; it does not reopen or retune the cumulative
+v8.12 algorithm.
+
+The first attempt must remain failed commissioning evidence. It started the
+managed recorder but never reached readiness because the established
+`~/turtlebot3_ws` underlay was absent from the wrapper environment and selected
+installed Python was stale. Preserve the run directory and its no-motion
+shutdown evidence. Do not relabel it as a selected experiment.
+
+M8E implementation shall:
+
+1. recover both snapshot and Pi source to timestamped backups and move, rather
+   than destroy, the stale selected build/install package directories;
+2. source `/opt/ros/humble`, then the established Pi TurtleBot3 underlay,
+   before the selected workspace build;
+3. build exactly `ros_esc_interfaces`, `ros_esc`, and
+   `turtlebot3_vehicle_nodes` with `--symlink-install`;
+4. resolve the wrapper evidence path before changing directory;
+5. construct the selected vehicle and complete experiment launch descriptions
+   before recorder ownership;
+6. prove byte-for-byte installed Python/source parity before hardware access;
+7. verify distinct readable/writable photoresistor and OpenCR character
+   devices automatically inside the wrapper;
+8. add a selected-only no-lidar base helper because `/scan` is outside the
+   selected open-field algorithm and LDS-02 otherwise competes with the
+   historical photoresistor `/dev/ttyUSB0`; retain all historical launch files
+   byte-for-byte;
+9. restore the exact historical sound-profile source module already required
+   by the pre-existing package entry point and launch; and
+10. keep normal operation as one bare wrapper with no new operator
+    authorization file, typed confirmation, or repeated check-only ritual.
+
+M8E acceptance requires a clean host build, selected launch construction,
+focused wrapper/launch/legacy tests, mounted snapshot/Pi full-tree parity, a
+human-operated on-Pi clean build, installed-source parity, and a nonlaunching
+`--check-only` result. `--check-only` may inspect device type and permissions
+but must not open serial, start pigpio, connect Vicon, create a ROS graph, start
+the recorder, or command motion.
+
+The accepted M8E result is `345/345` source hashes, `433/433` inventory entries,
+three on-Pi `colcon_build.rc=0` results, and installed Python parity
+`ros_esc=63`, `turtlebot3_vehicle_nodes=21`. The final seal and validation are:
+
+```text
+/home/mattb/physical_TB3_files_snapshot/phase09_backups/
+  20260804T234034Z_m8e_post_runtime_repair
+docs/codex/gesc_gaussian/validation/phase_09_pi_runtime_repair.md
+```
+
+M8E does not claim a live photoresistor sample, `/odom`, Vicon, servo/motor,
+recorder/final-zero, CSV, or physical search result. Before the first real run,
+correct the Pi's approximately seven-hour absolute clock error once and verify
+time against the operator computer. After that OS correction, the next planned
+action is the ordinary lab SOP and bare selected wrapper; the passing
+check-only does not become a per-run gate.
