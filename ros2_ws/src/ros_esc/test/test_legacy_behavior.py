@@ -19,6 +19,7 @@ from ros_esc.controller_node.controller_objects.turtlebot_vehicle import (
     Directional_Controller,
 )
 from ros_esc.cost_function_node import cost_function_node_script
+from ros_esc.filter_node import filter_node_script
 from ros_esc.filter_node.filter_node_script import CustomFilter
 from ros_esc.cost_function_node.cost_function_objects.cost_function_objects import (
     Multi_Light_Source_Cost,
@@ -77,6 +78,44 @@ class Recorder:
 
     def publish(self, msg):
         self.messages.append(msg)
+
+
+@pytest.mark.parametrize(
+    ("parser", "required"),
+    (
+        (
+            controller_node_script.parse_controller_arguments,
+            [
+                "/filter",
+                "/odom",
+                "/timekeeper",
+                "/control",
+                "/cmd_vel",
+                str(CONTROLLER_CONFIG),
+            ],
+        ),
+        (
+            filter_node_script.parse_filter_arguments,
+            [
+                "/cost",
+                "/encoder",
+                "/timekeeper",
+                "/filter",
+                "--filter_file",
+                str(FILTER_CONFIG),
+            ],
+        ),
+    ),
+)
+def test_shared_cli_clock_selector_is_additive_and_legacy_default_stays_true(
+    parser,
+    required,
+):
+    assert parser(required).use_sim_time is True
+    assert parser([*required, "--use-sim-time", "False"]).use_sim_time is False
+    assert parser([*required, "--use-sim-time", "true"]).use_sim_time is True
+    with pytest.raises(SystemExit):
+        parser([*required, "--use-sim-time", "not-a-boolean"])
 
 
 def test_supervisor_owned_assist_arbitration_is_default_off_and_scoped():
@@ -251,6 +290,7 @@ def test_robust_startup_waits_once_then_latches_strict_freshness():
     [
         (controller_node_script, "CustomController"),
         (cost_function_node_script, "CostFunction"),
+        (filter_node_script, "CustomFilter"),
         (supervisor_node_script, "SupervisorNode"),
         (pde_cost_history_script, "PDECostHistory"),
         (rotate_frame_node_script, "RotateFrame"),
@@ -978,6 +1018,7 @@ def _run_filter(monkeypatch, observability):
     rclpy.init(args=argv)
     node = CustomFilter()
     try:
+        assert node.get_parameter("use_sim_time").value is True
         node.filter_publisher = Recorder()
         if observability:
             node.gesc_diagnostics_publisher = Recorder()
@@ -1028,6 +1069,7 @@ def test_controller_legacy_and_typed_final_commands_match(monkeypatch):
     rclpy.init(args=argv)
     node = CustomController()
     try:
+        assert node.get_parameter("use_sim_time").value is True
         node.twist_publisher = Recorder()
         node.controller_publisher = Recorder()
         node.control_diagnostics_publisher = Recorder()

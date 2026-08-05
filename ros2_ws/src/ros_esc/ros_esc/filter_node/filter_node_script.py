@@ -15,8 +15,11 @@ import json
 import argparse
 import rclpy
 import numpy as np
+from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
+from rclpy.signals import SignalHandlerOptions
 import rclpy.parameter
+from ros_esc.deferred_signal_shutdown import DeferredSignalShutdown
 from ros_esc_interfaces.msg import (
     GescDiagnostics,
     StampedFloat64MultiArray,
@@ -33,65 +36,17 @@ class CustomFilter(Node):
     def __init__(self):
         super().__init__("custom_filter")
 
-        # Tell this node to use simulation time by setting this parameter
-        # This means anytime we use the command 'self._clock.now()' it returns
-        # the current simulation time, rather than the current system time.
+        args = parse_filter_arguments()
+        # MBuck 2026-08-04: preserve simulation time for every historical
+        # wrapper while allowing the selected physical launch to request wall
+        # time through this node's own strict command-line interface.
         self.set_parameters([
-            rclpy.parameter.Parameter('use_sim_time',rclpy.Parameter.Type.BOOL, True)
+            rclpy.parameter.Parameter(
+                "use_sim_time",
+                rclpy.Parameter.Type.BOOL,
+                bool(args.use_sim_time),
+            )
         ])
-
-        # For parsing the input arguments
-        description_msg = "\n".join([
-            "This filter node is used to create a custom filter to operate on input values. ",
-            "Custom filter architecture must make use of base filter and parameter ODE ",
-            "objects from the extremum seeking package. These filters are used to compute ",
-            "derivative estimates which will be used in the extremum seeking controller."
-            ])
-        inp_value_topic_msg = "\n".join([
-            "Please enter the input topic that is sending values to evaluate with the ",
-            "custom filter, e.g. '/cost_value_chatter'."
-        ])
-        inp_encoder_topic_msg = "\n".join([
-            "Please enter the input topic that is sending encoder data to evaluate with the ",
-            "custom filter, e.g. '/encoder_chatter'."
-        ])
-        inp_timekeeping_topic_msg = "\n".join([
-            "Please enter the input topic that is sending timekeeping information to reference ",
-            "e.g. '/timekeeper_chatter'."
-        ])
-        out_topic_msg = "\n".join([
-            "Please enter the output topic you want this node to publish to, ",
-            "e.g. '/filter_value_chatter'."
-        ])
-        file_msg = "\n".join([
-            "Please input the filepath to a .json file that describes the architecture ",
-            "of the custom filter."
-        ])
-        # string_msg = "\n".join([
-        #     "Please input a string that fully describes the architecture of the custom filter.",
-        # ])
-        encoder_inp_msg = "\n".join([
-            "Use this option to combine encoder data with cost value data and input the combined ",
-            "vector into the custom filter as the input, please select: 'True' or 'False'."
-        ])
-        parser = argparse.ArgumentParser(description=description_msg)
-        parser.add_argument('inp_value_topic', type=str, help = inp_value_topic_msg)
-        parser.add_argument('inp_encoder_topic', type=str, help = inp_encoder_topic_msg)
-        parser.add_argument('inp_timekeeping_topic', type=str, help=inp_timekeeping_topic_msg)
-        parser.add_argument('out_topic', type=str, help=out_topic_msg)
-        parser.add_argument('--filter_file', type=str, dest="json_config",
-                            help=file_msg)
-        # parser.add_argument('--filter_string', type=str, dest="string_config",
-        #                     help=string_msg)
-        parser.add_argument('--append_encoder_data', type=str, dest="combine_enc_data",
-                            help=encoder_inp_msg)
-        parser.add_argument("--enable_observability", default="False")
-        parser.add_argument("--algorithm_profile", default="legacy")
-        parser.add_argument(
-            "--gesc_diagnostics_topic",
-            default="/gesc_gaussian/gesc_diagnostics",
-        )
-        args = parser.parse_args()
 
         # Initialize variables
         self.prev_time = 0
@@ -384,6 +339,74 @@ class CustomFilter(Node):
         return z_vec_new
 
 
+def _argument_bool(value):
+    """Parse an explicit command-line boolean without silently accepting typos."""
+
+    if isinstance(value, bool):
+        return value
+    normalized = str(value).strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    raise argparse.ArgumentTypeError(f"invalid boolean value: {value!r}")
+
+
+def parse_filter_arguments(arguments=None):
+    """Parse the preserved filter CLI plus its additive clock selector."""
+
+    description_msg = "\n".join([
+        "This filter node is used to create a custom filter to operate on input values. ",
+        "Custom filter architecture must make use of base filter and parameter ODE ",
+        "objects from the extremum seeking package. These filters are used to compute ",
+        "derivative estimates which will be used in the extremum seeking controller."
+        ])
+    inp_value_topic_msg = "\n".join([
+        "Please enter the input topic that is sending values to evaluate with the ",
+        "custom filter, e.g. '/cost_value_chatter'."
+    ])
+    inp_encoder_topic_msg = "\n".join([
+        "Please enter the input topic that is sending encoder data to evaluate with the ",
+        "custom filter, e.g. '/encoder_chatter'."
+    ])
+    inp_timekeeping_topic_msg = "\n".join([
+        "Please enter the input topic that is sending timekeeping information to reference ",
+        "e.g. '/timekeeper_chatter'."
+    ])
+    out_topic_msg = "\n".join([
+        "Please enter the output topic you want this node to publish to, ",
+        "e.g. '/filter_value_chatter'."
+    ])
+    file_msg = "\n".join([
+        "Please input the filepath to a .json file that describes the architecture ",
+        "of the custom filter."
+    ])
+    encoder_inp_msg = "\n".join([
+        "Use this option to combine encoder data with cost value data and input the combined ",
+        "vector into the custom filter as the input, please select: 'True' or 'False'."
+    ])
+    parser = argparse.ArgumentParser(description=description_msg)
+    parser.add_argument('inp_value_topic', type=str, help=inp_value_topic_msg)
+    parser.add_argument('inp_encoder_topic', type=str, help=inp_encoder_topic_msg)
+    parser.add_argument('inp_timekeeping_topic', type=str, help=inp_timekeeping_topic_msg)
+    parser.add_argument('out_topic', type=str, help=out_topic_msg)
+    parser.add_argument('--filter_file', type=str, dest="json_config", help=file_msg)
+    parser.add_argument(
+        '--append_encoder_data',
+        type=str,
+        dest="combine_enc_data",
+        help=encoder_inp_msg,
+    )
+    parser.add_argument("--enable_observability", default="False")
+    parser.add_argument("--algorithm_profile", default="legacy")
+    parser.add_argument(
+        "--gesc_diagnostics_topic",
+        default="/gesc_gaussian/gesc_diagnostics",
+    )
+    parser.add_argument("--use-sim-time", type=_argument_bool, default=True)
+    return parser.parse_args(arguments)
+
+
 def _as_bool(value):
     """Parse existing launch-style string booleans."""
 
@@ -401,15 +424,25 @@ def _float_list(values):
 def main(args=None):
     """This will initialize and launch the custom filter node."""
 
-    rclpy.init(args=args)
+    rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
     node = CustomFilter()
-    try:
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        node.destroy_node()
-        rclpy.try_shutdown()
+    executor = SingleThreadedExecutor()
+    executor.add_node(node)
+    with DeferredSignalShutdown() as shutdown:
+        try:
+            while rclpy.ok() and not shutdown.requested:
+                executor.spin_once(timeout_sec=0.05)
+        except KeyboardInterrupt:
+            shutdown.request()
+        finally:
+            executor.remove_node(node)
+            try:
+                executor.shutdown()
+            finally:
+                try:
+                    node.destroy_node()
+                finally:
+                    rclpy.try_shutdown()
 
 
 if __name__ == "__main__":

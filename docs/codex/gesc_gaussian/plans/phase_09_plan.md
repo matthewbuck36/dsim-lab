@@ -1692,3 +1692,33 @@ initialization passed for the current powered session at
 superseded August 5 epoch-copy attempt created no run. The next planned action
 is the ordinary lab SOP and bare selected wrapper; the passing check-only does
 not become a per-run gate.
+
+### M8F first selected runtime-graph repair amendment — 2026-08-04
+
+<!-- MBuck 2026-08-04: Repair the first selected controller/filter startup failure without changing algorithm behavior or legacy wrapper selection. -->
+
+The first M8E-qualified bare run is retained failed commissioning evidence at
+`20260804T201250796597Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_6d9b4ac3`.
+The controller and filter rejected the selected launch's ROS parameter tail,
+readiness never became true, and the bag recorded zero `/cmd_vel`; no robot
+motion occurred. Shutdown then exposed context-order defects in the historical
+Vicon client, selected rotation node, and photoresistor reader.
+
+M8F is a bounded Level B runtime correction. Add a strict
+`--use-sim-time` option to the existing controller/filter parsers, defaulting
+to historical `True`; pass selected physical `False` through those parsers;
+and prove both values in the nonlaunching wrapper check. Apply signal-safe
+cleanup to the affected existing node owners. Do not change controller gains,
+supervisor policy, cost sign/units, Gaussian-fill behavior, topics, the
+Windows Vicon server, the seven-float Vicon protocol, or `/odom`-only algorithm
+pose ownership. Do not edit any historical ESC wrapper or launch file.
+
+M8F acceptance requires pre-repair snapshot/Pi backups, focused and full
+legacy/Phase 09 tests, critical lint, launch/node construction, an isolated
+three-package host build, a checksum-scoped no-delete SSHFS transfer, and exact
+full-source snapshot/Pi parity. This authorizes no Codex-started ROS process or
+hardware access. Because M8F changes Pi source after the earlier check, exactly
+one new human-operated `--check-only` is required to rebuild and prove the
+installed result. After it passes, check-only remains an as-needed diagnostic,
+not a per-run ceremony. Full evidence is in
+`docs/codex/gesc_gaussian/validation/phase_09_first_physical_run_repair.md`.

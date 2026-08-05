@@ -404,3 +404,25 @@ epoch-copy attempt started no run. Planning may proceed to the attached lab SOP
 and bare wrapper unless the Pi reboots first. Retain actual sensor, odometry,
 Vicon, command, final-zero, bag, CSV, and physical two-light behavior as
 unverified until a real run proves them.
+
+### Current M8F planning boundary — first selected startup repair
+
+Read
+`docs/codex/gesc_gaussian/validation/phase_09_first_physical_run_repair.md`
+before continuing. Preserve the first bare selected run as failed evidence.
+It produced no `/cmd_vel` and no motion because controller/filter rejected a
+ROS parameter tail before readiness.
+
+The accepted M8F design uses the existing strict controller/filter parsers for
+an additive `--use-sim-time` option, retains legacy default `True`, and selects
+physical `False` only in the Phase 09 launch. It also orders worker/executor
+cleanup before ROS teardown in the existing filter, selected rotation,
+photoresistor, and Vicon client owners. Do not alter the Windows Vicon server,
+protocol, units, evaluation-only role, `/odom` algorithm ownership, historical
+ESC wrappers/launches, or algorithm tuning.
+
+Source transfer and 345/345 parity are complete. Plan exactly one new
+human-operated `--check-only` because source changed after M8E; require its new
+parser-compatibility PASS before any bare run. Do not turn that one rebuild
+into a permanent pre-run ceremony, and do not claim physical behavior until a
+new retained run proves it.

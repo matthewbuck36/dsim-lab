@@ -42,83 +42,17 @@ class CustomController(Node):
     def __init__(self):
         super().__init__("custom_controller")
 
-        # Tell this node to use simulation time by setting this parameter
-        # This means anytime we use the command 'self._clock.now()' it returns
-        # the current simulation time, rather than the current system time.
+        args = parse_controller_arguments()
+        # MBuck 2026-08-04: retain the historical simulation-time default while
+        # allowing the Phase 09 physical wrapper to select wall time without
+        # forwarding ROS arguments into this node's strict legacy CLI parser.
         self.set_parameters([
-            rclpy.parameter.Parameter('use_sim_time',rclpy.Parameter.Type.BOOL, True)
+            rclpy.parameter.Parameter(
+                "use_sim_time",
+                rclpy.Parameter.Type.BOOL,
+                bool(args.use_sim_time),
+            )
         ])
-
-        # For parsing the input arguments
-        description_msg = "\n".join([
-            "This controller node is used to create a custom controller to operate on input ",
-            "values. All custom controller objects must take in the current time, the vehicle's ",
-            "state vector, and input values (likely coming from a derivative estimation filter) ",
-            "to operate on to produce a set of velocity commands to drive the vehicle."
-            ])
-        inp_value_msg = "\n".join([
-            "Please enter the input topic that is sending values StampedFloat64MultiArray messages",
-            "to evaluate with the custom controller, e.g. '/filter_value_chatter'."
-        ])
-        inp_state_msg = "\n".join([
-            "Please enter the input topic that is sending Odometry messages to convert to a ",
-            "robot state, e.g. '/odom'."
-        ])
-        inp_timekeeping_topic_msg = "\n".join([
-            "Please enter the input topic that is sending Timekeeper messages to reference ",
-            "e.g. '/timekeeper_chatter'."
-        ])
-        output_controller_topic_msg = "\n".join([
-            "Please name a topic to publish output StampedFloat64MultiArray messages to. ",
-            "Please write this topic name as a string, e.g. '/controller_chatter'."
-        ])
-        output_twist_topic_msg = "\n".join([
-            "Please name a topic to publish output Twist messages to. Please write this topic ",
-            "name as a string, e.g. '/cmd_vel'."
-        ])
-        config_file_msg = "\n".join([
-            "Please input the filepath to a config file that describes the custom controller."
-        ])
-        parser = argparse.ArgumentParser(description=description_msg)
-        parser.add_argument('inp_value_topic', type=str, help=inp_value_msg)
-        parser.add_argument('inp_state_topic', type=str, help=inp_state_msg)
-        parser.add_argument('inp_timekeeping_topic', type=str, help=inp_timekeeping_topic_msg)
-        parser.add_argument('out_control_topic', type=str, help=output_controller_topic_msg)
-        parser.add_argument('out_twist_topic', type=str, help=output_twist_topic_msg)
-        parser.add_argument('config', type=str, help=config_file_msg)
-        parser.add_argument("--enable_observability", default="False")
-        parser.add_argument("--algorithm_profile", default="legacy")
-        parser.add_argument(
-            "--control_diagnostics_topic",
-            default="/gesc_gaussian/control_diagnostics",
-        )
-        parser.add_argument(
-            "--algorithm_state_topic", default="/gesc_gaussian/algorithm_state"
-        )
-        parser.add_argument(
-            "--algorithm_event_topic", default="/gesc_gaussian/algorithm_events"
-        )
-        parser.add_argument(
-            "--supervisor_command_topic",
-            default="/gesc_gaussian/supervisor_command",
-        )
-        parser.add_argument("--supervisor_state_stale_sec", type=float, default=0.5)
-        parser.add_argument("--supervisor_command_stale_sec", type=float, default=0.5)
-        parser.add_argument(
-            "--open_field_escape_supervisor_owned_assist_enabled",
-            default="False",
-        )
-        parser.add_argument("--stale_pose_sec", type=float, default=0.5)
-        parser.add_argument("--stale_filter_sec", type=float, default=0.5)
-        parser.add_argument("--command_watchdog_rate_hz", type=float, default=20.0)
-        parser.add_argument("--startup_timeout_sec", type=float, default=5.0)
-        parser.add_argument("--zero_command_on_shutdown", default="True")
-        parser.add_argument("--recording_ready_required", default="False")
-        parser.add_argument(
-            "--recording_ready_topic", default="/gesc_gaussian/recording_ready"
-        )
-        parser.add_argument("--recording_ready_stale_sec", type=float, default=0.5)
-        args = parser.parse_args()
 
         # Initialize variables
         self.input_value = None
@@ -740,6 +674,94 @@ class CustomController(Node):
         if self.robust_profile and self.zero_command_on_shutdown:
             self._publish_zero("controller shutdown", report_fault=False)
         return super().destroy_node()
+
+
+def _argument_bool(value):
+    """Parse an explicit command-line boolean without silently accepting typos."""
+
+    if isinstance(value, bool):
+        return value
+    normalized = str(value).strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    raise argparse.ArgumentTypeError(f"invalid boolean value: {value!r}")
+
+
+def parse_controller_arguments(arguments=None):
+    """Parse the preserved controller CLI plus its additive clock selector."""
+
+    description_msg = "\n".join([
+        "This controller node is used to create a custom controller to operate on input ",
+        "values. All custom controller objects must take in the current time, the vehicle's ",
+        "state vector, and input values (likely coming from a derivative estimation filter) ",
+        "to operate on to produce a set of velocity commands to drive the vehicle."
+        ])
+    inp_value_msg = "\n".join([
+        "Please enter the input topic that is sending values StampedFloat64MultiArray messages",
+        "to evaluate with the custom controller, e.g. '/filter_value_chatter'."
+    ])
+    inp_state_msg = "\n".join([
+        "Please enter the input topic that is sending Odometry messages to convert to a ",
+        "robot state, e.g. '/odom'."
+    ])
+    inp_timekeeping_topic_msg = "\n".join([
+        "Please enter the input topic that is sending Timekeeper messages to reference ",
+        "e.g. '/timekeeper_chatter'."
+    ])
+    output_controller_topic_msg = "\n".join([
+        "Please name a topic to publish output StampedFloat64MultiArray messages to. ",
+        "Please write this topic name as a string, e.g. '/controller_chatter'."
+    ])
+    output_twist_topic_msg = "\n".join([
+        "Please name a topic to publish output Twist messages to. Please write this topic ",
+        "name as a string, e.g. '/cmd_vel'."
+    ])
+    config_file_msg = "\n".join([
+        "Please input the filepath to a config file that describes the custom controller."
+    ])
+    parser = argparse.ArgumentParser(description=description_msg)
+    parser.add_argument('inp_value_topic', type=str, help=inp_value_msg)
+    parser.add_argument('inp_state_topic', type=str, help=inp_state_msg)
+    parser.add_argument('inp_timekeeping_topic', type=str, help=inp_timekeeping_topic_msg)
+    parser.add_argument('out_control_topic', type=str, help=output_controller_topic_msg)
+    parser.add_argument('out_twist_topic', type=str, help=output_twist_topic_msg)
+    parser.add_argument('config', type=str, help=config_file_msg)
+    parser.add_argument("--enable_observability", default="False")
+    parser.add_argument("--algorithm_profile", default="legacy")
+    parser.add_argument(
+        "--control_diagnostics_topic",
+        default="/gesc_gaussian/control_diagnostics",
+    )
+    parser.add_argument(
+        "--algorithm_state_topic", default="/gesc_gaussian/algorithm_state"
+    )
+    parser.add_argument(
+        "--algorithm_event_topic", default="/gesc_gaussian/algorithm_events"
+    )
+    parser.add_argument(
+        "--supervisor_command_topic",
+        default="/gesc_gaussian/supervisor_command",
+    )
+    parser.add_argument("--supervisor_state_stale_sec", type=float, default=0.5)
+    parser.add_argument("--supervisor_command_stale_sec", type=float, default=0.5)
+    parser.add_argument(
+        "--open_field_escape_supervisor_owned_assist_enabled",
+        default="False",
+    )
+    parser.add_argument("--stale_pose_sec", type=float, default=0.5)
+    parser.add_argument("--stale_filter_sec", type=float, default=0.5)
+    parser.add_argument("--command_watchdog_rate_hz", type=float, default=20.0)
+    parser.add_argument("--startup_timeout_sec", type=float, default=5.0)
+    parser.add_argument("--zero_command_on_shutdown", default="True")
+    parser.add_argument("--recording_ready_required", default="False")
+    parser.add_argument(
+        "--recording_ready_topic", default="/gesc_gaussian/recording_ready"
+    )
+    parser.add_argument("--recording_ready_stale_sec", type=float, default=0.5)
+    parser.add_argument("--use-sim-time", type=_argument_bool, default=True)
+    return parser.parse_args(arguments)
 
 
 def _as_bool(value):

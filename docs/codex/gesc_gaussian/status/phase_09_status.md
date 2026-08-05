@@ -1020,7 +1020,7 @@ archive hash check also passed. No source changed during that correction.
 No on-Pi build/source, live Vicon connection, calibration, safety rehearsal,
 serial/GPIO access, lamp response, actuation, or robot motion was run for M8D.
 
-## Current milestone
+## M8E milestone at that point
 
 **M8D FAMILIAR CSV EXPORT PASS / M8C LAB-SOP ONE-COMMAND CONTRACT RETAINED /
 HOST QUALIFICATION PASS / SNAPSHOT-TO-PI PARITY PASS / LEGACY SELECTION
@@ -1184,7 +1184,7 @@ never during a run and never with a Unix epoch, timezone label, or offset. The
 recorder's `...Z`/`*_utc` labels follow this established Pi lab clock and are
 not an external true-UTC synchronization claim.
 
-## Current milestone
+## M8E final milestone before M8F
 
 **M8E CLEAN ON-PI BUILD AND CHECK-ONLY PASS / INSTALLED-SOURCE PARITY PASS /
 SELECTED DEVICE AND NO-LIDAR BASE SEPARATION PASS / LEGACY SELECTION PRESERVED /
@@ -1207,3 +1207,68 @@ GRAPH OR MOTION RUN.**
    odometry, command, rotation, or physical behavior is unacceptable.
 5. After `Ctrl+C`, wait for readiness false, final-zero dwell, bag finalization,
    validation, familiar CSV export, and the final retained run directory.
+
+## M8F first selected runtime-graph repair — 2026-08-04
+
+The first bare selected attempt is retained as a failed commissioning run:
+
+```text
+/home/pi/turtlebot_rotating_sensor_tests/gesc_gaussian_two_source/2026-08-04/
+  20260804T201250796597Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_6d9b4ac3
+```
+
+Both strict legacy CLI owners rejected `--ros-args -p
+use_sim_time:=False`; controller and filter exited 2, readiness never became
+true, and `/cmd_vel` had zero messages. The 3,187-message bag closed cleanly
+and retains `/odom`, IMU, encoder, and evaluation-only Vicon evidence. Its 18
+completeness failures and empty familiar CSVs are correct consequences of the
+startup failure. No algorithm motion ran.
+
+The accepted source repair adds a native `--use-sim-time` option to controller
+and filter with legacy default `True`, selects `False` only in the Phase 09
+launch, and validates the complete parsers inside `--check-only`. Signal-safe
+cleanup now covers filter, selected rotation, photoresistor, and the existing
+Vicon UDP client. The Windows Vicon server, endpoint, packet format, units,
+topics, and evaluation-only role remain unchanged; `/odom` remains the sole
+algorithm pose. Historical ESC wrappers and launches remain byte-pinned.
+
+Verified results:
+
+```text
+canonical focused tests: 10 passed
+canonical legacy regression: 37 passed
+focused Vicon/launch tests: 35 passed
+complete six-file Phase 09 physical suite: 238 passed
+critical changed-file lint and static syntax/XML/Bash checks: PASS
+fresh isolated host build: 3 packages passed in 12.5 s
+mounted Pi source static checks: PASS
+snapshot/Pi regular-file parity: 345/345
+snapshot/Pi symlink parity: 0/0
+```
+
+Pre-repair backups and receipts exist under
+`20260804T202726-0700_m8f_runtime_graph_repair` in both snapshot and mounted Pi
+`phase09_backups`. Eleven unique reviewed files were transferred with no
+delete operation. The Pi source is current, but its post-M8F build/install has
+not yet been rebuilt or qualified.
+
+## Current milestone
+
+**M8F SOURCE REPAIR HOST-QUALIFIED / SNAPSHOT-PI SOURCE PARITY PASS / ON-PI
+POST-REPAIR CHECK-ONLY NOT RUN / NEXT PHYSICAL ALGORITHM RUN NOT STARTED.**
+
+### Exact next action after M8F
+
+From the standalone Linux-tower SSH terminal, with no other build or ROS owner:
+
+```bash
+cd ~/ros2_ws/src/turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values
+./gesc_gaussian_two_source_voltage.bash --check-only
+```
+
+Require both `Selected CLI parser compatibility check: PASS (physical=False,
+legacy default=True).` and the normal final check-only PASS, with no device or
+ROS runtime started. Share that output before another bare run. This one
+repeat supersedes the earlier M8E instruction because the Pi source changed;
+it does not create a permanent per-run check-only requirement. See
+`docs/codex/gesc_gaussian/validation/phase_09_first_physical_run_repair.md`.

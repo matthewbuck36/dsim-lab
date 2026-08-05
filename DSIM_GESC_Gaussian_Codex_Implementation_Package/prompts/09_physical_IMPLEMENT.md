@@ -411,3 +411,29 @@ hash keys, manual handoff gates, or a separate build command. A real run must
 still prove live sensor protocol, `/odom`/IMU, Vicon evidence, motion,
 Ctrl+C/final zero, bag finalization, validation, familiar CSV export, and
 physical two-light behavior. Preserve unsuccessful physical evidence honestly.
+
+### Current M8F implementation continuation — first selected startup repair
+
+Read the M8F validation, Plan amendment, status, and handoff before acting. The
+failed run
+`20260804T201250796597Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_6d9b4ac3`
+is retained evidence: strict controller/filter parsers rejected the selected
+ROS parameter tail, readiness stayed false, `/cmd_vel` stayed empty, and no
+motion occurred.
+
+The reviewed repair is already present in both offline snapshot and Pi source.
+It preserves legacy parser defaults and every historical wrapper/launch,
+selects physical wall time through native controller/filter CLI options, and
+orders filter, rotation, photoresistor, and Vicon-client cleanup before ROS
+context shutdown. The unchanged Vicon server/protocol remains evaluation-only;
+`/odom` remains the sole algorithm pose. Host qualification and 345/345 source
+parity pass, but the post-M8F Pi install is not yet requalified.
+
+The next operator command is exactly one bare wrapper `--check-only` from its
+source directory. Require
+`Selected CLI parser compatibility check: PASS (physical=False, legacy
+default=True).`, the normal final check-only PASS, and confirmation that no
+runtime/device/motion started. Do not start another physical run until that
+output is reviewed. After it passes, return to the ordinary one-command bare
+experiment workflow; no extra authorization file or repeated check-only gate
+is required.

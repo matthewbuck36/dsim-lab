@@ -759,3 +759,47 @@ ROS; do not copy a Unix epoch or timezone/offset. The successful check-only need
 not be repeated for every experiment. Keep the floor clear and `Ctrl+C`
 available, then wait through managed final zero, bag finalization, validation,
 and M8D CSV export before collecting the run.
+
+## M8F first physical-run repair handoff — 2026-08-04
+
+The first bare selected run did not execute the algorithm. Controller and
+filter rejected the selected ROS parameter tail, both exited code 2,
+recording readiness remained false, `/cmd_vel` remained empty, and the
+recorder retained a correctly failed 3,187-message run at
+`20260804T201250796597Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_6d9b4ac3`.
+Do not delete or relabel it.
+
+M8F replaces the incompatible tail with native strict parser options while
+preserving legacy `use_sim_time=True` as the default and selecting wall time
+only for Phase 09. It also makes filter, rotation, photoresistor, and Vicon
+client teardown context-safe. This changes neither the cumulative v8.12
+algorithm nor any historical ESC wrapper/launch. `/odom` remains the only
+algorithm pose; Vicon remains required evaluation evidence only. The Windows
+server and its seven-float UDP protocol are unchanged.
+
+Host qualification passed 238 complete Phase 09 physical tests, 37 canonical
+legacy tests, critical lint/static checks, launch and node construction, and a
+fresh 12.5-second three-package isolated build. Eleven unique reviewed files
+were copied through SSHFS with no delete behavior. Snapshot/Pi parity is
+345/345 files and 0/0 symlinks. Matching rollback roots are:
+
+```text
+/home/mattb/physical_TB3_files_snapshot/phase09_backups/20260804T202726-0700_m8f_runtime_graph_repair
+/home/mattb/tb3-pi/phase09_backups/20260804T202726-0700_m8f_runtime_graph_repair
+```
+
+The only next action is one human-operated on-Pi rebuild/check from the
+standalone Linux SSH terminal:
+
+```bash
+cd ~/ros2_ws/src/turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values
+./gesc_gaussian_two_source_voltage.bash --check-only
+```
+
+Require the new parser-compatibility PASS line and normal final PASS, then
+share the complete output before another physical run. Remote-SSH sees source
+edits immediately but may need to reload an open buffer; generated install
+state is not requalified until this check completes. No ROS graph, serial
+device, Vicon client, recorder, actuator, or motion was started by Codex for
+M8F. Full evidence is in
+`docs/codex/gesc_gaussian/validation/phase_09_first_physical_run_repair.md`.
