@@ -445,3 +445,25 @@ runtime or hardware. Do not request another check-only unless the Pi reboots,
 source changes, or diagnosis requires it. The next human action is the ordinary
 Vicon/lab SOP and bare selected wrapper. Preserve and validate the resulting
 run regardless of success or failure.
+
+### Current M8G implementation continuation — selected startup timing
+
+Read the M8G validation, Plan/status amendments, and handoff. The second failed
+run reached OpenCR, `/odom`/IMU, encoder, evaluation-only Vicon, recording, and
+clean shutdown, but the selected 5-second algorithm grace expired before
+recorder-authorized rotation. Readiness never became true, all commands were
+zero, Timekeeper/source cost stayed absent, and no motion occurred.
+
+The reviewed source repair is already present in snapshot and Pi source. Only
+the selected wrapper and its test changed: explicit 45-second passive and
+45-second rotation recorder windows are covered by a selected-only 100-second
+controller/supervisor startup grace. The recorder remains the sole readiness
+owner; its lifecycle and nonzero-command gates are not relaxed. Shared 5-second
+defaults, algorithm code, and every historical ESC wrapper/launch remain
+unchanged. Host qualification and exact 345/345 source parity pass.
+
+The next command is exactly one human-operated bare-wrapper `--check-only` to
+rebuild the Pi install after the source change. Require the normal build,
+installed parity, parser, launch, and final PASS with no runtime/device/motion.
+After review, return to the ordinary Vicon/lab SOP and bare wrapper; do not make
+check-only a permanent per-run ceremony.

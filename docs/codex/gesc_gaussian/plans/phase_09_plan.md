@@ -1730,3 +1730,33 @@ no pigpio, serial, Vicon client, ROS graph, recorder, or motion. M8F therefore
 returns to the planned ordinary lab SOP and bare selected wrapper. Live sensor,
 motion, shutdown, rosbag, CSV, and two-light behavior remain unverified until
 the next retained physical run.
+
+### M8G selected startup-grace repair amendment — 2026-08-04
+
+<!-- MBuck 2026-08-04: Reconcile the selected algorithm startup grace with the recorder's existing two-stage physical readiness sequence. -->
+
+The next bare run is retained failed commissioning evidence at
+`20260804T205606472031Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_d4f0178d`.
+OpenCR, `/odom`/IMU, encoder, evaluation-only Vicon, recording, zero-command
+ownership, and clean shutdown worked, but readiness never became true. The
+supervisor's historical 5-second startup grace expired before the recorder
+finished passive preflight and authorized sensor rotation, producing a
+pre-readiness `SEARCH -> FAILSAFE` transition. Timekeeper and source-cost
+publication therefore never began; no algorithm motion occurred.
+
+Treat this as a bounded Level B selected-wrapper timing correction, not an
+algorithm retune and not a reason to weaken recorder lifecycle checks. Make
+the recorder's 45-second passive-preflight and 45-second rotation-startup
+windows explicit, and pass a 100-second startup grace through the existing
+selected launch argument to its controller and supervisor. Keep
+`recording_ready_required=True`, every recorder readiness/nonzero/final-zero
+gate, and the shared launch/node 5-second defaults unchanged. Do not edit any
+historical wrapper or launch.
+
+M8G acceptance requires matching pre-repair snapshot/Pi backups, focused and
+complete Phase 09 tests, canonical legacy tests, all Bash and XML checks,
+critical lint, an isolated three-package build, a two-file SSHFS transfer with
+no broad sync, and exact full-source parity. Because Pi source changed after
+the M8F build, require exactly one new human-operated `--check-only` before the
+next bare run. Full evidence is in
+`docs/codex/gesc_gaussian/validation/phase_09_second_physical_run_repair.md`.

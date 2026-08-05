@@ -1285,3 +1285,69 @@ The next retained run must still prove sensor, `/odom`/IMU, Vicon, command,
 motion, Ctrl+C/final zero, bag/validation/CSV, and physical two-light behavior.
 See
 `docs/codex/gesc_gaussian/validation/phase_09_first_physical_run_repair.md`.
+
+## M8G second selected-run diagnosis and startup-grace repair — 2026-08-04
+
+The second bare selected run is retained failed evidence at:
+
+```text
+/home/pi/turtlebot_rotating_sensor_tests/gesc_gaussian_two_source/2026-08-04/
+  20260804T205606472031Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_d4f0178d
+```
+
+The M8F runtime repairs held: the three-package build passed, OpenCR and
+wheel/IMU `/odom` came up, evaluation-only Vicon became live, the 10,234-message
+bag finalized, and every process shut down cleanly. Readiness remained false,
+all 1,202 `/cmd_vel` samples were zero, and no motion occurred. The selected
+supervisor's 5-second startup grace expired before the recorder's passive
+graph/parameter stage could authorize rotation, causing `SEARCH -> FAILSAFE`.
+No Timekeeper or source-cost messages were published.
+
+M8G changes exactly the new selected wrapper plus its focused test. The wrapper
+now passes explicit recorder bounds of `45.0 + 45.0` seconds and a selected-only
+algorithm startup grace of `100.0` seconds. Recording readiness remains the
+motion gate. Shared controller/supervisor defaults, the launch default, all
+historical ESC wrappers/launches, algorithm tuning, cost sign/units, `/odom`
+ownership, and evaluation-only Vicon remain unchanged.
+
+Verified results:
+
+```text
+focused selected wrapper/launch: 23 passed
+complete six-file Phase 09 suite: 239 passed
+canonical legacy behavior: 37 passed
+Bash syntax/XML parse/critical lint: 27/27, 9/9, PASS
+isolated selected build: 3 packages PASS in 15.2 s
+mounted-Pi focused suite: 23 passed
+snapshot/Pi regular files: 345/345 PASS
+snapshot/Pi inventory: 433/433 PASS
+source caches/symlinks: 0/0 on both sides
+```
+
+Matching recovery and transfer receipts are under
+`20260804T210435-0700_m8g_startup_grace_repair` in both snapshot and mounted-Pi
+`phase09_backups`. No Pi build, ROS graph, serial/GPIO access, Vicon client,
+recorder, or motion was started by Codex for M8G.
+
+## Current milestone
+
+**M8G SELECTED STARTUP-GRACE SOURCE REPAIR HOST-QUALIFIED / SNAPSHOT-PI SOURCE
+PARITY PASS / SECOND FAILED NO-MOTION RUN RETAINED / ON-PI POST-REPAIR BUILD AND
+CHECK-ONLY NOT YET RUN / PHYSICAL ALGORITHM BEHAVIOR NOT YET DEMONSTRATED.**
+
+### Exact next action after M8G
+
+From the standalone Linux-tower SSH terminal, run exactly one post-source-change
+check:
+
+```bash
+cd ~/ros2_ws/src/turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values
+./gesc_gaussian_two_source_voltage.bash --check-only
+```
+
+Review its three-package, installed-parity, parser-compatibility, launch, and
+final PASS output before another bare run. It must start no runtime or hardware.
+After it passes, do not repeat check-only as a ritual; return to the ordinary
+Vicon/lab SOP and bare wrapper. The next retained run still must prove live
+Timekeeper, voltage/raw cost, filter/control, readiness, authorized motion,
+Ctrl+C/final zero, bag/CSV completeness, and physical two-light behavior.

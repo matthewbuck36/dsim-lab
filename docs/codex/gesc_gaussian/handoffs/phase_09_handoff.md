@@ -809,3 +809,40 @@ command/motion, managed final zero, bag validation, CSV export, and two-light
 behavior. No ROS graph, serial device, Vicon client, recorder, actuator, or
 motion was started by Codex for M8F. Full evidence is in
 `docs/codex/gesc_gaussian/validation/phase_09_first_physical_run_repair.md`.
+
+## M8G second physical-run repair handoff — 2026-08-04
+
+The second bare selected run passed the M8F parser/cleanup boundary but did not
+execute the algorithm. OpenCR, onboard `/odom`/IMU, encoder, evaluation-only
+Vicon, rosbag, zero-command ownership, and clean shutdown were operational.
+The selected supervisor changed from `SEARCH` to `FAILSAFE` after its 5-second
+startup grace, before recorder preflight could authorize sensor rotation.
+Readiness remained false, all 1,202 `/cmd_vel` messages were zero, Timekeeper
+and source cost remained absent, and no robot motion occurred. Preserve the
+failed run `20260804T205606472031Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_d4f0178d`.
+
+M8G changes only `gesc_gaussian_two_source_voltage.bash` and its focused test.
+It explicitly retains the recorder's 45-second passive and 45-second rotation
+startup bounds while passing a selected-only 100-second startup grace through
+the existing launch argument to both controller and supervisor. Recorder
+readiness, lifecycle, nonzero-command, rotation, heartbeat, final-zero, and
+completeness gates are unchanged. The launch and shared node defaults remain
+5 seconds; all historical ESC entry points and algorithm code remain
+unchanged.
+
+Host/source qualification passed 23 focused tests, 239 complete Phase 09
+tests, 37 canonical legacy tests, all 27 Bash syntax checks, all nine XML
+parses, critical lint, and a fresh 15.2-second three-package build. Matching
+snapshot/Pi backups and receipts are under
+`20260804T210435-0700_m8g_startup_grace_repair`. The two-file SSHFS transfer
+finished with 345/345 regular-file and 433/433 inventory parity and zero source
+caches/symlinks. Codex started no Pi build, ROS graph, device, recorder, or
+motion.
+
+The Pi source is current but its installed package predates M8G. The exact next
+human action is one `./gesc_gaussian_two_source_voltage.bash --check-only` from
+the normal source directory. Review its build, installed parity, parser,
+launch, and final PASS output. After that one source-change check, return to the
+ordinary Vicon/lab SOP and bare wrapper; do not add a permanent ceremony. Full
+diagnosis, qualification, hashes, rollback, and remaining live checks are in
+`docs/codex/gesc_gaussian/validation/phase_09_second_physical_run_repair.md`.

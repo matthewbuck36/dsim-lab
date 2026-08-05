@@ -433,3 +433,21 @@ launch construction passed, and no runtime or hardware started. Planning may
 therefore return to the ordinary Vicon/lab SOP and bare wrapper unless the Pi
 reboots or source changes. Retain all live physical outcomes as unverified
 until that new run is finalized and validated.
+
+### Current M8G planning boundary — selected startup timing
+
+Read
+`docs/codex/gesc_gaussian/validation/phase_09_second_physical_run_repair.md`.
+Preserve the second failed run. M8F bringup and cleanup worked, but the selected
+supervisor's 5-second grace expired before the recorder's existing 45-second
+passive stage could authorize rotation. Readiness stayed false, every command
+was zero, Timekeeper/source cost never started, and no motion occurred.
+
+The accepted M8G design changes only the selected wrapper and its test. It
+passes explicit recorder bounds of 45 seconds passive plus 45 seconds rotation
+startup and a 100-second selected algorithm startup grace through the existing
+launch argument. Keep recorder readiness and lifecycle gates unchanged; keep
+the launch/shared defaults at 5 seconds; do not modify algorithm code or any
+historical ESC wrapper/launch. Host qualification and 345/345 snapshot/Pi
+parity pass. Plan exactly one post-source-change `--check-only` before the next
+bare run, then return to the ordinary one-command workflow.
