@@ -854,3 +854,64 @@ Do not repeat check-only or add a permanent ceremony. Full diagnosis,
 qualification, hashes, rollback, operator evidence, and remaining live checks
 are in
 `docs/codex/gesc_gaussian/validation/phase_09_second_physical_run_repair.md`.
+
+## M8H third physical-run clock repair handoff — 2026-08-04
+
+The third bare selected run reached OpenCR, wheel/IMU `/odom`, encoder,
+evaluation-only Vicon, the selected supervisor, rosbag, and zero-command
+ownership, but it did not reach readiness or execute the algorithm. Recorder
+physical-clock enforcement changed Gaussian fill's internally forced
+`use_sim_time=True` to `False` while its multithreaded executor owned the
+`/clock` waitable, producing rclpy `InvalidHandle`. All 815 recorded
+`/cmd_vel` messages were zero, all readiness and rotation-authorization
+samples were false, and no rotation command or robot motion occurred. Preserve
+run
+`20260804T212226731572Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_309b9e71`
+exactly as failed evidence.
+
+M8H adds one shared startup-only clock helper and uses it in exactly modified
+cost, both PDE histories, convergence detector, and Gaussian fill. With no ROS
+startup override it retains the historical Gazebo `True`; an explicit physical
+`False` and explicit simulation `True` are preserved from construction. The
+two-thread Gaussian executor, numerical algorithm and v8.12 tuning, interfaces,
+cost semantics, `/odom`-only algorithm pose, evaluation-only Vicon, recorder
+gates, selected entry point, and every historical ESC wrapper/launch remain
+unchanged.
+
+Host qualification passed 16 focused clock tests, 114 shared/legacy/clock
+regressions, 45 snapshot clock/parity tests, 256 complete snapshot Phase 09
+tests, critical syntax/lint, two isolated three-package builds, and a real
+installed Gaussian-fill two-thread physical-clock probe. The probe retained
+`False` through construction and three parameter-enforcement calls without
+`InvalidHandle` or traceback.
+
+Matching pre-edit recovery roots are:
+
+```text
+/home/mattb/physical_TB3_files_snapshot/phase09_backups/
+  20260804T214018-0700_m8h_clock_initialization_repair
+/home/mattb/tb3-pi/phase09_backups/
+  20260804T214018-0700_m8h_clock_initialization_repair
+```
+
+The reviewed eight-path SSHFS transfer used no broad sync or source deletion.
+After the Pi battery swap, reboot, and remount, fresh manifests proved 347/347
+regular-file hashes and 435/435 type/mode/size entries, with source-manifest
+SHA-256
+`87bfed392f98ad6cecca05c296fc2600c355821f2907e55e521ec00d6989fd6a`
+and inventory SHA-256
+`55b2b88117506164cf339696c74f1fe4a571bf1b8ad7cefc62b29cdb36b1ebbb`.
+Generated Python/pytest caches were cleaned from both source roots; final cache
+counts are zero. The matching post-transfer receipt hash is
+`6ae98289e19c2a066a8f61005e16e01b3dc9d4b0a97d8201d29caa6933dc453c`.
+
+Codex ran no Pi command, build, ROS graph, serial/GPIO operation, Vicon client,
+recorder, actuator, or motion for M8H. Because source changed and the Pi
+rebooted, the next action is one human-operated
+`./gesc_gaussian_two_source_voltage.bash --check-only` after restoring Nick's
+literal lab wall clock. Review its three-package build, installed parity,
+selected physical `False`, legacy default `True`, device separation, and
+launch-construction result before another bare experiment. The physical
+algorithm, motion, shutdown, rosbag validation, CSV export, and two-light
+behavior are still unverified. Full evidence is in
+`docs/codex/gesc_gaussian/validation/phase_09_third_physical_run_repair.md`.

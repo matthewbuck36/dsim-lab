@@ -10,9 +10,9 @@ from nav_msgs.msg import Odometry
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
-import rclpy.parameter
 from scipy.optimize import least_squares
 
+from ros_esc.clock_configuration import apply_legacy_sim_time_default
 from ros_esc_interfaces.msg import (
     AlgorithmEvent,
     AlgorithmState,
@@ -94,14 +94,9 @@ class GaussianFill(Node):
     def __init__(self):
         super().__init__("gaussian_fill")
 
-        # Use Gazebo sim time
-        self.set_parameters([
-            rclpy.parameter.Parameter(
-                "use_sim_time",
-                rclpy.parameter.Parameter.Type.BOOL,
-                True
-            )
-        ])
+        # MBuck 2026-08-04: keep the Gazebo default without replacing an
+        # explicit physical wall-time selection before this executor spins.
+        apply_legacy_sim_time_default(self)
 
         # ---- Parameters ----
         self.declare_parameter("escape_policy", "conditional_gaussian_fill")

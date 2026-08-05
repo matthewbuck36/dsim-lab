@@ -470,3 +470,31 @@ motion did not start. The next human action is the ordinary Vicon/lab SOP and
 bare selected wrapper. Do not request another check-only unless the Pi reboots,
 source changes again, or diagnosis requires it. Preserve and validate the next
 retained run regardless of success or failure.
+
+### Current M8H implementation handoff — shared clock initialization
+
+Read the M8H Plan/status amendment and
+`docs/codex/gesc_gaussian/validation/phase_09_third_physical_run_repair.md`.
+Retain the third failed run
+`20260804T212226731572Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_309b9e71`
+unchanged. It failed before readiness when Gaussian fill's forced simulator
+clock was changed live to physical wall time, destroying a `/clock` waitable
+inside its multithreaded executor. Every recorded command was zero and no
+motion occurred.
+
+The shared helper and its five owner integrations are already implemented,
+host-qualified, and transferred through SSHFS. Focused three-way clock tests,
+the bounded two-thread enforcement probe, shared/legacy and complete Phase 09
+regressions, syntax/critical lint, and both isolated builds pass. Fresh
+post-reboot snapshot/Pi parity is 347/347 files and 435/435 inventory entries;
+the seven shared reviewed files match canonical/snapshot/Pi and the physical
+parity test matches snapshot/Pi. No Pi build, graph, device, recorder, or
+motion was started by Codex.
+
+Do not edit the repair again without new evidence. Preserve the Gaussian
+two-thread executor, algorithm behavior/tuning, public interfaces, recorder
+enforcement, all legacy wrappers/launches, `/odom`-only algorithm pose, and
+evaluation-only Vicon. The next operator-owned action is exactly one
+`./gesc_gaussian_two_source_voltage.bash --check-only` after restoring Nick's
+literal lab wall clock. Wait for and review its installed build/parity/parser/
+launch output before recommending another bare experiment.

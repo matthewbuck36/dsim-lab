@@ -1,70 +1,65 @@
 # Phase 09 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-08-05T04:21:29+00:00
-Base HEAD: 12f1ebfbc1262e4d83102bc48430489355d02654
+Generated: 2026-08-05T05:03:18+00:00
+Base HEAD: c6fd39527e82d4c93c2507e3369bd2a109647376
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_09_status.md
-Status sha256: f5deb66602e5e658aa77fc22a2e947639419c7b704dc6fc2c7e725bfe40a1162
+Status sha256: d936a62bbbaa29900ce7bf7dfd741299d385f7b62bf89d68da676869c6511e64
 Plan: docs/codex/gesc_gaussian/plans/phase_09_plan.md
-Plan sha256: 77af7fea03eda6835d8b7f4768d63515bb14bbf150b797b333484fc726dadd00
-Unstaged diff sha256: 171fd7daea0daee1b84806d66ae06b270eb1fa55d1a2bd1ab752190d2fd28b68
+Plan sha256: 215650e877b7a414c079dcf41605e769f94441cc755d14b20bb33e164cb92073
+Unstaged diff sha256: c5eb82b93cc908afe42e594b5489ee308eb8bba862d96d5aa4036869b9f0825d
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 189]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 190]
  M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_IMPLEMENT.md
  M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_PLAN.md
  M docs/codex/gesc_gaussian/checkpoints/phase_09_checkpoint.txt
  M docs/codex/gesc_gaussian/handoffs/phase_09_handoff.md
  M docs/codex/gesc_gaussian/plans/phase_09_plan.md
  M docs/codex/gesc_gaussian/status/phase_09_status.md
- M docs/codex/gesc_gaussian/validation/phase_09_second_physical_run_repair.md
+ M ros2_ws/src/ros_esc/ros_esc/convergence_detector_node/convergence_detector_node_script.py
+ M ros2_ws/src/ros_esc/ros_esc/gaussian_fill_node/gaussian_fill_script.py
+ M ros2_ws/src/ros_esc/ros_esc/modified_cost_node/modified_cost_script.py
+ M ros2_ws/src/ros_esc/ros_esc/pde_cost_history_node/pde_cost_history_script.py
+ M ros2_ws/src/ros_esc/ros_esc/pde_history_node/pde_history_script.py
+?? docs/codex/gesc_gaussian/validation/phase_09_third_physical_run_repair.md
+?? ros2_ws/src/ros_esc/ros_esc/clock_configuration.py
+?? ros2_ws/src/ros_esc/test/test_clock_configuration.py
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../prompts/09_physical_IMPLEMENT.md               | 13 +++--
- .../prompts/09_physical_PLAN.md                    | 10 +++-
- .../checkpoints/phase_09_checkpoint.txt            | 49 +++----------------
- .../gesc_gaussian/handoffs/phase_09_handoff.md     | 20 +++++---
- docs/codex/gesc_gaussian/plans/phase_09_plan.md    | 10 ++++
- docs/codex/gesc_gaussian/status/phase_09_status.md | 38 ++++++++++-----
- .../phase_09_second_physical_run_repair.md         | 55 ++++++++++++++++------
- 7 files changed, 113 insertions(+), 82 deletions(-)
+ .../prompts/09_physical_IMPLEMENT.md               | 28 +++++++
+ .../prompts/09_physical_PLAN.md                    | 27 +++++++
+ .../checkpoints/phase_09_checkpoint.txt            | 64 ++++------------
+ .../gesc_gaussian/handoffs/phase_09_handoff.md     | 61 +++++++++++++++
+ docs/codex/gesc_gaussian/plans/phase_09_plan.md    | 53 +++++++++++++
+ docs/codex/gesc_gaussian/status/phase_09_status.md | 89 +++++++++++++++++++++-
+ .../convergence_detector_node_script.py            | 13 +---
+ .../gaussian_fill_node/gaussian_fill_script.py     | 13 +---
+ .../modified_cost_node/modified_cost_script.py     | 13 +---
+ .../pde_cost_history_script.py                     | 13 +---
+ .../ros_esc/pde_history_node/pde_history_script.py | 13 +---
+ 11 files changed, 288 insertions(+), 99 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**M8G SELECTED STARTUP-GRACE SOURCE REPAIR HOST-QUALIFIED / SNAPSHOT-PI SOURCE
-PARITY PASS / SECOND FAILED NO-MOTION RUN RETAINED / ON-PI POST-REPAIR BUILD,
-INSTALLED PARITY, PARSER COMPATIBILITY, AND CHECK-ONLY PASS / PHYSICAL ALGORITHM
-BEHAVIOR NOT YET DEMONSTRATED.**
+**M8H SHARED CLOCK SOURCE REPAIR HOST-QUALIFIED / REVIEWED PI SOURCE TRANSFER
+COMPLETE / POST-REBOOT 347/347 FILE AND 435/435 INVENTORY PARITY PASS / THIRD
+FAILED NO-MOTION RUN RETAINED / ON-PI POST-REPAIR BUILD AND CHECK-ONLY NOT YET
+RUN / PHYSICAL ALGORITHM BEHAVIOR NOT YET DEMONSTRATED.**
 
-### Exact next action after M8G
+The next incomplete criterion is exactly one new human-operated
+`./gesc_gaussian_two_source_voltage.bash --check-only`, because the Pi rebooted
+and source changed after M8G. Set the literal lab wall clock first. The check
+must pass the three selected builds, installed parity, selected physical
+`False`, legacy default `True`, device separation, and launch construction
+without starting the runtime. Review that output before another bare run.
 
-The operator completed the one-time post-source-change check:
-
-```text
-ros_esc_interfaces: PASS in 2.79 s
-ros_esc: PASS in 5.27 s
-turtlebot3_vehicle_nodes: PASS in 6.89 s
-three packages: PASS in 16.3 s
-installed Python parity: PASS (63 + 21 files)
-selected CLI parser: PASS (physical=False, legacy default=True)
-scenario/launch: primary, PASS
-devices: /dev/ttyUSB0 photoresistor, /dev/ttyACM0 OpenCR
-selected lidar: disabled
-current time: 2026-08-04T21:16:22+00:00
-pigpio/serial/Vicon/ROS graph/recorder/motion: NOT STARTED
-```
-
-Read-only SSHFS inspection confirmed all three `colcon_build.rc` files zero,
-the installed symlink chain targeting the repaired source wrapper, and exact
-post-cleanup snapshot/Pi parity of 345/345 files plus 433/433 inventory entries.
-The one-time M8G build/check gate is closed. If the Pi has not rebooted and
-source has not changed, follow the ordinary Vicon/lab SOP and invoke bare
 
 This file describes the base HEAD and diff before the next commit; it is
 not a claim that the eventual commit contains itself or that tests passed.

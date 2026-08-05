@@ -457,3 +457,30 @@ That one-time gate is closed. Return to the ordinary Vicon/lab SOP and bare
 wrapper unless the Pi reboots, source changes again, or diagnosis requires a
 new check; do not claim physical behavior until the next retained run is
 finalized and validated.
+
+### Current M8H post-transfer boundary — shared clock initialization
+
+Read
+`docs/codex/gesc_gaussian/validation/phase_09_third_physical_run_repair.md`
+and preserve the third failed run
+`20260804T212226731572Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_309b9e71`.
+The run reached OpenCR, `/odom`/IMU, evaluation-only Vicon, supervisor, and
+recording, but Gaussian fill died during physical parameter enforcement with
+rclpy `InvalidHandle`. Readiness and rotation authorization were always false,
+every recorded command was zero, and no motion occurred.
+
+The shared initialization correction is implemented and transferred. Modified
+cost, both PDE histories, convergence detector, and Gaussian fill now preserve
+an explicit physical `use_sim_time=False` or simulation `True` at construction
+while retaining the historical no-override Gazebo default `True`. Host clock,
+legacy, Phase 09, build, and two-thread enforcement gates pass. Fresh
+post-reboot snapshot/Pi parity is 347/347 files and 435/435 inventory entries,
+with zero source caches. No Pi build or physical process was started by Codex.
+
+Do not replan or rewrite this repair without new failed evidence. Preserve the
+two-thread executor, algorithm tuning, topics, cost semantics, `/odom`
+ownership, Vicon role, recorder gates, selected wrapper, and historical entry
+points. Because source changed and the Pi rebooted, require exactly one new
+operator `./gesc_gaussian_two_source_voltage.bash --check-only` after Nick's
+literal wall-clock step. Review that output before planning another bare run;
+do not turn check-only into a permanent ceremony.

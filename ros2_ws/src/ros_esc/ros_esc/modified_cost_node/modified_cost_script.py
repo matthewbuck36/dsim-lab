@@ -4,9 +4,9 @@ import math
 import rclpy
 import numpy as np
 from rclpy.node import Node
-import rclpy.parameter
 
 from nav_msgs.msg import Odometry
+from ros_esc.clock_configuration import apply_legacy_sim_time_default
 from ros_esc_interfaces.msg import (
     AlgorithmEvent,
     AlgorithmState,
@@ -76,14 +76,9 @@ class ModifiedCost2D(Node):
 
         args, _ = parser.parse_known_args()
 
-        # Use Gazebo sim time.
-        self.set_parameters([
-            rclpy.parameter.Parameter(
-                "use_sim_time",
-                rclpy.parameter.Parameter.Type.BOOL,
-                True
-            )
-        ])
+        # MBuck 2026-08-04: retain the Gazebo default only when startup did
+        # not explicitly select the physical wall clock.
+        apply_legacy_sim_time_default(self)
 
         # ---------------- Parameters ----------------
 

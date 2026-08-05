@@ -2,7 +2,7 @@
 import numpy as np
 import rclpy
 from rclpy.node import Node
-import rclpy.parameter
+from ros_esc.clock_configuration import apply_legacy_sim_time_default
 from ros_esc.supervisor_node.state_machine import ROBUST_PROFILE, VALID_PROFILES
 from ros_esc.search_epoch import SearchEpochGate
 from ros_esc_interfaces.msg import (
@@ -138,14 +138,9 @@ class ConvergenceDetector(Node):
     def __init__(self):
         super().__init__("convergence_detector")
 
-        # Use Gazebo simulation time
-        self.set_parameters([
-            rclpy.parameter.Parameter(
-                "use_sim_time",
-                rclpy.parameter.Parameter.Type.BOOL,
-                True
-            )
-        ])
+        # MBuck 2026-08-04: retain the Gazebo default only when startup did
+        # not explicitly select the physical wall clock.
+        apply_legacy_sim_time_default(self)
 
         # ---------------------------------------------------------------------
         # Parameters

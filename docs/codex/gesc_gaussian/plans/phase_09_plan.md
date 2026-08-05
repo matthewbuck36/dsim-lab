@@ -1770,3 +1770,56 @@ inspection confirmed all three build return codes zero and retained exact
 M8G therefore returns to the ordinary Vicon/lab SOP and bare selected wrapper;
 live sensor, motion, shutdown, bag, CSV, and two-light behavior remain
 unverified until the next retained run.
+
+### M8H shared clock-initialization repair amendment — 2026-08-04
+
+<!-- MBuck 2026-08-04: Preserve explicit physical wall time at node construction while retaining the historical Gazebo default. -->
+
+The third bare selected run is retained failed commissioning evidence at
+`20260804T212226731572Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_309b9e71`.
+OpenCR, wheel/IMU `/odom`, encoder, evaluation-only Vicon, the selected
+supervisor, rosbag, and zero-command ownership came up. During recorder
+physical-parameter enforcement, `gaussian_fill_node` exited with rclpy
+`InvalidHandle: cannot use Destroyable because destruction was requested`.
+Readiness and rotation authorization remained false, all recorded `/cmd_vel`
+messages were zero, and no robot motion occurred. Preserve the finalized bag,
+failed completeness result, and absent CSV export exactly as failed evidence.
+
+Treat this as a bounded Level B shared startup correction. Five existing
+extension owners currently force `use_sim_time=True` after construction even
+when their launch supplied an explicit physical `False`: modified cost, PDE
+position history, PDE cost history, convergence detector, and Gaussian fill.
+The recorder correctly enforces the physical manifest, but the resulting live
+`True -> False` transition destroys the `/clock` subscription while the
+Gaussian fill multithreaded executor is active.
+
+Add one shared clock-initialization helper in the existing `ros_esc` package.
+It must apply the historical Gazebo `True` default only when rclpy received no
+startup override. An explicit `False` must remain false from node construction,
+and an explicit `True` must remain true. Use the helper in exactly the five
+owners above. Keep Gaussian fill's two-thread executor, all numerical
+algorithm behavior, v8.12 tuning, topics, cost sign/units, `/odom` pose input,
+Vicon evaluation role, recorder enforcement, selected wrapper, and every
+historical launch/wrapper unchanged.
+
+M8H acceptance requires matching pre-edit snapshot/Pi backups and a complete
+source manifest; focused default/explicit-false/explicit-true construction
+tests for all five owners; a bounded two-thread Gaussian-fill physical-clock
+parameter-enforcement probe; canonical legacy tests; complete Phase 09 tests;
+syntax and critical lint; an isolated host build; a checksum-scoped no-delete
+SSHFS transfer; and exact canonical/snapshot/Pi parity for every shared file.
+Codex must not build on the Pi, start the physical ROS graph, open either
+serial device, connect Vicon, or command motion. Because Pi source changes,
+the operator must run exactly one new `--check-only` before another bare run.
+That rebuild/check remains diagnostic after source changes, not a permanent
+per-experiment ceremony.
+
+M8H host/source execution completed on 2026-08-04. All declared host tests,
+both isolated builds, and the installed two-thread enforcement probe passed;
+the reviewed eight-path transfer completed without broad sync or source
+deletion; and fresh post-reboot manifests prove 347/347 source files plus
+435/435 inventory entries match between snapshot and Pi. The retained receipt
+is
+`docs/codex/gesc_gaussian/validation/phase_09_third_physical_run_repair.md`.
+No Pi build or physical process was started by Codex. The one new operator
+`--check-only` remains the exact next gate before another bare experiment.

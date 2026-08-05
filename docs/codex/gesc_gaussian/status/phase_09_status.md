@@ -1,7 +1,7 @@
 # Phase 09 Live Status
 
-Last verified: `2026-08-04T17:55:33-07:00`
-Status: `M8E ON-PI CHECK-ONLY PASS, CLEAN BUILD, PI SOURCE PARITY PASS, AND LAB WALL-CLOCK INITIALIZATION PASS FOR CURRENT BOOT`
+Last verified: `2026-08-04T22:00:57-07:00`
+Status: `M8H CLOCK REPAIR HOST-QUALIFIED AND TRANSFERRED; 347/347 PI SOURCE PARITY PASS; NEW OPERATOR CHECK-ONLY PENDING`
 
 ## Objective
 
@@ -1252,7 +1252,7 @@ Pre-repair backups and receipts exist under
 delete operation. The Pi source is current, but its post-M8F build/install has
 not yet been rebuilt or qualified.
 
-## Current milestone
+## Historical M8F milestone
 
 **M8F SOURCE REPAIR HOST-QUALIFIED / SNAPSHOT-PI SOURCE PARITY PASS / ON-PI
 POST-REPAIR BUILD, INSTALLED PARITY, PARSER COMPATIBILITY, AND CHECK-ONLY PASS /
@@ -1329,7 +1329,7 @@ Matching recovery and transfer receipts are under
 `phase09_backups`. No Pi build, ROS graph, serial/GPIO access, Vicon client,
 recorder, or motion was started by Codex for M8G.
 
-## Current milestone
+## Historical M8G milestone
 
 **M8G SELECTED STARTUP-GRACE SOURCE REPAIR HOST-QUALIFIED / SNAPSHOT-PI SOURCE
 PARITY PASS / SECOND FAILED NO-MOTION RUN RETAINED / ON-PI POST-REPAIR BUILD,
@@ -1363,3 +1363,84 @@ source has not changed, follow the ordinary Vicon/lab SOP and invoke bare
 The next retained run still must prove live Timekeeper, voltage/raw cost,
 filter/control, readiness, authorized motion, Ctrl+C/final zero, bag/CSV
 completeness, and physical two-light behavior.
+
+## M8H third selected-run diagnosis and shared clock repair — 2026-08-04
+
+The third bare run is retained unchanged at:
+
+```text
+/home/pi/turtlebot_rotating_sensor_tests/gesc_gaussian_two_source/2026-08-04/
+  20260804T212226731572Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_309b9e71
+```
+
+The bag finalized with 8,833 messages. Vicon and onboard `/odom` were live,
+but Gaussian fill died before recorder readiness when physical parameter
+enforcement changed its internally forced `use_sim_time=True` back to the
+manifest-required `False`. The rclpy multithreaded executor then encountered a
+destroyed `/clock` QoS waitable and raised `InvalidHandle`. All 815 recorded
+`/cmd_vel` messages were zero; all 421 rotation-authorization and 416 readiness
+samples were false; no rotation RPM command or robot motion occurred. Missing
+resolved snapshots and CSVs are downstream consequences of the pre-barrier
+failure, not separate recorder defects.
+
+M8H is complete at the host/source-transfer boundary as a Level B shared
+startup correction. One shared helper now preserves an explicit startup
+`use_sim_time=False` or `True` and applies the historical Gazebo `True` only
+when startup supplied no override. Exactly the five affected owners use it;
+Gaussian fill's two-thread executor and all algorithm, topic, cost, pose,
+Vicon, recorder, selected-wrapper, and historical-entry behavior are
+unchanged. Matching pre-edit recovery roots are:
+
+```text
+/home/mattb/physical_TB3_files_snapshot/phase09_backups/
+  20260804T214018-0700_m8h_clock_initialization_repair
+/home/mattb/tb3-pi/phase09_backups/
+  20260804T214018-0700_m8h_clock_initialization_repair
+```
+
+Their `MANIFEST.md` files match with SHA-256
+`c297823f6e2149c335412d99e5362637dccf1cd83595cd42c33459a17c9de643`.
+The normalized pre-edit full-source manifest SHA-256 is
+`30c4641232eaac0bd290050e85c8d01464089e004b6f2ed12489ccc7a865bc96`.
+
+Verified M8H results:
+
+```text
+focused five-owner clock suite: 16 passed
+shared legacy/clock/PDE/convergence/Gaussian/observability: 114 passed
+canonical isolated build: 3 packages PASS in 14.3 s
+installed two-thread Gaussian physical-clock probe: PASS
+snapshot focused clock/parity suite: 45 passed
+complete snapshot Phase 09 suite: 256 passed
+snapshot isolated build: 3 packages PASS in 14.9 s
+mounted-Pi source AST parse and critical lint: 8/8 PASS
+canonical/snapshot/Pi reviewed shared paths: 7/7 byte-identical
+snapshot/Pi physical parity test: 1/1 byte-identical
+snapshot/Pi regular-file parity: 347/347 PASS
+source-manifest SHA-256: 87bfed392f98ad6cecca05c296fc2600c355821f2907e55e521ec00d6989fd6a
+snapshot/Pi inventory parity: 435/435 PASS
+inventory SHA-256: 55b2b88117506164cf339696c74f1fe4a571bf1b8ad7cefc62b29cdb36b1ebbb
+snapshot/Pi generated cache directories: 0/0
+```
+
+The eight-path reviewed SSHFS transfer used no broad sync or source deletion.
+A separate cleanup removed only regenerated Python/pytest cache artifacts.
+Matching `POST_TRANSFER.md` receipts have SHA-256
+`6ae98289e19c2a066a8f61005e16e01b3dc9d4b0a97d8201d29caa6933dc453c`.
+No Pi build, ROS graph, serial device, pigpio daemon, Vicon client, recorder,
+or motion was started by Codex. Full evidence is in
+`docs/codex/gesc_gaussian/validation/phase_09_third_physical_run_repair.md`.
+
+## Current milestone
+
+**M8H SHARED CLOCK SOURCE REPAIR HOST-QUALIFIED / REVIEWED PI SOURCE TRANSFER
+COMPLETE / POST-REBOOT 347/347 FILE AND 435/435 INVENTORY PARITY PASS / THIRD
+FAILED NO-MOTION RUN RETAINED / ON-PI POST-REPAIR BUILD AND CHECK-ONLY NOT YET
+RUN / PHYSICAL ALGORITHM BEHAVIOR NOT YET DEMONSTRATED.**
+
+The next incomplete criterion is exactly one new human-operated
+`./gesc_gaussian_two_source_voltage.bash --check-only`, because the Pi rebooted
+and source changed after M8G. Set the literal lab wall clock first. The check
+must pass the three selected builds, installed parity, selected physical
+`False`, legacy default `True`, device separation, and launch construction
+without starting the runtime. Review that output before another bare run.

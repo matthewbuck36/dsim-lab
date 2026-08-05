@@ -5,8 +5,8 @@ import numpy as np
 from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
 from rclpy.signals import SignalHandlerOptions
-import rclpy.parameter
 
+from ros_esc.clock_configuration import apply_legacy_sim_time_default
 from ros_esc.deferred_signal_shutdown import DeferredSignalShutdown
 from ros_esc.search_epoch import SearchEpochGate
 from ros_esc.supervisor_node.state_machine import (
@@ -42,14 +42,9 @@ class PDECostHistory(Node):
             parameter_overrides=parameter_overrides,
         )
 
-        # Use Gazebo simulation time
-        self.set_parameters([
-            rclpy.parameter.Parameter(
-                "use_sim_time",
-                rclpy.parameter.Parameter.Type.BOOL,
-                True
-            )
-        ])
+        # MBuck 2026-08-04: retain the Gazebo default only when startup did
+        # not explicitly select the physical wall clock.
+        apply_legacy_sim_time_default(self)
 
         # Parameters
         self.declare_parameter("n_buffer", 2000)
