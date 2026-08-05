@@ -1,7 +1,7 @@
 # Phase 09 Live Status
 
-Last verified: `2026-08-04T22:09:03-07:00`
-Status: `M8H CLOCK REPAIR INSTALLED CHECK-ONLY PASS; SOURCE PARITY RETAINED; NEXT BARE PHYSICAL RUN NOT YET STARTED`
+Last verified: `2026-08-04T22:38:22-07:00`
+Status: `M8I RUNTIME/EVIDENCE SOURCE REPAIR HOST-QUALIFIED AND TRANSFERRED; 347/347 PARITY PASS; POST-CHANGE PI CHECK-ONLY NOT YET RUN`
 
 ## Objective
 
@@ -1455,3 +1455,76 @@ new retained bare physical run under the ordinary Vicon/lab SOP. That run must
 still prove live Timekeeper and voltage/raw cost, filter/control, readiness and
 authorized motion, managed final zero, bag validation, familiar CSV export,
 and physical two-light behavior.
+
+## M8I fourth selected-run diagnosis and runtime/evidence repair — 2026-08-04
+
+The fourth bare run is retained unchanged at:
+
+```text
+/home/pi/turtlebot_rotating_sensor_tests/gesc_gaussian_two_source/2026-08-04/
+  20260804T221143126652Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_b27fffe0
+```
+
+This is the first retained run with authorized selected-controller motion. It
+spent about 10.6 seconds in `SEARCH`, moved roughly 0.13 m according to both
+onboard `/odom` and evaluation-only Vicon, respected the frozen 0.05 m/s and
+0.30 rad/s command ceilings, and created no Gaussian fill before shutdown.
+The recorder revoked on one source/filter coordinator snapshot at 0.577/0.573
+seconds. The finalized bag continued to receive both streams with sub-0.25
+second gaps, so the stop was bounded recorder scheduling jitter rather than a
+publisher or controller-input loss.
+
+M8I retains the strict 0.50-second startup snapshot. Only the selected physical
+recorder now uses a 1.50-second runtime heartbeat bound plus 0.50 seconds of
+continuous stale-only grace. Semantic, malformed, nonfinite, process, service,
+or mixed faults remain immediate. Controller and rotation-owner local
+freshness stay at 0.50 seconds. Simulation and legacy retain 0.50 seconds with
+zero grace. Rotation now sends the first configured RPM in the same tick that
+it first reports `RUNNING`; final-zero validation now uses the first
+authorization true-to-false boundary rather than a later duplicate false.
+
+Verified host/source results:
+
+```text
+targeted M8I tests: 11 passed
+complete edited focused files: 160 passed
+direct five-file Phase 09 suite: 225 passed
+complete snapshot Phase 09 suite: 264 passed
+canonical recorder regression: 69 passed
+canonical legacy + recording integration: 38 passed, 1 expected skip
+Python/YAML syntax and critical lint: PASS
+snapshot isolated build: 3 packages PASS in 14.9 s
+retained-run read-only replay: final rotation zero PASS; run still FAIL
+snapshot/Pi regular-file parity: 347/347 PASS
+source-manifest SHA-256: d2b265445a82b73de2737780aaea607e94f0de1a3656828cab265980d290997f
+snapshot/Pi inventory parity: 435/435 PASS
+inventory SHA-256: 9fcc3725566217ebe4bd55a637f2da2b09d2b31e698293abaea55e2cc213afed
+snapshot/Pi generated cache directories: 0/0
+```
+
+Matching pre-edit recovery roots are
+`20260804T222620-0700_m8i_runtime_grace_rotation_evidence` under both the
+snapshot and mounted-Pi `phase09_backups` directories. The reviewed six-path
+SSHFS transfer copied no other source and deleted no source. The matching
+post-transfer receipt SHA-256 is
+`87ad2314ab69dab01c574e63732768223e43a6cd35e0ef85305677ae2839f544`.
+Codex started no Pi build, ROS graph, serial/GPIO device, Vicon client,
+recorder, rotation, actuator, or motion. Full evidence is in
+`docs/codex/gesc_gaussian/validation/phase_09_fourth_physical_run_repair.md`.
+
+## Current milestone
+
+**M8I PHYSICAL-RUNTIME HEARTBEAT AND ROTATION-EVIDENCE SOURCE REPAIR
+HOST-QUALIFIED / REVIEWED SIX-PATH PI SOURCE TRANSFER COMPLETE / 347/347 FILE
+AND 435/435 INVENTORY PARITY PASS / FOURTH FAILED FIRST-MOTION RUN RETAINED /
+POST-CHANGE PI BUILD AND CHECK-ONLY NOT YET RUN / COMPLETE PHYSICAL
+GESC+GAUSSIAN TWO-SOURCE BEHAVIOR NOT YET DEMONSTRATED.**
+
+The next incomplete criterion is exactly one operator-owned selected
+`./gesc_gaussian_two_source_voltage.bash --check-only` from the standalone SSH
+terminal. It must pass all three packages, installed parity, selected physical
+`False`, legacy-default `True`, device separation, and launch construction
+without starting hardware or motion. If it passes, return to the ordinary
+Vicon/lab SOP and bare wrapper. Do not repeat check-only per experiment, do not
+weaken remaining controller/rotation safety behavior, and retain the next run
+regardless of outcome.

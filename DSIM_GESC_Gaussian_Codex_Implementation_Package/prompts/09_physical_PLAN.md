@@ -487,3 +487,41 @@ separation, and launch construction without starting runtime or hardware.
 Mounted checks retain 347/347 source and 435/435 inventory parity. Return to
 the ordinary Vicon/lab SOP and bare wrapper; do not turn check-only into a
 permanent ceremony, and do not claim physical behavior before a retained run.
+
+### Current M8I planning boundary — runtime jitter and rotation evidence
+
+Preserve the fourth run
+`20260804T221143126652Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_b27fffe0`.
+It is the first retained selected run with authorized base motion: about 10.6
+seconds in `SEARCH`, approximately 0.13 m net travel, frozen speed ceilings
+respected, and no Gaussian fill yet. It ended when the recorder's independent
+subscriber saw one 0.577/0.573-second source/filter age snapshot, although the
+bag retained both streams with sub-0.25-second receipt gaps and the controller
+kept its own 0.50-second freshness enforcement.
+
+Plan a bounded selected-physical runtime grace, not a global safety bypass.
+Keep startup freshness at 0.50 seconds; use 1.50 seconds only for the physical
+recorder's runtime heartbeat snapshot and require 0.50 seconds of continuously
+stale heartbeat-only evidence before revocation. Malformed or semantically
+invalid data, controller-local freshness, rotation-local freshness, command
+limits, process failures, and final zero remain unchanged. Simulation and
+legacy behavior must retain their current 0.50-second no-grace defaults.
+
+Also repair the producer/validator ordering exposed by the bag: the first
+`RUNNING` rotation status must already contain the first configured nonzero RPM
+command, and terminal rotation zero must be ordered against the first
+authorization `true -> false` transition rather than the recorder's final
+repeated false heartbeat. Require focused tests, full Phase 09 and legacy
+regressions, isolated build, recoverable six-path source transfer, exact
+snapshot/Pi parity, and one post-source-change human `--check-only`. Do not
+relabel the fourth run or claim a completed Gaussian two-source demonstration.
+
+M8I execution is now complete at the host/source-transfer boundary. The
+declared runtime grace and both rotation-evidence corrections are present in
+the snapshot and mounted Pi source. Targeted, complete Phase 09, canonical
+recorder/legacy, syntax/lint, isolated-build, and read-only retained-run replay
+gates pass. The reviewed six-path transfer used no delete behavior; normalized
+snapshot/Pi parity is 347/347 files plus 435/435 inventory entries. No Pi build
+or physical process was started by Codex. The only next gate is one
+operator-owned selected `--check-only`; if it passes, return to the ordinary
+Vicon/lab SOP and bare wrapper.

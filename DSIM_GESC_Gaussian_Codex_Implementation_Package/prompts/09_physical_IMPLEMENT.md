@@ -502,3 +502,44 @@ hardware. Mounted checks retain 347/347 source and 435/435 inventory parity.
 Do not request another check-only unless source changes or diagnosis requires
 it. The next human action is the ordinary Vicon/lab SOP and bare wrapper;
 preserve and validate the resulting run regardless of outcome.
+
+### Current M8I implementation handoff — runtime grace and rotation evidence
+
+Retain the fourth physical run
+`20260804T221143126652Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_b27fffe0`
+unchanged. It reached readiness, executed `SEARCH` for about 10.6 seconds,
+moved approximately 0.13 m net within the selected command ceilings, and then
+stopped cleanly after a recorder-only source/filter freshness false positive.
+The bag continued to receive both streams; no Gaussian fill occurred before
+shutdown.
+
+Implement only the reviewed M8I boundary. Preserve the 0.50-second startup
+snapshot, add a selected-physical runtime threshold of 1.50 seconds, and
+require 0.50 seconds of continuous heartbeat-only staleness before recorder
+revocation. Invalid/nonfinite/semantic faults remain immediate. Do not change
+the controller's independent 0.50-second freshness checks, rotation owner's
+independent freshness checks, speed limits, final-zero path, simulation
+defaults, or legacy selections.
+
+Make the rotation owner issue its first configured RPM command in the same
+tick that settling transitions to `RUNNING`. Make offline final-zero validation
+use the first authorization `true -> false` boundary after authorization,
+instead of the last repeated false heartbeat. Cover transient recovery,
+persistent stale revocation, immediate semantic fault, truthful first RUNNING
+status, and repeated-false shutdown ordering in tests. Back up snapshot and Pi
+before editing; transfer exactly the six reviewed source/test paths with no
+delete behavior; prove full parity; update Phase 09 evidence; and require one
+operator-run `--check-only` because installed source changes. Do not start ROS,
+devices, Vicon, recording, rotation, or motion from Codex.
+
+This implementation boundary is complete. Matching pre-edit backups are under
+`20260804T222620-0700_m8i_runtime_grace_rotation_evidence`; all declared host
+tests and the isolated three-package snapshot build pass; and read-only replay
+repairs final-rotation-zero evidence without relabeling the retained failed
+run. Exactly six reviewed files were copied through SSHFS with no source
+deletion. Snapshot/Pi parity is 347/347 files and 435/435 inventory entries,
+with zero generated source-cache directories. Codex started no Pi build,
+graph, device, Vicon client, recorder, rotation, or motion. Do not edit this
+repair again without new evidence. The next action is one human-run selected
+`--check-only`, followed on success by the ordinary Vicon/lab SOP and bare
+wrapper.

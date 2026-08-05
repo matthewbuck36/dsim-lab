@@ -1,64 +1,55 @@
 # Phase 09 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-08-05T05:09:59+00:00
-Base HEAD: 47f3d33b69f1ec175dd6e072a38ce9aa1beb088d
+Generated: 2026-08-05T05:41:31+00:00
+Base HEAD: b9c0f97d01f070f3f2685cdb521ef3edb961a02e
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_09_status.md
-Status sha256: 9ca885c563e8b7a65fc1ef32ee1aecabe6b573e1d5cf3cd64f75f8cd58631934
+Status sha256: e59c5fbd293143adc38de385cc7aaaca792954d079e6fe9af52caa40bdb81283
 Plan: docs/codex/gesc_gaussian/plans/phase_09_plan.md
-Plan sha256: d1c0a75b6f03fdcd05e72406e13e73a013795ed866e2236e5c8e5b616400ed15
-Unstaged diff sha256: dd65735d0d06a7e8a3f984cf22f06c499e988f6e12c5428e8311b30fb0082ed4
+Plan sha256: 76bb46a47cf864587e249edff684a675ccfafca249250b9cda3265a80f84b54e
+Unstaged diff sha256: ba76639d2369db7b1d0db443c13dd1dd3aeca98f65d8056a5227233d2bd50e6c
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 191]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 192]
  M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_IMPLEMENT.md
  M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_PLAN.md
  M docs/codex/gesc_gaussian/checkpoints/phase_09_checkpoint.txt
  M docs/codex/gesc_gaussian/handoffs/phase_09_handoff.md
  M docs/codex/gesc_gaussian/plans/phase_09_plan.md
  M docs/codex/gesc_gaussian/status/phase_09_status.md
- M docs/codex/gesc_gaussian/validation/phase_09_third_physical_run_repair.md
+?? docs/codex/gesc_gaussian/validation/phase_09_fourth_physical_run_repair.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../prompts/09_physical_IMPLEMENT.md               | 12 +++--
- .../prompts/09_physical_PLAN.md                    | 11 +++--
- .../checkpoints/phase_09_checkpoint.txt            | 52 +++-------------------
- .../gesc_gaussian/handoffs/phase_09_handoff.md     | 17 +++++++
- docs/codex/gesc_gaussian/plans/phase_09_plan.md    |  8 ++++
- docs/codex/gesc_gaussian/status/phase_09_status.md | 33 +++++++++-----
- .../phase_09_third_physical_run_repair.md          | 48 +++++++++++++++-----
- 7 files changed, 106 insertions(+), 75 deletions(-)
+ .../prompts/09_physical_IMPLEMENT.md               | 41 ++++++++++++
+ .../prompts/09_physical_PLAN.md                    | 38 +++++++++++
+ .../checkpoints/phase_09_checkpoint.txt            | 52 ++-------------
+ .../gesc_gaussian/handoffs/phase_09_handoff.md     | 63 ++++++++++++++++++
+ docs/codex/gesc_gaussian/plans/phase_09_plan.md    | 58 ++++++++++++++++
+ docs/codex/gesc_gaussian/status/phase_09_status.md | 77 +++++++++++++++++++++-
+ 6 files changed, 282 insertions(+), 47 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**M8H SHARED CLOCK SOURCE REPAIR HOST-QUALIFIED / REVIEWED PI SOURCE TRANSFER
-COMPLETE / POST-REBOOT 347/347 FILE AND 435/435 INVENTORY PARITY PASS / THIRD
-FAILED NO-MOTION RUN RETAINED / ON-PI POST-REPAIR BUILD, INSTALLED PARITY,
-PARSER COMPATIBILITY, AND CHECK-ONLY PASS / PHYSICAL ALGORITHM BEHAVIOR NOT YET
-DEMONSTRATED.**
+**M8I PHYSICAL-RUNTIME HEARTBEAT AND ROTATION-EVIDENCE SOURCE REPAIR
+HOST-QUALIFIED / REVIEWED SIX-PATH PI SOURCE TRANSFER COMPLETE / 347/347 FILE
+AND 435/435 INVENTORY PARITY PASS / FOURTH FAILED FIRST-MOTION RUN RETAINED /
+POST-CHANGE PI BUILD AND CHECK-ONLY NOT YET RUN / COMPLETE PHYSICAL
+GESC+GAUSSIAN TWO-SOURCE BEHAVIOR NOT YET DEMONSTRATED.**
 
-The operator completed the one required post-M8H check-only. All three selected
-packages passed in 16.4 seconds; installed Python parity passed with
-`ros_esc=64` and `turtlebot3_vehicle_nodes=21`; selected physical `False`,
-legacy default `True`, device separation, and launch construction passed; and
-pigpio, serial, Vicon, the ROS graph, recording, and motion did not start.
-Read-only SSHFS inspection confirmed all three build return codes zero, the
-active symlink-install chain contains the new helper, and exact 347/347 source
-plus 435/435 inventory parity remains. The build regenerated 16 normal Python
-bytecode files under 11 Pi cache directories; these are excluded generated
-artifacts, not source drift.
-
-The one-time M8H build/check gate is closed. The next incomplete criterion is a
-new retained bare physical run under the ordinary Vicon/lab SOP. That run must
-still prove live Timekeeper and voltage/raw cost, filter/control, readiness and
-authorized motion, managed final zero, bag validation, familiar CSV export,
-and physical two-light behavior.
+The next incomplete criterion is exactly one operator-owned selected
+`./gesc_gaussian_two_source_voltage.bash --check-only` from the standalone SSH
+terminal. It must pass all three packages, installed parity, selected physical
+`False`, legacy-default `True`, device separation, and launch construction
+without starting hardware or motion. If it passes, return to the ordinary
+Vicon/lab SOP and bare wrapper. Do not repeat check-only per experiment, do not
+weaken remaining controller/rotation safety behavior, and retain the next run
+regardless of outcome.
 
 
 This file describes the base HEAD and diff before the next commit; it is

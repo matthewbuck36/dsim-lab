@@ -932,3 +932,66 @@ source changes or diagnosis requires it. The next human action is the ordinary
 Vicon/lab SOP and bare `./gesc_gaussian_two_source_voltage.bash`; retain and
 validate its output regardless of success or failure. Physical algorithm
 behavior remains unverified until that run completes.
+
+## M8I fourth physical-run runtime/evidence repair handoff — 2026-08-04
+
+Preserve
+`20260804T221143126652Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_b27fffe0`
+unchanged. It is the first retained selected run that reached readiness and
+moved under the cumulative v8.12 controller: about 10.6 seconds of `SEARCH`,
+roughly 0.13 m net motion in both onboard `/odom` and evaluation-only Vicon,
+frozen command ceilings respected, and no Gaussian fill before shutdown.
+
+The recorder stopped after its own subscriber/coordinator observed one
+0.577/0.573-second source/filter age snapshot. The finalized bag continued to
+contain both publishers at sub-0.25-second receipt gaps, while controller-local
+freshness remained separately enforced at 0.50 seconds. Treat this as the
+documented recorder scheduling false positive, not proof of publisher loss.
+The retained run remains failed; do not rewrite its metadata or completeness
+report.
+
+M8I is implemented and transferred. Selected physical startup remains strict
+at 0.50 seconds. Runtime recorder heartbeat staleness uses 1.50 seconds plus
+0.50 seconds of continuous stale-only grace. Recovery clears the pending
+timer; semantic/nonfinite/malformed/process/service/mixed faults remain
+immediate. Simulation, legacy, controller-local freshness, rotation-local
+freshness, speed limits, and final-zero shutdown remain unchanged. The
+rotation owner now commands nonzero RPM in the first `RUNNING` tick, and the
+validator orders terminal rotation zero after the first authorization
+true-to-false transition.
+
+Host qualification passed 11 targeted tests, 160 complete edited-file tests,
+225 directly related Phase 09 tests, 264 complete snapshot Phase 09 tests, 69
+canonical recorder regressions, 38 canonical legacy/recording tests with one
+expected skip, syntax/critical lint, and a fresh 14.9-second isolated
+three-package build. Read-only replay proves the repaired final-rotation-zero
+check passes while the old run remains failed for its original runtime and
+status evidence.
+
+Matching rollback roots are:
+
+```text
+/home/mattb/physical_TB3_files_snapshot/phase09_backups/
+  20260804T222620-0700_m8i_runtime_grace_rotation_evidence
+/home/mattb/tb3-pi/phase09_backups/
+  20260804T222620-0700_m8i_runtime_grace_rotation_evidence
+```
+
+The reviewed six-path SSHFS transfer deleted no source. Final snapshot/Pi
+parity is 347/347 regular files and 435/435 inventory entries. The normalized
+source SHA-256 is
+`d2b265445a82b73de2737780aaea607e94f0de1a3656828cab265980d290997f`;
+inventory SHA-256 is
+`9fcc3725566217ebe4bd55a637f2da2b09d2b31e698293abaea55e2cc213afed`.
+Generated cache directories are 0/0. Codex ran no Pi command, build, graph,
+device, Vicon client, recorder, rotation, or motion. Full evidence is in
+`docs/codex/gesc_gaussian/validation/phase_09_fourth_physical_run_repair.md`.
+
+Because source changed, the next action is one human-operated
+`./gesc_gaussian_two_source_voltage.bash --check-only` from the standalone SSH
+terminal. Review all three build results, installed parity, selected physical
+`False`, legacy-default `True`, device separation, and launch construction.
+If it passes, use the ordinary Vicon/lab SOP and bare wrapper; do not add a
+permanent check-only ceremony. The next retained experiment still must prove a
+sustained GESC+Gaussian run, any warranted fill lifecycle, managed final zero,
+bag validation, familiar CSV export, and physical two-light behavior.

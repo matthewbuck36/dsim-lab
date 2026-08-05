@@ -1831,3 +1831,61 @@ legacy-default `True`, device separation, and launch construction passed; and
 no runtime or hardware process started. Mounted checks retained 347/347 source
 and 435/435 inventory parity. M8H therefore returns to the ordinary Vicon/lab
 SOP and bare wrapper; physical behavior remains unverified until the next run.
+
+### M8I runtime heartbeat grace and rotation-evidence repair amendment — 2026-08-04
+
+<!-- MBuck 2026-08-04: Preserve the first-motion run while separating recorder scheduling jitter from real control faults and repairing two rotation evidence-ordering defects. -->
+
+The fourth bare selected run is retained unchanged at
+`20260804T221143126652Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_b27fffe0`.
+It passed startup and authorization, executed the selected controller in
+`SEARCH` for about 10.6 seconds, remained within the frozen `0.05 m/s` and
+`0.30 rad/s` ceilings, and moved about 0.13 m net according to both onboard
+`/odom` and evaluation-only Vicon. No Gaussian fill was created before the run
+ended, so this is first-motion commissioning evidence rather than a complete
+two-source demonstration.
+
+The recorder revoked readiness after one coordinator snapshot reported
+`source_cost=0.577 s` and `filter_output_legacy=0.573 s` against the original
+`0.50 s` startup freshness bound. The finalized bag independently retained
+both streams through that interval, with maximum receipt gaps below `0.25 s`,
+and the controller's separate subscriptions and `0.50 s` freshness checks
+remained active. This is a recorder-subscriber scheduling false positive, not
+evidence that the physical source or filter stopped. The shutdown path still
+proved readiness false, base zero within milliseconds, rotation zero, clean
+target/bag exits, and successful familiar CSV export.
+
+M8I is a bounded Level B physical-runtime correction. Keep the strict `0.50 s`
+startup authorization snapshot. Add a physical-runtime-only `1.50 s`
+coordinator heartbeat threshold and require `0.50 s` of continuously stale
+heartbeat-only evidence before recorder revocation. Any malformed/nonfinite or
+semantic heartbeat fault remains immediate. The controller's independent
+`0.50 s` pose/filter/supervisor/readiness checks, the rotation owner's
+independent `0.50 s` authorization/encoder checks, process-exit handling,
+command ceilings, one `/cmd_vel` owner, and managed final-zero shutdown remain
+unchanged. Simulation and legacy defaults retain the original one-snapshot
+`0.50 s` behavior; only the selected physical manifest opts into runtime
+grace.
+
+Two independent evidence defects are also in scope:
+
+1. when settling ends, the selected rotation state machine must emit its first
+   finite configured RPM command in the same tick that it first reports
+   `RUNNING`, so a truthful status can never report `RUNNING` with the prior
+   zero command; and
+2. offline final-zero validation must compare the terminal rotation zero with
+   the first `true -> false` authorization revocation boundary, not the final
+   repeated false heartbeat published later by the recorder during managed
+   shutdown.
+
+Do not weaken offline operational coverage, relabel the retained failed run,
+change algorithm tuning, alter Vicon's evaluation-only role, or modify any
+historical wrapper/launch/configuration. M8I source scope is exactly the
+existing recorder, manifest, validator, selected rotation owner, and their two
+focused tests. Acceptance requires a sealed snapshot/Pi pre-edit backup,
+focused persistent/transient/immediate-fault runtime-grace tests, same-tick
+RUNNING-command proof, repeated-false final-zero proof, complete Phase 09 and
+legacy regressions, critical syntax/lint, an isolated three-package snapshot
+build, a reviewed six-path no-delete SSHFS transfer, exact final snapshot/Pi
+source parity, updated validation/status/handoff/checkpoint evidence, and one
+human-operated `--check-only` after source changes before the next bare run.
