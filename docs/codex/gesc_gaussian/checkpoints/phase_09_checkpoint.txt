@@ -1,18 +1,18 @@
 # Phase 09 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-08-05T00:05:42+00:00
-Base HEAD: 4bcb7df0851b416acb181f3b0d8191c7b62745bf
+Generated: 2026-08-05T00:57:45+00:00
+Base HEAD: 1379d4b5faa5aed1ab9cad01d4ac452a4d4c5824
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_09_status.md
-Status sha256: bf99340bf15e64bfe903d6d1e12c4fe39db3d39051614d6edb6f72f3cb7285fb
+Status sha256: a0032c0afe1e5923d2662a716385772e67a4b013dc445c9dabef246efd62db05
 Plan: docs/codex/gesc_gaussian/plans/phase_09_plan.md
-Plan sha256: 1f3fa2fe45a925b91e34b3a2ec4160805e6e5dc19bd906f52f88b03ef42e7a52
-Unstaged diff sha256: 02c107ac7fc70250d28cb725bb7abb9dfc6ff48fc5078389ffbe2e9f95c8839d
+Plan sha256: 9aa082d2ed864ab5571bef7b6973aa7e3b52de3175189bf2cfab5247fa6a117a
+Unstaged diff sha256: 5e38adf8a8169ac498548ede8ed75e2d1eedde70a29fc52ae1cafe40f93e89e7
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 184]
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 185]
  M DSIM_GESC_Gaussian_Codex_Implementation_Package/10_PHYSICAL_EXPERIMENT_READINESS.md
  M DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md
  M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_IMPLEMENT.md
@@ -28,24 +28,24 @@ Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852
 unstaged and staged: pass
 
 ## Changed-file summary
- .../10_PHYSICAL_EXPERIMENT_READINESS.md            | 28 ++++++++---
- .../START_HERE.md                                  | 10 ++--
- .../prompts/09_physical_IMPLEMENT.md               | 18 ++++---
- .../prompts/09_physical_PLAN.md                    | 14 +++---
- .../checkpoints/phase_09_checkpoint.txt            | 37 +++-----------
- .../gesc_gaussian/handoffs/phase_09_handoff.md     | 26 +++++-----
- .../codex/gesc_gaussian/implementation_sequence.md |  9 ++--
+ .../10_PHYSICAL_EXPERIMENT_READINESS.md            | 26 +++++++----
+ .../START_HERE.md                                  | 12 +++--
+ .../prompts/09_physical_IMPLEMENT.md               | 19 ++++----
+ .../prompts/09_physical_PLAN.md                    |  9 ++--
+ .../checkpoints/phase_09_checkpoint.txt            | 36 +++------------
+ .../gesc_gaussian/handoffs/phase_09_handoff.md     | 26 +++++++----
+ .../codex/gesc_gaussian/implementation_sequence.md | 12 +++--
  docs/codex/gesc_gaussian/plans/phase_09_plan.md    | 12 +++--
- docs/codex/gesc_gaussian/status/phase_09_status.md | 37 ++++++++------
- .../validation/phase_09_pi_runtime_repair.md       | 58 +++++++++++++++++-----
- 10 files changed, 145 insertions(+), 104 deletions(-)
+ docs/codex/gesc_gaussian/status/phase_09_status.md | 33 ++++++++------
+ .../validation/phase_09_pi_runtime_repair.md       | 53 ++++++++++++----------
+ 10 files changed, 125 insertions(+), 113 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
 **M8E CLEAN ON-PI BUILD AND CHECK-ONLY PASS / INSTALLED-SOURCE PARITY PASS /
 SELECTED DEVICE AND NO-LIDAR BASE SEPARATION PASS / LEGACY SELECTION PRESERVED /
-OFFLINE MANUAL CLOCK INITIALIZATION PASS FOR CURRENT POWER SESSION / NO ROS
+OFFLINE LAB WALL-CLOCK INITIALIZATION PASS FOR CURRENT POWER SESSION / NO ROS
 GRAPH OR MOTION RUN.**
 
 

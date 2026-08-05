@@ -1685,8 +1685,10 @@ docs/codex/gesc_gaussian/validation/phase_09_pi_runtime_repair.md
 M8E does not claim a live photoresistor sample, `/odom`, Vicon, servo/motor,
 recorder/final-zero, CSV, or physical search result. The Pi has no RTC and the
 isolated DSIMOVERWATCH router has no internet NTP access. Preserve Nick's
-package-README `sudo date -s` procedure after each Pi reboot and before ROS;
-the offline time copy passed for the current powered session at
-`2026-08-05T00:02:42+00:00` without changing timezone or NTP configuration.
-The next planned action is the ordinary lab SOP and bare selected wrapper; the
-passing check-only does not become a per-run gate.
+package-README literal wall-clock `sudo date -s` procedure after each Pi reboot
+and before ROS; never copy Unix epoch or timezone/offset. The accepted
+initialization passed for the current powered session at
+`2026-08-04T17:54:22+00:00` without changing timezone or NTP configuration. The
+superseded August 5 epoch-copy attempt created no run. The next planned action
+is the ordinary lab SOP and bare selected wrapper; the passing check-only does
+not become a per-run gate.

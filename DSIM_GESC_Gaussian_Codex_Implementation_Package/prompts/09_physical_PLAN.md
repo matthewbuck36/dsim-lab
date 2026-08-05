@@ -396,10 +396,11 @@ recording, or moving the robot. Final snapshot/Pi parity is `345/345` files and
 ceremony or require repeated check-only before ordinary runs.
 
 The Pi has no RTC and DSIMOVERWATCH has no internet NTP route. Preserve Nick's
-package-README `sudo date -s` procedure after each reboot and before starting
-ROS; do not replace it with a timezone/NTP reconfiguration. The offline copy
-from the accurately timed lab computer passed for the current powered session
-at `2026-08-05T00:02:42+00:00`. Planning may proceed to the attached lab SOP
+package-README literal wall-clock `sudo date -s` procedure after each reboot
+and before starting ROS; do not replace it with Unix epoch, timezone/offset, or
+a timezone/NTP reconfiguration. The accepted copy passed for the current
+powered session at `2026-08-04T17:54:22+00:00`; the superseded August 5
+epoch-copy attempt started no run. Planning may proceed to the attached lab SOP
 and bare wrapper unless the Pi reboots first. Retain actual sensor, odometry,
 Vicon, command, final-zero, bag, CSV, and physical two-light behavior as
 unverified until a real run proves them.

@@ -2,7 +2,7 @@
 
 Date: `2026-08-04` (`America/Los_Angeles`)
 
-Current outcome: `M8E CLEAN ON-PI CHECK-ONLY, INSTALLED-SOURCE PARITY, REAL-PI SOURCE PARITY, AND OFFLINE CLOCK INITIALIZATION PASS FOR CURRENT BOOT`
+Current outcome: `M8E CLEAN ON-PI CHECK-ONLY, INSTALLED-SOURCE PARITY, REAL-PI SOURCE PARITY, AND LAB WALL-CLOCK INITIALIZATION PASS FOR CURRENT BOOT`
 
 The current human operator follows the attached lab Vicon SOP and invokes bare
 `gesc_gaussian_two_source_voltage.bash`; no repository readiness tag,
@@ -16,8 +16,9 @@ three-package build, installed-source parity, device separation, and launch
 construction. Final snapshot/Pi parity is `345/345` regular files and
 `433/433` inventory entries. No serial device, live Vicon connection, ROS
 graph, recorder, actuator, rotating frame, lamp trial, or robot motion was
-started. Nick's offline `sudo date -s` clock initialization passed for the
-current powered session and must be repeated after each Pi reboot.
+started. Nick's literal wall-clock `sudo date -s` initialization passed at
+`2026-08-04T17:54:22+00:00` for the current powered session and must be
+repeated after each Pi reboot.
 
 ## Historical M0-M8B implementation record (superseded by M8C)
 
@@ -744,12 +745,17 @@ failed-attempt diagnosis, host results, Pi output, and rollback details.
 The Pi has no RTC and cannot reach internet NTP through the isolated
 DSIMOVERWATCH router. After reboot it returned to a stale June 2025 clock,
 confirming why Nick's package README requires `sudo date -s` before experiments.
-The operator copied the accurately timed lab Linux computer's Unix epoch over
-local SSH; the Pi reported `2026-08-05T00:02:42+00:00`, which is correct UTC.
-No timezone or NTP setting changed.
+An initial Unix-epoch copy produced August 5 UTC while the lab was still on the
+evening of August 4; no run started under that superseded setup. Nick's README
+and both legacy collectors establish literal local-wall-time entry. The Linux
+tower reported `2026-08-04 17:54:22 PDT -0700`, and the corrected Pi reported
+`2026-08-04T17:54:22+00:00`. No timezone or NTP setting changed. The Pi's
+`+00:00` and recorder `Z` labels reflect the historical lab clock convention,
+not an external true-UTC synchronization claim.
 
 The current powered session is ready for the ordinary M8C SOP and bare wrapper.
-If the Pi reboots first, repeat the manual date step before starting ROS. The
-successful check-only need not be repeated for every experiment. Keep the floor
-clear and `Ctrl+C` available, then wait through managed final zero, bag
-finalization, validation, and M8D CSV export before collecting the run.
+If the Pi reboots first, repeat the literal wall-clock date step before starting
+ROS; do not copy a Unix epoch or timezone/offset. The successful check-only need
+not be repeated for every experiment. Keep the floor clear and `Ctrl+C`
+available, then wait through managed final zero, bag finalization, validation,
+and M8D CSV export before collecting the run.

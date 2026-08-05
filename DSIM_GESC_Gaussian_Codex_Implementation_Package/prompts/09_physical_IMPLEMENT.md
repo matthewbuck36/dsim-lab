@@ -401,12 +401,13 @@ the Pi was back online. Do not erase this evidence or demand it again for every
 run.
 
 The Pi has no RTC and DSIMOVERWATCH has no internet NTP route. Preserve Nick's
-package-README `sudo date -s` procedure after each reboot and before starting
-ROS; do not replace it with a timezone/NTP reconfiguration. The offline time
-copy passed for the current powered session at `2026-08-05T00:02:42+00:00`.
-Then follow the attached Vicon lab SOP and invoke the bare wrapper. Do not add
-authorization files, typed confirmations, hash keys, manual handoff gates, or
-a separate build command. A real run must still prove live sensor protocol,
-`/odom`/IMU, Vicon evidence, motion, Ctrl+C/final zero, bag finalization,
-validation, familiar CSV export, and physical two-light behavior. Preserve
-unsuccessful physical evidence honestly.
+package-README literal wall-clock `sudo date -s` procedure after each reboot
+and before starting ROS; do not replace it with Unix epoch, timezone/offset, or
+a timezone/NTP reconfiguration. The accepted initialization passed for the
+current powered session at `2026-08-04T17:54:22+00:00`; the superseded August 5
+epoch-copy attempt started no run. Then follow the attached Vicon lab SOP and
+invoke the bare wrapper. Do not add authorization files, typed confirmations,
+hash keys, manual handoff gates, or a separate build command. A real run must
+still prove live sensor protocol, `/odom`/IMU, Vicon evidence, motion,
+Ctrl+C/final zero, bag finalization, validation, familiar CSV export, and
+physical two-light behavior. Preserve unsuccessful physical evidence honestly.

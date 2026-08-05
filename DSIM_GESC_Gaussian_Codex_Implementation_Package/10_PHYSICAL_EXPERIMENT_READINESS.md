@@ -56,8 +56,10 @@ M8E rollback evidence is retained at:
 The full result is
 `docs/codex/gesc_gaussian/validation/phase_09_pi_runtime_repair.md`. The Pi has
 no RTC and DSIMOVERWATCH has no internet NTP access. Nick's established
-`sudo date -s` procedure successfully initialized the current powered session
-to `2026-08-05T00:02:42+00:00`; no timezone or NTP setting changed.
+literal wall-clock `sudo date -s` procedure successfully initialized the
+current powered session to `2026-08-04T17:54:22+00:00`; no timezone or NTP
+setting changed. The earlier Unix-epoch copy to August 5 was superseded before
+any experiment or run directory started.
 
 ## Before the run
 
@@ -71,21 +73,27 @@ to `2026-08-05T00:02:42+00:00`; no timezone or NTP setting changed.
   supervising the run.
 - [ ] Keep the robot terminal focused so `Ctrl+C` is immediately available.
 - [ ] After every Pi reboot, verify the lab Linux computer's clock, then use
-  Nick's `sudo date -s` procedure before starting ROS. If the Pi has remained
-  powered since the successful `2026-08-05T00:02:42+00:00` initialization,
-  this is already complete for the current session.
+  Nick's literal wall-clock `sudo date -s` procedure before starting ROS. If
+  the Pi has remained powered since the successful
+  `2026-08-04T17:54:22+00:00` initialization, this is already complete for the
+  current session.
 
 From an accurately timed lab Linux terminal outside the Pi SSH session, the
 offline-safe form is:
 
 ```bash
+date '+%Y-%m-%d %H:%M:%S %Z %z'
+
 ssh -t pi@192.168.1.36 \
-  "sudo date -s '@$(date +%s)' && date --iso-8601=seconds"
+  "sudo date -s '$(date '+%Y-%m-%d %H:%M:%S')' && date --iso-8601=seconds"
 ```
 
-This uses only the DSIMOVERWATCH LAN. A final `+00:00` is correct because the
-Pi remains in UTC; `System clock synchronized: no` is expected without NTP.
-Never change the Pi clock after ROS or rosbag has started.
+This uses only the DSIMOVERWATCH LAN and transfers the Linux tower's displayed
+wall-clock fields. Do not replace the formatted string with Unix epoch or add
+`PDT`/an offset. A final `+00:00` is expected because the Pi remains configured
+as UTC, but its calendar and hour must match the Linux tower's Pacific wall
+clock. `System clock synchronized: no` is expected without NTP. Never change
+the Pi clock after ROS or rosbag has started.
 
 No separate build command, site-configuration copy, stationary preflight,
 calibration approval, `--check-only`, typed `RUN`, subject/segment entry,

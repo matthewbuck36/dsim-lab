@@ -275,33 +275,40 @@ NTP service: active
 ```
 
 The Pi has no RTC and DSIMOVERWATCH is an isolated lab router without internet
-NTP access. The mounted package README therefore intentionally requires
-Nick's `sudo date -s` step before experiments. The earlier one-time NTP/timezone
-correction assumption is superseded; no timezone or NTP configuration was
-changed.
+NTP access. The mounted package README therefore requires Nick's literal
+`sudo date -s "{Month} {Day} {Hour}:{Min} {Year}"` step before experiments.
+The legacy physical and `ros_esc` collectors both name `Test_*` folders from
+`datetime.now()`. The selected `record_run` owner uses `_utc_now()` for its
+`YYYY-MM-DD` directory and `...Z` run identifier, so its folder follows the
+calendar represented by the UTC-configured Pi clock.
 
-After verifying the lab Linux computer's clock, the operator ran from that
-computer, outside the existing Pi SSH shell:
+The first attempted correction copied the Linux computer's Unix epoch. It set
+the Pi to true UTC and produced `2026-08-05T00:02:42+00:00` while the lab was
+still on the evening of August 4. No experiment or run directory was created
+under that setting. The attempt is retained as superseded setup evidence, not
+the accepted lab clock procedure.
 
-```bash
-ssh -t pi@192.168.1.36 \
-  "sudo date -s '@$(date +%s)' && date --iso-8601=seconds"
-```
-
-The local shell supplied its Unix epoch over the isolated LAN, and the Pi
-reported:
+The operator then verified the Linux tower's local wall clock and copied only
+its displayed date/time fields, without an epoch, timezone name, or offset:
 
 ```text
-Wed Aug  5 12:02:42 AM UTC 2026
-2026-08-05T00:02:42+00:00
+Linux tower: 2026-08-04 17:54:22 PDT -0700
+Pi result:   Tue Aug  4 05:54:22 PM UTC 2026
+Pi ISO:      2026-08-04T17:54:22+00:00
 ```
 
-This is the correct UTC representation of approximately `17:02` Pacific on
-2026-08-04 and is a PASS for the current powered session. It requires no
-internet connection. Repeat the established manual time initialization after
-every Pi reboot and before starting ROS or rosbag; never change the clock
-during a run. `System clock synchronized: no` is expected under this offline
-manual procedure and is not a Phase 09 authorization gate.
+This matches Nick's historical procedure and is a PASS for the current powered
+session. The Pi remains configured as UTC, but its displayed calendar and hour
+intentionally match the lab's Pacific wall clock so physical run folders keep
+the date the operator entered. Consequently, `...Z` and `*_utc` recorder
+labels describe the Pi's lab clock convention; they are not claimed as
+externally synchronized true UTC. Vicon packets carry pose only and receive
+their timestamps on the same Pi, so within-run evidence remains on one clock.
+
+Repeat this literal wall-time initialization after every Pi reboot and before
+starting ROS or rosbag; never change the clock during a run. Do not substitute
+Unix epoch, `PDT`, or an offset. `System clock synchronized: no` is expected
+under this offline manual procedure and is not a Phase 09 authorization gate.
 
 ## Remaining physical boundary
 

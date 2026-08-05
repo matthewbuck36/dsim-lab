@@ -1,7 +1,7 @@
 # Phase 09 Live Status
 
-Last verified: `2026-08-04T17:04:33-07:00`
-Status: `M8E ON-PI CHECK-ONLY PASS, CLEAN BUILD, PI SOURCE PARITY PASS, AND OFFLINE CLOCK INITIALIZATION PASS FOR CURRENT BOOT`
+Last verified: `2026-08-04T17:55:33-07:00`
+Status: `M8E ON-PI CHECK-ONLY PASS, CLEAN BUILD, PI SOURCE PARITY PASS, AND LAB WALL-CLOCK INITIALIZATION PASS FOR CURRENT BOOT`
 
 ## Objective
 
@@ -1170,26 +1170,33 @@ behind absolute UTC. A later reboot restored the stale
 active but unsynchronized NTP. DSIMOVERWATCH has no internet access. This
 matches Nick's package README, which requires `sudo date -s` before experiments.
 
-From the correctly timed lab Linux computer, the operator copied its Unix
-epoch to the Pi over SSH using `sudo date -s`. The Pi then reported
-`2026-08-05T00:02:42+00:00`, the correct UTC representation of approximately
-`17:02` Pacific. No timezone or NTP configuration changed. The clock is valid
-for this powered session; repeat the manual date step after each Pi reboot and
-before starting ROS, never during a run. This is an established offline lab OS
-step, not a repository authorization gate.
+The first correction copied the Linux tower's Unix epoch and produced
+`2026-08-05T00:02:42+00:00` while the lab remained on August 4. No run started
+under that superseded setting. Review of Nick's README, both legacy collector
+owners, and the selected recorder confirmed that the established convention is
+to enter Pacific wall-clock fields literally into the UTC-configured Pi.
+
+The Linux tower reported `2026-08-04 17:54:22 PDT -0700`; the corrected Pi
+reported `2026-08-04T17:54:22+00:00`. That is a PASS for this powered session
+and preserves the historical folder date. No timezone or NTP configuration
+changed. Repeat the literal wall-time step after each reboot and before ROS,
+never during a run and never with a Unix epoch, timezone label, or offset. The
+recorder's `...Z`/`*_utc` labels follow this established Pi lab clock and are
+not an external true-UTC synchronization claim.
 
 ## Current milestone
 
 **M8E CLEAN ON-PI BUILD AND CHECK-ONLY PASS / INSTALLED-SOURCE PARITY PASS /
 SELECTED DEVICE AND NO-LIDAR BASE SEPARATION PASS / LEGACY SELECTION PRESERVED /
-OFFLINE MANUAL CLOCK INITIALIZATION PASS FOR CURRENT POWER SESSION / NO ROS
+OFFLINE LAB WALL-CLOCK INITIALIZATION PASS FOR CURRENT POWER SESSION / NO ROS
 GRAPH OR MOTION RUN.**
 
 ## Exact next workflow after M8E
 
-1. If the Pi has rebooted since the successful `2026-08-05T00:02:42+00:00`
-   initialization, repeat Nick's `sudo date -s` time copy from an accurately
-   timed lab computer before starting ROS. Otherwise the current clock is
+1. If the Pi has rebooted since the successful
+   `2026-08-04T17:54:22+00:00` initialization, repeat Nick's literal
+   wall-clock `sudo date -s` step from the lab computer before starting ROS.
+   Do not copy a Unix epoch or timezone/offset. Otherwise the current clock is
    already valid.
 2. Follow the attached Vicon SOP, start the unchanged Windows
    `vicon-tracker-server.py`, arrange the two lamps, clear the floor, and keep

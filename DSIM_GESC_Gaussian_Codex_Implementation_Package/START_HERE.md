@@ -293,11 +293,13 @@ back online.
 
 Read the authoritative validation at
 `docs/codex/gesc_gaussian/validation/phase_09_pi_runtime_repair.md`. The Pi has
-no RTC or reachable internet NTP on DSIMOVERWATCH, so preserve Nick's
-`sudo date -s` procedure after every reboot and before starting ROS. The
-offline time copy passed for the current powered session at
-`2026-08-05T00:02:42+00:00`. Follow the M8C lab SOP and invoke the bare wrapper;
-the successful check-only is not a repeated gate.
+no RTC or reachable internet NTP on DSIMOVERWATCH, so preserve Nick's literal
+wall-clock `sudo date -s` procedure after every reboot and before starting ROS.
+Do not copy a Unix epoch or timezone/offset. The accepted initialization passed
+for the current powered session at `2026-08-04T17:54:22+00:00`; the earlier
+August 5 epoch-copy attempt started no run and is superseded. Follow the M8C lab
+SOP and invoke the bare wrapper; the successful check-only is not a repeated
+gate.
 
 ---
 

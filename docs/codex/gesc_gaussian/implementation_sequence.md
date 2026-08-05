@@ -556,11 +556,13 @@ Recovery and final seal roots are timestamped
 `docs/codex/gesc_gaussian/validation/phase_09_pi_runtime_repair.md`.
 
 The Pi has no RTC and no internet NTP route on DSIMOVERWATCH. Preserve Nick's
-package-README procedure: after every reboot and before starting ROS, copy time
-from an accurately timed lab computer with `sudo date -s`. The offline copy
-passed for the current powered session at `2026-08-05T00:02:42+00:00`; no
-timezone or NTP configuration changed. Then follow the ordinary M8C lab SOP and
-bare wrapper. Actual sensor, odometry, Vicon, command, motion,
+package-README procedure: after every reboot and before starting ROS, enter the
+lab computer's displayed Pacific wall-clock fields literally with
+`sudo date -s`; never copy Unix epoch or timezone/offset. The accepted
+initialization passed for the current session at
+`2026-08-04T17:54:22+00:00`; the superseded August 5 epoch-copy attempt started
+no run, and no timezone or NTP configuration changed. Then follow the ordinary
+M8C lab SOP and bare wrapper. Actual sensor, odometry, Vicon, command, motion,
 Ctrl+C/final-zero, bag, CSV, and physical search behavior remain unverified.
 
 ## Phase 10 - final documentation
