@@ -1683,8 +1683,10 @@ docs/codex/gesc_gaussian/validation/phase_09_pi_runtime_repair.md
 ```
 
 M8E does not claim a live photoresistor sample, `/odom`, Vicon, servo/motor,
-recorder/final-zero, CSV, or physical search result. Before the first real run,
-correct the Pi's approximately seven-hour absolute clock error once and verify
-time against the operator computer. After that OS correction, the next planned
-action is the ordinary lab SOP and bare selected wrapper; the passing
-check-only does not become a per-run gate.
+recorder/final-zero, CSV, or physical search result. The Pi has no RTC and the
+isolated DSIMOVERWATCH router has no internet NTP access. Preserve Nick's
+package-README `sudo date -s` procedure after each Pi reboot and before ROS;
+the offline time copy passed for the current powered session at
+`2026-08-05T00:02:42+00:00` without changing timezone or NTP configuration.
+The next planned action is the ordinary lab SOP and bare selected wrapper; the
+passing check-only does not become a per-run gate.

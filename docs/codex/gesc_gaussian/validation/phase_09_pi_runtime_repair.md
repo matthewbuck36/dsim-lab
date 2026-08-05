@@ -257,20 +257,51 @@ type/mode/size inventory matched the live seal exactly. Small post-repair
 manifests and the transfer/rollback receipt are also retained under the Pi
 M8E recovery root.
 
-## Clock correction required before the first real run
+## Offline manual clock initialization
 
 The check-only timestamp was `2026-08-04T16:27:57+00:00`, while the operator
 and host were at approximately `16:27` Pacific (`23:27 UTC`). Earlier, local
 wall-clock numbers had been assigned manually while the Pi remained configured
-for UTC. The Pi absolute clock is therefore about seven hours behind.
+for UTC, leaving that check-only timestamp about seven hours behind.
 
-This did not affect build, parity, device, or launch-construction checks. It
-would affect rosbag message time, run-directory timestamps, correlation with
-Vicon, and later analysis. Before the first real run, inspect
-`timedatectl status` and `date --iso-8601=seconds`, correct timezone/time
-synchronization once, and compare the result with the operator computer. Once
-working, this is ordinary OS state and not a repeated Phase 09 authorization
-gate.
+The next reboot exposed the complete lab clock contract:
+
+```text
+Pi date after reboot: 2025-06-04T14:59:08+00:00
+time zone: Etc/UTC
+RTC: n/a
+system clock synchronized: no
+NTP service: active
+```
+
+The Pi has no RTC and DSIMOVERWATCH is an isolated lab router without internet
+NTP access. The mounted package README therefore intentionally requires
+Nick's `sudo date -s` step before experiments. The earlier one-time NTP/timezone
+correction assumption is superseded; no timezone or NTP configuration was
+changed.
+
+After verifying the lab Linux computer's clock, the operator ran from that
+computer, outside the existing Pi SSH shell:
+
+```bash
+ssh -t pi@192.168.1.36 \
+  "sudo date -s '@$(date +%s)' && date --iso-8601=seconds"
+```
+
+The local shell supplied its Unix epoch over the isolated LAN, and the Pi
+reported:
+
+```text
+Wed Aug  5 12:02:42 AM UTC 2026
+2026-08-05T00:02:42+00:00
+```
+
+This is the correct UTC representation of approximately `17:02` Pacific on
+2026-08-04 and is a PASS for the current powered session. It requires no
+internet connection. Repeat the established manual time initialization after
+every Pi reboot and before starting ROS or rosbag; never change the clock
+during a run. `System clock synchronized: no` is expected under this offline
+manual procedure and is not a Phase 09 authorization gate.
 
 ## Remaining physical boundary
 
@@ -286,7 +317,8 @@ not yet been demonstrated by the repaired wrapper:
   validation, and familiar CSV export on a real selected run; or
 - the algorithm's physical two-light search behavior.
 
-After the one-time clock correction, the next normal action is the attached lab
-SOP followed by the bare wrapper, with the floor clear, the robot supervised,
-and `Ctrl+C` immediately available. No additional repository authorization file
-or repeated `--check-only` is part of that normal operator path.
+The clock is valid for the current powered session. The next normal action is
+the attached lab SOP followed by the bare wrapper, with the floor clear, the
+robot supervised, and `Ctrl+C` immediately available. If the Pi reboots first,
+repeat Nick's manual date step. No additional repository authorization file or
+repeated `--check-only` is part of that normal operator path.

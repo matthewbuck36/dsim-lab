@@ -555,9 +555,12 @@ Recovery and final seal roots are timestamped
 `20260804T234034Z_m8e_post_runtime_repair`; the controlling validation is
 `docs/codex/gesc_gaussian/validation/phase_09_pi_runtime_repair.md`.
 
-Before the first real run, correct the Pi absolute clock once; its check-only
-timestamp was approximately seven hours behind UTC. Then follow the ordinary
-M8C lab SOP and bare wrapper. Actual sensor, odometry, Vicon, command, motion,
+The Pi has no RTC and no internet NTP route on DSIMOVERWATCH. Preserve Nick's
+package-README procedure: after every reboot and before starting ROS, copy time
+from an accurately timed lab computer with `sudo date -s`. The offline copy
+passed for the current powered session at `2026-08-05T00:02:42+00:00`; no
+timezone or NTP configuration changed. Then follow the ordinary M8C lab SOP and
+bare wrapper. Actual sensor, odometry, Vicon, command, motion,
 Ctrl+C/final-zero, bag, CSV, and physical search behavior remain unverified.
 
 ## Phase 10 - final documentation

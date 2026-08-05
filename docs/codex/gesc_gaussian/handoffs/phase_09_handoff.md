@@ -2,7 +2,7 @@
 
 Date: `2026-08-04` (`America/Los_Angeles`)
 
-Current outcome: `M8E CLEAN ON-PI CHECK-ONLY, INSTALLED-SOURCE PARITY, AND REAL-PI SOURCE PARITY PASS — CLOCK CORRECTION REQUIRED BEFORE FIRST REAL RUN`
+Current outcome: `M8E CLEAN ON-PI CHECK-ONLY, INSTALLED-SOURCE PARITY, REAL-PI SOURCE PARITY, AND OFFLINE CLOCK INITIALIZATION PASS FOR CURRENT BOOT`
 
 The current human operator follows the attached lab Vicon SOP and invokes bare
 `gesc_gaussian_two_source_voltage.bash`; no repository readiness tag,
@@ -16,8 +16,8 @@ three-package build, installed-source parity, device separation, and launch
 construction. Final snapshot/Pi parity is `345/345` regular files and
 `433/433` inventory entries. No serial device, live Vicon connection, ROS
 graph, recorder, actuator, rotating frame, lamp trial, or robot motion was
-started. The Pi clock is about seven hours behind absolute UTC and must be
-corrected once before the first real run.
+started. Nick's offline `sudo date -s` clock initialization passed for the
+current powered session and must be repeated after each Pi reboot.
 
 ## Historical M0-M8B implementation record (superseded by M8C)
 
@@ -741,13 +741,15 @@ See
 `docs/codex/gesc_gaussian/validation/phase_09_pi_runtime_repair.md` for commands,
 failed-attempt diagnosis, host results, Pi output, and rollback details.
 
-One operating-system item remains before the first real run: the Pi printed
-local Pacific wall-clock numbers with a `+00:00` UTC offset and is therefore
-about seven hours behind absolute time. Correct timezone/time synchronization
-once and compare it with the operator computer so rosbag and run-directory
-timestamps are valid. This is not a new per-run authorization ceremony.
+The Pi has no RTC and cannot reach internet NTP through the isolated
+DSIMOVERWATCH router. After reboot it returned to a stale June 2025 clock,
+confirming why Nick's package README requires `sudo date -s` before experiments.
+The operator copied the accurately timed lab Linux computer's Unix epoch over
+local SSH; the Pi reported `2026-08-05T00:02:42+00:00`, which is correct UTC.
+No timezone or NTP setting changed.
 
-After that correction, follow the ordinary M8C SOP and invoke the bare wrapper.
-The successful check-only need not be repeated for every experiment. Keep the
-floor clear and `Ctrl+C` available, then wait through managed final zero, bag
+The current powered session is ready for the ordinary M8C SOP and bare wrapper.
+If the Pi reboots first, repeat the manual date step before starting ROS. The
+successful check-only need not be repeated for every experiment. Keep the floor
+clear and `Ctrl+C` available, then wait through managed final zero, bag
 finalization, validation, and M8D CSV export before collecting the run.

@@ -54,11 +54,10 @@ M8E rollback evidence is retained at:
 ```
 
 The full result is
-`docs/codex/gesc_gaussian/validation/phase_09_pi_runtime_repair.md`. The only
-remaining one-time OS correction is the Pi clock: it currently represents
-Pacific wall-clock numbers as UTC and is about seven hours behind absolute
-time. Correct and verify it before the first real run so bag/run timestamps are
-valid.
+`docs/codex/gesc_gaussian/validation/phase_09_pi_runtime_repair.md`. The Pi has
+no RTC and DSIMOVERWATCH has no internet NTP access. Nick's established
+`sudo date -s` procedure successfully initialized the current powered session
+to `2026-08-05T00:02:42+00:00`; no timezone or NTP setting changed.
 
 ## Before the run
 
@@ -71,9 +70,22 @@ valid.
 - [ ] Clear the floor and keep the robot within sight and reach of the person
   supervising the run.
 - [ ] Keep the robot terminal focused so `Ctrl+C` is immediately available.
-- [ ] Before the first real run only, verify that the corrected Pi time matches
-  the operator computer. Do not repeat this as a repository authorization
-  ceremony once time synchronization is working.
+- [ ] After every Pi reboot, verify the lab Linux computer's clock, then use
+  Nick's `sudo date -s` procedure before starting ROS. If the Pi has remained
+  powered since the successful `2026-08-05T00:02:42+00:00` initialization,
+  this is already complete for the current session.
+
+From an accurately timed lab Linux terminal outside the Pi SSH session, the
+offline-safe form is:
+
+```bash
+ssh -t pi@192.168.1.36 \
+  "sudo date -s '@$(date +%s)' && date --iso-8601=seconds"
+```
+
+This uses only the DSIMOVERWATCH LAN. A final `+00:00` is correct because the
+Pi remains in UTC; `System clock synchronized: no` is expected without NTP.
+Never change the Pi clock after ROS or rosbag has started.
 
 No separate build command, site-configuration copy, stationary preflight,
 calibration approval, `--check-only`, typed `RUN`, subject/segment entry,
