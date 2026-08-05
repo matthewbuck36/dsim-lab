@@ -1889,3 +1889,60 @@ legacy regressions, critical syntax/lint, an isolated three-package snapshot
 build, a reviewed six-path no-delete SSHFS transfer, exact final snapshot/Pi
 source parity, updated validation/status/handoff/checkpoint evidence, and one
 human-operated `--check-only` after source changes before the next bare run.
+
+### M8J physical recorder gate-lane isolation amendment — 2026-08-04
+
+<!-- MBuck 2026-08-04: Isolate the existing physical recorder's authorization heartbeats from passive diagnostics and subscription scheduling without changing either consumer lease. -->
+
+Preserve the fifth bare selected run unchanged at
+`20260804T224523162901Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_8d7f9b77`.
+It passed the M8I source/filter correction, reached readiness, moved for about
+6.19 seconds, and remained inside the frozen `0.05 m/s` and `0.30 rad/s`
+command ceilings. Onboard `/odom` recorded approximately `0.0457 m` net motion
+and evaluation-only Vicon approximately `0.0592 m`; no Gaussian fill was
+created before shutdown.
+
+The retained bag shows a recorder-executor scheduling defect rather than an
+algorithm-input loss. The recorder-owned `/gesc_gaussian/recording_ready` and
+`/gesc_gaussian/rotation_authorized` topics paused together for approximately
+`1.572 s`, while source cost, filter, control diagnostics, `/cmd_vel`, `/odom`,
+Vicon, algorithm state, rotation status, and rotation command continued with
+maximum gaps below `0.25 s`. The selected rotation owner therefore correctly
+applied its unchanged `0.50 s` authorization lease, entered `FAULT`, issued
+rotation zero, and the base reached zero about `12.7 ms` after that fault. The
+recorder's later `operational rotation status heartbeat is invalid` error is a
+downstream report of that correct stop and must not be bypassed.
+
+M8J is a bounded Level B scheduling correction in the existing recorder owner.
+For physical mode only, place the periodic readiness/rotation-authorization
+publisher in a dedicated mutually exclusive callback group and spin the
+coordinator with exactly two executor threads. Leave every subscription,
+readiness decision, live diagnostic callback, and other recorder callback in
+the default mutually exclusive group. Simulation and legacy modes must retain
+the single-threaded executor. Do not add a node or process, alter either
+authorization topic or rate, lengthen the controller or rotation owner's
+`0.50 s` leases, weaken semantic/runtime faults, change final-zero behavior,
+modify algorithm tuning, or alter any historical wrapper/launch/configuration.
+
+Acceptance requires matching snapshot/Pi pre-edit backups and manifests; a
+focused physical callback-lane construction test; a bounded real-rclpy probe
+showing both gate heartbeats continue while the default callback group is
+blocked beyond `0.50 s`; proof that simulation still selects the
+single-threaded executor; complete Phase 09 and canonical recorder/legacy
+regressions; syntax and critical lint; an isolated three-package snapshot
+build; a reviewed two-path no-delete SSHFS transfer; exact final snapshot/Pi
+source parity; and updated validation/status/handoff/checkpoint evidence.
+Because Pi source changes, require one operator-owned `--check-only` before
+the next bare run. Codex must not start the Pi build, ROS graph, serial/GPIO
+devices, Vicon client, recorder, actuator, or robot motion.
+
+M8J host/source execution is complete. The physical-only callback group and
+two-thread coordinator are implemented; both gate topics survived a bounded
+0.75-second default-group blockage in five repeated probes. Complete snapshot,
+canonical recorder, and legacy/recording regressions pass, as does a fresh
+three-package isolated build. Matching recovery copies are retained under
+`20260804T225906-0700_m8j_physical_gate_lane`; exactly two reviewed files were
+transferred without source deletion. Final snapshot/Pi parity is `347/347`
+files and `435/435` inventory entries. No Pi build or physical process was
+started by Codex. The one post-source-change operator `--check-only` is now the
+next gate before another bare experiment.

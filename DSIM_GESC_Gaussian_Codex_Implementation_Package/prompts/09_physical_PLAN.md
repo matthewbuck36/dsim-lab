@@ -525,3 +525,33 @@ snapshot/Pi parity is 347/347 files plus 435/435 inventory entries. No Pi build
 or physical process was started by Codex. The only next gate is one
 operator-owned selected `--check-only`; if it passes, return to the ordinary
 Vicon/lab SOP and bare wrapper.
+
+### Current M8J planning boundary — physical recorder gate scheduling
+
+Preserve the fifth run
+`20260804T224523162901Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_8d7f9b77`.
+It reached readiness and moved for about 6.19 seconds before both
+recorder-owned authorization topics exhibited the same approximately 1.572
+second publication gap. Every algorithm/control/pose and rotation evidence
+stream continued below 0.25-second gaps. The rotation owner correctly applied
+its unchanged 0.50-second lease, faulted, and stopped both actuators; the later
+recorder rotation-status error was downstream.
+
+Plan a physical-only scheduling repair inside the existing recorder owner:
+give the readiness/rotation-authorization timer its own mutually exclusive
+callback group and use an exactly two-thread executor for physical mode. Keep
+all subscriptions and passive live diagnostics in the default callback group,
+and keep simulation/legacy on the existing single-threaded executor. Do not
+increase either motion consumer lease, weaken faults, add a node/process,
+change gate topics/rates, change algorithm behavior, or touch historical
+entry points. Require bounded starvation proof, regressions, build, recoverable
+two-path transfer, exact parity, and one post-source-change human check-only.
+
+M8J planning is now executed at the host/source-transfer boundary. The
+physical-only gate callback lane and exactly two-thread coordinator passed the
+bounded starvation probe, complete Phase 09 and canonical regressions, and an
+isolated three-package build. Exactly two reviewed files were transferred with
+no source deletion. Snapshot/Pi parity is 347/347 files and 435/435 inventory
+entries. Codex started no Pi build or physical process. The next gate is one
+operator-owned selected `--check-only`, followed on success by the ordinary
+Vicon/lab SOP and bare wrapper.

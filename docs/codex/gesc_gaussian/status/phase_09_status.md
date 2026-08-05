@@ -1528,3 +1528,92 @@ without starting hardware or motion. If it passes, return to the ordinary
 Vicon/lab SOP and bare wrapper. Do not repeat check-only per experiment, do not
 weaken remaining controller/rotation safety behavior, and retain the next run
 regardless of outcome.
+
+## M8J fifth selected-run diagnosis and gate-lane repair — 2026-08-04
+
+The post-M8I operator check-only passed all three packages in 16.4 seconds,
+installed parity (`ros_esc=64`, `turtlebot3_vehicle_nodes=21`), selected
+physical `False`, legacy-default `True`, device separation, and launch
+construction without starting hardware. The subsequent fifth bare run is
+retained unchanged at:
+
+```text
+/home/pi/turtlebot_rotating_sensor_tests/gesc_gaussian_two_source/2026-08-04/
+  20260804T224523162901Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_8d7f9b77
+```
+
+It reached readiness for approximately 6.19 seconds and moved about 0.0457 m
+net by `/odom` and 0.0592 m by evaluation-only Vicon, within the selected
+command ceilings. No Gaussian fill occurred. Both recorder-owned gate topics
+then paused together for approximately 1.572 seconds. Source cost, filter,
+control diagnostics, `/cmd_vel`, `/odom`, Vicon, algorithm state, rotation
+status, and rotation command continued with maximum bag gaps below 0.25
+seconds. The unchanged rotation-owner authorization lease correctly produced
+`FAULT` and rotation zero; base zero followed about 12.7 ms later. The
+recorder's later invalid rotation-status error is downstream of this stop.
+Target and bag shutdown were clean, familiar CSV export passed, and offline
+base final-zero passed. Completeness remains honestly failed for the retained
+rotation-status/operational-coverage/runtime-metadata evidence.
+
+M8J entered implementation as the saved Plan's physical-only recorder
+callback-lane repair. At amendment start, no M8J source had been modified. The
+first criterion was sealed snapshot/Pi pre-edit backup and parity, followed by
+focused implementation and host qualification. Codex would not start a Pi
+build, ROS graph, serial/GPIO device, Vicon client, recorder, rotation,
+actuator, or motion.
+
+### M8J verified host/source result
+
+The existing physical recorder now assigns only its periodic readiness and
+rotation-authorization publisher to a dedicated mutually exclusive callback
+group and uses exactly two executor threads in physical mode. Every
+subscription and passive live diagnostic remains in the default mutually
+exclusive group. Simulation and legacy still select the original
+single-threaded executor. Topics, publication rate, readiness logic, both
+motion-owner `0.50 s` leases, runtime/semantic checks, final zero, algorithms,
+launches, wrappers, `/odom`, and evaluation-only Vicon are unchanged.
+
+Verified results:
+
+```text
+focused physical executor/starvation tests: 2 passed
+independent blocked-default-group repetitions: 5/5 passed
+complete snapshot Phase 09 functional suite: 266 passed
+canonical recorder regression: 69 passed
+canonical legacy + recording integration: 38 passed, 1 expected skip
+Python AST/compile and critical lint: PASS
+edited-file full-style delta: unchanged inherited baseline, 1783 findings
+snapshot isolated build: 3 packages PASS in 14.8 s
+isolated installed-overlay focused probe: 2 passed
+mounted-Pi AST and critical lint: PASS
+snapshot/Pi regular-file parity: 347/347 PASS
+source-manifest SHA-256: 4cac14581722f81a98677a41f0e5d867951f25c55d46f895d9484553fe781d98
+snapshot/Pi inventory parity: 435/435 PASS
+inventory SHA-256: aa1589808c9d76fb9201c51edcdb087cf0aeedda6bf9999e4b1e06f247f0699d
+snapshot/Pi generated cache directories: 0/0
+```
+
+Matching rollback roots are
+`20260804T225906-0700_m8j_physical_gate_lane` under both the snapshot and
+mounted-Pi `phase09_backups` directories. The reviewed two-path SSHFS transfer
+deleted no source. Matching post-transfer receipts have SHA-256
+`44148426828219c4d8a2be5aa984ccc8a46c4cfd651c3f0317bdba5cb9244db4`.
+Codex ran no Pi command, build, graph, device, Vicon client, recorder,
+rotation, actuator, or motion. Full evidence is in
+`docs/codex/gesc_gaussian/validation/phase_09_fifth_physical_run_repair.md`.
+
+## Current milestone
+
+**M8J PHYSICAL RECORDER GATE-LANE REPAIR HOST-QUALIFIED / REVIEWED TWO-PATH PI
+SOURCE TRANSFER COMPLETE / 347/347 FILE AND 435/435 INVENTORY PARITY PASS /
+FIFTH FAILED SHORT-MOTION RUN RETAINED / POST-CHANGE PI BUILD AND CHECK-ONLY
+NOT YET RUN / COMPLETE PHYSICAL GESC+GAUSSIAN TWO-SOURCE BEHAVIOR NOT YET
+DEMONSTRATED.**
+
+The next incomplete criterion is exactly one operator-owned selected
+`./gesc_gaussian_two_source_voltage.bash --check-only` from the standalone SSH
+terminal. It must pass all three packages, installed parity, selected physical
+`False`, legacy-default `True`, device separation, and launch construction
+without starting hardware or motion. If it passes, return to the ordinary
+Vicon/lab SOP and bare wrapper. Do not repeat check-only per experiment and do
+not weaken the unchanged controller or rotation-owner leases.

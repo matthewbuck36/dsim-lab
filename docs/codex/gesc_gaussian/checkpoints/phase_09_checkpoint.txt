@@ -1,55 +1,56 @@
 # Phase 09 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-08-05T05:41:31+00:00
-Base HEAD: b9c0f97d01f070f3f2685cdb521ef3edb961a02e
+Generated: 2026-08-05T06:11:54+00:00
+Base HEAD: c1f3b9d36577d1bdf57e360c7b48abcec2729ea9
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_09_status.md
-Status sha256: e59c5fbd293143adc38de385cc7aaaca792954d079e6fe9af52caa40bdb81283
+Status sha256: 86b3240701cb2dfdb08d2d4755628f096b08e8e3c36593125345ac13ddb7998e
 Plan: docs/codex/gesc_gaussian/plans/phase_09_plan.md
-Plan sha256: 76bb46a47cf864587e249edff684a675ccfafca249250b9cda3265a80f84b54e
-Unstaged diff sha256: ba76639d2369db7b1d0db443c13dd1dd3aeca98f65d8056a5227233d2bd50e6c
-Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+Plan sha256: 854abfbabcae12133a3909a5f8d08d5c53949902426aaa40250b21922098cbc7
+Unstaged diff sha256: b700556db7ca8a3cb3297bcb4754cb0649277da92a469ec89a7dd3e1f239a5f4
+Staged diff sha256: 74a82f48a0e2b1806bf6c11653f7e4f66cbafd6144611841e45f43e91ec94472
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 192]
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_PLAN.md
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 193]
+M  DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_IMPLEMENT.md
+M  DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_PLAN.md
  M docs/codex/gesc_gaussian/checkpoints/phase_09_checkpoint.txt
- M docs/codex/gesc_gaussian/handoffs/phase_09_handoff.md
- M docs/codex/gesc_gaussian/plans/phase_09_plan.md
- M docs/codex/gesc_gaussian/status/phase_09_status.md
-?? docs/codex/gesc_gaussian/validation/phase_09_fourth_physical_run_repair.md
+M  docs/codex/gesc_gaussian/handoffs/phase_09_handoff.md
+M  docs/codex/gesc_gaussian/plans/phase_09_plan.md
+M  docs/codex/gesc_gaussian/status/phase_09_status.md
+A  docs/codex/gesc_gaussian/validation/phase_09_fifth_physical_run_repair.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../prompts/09_physical_IMPLEMENT.md               | 41 ++++++++++++
- .../prompts/09_physical_PLAN.md                    | 38 +++++++++++
- .../checkpoints/phase_09_checkpoint.txt            | 52 ++-------------
- .../gesc_gaussian/handoffs/phase_09_handoff.md     | 63 ++++++++++++++++++
- docs/codex/gesc_gaussian/plans/phase_09_plan.md    | 58 ++++++++++++++++
- docs/codex/gesc_gaussian/status/phase_09_status.md | 77 +++++++++++++++++++++-
- 6 files changed, 282 insertions(+), 47 deletions(-)
+ .../checkpoints/phase_09_checkpoint.txt            | 55 +++++-----------------
+ 1 file changed, 13 insertions(+), 42 deletions(-)
+ .../prompts/09_physical_IMPLEMENT.md               |  36 +++++
+ .../prompts/09_physical_PLAN.md                    |  30 ++++
+ .../gesc_gaussian/handoffs/phase_09_handoff.md     |  52 +++++++
+ docs/codex/gesc_gaussian/plans/phase_09_plan.md    |  57 +++++++
+ docs/codex/gesc_gaussian/status/phase_09_status.md |  89 +++++++++++
+ .../phase_09_fifth_physical_run_repair.md          | 164 +++++++++++++++++++++
+ 6 files changed, 428 insertions(+)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**M8I PHYSICAL-RUNTIME HEARTBEAT AND ROTATION-EVIDENCE SOURCE REPAIR
-HOST-QUALIFIED / REVIEWED SIX-PATH PI SOURCE TRANSFER COMPLETE / 347/347 FILE
-AND 435/435 INVENTORY PARITY PASS / FOURTH FAILED FIRST-MOTION RUN RETAINED /
-POST-CHANGE PI BUILD AND CHECK-ONLY NOT YET RUN / COMPLETE PHYSICAL
-GESC+GAUSSIAN TWO-SOURCE BEHAVIOR NOT YET DEMONSTRATED.**
+**M8J PHYSICAL RECORDER GATE-LANE REPAIR HOST-QUALIFIED / REVIEWED TWO-PATH PI
+SOURCE TRANSFER COMPLETE / 347/347 FILE AND 435/435 INVENTORY PARITY PASS /
+FIFTH FAILED SHORT-MOTION RUN RETAINED / POST-CHANGE PI BUILD AND CHECK-ONLY
+NOT YET RUN / COMPLETE PHYSICAL GESC+GAUSSIAN TWO-SOURCE BEHAVIOR NOT YET
+DEMONSTRATED.**
 
 The next incomplete criterion is exactly one operator-owned selected
 `./gesc_gaussian_two_source_voltage.bash --check-only` from the standalone SSH
 terminal. It must pass all three packages, installed parity, selected physical
 `False`, legacy-default `True`, device separation, and launch construction
 without starting hardware or motion. If it passes, return to the ordinary
-Vicon/lab SOP and bare wrapper. Do not repeat check-only per experiment, do not
-weaken remaining controller/rotation safety behavior, and retain the next run
-regardless of outcome.
+Vicon/lab SOP and bare wrapper. Do not repeat check-only per experiment and do
+not weaken the unchanged controller or rotation-owner leases.
 
 
 This file describes the base HEAD and diff before the next commit; it is

@@ -543,3 +543,39 @@ graph, device, Vicon client, recorder, rotation, or motion. Do not edit this
 repair again without new evidence. The next action is one human-run selected
 `--check-only`, followed on success by the ordinary Vicon/lab SOP and bare
 wrapper.
+
+### Current M8J implementation continuation — physical gate callback lane
+
+Retain the fifth selected run
+`20260804T224523162901Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_8d7f9b77`
+unchanged. M8I worked: source/filter/control/pose streams remained healthy.
+The stop instead followed matching approximately 1.572-second gaps in the two
+recorder-owned authorization topics while all other relevant bag streams
+continued below 0.25-second gaps. The rotation owner correctly stopped on its
+unchanged 0.50-second authorization lease; do not bypass its fault or the
+recorder's downstream invalid-status report.
+
+Implement only a physical recorder scheduling correction. Put the existing
+gate heartbeat timer in a dedicated mutually exclusive callback group and use
+an exactly two-thread executor for physical mode. Preserve the default callback
+group for subscriptions and live diagnostics, and preserve the single-threaded
+executor for simulation/legacy. Do not change gate topics/rate, controller or
+rotation leases, runtime/semantic checks, final zero, algorithms, selected
+launch/wrapper, or historical entry points. Add focused construction and
+bounded starvation tests, run complete Phase 09/canonical regressions and an
+isolated build, back up both roots, transfer only the recorder and its focused
+test with no delete behavior, prove exact parity, and update durable evidence.
+Codex must not run the Pi build or any physical process. The resulting Pi
+source change requires one human-operated `--check-only` before another bare
+experiment.
+
+This implementation boundary is complete. Matching recovery roots are under
+`20260804T225906-0700_m8j_physical_gate_lane`; the bounded physical starvation
+probe passed five repeated runs; complete snapshot, canonical recorder, and
+legacy/recording regressions plus the isolated build pass. Exactly two reviewed
+files were copied through SSHFS without source deletion. Snapshot/Pi parity is
+347/347 files and 435/435 inventory entries, with zero source-cache directories.
+Codex started no Pi build, graph, device, Vicon client, recorder, rotation, or
+motion. Do not edit this repair without new evidence. The next action is one
+human-run selected `--check-only`, followed on success by the ordinary
+Vicon/lab SOP and bare wrapper.

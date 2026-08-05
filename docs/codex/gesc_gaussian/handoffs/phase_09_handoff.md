@@ -995,3 +995,55 @@ If it passes, use the ordinary Vicon/lab SOP and bare wrapper; do not add a
 permanent check-only ceremony. The next retained experiment still must prove a
 sustained GESC+Gaussian run, any warranted fill lifecycle, managed final zero,
 bag validation, familiar CSV export, and physical two-light behavior.
+
+## M8J fifth physical-run gate-lane repair handoff — 2026-08-04
+
+Preserve
+`20260804T224523162901Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_8d7f9b77`
+unchanged. It reached readiness, moved for about 6.19 seconds within the frozen
+command ceilings, and stopped after matching approximately 1.572-second gaps
+in the recorder-owned readiness and rotation-authorization topics. Source,
+filter, command, pose, algorithm, and rotation streams remained below
+0.25-second gaps. The rotation owner correctly enforced its unchanged
+0.50-second authorization lease and stopped; the later invalid rotation-status
+message was downstream. The bag/target stopped cleanly and familiar CSV export
+passed, but completeness remains failed and no Gaussian fill occurred.
+
+M8J isolates the existing physical recorder's gate timer in its own mutually
+exclusive callback group and uses exactly two executor threads only in physical
+mode. Simulation/legacy remain single-threaded. It adds no node or process and
+does not alter topics, rates, safety leases, fault policy, algorithms, final
+zero, selected or historical launches/wrappers, `/odom` pose ownership, or
+Vicon's evaluation-only role.
+
+Qualification passed a five-times-repeated 0.75-second blocked-default-group
+probe, 266 complete snapshot tests, 69 canonical recorder tests, 38 legacy and
+recording tests with one expected skip, critical static checks, a fresh
+14.8-second three-package build, and an installed-overlay probe. Matching
+pre-edit recovery roots are:
+
+```text
+/home/mattb/physical_TB3_files_snapshot/phase09_backups/
+  20260804T225906-0700_m8j_physical_gate_lane
+/home/mattb/tb3-pi/phase09_backups/
+  20260804T225906-0700_m8j_physical_gate_lane
+```
+
+Exactly two reviewed files were transferred through SSHFS with no source
+deletion. Final parity is 347/347 files and 435/435 inventory entries; the
+normalized hashes are
+`4cac14581722f81a98677a41f0e5d867951f25c55d46f895d9484553fe781d98`
+and
+`aa1589808c9d76fb9201c51edcdb087cf0aeedda6bf9999e4b1e06f247f0699d`.
+Generated source caches are 0/0. Codex ran no Pi command, build, graph, device,
+Vicon client, recorder, rotation, actuator, or motion. Full evidence is in
+`docs/codex/gesc_gaussian/validation/phase_09_fifth_physical_run_repair.md`.
+
+Because source changed, the next action is one human-operated
+`./gesc_gaussian_two_source_voltage.bash --check-only` from the standalone SSH
+terminal. Review all three package results, installed parity, selected physical
+`False`, legacy-default `True`, device separation, and launch construction. If
+it passes, use the ordinary Vicon/lab SOP and bare wrapper; do not add a
+permanent check-only ceremony. A later retained run still must demonstrate
+sustained GESC+Gaussian behavior, any warranted fill lifecycle, managed final
+zero, complete bag/CSV evidence, and physical two-light performance.
