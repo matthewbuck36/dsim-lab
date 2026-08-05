@@ -579,3 +579,93 @@ Codex started no Pi build, graph, device, Vicon client, recorder, rotation, or
 motion. Do not edit this repair without new evidence. The next action is one
 human-run selected `--check-only`, followed on success by the ordinary
 Vicon/lab SOP and bare wrapper.
+
+### Current M8K implementation continuation — physical heartbeat lane
+
+Retain the sixth selected run
+`20260804T231459927630Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_2155c436`
+unchanged. M8J worked: both recorder-owned gate topics stayed below
+0.145-second gaps for the full 119.61-second authorized interval. The robot
+traveled 4.55 m by integrated onboard `/odom`, confirmed convergence, entered
+`VERIFY_EXTREMUM`, and stopped at zero normally. Before classification or a
+fill request, the recorder falsely revoked readiness because all of its shared
+default-group heartbeat observations aged together to 1.846-2.019 seconds,
+while the bag-recorded publishers remained below 0.255-second gaps.
+
+Implement only the approved M8K physical recorder scheduling correction.
+Preserve the M8J gate callback group. Add a dedicated mutually exclusive group
+for passive diagnostic subscriptions and the terminal diagnostic timer, leave
+safety-heartbeat and command-observation subscriptions in the default group,
+and use exactly three physical executor threads. Simulation and legacy remain
+single-threaded. Preserve all gate rates, leases, runtime/semantic checks,
+final zero, algorithms, tuning, topics, cost semantics, `/odom`,
+evaluation-only Vicon, selected launch/wrapper, and historical entry points.
+Add a bounded real-rclpy test that blocks diagnostics beyond the complete
+1.50-second stale bound plus 0.50-second grace while heartbeats and both gates
+remain live and authorization is not revoked. Repeat it five times, run full
+Phase 09/canonical regressions and an isolated build, transfer only the
+recorder and focused test through the reviewed SSHFS scope with no deletion,
+prove exact parity, and update durable evidence. Codex must not run a Pi build
+or any physical process. The Pi source change requires one human-operated
+`--check-only` before another bare experiment.
+
+This M8K implementation boundary is complete. Matching recovery roots and
+receipts are under
+`20260804T234106-0700_m8k_physical_heartbeat_lane`; all declared focused,
+complete Phase 09, canonical recorder/legacy, critical static, isolated-build,
+and installed-overlay gates pass. Exactly two reviewed files were copied
+through SSHFS without source deletion. Snapshot/Pi parity is `347/347` files
+and `435/435` inventory entries, with zero generated source caches. Codex
+started no Pi build, graph, device, Vicon client, recorder, rotation, actuator,
+or motion. Do not edit this repair without new evidence. The next action is
+one human-run selected `--check-only`, followed on success by the ordinary
+Vicon/lab SOP and bare wrapper.
+
+### Current M8L implementation continuation — rotation initialization re-arm
+
+Retain the seventh selected run
+`20260805T000043179553Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_d9eb86a8`
+unchanged. Readiness never became true, all 1,900 `/cmd_vel` messages remained
+zero, and rotation faulted on its 0.50-second authorization lease before
+alignment. Recorder gate heartbeats continued near 10 Hz; the failure was the
+rotation owner's pre-initialization timestamp aging while its single callback
+lane synchronously opened pigpio/PWM.
+
+The approved implementation is complete. The first true gate initializes
+hardware once, commands/publishes neutral zero, clears that consumed
+timestamp, and stays in `WAITING_AUTHORIZATION`; only a subsequent fresh true
+gate enters `ALIGNING`. Offline evidence accepts initialized-neutral waiting
+only after the authorization boundary. Strict preauthorization evidence, the
+post-arm 0.50-second lease, encoder lease, all fault/zero behavior, public
+schema, M8K recorder lanes, controller safety, algorithms, topics, `/odom`,
+evaluation-only Vicon, selected and historical entry points remain unchanged.
+
+Matching recovery roots and receipts are under
+`20260805T002822-0700_m8l_rotation_initialization_rearm`. All declared host
+tests and the fresh three-package isolated build pass. Exactly four reviewed
+files were copied through SSHFS without source deletion; parity is `347/347`
+files and `435/435` inventory entries with zero generated caches. Codex ran no
+Pi build or physical process. Do not edit this repair without new evidence.
+The next action is one human-run selected `--check-only`, followed on success
+by the ordinary Vicon/lab SOP and bare wrapper.
+
+### Current M8M implementation boundary — not yet authorized or implemented
+
+Retain
+`20260805T004605139747Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_cd83f78f`
+as the first physical two-basin behavioral success. It completed local
+classification, created and used one fill, escaped back to `SEARCH`, and
+reacquired the stronger signal, but the operator stopped before formal second
+convergence. Completeness passes `61/62`; only the offline validator rejects
+one in-flight `RUNNING` status 45 milliseconds after shutdown authority was
+first observed false. Exact rotation zero and terminal revoked/zero status
+followed at 67 and 92 milliseconds.
+
+Do not change source without authorization. The bounded candidate repair is
+offline validator plus focused test only: allow the pre-terminal distributed
+ordering transition within the existing safety bound, require exact terminal
+zero, and reject active/nonzero evidence after it. Runtime recorder,
+controller, rotation owner, leases, algorithms, topics, `/odom`, Vicon role,
+launches, wrappers, and legacy paths remain unchanged. The Pi SSHFS mount is
+intentionally unmounted; do not inspect or transfer until explicitly remounted
+and authorized.

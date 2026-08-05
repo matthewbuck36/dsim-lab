@@ -1047,3 +1047,174 @@ it passes, use the ordinary Vicon/lab SOP and bare wrapper; do not add a
 permanent check-only ceremony. A later retained run still must demonstrate
 sustained GESC+Gaussian behavior, any warranted fill lifecycle, managed final
 zero, complete bag/CSV evidence, and physical two-light performance.
+
+## M8K sixth physical-run heartbeat-lane repair handoff — 2026-08-04
+
+Preserve
+`20260804T231459927630Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_2155c436`
+unchanged. It sustained readiness for `119.608472429 s`, traveled `4.5543 m`
+by integrated onboard `/odom` and `5.2828 m` by evaluation-only Vicon,
+confirmed a convergence candidate after `6.0033 s` of qualified dwell, and
+entered `VERIFY_EXTREMUM` at zero command. Recorder shutdown interrupted the
+nine-second candidate-cost classification window about `5.4 s` later, so no
+fill request or typed Gaussian fill was produced. Familiar CSV export and
+final-zero evidence passed; completeness remains failed for runtime metadata
+and the downstream convergence-node teardown marker.
+
+The retained 48,731-message bag proves M8J worked. Recorder readiness and
+rotation authorization stayed near 10 Hz with maximum gaps of `0.144462 s`
+and `0.144453 s`, and all actual runtime publishers stayed below `0.254152 s`.
+The false stop occurred because the recorder's heartbeat subscriptions shared
+the callback lane with passive diagnostics and aged together to
+`1.846-2.019 s`, crossing the unchanged `1.50 s` threshold plus `0.50 s`
+stale-only grace.
+
+M8K preserves the M8J gate group and adds a separate mutually exclusive group
+for passive diagnostic subscriptions and the terminal diagnostics timer.
+Heartbeat and command-observation subscriptions remain in the default safety
+group. Physical mode uses exactly three executor threads; simulation and
+legacy remain single-threaded with default callback grouping. No topic, gate
+rate, threshold, grace, controller/rotation lease, fault rule, final zero,
+algorithm, tuning, cost convention, `/odom` ownership, Vicon role, launch,
+wrapper, or historical ESC path changed.
+
+Qualification passed four focused construction/starvation tests, the
+2.25-second blocked-diagnostic probe in five independent processes, 143
+complete focused recording tests, 268 complete snapshot Phase 09 tests, 69
+canonical recorder tests, 38 canonical legacy/recording tests with one
+expected skip, critical static checks, a fresh 14.9-second isolated
+three-package build, and four installed-overlay probes.
+
+Matching rollback roots are:
+
+```text
+/home/mattb/physical_TB3_files_snapshot/phase09_backups/
+  20260804T234106-0700_m8k_physical_heartbeat_lane
+/home/mattb/tb3-pi/phase09_backups/
+  20260804T234106-0700_m8k_physical_heartbeat_lane
+```
+
+Exactly two reviewed files were transferred through SSHFS with no source
+deletion. Final parity is `347/347` regular files and `435/435` inventory
+entries. Normalized hashes are
+`b4608bed1cca5a7e45f9e5411ea12156c5c40f282ea0be6d44f53ba3bea57fe0`
+and
+`269523e491eec089a21ce72138ed8ef8b3eb3331993ef1024a86c73f20d04312`.
+Generated source caches are zero in both roots, and matching post-transfer
+receipts have SHA-256
+`056a826d1f9b0e686c758753e5e399c37064a536f33b4af824778ea920e26a0c`.
+Codex ran no Pi command, build, graph, device, Vicon client, recorder,
+rotation, actuator, or motion. Full evidence is in
+`docs/codex/gesc_gaussian/validation/phase_09_sixth_physical_run_repair.md`.
+
+Because source changed, the next action is one operator-owned
+`./gesc_gaussian_two_source_voltage.bash --check-only` from the standalone SSH
+terminal. Review all three package results, installed parity, selected physical
+`False`, legacy-default `True`, device separation, and launch construction. If
+it passes, return to the ordinary Vicon/lab SOP and bare wrapper; do not turn
+check-only into a per-run ceremony. A later retained run must still complete
+candidate classification, create/use a Gaussian fill if warranted, stop with
+managed final zero, and produce complete bag/CSV evidence for the physical
+two-light experiment.
+
+## M8L seventh physical-run rotation initialization handoff — 2026-08-05
+
+Preserve
+`20260805T000043179553Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_d9eb86a8`
+unchanged. It passed the passive barrier and recorder rotation authorization,
+but never reached base readiness and never moved. All `1,900` recorded
+`/cmd_vel` messages are zero. The rotation owner faulted about `0.5675 s`
+after the first true gate with `rotation authorization heartbeat became stale`,
+zero RPM, and no timekeeper. Source cost, filter output, and Gaussian behavior
+never started; completeness remains failed.
+
+The recorder's M8K lanes remained healthy. True rotation heartbeats continued
+near 10 Hz through the fault, including one about `0.026 s` beforehand. The
+latent race was inside the single-threaded rotation owner: its first true
+callback timestamped authorization and then synchronously initialized
+pigpio/PWM. This instance exceeded the unchanged `0.50 s` lease before the
+queued fresh heartbeat callback could run. Earlier M8J/M8K runs initialized in
+roughly `0.057/0.054 s`, explaining why they reached alignment.
+
+M8L consumes the first true heartbeat for one-time hardware initialization,
+immediately commands and publishes neutral zero, clears that timestamp, and
+remains in `WAITING_AUTHORIZATION`. Only a subsequent fresh true heartbeat
+sets active/ever authorization and enters `ALIGNING`. Ticks in the
+initialized-neutral wait cannot move or fault on the operational lease. Once
+armed, the existing `0.50 s` authorization lease, encoder lease,
+alignment/settle/profile behavior, faults, and shutdown are unchanged. The
+public schema remains version 1; offline validation accepts this truthful
+waiting combination only after the gate boundary. Strict preauthorization
+checks remain unchanged. The M8K recorder and its three callback lanes are
+byte-for-byte untouched.
+
+Host qualification passed 16 targeted tests, 165 complete focused tests, 269
+complete snapshot Phase 09 tests, 69 canonical recorder tests, and 38
+canonical legacy/recording tests with one expected skip. Critical static
+checks and added-line style review passed. The fresh three-package build at
+`/tmp/phase09_m8l_build.3pi2KJ` passed in `15.4 s`, followed by four installed
+overlay probes.
+
+Matching rollback roots are:
+
+```text
+/home/mattb/physical_TB3_files_snapshot/phase09_backups/
+  20260805T002822-0700_m8l_rotation_initialization_rearm
+/home/mattb/tb3-pi/phase09_backups/
+  20260805T002822-0700_m8l_rotation_initialization_rearm
+```
+
+Exactly four reviewed files were transferred through SSHFS with no source
+deletion. Final parity is `347/347` files and `435/435` inventory entries;
+normalized hashes are
+`e6315dd935f129b4da0b8071774dc38b60de66a63091c3f9f8136b913a07baf8`
+and
+`555de4d862976f9cd11d56882e3aa47e14a83d38126761f2b702d51e3e5c559a`.
+Generated source caches are zero in both roots. Identical transfer receipts
+have SHA-256
+`694a9f83ef3c8dcd9bfe5fa9f4222fdf4e21b1b01a9f2f68fa4ca7f1b81b8cec`.
+Codex ran no Pi build or physical process.
+
+Because source changed, the next action is exactly one operator-owned command
+from the standalone Pi SSH terminal:
+
+```bash
+cd ~/ros2_ws/src/turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values
+./gesc_gaussian_two_source_voltage.bash --check-only
+```
+
+If it passes, return to the ordinary Vicon/lab SOP and bare wrapper. Do not add
+another preflight ceremony. The next retained run still must complete the
+candidate classification window, create/use a fill if warranted, finish with
+managed zero, and provide complete bag/CSV two-light evidence.
+
+## Eighth physical-run behavioral-success handoff — 2026-08-05
+
+The operator-owned `--check-only` passed and the subsequent bare run is
+retained at
+`20260805T004605139747Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_cd83f78f`.
+It is the first physical run to complete local convergence and classification,
+create one Gaussian fill, perform repulsive plus assisted escape, return to
+`SEARCH`, and reacquire the stronger-light signal. Onboard `/odom` path length
+is `7.797691 m`; the local candidate estimate is `0.435 V`; and five later
+rotation-scale voltage peaks have median `1.9013 V` (`4.37` times local).
+
+The operator stopped before a second convergence confirmation or `GOAL_HOLD`,
+so retain the narrower claim: first two-basin behavioral success, not complete
+second-extremum acceptance. Target/bag shutdown is clean. Completeness is
+`61/62`; only `rotation_status_semantics` fails because one in-flight
+`RUNNING` status was received 45 milliseconds after the recorder's first false
+gate. Rotation reached zero after 67 milliseconds and exact terminal
+authorization-revoked fault/zero after 92 milliseconds; `/cmd_vel` was zero
+after six milliseconds.
+
+No M8M code exists yet. The bounded next repair, if authorized, belongs only
+to offline rotation evidence validation and its focused tests. Model the
+cross-topic transition without weakening safety: require the exact terminal
+zero within the existing bound and reject active/nonzero evidence after it.
+Do not tune the working algorithm or alter M8K/M8L runtime owners.
+
+The operator intentionally unmounted `/home/mattb/tb3-pi` after the run.
+Do not attempt mounted inspection or transfer until an explicit remount and
+authorization. Detailed evidence is in
+`docs/codex/gesc_gaussian/validation/phase_09_eighth_physical_run_validation.md`.

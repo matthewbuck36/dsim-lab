@@ -1,56 +1,53 @@
 # Phase 09 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-08-05T06:11:54+00:00
-Base HEAD: c1f3b9d36577d1bdf57e360c7b48abcec2729ea9
+Generated: 2026-08-05T08:12:36+00:00
+Base HEAD: 713b0c5c83b80ce0c862763a2292b724ba4ba345
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_09_status.md
-Status sha256: 86b3240701cb2dfdb08d2d4755628f096b08e8e3c36593125345ac13ddb7998e
+Status sha256: 118ba9e2a46cf6b49ef89f0bada1dd4f9515a7fad3230968283c66d84c6e95c1
 Plan: docs/codex/gesc_gaussian/plans/phase_09_plan.md
-Plan sha256: 854abfbabcae12133a3909a5f8d08d5c53949902426aaa40250b21922098cbc7
-Unstaged diff sha256: b700556db7ca8a3cb3297bcb4754cb0649277da92a469ec89a7dd3e1f239a5f4
-Staged diff sha256: 74a82f48a0e2b1806bf6c11653f7e4f66cbafd6144611841e45f43e91ec94472
+Plan sha256: 0867f3685e0a61b19ba726f2352e5ed39a7bb0dbf2fc8de669ccaaee5250a75a
+Unstaged diff sha256: 3566c3d98e736bcc7461b91ba681703d30ed601cf99d3edc24f93626effb638c
+Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 193]
-M  DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_IMPLEMENT.md
-M  DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_PLAN.md
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 194]
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_IMPLEMENT.md
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_PLAN.md
  M docs/codex/gesc_gaussian/checkpoints/phase_09_checkpoint.txt
-M  docs/codex/gesc_gaussian/handoffs/phase_09_handoff.md
-M  docs/codex/gesc_gaussian/plans/phase_09_plan.md
-M  docs/codex/gesc_gaussian/status/phase_09_status.md
-A  docs/codex/gesc_gaussian/validation/phase_09_fifth_physical_run_repair.md
+ M docs/codex/gesc_gaussian/handoffs/phase_09_handoff.md
+ M docs/codex/gesc_gaussian/plans/phase_09_plan.md
+ M docs/codex/gesc_gaussian/status/phase_09_status.md
+?? docs/codex/gesc_gaussian/validation/phase_09_eighth_physical_run_validation.md
+?? docs/codex/gesc_gaussian/validation/phase_09_seventh_physical_run_repair.md
+?? docs/codex/gesc_gaussian/validation/phase_09_sixth_physical_run_repair.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../checkpoints/phase_09_checkpoint.txt            | 55 +++++-----------------
- 1 file changed, 13 insertions(+), 42 deletions(-)
- .../prompts/09_physical_IMPLEMENT.md               |  36 +++++
- .../prompts/09_physical_PLAN.md                    |  30 ++++
- .../gesc_gaussian/handoffs/phase_09_handoff.md     |  52 +++++++
- docs/codex/gesc_gaussian/plans/phase_09_plan.md    |  57 +++++++
- docs/codex/gesc_gaussian/status/phase_09_status.md |  89 +++++++++++
- .../phase_09_fifth_physical_run_repair.md          | 164 +++++++++++++++++++++
- 6 files changed, 428 insertions(+)
+ .../prompts/09_physical_IMPLEMENT.md               |  90 ++++++
+ .../prompts/09_physical_PLAN.md                    |  85 ++++++
+ .../checkpoints/phase_09_checkpoint.txt            |  58 +---
+ .../gesc_gaussian/handoffs/phase_09_handoff.md     | 171 ++++++++++++
+ docs/codex/gesc_gaussian/plans/phase_09_plan.md    | 202 ++++++++++++++
+ docs/codex/gesc_gaussian/status/phase_09_status.md | 310 ++++++++++++++++++++-
+ 6 files changed, 871 insertions(+), 45 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**M8J PHYSICAL RECORDER GATE-LANE REPAIR HOST-QUALIFIED / REVIEWED TWO-PATH PI
-SOURCE TRANSFER COMPLETE / 347/347 FILE AND 435/435 INVENTORY PARITY PASS /
-FIFTH FAILED SHORT-MOTION RUN RETAINED / POST-CHANGE PI BUILD AND CHECK-ONLY
-NOT YET RUN / COMPLETE PHYSICAL GESC+GAUSSIAN TWO-SOURCE BEHAVIOR NOT YET
-DEMONSTRATED.**
+**M8L ROTATION INITIALIZATION RE-ARM PHYSICALLY PROVEN / EIGHTH RUN RETAINED
+AS FIRST TWO-BASIN BEHAVIORAL SUCCESS / ONE GAUSSIAN FILL AND ASSISTED ESCAPE
+CONFIRMED / STRONGER-LIGHT REACQUISITION CORROBORATED / FORMAL SECOND
+CONVERGENCE NOT REACHED / COMPLETENESS 61/62 WITH ONE SHUTDOWN EVIDENCE-ORDER
+FALSE NEGATIVE / M8M NOT IMPLEMENTED / PI SSHFS INTENTIONALLY UNMOUNTED.**
 
-The next incomplete criterion is exactly one operator-owned selected
-`./gesc_gaussian_two_source_voltage.bash --check-only` from the standalone SSH
-terminal. It must pass all three packages, installed parity, selected physical
-`False`, legacy-default `True`, device separation, and launch construction
-without starting hardware or motion. If it passes, return to the ordinary
-Vicon/lab SOP and bare wrapper. Do not repeat check-only per experiment and do
-not weaken the unchanged controller or rotation-owner leases.
+The next code action, if authorized, is the bounded offline M8M validator/test
+repair described above. Do not change the algorithm, controller, recorder
+lanes, rotation owner, leases, topics, `/odom` ownership, Vicon role, launch,
+wrapper, or legacy paths. No further physical run is planned tonight.
 
 
 This file describes the base HEAD and diff before the next commit; it is

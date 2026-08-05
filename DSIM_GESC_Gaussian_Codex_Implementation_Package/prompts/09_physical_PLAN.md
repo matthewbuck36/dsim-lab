@@ -555,3 +555,88 @@ no source deletion. Snapshot/Pi parity is 347/347 files and 435/435 inventory
 entries. Codex started no Pi build or physical process. The next gate is one
 operator-owned selected `--check-only`, followed on success by the ordinary
 Vicon/lab SOP and bare wrapper.
+
+### Current M8L planning boundary — rotation initialization re-arm
+
+Preserve the seventh selected run
+`20260805T000043179553Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_d9eb86a8`.
+It never reached readiness or motion: every recorded `/cmd_vel` was zero, and
+rotation faulted about 0.5675 seconds after the first true gate. Recorder
+rotation heartbeats stayed healthy near 10 Hz through the fault. The selected
+rotation owner's first true callback instead timestamped authorization before
+synchronously opening pigpio/PWM in its single callback lane; this instance
+exceeded the unchanged 0.50-second lease before a queued fresh heartbeat could
+run.
+
+Plan only an initialization re-arm in the existing rotation owner. The first
+true heartbeat initializes once, immediately commands/publishes neutral zero,
+clears the consumed timestamp, and remains in `WAITING_AUTHORIZATION`. Require
+a later fresh true heartbeat before `ALIGNING`. Preserve the 0.50-second
+post-arm authorization lease, encoder lease, fault behavior, public schema,
+recorder M8K lanes, controller, algorithms, topics, `/odom`, evaluation-only
+Vicon, launches, wrappers, and legacy methods. Permit the initialized-neutral
+waiting status in offline evidence only after authorization; keep strict
+preauthorization checks unchanged.
+
+M8L planning is now executed at the host/source-transfer boundary. Focused,
+complete Phase 09, canonical recorder/legacy, critical static, isolated-build,
+and installed-overlay gates pass. Exactly four reviewed files were transferred
+without source deletion. Snapshot/Pi parity is `347/347` files and `435/435`
+inventory entries, with zero generated caches. Codex started no Pi build or
+physical process. The next gate is one operator-owned selected `--check-only`,
+followed on success by the ordinary Vicon/lab SOP and bare wrapper.
+
+### Current M8K planning boundary — physical heartbeat versus diagnostics
+
+Preserve the sixth selected run
+`20260804T231459927630Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_2155c436`.
+It sustained readiness for 119.61 seconds, moved 4.55 m by integrated onboard
+`/odom`, emitted a qualified convergence confirmation, and entered
+`VERIFY_EXTREMUM` at zero command. It was interrupted before candidate
+classification or Gaussian-fill creation. The bag proves the M8J gate lane
+remained healthy below 0.145-second gaps and all actual heartbeat publishers
+remained below 0.255-second gaps; only the coordinator's shared default-group
+subscription observations aged together past the 1.50-second runtime bound
+and 0.50-second grace.
+
+Plan only a physical recorder scheduling correction. Preserve the existing
+M8J gate group, create a dedicated mutually exclusive group for passive
+diagnostic subscriptions and terminal diagnostics, retain safety-heartbeat and
+command subscriptions in the default group, and use exactly three physical
+executor threads. Keep simulation/legacy single-threaded. Do not weaken any
+lease, heartbeat rule, semantic fault, or final-zero check, and do not change
+the algorithm, topics, cost semantics, `/odom`, evaluation-only Vicon, launch,
+wrapper, or historical ESC method. Require a real-rclpy diagnostic-block probe
+beyond two seconds, five repetitions, full regressions, isolated build,
+recoverable two-path transfer, exact parity, durable evidence, and one
+post-source-change human `--check-only`. Codex must start no Pi or physical
+process.
+
+M8K planning is now executed at the host/source-transfer boundary. The
+three-lane physical recorder passed the bounded diagnostic starvation probe
+in five independent processes, complete Phase 09 and canonical regressions,
+critical checks, and a fresh isolated three-package build. Exactly two
+reviewed files were transferred without source deletion. Snapshot/Pi parity
+is `347/347` files and `435/435` inventory entries, with zero generated source
+caches. Codex started no Pi build or physical process. The next gate is one
+operator-owned selected `--check-only`, followed on success by the ordinary
+Vicon/lab SOP and bare wrapper.
+
+### Current M8M planning boundary — shutdown evidence ordering
+
+Preserve the eighth selected run
+`20260805T004605139747Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_cd83f78f`.
+It completed local classification, created one fill, escaped, returned to
+`SEARCH`, and strongly reacquired the higher-voltage source. It stopped before
+formal second convergence. Recording passes `61/62`; the only failure is one
+in-flight `RUNNING` rotation status 45 milliseconds after the recorder's false
+gate, followed by rotation zero at 67 milliseconds and the exact revoked/zero
+terminal status at 92 milliseconds.
+
+If authorized, plan only a bounded offline validator/test correction that
+accepts this pre-terminal cross-topic transition, requires exact terminal zero
+within the existing safety bound, and rejects any active/nonzero evidence
+afterward. Preserve all runtime owners, leases, algorithms, topics, `/odom`,
+evaluation-only Vicon, wrappers, and legacy paths. The operator intentionally
+unmounted the Pi SSHFS tree; do not inspect or transfer until explicit remount
+and authorization.

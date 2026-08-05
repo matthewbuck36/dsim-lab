@@ -1,7 +1,7 @@
 # Phase 09 Live Status
 
-Last verified: `2026-08-04T22:38:22-07:00`
-Status: `M8I RUNTIME/EVIDENCE SOURCE REPAIR HOST-QUALIFIED AND TRANSFERRED; 347/347 PARITY PASS; POST-CHANGE PI CHECK-ONLY NOT YET RUN`
+Last verified: `2026-08-05T00:41:54-07:00`
+Status: `M8L ROTATION INITIALIZATION RE-ARM HOST-QUALIFIED AND TRANSFERRED; 347/347 PARITY PASS; SEVENTH ZERO-MOTION RUN RETAINED; POST-CHANGE PI CHECK-ONLY NOT YET RUN`
 
 ## Objective
 
@@ -1617,3 +1617,309 @@ terminal. It must pass all three packages, installed parity, selected physical
 without starting hardware or motion. If it passes, return to the ordinary
 Vicon/lab SOP and bare wrapper. Do not repeat check-only per experiment and do
 not weaken the unchanged controller or rotation-owner leases.
+
+## M8K sixth selected-run diagnosis and implementation start — 2026-08-04
+
+The operator completed the post-M8J check-only successfully and then retained
+the sixth bare selected run at:
+
+```text
+/home/pi/turtlebot_rotating_sensor_tests/gesc_gaussian_two_source/2026-08-04/
+  20260804T231459927630Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_2155c436
+```
+
+It sustained readiness for `119.608472429 s`, traveled `4.554253040 m` by
+integrated onboard `/odom` (`2.461536026 m` net) and `5.282798477 m` by
+evaluation-only Vicon (`2.329767063 m` net), emitted a qualified convergence
+candidate and confirmation, and entered `VERIFY_EXTREMUM` with zero command.
+The stop occurred about `5.4 s` into verification, before the nine-second
+candidate-cost window, so no fill request or typed Gaussian fill exists.
+
+The 48,731-message bag proves the M8J gate repair held: readiness and rotation
+authorization maximum gaps were `0.144462 s` and `0.144453 s`. Every actual
+runtime-heartbeat publisher stayed below `0.254152 s`, but the coordinator's
+own ten heartbeat observations aged together to `1.846-2.019 s`. Its unchanged
+`1.50 s` threshold plus `0.50 s` stale-only grace therefore produced a false
+runtime revocation. Familiar CSV export and final-zero checks passed. The run
+remains failed for runtime shutdown metadata and a downstream
+convergence-detector teardown marker; it is not a completed Gaussian-fill or
+two-source demonstration.
+
+The user authorized the bounded M8K repair. Matching pre-edit recovery roots
+are sealed at
+`20260804T234106-0700_m8k_physical_heartbeat_lane` under both snapshot and
+mounted-Pi `phase09_backups`. Pre-edit snapshot/Pi parity is `347/347` regular
+files and `435/435` inventory entries; normalized hashes remain
+`4cac14581722f81a98677a41f0e5d867951f25c55d46f895d9484553fe781d98`
+and `aa1589808c9d76fb9201c51edcdb087cf0aeedda6bf9999e4b1e06f247f0699d`.
+Source implementation has not yet started.
+
+## Current milestone
+
+**M8K PHYSICAL HEARTBEAT-LANE REPAIR AUTHORIZED / SIXTH FAILED
+CONVERGENCE-VERIFICATION RUN RETAINED / MATCHING PRE-EDIT SNAPSHOT AND PI
+BACKUPS SEALED / SOURCE IMPLEMENTATION NOT YET STARTED / NO PI BUILD OR
+PHYSICAL PROCESS AUTHORIZED.**
+
+The next incomplete criterion is the focused source correction and bounded
+diagnostic-block starvation proof described by the saved M8K plan amendment.
+
+### M8K verified host/source result
+
+The physical recorder now retains the M8J gate group and adds a separate
+passive-diagnostic callback group. Heartbeat and command subscriptions remain
+in the default safety group. Physical mode uses exactly three executor
+threads; simulation and legacy retain their original single-threaded executor
+and default callback group. No threshold, grace, lease, fault rule, final-zero
+behavior, algorithm, topic, cost convention, pose/Vicon role, launch, wrapper,
+or historical ESC path changed.
+
+Verified results:
+
+```text
+focused physical/simulation callback tests: 4 passed
+independent blocked-diagnostic repetitions: 5/5 passed
+complete focused physical-recording file: 143 passed
+complete snapshot Phase 09 functional suite: 268 passed
+canonical recorder regression: 69 passed
+canonical legacy + recording integration: 38 passed, 1 expected skip
+Python AST and critical lint: PASS
+edited-file style baseline: 1942 before / 1942 after; zero added-line findings
+snapshot isolated build: 3 packages PASS in 14.9 s
+isolated installed-overlay focused probe: 4 passed
+```
+
+The isolated build is retained at `/tmp/phase09_m8k_build.IL3wl3`. Two
+test-shell composition errors were corrected and recorded in the validation
+file: a physical/canonical package-overlay mismatch during the first legacy
+attempt, and an incorrectly cleared ROS `PYTHONPATH` during the first
+installed-overlay attempt. Corrected authoritative commands pass; neither
+changed source.
+
+## Current milestone
+
+**M8K PHYSICAL HEARTBEAT-LANE REPAIR HOST-QUALIFIED / SIXTH FAILED
+CONVERGENCE-VERIFICATION RUN RETAINED / MATCHING PRE-EDIT BACKUPS SEALED /
+REVIEWED TWO-PATH PI TRANSFER NOT YET RUN / NO PI BUILD OR PHYSICAL PROCESS
+STARTED.**
+
+The next incomplete criterion is the reviewed two-file no-delete SSHFS
+transfer, followed by exact snapshot/Pi source and inventory parity.
+
+### M8K reviewed transfer result
+
+The transfer dry run listed only the recorder and its focused test. Both live
+Pi targets matched the sealed M8K pre-edit copies before transfer. Exactly
+those two paths were copied with checksum-scoped `rsync -rlptO`; no delete
+option was used, and the post-transfer dry run is empty. Snapshot and mounted
+Pi copies match at hashes
+`911c370d2019578781c909d9fd9cbe85b585fb3e70d9f5000b7147ab68ce5cbc`
+and
+`dc7e2281a56d80e441ab3d70e55c4dfc8cceff5c87928e14918b98b96b1af385`.
+The rollback copies retain their pre-edit hashes.
+
+Final normalized parity is `347/347` regular files and `435/435` inventory
+entries. The source-manifest SHA-256 is
+`b4608bed1cca5a7e45f9e5411ea12156c5c40f282ea0be6d44f53ba3bea57fe0`;
+the inventory SHA-256 is
+`269523e491eec089a21ce72138ed8ef8b3eb3331993ef1024a86c73f20d04312`.
+Generated source caches are zero in both roots. Mounted AST and critical lint
+pass. Matching receipts have SHA-256
+`056a826d1f9b0e686c758753e5e399c37064a536f33b4af824778ea920e26a0c`.
+Codex started no Pi build or physical process.
+
+## Current milestone
+
+**M8K PHYSICAL HEARTBEAT-LANE REPAIR HOST-QUALIFIED / REVIEWED TWO-PATH PI
+SOURCE TRANSFER COMPLETE / 347/347 FILE AND 435/435 INVENTORY PARITY PASS /
+SIXTH FAILED CONVERGENCE-VERIFICATION RUN RETAINED / POST-CHANGE PI BUILD AND
+CHECK-ONLY NOT YET RUN / COMPLETE PHYSICAL GESC+GAUSSIAN TWO-SOURCE BEHAVIOR
+NOT YET DEMONSTRATED.**
+
+The next incomplete criterion is exactly one operator-owned selected
+`./gesc_gaussian_two_source_voltage.bash --check-only` from the standalone SSH
+terminal. It must pass all three packages, installed parity, selected physical
+`False`, legacy-default `True`, device separation, and launch construction
+without starting hardware or motion. If it passes, return to the ordinary
+Vicon/lab SOP and bare wrapper. Do not repeat check-only per experiment and do
+not weaken the unchanged recorder rules or controller/rotation-owner leases.
+
+## M8L seventh selected-run diagnosis and host-qualified repair — 2026-08-05
+
+The operator completed the post-M8K check-only successfully and then retained
+the seventh bare selected run at:
+
+```text
+/home/pi/turtlebot_rotating_sensor_tests/gesc_gaussian_two_source/2026-08-05/
+  20260805T000043179553Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_d9eb86a8
+```
+
+The recorder's passive barrier and rotation-authorization decision passed,
+but readiness never became true. All `1,900` recorded `/cmd_vel` messages are
+zero. Rotation moved directly from `WAITING_AUTHORIZATION` to `FAULT` about
+`0.5675 s` after the first true authorization, reporting
+`rotation authorization heartbeat became stale`, zero rotation command, and
+no timekeeper. No source cost, filter output, base motion, or Gaussian fill
+followed. Preserve the failed completeness and empty familiar data streams.
+
+The bag proves the recorder's M8K lanes remained healthy: true rotation
+heartbeats continued near 10 Hz through the fault, including one about
+`0.026 s` beforehand. The rotation node's first true callback timestamped the
+heartbeat and then synchronously opened pigpio/PWM in its single callback
+lane. This instance exceeded the unchanged `0.50 s` lease, letting the timer
+inspect the old pre-initialization timestamp before a queued fresh heartbeat
+callback. The fifth and sixth runs happened to enter alignment in about
+`0.057 s` and `0.054 s`, so their success is consistent with this latent
+startup race.
+
+The authorized M8L correction changes four existing offline-snapshot files.
+The first true heartbeat initializes hardware once, immediately commands and
+publishes neutral zero, clears the consumed timestamp, and stays in
+`WAITING_AUTHORIZATION`. A later fresh true heartbeat alone sets active/ever
+authorization and enters `ALIGNING`. Waiting ticks never move or enforce the
+operational lease; after re-arm, the existing `0.50 s` lease, encoder lease,
+alignment/settle/profile behavior, fault latch, and shutdown remain unchanged.
+The public status schema/state names remain unchanged. Offline validation now
+accepts initialized-neutral waiting only after the first authorization
+boundary, while preauthorization evidence still requires untouched hardware
+and no command. The M8K recorder file remains byte-for-byte unchanged at
+SHA-256
+`911c370d2019578781c909d9fd9cbe85b585fb3e70d9f5000b7147ab68ce5cbc`.
+
+Matching pre-edit backups are
+`20260805T002822-0700_m8l_rotation_initialization_rearm` under both snapshot
+and mounted-Pi `phase09_backups`. Pre-edit parity passed at `347/347` regular
+files and `435/435` inventory entries with normalized hashes
+`b4608bed1cca5a7e45f9e5411ea12156c5c40f282ea0be6d44f53ba3bea57fe0`
+and
+`269523e491eec089a21ce72138ed8ef8b3eb3331993ef1024a86c73f20d04312`.
+
+Verified host/source results:
+
+```text
+targeted M8L behavior/evidence tests: 16 passed
+complete two focused test files: 165 passed
+complete snapshot Phase 09 functional suite: 269 passed
+canonical recorder regression: 69 passed
+canonical legacy + recording integration: 38 passed, 1 expected skip
+Python AST and critical lint: PASS
+edited-file style baseline: 1888 before / 1881 after; zero added-line findings
+snapshot isolated build: 3 packages PASS in 15.4 s
+isolated installed-overlay focused probe: 4 passed
+```
+
+The build is retained at `/tmp/phase09_m8l_build.3pi2KJ`. The first focused
+test command incorrectly added ROS interface source rather than a generated
+interface overlay to `PYTHONPATH`, so collection stopped with
+`ModuleNotFoundError: ros_esc_interfaces`. Sourcing the retained generated
+host overlay and prepending only the two Python source packages corrected the
+command; all authoritative results above pass. This command-environment error
+did not change source and is not a product failure.
+
+## Current milestone
+
+**M8L ROTATION INITIALIZATION RE-ARM HOST-QUALIFIED / SEVENTH FAILED
+ZERO-MOTION RUN RETAINED / MATCHING PRE-EDIT BACKUPS SEALED / REVIEWED
+FOUR-PATH PI SOURCE TRANSFER NOT YET RUN / NO PI BUILD OR PHYSICAL PROCESS
+STARTED.**
+
+The next incomplete criterion is the reviewed four-file no-delete SSHFS
+transfer followed by exact snapshot/Pi normalized parity. After any source
+transfer, exactly one operator-owned selected `--check-only` is required
+before the next bare run.
+
+### M8L reviewed transfer result
+
+The transfer dry run listed exactly the selected rotation owner, its focused
+test, the offline validator, and its focused test. All four mounted-Pi targets
+matched the sealed M8L pre-edit copies before transfer. The checksum-scoped
+`rsync -rlptOc` copy used no delete option, and the post-transfer dry run is
+empty. Snapshot and mounted-Pi target hashes match at:
+
+```text
+phase09_rotation_node.py:           429469ca69ff88274e13efb6e5151d9918a58aaf8743e98a244673c323348f5c
+test_phase09_rotation_gate.py:      5c9fbc40f0cc13267f023c86ca059300c12858c91b740ab62183fe3c4a940ba8
+validate_run.py:                    60d5a86556f4fe91db3537fc33a86eaaa73ca42040f07c16c9bea3c40ea0a41e
+test_phase09_physical_recording.py: 808b9667aba7fb6c2d0c98bbc4df894b57689fa688e27e16f394fc2a9849465f
+```
+
+Final normalized parity is `347/347` regular files and `435/435` inventory
+entries. The source-manifest SHA-256 is
+`e6315dd935f129b4da0b8071774dc38b60de66a63091c3f9f8136b913a07baf8`;
+the inventory SHA-256 is
+`555de4d862976f9cd11d56882e3aa47e14a83d38126761f2b702d51e3e5c559a`.
+Generated caches are zero in both roots. Mounted AST and critical lint pass.
+Matching post-transfer receipts have SHA-256
+`694a9f83ef3c8dcd9bfe5fa9f4222fdf4e21b1b01a9f2f68fa4ca7f1b81b8cec`.
+Codex started no Pi build or physical process.
+
+## Current milestone
+
+**M8L ROTATION INITIALIZATION RE-ARM HOST-QUALIFIED / REVIEWED FOUR-PATH PI
+SOURCE TRANSFER COMPLETE / 347/347 FILE AND 435/435 INVENTORY PARITY PASS /
+SEVENTH FAILED ZERO-MOTION RUN RETAINED / POST-CHANGE PI BUILD AND CHECK-ONLY
+NOT YET RUN / COMPLETE PHYSICAL GESC+GAUSSIAN TWO-SOURCE BEHAVIOR NOT YET
+DEMONSTRATED.**
+
+The next incomplete criterion is exactly one operator-owned selected
+`./gesc_gaussian_two_source_voltage.bash --check-only` from the standalone SSH
+terminal. It must pass all three packages, installed parity, selected physical
+`False`, legacy-default `True`, device separation, and launch construction
+without starting hardware or motion. If it passes, return to the ordinary
+Vicon/lab SOP and bare wrapper. Do not repeat check-only per experiment and do
+not weaken the unchanged recorder, controller, or rotation-owner safety rules.
+
+## Eighth physical run: first behavioral success and M8M evidence boundary
+
+The operator-owned selected `--check-only` passed, followed by the ordinary
+Vicon/lab setup and bare wrapper. Preserve the resulting run unchanged at:
+
+```text
+/home/pi/turtlebot_rotating_sensor_tests/gesc_gaussian_two_source/2026-08-05/
+  20260805T004605139747Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_cd83f78f
+```
+
+This is the first retained physical run to confirm a local convergence,
+complete the nine-second candidate classification, create one Gaussian fill,
+execute repulsive and assisted escape, return stably to `SEARCH`, and reacquire
+the stronger-light signal. Onboard `/odom` integrates `7.797691 m` with
+`4.197350 m` net displacement. The local candidate estimate is about
+`0.435 V`; five later rotation-scale peaks have median `1.9013 V`, a `4.37`
+ratio, with maximum `2.3069 V`. The run was stopped in `SEARCH`, so it has no
+second convergence confirmation or `GOAL_HOLD`; describe it as the first
+behavioral success, not a complete second-extremum acceptance run.
+
+Recording finalized cleanly. Target and bag exit codes are zero, cleanup is
+clean, and completeness passes `61/62` checks. The sole failure is a
+shutdown-ordering false negative: the recorder observed authorization false,
+then one in-flight `RUNNING` rotation status 45 milliseconds later, rotation
+zero after 67 milliseconds, and the exact authorization-revoked terminal
+fault/zero status after 92 milliseconds. `/cmd_vel` was zero after six
+milliseconds. Current offline validation rejects any nonterminal status after
+the first false receipt even though independent callback lanes cannot impose
+that cross-topic total order.
+
+No M8M source repair is implemented. Preserve all M8L controller/rotation
+safety behavior. The next bounded source question is offline evidence only:
+allow a pre-revocation in-flight transition until the exact terminal zero
+status within the existing bound, forbid active/nonzero evidence afterward,
+and regression-test this run's exact ordering without weakening other gates.
+Full evidence is in
+`docs/codex/gesc_gaussian/validation/phase_09_eighth_physical_run_validation.md`.
+
+The operator intentionally unmounted `/home/mattb/tb3-pi` after the run.
+Codex attempted no access after unmount and will not transfer or inspect Pi
+source until the operator explicitly remounts and authorizes it.
+
+## Current milestone
+
+**M8L ROTATION INITIALIZATION RE-ARM PHYSICALLY PROVEN / EIGHTH RUN RETAINED
+AS FIRST TWO-BASIN BEHAVIORAL SUCCESS / ONE GAUSSIAN FILL AND ASSISTED ESCAPE
+CONFIRMED / STRONGER-LIGHT REACQUISITION CORROBORATED / FORMAL SECOND
+CONVERGENCE NOT REACHED / COMPLETENESS 61/62 WITH ONE SHUTDOWN EVIDENCE-ORDER
+FALSE NEGATIVE / M8M NOT IMPLEMENTED / PI SSHFS INTENTIONALLY UNMOUNTED.**
+
+The next code action, if authorized, is the bounded offline M8M validator/test
+repair described above. Do not change the algorithm, controller, recorder
+lanes, rotation owner, leases, topics, `/odom` ownership, Vicon role, launch,
+wrapper, or legacy paths. No further physical run is planned tonight.
