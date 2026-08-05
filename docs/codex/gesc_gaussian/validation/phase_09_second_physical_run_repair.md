@@ -3,7 +3,7 @@
 Date: 2026-08-04
 Milestone: M8G
 Decision: **SECOND FAILED RUN RETAINED / SELECTED STARTUP-GRACE REPAIR
-HOST-QUALIFIED AND TRANSFERRED / ON-PI REBUILD NOT YET RUN / PHYSICAL
+HOST-QUALIFIED AND TRANSFERRED / ON-PI REBUILD AND CHECK-ONLY PASS / PHYSICAL
 ALGORITHM BEHAVIOR NOT YET DEMONSTRATED**
 
 ## Retained failed run
@@ -161,23 +161,50 @@ prepended passed 37/37. The initial executable lookup also missed module-only
 flake8; `python3 -m flake8` then passed the critical check. These were bounded
 host-harness corrections, not product failures.
 
+## Operator-run post-M8G check-only evidence
+
+The operator ran the required one-time rebuild/check from the standalone
+Linux-tower SSH terminal. Exact result:
+
+```text
+ros_esc_interfaces: PASS in 2.79 s
+ros_esc: PASS in 5.27 s
+turtlebot3_vehicle_nodes: PASS in 6.89 s
+three-package summary: PASS in 16.3 s
+installed Python parity: PASS (ros_esc=63, turtlebot3_vehicle_nodes=21)
+selected CLI parser: PASS (physical=False, legacy default=True)
+scenario: primary
+turtlebot3 underlay: /home/pi/turtlebot3_ws/install/setup.bash
+turtlebot3 model: burger
+photoresistor/OpenCR: /dev/ttyUSB0, /dev/ttyACM0
+selected lidar: disabled
+launch construction: PASS
+Pi lab clock: 2026-08-04T21:16:22+00:00
+pigpio/serial/Vicon/ROS graph/recorder/motion: NOT STARTED
+```
+
+Read-only SSHFS inspection confirmed all three live `colcon_build.rc` files are
+zero. The installed wrapper symlink resolves on the Pi through the selected
+build tree to the repaired source wrapper containing the explicit `45/45/100`
+timings. After removing only generated post-build bytecode caches, full
+snapshot/Pi parity remains 345/345 regular-file hashes and 433/433 inventory
+entries with the same M8G manifest and inventory digests. No source or run data
+was removed.
+
 ## Current boundary and next action
 
-The real Pi source is repaired, but its installed package still predates M8G.
-Run exactly one nonlaunching rebuild/check from the standalone Linux-tower SSH
-terminal:
+The one-time M8G source/build/check gate is closed. If the Pi has not rebooted
+and source has not changed, do not run check-only again. Follow the ordinary
+Vicon/lab SOP, keep the floor clear and `Ctrl+C` immediately available, then
+run the bare selected wrapper from the same standalone SSH terminal:
 
 ```bash
 cd ~/ros2_ws/src/turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values
-./gesc_gaussian_two_source_voltage.bash --check-only
+./gesc_gaussian_two_source_voltage.bash
 ```
 
-Require the three-package build, installed Python parity, selected CLI parser
-compatibility, launch construction, and final check-only PASS. That command
-must again report that pigpio, serial, Vicon, the ROS graph, recorder, and
-motion were not started. After its output is reviewed, check-only returns to an
-as-needed diagnostic and the next action is the ordinary Vicon/lab SOP plus the
-bare wrapper. A later real run must still demonstrate Timekeeper, voltage/raw
-cost, filter/control, readiness, nonzero authorized command and motion,
-operator Ctrl+C, final zero, finalized bag, familiar CSVs, and two-light
-behavior.
+This is permission to proceed with the human-operated experiment, not a claim
+that physical behavior is already validated. The next retained run must still
+demonstrate Timekeeper, voltage/raw cost, filter/control, readiness, authorized
+command and motion, operator Ctrl+C, final zero, finalized bag, familiar CSVs,
+and two-light behavior.

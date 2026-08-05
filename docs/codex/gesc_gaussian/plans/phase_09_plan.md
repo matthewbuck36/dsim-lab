@@ -1760,3 +1760,13 @@ no broad sync, and exact full-source parity. Because Pi source changed after
 the M8F build, require exactly one new human-operated `--check-only` before the
 next bare run. Full evidence is in
 `docs/codex/gesc_gaussian/validation/phase_09_second_physical_run_repair.md`.
+
+The required post-M8G operator check subsequently passed all three packages in
+16.3 seconds, installed Python parity, selected physical `False`, legacy
+default `True`, device separation, and launch construction. It started no
+pigpio, serial, Vicon client, ROS graph, recorder, or motion. Read-only SSHFS
+inspection confirmed all three build return codes zero and retained exact
+345/345 source plus 433/433 inventory parity after generated cache cleanup.
+M8G therefore returns to the ordinary Vicon/lab SOP and bare selected wrapper;
+live sensor, motion, shutdown, bag, CSV, and two-light behavior remain
+unverified until the next retained run.

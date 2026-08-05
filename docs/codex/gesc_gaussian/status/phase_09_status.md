@@ -1332,22 +1332,34 @@ recorder, or motion was started by Codex for M8G.
 ## Current milestone
 
 **M8G SELECTED STARTUP-GRACE SOURCE REPAIR HOST-QUALIFIED / SNAPSHOT-PI SOURCE
-PARITY PASS / SECOND FAILED NO-MOTION RUN RETAINED / ON-PI POST-REPAIR BUILD AND
-CHECK-ONLY NOT YET RUN / PHYSICAL ALGORITHM BEHAVIOR NOT YET DEMONSTRATED.**
+PARITY PASS / SECOND FAILED NO-MOTION RUN RETAINED / ON-PI POST-REPAIR BUILD,
+INSTALLED PARITY, PARSER COMPATIBILITY, AND CHECK-ONLY PASS / PHYSICAL ALGORITHM
+BEHAVIOR NOT YET DEMONSTRATED.**
 
 ### Exact next action after M8G
 
-From the standalone Linux-tower SSH terminal, run exactly one post-source-change
-check:
+The operator completed the one-time post-source-change check:
 
-```bash
-cd ~/ros2_ws/src/turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values
-./gesc_gaussian_two_source_voltage.bash --check-only
+```text
+ros_esc_interfaces: PASS in 2.79 s
+ros_esc: PASS in 5.27 s
+turtlebot3_vehicle_nodes: PASS in 6.89 s
+three packages: PASS in 16.3 s
+installed Python parity: PASS (63 + 21 files)
+selected CLI parser: PASS (physical=False, legacy default=True)
+scenario/launch: primary, PASS
+devices: /dev/ttyUSB0 photoresistor, /dev/ttyACM0 OpenCR
+selected lidar: disabled
+current time: 2026-08-04T21:16:22+00:00
+pigpio/serial/Vicon/ROS graph/recorder/motion: NOT STARTED
 ```
 
-Review its three-package, installed-parity, parser-compatibility, launch, and
-final PASS output before another bare run. It must start no runtime or hardware.
-After it passes, do not repeat check-only as a ritual; return to the ordinary
-Vicon/lab SOP and bare wrapper. The next retained run still must prove live
-Timekeeper, voltage/raw cost, filter/control, readiness, authorized motion,
-Ctrl+C/final zero, bag/CSV completeness, and physical two-light behavior.
+Read-only SSHFS inspection confirmed all three `colcon_build.rc` files zero,
+the installed symlink chain targeting the repaired source wrapper, and exact
+post-cleanup snapshot/Pi parity of 345/345 files plus 433/433 inventory entries.
+The one-time M8G build/check gate is closed. If the Pi has not rebooted and
+source has not changed, follow the ordinary Vicon/lab SOP and invoke bare
+`./gesc_gaussian_two_source_voltage.bash`; do not repeat check-only as a ritual.
+The next retained run still must prove live Timekeeper, voltage/raw cost,
+filter/control, readiness, authorized motion, Ctrl+C/final zero, bag/CSV
+completeness, and physical two-light behavior.

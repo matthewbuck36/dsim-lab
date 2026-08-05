@@ -449,5 +449,11 @@ startup and a 100-second selected algorithm startup grace through the existing
 launch argument. Keep recorder readiness and lifecycle gates unchanged; keep
 the launch/shared defaults at 5 seconds; do not modify algorithm code or any
 historical ESC wrapper/launch. Host qualification and 345/345 snapshot/Pi
-parity pass. Plan exactly one post-source-change `--check-only` before the next
-bare run, then return to the ordinary one-command workflow.
+parity pass. The one post-source-change operator `--check-only` is now complete:
+all three packages built in 16.3 seconds; installed Python parity, selected and
+legacy parser compatibility, device separation, and launch construction passed;
+and pigpio, serial, Vicon, the ROS graph, recording, and motion did not start.
+That one-time gate is closed. Return to the ordinary Vicon/lab SOP and bare
+wrapper unless the Pi reboots, source changes again, or diagnosis requires a
+new check; do not claim physical behavior until the next retained run is
+finalized and validated.

@@ -462,8 +462,11 @@ owner; its lifecycle and nonzero-command gates are not relaxed. Shared 5-second
 defaults, algorithm code, and every historical ESC wrapper/launch remain
 unchanged. Host qualification and exact 345/345 source parity pass.
 
-The next command is exactly one human-operated bare-wrapper `--check-only` to
-rebuild the Pi install after the source change. Require the normal build,
-installed parity, parser, launch, and final PASS with no runtime/device/motion.
-After review, return to the ordinary Vicon/lab SOP and bare wrapper; do not make
-check-only a permanent per-run ceremony.
+The one human-operated post-source-change `--check-only` is now complete. All
+three packages built in 16.3 seconds; installed Python parity, selected
+physical `False`, legacy-default `True`, device separation, and launch
+construction passed; and pigpio, serial, Vicon, the ROS graph, recording, and
+motion did not start. The next human action is the ordinary Vicon/lab SOP and
+bare selected wrapper. Do not request another check-only unless the Pi reboots,
+source changes again, or diagnosis requires it. Preserve and validate the next
+retained run regardless of success or failure.

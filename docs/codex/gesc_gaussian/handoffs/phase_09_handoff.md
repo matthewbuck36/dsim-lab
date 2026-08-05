@@ -839,10 +839,18 @@ finished with 345/345 regular-file and 433/433 inventory parity and zero source
 caches/symlinks. Codex started no Pi build, ROS graph, device, recorder, or
 motion.
 
-The Pi source is current but its installed package predates M8G. The exact next
-human action is one `./gesc_gaussian_two_source_voltage.bash --check-only` from
-the normal source directory. Review its build, installed parity, parser,
-launch, and final PASS output. After that one source-change check, return to the
-ordinary Vicon/lab SOP and bare wrapper; do not add a permanent ceremony. Full
-diagnosis, qualification, hashes, rollback, and remaining live checks are in
+The operator subsequently completed the required post-M8G check-only. All
+three packages passed in 16.3 seconds; installed Python parity, selected
+physical `False`, legacy-default `True`, device separation, and launch
+construction passed; no runtime or hardware started. Read-only SSHFS inspection
+confirmed all three build return codes zero, the installed wrapper symlink
+chain targeting repaired source, and exact post-cleanup 345/345 file plus
+433/433 inventory parity.
+
+The one-time M8G rebuild/check gate is closed. If the Pi has not rebooted and
+source has not changed, the next human action is the ordinary Vicon/lab SOP and
+bare `./gesc_gaussian_two_source_voltage.bash` from the standalone SSH terminal.
+Do not repeat check-only or add a permanent ceremony. Full diagnosis,
+qualification, hashes, rollback, operator evidence, and remaining live checks
+are in
 `docs/codex/gesc_gaussian/validation/phase_09_second_physical_run_repair.md`.
