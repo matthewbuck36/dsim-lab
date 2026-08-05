@@ -1,7 +1,7 @@
 # Phase 09 Live Status
 
-Last verified: `2026-08-04T22:00:57-07:00`
-Status: `M8H CLOCK REPAIR HOST-QUALIFIED AND TRANSFERRED; 347/347 PI SOURCE PARITY PASS; NEW OPERATOR CHECK-ONLY PENDING`
+Last verified: `2026-08-04T22:09:03-07:00`
+Status: `M8H CLOCK REPAIR INSTALLED CHECK-ONLY PASS; SOURCE PARITY RETAINED; NEXT BARE PHYSICAL RUN NOT YET STARTED`
 
 ## Objective
 
@@ -1435,12 +1435,23 @@ or motion was started by Codex. Full evidence is in
 
 **M8H SHARED CLOCK SOURCE REPAIR HOST-QUALIFIED / REVIEWED PI SOURCE TRANSFER
 COMPLETE / POST-REBOOT 347/347 FILE AND 435/435 INVENTORY PARITY PASS / THIRD
-FAILED NO-MOTION RUN RETAINED / ON-PI POST-REPAIR BUILD AND CHECK-ONLY NOT YET
-RUN / PHYSICAL ALGORITHM BEHAVIOR NOT YET DEMONSTRATED.**
+FAILED NO-MOTION RUN RETAINED / ON-PI POST-REPAIR BUILD, INSTALLED PARITY,
+PARSER COMPATIBILITY, AND CHECK-ONLY PASS / PHYSICAL ALGORITHM BEHAVIOR NOT YET
+DEMONSTRATED.**
 
-The next incomplete criterion is exactly one new human-operated
-`./gesc_gaussian_two_source_voltage.bash --check-only`, because the Pi rebooted
-and source changed after M8G. Set the literal lab wall clock first. The check
-must pass the three selected builds, installed parity, selected physical
-`False`, legacy default `True`, device separation, and launch construction
-without starting the runtime. Review that output before another bare run.
+The operator completed the one required post-M8H check-only. All three selected
+packages passed in 16.4 seconds; installed Python parity passed with
+`ros_esc=64` and `turtlebot3_vehicle_nodes=21`; selected physical `False`,
+legacy default `True`, device separation, and launch construction passed; and
+pigpio, serial, Vicon, the ROS graph, recording, and motion did not start.
+Read-only SSHFS inspection confirmed all three build return codes zero, the
+active symlink-install chain contains the new helper, and exact 347/347 source
+plus 435/435 inventory parity remains. The build regenerated 16 normal Python
+bytecode files under 11 Pi cache directories; these are excluded generated
+artifacts, not source drift.
+
+The one-time M8H build/check gate is closed. The next incomplete criterion is a
+new retained bare physical run under the ordinary Vicon/lab SOP. That run must
+still prove live Timekeeper and voltage/raw cost, filter/control, readiness and
+authorized motion, managed final zero, bag validation, familiar CSV export,
+and physical two-light behavior.

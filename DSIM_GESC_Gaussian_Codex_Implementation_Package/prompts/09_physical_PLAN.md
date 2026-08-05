@@ -480,7 +480,10 @@ with zero source caches. No Pi build or physical process was started by Codex.
 Do not replan or rewrite this repair without new failed evidence. Preserve the
 two-thread executor, algorithm tuning, topics, cost semantics, `/odom`
 ownership, Vicon role, recorder gates, selected wrapper, and historical entry
-points. Because source changed and the Pi rebooted, require exactly one new
-operator `./gesc_gaussian_two_source_voltage.bash --check-only` after Nick's
-literal wall-clock step. Review that output before planning another bare run;
-do not turn check-only into a permanent ceremony.
+points. The one required post-source-change operator check-only now passes all
+three packages in 16.4 seconds, installed parity (`ros_esc=64`, physical
+package 21), selected physical `False`, legacy-default `True`, device
+separation, and launch construction without starting runtime or hardware.
+Mounted checks retain 347/347 source and 435/435 inventory parity. Return to
+the ordinary Vicon/lab SOP and bare wrapper; do not turn check-only into a
+permanent ceremony, and do not claim physical behavior before a retained run.

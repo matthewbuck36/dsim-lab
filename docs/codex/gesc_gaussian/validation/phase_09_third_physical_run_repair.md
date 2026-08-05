@@ -1,6 +1,6 @@
 # Phase 09 M8H — Third Physical-Run Clock Repair
 
-Verified: `2026-08-04T22:00:57-07:00`
+Verified: `2026-08-04T22:09:03-07:00`
 
 ## Result
 
@@ -129,20 +129,46 @@ canonical/snapshot/Pi shared:    7/7 byte-identical
 snapshot/Pi physical parity test: 1/1 byte-identical
 ```
 
-## Remaining operator gate
+## Operator check-only closeout
 
-The Pi rebooted and its source changed. In the standalone SSH terminal, the
-operator must restore Nick's literal lab wall-clock convention, then run one:
+The operator restored Nick's literal lab wall-clock convention and ran the
+required one-time command from the standalone SSH terminal:
 
 ```bash
 cd ~/ros2_ws/src/turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values
 ./gesc_gaussian_two_source_voltage.bash --check-only
 ```
 
-The output must again show the three selected packages, installed parity,
-selected physical `False`, legacy default `True`, device separation, and
-launch construction passing while stating that no runtime or motion started.
-Only after that output is reviewed should the ordinary Vicon/lab SOP and bare
-wrapper be attempted. Live source cost, Timekeeper, filter/control,
-authorization, motion, managed final zero, bag/CSV completeness, and physical
-two-light behavior remain unverified.
+The result passed:
+
+```text
+ros_esc_interfaces: 3.03 s
+ros_esc: 5.91 s
+turtlebot3_vehicle_nodes: 5.30 s
+three packages: PASS in 16.4 s
+installed Python parity: PASS (ros_esc=64, turtlebot3_vehicle_nodes=21)
+selected CLI parser: PASS (physical=False, legacy default=True)
+scenario/launch: primary, PASS
+devices: /dev/ttyUSB0 photoresistor, /dev/ttyACM0 OpenCR
+selected lidar: disabled
+current time: 2026-08-04T22:06:12+00:00
+pigpio/serial/Vicon/ROS graph/recorder/motion: NOT STARTED
+```
+
+Read-only SSHFS inspection then confirmed all three `colcon_build.rc` files are
+zero. The installed `ros-esc.egg-link` targets `/home/pi/ros2_ws/build/ros_esc`,
+whose package link targets `/home/pi/ros2_ws/src/ros_esc/ros_esc`; the active
+source helper hash remains
+`54942fc70164bbe7d36d5a82daea3f1d41e21ccd0dd90a1a9bb167a24a418ae9`.
+Fresh post-build source comparison still passes 347/347 hashes and 435/435
+inventory entries with the sealed manifest digests above.
+
+The build regenerated 16 bytecode files (80,108 bytes) beneath 11 normal
+`__pycache__` directories in the Pi source tree. They are excluded generated
+artifacts, not source drift, and do not require another build or check-only.
+The one-time M8H installed gate is closed.
+
+The next human action may follow the ordinary Vicon/lab SOP and invoke the bare
+selected wrapper. Live source cost, Timekeeper, filter/control, authorization,
+motion, managed final zero, bag/CSV completeness, and physical two-light
+behavior remain unverified until that retained run is finalized and reviewed.

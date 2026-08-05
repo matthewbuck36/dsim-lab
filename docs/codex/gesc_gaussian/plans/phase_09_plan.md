@@ -1823,3 +1823,11 @@ is
 `docs/codex/gesc_gaussian/validation/phase_09_third_physical_run_repair.md`.
 No Pi build or physical process was started by Codex. The one new operator
 `--check-only` remains the exact next gate before another bare experiment.
+
+The operator subsequently completed that one-time gate. All three selected
+packages passed in 16.4 seconds; installed Python parity passed at 64 shared
+`ros_esc` files plus 21 physical-package files; selected physical `False`,
+legacy-default `True`, device separation, and launch construction passed; and
+no runtime or hardware process started. Mounted checks retained 347/347 source
+and 435/435 inventory parity. M8H therefore returns to the ordinary Vicon/lab
+SOP and bare wrapper; physical behavior remains unverified until the next run.

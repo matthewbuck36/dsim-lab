@@ -494,7 +494,11 @@ motion was started by Codex.
 Do not edit the repair again without new evidence. Preserve the Gaussian
 two-thread executor, algorithm behavior/tuning, public interfaces, recorder
 enforcement, all legacy wrappers/launches, `/odom`-only algorithm pose, and
-evaluation-only Vicon. The next operator-owned action is exactly one
-`./gesc_gaussian_two_source_voltage.bash --check-only` after restoring Nick's
-literal lab wall clock. Wait for and review its installed build/parity/parser/
-launch output before recommending another bare experiment.
+evaluation-only Vicon. The one operator-owned post-source-change check-only is
+now complete: all three packages, installed parity (`ros_esc=64`, physical
+package 21), selected physical `False`, legacy-default `True`, device
+separation, and launch construction passed without starting runtime or
+hardware. Mounted checks retain 347/347 source and 435/435 inventory parity.
+Do not request another check-only unless source changes or diagnosis requires
+it. The next human action is the ordinary Vicon/lab SOP and bare wrapper;
+preserve and validate the resulting run regardless of outcome.
