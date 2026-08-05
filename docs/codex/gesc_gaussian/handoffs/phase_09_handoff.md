@@ -788,18 +788,24 @@ were copied through SSHFS with no delete behavior. Snapshot/Pi parity is
 /home/mattb/tb3-pi/phase09_backups/20260804T202726-0700_m8f_runtime_graph_repair
 ```
 
-The only next action is one human-operated on-Pi rebuild/check from the
+The operator subsequently completed the one-time on-Pi rebuild/check from the
 standalone Linux SSH terminal:
 
-```bash
-cd ~/ros2_ws/src/turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values
-./gesc_gaussian_two_source_voltage.bash --check-only
+```text
+three selected packages: PASS in 14.4 s
+installed Python parity: PASS (ros_esc=63, turtlebot3_vehicle_nodes=21)
+selected CLI parser: PASS (physical=False, legacy default=True)
+launch construction: PASS
+devices/model/lidar: /dev/ttyUSB0, /dev/ttyACM0, burger, selected lidar off
+pigpio/serial/Vicon/ROS graph/recorder/motion: NOT STARTED
 ```
 
-Require the new parser-compatibility PASS line and normal final PASS, then
-share the complete output before another physical run. Remote-SSH sees source
-edits immediately but may need to reload an open buffer; generated install
-state is not requalified until this check completes. No ROS graph, serial
-device, Vicon client, recorder, actuator, or motion was started by Codex for
-M8F. Full evidence is in
+All three live `colcon_build.rc` files are zero. The M8F rebuild/parser gate is
+closed. If the Pi has not rebooted and source has not changed, the next action
+is the established Vicon/lab SOP followed by the bare selected wrapper from the
+standalone SSH terminal. No repeated check-only or separate build command is
+required. A real run must still prove live sensor, `/odom`/IMU, Vicon evidence,
+command/motion, managed final zero, bag validation, CSV export, and two-light
+behavior. No ROS graph, serial device, Vicon client, recorder, actuator, or
+motion was started by Codex for M8F. Full evidence is in
 `docs/codex/gesc_gaussian/validation/phase_09_first_physical_run_repair.md`.

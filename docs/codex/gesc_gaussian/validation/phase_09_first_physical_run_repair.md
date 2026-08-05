@@ -148,29 +148,51 @@ Package-wide flake8 meta-tests still report thousands of inherited formatting
 findings in the historical packages. Critical syntax/name lint on the repair
 scope passes; M8F does not reformat unrelated shared-lab source.
 
+## Operator-run on-Pi check-only evidence
+
+The operator ran the required one-time post-repair check from the standalone
+Linux-tower SSH terminal. Exact result:
+
+```text
+ros_esc_interfaces: PASS in 2.61 s
+ros_esc: PASS in 5.19 s
+turtlebot3_vehicle_nodes: PASS in 5.31 s
+three-package summary: PASS in 14.4 s
+installed Python parity: PASS (ros_esc=63, turtlebot3_vehicle_nodes=21)
+selected CLI parser compatibility: PASS (physical=False, legacy default=True)
+final check-only result: PASS
+scenario: primary
+turtlebot3 underlay/model: /home/pi/turtlebot3_ws, burger
+photoresistor/OpenCR: /dev/ttyUSB0, /dev/ttyACM0
+selected lidar: disabled
+launch construction: PASS
+Pi lab clock: 2026-08-04T20:52:29+00:00
+pigpio/serial/Vicon/ROS graph/recorder/motion: NOT STARTED
+```
+
+Read-only SSHFS inspection also found `colcon_build.rc=0` for all three
+packages. This closes the post-M8F source/build/parser check-only gate. Codex
+did not run the command and did not start any Pi process.
+
 ## Current boundary and exact next action
 
-The Linux tower sees the repaired Pi source immediately because Remote-SSH and
-this SSHFS mount address the same `/home/pi` filesystem. An already-open editor
-buffer may need reload. The Pi `build`/`install` result has **not** been rebuilt
-or requalified after M8F by Codex.
+The repaired source and installed Pi packages are now statically qualified.
+This does not demonstrate live voltage input, `/odom`/IMU, evaluation-only
+Vicon evidence, controller output, robot motion, managed shutdown, rosbag
+completion, familiar CSV export, or two-source search behavior.
 
-From the standalone Linux-tower SSH terminal, with the robot stationary and no
-other build or ROS owner active, run exactly:
+If the Pi has not rebooted and no source changed after the passing check, do
+not repeat check-only. Follow the established lab/Vicon setup, keep the floor
+clear and `Ctrl+C` immediately available, then run from the same standalone
+SSH owner:
 
 ```bash
 cd ~/ros2_ws/src/turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values
-./gesc_gaussian_two_source_voltage.bash --check-only
+./gesc_gaussian_two_source_voltage.bash
 ```
 
-The new output must include:
-
-```text
-Selected CLI parser compatibility check: PASS (physical=False, legacy default=True).
-GESC + Gaussian two-source check-only result: PASS.
-```
-
-That check must still report that no pigpio daemon, serial device, Vicon
-client, ROS graph, recorder, or motion was started. Share the complete output
-before starting another bare physical run. A passing host build and source
-transfer do not demonstrate the physical algorithm.
+Watch the printed run directory and one-second diagnostics. Motion must remain
+blocked until readiness becomes true. Stop on any sensor, odometry, Vicon,
+command, rotation, or physical-behavior error. After stopping, wait for
+readiness false, final-zero dwell, bag finalization, validation, CSV export,
+and the final retained run-directory report before closing the terminal.

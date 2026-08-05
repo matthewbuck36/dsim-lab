@@ -437,3 +437,11 @@ runtime/device/motion started. Do not start another physical run until that
 output is reviewed. After it passes, return to the ordinary one-command bare
 experiment workflow; no extra authorization file or repeated check-only gate
 is required.
+
+The operator-run post-M8F check has now passed the three-package build in 14.4
+seconds, installed Python parity, selected physical `False`, legacy-default
+`True`, device separation, and launch construction without starting any
+runtime or hardware. Do not request another check-only unless the Pi reboots,
+source changes, or diagnosis requires it. The next human action is the ordinary
+Vicon/lab SOP and bare selected wrapper. Preserve and validate the resulting
+run regardless of success or failure.

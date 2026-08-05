@@ -1255,20 +1255,33 @@ not yet been rebuilt or qualified.
 ## Current milestone
 
 **M8F SOURCE REPAIR HOST-QUALIFIED / SNAPSHOT-PI SOURCE PARITY PASS / ON-PI
-POST-REPAIR CHECK-ONLY NOT RUN / NEXT PHYSICAL ALGORITHM RUN NOT STARTED.**
+POST-REPAIR BUILD, INSTALLED PARITY, PARSER COMPATIBILITY, AND CHECK-ONLY PASS /
+NEXT PHYSICAL ALGORITHM RUN NOT STARTED.**
 
 ### Exact next action after M8F
 
-From the standalone Linux-tower SSH terminal, with no other build or ROS owner:
+The operator completed the one-time post-repair command from the standalone
+Linux-tower SSH terminal:
 
-```bash
-cd ~/ros2_ws/src/turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values
-./gesc_gaussian_two_source_voltage.bash --check-only
+```text
+ros_esc_interfaces: PASS in 2.61 s
+ros_esc: PASS in 5.19 s
+turtlebot3_vehicle_nodes: PASS in 5.31 s
+three packages: PASS in 14.4 s
+installed Python parity: PASS (63 + 21 files)
+selected CLI parser: PASS (physical=False, legacy default=True)
+scenario/launch: primary, PASS
+devices: /dev/ttyUSB0 photoresistor, /dev/ttyACM0 OpenCR
+selected lidar: disabled
+current time: 2026-08-04T20:52:29+00:00
+pigpio/serial/Vicon/ROS graph/recorder/motion: NOT STARTED
 ```
 
-Require both `Selected CLI parser compatibility check: PASS (physical=False,
-legacy default=True).` and the normal final check-only PASS, with no device or
-ROS runtime started. Share that output before another bare run. This one
-repeat supersedes the earlier M8E instruction because the Pi source changed;
-it does not create a permanent per-run check-only requirement. See
+Read-only SSHFS inspection confirmed all three `colcon_build.rc` files are
+zero. The one-time M8F rebuild gate is closed. If the Pi has not rebooted and
+source has not changed, follow the established Vicon/lab SOP and invoke bare
+`./gesc_gaussian_two_source_voltage.bash`; do not repeat check-only as a ritual.
+The next retained run must still prove sensor, `/odom`/IMU, Vicon, command,
+motion, Ctrl+C/final zero, bag/validation/CSV, and physical two-light behavior.
+See
 `docs/codex/gesc_gaussian/validation/phase_09_first_physical_run_repair.md`.

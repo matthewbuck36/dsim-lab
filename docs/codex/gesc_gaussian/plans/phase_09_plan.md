@@ -1722,3 +1722,11 @@ one new human-operated `--check-only` is required to rebuild and prove the
 installed result. After it passes, check-only remains an as-needed diagnostic,
 not a per-run ceremony. Full evidence is in
 `docs/codex/gesc_gaussian/validation/phase_09_first_physical_run_repair.md`.
+
+The required human-operated post-M8F check subsequently passed all three
+packages in 14.4 seconds, installed Python parity, selected physical `False`,
+legacy-default `True`, device separation, and launch construction. It started
+no pigpio, serial, Vicon client, ROS graph, recorder, or motion. M8F therefore
+returns to the planned ordinary lab SOP and bare selected wrapper. Live sensor,
+motion, shutdown, rosbag, CSV, and two-light behavior remain unverified until
+the next retained physical run.

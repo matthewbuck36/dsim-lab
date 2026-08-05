@@ -426,3 +426,10 @@ human-operated `--check-only` because source changed after M8E; require its new
 parser-compatibility PASS before any bare run. Do not turn that one rebuild
 into a permanent pre-run ceremony, and do not claim physical behavior until a
 new retained run proves it.
+
+The required post-M8F operator check now passes: all three packages built in
+14.4 seconds, installed parity and the selected/legacy parser contract passed,
+launch construction passed, and no runtime or hardware started. Planning may
+therefore return to the ordinary Vicon/lab SOP and bare wrapper unless the Pi
+reboots or source changes. Retain all live physical outcomes as unverified
+until that new run is finalized and validated.
