@@ -1,9 +1,18 @@
 # Unified GESC/Gaussian Recording Runs
 
-Phase 05 provides one entry point for simulation and future audited physical
-runs. It always records explicit manifest topics to a ROS 2 Humble sqlite3
+Phase 05 provides one entry point for simulation and the Phase 09 selected
+physical workflow. It always records explicit manifest topics to a ROS 2 Humble sqlite3
 bag, captures the target console, snapshots Git and parameters, holds motion
 at zero until preflight passes, and validates the finished run.
+
+> **V1 closeout:** The complete current recording, analysis, storage, physical
+> shutdown, and result boundary is in
+> [Sections 12–15 of FINAL_PROJECT_REPORT_V1.md](FINAL_PROJECT_REPORT_V1.md#12-physical-integration-commissioning-and-complete-v1-results).
+> Earlier Phase 08 execution sections below are retained as historical
+> evidence; do not resume closed roots or withheld suites. The sole recorder is
+> `record_run`, the sole validator is `validate_run`, sqlite3 remains
+> authoritative, physical stop remains manual `Ctrl+C`, and Vicon is
+> evaluation-only. Phase 10 ran no Gazebo or hardware.
 
 ## Before starting
 

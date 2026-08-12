@@ -1,5 +1,25 @@
 # Master Implementation Plan
 
+## Terminal V1 closeout record
+
+Phase 10 closes the `feature/gesc-gaussian-robustness-v1` line with the
+authoritative LaTeX-typeset
+[`FINAL_PROJECT_REPORT_V1.pdf`](../docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.pdf),
+its [`FINAL_PROJECT_REPORT_V1.tex`](../docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.tex)
+source, [Markdown audit companion](../docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.md),
+and
+[coverage matrix](../docs/codex/gesc_gaussian/validation/phase_10_report_coverage.tsv).
+This does not change the historical phase objectives or acceptance gates.
+
+The broad simulation-ready and physical-ready objectives were not achieved.
+The supported selected simulation results are v8.10 primary `11/11`, v8.11
+secondary `6/6`, v8.12 visible `14/14`, and one varied v8.12 case at `13/14`;
+the other three varied cases were withheld. The eighth physical run produced a
+selected two-basin behavioral success, but no second convergence or
+`GOAL_HOLD`, and `61/62` completeness. Phase 10 authorizes no runtime or
+hardware execution. Future robustness work belongs on a separately created
+`feature/gesc-gaussian-robustness-v2` branch above the completed V1 closeout.
+
 ## Phase ordering
 
 | Phase | Purpose | Physical robot allowed? |
@@ -333,6 +353,11 @@ Leave the package understandable and defensible.
 
 ## Required outputs
 
+- `docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.pdf` as the canonical
+  LaTeX-typeset, thesis-facing master report for the entire implementation
+  package and its results, with `.tex` source and `.md` audit companion.
+- A machine-readable coverage matrix and documentation-validation record that
+  prove the report's source and result coverage.
 - Updated repository README.
 - Algorithm math and state diagram.
 - Topic/data dictionary.

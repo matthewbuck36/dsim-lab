@@ -2,6 +2,33 @@
 
 This package is designed to be copied into the root of the existing `dsim-lab` Git repository and used with the Codex extension in VS Code.
 
+## Current entry point — Phase 10 V1 closeout
+
+Start with the LaTeX-typeset
+[`FINAL_PROJECT_REPORT_V1.pdf`](../docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.pdf)
+for the complete V1 architecture, mathematics, interfaces, parameters,
+chronology, results, limitations, and reproducibility record. The
+[`FINAL_PROJECT_REPORT_V1.tex`](../docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.tex)
+source and [Markdown audit companion](../docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.md)
+are retained beside it. Its companion
+[coverage matrix](../docs/codex/gesc_gaussian/validation/phase_10_report_coverage.tsv)
+shows which implementation-package and phase artifacts were considered.
+
+The terminal V1 evidence boundary is deliberately narrow: broad simulation
+readiness and broad physical readiness failed. Selected simulation evidence is
+v8.10 primary `11/11`, v8.11 secondary `6/6`, v8.12 visible `14/14`, and the
+first varied v8.12 case `13/14`; the remaining three varied cases were withheld
+without retry. The eighth physical run is the first retained two-basin
+behavioral success, but it ended before a second convergence or `GOAL_HOLD`
+and retained `61/62` completeness. Manual operator `Ctrl+C` remains the normal
+physical stop; `GOAL_HOLD` is not a physical process terminator.
+
+The dated Phase 08 and Phase 09 checkpoint sections below are preserved as
+historical navigation and provenance. The final report, latest handoffs, and
+live source supersede them where they describe an earlier "current" state.
+Phase 10 authorizes no Gazebo rerun, hardware command, physical transfer, or
+creation of `feature/gesc-gaussian-robustness-v2`.
+
 ## The intended outcome
 
 Implement a backward-compatible **GESC + robust Gaussian local-minimum escape system** that:

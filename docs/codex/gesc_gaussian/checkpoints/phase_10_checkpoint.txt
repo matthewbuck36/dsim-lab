@@ -1,0 +1,85 @@
+# Phase 10 checkpoint
+
+Checkpoint kind: precommit material-boundary snapshot
+Generated: 2026-08-12T17:42:02+00:00
+Base HEAD: e3dd0ef5cfa5a79ee8bed3017bf844f4f269add7
+Branch: feature/gesc-gaussian-robustness-v1
+Status: docs/codex/gesc_gaussian/status/phase_10_status.md
+Status sha256: cb042bcfcda1341a7b8c537f760147561bfab5aa92a4bd599a3d6ab640fbd640
+Plan: docs/codex/gesc_gaussian/plans/phase_10_plan.md
+Plan sha256: bd1eabd2da3d9db0354c86ed5ac6d5370f48b0f680cf7660fc86d78c4c52b288
+Unstaged diff sha256: 1ad76a4a27f82ab1a45c2525869861ea0cf31114a037c203e23ee32602547215
+Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+
+## Git state
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 195]
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/00_MASTER_IMPLEMENTATION_PLAN.md
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/01_RESEARCH_DECISIONS_AND_ASSUMPTIONS.md
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/09_RISK_REGISTER.md
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/10_PHYSICAL_EXPERIMENT_READINESS.md
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/README.md
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/10_documentation_IMPLEMENT.md
+ M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/10_documentation_PLAN.md
+ M EXPERIMENT_STORAGE.md
+ M README.md
+ M docs/codex/gesc_gaussian/implementation_sequence.md
+ M docs/codex/gesc_gaussian/interface_map.md
+ M docs/codex/gesc_gaussian/recording_runs.md
+ M docs/codex/gesc_gaussian/test_commands.md
+ M docs/codex/gesc_gaussian/topic_dictionary.md
+ M ros2_ws/src/ros_esc/README.md
+ M ros2_ws/src/ros_esc_interfaces/README.md
+ M ros2_ws/src/turtlebot3_rotating_sensor/README.md
+ M writing/README.md
+?? docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.md
+?? docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.pdf
+?? docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.tex
+?? docs/codex/gesc_gaussian/checkpoints/phase_10_checkpoint.txt
+?? docs/codex/gesc_gaussian/handoffs/phase_10_handoff.md
+?? docs/codex/gesc_gaussian/plans/phase_10_plan.md
+?? docs/codex/gesc_gaussian/status/phase_10_status.md
+?? docs/codex/gesc_gaussian/validation/phase_10_documentation_validation.md
+?? docs/codex/gesc_gaussian/validation/phase_10_report_coverage.tsv
+
+## Diff check
+unstaged and staged: pass
+
+## Changed-file summary
+ .../00_MASTER_IMPLEMENTATION_PLAN.md               |  25 ++++
+ .../01_RESEARCH_DECISIONS_AND_ASSUMPTIONS.md       |  25 ++++
+ .../06_TEST_MATRIX_AND_ACCEPTANCE_GATES.md         |  25 ++++
+ .../09_RISK_REGISTER.md                            |  18 +++
+ .../10_PHYSICAL_EXPERIMENT_READINESS.md            |  26 +++++
+ .../README.md                                      |  25 ++++
+ .../START_HERE.md                                  |  27 +++++
+ .../prompts/10_documentation_IMPLEMENT.md          |  26 +++++
+ .../prompts/10_documentation_PLAN.md               |  25 ++++
+ EXPERIMENT_STORAGE.md                              |  40 +++++++
+ README.md                                          |  59 +++++++++-
+ .../codex/gesc_gaussian/implementation_sequence.md |  22 ++++
+ docs/codex/gesc_gaussian/interface_map.md          |  31 +++++
+ docs/codex/gesc_gaussian/recording_runs.md         |  13 ++-
+ docs/codex/gesc_gaussian/test_commands.md          | 129 +++++++++++++++++++++
+ docs/codex/gesc_gaussian/topic_dictionary.md       |  14 +++
+ ros2_ws/src/ros_esc/README.md                      |  54 ++++++++-
+ ros2_ws/src/ros_esc_interfaces/README.md           |  34 ++++++
+ ros2_ws/src/turtlebot3_rotating_sensor/README.md   |  44 ++++++-
+ writing/README.md                                  |  17 ++-
+ 20 files changed, 666 insertions(+), 13 deletions(-)
+
+## Current milestone snapshot
+## Current milestone
+
+- Milestone: `M5 — validate and close V1 documentation`
+- Implementation complete: `yes`
+- Next acceptance criterion: create the one user-authorized local V1 closeout
+  commit with exact subject
+  `docs(phase10): close GESC Gaussian V1 report and evidence`; do not create the
+  V2 branch.
+
+
+
+This file describes the base HEAD and diff before the next commit; it is
+not a claim that the eventual commit contains itself or that tests passed.

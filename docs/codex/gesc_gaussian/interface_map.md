@@ -1,5 +1,36 @@
 # GESC Gaussian Interface Map
 
+> **Current V1 map (Phase 10, 2026-08-12):** The historical Phase 00 inventory
+> remains below for provenance. The final owner graph, six robust messages,
+> topic roles, simulation/physical split, and selected parameter values are in
+> [Sections 5–9 of the V1 report](FINAL_PROJECT_REPORT_V1.md#5-repository-baseline-and-final-architecture)
+> and the current [topic dictionary](topic_dictionary.md). Broad simulation and
+> physical readiness were not established.
+
+## Final V1 owner boundary
+
+| Interface/decision | Sole current owner | Boundary |
+|---|---|---|
+| raw simulation cost | `cost_function_node` | Mutually exclusive with physical adapter. |
+| physical sensor/cost | `photoresistor_node` | Records `+V`; exposes minimization `-V`; source-score calibration inert. |
+| algorithm pose | `/odom` from Gazebo or no-lidar TB3 base | Vicon never substitutes. |
+| passive physical evaluation | `odometry_node` → `/gesc_gaussian/evaluation/vicon_odom` | `nav_msgs/Odometry`; cannot gate, steer, rank, fill, or stop. |
+| augmented cost | `modified_cost_node` | Raw + active Gaussian + affine under supervisor weights. |
+| convergence | `convergence_detector_node` | Candidate/confirmation only. |
+| fill lifecycle | `gaussian_fill_node` | Estimator, designer, validator, registry, revisions. |
+| robust state/policy | `supervisor_node` | Sole eight-state/weight/escape/recenter owner. |
+| final motion | `controller_node` | Sole `/cmd_vel` publisher. |
+| recording/readiness/final zero | `record_run` | Sole recorder; sole physical rotation-authority owner. |
+| validation | `validate_run` | Sole completeness validator. |
+| simulation orchestration | `run_scenario`/`validate_robustness` | No algorithm output and no physical mode. |
+| analysis | `analyze_run`/`summarize_matrix` | Derived products; bag remains authority. |
+
+Direct launches retain `legacy`, PDE-off, observability-off compatibility
+defaults. `robust_gaussian_v1` is explicit opt-in. The selected physical graph
+uses the same shared modified-cost, history, detector, fill, supervisor,
+filter, and controller implementation; only hardware, launch, rotation, and
+evaluation adapters differ.
+
 > Historical Phase 00 snapshot. This file maps the interfaces that existed at
 > the Phase 00 audit commit; it is not a current Phase 08 interface inventory.
 > Consult current message definitions, launch files,

@@ -4,6 +4,31 @@ This package converts the laboratory discussions with Dr. Nili and Patrick into 
 
 It is intentionally **repository-adaptive**: the target architecture and behavior are fixed, but Phase 00 discovers the repository's actual node names, packages, topic conventions, launch patterns, parameters, and message definitions before Codex makes edits.
 
+## Phase 10 V1 closeout
+
+The authoritative, thesis-facing account of the completed V1 effort is the
+LaTeX-typeset [`FINAL_PROJECT_REPORT_V1.pdf`](../docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.pdf).
+Its [`FINAL_PROJECT_REPORT_V1.tex`](../docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.tex)
+source and [Markdown audit companion](../docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.md)
+are retained with it.
+It reconciles the design package, Phases 00-10, current implementation owners,
+retained evidence, reproducibility instructions, and limitations. The
+[coverage matrix](../docs/codex/gesc_gaussian/validation/phase_10_report_coverage.tsv)
+indexes the material considered by that report.
+
+V1 did **not** establish broad simulation or physical robustness. Its strongest
+selected simulation results were v8.10 primary `11/11`, v8.11 secondary `6/6`,
+and the v8.12 visible probe `14/14`; the first varied v8.12 case was `13/14`
+and the other three varied cases were withheld. The eighth retained physical
+run demonstrated the selected two-basin behavior, but stopped before a second
+convergence or `GOAL_HOLD` and passed `61/62` completeness checks. These scoped
+results must not be relabeled as broad readiness.
+
+Phase 10 is documentation-only: it authorizes no hardware run, runtime change,
+or V2 work. A future `feature/gesc-gaussian-robustness-v2` branch may start from
+the completed V1 closeout commit, but must use separately versioned plans,
+evidence, and reports rather than revising the V1 result.
+
 ## Research direction captured here
 
 The research baseline is now:

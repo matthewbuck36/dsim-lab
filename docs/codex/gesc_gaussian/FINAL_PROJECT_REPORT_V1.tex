@@ -1,0 +1,2272 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+\documentclass[
+  10pt,
+  letterpaper,
+]{article}
+\usepackage{xcolor}
+\usepackage[margin=0.72in]{geometry}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage{setspace}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\newcommand{\passthrough}[1]{#1}
+\lstset{defaultdialect=[5.3]Lua}
+\lstset{defaultdialect=[x86masm]Assembler}
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  frame=single,
+  framesep=4pt,
+  rulecolor=\color{gray!35},
+  backgroundcolor=\color{gray!4},
+  showstringspaces=false,
+  literate={–}{{\textendash}}1
+           {×}{{$\times$}}1
+           {π}{{$\pi$}}1
+           {→}{{$\rightarrow$}}1
+           {−}{{$-$}}1
+           {≤}{{$\leq$}}1
+           {≥}{{$\geq$}}1
+           {²}{{$^2$}}1
+}
+\tikzset{
+  reportblock/.style={draw=MidnightBlue!70, rounded corners=2pt,
+    fill=MidnightBlue!5, align=center, minimum height=6mm,
+    text width=25mm, font=\scriptsize},
+  reportdata/.style={draw=OliveGreen!70, rounded corners=2pt,
+    fill=OliveGreen!7, align=center, minimum height=6mm,
+    text width=25mm, font=\scriptsize},
+  reportowner/.style={draw=BrickRed!70, rounded corners=2pt,
+    fill=BrickRed!6, align=center, minimum height=6mm,
+    text width=25mm, font=\scriptsize},
+  reportarrow/.style={-{Latex[length=2mm]}, thick, draw=black!65},
+  reportevidence/.style={-{Latex[length=2mm]}, dashed, thick, draw=black!55}
+}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize GESC + Robust Gaussian V1}
+\fancyhead[R]{\footnotesize Final Project Report}
+\fancyfoot[C]{\footnotesize Page \thepage\ of \pageref*{LastPage}}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\footrulewidth}{0.3pt}
+\usepackage{longtable,booktabs,array}
+\usepackage{caption}
+\captionsetup[table]{skip=6pt}
+\newcounter{none} % for unnumbered tables
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+% fallback for those not using the hyperref driver hyperxmp:
+\makeatletter
+\@ifundefined{xmpquote}{\newcommand{\xmpquote}[1]{#1}}{}
+\makeatother
+\hypersetup{
+  pdftitle={GESC + Robust Gaussian V1 Final Project Report},
+  pdfauthor={DSIM Lab},
+  colorlinks=true,
+  linkcolor={blue},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={blue},
+  pdfcreator={LaTeX via pandoc}}
+
+\title{GESC + Robust Gaussian V1 Final Project Report}
+\usepackage{etoolbox}
+\makeatletter
+\providecommand{\subtitle}[1]{% add subtitle to \maketitle
+  \apptocmd{\@title}{\par {\large #1 \par}}{}{}
+}
+\makeatother
+\subtitle{Architecture, implementation, simulation and physical evidence, limitations, and reproducibility}
+\author{DSIM Lab}
+\date{2026-08-12}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\begin{center}
+\fbox{\begin{minipage}{0.88\textwidth}
+\centering
+\textbf{V1 evidence boundary.} This report preserves selected successes,
+failed broad-readiness gates, partial and withheld results, and the incomplete
+second-extremum physical boundary. It does not claim broad simulation or
+physical robustness and does not describe an implemented V2.
+\end{minipage}}
+\end{center}
+\vfill
+\begin{center}
+\small Canonical reader-facing artifact: \texttt{FINAL\_PROJECT\_REPORT\_V1.pdf}\\
+Authoritative source: \texttt{FINAL\_PROJECT\_REPORT\_V1.tex}\\
+Repository audit companion: \texttt{FINAL\_PROJECT\_REPORT\_V1.md}
+\end{center}
+\newpage
+
+{
+\hypersetup{linkcolor=blue}
+\setcounter{tocdepth}{3}
+\tableofcontents
+}
+\setstretch{1.04}
+\section{1. Document identity and V1 evidence boundary}\label{document-identity-and-v1-evidence-boundary}
+
+This is the repository-native content and audit companion for the canonical
+typeset \href{FINAL_PROJECT_REPORT_V1.pdf}{V1 report PDF}. Its authoritative
+typesetting source is \url{FINAL_PROJECT_REPORT_V1.tex}.
+The three synchronized representations form the thesis-facing closeout report
+for the
+\nolinkurl{DSIM\_GESC\_Gaussian\_Codex\_Implementation\_Package} effort on branch
+\nolinkurl{feature/gesc-gaussian-robustness-v1}. It was prepared on 2026-08-12 against
+parent/base HEAD \nolinkurl{e3dd0ef5cfa5a79ee8bed3017bf844f4f269add7}. After the
+documentation gates passed, the user authorized one closeout commit with the
+exact subject \texttt{docs(phase10): close GESC Gaussian V1 report and evidence}.
+Because a commit cannot embed its own object ID without changing that ID, the
+authoritative V1 boundary is the commit containing this report set with that
+exact subject; resolve it with
+\texttt{git log -1 --format=\%H -- docs/codex/gesc\_gaussian/FINAL\_PROJECT\_REPORT\_V1.pdf}.
+The future V2 branch must
+start from that containing commit, not from \nolinkurl{e3dd0ef} alone.
+
+This report covers the repository implementation, package requirements,
+source material, Phases 00-10, simulation evidence through terminal v8.12,
+physical snapshot integration and eight retained attempts, tests, artifacts,
+limitations, and reproducibility boundaries. Its machine-checkable companion
+is \href{validation/phase_10_report_coverage.tsv}{the Phase 10 coverage matrix}.
+The exact validation commands and outcomes are in
+\href{validation/phase_10_documentation_validation.md}{the Phase 10 documentation validation}.
+
+V1 is a frozen evidence record. It may be cited, reproduced within its stated
+scope, or used as a baseline, but its failed and partial results must not be
+rewritten when later work improves the algorithm. The intended future branch
+name is \nolinkurl{feature/gesc-gaussian-robustness-v2}; no V2 branch, implementation, or
+result exists in this report.
+
+\subsection{Claim vocabulary}\label{claim-vocabulary}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Term
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Meaning in this report
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Implemented & Present in the cited current source owner. It does not imply empirical success. \\
+Software gate passed & The cited build, focused test, static, or infrastructure criterion passed. \\
+Behavioral pass & The predeclared behavioral observations for that one run or scope passed. \\
+Formal pass & Every selected predicate in that exact versioned contract passed. \\
+Selected demonstration & Evidence for a named fixed layout/profile; not an unbiased robustness population. \\
+Partial & Useful behavior or infrastructure occurred, but the complete declared result did not pass. \\
+Failed & A declared gate missed. The result remains evidence and is not relabeled. \\
+Withheld/not run & Execution stopped under a declared early-stop rule; no outcome is inferred. \\
+Broad readiness & The entire predeclared simulation- or physical-ready gate passed. V1 achieved neither. \\
+\end{longtable}
+}
+
+The source-of-truth order used here is current source/tests/resolved interfaces
+and launch graph; Git state/history; completed handoffs; approved Plans; live
+status/checkpoints; Phase 00 audits and the Phase 00-05 bridge; package
+specifications; then raw transcripts or experimental memory. Historical
+documents describe their date-specific state. A later dated amendment may
+supersede a stale ``current'' sentence without altering the original file.
+
+\section{2. Executive summary and final conclusions}\label{executive-summary-and-final-conclusions}
+
+V1 built a complete, observable, opt-in GESC + Gaussian research stack while
+preserving legacy ESC behavior. The stack includes six robust typed messages,
+an explicit eight-state supervisor, synchronized basin estimation, adaptive
+anisotropic Gaussian fills, revision-aware merging, pure and assisted escape,
+bounded recentering, a sole rosbag recorder and validator, deterministic
+scenario execution, offline analysis, simulation validation contracts, and a
+selected physical two-light workflow using the same algorithm implementation.
+
+The strongest supported simulation results are narrow and useful:
+
+\begin{itemize}
+\tightlist
+\item
+  v8.10 primary fixed two-source \nolinkurl{1:4} layout: \nolinkurl{11/11} formal passes;
+\item
+  v8.11 secondary fixed two-source \nolinkurl{1:4} layout: \nolinkurl{6/6} formal passes;
+\item
+  v8.12 visible interior-anchor probe: all \nolinkurl{14/14} selected predicates passed;
+\item
+  the first varied v8.12 matrix case completed the intended science but passed
+  \nolinkurl{13/14} formal predicates because exit alignment was \nolinkurl{0.735563}, below the
+  frozen \nolinkurl{0.80} threshold; the other three matrix cases were withheld.
+\end{itemize}
+
+Those results did \textbf{not} pass the broad Phase 08 robustness gate. Earlier v1,
+v2, v3/V3A-D, V4, V5, V6, Phase 08.7, and v8-v8.9 failures remain material:
+they show activation gaps, route/topology errors, evidence defects, recovery
+nonrepeatability, and sensitivity across starts/seeds. No simulation-ready tag
+exists.
+
+The strongest physical result is the eighth retained run. It completed local
+convergence and nine-second classification, created one Gaussian fill,
+performed repulsive plus assisted escape, returned to \nolinkurl{SEARCH}, and reacquired
+a stronger-light signal. Onboard \nolinkurl{/odom} integrated \texttt{7.797691 m}; five later
+rotation-scale voltage peaks had median \texttt{1.9013 V}, \nolinkurl{4.37} times the local
+candidate estimate of about \texttt{0.435 V}. The operator stopped before a second
+convergence confirmation or \nolinkurl{GOAL\_HOLD}. Completeness was \nolinkurl{61/62}; the only
+failure was a retained cross-topic shutdown-ordering false negative involving
+one in-flight rotation status. This is first physical two-basin behavioral
+success, \textbf{not} complete second-extremum acceptance and not broad physical
+readiness.
+
+The decision-useful V1 conclusion is therefore:
+
+\begin{quote}
+The project demonstrated that one shared GESC + adaptive Gaussian pipeline
+can detect and fill an undesired light basin, escape it, and progress toward
+a stronger source in selected simulation layouts and one retained physical
+trial. V1 did not demonstrate robustness over the declared broad simulation
+envelope, arbitrary layouts/intensities, or a complete second-extremum
+physical run.
+\end{quote}
+
+The appropriate next step is a separately planned V2 study with new versioned
+evidence, not retroactive tuning or gate changes in V1.
+
+\section{3. Research motivation and supplied source material}\label{research-motivation-and-supplied-source-material}
+
+The project began with a GESC controller plus Gaussian local-minimum escape
+whose physical demonstration could orbit repeatedly, leave a basin slowly, or
+create residual minima. Dr.~Nili's direct requirements were to focus on GESC
++ Gaussian robustness, treat raw cost, Gaussian repulsion, and affine
+assistance as independently switchable, test extensively in Gazebo, cover
+different depths/strengths/source counts/close minima, and avoid presenting
+many repeated circles as success. Light remained the implemented field;
+reflective acoustic fields were future motivation only.
+
+Patrick's data discussion required the input and output of each software block,
+switching times, modes, Gaussian parameters, commands, and timestamps to be
+published as ROS data and retained in rosbag2. Console text was explicitly not
+enough. His whiteboards motivated---but did not mandate---the basin-scale fill,
+soft association, and switchable cost interpretation.
+
+The supplied material is indexed in
+\href{../../../DSIM_GESC_Gaussian_Codex_Implementation_Package/source_material/README.md}{the source-material README}
+and includes:
+
+\begin{itemize}
+\tightlist
+\item
+  \nolinkurl{meeting\_dr\_nili\_audio.m4a}, an automatic extracted transcript, and the raw
+  transcript document;
+\item
+  \nolinkurl{meeting\_patrick\_data\_collection\_raw.txt};
+\item
+  \href{../../../DSIM_GESC_Gaussian_Codex_Implementation_Package/source_material/whiteboard_gaussian_escape.jpg}{the Gaussian-escape whiteboard};
+\item
+  \href{../../../DSIM_GESC_Gaussian_Codex_Implementation_Package/source_material/whiteboard_switchable_cost_recenter.jpeg}{the switchable-cost/recenter whiteboard}; and
+\item
+  \href{../../../DSIM_GESC_Gaussian_Codex_Implementation_Package/source_material/CONSOLIDATED_MEETING_DECISIONS.md}{consolidated meeting decisions}.
+\end{itemize}
+
+Automatic transcripts may contain recognition errors. This report uses the
+consolidated decisions for attribution and labels kernel estimation,
+quadratic fitting, fill escalation, exact state sequencing, and recenter
+mechanics as adopted engineering hypotheses rather than direct quotations or
+immutable meeting mandates.
+
+\section{4. Requirements, assumptions, and decision traceability}\label{requirements-assumptions-and-decision-traceability}
+
+The fixed invariants were: preserve the raw minimization sign and units;
+autonomous escape with bounded safe motion; avoid known minima; classify the
+goal using evidence unavailable to neither simulator nor physical controller;
+record complete structured data; switch cost components independently;
+preserve selectable legacy behavior; and keep simulation/physical algorithm
+semantics shared.
+
+The implemented cost contract is
+
+\[
+J_{\mathrm{aug}}(x,t)=
+w_s(t)J_{\mathrm{raw}}(x)+
+w_g(t)\sum_i F_i(x)+
+w_a(t)J_{\mathrm{affine}}(x).
+\]
+
+The physical adapter records sensor voltage \nolinkurl{+V} and exposes minimization cost
+\nolinkurl{-V}; the simulator retains its model-relative cost. The sensor continues to
+be sampled and logged while \nolinkurl{w\_s=0}. Ground-truth source geometry, declared
+roles, Vicon, and evaluator topology never enter the controller.
+
+\subsection{Policy and amendments}\label{policy-and-amendments}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Boundary
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+V1 treatment
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Level A contradiction & Stop for objective, sign/unit, ownership, parity, safety, evidence-integrity, physical-authorization, or overlapping-user-change conflicts. \\
+Level B correction & Allow a bounded, tested correction that preserves the objective and gates; record the failed evidence and exact amendment. \\
+Level C failure & Close that fixed experiment version honestly, retain every result, and require a separately planned next version. \\
+Legacy behavior & \nolinkurl{algorithm\_profile=legacy} remains the direct-launch default; robust behavior is opt-in. \\
+Broad Phase 08 gate & Failed and never converted into a selected-demonstration claim. \\
+Phase 09 amendment & Allowed selected-scenario source integration and later explicitly authorized motion without a broad readiness tag. \\
+V2 & Future branch and new evidence only; V1 files and outcomes remain immutable. \\
+\end{longtable}
+}
+
+The main bounded corrections included ROS launch DOUBLE typing and signal-safe
+shutdown (Phase 04), recorder/parameter/readiness sequencing (Phases 05-08),
+real Gazebo contact/delay evidence (07.5), scenario/evaluator contracts and
+runner faults (Phase 08), and physical clock/startup/executor/rotation races
+(Phase 09). Each correction received new versioned evidence; none changed an
+already-observed failure into a pass.
+
+\section{5. Repository baseline and final architecture}\label{repository-baseline-and-final-architecture}
+
+Phase 00 found three canonical simulation packages:
+
+\begin{itemize}
+\tightlist
+\item
+  \nolinkurl{ros\_esc}: existing algorithm, cost, filter, controller, Gaussian,
+  recording, scenario, validation, and analysis owners;
+\item
+  \nolinkurl{ros\_esc\_interfaces}: the only custom ROS interface package; and
+\item
+  \nolinkurl{turtlebot3\_rotating\_sensor}: Gazebo model, launch graph, worlds, and
+  wrappers.
+\end{itemize}
+
+The physical source is a read-only snapshot at
+\nolinkurl{/home/mattb/physical\_TB3\_files\_snapshot/pi/ros2\_ws/src}, containing
+\nolinkurl{ros\_esc}, \nolinkurl{ros\_esc\_interfaces}, and \nolinkurl{turtlebot3\_vehicle\_nodes}. Phase 09
+extended the same algorithm owners and added only hardware/evaluation/launch
+adapters. The current local snapshot has 347 regular files; the retained M8L
+inventory has 435 rows including directories. Phase 10 did not access the live
+Pi filesystem.
+
+\subsection{Simulation graph}\label{simulation-graph}
+
+\begin{figure}[htbp]
+\centering
+\resizebox{0.95\linewidth}{!}{%
+\begin{tikzpicture}[node distance=8mm and 11mm]
+  \node[reportdata] (world) {Gazebo world\\and light model};
+  \node[reportblock, right=of world] (cost) {\texttt{cost\_function}};
+  \node[reportdata, right=of cost] (raw) {raw cost and\\source cost};
+  \node[reportblock, right=of raw] (modified) {\texttt{modified\_cost}};
+  \node[reportblock, right=of modified] (filter) {existing\\GESC filter};
+  \node[reportowner, right=of filter] (controller) {sole command owner\\\texttt{controller\_node}};
+  \node[reportdata, right=of controller] (cmd) {\texttt{/cmd\_vel}};
+
+  \node[reportdata, below=12mm of world] (odom) {Gazebo\\\texttt{/odom}};
+  \node[reportblock, right=of odom] (history) {pose and PDE\\history owners};
+  \node[reportblock, right=of history] (conv) {convergence\\detector};
+  \node[reportowner, right=of conv] (supervisor) {sole robust\\supervisor};
+  \node[reportowner, right=of supervisor] (fill) {Gaussian fill\\owner};
+  \node[reportowner, right=of fill] (recorder) {sole \texttt{record\_run}\\rosbag owner};
+  \node[reportblock, right=of recorder] (analysis) {\texttt{validate\_run}\\and analysis};
+
+  \draw[reportarrow] (world) -- (cost);
+  \draw[reportarrow] (cost) -- (raw);
+  \draw[reportarrow] (raw) -- (modified);
+  \draw[reportarrow] (modified) -- (filter);
+  \draw[reportarrow] (filter) -- (controller);
+  \draw[reportarrow] (controller) -- (cmd);
+  \draw[reportarrow] (cmd) to[bend left=28] (world);
+  \draw[reportarrow] (odom) -- (history);
+  \draw[reportarrow] (history) -- (conv);
+  \draw[reportarrow] (conv) -- (supervisor);
+  \draw[reportarrow] (supervisor) -- (fill);
+  \draw[reportarrow] (fill) -- (modified);
+  \draw[reportarrow] (supervisor) -- (modified);
+  \draw[reportarrow] (supervisor) -- (controller);
+  \draw[reportevidence] (raw) -- (recorder);
+  \draw[reportevidence] (odom) to[bend right=12] (recorder);
+  \draw[reportevidence] (fill) -- (recorder);
+  \draw[reportevidence] (supervisor) to[bend right=12] (recorder);
+  \draw[reportevidence] (controller) -- (recorder);
+  \draw[reportarrow] (recorder) -- (analysis);
+\end{tikzpicture}%
+}
+\caption{Canonical simulation ownership and evidence graph. Solid arrows are
+runtime/control flow; dashed arrows are recorder evidence inputs. The graph has
+one supervisor, one command owner, one recorder, and one validator path.}
+\label{fig:simulation-architecture}
+\end{figure}
+
+\nolinkurl{gazebo.launch.xml} is the single central launch. Cost owners are mutually
+exclusive, the robust supervisor is the sole robust state owner, and
+\nolinkurl{custom\_controller} remains the sole \nolinkurl{/cmd\_vel} owner. The supervisor supplies
+weights, authorization, and bounded supervisory contribution; it does not
+create a second velocity publisher.
+
+\subsection{Selected physical graph}\label{selected-physical-graph}
+
+\begin{figure}[htbp]
+\centering
+\resizebox{0.95\linewidth}{!}{%
+\begin{tikzpicture}[node distance=8mm and 10mm]
+  \node[reportdata] (light) {rotating\\photoresistor};
+  \node[reportblock, right=of light] (adapter) {physical sensor/\\cost adapter};
+  \node[reportblock, right=of adapter] (modified) {shared modified-\\cost + GESC path};
+  \node[reportblock, right=of modified] (filter) {shared filter};
+  \node[reportowner, right=of filter] (controller) {sole command owner\\\texttt{controller\_node}};
+  \node[reportdata, right=of controller] (cmd) {\texttt{/cmd\_vel}};
+
+  \node[reportblock, below=12mm of light] (opencr) {OpenCR wheel +\\IMU bringup};
+  \node[reportdata, right=of opencr] (odom) {algorithm pose\\\texttt{/odom}};
+  \node[reportowner, right=of odom] (gaussian) {shared Gaussian\\estimator/fill};
+  \node[reportowner, right=of gaussian] (supervisor) {shared robust\\supervisor};
+  \node[reportowner, right=of supervisor] (recorder) {\texttt{record\_run}\\readiness/rotation};
+  \node[reportblock, right=of recorder] (rotation) {rotation owner};
+
+  \node[reportblock, below=12mm of odom] (vicon) {Vicon\\server/client};
+  \node[reportdata, right=of vicon] (eval) {evaluation-only\\Vicon odometry};
+
+  \draw[reportarrow] (light) -- (adapter) node[midway, above, font=\scriptsize] {$+V$};
+  \draw[reportarrow] (adapter) -- (modified) node[midway, above, font=\scriptsize] {$-V$ cost};
+  \draw[reportarrow] (modified) -- (filter);
+  \draw[reportarrow] (filter) -- (controller);
+  \draw[reportarrow] (controller) -- (cmd);
+  \draw[reportarrow] (opencr) -- (odom);
+  \draw[reportarrow] (odom) -- (gaussian);
+  \draw[reportarrow] (odom) -- (modified);
+  \draw[reportarrow] (gaussian) -- (supervisor);
+  \draw[reportarrow] (supervisor) -- (filter);
+  \draw[reportarrow] (recorder) -- (rotation);
+  \draw[reportarrow] (rotation) to[bend right=17] (adapter);
+  \draw[reportarrow] (recorder) -- (controller);
+  \draw[reportarrow] (vicon) -- (eval);
+  \draw[reportevidence] (eval) -- (recorder) node[midway, below, font=\scriptsize] {evaluation only};
+  \draw[reportevidence] (adapter) -- (recorder);
+  \draw[reportevidence] (odom) to[bend right=13] (recorder);
+  \draw[reportevidence] (supervisor) -- (recorder);
+  \draw[reportevidence] (controller) -- (recorder);
+\end{tikzpicture}%
+}
+\caption{Selected physical graph. Wheel/IMU-backed \texttt{/odom} is the
+algorithm pose; Vicon is passive evaluation only. The recorder owns readiness,
+rotation authorization, and final-zero coordination.}
+\label{fig:physical-architecture}
+\end{figure}
+
+Wheel/IMU-backed \nolinkurl{/odom} is the sole algorithm pose. Vicon publishes
+\nolinkurl{nav\_msgs/msg/Odometry} on \nolinkurl{/gesc\_gaussian/evaluation/vicon\_odom} for passive
+evaluation and cannot gate or stop motion. The selected open field has no
+autonomous obstacle or wall avoidance. Arrival and run end are manual
+operator \nolinkurl{Ctrl+C}; \nolinkurl{GOAL\_HOLD} is not a physical process terminator.
+
+\subsection{Legacy and robust selection}\label{legacy-and-robust-selection}
+
+Direct Gazebo and physical launch files default to \nolinkurl{legacy} and disabled PDE/
+robust extensions. The selected wrappers explicitly choose
+\nolinkurl{robust\_gaussian\_v1}, PDE extensions, typed observability, and recording
+readiness. Legacy arrays, topics, wrappers, configs, and historical Heavy-Ball
+examples remain present. Heavy-Ball is archive/reproduction context, not the
+active GESC + Gaussian V1 method.
+
+\section{6. GESC and robust Gaussian mathematics}\label{gesc-and-robust-gaussian-mathematics}
+
+\subsection{6.1 Cost and sign contract}\label{cost-and-sign-contract}
+
+The controller is formulated around minimization. For channel \nolinkurl{c}, the
+observable cost pipeline is
+
+\[
+J_{\mathrm{aug},c}(x,t)=w_s(t)J_{\mathrm{raw},c}(x,t)
++w_g(t)J_{\mathrm{fill},c}(x,t)
++w_a(t)J_{\mathrm{affine},c}(x,t).
+\]
+
+\nolinkurl{modified\_cost\_node} is the sole composer. It never changes the meaning of the
+raw term. In simulation, \nolinkurl{J\_raw} has the units and scale of the selected light
+model. On the physical robot, \nolinkurl{photoresistor\_node} records
+\nolinkurl{raw\_sensor\_value=+V} and publishes \nolinkurl{raw\_cost=-V}; therefore a stronger light
+is a lower raw cost. \nolinkurl{source\_score} is a separate classification quantity and
+was deliberately invalid/NaN in the final physical profile because physical
+source-score calibration was inert. Raw voltage and \nolinkurl{-V} cost remained valid.
+
+The state-dependent weights are fixed by
+\href{../../../ros2_ws/src/ros_esc/ros_esc/supervisor_node/state_machine.py}{\nolinkurl{state\_machine.py}}:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1667}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2222}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2222}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2222}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1667}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+State
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+\nolinkurl{w\_s}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+\nolinkurl{w\_g}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+\nolinkurl{w\_a}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Interpretation
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\nolinkurl{SEARCH} & 1 & 1 & 0 & Follow the raw field while retaining fills. \\
+\nolinkurl{VERIFY\_EXTREMUM} & 1 & 1 & 0 & Hold the same objective while classifying a candidate. \\
+\nolinkurl{DESIGN\_OR\_MERGE\_FILL} & 0 & 1 & 0 & Remove raw attraction while the fill is made authoritative. \\
+\nolinkurl{ESCAPE\_REPULSE} & 0 & 1 & 0 & Leave under Gaussian repulsion. \\
+\nolinkurl{ESCAPE\_ASSIST} & 0 & 1 & 1 & Add the bounded affine escape direction. \\
+\nolinkurl{RECENTER} & 0 & 1 & 0 & Supervisor owns bounded return motion; raw attraction stays off. \\
+\nolinkurl{GOAL\_HOLD} & 0 & 1 & 0 & Zero-motion terminal algorithm state. \\
+\nolinkurl{FAILSAFE} & 0 & 0 & 0 & Zero all objective components and command motion to zero. \\
+\end{longtable}
+}
+
+The affine contribution implemented in
+\href{../../../ros2_ws/src/ros_esc/ros_esc/modified_cost_node/modified_cost_script.py}{\nolinkurl{modified\_cost\_script.py}}
+is
+
+\[
+J_{\mathrm{affine}}(x,t)=-s\,b(t)^\mathsf{T}(x-x_a),
+\qquad b(t)=b_0e^{-\lambda(t-t_a)},
+\]
+
+where \nolinkurl{s=affine\_direction\_sign}, \nolinkurl{x\_a} is the fill/approach anchor, and \nolinkurl{b\_0}
+comes from PDE history or the odometry fallback. V1 selected \nolinkurl{s=+1}, gain
+\nolinkurl{0.50}, decay \nolinkurl{5e-7}, and maximum age \texttt{35 s}. A stale/degenerate direction is
+invalid rather than silently reused.
+
+\subsection{6.2 GESC path}\label{gesc-path}
+
+The existing GESC owners were extended, not replaced. The rotating sensor and
+pose owners feed \nolinkurl{cost\_function\_node}/the physical adapter and \nolinkurl{pde\_history};
+\nolinkurl{modified\_cost\_node} emits the selected objective; \nolinkurl{filter\_node} performs the
+existing demodulation/filter dynamics; and \nolinkurl{controller\_node} converts the
+filtered estimate plus any supervisor contribution into the sole \nolinkurl{/cmd\_vel}.
+\nolinkurl{GescDiagnostics} records filter input/output, state before/derivative/after,
+and dither phase/amplitude/frequency. \nolinkurl{ControlDiagnostics} records unsaturated
+GESC, supervisor, combined, final, saturation, limit, and gain values.
+
+This separation matters empirically. A roughly three-second rotating-sensor
+cycle can produce bounded phase-locked command ripple; it is not by itself an
+escape event. State and event messages, rather than visual motion alone,
+identify convergence, fill creation, escape, and goal classification.
+
+\subsection{6.3 Basin estimator}\label{basin-estimator}
+
+\href{../../../ros2_ws/src/ros_esc/ros_esc/gaussian_fill_node/gaussian_fill_script.py}{\nolinkurl{gaussian\_fill\_script.py}}
+synchronizes pose and source cost within \nolinkurl{sample\_sync\_tolerance\_sec}, rejects
+nonfinite, stale, implausibly fast, and MAD-outlier samples, and retains a
+bounded window. Let accepted samples be \nolinkurl{(x\_k,J\_k)}, normalized costs be
+\texttt{\textbackslash widetilde J\_k}, position bandwidth be \nolinkurl{h}, and cost temperature be \nolinkurl{T\_J}.
+The stable joint spatial/cost kernel is
+
+\[
+q_k=\exp\!\left(-\frac{\lVert x_k-\mu\rVert^2}{2h^2}
+-\frac{\widetilde J_k}{T_J}\right),\qquad
+\bar q_k=\frac{q_k}{\sum_jq_j},
+\]
+
+\[
+\mu=\sum_k\bar q_kx_k,\qquad
+\Sigma=\sum_k\bar q_k(x_k-\mu)(x_k-\mu)^\mathsf{T}.
+\]
+
+Mean-shift iterations refine the center; covariance eigenvalues are clipped to
+the configured finite interval. The implementation also fits a regularized
+local quadratic
+
+\[
+\hat J(x)=c+g^\mathsf{T}(x-\mu)
++\tfrac12(x-\mu)^\mathsf{T}H(x-\mu)
+\]
+
+with ridge \nolinkurl{quadratic\_ridge\_lambda}. Excess condition number, insufficient
+samples, shallow basin depth, nonpositive curvature, or invalid geometry lowers
+confidence or rejects the design. Candidate-informed mode carries the
+pretrigger raw-cost distribution into amplitude design; evaluator topology and
+ground truth are not inputs.
+
+\subsection{6.4 Adaptive fill design and validation}\label{adaptive-fill-design-and-validation}
+
+For fill \nolinkurl{i}, V1 uses an anisotropic positive cost lift
+
+\[
+F_i(x)=A_i\exp\!\left[-\tfrac12
+(x-\mu_i)^\mathsf{T}\Sigma_i^{-1}(x-\mu_i)\right].
+\]
+
+The covariance is scaled, then its principal widths are clipped between the
+sigma floor and ceiling. Amplitude combines measured basin depth and local
+curvature, then is clipped. Selected v8.12 used covariance scale \nolinkurl{2.5}, sigma
+range \texttt{0.50--1.25 m}, depth scale \nolinkurl{1.5}, amplitude maximum \nolinkurl{6.25} cost units,
+and candidate-informed scale \nolinkurl{1.25}.
+
+Before publication, a finite grid over the support checks that the augmented
+surface no longer retains the prohibited local minimum. A failing design may
+increase amplitude by \nolinkurl{1.5} and width by \nolinkurl{1.25}, up to five escalations; a
+still-invalid design produces \nolinkurl{FILL\_DESIGN\_FAILED}, not a nominal fill. The
+reported support and exit geometry are
+
+\[
+r_{\mathrm{support}}=k_s\sigma_{\max},\qquad
+r_{\mathrm{exit}}=k_e\sigma_{\max},
+\]
+
+with selected \nolinkurl{k\_s=3.0} and \nolinkurl{k\_e=2.70}. The supervisor requires radial exit
+and a one-second hold before declaring the basin left.
+
+\subsection{6.5 Association, merge, revision, and confidence}\label{association-merge-revision-and-confidence}
+
+New candidates are compared with active fills using bandwidth/radius and a
+soft association probability. \nolinkurl{minimum\_merge\_probability=0.60} is the soft
+merge gate; geometric hard-overlap protection prevents two active fills from
+silently representing the same basin. A merge creates a new revision and
+marks the previous representation superseded. Fill identity (\nolinkurl{fill\_id}),
+cluster identity, revision, active/superseded flags, fit residual, condition
+number, sample count, confidence, and escalation count are published in
+\nolinkurl{GaussianFill}. This makes update history reconstructable from the bag.
+
+The low-confidence threshold is \nolinkurl{0.60}. Low confidence is observable and can
+block unsafe assumptions; it is not converted into false precision. Numeric
+safeguards include finite checks, positive-duration and nonnegative-range
+validation, eigenvalue clipping, a \nolinkurl{1e-9} grid-minimum tolerance, bounded
+sample buffers, explicit validity flags, and zero-output fallbacks.
+
+\section{7. Hybrid state machine and safety behavior}\label{hybrid-state-machine-and-safety-behavior}
+
+The supervisor owns one eight-state machine. The message constants and Python
+enum intentionally match.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{0.96\textwidth}{!}{%
+\begin{tikzpicture}[node distance=12mm and 22mm,
+  state/.style={reportblock, text width=31mm, minimum height=9mm},
+  terminal/.style={reportowner, text width=31mm, minimum height=9mm},
+  every edge quotes/.style={font=\scriptsize, align=center}]
+  \node[circle, fill=black, inner sep=2.2pt] (start) {};
+  \node[state, right=of start] (search) {\texttt{SEARCH}};
+  \node[state, right=of search] (verify) {\texttt{VERIFY\_EXTREMUM}};
+  \node[terminal, above right=10mm and 22mm of verify] (goal) {\texttt{GOAL\_HOLD}\\zero command};
+  \node[state, below right=10mm and 22mm of verify] (design) {\texttt{DESIGN\_OR\_MERGE\_FILL}};
+  \node[state, below=of design] (repulse) {\texttt{ESCAPE\_REPULSE}};
+  \node[state, left=of repulse] (assist) {\texttt{ESCAPE\_ASSIST}};
+  \node[state, left=of assist] (recenter) {\texttt{RECENTER}};
+  \node[terminal, below=18mm of assist] (failsafe) {\texttt{FAILSAFE}\\zero command};
+
+  \draw[reportarrow] (start) -- (search) node[midway, above, font=\scriptsize] {ready + fresh};
+  \draw[reportarrow] (search) -- (verify) node[midway, above, font=\scriptsize] {qualified candidate};
+  \draw[reportarrow] (verify) -- (goal) node[midway, above, sloped, font=\scriptsize] {target};
+  \draw[reportarrow] (verify) -- (design) node[midway, below, sloped, font=\scriptsize] {undesired};
+  \draw[reportarrow] (verify) to[bend left=28] node[below, font=\scriptsize] {reject/reset} (search);
+  \draw[reportarrow] (design) -- (repulse) node[midway, right, font=\scriptsize] {fill ready};
+  \draw[reportarrow] (repulse) -- (assist) node[midway, above, font=\scriptsize] {stall};
+  \draw[reportarrow] (repulse) to[bend left=20] node[above, sloped, font=\scriptsize] {exit; recenter on} (recenter);
+  \draw[reportarrow] (assist) -- (recenter) node[midway, above, font=\scriptsize] {exit; recenter on};
+  \draw[reportarrow] (repulse) to[bend right=42] node[above, font=\scriptsize] {exit; recenter off} (search);
+  \draw[reportarrow] (assist) to[bend right=20] node[above, font=\scriptsize] {exit; recenter off} (search);
+  \draw[reportarrow] (recenter) to[bend left=18] node[left, font=\scriptsize] {target + dwell} (search);
+
+  \draw[reportevidence] (search) -- (failsafe);
+  \draw[reportevidence] (verify) -- (failsafe);
+  \draw[reportevidence] (design) -- (failsafe);
+  \draw[reportevidence] (repulse) -- (failsafe);
+  \draw[reportevidence] (assist) -- (failsafe);
+  \draw[reportevidence] (recenter) -- (failsafe);
+  \path[reportarrow] (goal) edge[loop right] node[right, font=\scriptsize] {process continues} (goal);
+  \path[reportarrow] (failsafe) edge[loop below] node[below, font=\scriptsize] {until restart} (failsafe);
+\end{tikzpicture}%
+}
+\caption{Eight-state robust-supervisor graph. Dashed transitions represent
+stale/invalid-input or timeout paths to \texttt{FAILSAFE}; the following table
+retains the complete per-state transition contract.}
+\label{fig:state-machine}
+\end{figure}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+State
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Required behavior
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Principal exit/timeout
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\nolinkurl{SEARCH} & Raw+fill objective, observe convergence, reset stale search epochs where selected. & Qualified candidate; stale/invalid input; external stop. \\
+\nolinkurl{VERIFY\_EXTREMUM} & Hold candidate evidence for complete rotations; compare counted candidates or calibrated score. & Goal, undesired candidate, rejection, or \texttt{12 s} verification timeout. \\
+\nolinkurl{DESIGN\_OR\_MERGE\_FILL} & Freeze raw attraction, request one design/merge, await an attributable fill event. & Valid fill or \texttt{5 s} design timeout/failure. \\
+\nolinkurl{ESCAPE\_REPULSE} & Use active fill only; measure radius/progress and maintain controller ownership. & Exit+\texttt{1 s} hold, stall, or selected \texttt{35 s} limit. \\
+\nolinkurl{ESCAPE\_ASSIST} & Add bounded affine/supervisor-owned assist when selected and repulsion stalls. & Exit+hold or escape timeout. \\
+\nolinkurl{RECENTER} & Bounded supervisor motion to a safe target while avoiding fill support and walls. & Position+dwell or \texttt{30 s} timeout. Disabled in selected v8.12/physical profile. \\
+\nolinkurl{GOAL\_HOLD} & Publish zero-motion state after goal evidence. & Manual/external shutdown; it does not terminate recording. \\
+\nolinkurl{FAILSAFE} & Set weights and command to zero; publish attributable failure. & Explicit process shutdown/restart only. \\
+\end{longtable}
+}
+
+Selected counted-candidate classification assumes exactly two sources and one
+fillable local candidate. It gathers three full \texttt{3 s} rotations per candidate
+and retains six rotations of pretrigger evidence; median/MAD statistics rank
+the second candidate against the first. This is an experimental contract, not
+general unknown-source inference.
+
+Safety is layered:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Startup requires the selected profile, compatible PDE/controller owners,
+  fresh pose/sensor/state, and---on physical runs---recorder readiness.
+\item
+  Stale pose, sensor, state, command, recorder heartbeat, or rotation lease
+  leads to a bounded zero/failsafe path.
+\item
+  Only \nolinkurl{controller\_node} publishes \nolinkurl{/cmd\_vel}; the supervisor contributes to
+  that owner rather than publishing a competing command.
+\item
+  \nolinkurl{zero\_command\_on\_shutdown=True} and the managed recorder revoke readiness
+  and rotation, publish stop, wait for stable base/rotation zero, then stop
+  target and bag.
+\item
+  The selected physical environment is open field and has no autonomous
+  obstacle avoidance. A human operator remains responsible for the e-stop,
+  clearance, and manual \nolinkurl{Ctrl+C}.
+\end{enumerate}
+
+\section{8. ROS 2 implementation reference}\label{ros-2-implementation-reference}
+
+\subsection{8.1 Runtime owners and entry points}\label{runtime-owners-and-entry-points}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Owner
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Responsibility
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Installed entry point(s)
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\nolinkurl{cost\_function\_node} / physical \nolinkurl{photoresistor\_node} & Raw sensor and raw-cost source; exactly one active cost owner. & \nolinkurl{cost\_function\_node}; vehicle \nolinkurl{photoresistor\_node} \\
+\nolinkurl{pde\_history\_node}, \nolinkurl{pde\_cost\_history\_node} & Pose/cost history used by GESC and affine direction. & same names \\
+\nolinkurl{convergence\_detector\_node} & Qualified candidate and confirmation events. & \nolinkurl{convergence\_detector\_node} \\
+\nolinkurl{gaussian\_fill\_node} & Sample synchronization, basin estimation, design, validation, registry. & \nolinkurl{gaussian\_fill\_node} \\
+\nolinkurl{modified\_cost\_node} & Weighted raw+Gaussian+affine composition. & \nolinkurl{modified\_cost\_node} \\
+\nolinkurl{filter\_node} & Existing GESC demodulation/filter dynamics. & \nolinkurl{filter\_node} \\
+\nolinkurl{supervisor\_node} & Sole robust state, weights, fill requests, escape/recenter policy. & \nolinkurl{supervisor\_node} \\
+\nolinkurl{controller\_node} & Sole final command and \nolinkurl{/cmd\_vel} publisher. & \nolinkurl{controller\_node} \\
+\nolinkurl{record\_run} / \nolinkurl{validate\_run} & Sole managed recorder and sole completeness validator. & \nolinkurl{record\_run}, \nolinkurl{validate\_run} \\
+\nolinkurl{run\_scenario} / \nolinkurl{validate\_robustness} & Simulation-only deterministic orchestration and gate evaluation. & \nolinkurl{run\_scenario}, \nolinkurl{validate\_robustness} \\
+bag analysis & Synchronized tables, CSVs, plots, run/matrix summaries. & \nolinkurl{analyze\_run}, \nolinkurl{summarize\_matrix} \\
+physical base/Vicon/rotation adapters & No-lidar base \nolinkurl{/odom}, passive Vicon odometry, recorder-authorized sensor rotation. & vehicle bringup, \nolinkurl{odometry\_node}, \nolinkurl{phase09\_rotation\_node} \\
+\end{longtable}
+}
+
+The canonical simulation launch is
+\href{../../../ros2_ws/src/turtlebot3_rotating_sensor/launch/gazebo.launch.xml}{\nolinkurl{gazebo.launch.xml}}.
+It has compatibility defaults \nolinkurl{algorithm\_profile=legacy},
+\nolinkurl{use\_pde\_extensions=False}, and \nolinkurl{enable\_observability=False}; a scenario or
+wrapper must opt into \nolinkurl{robust\_gaussian\_v1}. The selected physical launch is
+\nolinkurl{turtlebot3\_vehicle\_nodes/launch/gesc\_gaussian\_two\_source.launch.xml} in the
+read-only snapshot, called by
+\nolinkurl{gesc\_gaussian\_two\_source\_voltage.bash}. Direct physical defaults are likewise
+legacy/inert; the wrapper supplies the robust profile.
+
+\subsection{8.2 Typed messages}\label{typed-messages}
+
+Six robust messages were added; five pre-existing stamped/timekeeper messages
+remain byte-compatible.
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Message
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Complete semantic payload
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\nolinkurl{AlgorithmState} & Current/previous enum and names, transition reason, run/profile, elapsed time, active fill/escape geometry, radial progress, stall, safe direction, recenter target, weights, failsafe, validity/source timestamps. \\
+\nolinkurl{AlgorithmEvent} & Typed configuration/capability/state/convergence/fill/goal/escape/recenter/timeout/failsafe events, state, fill ID, reason/detail, named numeric values, validity/source timestamps. \\
+\nolinkurl{GaussianFill} & Frame, fill/cluster/revision, center, amplitude, covariance, principal widths/orientation, support/exit radii, confidence, samples, residual/condition/escalations, active/superseded and validity. \\
+\nolinkurl{CostBreakdown} & Source mode/name/channels; raw and filtered sensor; raw cost; source score; Gaussian, affine, and augmented costs; three weights and validity flags. \\
+\nolinkurl{GescDiagnostics} & Filter input/output/state derivative path plus dither phase, amplitude, frequency and validity. \\
+\nolinkurl{ControlDiagnostics} & GESC, supervisor, combined, and final six-axis commands; saturation, limits, \nolinkurl{k\_vx}, \nolinkurl{k\_wz}, validity. \\
+Legacy set & \nolinkurl{StampedFloat64}, \nolinkurl{StampedFloat64MultiArray}, \nolinkurl{StampedString}, \nolinkurl{StampedTransformMultiArray}, and \nolinkurl{Timekeeper} remain available for old consumers. \\
+\end{longtable}
+}
+
+\subsection{8.3 Canonical topics and role boundaries}\label{canonical-topics-and-role-boundaries}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Topic
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Type/role
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Owner/boundary
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\nolinkurl{/odom} & \nolinkurl{nav\_msgs/Odometry}; algorithm pose & Gazebo/base only; sole physical control pose. \\
+\nolinkurl{/cmd\_vel} & final base command & \nolinkurl{controller\_node} only. \\
+\nolinkurl{/gesc\_gaussian/source\_cost} & algorithm source-cost stream & active simulation/physical cost owner. \\
+\nolinkurl{/gesc\_gaussian/cost\_breakdown} & \nolinkurl{CostBreakdown} & cost/modified-cost observability. \\
+\nolinkurl{/gesc\_gaussian/gesc\_diagnostics} & \nolinkurl{GescDiagnostics} & filter owner. \\
+\nolinkurl{/gesc\_gaussian/control\_diagnostics} & \nolinkurl{ControlDiagnostics} & controller owner. \\
+\nolinkurl{/gesc\_gaussian/convergence\_status} & legacy-compatible convergence status & detector owner. \\
+\nolinkurl{/gesc\_gaussian/fill\_requests} & attributable fill request & supervisor to fill owner. \\
+\nolinkurl{/gesc\_gaussian/gaussian\_fills} & \nolinkurl{GaussianFill} & fill registry owner. \\
+\nolinkurl{/gesc\_gaussian/algorithm\_state} & \nolinkurl{AlgorithmState} & supervisor owner. \\
+\nolinkurl{/gesc\_gaussian/algorithm\_events} & \nolinkurl{AlgorithmEvent} & attributable publishers; state semantics owned by supervisor. \\
+\nolinkurl{/gesc\_gaussian/supervisor\_command} & bounded contribution & supervisor to sole controller. \\
+\nolinkurl{/gesc\_gaussian/recording\_ready} & managed-run heartbeat & \nolinkurl{record\_run}. \\
+\nolinkurl{/gesc\_gaussian/stop\_requested} & managed stop & \nolinkurl{record\_run}/operator shutdown path. \\
+\nolinkurl{/gesc\_gaussian/rotation\_authorized} & physical rotation lease & \nolinkurl{record\_run} only. \\
+\nolinkurl{/gesc\_gaussian/evaluation/vicon\_odom} & \nolinkurl{nav\_msgs/Odometry}; passive evaluation & \nolinkurl{odometry\_node}; never a controller input or motion gate. \\
+simulation delayed/contact topics & disturbance/evaluation support & scenario support only; default off. \\
+\end{longtable}
+}
+
+QoS details that affect evidence are installed with the recorder manifest and
+\href{../../../ros2_ws/src/ros_esc/ros_esc/experiment_recording/qos_overrides.yaml}{\nolinkurl{qos\_overrides.yaml}}.
+The bag is the authority: console logs and derived CSVs cannot replace a
+required typed topic.
+
+\section{9. Complete parameter reference}\label{complete-parameter-reference}
+
+This section distinguishes node defaults, direct-launch compatibility
+defaults, and selected experiment overrides. Numeric constraints are enforced
+in their cited owner; durations and scales are finite and normally positive,
+counts are integer/nonnegative or positive as stated, probabilities are in
+\nolinkurl{[0,1]}, covariance/sigma values are positive, and topic/profile strings must
+resolve. The exhaustive launch forwarding surface remains in the canonical
+XML; the tables below cover every parameter that changes the documented robust
+algorithm, evidence, or selected physical behavior.
+
+\subsection{9.1 Convergence defaults and selected V1 values}\label{convergence-defaults-and-selected-v1-values}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2143}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2857}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2857}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2143}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Parameter
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Node/direct default
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Selected v8.12 and physical
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Unit/constraint
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\nolinkurl{k\_periods} & 20 & inherited & periods; positive int \\
+\nolinkurl{threshold} / launch \nolinkurl{convergence\_threshold} & \nolinkurl{0.1} / \nolinkurl{0.2} & launch-selected model value & cost/filter scale; positive \\
+\nolinkurl{decay\_rate} & 0.15 & inherited & positive \\
+\nolinkurl{n\_buffer}, \nolinkurl{omega} & 2000, 5.0 & inherited & samples, rad/s; positive \\
+\nolinkurl{min\_fill\_periods} & 1.0 / launch 2.0 & 2.0 & periods; positive \\
+\nolinkurl{convergence\_count\_start} & 3 & inherited & positive int \\
+\nolinkurl{reset\_counter\_after\_event} & true & true & bool \\
+\nolinkurl{convergence\_confirmation\_policy} & \nolinkurl{crossing\_count} & \nolinkurl{qualified\_dwell} & enum \\
+\nolinkurl{convergence\_confirmation\_dwell\_sec} & 6.0 & 6.0 & s; positive \\
+\nolinkurl{convergence\_confirmation\_exit\_threshold\_scale} & 1.5 & 1.5 & positive \\
+\nolinkurl{state\_gating\_enabled} & false & true & bool \\
+\nolinkurl{minimum\_path\_length\_m} & 0.0 & 0.20 & m; nonnegative \\
+\nolinkurl{maximum\_path\_efficiency} & 1.0 & 0.50 & ratio; \nolinkurl{[0,1]} \\
+\end{longtable}
+}
+
+\subsection{9.2 Gaussian estimator, designer, and registry}\label{gaussian-estimator-designer-and-registry}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Parameter family
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Current defaults
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Selected override
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Units/constraints
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Legacy compatibility & \nolinkurl{escape\_policy=conditional\_gaussian\_fill}; \nolinkurl{amplitude=5.0}; \nolinkurl{min\_sigma=0.10}; \nolinkurl{max\_sigma=5.0}; \nolinkurl{min\_points=50}; \nolinkurl{use\_recent\_fraction=1.0}; \nolinkurl{max\_fills=1}; cooldown/min fill distances \nolinkurl{0}; \nolinkurl{center\_source=event\_mean}; max fit-center distance \nolinkurl{0.75}; fit amplitude \nolinkurl{[0.15,10]}; offset bound \nolinkurl{10} & max fills 1 & Legacy path only unless forwarded; finite bounds. \\
+Synchronization & pose \nolinkurl{/odom}; channel 0; tolerance \nolinkurl{0.05}; maximum speed \nolinkurl{0.20}; outlier MAD \nolinkurl{3.5}; max samples \nolinkurl{4000}; window \nolinkurl{8.0}; minimum samples \nolinkurl{40}; max age \nolinkurl{12.0} & minimum samples 40 & m, s, m/s, count; positive/nonnegative. \\
+Center/covariance & mean-shift iterations \nolinkurl{5}; tolerance \nolinkurl{0.005}; kernel bandwidth \nolinkurl{0.25}; cost temperature \nolinkurl{0.05}; covariance eigenvalues \nolinkurl{[0.0025,0.25]} & inherited & m, normalized cost, m\textsuperscript{2}; ordered positive limits. \\
+Quadratic/depth & ridge \nolinkurl{1e-6}; max condition \nolinkurl{1e8}; center/shoulder percentiles \nolinkurl{10/80}; inner Mahalanobis radius \nolinkurl{1.0}; minimum basin depth \nolinkurl{0.02} & inherited & finite; percentiles \nolinkurl{[0,100]}. \\
+Width & covariance scale \nolinkurl{2.5}; sigma floor/ceiling \nolinkurl{0.15/1.25} & \nolinkurl{2.5}; \nolinkurl{0.50/1.25} & scale, m; positive and ordered. \\
+Amplitude & depth scale \nolinkurl{1.5}; curvature scale \nolinkurl{1.2}; min/max \nolinkurl{0.10/3.00} & depth \nolinkurl{1.5}; max \nolinkurl{6.25}; candidate scale \nolinkurl{1.25} & cost units; finite nonnegative. \\
+Residual validation & grid \nolinkurl{41}; support sigma \nolinkurl{3.0}; max escalations \nolinkurl{5}; amplitude/width factors \nolinkurl{1.5/1.25}; tolerance \nolinkurl{1e-9} & inherited & positive odd grid/count/scales. \\
+Geometry & support sigma \nolinkurl{3.0}; exit sigma \nolinkurl{2.5} & exit \nolinkurl{2.70} & sigma multipliers; positive. \\
+Association & merge bandwidth \nolinkurl{0.50}; radius scale \nolinkurl{2.0}; minimum probability \nolinkurl{0.60}; low-confidence \nolinkurl{0.60} & inherited & m, scale, probabilities. \\
+Redesign/candidate & retain samples false; candidate-informed false; scale \nolinkurl{1.0} & true; true; \nolinkurl{1.25} & bool/positive. \\
+\end{longtable}
+}
+
+\subsection{9.3 Supervisor and selected robust profile}\label{supervisor-and-selected-robust-profile}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Family
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Direct/current default
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Selected v8.12 and physical
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Constraint/unit
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Profile/rate/start & \nolinkurl{robust\_gaussian\_v1} node; direct launch \nolinkurl{legacy}; publish 20 Hz; startup 5 s & robust; 20 Hz; physical startup 100 s & valid profile, positive Hz/s \\
+Goal evidence & score 0.95; rotation 3 s $\times 2$; goal hold 3 s & same & calibrated ratio or counted contract; positive durations/count \\
+Candidate evidence & \nolinkurl{absolute\_source\_score}; known sources 0; rotation 3 s $\times 2$; pretrigger 0; MAD 3; informed false & \nolinkurl{counted\_candidates}; 2; 3 s $\times 3$; pretrigger 6; MAD 3; informed true & counted mode requires sources $\geq 2$ and fills = sources $-1$ \\
+Verification/design & convergence hold 2 s; undesired hold 3 s; verify 12 s; design 5 s & same & s; positive \\
+Escape & max 20 s; exit hold 1 s; stall 3 s; min radial progress 0.05 m; approach history 3 s & max 35 s; exit 1 s; stall 3 s; 0.05 m; history 0.5 s & finite positive/nonnegative \\
+Open-field features & assist, approach continuity, interior anchor, active-fill transit, supervisor assist all false; interior min displacement 0.50 m & all five true; 0.50 m & bool; positive m \\
+Recenter & after escape true; bounds true; max 30 s; target clearance 0.05 m; tolerance 0.25 m; hold 1 s; gains 0.50/1.50; caps 0.10 m/s, 0.40 rad/s; rotate threshold $\pi/3$ & after escape false; bounds false; other values inert & finite; positive where used \\
+Bounds/directions & room \texttt{[-2,2]}$\times$\texttt{[-2,2]} m; center \nolinkurl{(0,0)}; wall margin 0.35 m; lookahead 0.50 m; candidate step $\pi/4$; fill margin 0.10 m; adaptive lookahead false & bounds disabled; fill margin 0.10 m & m/rad/bool \\
+Post-recovery & guidance/recoverable navigation/progress/source handoff/continuity/resume false; retries/refresh 0; window 12 s; min path 0.60 m; max displacement 0.20 m; reversal dot $-0.90$; bypass 0.10 m & disabled & experimental defaults; dot in \nolinkurl{[-1,1]} \\
+Freshness/watchdog & pose, sensor, state, command, and recording-ready stale limits 0.50 s; watchdog 20 Hz; zero on shutdown true & same & positive s/Hz; bool \\
+Topics & \nolinkurl{/odom}, source cost, convergence, fill request, supervisor command/stop, state/events/fills, recording ready & same; Vicon separate & resolvable ROS names \\
+\end{longtable}
+}
+
+\subsection{9.4 Modified-cost, controller, physical, recorder, and tools}\label{modified-cost-controller-physical-recorder-and-tools}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Owner/family
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Defaults
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Selected value or use
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Unit/constraint
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Modified cost & all channels true; direction LPF 0.90; min step \nolinkurl{1e-4}; affine enabled; gain 0.5; decay \nolinkurl{5e-7}; min norm \nolinkurl{1e-4}; max age 30 s; sign 1; PDE history true; exclusion factor 3; \nolinkurl{outside\_to\_anchor} & gain 0.50; decay \nolinkurl{5e-7}; max age 35 s; sign 1 & finite; LPF \nolinkurl{[0,.999]}; s/m as named \\
+Selected controller & config-owned & \nolinkurl{Directional\_Controller}; \nolinkurl{k\_vx=1.0}; \nolinkurl{k\_wz=5.0}; wheel radius 0.033 m; separation 0.158 m; max 70 RPM; caps 0.05 m/s and 0.30 rad/s physical & finite hardware limits \\
+Physical time/pose/evaluation & direct wall time; \nolinkurl{/odom}; Vicon disabled & \nolinkurl{use\_sim\_time=false}; \nolinkurl{/odom}; passive Vicon enabled on evaluation topic & strict role separation \\
+Physical cost & calibration optional/inert & sensor \texttt{+V}, cost \texttt{-V}, source score invalid & volts \\
+\nolinkurl{record\_run} & mode required; metadata required; root \nolinkurl{\~/Experiments/GESC-Gaussian/runs}; installed manifest; sqlite3; duration 0; preflight 45 s; ready 15 s; zero 3 s; target exit 15 s; post-zero 0.5 s; ready 10 Hz & physical wrapper supplies metadata/root/target; manual duration & positive time/rate; sqlite3 authority \\
+\nolinkurl{validate\_run} & one run-directory positional argument & post-run/offline validation & readable finalized run \\
+\nolinkurl{run\_scenario} & scenario YAML; required operator; optional repeated case IDs, root, summary, GUI, dry-run & versioned Phase 08 YAML & finite serial scenario contract \\
+\nolinkurl{analyze\_run} & run directory; optional output, channel, sync tolerance & one retained run & valid bag/topic/channel \\
+\nolinkurl{summarize\_matrix} & one or more inputs; required output directory & compatible versioned summaries only & never pool incompatible gates \\
+\end{longtable}
+}
+
+Simulation light position/intensity, start pose, bounds, disturbance, and
+acceptance values are case-owned in versioned scenario YAML rather than global
+algorithm defaults. The v8.12 visible case used two sources, relative inputs
+\nolinkurl{533.333...} and \nolinkurl{1600}, start \nolinkurl{(0,0,0)}, local source
+\nolinkurl{(0.883883,0.883883)}, global source \nolinkurl{(3.5,3.5)}, and seed \nolinkurl{20001}. Relative
+Gazebo lumen inputs are model parameters, not calibrated physical lux.
+
+\section{10. Implementation chronology: Phases 00--10}\label{implementation-chronology-phases-0010}
+
+The project advanced through evidence-gated phases. The commit column is a
+navigation boundary, not a claim that every later amendment was present at the
+first hash. Each linked handoff resolves the exact files, commands, skips, and
+dirty-state receipt.
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Phase
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Objective and implemented outcome
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Verification/result
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Commit boundary and handoff
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+00 & Read-only repository, owner, interface, test, and risk audit. No runtime change. & Baseline collected 885 tests: 875 inherited failures, 1 skip, no collection errors. & baseline \nolinkurl{e0c693e}; \href{handoffs/phase_00_handoff.md}{handoff} \\
+01 & Added six typed observability messages and instrumented existing cost/filter/controller/fill owners without changing outputs. & 16 focused passed; global 901 with unchanged 875 failures/1 skip. & \nolinkurl{6eaab86}--\nolinkurl{2ba43f3}; \href{handoffs/phase_01_handoff.md}{handoff} \\
+02 & Added opt-in eight-state supervisor, switchable component weights, stale/failsafe zero, and compatibility profile selection. & 44 focused passed; global 929/875 failures/1 skip. & \nolinkurl{000f001}--\nolinkurl{8cf93f5}; \href{handoffs/phase_02_handoff.md}{handoff} \\
+03 & Added synchronized basin estimation, adaptive anisotropic design, residual validation, association/merge revisions, and typed fill lifecycle. & 65 focused passed; global 950/875 failures/1 skip. & \nolinkurl{8717bf5}--\nolinkurl{8789693}; \href{handoffs/phase_03_handoff.md}{handoff} \\
+04 & Added repulsive exit geometry, assisted escape, bounded recenter, supervisor contribution, and command safety. A visible smoke exposed launch DOUBLE typing and SIGINT defects; both were repaired and the failed evidence retained. & 93 focused and visible startup/SIGINT passed; global 978/875 failures/1 skip. & \nolinkurl{b0e024d}--\nolinkurl{2e40388}; \href{handoffs/phase_04_handoff.md}{handoff} \\
+05 & Unified metadata-rich sqlite3 recording, topic manifest, readiness gate, final-zero ordering, and sole validator. & 113 focused passed/1 skipped; a 19-topic bag, final zero, provenance, and validation passed; global 999/875 failures/2 skips. & \nolinkurl{3982eb9}--\nolinkurl{a7df8cf}; \href{handoffs/phase_05_handoff.md}{handoff} \\
+05.5 & Consolidated Phase 00--05 knowledge and hardened Plan/status/checkpoint/handoff recovery. No runtime change. & Phase 05 accepted run and totals revalidated. & \nolinkurl{7cc9ace}; \href{handoffs/phase_05_5_handoff.md}{handoff} \\
+06 & Added deterministic YAML scenario schema/runner, seeded Gazebo execution, cleanup, and acceptance evaluation. & 143 focused/2 skips plus one recorded E2E pass; robust and legacy recording/cleanup 2/2; two short-run ground-truth misses were nonpredicates; global 1027/872 failures/3 skips. & \nolinkurl{b84518a}--\nolinkurl{8c6191d}; \href{handoffs/phase_06_handoff.md}{handoff} \\
+07 & Added bag-authoritative synchronization, metric tables, plots, failure analysis, CSV compatibility export, and matrix summaries. & 153 focused/2 skips plus 10 new tests; one complete and one partial bag; 22 CSV and 16 PNG products; global 1037/872 failures/3 skips. & \nolinkurl{80d5c6a}; \href{handoffs/phase_07_handoff.md}{handoff} \\
+07.5 & Qualified deterministic contacts, noise, sensor delay, and pose delay as Phase 08 prerequisites. & 162 focused/2 skips; five probes complete; global 1031/856 inherited failures/3 skips. No robustness claim. & \nolinkurl{2a74001}; \href{handoffs/phase_07_5_handoff.md}{handoff} \\
+08 & Executed versioned simulation development, corrections, selected reproductions, and frozen gates. Many genuine and infrastructure failures were retained. & Broad readiness failed. Scoped maxima were v8.10 primary 11/11, v8.11 secondary 6/6, and v8.12 visible 14/14; v8.12 varied case 13/14 and three withheld. & terminal receipts through \nolinkurl{c04c222}; \href{handoffs/phase_08_8_handoff.md}{08.8 handoff} \\
+09 & Backed up and reconciled a physical source snapshot; ported shared owners/interfaces; added hardware/evaluation/readiness/rotation adapters; repaired seven observed commissioning faults; retained eight numbered trials. & Host/static/check-only gates passed at their scopes. Eighth run was first physical two-basin behavioral success but stopped before second confirmation/goal and passed 61/62 completeness. No broad physical-ready result. & terminal V1 HEAD \nolinkurl{e3dd0ef}; \href{handoffs/phase_09_handoff.md}{handoff} \\
+10 & Audited every package/phase/result artifact; wrote this master report, coverage proof, current navigation, validation record, checkpoint, and handoff. Documentation only. & Acceptance is the Phase 10 documentation gate, not a runtime/robustness rerun. & parent \nolinkurl{e3dd0ef}; closeout is the commit containing this report with the authorized subject above. \\
+\end{longtable}
+}
+
+There were no Phase 00--07 live status/checkpoint files because that durable
+policy was introduced later; the absence is a historical workflow gap, not an
+unrecorded runtime implementation. Their Plans, handoffs, bridge, tests, and
+Git receipts remain the controlling evidence.
+
+\section{11. Simulation scenarios, methods, and complete V1 results}\label{simulation-scenarios-methods-and-complete-v1-results}
+
+\subsection{11.1 Method and denominator rules}\label{method-and-denominator-rules}
+
+\nolinkurl{run\_scenario} validates schema, resolves a frozen profile, creates a unique
+run ID, invokes the sole recorder around the canonical Gazebo graph, enforces
+finite wall/run/shutdown budgets, validates the finalized run, evaluates only
+the case's declared predicates, and writes a scenario summary. Seeds, source
+geometry/intensity, start pose, disturbances, algorithm overrides, and exact
+success predicates live in the versioned YAML. GUI probes were visible; suites
+were bounded and generally headless. Failed, contaminated, infrastructure-
+invalid, early-stopped, and withheld cases remain in their declared
+denominators.
+
+Development probes answer a local diagnostic question. Selected reproduction
+sets measure a known-success population. Prospective fixed-layout repeats
+measure only that layout/version. Formal pass means all predicates in that
+version; scientific/behavioral pass can coexist with an evaluator/evidence
+false negative but is never relabeled formal. Results from versions that
+changed controller, evaluator, topology, or evidence contracts are not pooled.
+
+\subsection{11.2 Phase 08 v1--v6}\label{phase-08-v1v6}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Version/probe
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Executed result
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Failure/correction boundary
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Primary evidence
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+v1 training & 81/81 ran; C0--C5/C7/C8 infrastructure-eligible, C6 ineligible; every candidate had 0 end-to-end successes and 0 escapes. C8 was chosen only by lowest median path \texttt{13.2286087344 m}. & Selection was not behavioral success. & \href{validation/phase_08_parameter_selection.json}{parameter selection} \\
+v1 holdout & 12/12 ran: controller goal 0/12, ground truth 5/12, failsafe 2/12, collision 0, timeout 0. & Activation timing unreachable; goal verification was orientation dependent and instantaneous. & \href{validation/phase_08_v1_failure_closeout.md}{failure closeout} \\
+v1 pass 1 & Planned 519; stopped at 203 retained directories: 200 recording-complete, 3 failed; current root has 320 bags. & No \nolinkurl{pass\_1.json}; passes 2--3 never began. Immutable failed version. & \href{validation/phase_08_v1_failure_closeout.md}{failure closeout} \\
+v2 activation & 10/10 ran; complete lifecycle 1/10, recording/analysis 3/10, cleanup 10/10, goal 1/10, valid no-collision 9/10, seven typed fills, one escape. & Six stale-source fill timestamps plus missing publisher snapshot/lifecycle evidence. Gate 2 failed; 30 tuning, 20 holdout, 50 validation, 10 repeats withheld. & \href{validation/phase_08_v2_validation_report.md}{validation}, \href{validation/phase_08_v2_failure_report.md}{failure} \\
+08.1 high-goal & Reached \texttt{SEARCH}, then \texttt{VERIFY\_EXTREMUM}, then \texttt{GOAL\_HOLD}. & Diagnostic activation only. & \href{validation/phase_08_1_activation_contract.md}{activation contract} \\
+08.1 fill & Fill about 0.09 s, repulsive escape 8.714 s, then recenter orbit and 30 s failsafe. & Activation subclaim passed; full diagnostic failed. & \href{validation/phase_08_1_activation_contract.md}{activation contract} \\
+08.2 recenter & Seed 8304: one fill, escape 7.532641327 s, recenter 8.610255022 s, returned SEARCH, no collision/failsafe/evidence defect. & Sealed recenter-only success; not v3 acceptance/readiness. & \href{handoffs/phase_08_2_handoff.md}{handoff} \\
+v3A & One GUI seed 9301; recording/cleanup passed. & 105 non-ground contacts came from an accidentally enabled positive-control obstacle at the robot pose; contaminated; nine withheld. & \href{validation/phase_08_v3a_failure_report.md}{failure} \\
+v3B & Seed 9301 infrastructure/safety and controller/ground-truth goals passed; final distance 0.039083 m. & Full fill/escape/recenter occurred where direct/no-recovery was required: genuine behavioral miss; nine withheld. & \href{validation/phase_08_v3b_failure_report.md}{failure} \\
+v3C & Required seed 9302 failed before Gazebo. & Incorrect executor/context caused \texttt{AttributeError: \_\_enter\_\_}; no behavioral run. & \href{validation/phase_08_v3c_prelaunch_failure_report.md}{prelaunch failure} \\
+v3D & v3B carried plus one new GUI 9302; robot moved through second fill/failsafe; bag had 400,131 messages. & Recorder SIGINT invalidated context before readiness-false/final-zero/finalization; infrastructure-invalid; eight withheld. & \href{validation/phase_08_v3d_failure_report.md}{failure} \\
+v4 & Three Gazebo executions; corrected r2b seed 10601 was sole eligible \nolinkurl{1/120}, directly reached goal at 0.096979 m with recording, cleanup, final zero, and no collision. & Required fill/escape/recenter never occurred. Earlier run lost finalization; r2 packaging ran no Gazebo. Later stages withheld. & \href{validation/phase_08_v4_validation_report.md}{validation}, \href{validation/phase_08_v4_terminal_report_erratum.md}{erratum} \\
+v5/v5b & No valid behavioral Gazebo result. & Recovery-lineage prelaunch and stale-shell recorder defects; superseded by v5c. & \href{validation/phase_08_v5_validation_report.md}{v5 report} \\
+v5c & Eight visible seeds; recording/cleanup 8/8; four completed a lifecycle/goal path. & Declared blocker encounter 0/8; fill-to-blocker \texttt{1.2624--1.5782 m}, required $\leq 0.35$ m. Wrong basin; 112/120 withheld. & \href{validation/phase_08_v5_validation_report.md}{validation} \\
+v6 sweep & H25 primary/full pass; H50 stall/reject/failsafe; H70 local treated as goal/no fill; H85 primary pass then reject/failsafe. & H25 ratio selected for repeats only. & \href{validation/phase_08_v6_validation_report.md}{validation} \\
+v6 repeats & Three H25: one full pass; two later rejection/failsafe. & Full repeatability 1/3, required 2/3; first recovery 2/3. & \href{validation/phase_08_v6_validation_report.md}{validation} \\
+\end{longtable}
+}
+
+\subsection{11.3 Phase 08.7 correction probes and reproduction}\label{phase-08.7-correction-probes-and-reproduction}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Milestone
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Exact result
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Status/limitation
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+M1 & Historical immutability/no-Gazebo qualification passed. & Infrastructure only. & \href{validation/phase_08_7_m1_historical_immutability.json}{JSON} \\
+M2 & Visible 18001 Stage A/fill passed; Stage B best 2.204118 m, required $\leq 0.35$ m. & Failed; later reject/failsafe. & \href{validation/phase_08_7_m2_geometry_probe_report.md}{report} \\
+M2.1 & Infrastructure passed; SEARCH for 360 s, no convergence/fill. & Failed; efficiency cap 0.35 overconstrained. A prior shell \texttt{set -u} error was not an attempt. & \href{validation/phase_08_7_m2_1_correction_probe_report.md}{report} \\
+M2.2 & Detector/fill plus direct, assisted, recenter, SEARCH recovery occurred. & Formal Stage A false due direct-only reporter; monitor never armed; 0.60 m geometry too strict before failsafe/contact. & \href{validation/phase_08_7_m2_2_efficiency_correction_probe_report.md}{report} \\
+M2.3 & 18001 passed development contract; Stage B 1.199192 m under 1.20 m. & One development probe only. & \href{validation/phase_08_7_m2_3_assisted_recovery_stop_probe_report.md}{report} \\
+M3 & Five positions, infrastructure 5/5, combined 1/5. & One pass; one 39/40 sample miss; wall collision; wrong local; recenter timeout. Required 5/5 failed. & \href{validation/phase_08_7_m3_spatial_suite_report.md}{report} \\
+M4 & 18201 behavior passed, Stage B 1.199229 m. & Formal failure solely from merged \nolinkurl{/joint\_states} publishers' 225 ms timestamp regression; suite withheld. & \href{validation/phase_08_7_m4_visible_probe_report.md}{report} \\
+M4.1 & Timestamp correction verified. & 18207 Stage B failed at 2.399676 m after post-recovery looping; suite withheld. & \href{validation/phase_08_7_m4_1_visible_probe_report.md}{report} \\
+M4.2 & 18208 behavior passed, Stage B 1.198171 m. & Completeness 47/48: two supervisor configuration events lacked attribution; suite withheld. & \href{validation/phase_08_7_m4_2_visible_probe_report.md}{report} \\
+M4.3 visible & 18308 full pass. & Authorized suite only. & \href{validation/phase_08_7_m4_3_visible_probe_report.md}{visible report} \\
+M4.3 suite & Eight ran; infrastructure 8/8, Stage A 7/8, formal 6/8. & r1.0 unsafe direction; r1.5/22.5 wrong departure. Optional three-light withheld. & \href{validation/phase_08_7_m4_3_two_light_suite_report.md}{suite} \\
+M4.4 visible & 18408 assisted path passed, Stage B 1.198640 m. & Authorized corrected suite only. & \href{validation/phase_08_7_m4_4_two_light_suite_report.md}{suite/report} \\
+M4.4 suite & Eight: formal 5/8; behavior 5/7 eligible; one infrastructure-invalid. & Controller load failure, exact-reversal miss, and fixed-horizon budget defect. & \href{validation/phase_08_7_m4_4_two_light_suite_report.md}{suite} \\
+M4.5 & 18508 Stage A/one fill passed. & Stage B 3.628273 m; reversal threshold $-0.90$ missed observed $-0.841$. & \href{validation/phase_08_7_m4_5_visible_probe_report.md}{report} \\
+M4.6 & Threshold $-0.80$ armed. & Tangent made zero source progress; premature clearance release; Stage B 2.617347 m. & \href{validation/phase_08_7_m4_6_visible_probe_report.md}{report} \\
+M4.7 & Stage A passed. & Stage B 2.744859 m; direction truly opposed motion so new corridor correctly did not arm. & \href{validation/phase_08_7_m4_7_visible_probe_report.md}{report} \\
+M4.8 & 17 evidence-selected historical successes rerun: formal 13/17, behavioral 14/17, Stage A+fill 16/17, Stage B 14/17, recording 16/17; safety/final-zero/cleanup/sqlite 17/17. & Retrospective selected set; three behavioral disagreements, one console-clean miss; all 16 recoveries direct, no assist. & \href{validation/phase_08_7_m4_8_success_reproduction_report.md}{report}, \href{validation/phase_08_7_m4_8_success_reproduction_manifest.json}{manifest} \\
+\end{longtable}
+}
+
+\subsection{11.4 Phase 08.8 v8.0--v8.12}\label{phase-08.8-v8.0v8.12}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Version
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Executed result
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Formal/scientific boundary
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+v8.0 & Visible 18801 complete, first unknown candidate and one fill. & 0/1: failed departure, returned/revisited; later gates withheld. & \href{validation/phase_08_8_primary_probe.md}{report} \\
+v8.1 & 18901 assisted recovery and global arrival, 0.155548 m. & 0/1: correct second candidate rejected by post-confirmation-only evidence slice. & \href{validation/phase_08_8_m3_1_primary_probe.md}{report} \\
+v8.2 & Visible 19001 formal pass; repeat 19011 ran. & Formal 1/2: 19011 Stage B 3.180001 m from weak/inconsistent fill; seeds 19012--19020 withheld. & \href{validation/phase_08_8_m3_2_primary_probe.md}{probe}, \href{validation/phase_08_8_m4_primary_repeats.md}{repeats} \\
+v8.3 & Visible 19101 and repeats 19111--19114 passed. & 5/6: 19115 wrong escape alignment and Stage B 5.167727 m; remaining withheld. & \href{validation/phase_08_8_m4_2_primary_repeats.md}{repeats} \\
+v8.4 & Visible 19201 and 19211 passed. & 2/3: 19212 revalidator reversed selected direction; Stage B 4.679383 m; remaining withheld. & \href{validation/phase_08_8_m4_4_primary_repeats.md}{repeats} \\
+v8.5 & Visible 19301 and repeats 19311--19315 passed. & 6/7: 19316 command interaction reversed actual exit; Stage B 2.149315 m; remaining withheld. & \href{validation/phase_08_8_m4_6_primary_repeats.md}{repeats} \\
+v8.6 & Visible correction passed; 19411 scientifically reached global at 0.123614 m. & Formal 1/2, scientific 2/2; 19411 was 12/14 due one cross-topic transition sample and external echo cleanup contamination; remaining withheld. & \href{validation/phase_08_8_m4_7_primary_repeats.md}{repeats} \\
+v8.7 & Visible and 19511--19513 passed; 19514 reached global at 0.112068 m. & Formal 4/5; 19514 was 13/14 from evaluator assist-entry false negative; remaining withheld. & \href{validation/phase_08_8_m4_8_primary_repeats.md}{repeats} \\
+v8.8 & Visible and 19611--19615 passed; 19616 scientifically passed direct, final 0.104056 m. & Formal 6/7; fixed assist-only evaluator rejected valid direct route; remaining withheld. & \href{validation/phase_08_8_m4_9_primary_repeats.md}{repeats} \\
+v8.9 & 19701 dispatched; no Gazebo, bag, or plots. & Pre-Gazebo failure: installed runner's \nolinkurl{/tmp} cwd made recorder Git lookup fail. No repeats. & \href{validation/phase_08_8_m4_10_primary_probe.md}{report} \\
+v8.10 primary & Visible 19801 plus 19811--19820 all passed. & \textbf{11/11 formal}, fixed primary layout only. & \href{validation/phase_08_8_m4_11_primary_probe.md}{probe}, \href{validation/phase_08_8_m4_11_primary_repeats.md}{repeats} \\
+v8.10 secondary & 19851 scientifically complete direct route, final 0.105549 m. & Formal 10/14 and 0/1 because evaluator used declared lamp at 0.60 m rather than aggregate basin at 0.75 m. Repeats withheld. & \href{validation/phase_08_8_m4_11_secondary_probe.md}{report} \\
+v8.11 secondary & Evaluator-only topology correction; visible 19901 and repeats 19911--19915 all passed. & \textbf{6/6 formal}, five direct and one assisted; exact layout only. & \href{validation/phase_08_8_m8_3_v8_11_secondary_visible_probe.md}{visible}, \href{validation/phase_08_8_m8_3_v8_11_secondary_repeats.md}{repeats} \\
+v8.11 matrix & Only seed 19931 ran. & 0/1 formal/science: immediate failsafe because pre-fill odometry did not exceed exit radius; three seeds withheld. & \href{validation/phase_08_8_m8_4_v8_11_broad_matrix.md}{report} \\
+v8.12 visible & New default-off \nolinkurl{interior\_farthest}; seed 20001, assisted, final 0.1167065 m. & \textbf{14/14 formal}; one selected visible case only. & \href{validation/phase_08_8_m8_8_v8_12_visible_probe.md}{report} \\
+v8.12 matrix & Only 20031 ran; direct scientific path, one fill, final 0.127721 m. & \textbf{13/14 formal}, 1/1 science: exit alignment 0.735563 \textless0.80. Seeds 20032--20034 withheld; no v8.13. & \href{validation/phase_08_8_m8_9_v8_12_broad_matrix.md}{report} \\
+Optional three-light & 0 executions. & Not run; prerequisites never authorized it. & \href{validation/phase_08_8_final_report.md}{final report} \\
+\end{longtable}
+}
+
+\begin{figure}[htbp]
+\centering
+\resizebox{0.94\linewidth}{!}{%
+\begin{tikzpicture}[x=1cm,y=0.78cm,font=\small]
+  \foreach \y/\label in {3/{v8.10 primary},2/{v8.11 secondary},1/{v8.12 visible},0/{v8.12 varied}} {
+    \node[anchor=east] at (-0.25,\y+0.22) {\label};
+    \fill[gray!18] (0,\y) rectangle (13,\y+0.45);
+  }
+  \fill[MidnightBlue!72] (0,3) rectangle (13,3.45);
+  \fill[MidnightBlue!72] (0,2) rectangle (13,2.45);
+  \fill[MidnightBlue!72] (0,1) rectangle (13,1.45);
+  \fill[MidnightBlue!72] (0,0) rectangle (12.071,0.45);
+  \fill[BrickRed!72] (12.071,0) rectangle (13,0.45);
+  \node[anchor=west,font=\bfseries\small] at (13.18,3.22) {11/11};
+  \node[anchor=west,font=\bfseries\small] at (13.18,2.22) {6/6};
+  \node[anchor=west,font=\bfseries\small] at (13.18,1.22) {14/14};
+  \node[anchor=west,font=\bfseries\small] at (13.18,0.22) {13/14};
+  \draw[->,black!65] (0,-0.35) -- (13.35,-0.35) node[right] {predicate pass rate (\%)};
+  \foreach \x/\tick in {0/0,2.6/20,5.2/40,7.8/60,10.4/80,13/100} {
+    \draw[black!55] (\x,-0.43) -- (\x,-0.27);
+    \node[anchor=north] at (\x,-0.48) {\tick};
+  }
+  \node[fill=MidnightBlue!72,minimum width=4mm,minimum height=2.5mm] at (3.2,-1.25) {};
+  \node[anchor=west] at (3.5,-1.25) {passed predicate share};
+  \node[fill=BrickRed!72,minimum width=4mm,minimum height=2.5mm] at (7.3,-1.25) {};
+  \node[anchor=west] at (7.6,-1.25) {unmet predicate share};
+\end{tikzpicture}%
+}
+\caption{Scoped terminal simulation predicate outcomes. Each bar is normalized
+within its own named contract; the raw ratios are printed at right. These
+selected cases have different denominators and are not pooled into a broad
+robustness rate.}
+\label{fig:selected-simulation-outcomes}
+\end{figure}
+
+\subsection{11.5 Retained simulation products}\label{retained-simulation-products}
+
+The 56 current Phase 08 run roots under
+\nolinkurl{/home/mattb/Experiments/GESC-Gaussian/runs} contain 459 sqlite3 bag files,
+456 \nolinkurl{scenario\_result.yaml} files, and 1,903 PNGs. These are current local
+counts, not an acceptance denominator. The terminal selected roots include:
+
+\begin{itemize}
+\tightlist
+\item
+  \nolinkurl{/home/mattb/Experiments/GESC-Gaussian/runs/phase08\_8\_10\_primary\_repeats};
+\item
+  \nolinkurl{/home/mattb/Experiments/GESC-Gaussian/runs/phase08\_8\_11\_secondary\_repeats};
+\item
+  \nolinkurl{/home/mattb/Experiments/GESC-Gaussian/runs/phase08\_8\_12\_interior\_anchor\_probe};
+\item
+  \nolinkurl{/home/mattb/Experiments/GESC-Gaussian/runs/phase08\_8\_12\_broad\_matrix}; and
+\item
+  \nolinkurl{/home/mattb/Experiments/GESC-Gaussian/runs/phase08\_v7\_success\_reproduction\_1}.
+\end{itemize}
+
+Selected terminal summaries and plot roots verified locally during the Phase
+10 audit are:
+
+\begin{itemize}
+\tightlist
+\item
+  v8.10 primary visible:
+  \nolinkurl{/home/mattb/Experiments/GESC-Gaussian/runs/phase08\_8\_10\_primary\_probe/phase08\_v8\_10\_primary\_visible\_probe\_summary.yaml};
+\item
+  v8.10 primary repeats:
+  \nolinkurl{/home/mattb/Experiments/GESC-Gaussian/runs/phase08\_8\_10\_primary\_repeats/phase08\_v8\_10\_primary\_repeats\_summary.yaml};
+\item
+  v8.10 secondary:
+  \nolinkurl{/home/mattb/Experiments/GESC-Gaussian/runs/phase08\_8\_10\_secondary\_probe/phase08\_v8\_10\_secondary\_visible\_probe\_summary.yaml};
+\item
+  v8.11 secondary visible:
+  \nolinkurl{/home/mattb/Experiments/GESC-Gaussian/runs/phase08\_8\_11\_secondary\_probe/scenario\_summaries/20260731T210056130307Z\_phase08\_v8\_11\_secondary\_visible\_probe.yaml};
+\item
+  v8.11 secondary repeats:
+  \nolinkurl{/home/mattb/Experiments/GESC-Gaussian/runs/phase08\_8\_11\_secondary\_repeats/scenario\_summaries/20260731T211244723799Z\_phase08\_v8\_11\_secondary\_repeats.yaml};
+\item
+  v8.11 matrix:
+  \nolinkurl{/home/mattb/Experiments/GESC-Gaussian/runs/phase08\_8\_11\_broad\_matrix/scenario\_summaries/20260731T215507749994Z\_phase08\_v8\_11\_broad\_matrix.yaml};
+\item
+  v8.12 visible summary:
+  \nolinkurl{/home/mattb/Experiments/GESC-Gaussian/runs/phase08\_8\_12\_interior\_anchor\_probe/scenario\_summaries/20260731T231350696332Z\_phase08\_v8\_12\_interior\_anchor\_visible\_probe.yaml};
+\item
+  v8.12 visible plots:
+  \nolinkurl{/home/mattb/Experiments/GESC-Gaussian/runs/phase08\_8\_12\_interior\_anchor\_probe/2026-07-31/20260731T231351648763Z\_simulation\_phase08\_v8\_12\_interior\_anchor\_visible\_probe-v8\_12\_interior\_anchor\_r1p25\_a45\_rati\_439a8eac/analysis/phase07/plots};
+\item
+  v8.12 matrix summary:
+  \nolinkurl{/home/mattb/Experiments/GESC-Gaussian/runs/phase08\_8\_12\_broad\_matrix/scenario\_summaries/20260731T233137289914Z\_phase08\_v8\_12\_broad\_matrix.yaml}; and
+\item
+  v8.12 matrix plots:
+  \nolinkurl{/home/mattb/Experiments/GESC-Gaussian/runs/phase08\_8\_12\_broad\_matrix/2026-07-31/20260731T233137972843Z\_simulation\_phase08\_v8\_12\_broad\_matrix-v8\_12\_matrix\_r1p25\_a45\_ratio1to3\_20031-robust\_gaussia\_6efe976a/analysis/phase07/plots}.
+\end{itemize}
+
+Each analyzed Phase 08.8 run normally retains nine standard plots:
+\nolinkurl{trajectory\_sources\_fills.png}, \nolinkurl{candidate\_ranking.png}, \nolinkurl{cost.png},
+\nolinkurl{components.png}, \nolinkurl{state\_events.png}, \nolinkurl{weights.png},
+\nolinkurl{command\_saturation.png}, \nolinkurl{radial\_escape.png}, and \nolinkurl{gaussian\_history.png}.
+Availability of a plot is evidence-product completeness, not behavioral pass.
+
+The terminal outcome is unambiguous: no version completed the required
+70-unique-run denominator, no simulation-ready tag exists, and the selected
+version/layout denominators above must remain separate.
+
+\section{12. Physical integration, commissioning, and complete V1 results}\label{physical-integration-commissioning-and-complete-v1-results}
+
+\subsection{12.1 Snapshot, parity, and operator architecture}\label{snapshot-parity-and-operator-architecture}
+
+Phase 09 first created a recoverable snapshot backup and SHA-256 inventory,
+classified the intended shared, adapted, and physical-only files, ported the six
+typed interfaces and shared algorithm owners, added physical adapters without
+forking the algorithm, and qualified legacy assets. Transfers were bounded,
+manifested, and rollback-backed. Source/Pi parity was a prerequisite, never a
+claim of hardware readiness.
+
+The current local snapshot contains 347 regular files, zero symlinks, and zero
+cache directories. The final M8L inventory convention has 435 rows: those 347
+files plus 88 directory rows including the root. Relative to M0, 41 files were
+added, 19 modified, zero deleted, and 287 unchanged. The final retained M8L
+receipt is under
+\nolinkurl{/home/mattb/physical\_TB3\_files\_snapshot/phase09\_backups/20260805T002822-0700\_m8l\_rotation\_initialization\_rearm/}.
+The tracked 345-file/432-row M8B manifests are historical, not the final M8L
+inventory.
+
+The selected no-lidar TurtleBot3 base owns wheel/IMU \nolinkurl{/odom}; the photoresistor
+adapter emits \nolinkurl{+V} sensing and \nolinkurl{-V} minimization cost; shared GESC/Gaussian
+owners consume \nolinkurl{/odom}; \nolinkurl{controller\_node} alone owns \nolinkurl{/cmd\_vel}; Vicon is
+passive evidence; \nolinkurl{record\_run} alone owns readiness, rotation authorization,
+recording, validation sequencing, and final zero; and
+\nolinkurl{phase09\_rotation\_node} accepts only that recorder authorization.
+
+\subsection{12.2 M0--M8L integration chronology}\label{m0m8l-integration-chronology}
+
+Per-command test counts overlap and are not summed.
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Milestone
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Result and selected verification
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+M0 & Baseline 306 files/389 inventory rows/0 symlinks; 390-entry archive; backup/hash/inventory passed. & \href{validation/phase_09_snapshot_backup_receipt.md}{backup receipt} \\
+M1 & 52 source rows classified; 51 unique transfer paths; identical parser excluded. & \href{validation/phase_09_shared_source_manifest.tsv}{shared manifest} \\
+M2 & Six interfaces plus 18 shared runtime files; 27 paths byte-identical. Two-package build, shared 300, observability 13 (2 deselected), legacy 34 passed. & \href{validation/phase_09_static_qualification.md}{static qualification} \\
+M3 & Adapter/compatibility layer. Accepted checks: Bash 27, launch 6, assets 40, installed focused 69, three-package build 12.6 s. & \href{validation/phase_09_legacy_compatibility.md}{legacy compatibility} \\
+M4 & Physical recorder/readiness/final-zero integrated. Physical 36; combined 84 passed/1 skipped; build 13.4 s. & \href{handoffs/phase_09_handoff.md}{handoff} \\
+M5 & Selected schema/profile and inert preflight: focused 76; Bash 27; primary/secondary inert preflights exited 2 as expected. & \href{status/phase_09_status.md}{status} \\
+M6 & Broad host gate: focused 76, shared 272, observability 13/2 deselected, recording 70/1 skipped, legacy 34, Bash 27, show-args 6, interfaces 6, build 13.3 s. Non-gating style still had 917 failures including 873 Q000. & \href{status/phase_09_status.md}{status} \\
+M7/M7.1 & Transfer seal 339/425, 51-path recovery pass; reseal Phase09 93, shared 272, recording 70/1 skip, observability 13/2 deselected, legacy 34, show-args 6, legacy hashes, build 13.1 s. & \href{validation/phase_09_pi_transfer_receipt.md}{Pi transfer receipt} \\
+M8A & Direct snapshot qualification: 93 direct, parity/launch 44, Bash 27; 339/425 parity. No on-Pi build/check-only. & \href{handoffs/phase_09_handoff.md}{handoff} \\
+M8B & Expanded snapshot 345/432; focused 309, shared 272, recording 70/1 skip, observability 13/2 deselected, legacy 34, parsing 11 XML/7 YAML/68 JSON, critical 111, hash groups 40/40 and 68/68, build 13.0 s. & \href{status/phase_09_status.md}{status} \\
+M8C & Simplified operator contract 342/430; focused 196; ros\_esc 153/3 deselected; vehicle 71/3 deselected; Bash 27; Python 9; structured parses; build 12.6 s. & \href{handoffs/phase_09_handoff.md}{handoff amendment} \\
+M8D & Legacy CSV export 343/431; source and installed 209; package subsets; build 12.6 s. & \href{status/phase_09_status.md}{status} \\
+M8E & Real-Pi underlay/build/no-lidar repair 345/433; host 22, installed/device 233, vehicle 74, helper lint pass, host build 15.1 s; operator check-only three packages passed in 1m39s. & \href{validation/phase_09_pi_runtime_repair.md}{runtime repair} \\
+M8F & CLI/runtime graph repair: focus 10, legacy 37, Vicon/launch 35, full physical 238, build 12.5 s; check-only 14.4 s pass. & \href{validation/phase_09_first_physical_run_repair.md}{first repair} \\
+M8G & Startup grace repair: focus 23, Phase09 239, legacy 37, build 15.2 s; check-only 16.3 s pass. & \href{validation/phase_09_second_physical_run_repair.md}{second repair} \\
+M8H & Wall-clock initialization repair: clock 16, shared 114, canonical build 14.3 s, installed probe pass, snapshot 256/build 14.9 s, mounted AST/lint 8/8; check-only 16.4 s pass. & \href{validation/phase_09_third_physical_run_repair.md}{third repair} \\
+M8I & Recorder grace/rotation evidence: targeted 11, focused 160, related 225, snapshot 264, recorder 69, legacy/recording 38/1 skip, build 14.9 s; check-only pass. & \href{validation/phase_09_fourth_physical_run_repair.md}{fourth repair} \\
+M8J & Recorder gate callback lane separated: focus 2, starvation 5/5, snapshot 266, recorder 69, legacy/recording 38/1 skip, build 14.8 s; check-only pass. & \href{validation/phase_09_fifth_physical_run_repair.md}{fifth repair} \\
+M8K & Heartbeat/safety/passive lanes separated: focus 4, starvation 5/5, recorder-file 143, snapshot 268, recorder 69, legacy/recording 38/1 skip, build 14.9 s, installed 4; check-only pass. & \href{validation/phase_09_sixth_physical_run_repair.md}{sixth repair} \\
+M8L & Rotation initialization re-arm: focused 16, changed-file 165, snapshot 269, recorder 69, legacy/recording 38/1 skip, build 15.4 s, installed 4; pre-run check-only passed. & \href{validation/phase_09_seventh_physical_run_repair.md}{seventh repair} \\
+\end{longtable}
+}
+
+\subsection{12.3 Retained commissioning attempts}\label{retained-commissioning-attempts}
+
+An unnumbered M8E commissioning attempt failed before the eight attempts below
+from stale underlay/install/serial-flag handling. Its recorded Pi path is
+\nolinkurl{/home/pi/turtlebot\_rotating\_sensor\_tests/gesc\_gaussian\_two\_source/2026-08-04/20260804T152851316144Z\_physical\_phase09\_selected\_primary\_r1p5\_a45\_ratio1to4\_df84804a}.
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.4000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedleft
+Attempt
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Exact retained outcome
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+1 & Controller/filter rejected ROS arguments; 3,187 messages; readiness never true; no command/source/filter/timekeeper, no motion; 18 completeness failures. & \href{validation/phase_09_first_physical_run_repair.md}{first repair} \\
+2 & Startup-grace mismatch; 10,234 messages; readiness false; 1,202 \nolinkurl{/cmd\_vel}, all zero; no source cost/timekeeper/motion; target and bag clean. & \href{validation/phase_09_second_physical_run_repair.md}{second repair} \\
+3 & Late \nolinkurl{use\_sim\_time} change caused \nolinkurl{InvalidHandle}; 8,833 messages; Vicon/odom live; 815 commands all zero; 421 rotation authorizations false; no RPM/motion. & \href{validation/phase_09_third_physical_run_repair.md}{third repair} \\
+4 & First readiness and bounded physical SEARCH, about 10.6 s and 0.13 m; no fill. Recorder falsely aged source/filter to 0.577/0.573 s while bag gaps were \textless0.25 s; zero/cleanup passed. & \href{validation/phase_09_fourth_physical_run_repair.md}{fourth repair} \\
+5 & Readiness 6.189497 s; net 0.045709 m odom/0.059153 m Vicon; no fill. Gate callbacks paused \textasciitilde1.572 s; 0.5 s rotation lease faulted/zeroed; base zero 12.663 ms; export passed, completeness failed. & \href{validation/phase_09_fifth_physical_run_repair.md}{fifth repair} \\
+6 & Readiness 119.608472 s; odom path/net 4.554253/2.461536 m; Vicon 5.282798/2.329767 m; convergence after 6.003336 s at $(-1.492954,-1.607303)$. Operator stopped 5.4 s into 9 s verification; no fill; 48,731 messages; zero/export passed, completeness failed. & \href{validation/phase_09_sixth_physical_run_repair.md}{sixth repair} \\
+7 & Barrier/auth passed, but first authorization initialized hardware and was consumed before re-arm; stale fault \textasciitilde0.5675 s later; readiness false; 1,900 commands all zero; no source/filter/timekeeper/motion/fill. & \href{validation/phase_09_seventh_physical_run_repair.md}{seventh repair} \\
+8 & First narrow physical two-basin behavioral success: convergence, 9 s classification, one fill \nolinkurl{(2.227914,0.264837)}, amplitude 0.562125, exit radius 1.366771 m; repulse+assist $\rightarrow$ SEARCH; no recenter; odom path/net 7.797691/4.197350 m; Vicon 9.027076/4.088632 m. Manual stop before second convergence/goal. & \href{validation/phase_09_eighth_physical_run_validation.md}{eighth validation} \\
+\end{longtable}
+}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=1.45cm,y=1.2cm,font=\scriptsize]
+  \draw[->,black!65] (0.55,0) -- (8.55,0) node[right] {attempt};
+  \draw[->,black!65] (0.8,-0.2) -- (0.8,2.45);
+  \foreach \x in {1,...,8} {
+    \draw[black!40] (\x,-0.08) -- (\x,0.08);
+    \node[anchor=north] at (\x,-0.12) {\x};
+  }
+  \foreach \y/\label in {0/{no motion},1/{partial / bounded behavior},2/{selected behavioral success}} {
+    \draw[black!40] (0.72,\y) -- (0.88,\y);
+    \node[anchor=east] at (0.68,\y) {\label};
+  }
+  \draw[thick,gray!55] (1,0) -- (2,0) -- (3,0) -- (4,1) -- (5,1) -- (6,1) -- (7,0) -- (8,2);
+  \foreach \x in {1,2,3,7} \fill[BrickRed!78] (\x,0) circle (2.6pt);
+  \foreach \x in {4,5,6} \fill[Goldenrod!85!black] (\x,1) circle (2.6pt);
+  \fill[OliveGreen!80!black] (8,2) circle (3.2pt);
+  \node[rotate=52,anchor=west] at (1.03,0.10) {argument reject};
+  \node[rotate=52,anchor=west] at (2.03,0.10) {startup grace};
+  \node[rotate=52,anchor=west] at (3.03,0.10) {clock handle};
+  \node[rotate=52,anchor=west] at (4.03,1.10) {bounded motion};
+  \node[rotate=52,anchor=west] at (5.03,1.10) {lease/callback};
+  \node[rotate=52,anchor=west] at (6.03,1.10) {convergence; no fill};
+  \node[rotate=52,anchor=west] at (7.03,0.10) {initialization race};
+  \node[rotate=52,anchor=west] at (8.03,2.10) {two-basin behavior};
+\end{tikzpicture}
+\caption{Phase 09 numbered-attempt progression. Vertical levels are explicit
+evidence categories, not a continuous performance score. Attempt 8 is a narrow
+behavioral success and remains incomplete for second convergence,
+\texttt{GOAL\_HOLD}, and broad physical readiness.}
+\label{fig:physical-attempt-progression}
+\end{figure}
+
+The exact numbered run roots are retained in the Phase 09 repair reports and
+coverage index. They are Pi-side paths quoted from repository evidence; Phase
+10 did not access the live mount to revalidate their presence.
+
+For lossless recovery, the eight quoted run roots are:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5714}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.4286}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedleft
+Attempt
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Retained Pi-side path
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+1 & \nolinkurl{/home/pi/turtlebot\_rotating\_sensor\_tests/gesc\_gaussian\_two\_source/2026-08-04/20260804T201250796597Z\_physical\_phase09\_selected\_primary\_r1p5\_a45\_ratio1to4\_6d9b4ac3} \\
+2 & \nolinkurl{/home/pi/turtlebot\_rotating\_sensor\_tests/gesc\_gaussian\_two\_source/2026-08-04/20260804T205606472031Z\_physical\_phase09\_selected\_primary\_r1p5\_a45\_ratio1to4\_d4f0178d} \\
+3 & \nolinkurl{/home/pi/turtlebot\_rotating\_sensor\_tests/gesc\_gaussian\_two\_source/2026-08-04/20260804T212226731572Z\_physical\_phase09\_selected\_primary\_r1p5\_a45\_ratio1to4\_309b9e71} \\
+4 & \nolinkurl{/home/pi/turtlebot\_rotating\_sensor\_tests/gesc\_gaussian\_two\_source/2026-08-04/20260804T221143126652Z\_physical\_phase09\_selected\_primary\_r1p5\_a45\_ratio1to4\_b27fffe0} \\
+5 & \nolinkurl{/home/pi/turtlebot\_rotating\_sensor\_tests/gesc\_gaussian\_two\_source/2026-08-04/20260804T224523162901Z\_physical\_phase09\_selected\_primary\_r1p5\_a45\_ratio1to4\_8d7f9b77} \\
+6 & \nolinkurl{/home/pi/turtlebot\_rotating\_sensor\_tests/gesc\_gaussian\_two\_source/2026-08-04/20260804T231459927630Z\_physical\_phase09\_selected\_primary\_r1p5\_a45\_ratio1to4\_2155c436} \\
+7 & \nolinkurl{/home/pi/turtlebot\_rotating\_sensor\_tests/gesc\_gaussian\_two\_source/2026-08-05/20260805T000043179553Z\_physical\_phase09\_selected\_primary\_r1p5\_a45\_ratio1to4\_d9eb86a8} \\
+8 & \nolinkurl{/home/pi/turtlebot\_rotating\_sensor\_tests/gesc\_gaussian\_two\_source/2026-08-05/20260805T004605139747Z\_physical\_phase09\_selected\_primary\_r1p5\_a45\_ratio1to4\_cd83f78f} \\
+\end{longtable}
+}
+
+\subsection{12.4 Eighth-run claim and 61/62 limitation}\label{eighth-run-claim-and-6162-limitation}
+
+The eighth bag was 186,003,456 bytes. It showed one local candidate, a fill,
+repulsive then assisted escape, return to \nolinkurl{SEARCH}, and stronger-light
+reacquisition. Five later rotation-scale voltage peaks had median \texttt{1.9013 V},
+4.37 times the local candidate estimate near \texttt{0.435 V}. These observations
+support progress from a weaker basin toward a stronger signal.
+
+They do not support complete second-extremum acceptance: there was no second
+convergence confirmation, second classification, or \nolinkurl{GOAL\_HOLD}; the operator
+ended the open-field run manually. Completeness was 61/62. After the first
+false rotation gate, one already-in-flight 20 RPM \nolinkurl{RUNNING} status arrived for
+about 45 ms. Base zero appeared in about 6 ms, rotation zero in about 67 ms,
+and revoked \nolinkurl{FAULT}/zero in about 92 ms. The current receipt-ordered validator
+calls this a failure even though the bounded shutdown behavior was observed.
+M8M is documented as a possible future validator correction but was not
+implemented. V1 therefore closes as selected behavioral success with an
+evidence-order false negative, not formal physical acceptance. The
+\href{checkpoints/phase_09_checkpoint.txt}{terminal Phase 09 checkpoint} records
+that exact M8L/eighth-run boundary.
+
+\section{13. Recording, analysis, and artifact products}\label{recording-analysis-and-artifact-products}
+
+\texttt{ros2 run ros\_esc record\_run} is the sole recorder for simulation and physical
+runs. It creates a unique date/run directory, copies and resolves metadata,
+captures branch/commit/dirty provenance, snapshots parameters and the graph,
+starts \texttt{ros2 bag record} with the installed topic/QoS manifest, gates motion
+until readiness, retains target/recorder consoles, and finalizes integrity and
+completeness records. \texttt{ros2 run ros\_esc validate\_run RUN\_DIRECTORY} is the sole
+validator. A second recorder, live CSV authority, or console-only substitute
+would violate the evidence contract.
+
+The shutdown transaction is intentionally ordered:
+
+\begin{figure}[htbp]
+\centering
+\resizebox{0.96\textwidth}{!}{%
+\begin{tikzpicture}[font=\scriptsize]
+  \foreach \x/\name in {0/{Operator / scenario},3/{\texttt{record\_run}},6/{controller / base},9/{rotation target},12/{\texttt{rosbag2}}} {
+    \node[reportblock, text width=24mm] (p\x) at (\x,0) {\name};
+    \draw[densely dashed, black!45] (\x,-0.45) -- (\x,-11.9);
+  }
+  \draw[reportarrow] (0,-1.0) -- node[above,fill=white,inner sep=1pt] {SIGINT, duration, or managed stop} (3,-1.0);
+  \draw[reportarrow] (3,-1.9) -- ++(0.8,0) -- ++(0,-0.5) -- ++(-0.8,0);
+  \node[anchor=west,fill=white,inner sep=1pt] at (3.9,-2.15) {close authorization; readiness=false};
+  \draw[reportarrow] (3,-3.2) -- node[above,fill=white,inner sep=1pt] {rotation authorization=false} (9,-3.2);
+  \draw[reportarrow] (3,-4.2) -- node[above,fill=white,inner sep=1pt] {stop requested=true} (6,-4.2);
+  \draw[reportevidence] (6,-5.2) -- node[above,fill=white,inner sep=1pt] {stable base command = zero} (3,-5.2);
+  \draw[reportevidence] (9,-6.2) -- node[above,fill=white,inner sep=1pt] {stable rotation = zero} (3,-6.2);
+  \draw[reportarrow] (3,-7.1) -- ++(0.8,0) -- ++(0,-0.5) -- ++(-0.8,0);
+  \node[anchor=west,fill=white,inner sep=1pt] at (3.9,-7.35) {post-zero dwell};
+  \draw[reportarrow] (3,-8.4) -- node[above,fill=white,inner sep=1pt] {terminate target after bounded grace} (0,-8.4);
+  \draw[reportarrow] (3,-9.4) -- node[above,fill=white,inner sep=1pt] {terminate and finalize SQLite bag} (12,-9.4);
+  \draw[reportevidence] (12,-10.4) -- node[above,fill=white,inner sep=1pt] {metadata and database finalized} (3,-10.4);
+  \draw[reportarrow] (3,-11.3) -- ++(0.8,0) -- ++(0,-0.5) -- ++(-0.8,0);
+  \node[anchor=west,fill=white,inner sep=1pt] at (3.9,-11.55) {validate, export, integrity/completeness};
+\end{tikzpicture}%
+}
+\caption{Managed recorder shutdown transaction. Authorization closes before
+target termination; stable base and rotation zero are observed before the bag
+is finalized and derived products are written.}
+\label{fig:shutdown-sequence}
+\end{figure}
+
+Typical retained products are:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Product
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Authority and purpose
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\nolinkurl{metadata.yaml} and resolved configuration/parameter snapshots & Operator intent plus exact execution provenance. A desired value is not accepted when the live resolved value disagrees. \\
+sqlite3 bag (\nolinkurl{*.db3} plus metadata) & Primary time-series authority. Required typed and compatibility topics, shutdown evidence, and evaluator streams are read here. \\
+\nolinkurl{completeness.json} / integrity result & Machine-checkable required topics/types/counts/rates, final zero, readiness, stop, configuration, and lifecycle checks. \\
+target/recorder console & Diagnostic context only; cannot replace required bag data. \\
+\nolinkurl{scenario\_definition.yaml}, \nolinkurl{resolved\_scenario.yaml}, \nolinkurl{scenario\_result.yaml} & Original, resolved, and observed simulation case contract/outcome. \\
+synchronized analysis tables and summaries & Derived, traceable products with validity/provenance columns; never override raw bag evidence. \\
+nine standard PNG plots & Trajectory/fills, candidate ranking, cost, components, state/events, weights, saturation, radial escape, Gaussian history. \\
+matrix summary & Aggregates only compatible run/version contracts and preserves unavailable/failed rows. \\
+physical familiar CSV export & Post-finalization, atomic and idempotent compatibility views; the bag remains authority. \\
+\end{longtable}
+}
+
+The physical export creates \nolinkurl{encoder.csv}, \nolinkurl{cost\_value.csv},
+\nolinkurl{filter\_value.csv}, \nolinkurl{control\_value.csv}, and evaluation-meaning
+\nolinkurl{odometry.csv}, plus \nolinkurl{raw\_cost\_value.csv} (\nolinkurl{-V}) and
+\nolinkurl{algorithm\_odometry.csv} (\nolinkurl{/odom}). \nolinkurl{legacy\_csv\_manifest.json} records aliases,
+semantics, row counts, sizes, hashes, and export errors. It does not fabricate
+\nolinkurl{comments.txt}, and old browsers may not auto-discover the nested run root.
+
+Simulation runs normally live under
+\nolinkurl{\~/Experiments/GESC-Gaussian/runs/<date>/<run-id>/}; scenario Plans may select
+a version-specific root below \nolinkurl{.../runs}. The selected physical wrapper uses
+\nolinkurl{$\{HOME\}/turtlebot\_rotating\_sensor\_tests/gesc\_gaussian\_two\_source/<UTC-date>/<run-id>/}
+on the Pi. Raw bags and high-volume plots remain outside Git. Git retains
+Plans, schemas, summaries, manifests, validation reports, hashes, and exact
+paths. Failed and partial run directories are preserved; cleanup or storage
+work requires a separate read-only inventory and explicit deletion authority.
+
+\section{14. Testing and validation evidence}\label{testing-and-validation-evidence}
+
+Test counts below are per recorded gate. Global counts contain an inherited
+style baseline and are not a measure of behavioral quality. Focused suites
+grew as capabilities were added; later counts often include earlier tests and
+must not be summed.
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Boundary
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Focused/runtime evidence
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Global or known debt
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Claim
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Phase 00 & Audit only. & 885 total; 875 failures; 1 skip; failures dominated pre-existing style/lint. & Baseline, not implementation acceptance. \\
+Phase 01 & 16 passed. & 901 total; 875 failures; 1 skip. & Typed observability compatibility. \\
+Phase 02 & 44 passed. & 929 total; 875 failures; 1 skip. & State/profile/safety core. \\
+Phase 03 & 65 passed. & 950 total; 875 failures; 1 skip. & Pure estimator/designer/registry plus ROS wiring. \\
+Phase 04 & 93 passed plus visible Gazebo startup/SIGINT smoke. & 978 total; 875 failures; 1 skip. & Escape/recenter and bounded lifecycle correction. \\
+Phase 05/05.5 & 113 passed, 1 skipped; complete 19-topic recorded run. & 999 total; 875 failures; 2 skips. & Recorder/validator/final-zero. \\
+Phase 06 & 143 passed, 2 skipped; bounded recorded E2E passed. & 1,027 total; 872 failures; 3 skips. & Scenario infrastructure, not robustness. \\
+Phase 07 & 153 passed, 2 skipped plus 10 new; complete and partial bags analyzed. & 1,037 total; 872 failures; 3 skips. & Analysis/plot/CSV semantics. \\
+Phase 07.5 & 162 passed, 2 skipped; five prerequisite probes. & 1,031 total; 856 inherited failures; 3 skips. & Contact/noise/delay support only. \\
+Phase 08 & Many version-specific static, runner, recorder, analyzer, GUI, and headless gates; exact results in Section 11. & No 70-unique acceptance denominator; broad gate failed. & Selected/versioned evidence only. \\
+Phase 09 M6 & Focused 76; shared 272; observability 13/2 deselected; recording 70/1 skipped; legacy 34; Bash 27; launch args 6; interfaces 6; build 13.3 s. & Non-gating style 917 failures including 873 Q000. & Host qualification, not hardware behavior. \\
+Phase 09 M8L & Focused 16; changed-file 165; snapshot 269; recorder 69; legacy/recording 38/1 skipped; build 15.4 s; installed 4; check-only passed. & Eighth run 61/62 completeness. & Selected physical behavior, not formal/broad acceptance. \\
+Phase 10 & Context, required-doc, TSV coverage, headings, links, fences, structured file parsing, interfaces/entry points, claim searches, path scope, and Git whitespace checks. & No ROS build, Gazebo run, matrix, Pi access, or hardware run: documentation-only by Plan. & Exact commands/outcomes are in \href{validation/phase_10_documentation_validation.md}{the Phase 10 validation record}. \\
+\end{longtable}
+}
+
+Infrastructure completeness and behavior remain distinct. A clean bag can
+record a failed algorithm; a successful trajectory can be formally invalid
+when required evidence is missing; and a static/check-only pass cannot prove
+motion. Skips and deselections were retained where environment, style debt, or
+test design made them intentional. Phase 10 did not rerun historical matrices
+to manufacture a cleaner denominator.
+
+\section{15. Verified operating instructions}\label{verified-operating-instructions}
+
+These commands are documentation. Phase 10 did not execute Gazebo or physical
+hardware. Operators must first verify their environment, branch, metadata,
+workspace cleanliness, and physical authorization.
+
+\subsection{15.1 Build and source}\label{build-and-source}
+
+\begin{lstlisting}[language=bash]
+cd /home/mattb/dsim-lab/ros2_ws
+source /opt/ros/humble/setup.bash
+colcon build --symlink-install \
+  --packages-select ros_esc_interfaces ros_esc turtlebot3_rotating_sensor
+source install/setup.bash
+\end{lstlisting}
+
+\subsection{15.2 Inspect or run a bounded simulation case}\label{inspect-or-run-a-bounded-simulation-case}
+
+Dry-run validates and expands without ROS/Gazebo:
+
+\begin{lstlisting}[language=bash]
+ros2 run ros_esc run_scenario \
+  src/ros_esc/ros_esc/scenario_runner/scenarios/phase06_smoke.yaml \
+  --operator "$USER" \
+  --dry-run
+\end{lstlisting}
+
+For a visible, finite one-off execution, add \nolinkurl{--gui} and use only a currently
+approved scenario/case/root. Do not resume closed Phase 08 roots or dispatch a
+withheld matrix. A direct robust launch, useful for inspection rather than
+acceptance, is:
+
+\begin{lstlisting}[language=bash]
+ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml \
+  gazebo_gui:=True \
+  algorithm_profile:=robust_gaussian_v1 \
+  use_pde_extensions:=True \
+  enable_observability:=True \
+  recording_ready_required:=False
+\end{lstlisting}
+
+Direct launch is not a managed evidence run. For one, wrap the target exactly
+as an argument vector after \nolinkurl{--}:
+
+\begin{lstlisting}[language=bash]
+ros2 run ros_esc record_run \
+  --mode simulation \
+  --metadata-input src/ros_esc/test/fixtures/recording_smoke_metadata.yaml \
+  --duration-sec 8.0 \
+  --preflight-timeout-sec 60.0 \
+  --runs-root ~/Experiments/GESC-Gaussian/runs \
+  -- \
+  ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml \
+  algorithm_profile:=robust_gaussian_v1 \
+  use_pde_extensions:=True \
+  enable_observability:=True \
+  recording_ready_required:=True
+\end{lstlisting}
+
+The fixture is for a smoke test; a research run requires a copied, honestly
+completed metadata template and a versioned scenario/Plan.
+
+\subsection{15.3 Validate and analyze retained evidence}\label{validate-and-analyze-retained-evidence}
+
+\begin{lstlisting}[language=bash]
+ros2 run ros_esc validate_run /absolute/path/to/run
+
+ros2 run ros_esc analyze_run \
+  /absolute/path/to/run \
+  --output-dir /absolute/path/to/run/analysis
+
+ros2 run ros_esc summarize_matrix \
+  /absolute/path/to/compatible/summary-or-run ... \
+  --output-dir /absolute/path/to/matrix-summary
+\end{lstlisting}
+
+Do not combine incompatible experiment versions. An unavailable external path
+must be labeled unavailable, not reconstructed from prose.
+
+\subsection{15.4 Selected physical operator procedure}\label{selected-physical-operator-procedure}
+
+The current selected procedure is the dedicated wrapper in the physical Pi
+workspace. It builds/sources the required packages, checks installed/source
+parity and distinct devices, launches no-lidar base and the selected graph,
+creates a run root, starts the sole recorder, and prints bounded diagnostics.
+The operator command recorded by the current checklist is:
+
+\begin{lstlisting}[language=bash]
+cd ~/ros2_ws/src/turtlebot3_vehicle_nodes/bash_scripts/light_esc_experiments/voltage_cost_values
+./gesc_gaussian_two_source_voltage.bash
+\end{lstlisting}
+
+Before using it, follow the lab power, e-stop, open-field-clearance, device,
+OpenCR, photoresistor, Vicon-evaluation, and clock SOP in
+\href{../../../DSIM_GESC_Gaussian_Codex_Implementation_Package/10_PHYSICAL_EXPERIMENT_READINESS.md}{the physical-readiness document}.
+Do not change the Pi clock after ROS/rosbag starts. Vicon may be absent/stale
+only as an explicitly failed evaluation-completeness condition; it cannot be
+substituted for \nolinkurl{/odom} or used to gate motion.
+
+Stop normally with \nolinkurl{Ctrl+C}. Do not treat \nolinkurl{GOAL\_HOLD} as process exit. Leave
+the terminal running while readiness/rotation are revoked, final zero is
+observed, the target and bag finalize, validation runs, and CSV export
+completes. On any fault, retain the run and diagnose it before retrying. Phase
+10 did not run this procedure, access the Pi, or authorize another trial.
+
+\section{16. Backward compatibility and migration}\label{backward-compatibility-and-migration}
+
+V1 is opt-in. Direct simulation and physical launches retain \nolinkurl{legacy}, PDE
+off, and observability off where the source defines those defaults. Existing
+legacy topics, five compatibility messages, arrays, config JSON, wrappers,
+launches, data readers, and controller/filter owners remain. The robust profile
+adds typed observability and supervisor behavior around the same owners; it
+does not require legacy users to migrate runtime code.
+
+Heavy-Ball ESC files under historical \nolinkurl{paper\_recreations} and legacy wrapper/
+config paths remain useful for reproduction and regression. Their presence in
+a default filepath does not make Heavy-Ball the active V1 method. Current V1
+instructions explicitly select GESC filter/controller configuration and
+\nolinkurl{robust\_gaussian\_v1}.
+
+Migration for a new managed V1 run is therefore configuration-only:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  keep the canonical launch and sole owners;
+\item
+  select \nolinkurl{algorithm\_profile:=robust\_gaussian\_v1}, PDE extensions, and typed
+  observability;
+\item
+  supply a versioned scenario/metadata contract;
+\item
+  use \nolinkurl{record\_run}, then \nolinkurl{validate\_run} and \nolinkurl{analyze\_run}; and
+\item
+  retain legacy and failed artifacts unchanged.
+\end{enumerate}
+
+The physical snapshot is adapted around hardware, time, rotation, and passive
+evaluation, while shared algorithm files remain parity-controlled. No
+simulation-only evaluator topology enters physical control.
+
+\section{17. Reproducibility checklist}\label{reproducibility-checklist}
+
+Use this checklist for a supported reproduction or audit:
+
+\begin{itemize}
+\tightlist
+\item[$\square$]
+  Record repository path, branch, full commit, and \texttt{git status --short}.
+  For this report the parent is \nolinkurl{e3dd0ef...}; use the full ID returned by the
+  containing-commit command in Section 1 as the V1 closeout boundary.
+\item[$\square$]
+  Record Ubuntu/ROS/Gazebo/Python environment and source order. The project
+  was developed against ROS 2 Humble on Ubuntu 22.04-class hosts.
+\item[$\square$]
+  Rebuild the reader-facing report from the authoritative source with
+  \texttt{tectonic FINAL\_PROJECT\_REPORT\_V1.tex} in
+  \nolinkurl{docs/codex/gesc\_gaussian/}, then confirm metadata/page count with
+  \nolinkurl{pdfinfo} and text extraction with \nolinkurl{pdftotext}. The Phase 10
+  closeout used Tectonic 0.17.0.
+\item[$\square$]
+  Build only the required packages and retain bounded build/test output.
+\item[$\square$]
+  Confirm \nolinkurl{algorithm\_profile}, launch file, cost owner, controller owner,
+  recorder owner, \nolinkurl{/odom} route, cost sign/units, and evaluation-only topics.
+\item[$\square$]
+  Copy and complete metadata; never edit a retained run's resolved input.
+\item[$\square$]
+  Record scenario schema/version, profile ID, case ID, seed, start,
+  sources, relative intensities, disturbances, exact predicates, timeouts, and
+  run root.
+\item[$\square$]
+  Use a new run ID and an empty target directory; do not overwrite or
+  automatically retry failed evidence.
+\item[$\square$]
+  Verify readiness before nonzero motion; preserve a failure if it never
+  opens.
+\item[$\square$]
+  Stop through the managed recorder and verify readiness false, stop true,
+  stable final zero, bag finalization, integrity, and completeness.
+\item[$\square$]
+  Retain sqlite3 bag, metadata/config/parameters, console, completeness,
+  scenario result, analysis summary, CSV/plots, and hashes as applicable.
+\item[$\square$]
+  Compare only compatible contracts. Keep formal, behavioral,
+  infrastructure, selected, and broad denominators separate.
+\item[$\square$]
+  Label unavailable external paths and unexecuted commands; never infer a
+  pass from a handoff that records only a proposal.
+\item[$\square$]
+  Preserve failures, corrections, and superseded procedures. A corrected
+  new version does not alter the old outcome.
+\item[$\square$]
+  For physical work, verify backup/rollback, source parity, devices,
+  e-stop/operator clearance, wall clock, passive Vicon identity, manual stop,
+  and no autonomous obstacle avoidance.
+\end{itemize}
+
+The exact Phase 10 report audit is reproducible from
+\href{validation/phase_10_report_coverage.tsv}{\nolinkurl{phase\_10\_report\_coverage.tsv}} and
+\href{validation/phase_10_documentation_validation.md}{\nolinkurl{phase\_10\_documentation\_validation.md}}.
+
+\section{18. Limitations, threats to validity, and unsupported claims}\label{limitations-threats-to-validity-and-unsupported-claims}
+
+\subsection{18.1 Algorithm/model limitations}\label{algorithmmodel-limitations}
+
+\begin{itemize}
+\tightlist
+\item
+  Counted-candidate V1 assumes two sources and one fillable undesired basin;
+  unknown source count and more than two basins were not established.
+\item
+  The fitted local quadratic and Gaussian approximation can be poor for
+  asymmetric, flat, overlapping, sparse, or abruptly changing fields.
+\item
+  Center, width, amplitude, candidate ranking, and escape direction depend on
+  sampling trajectory, timing, dither/rotation phase, windowing, and selected
+  thresholds. V1 showed seed/start sensitivity.
+\item
+  Open-field assist has no general obstacle/wall planner. Recenter and several
+  post-recovery mechanisms are disabled in the selected terminal profile.
+\item
+  Sensor noise, delay, contacts, and limited geometries were qualified as
+  infrastructure, not exhaustively sampled as a robustness population.
+\end{itemize}
+
+\subsection{18.2 Simulation threats}\label{simulation-threats}
+
+\begin{itemize}
+\tightlist
+\item
+  Gazebo lumen inputs are relative model parameters, not measured lux at the
+  rotating sensor. Shadows, reflections, wall material, occlusion, ambient
+  light, thermal/electrical drift, and physical response were not calibrated
+  into the simulation.
+\item
+  Many probes were development-selected or corrections after inspecting prior
+  outcomes. M4.8 was explicitly evidence-selected. These cannot estimate an
+  unbiased success probability.
+\item
+  v8.10, v8.11, and v8.12 changed implementation/evaluator/evidence contracts;
+  their denominators cannot be pooled.
+\item
+  Only one v8.12 varied matrix case ran; \texttt{0/1 formal} does not mean four
+  empirical failures. Three cases were withheld.
+\item
+  Optional three-light, arbitrary source count/intensity, broad walls/
+  obstacles, and the required 70-unique-run suite were not completed.
+\end{itemize}
+
+\subsection{18.3 Physical threats}\label{physical-threats}
+
+\begin{itemize}
+\tightlist
+\item
+  One selected two-light run supplied the strongest physical behavior. It is
+  insufficient for repeatability, population robustness, or transfer claims.
+\item
+  The physical photoresistor retained volts/\nolinkurl{-V}; no frozen calibrated
+  source-score mapping was used. Later voltage peaks support relative progress,
+  not absolute radiometry.
+\item
+  Wheel/IMU \nolinkurl{/odom} drifts; Vicon is a different passive evaluation frame and
+  cannot correct control. Frame alignment and coverage can affect comparison.
+\item
+  The eighth run ended before second convergence/classification/goal; 61/62
+  completeness includes a known receipt-order false negative that remains
+  uncorrected in V1.
+\item
+  Open-field operation depended on a human e-stop/clearance and manual stop.
+  No autonomous physical collision avoidance was demonstrated.
+\item
+  Pi-side run paths in this report come from retained repository evidence;
+  Phase 10 deliberately did not access the currently mounted live Pi home.
+\end{itemize}
+
+\subsection{18.4 Engineering/evidence limitations}\label{engineeringevidence-limitations}
+
+\begin{itemize}
+\tightlist
+\item
+  The inherited broad style suite remained heavily failing (875 at baseline;
+  Phase 09 recorded 917 non-gating style failures, 873 Q000). Focused behavior
+  suites passed at their declared scopes but do not erase that debt.
+\item
+  Phase 00--07 predated live status/checkpoint files. Handoffs/Git/tests recover
+  the boundary, but the provenance form is less uniform than later phases.
+\item
+  Raw high-volume run evidence is outside Git and may be unavailable on another
+  machine. Git-side reports, hashes, and manifests are receipts, not replicas.
+\item
+  Recorder receipt order across independent ROS publishers is not causal
+  order. The eighth shutdown case is the known concrete example.
+\end{itemize}
+
+Accordingly, V1 does \textbf{not} support claims of broad simulation robustness,
+broad physical robustness/readiness, arbitrary-layout/source-count handling,
+calibrated sim-to-real light equivalence, autonomous obstacle safety, or a
+formally complete second-extremum physical acceptance run.
+
+\section{19. Future V2 boundary}\label{future-v2-boundary}
+
+Future robustness work is intended for a new branch named
+\nolinkurl{feature/gesc-gaussian-robustness-v2}, created \textbf{after} the authorized Phase 10
+closeout commit is recorded on V1. The new branch must start from the commit
+containing this report with the exact subject recorded in Section 1, not merely
+from parent/base \nolinkurl{e3dd0ef}. Phase 10 did not create the V2 branch.
+
+Evidence-backed questions suitable for a new Plan include:
+
+\begin{itemize}
+\tightlist
+\item
+  Can a frozen prospective design pass a sufficiently broad unique-run
+  denominator without version-on-first-miss adaptation?
+\item
+  Which sensing/windowing/fill design changes reduce seed/start sensitivity
+  while preserving cost sign, ownership, and legacy behavior?
+\item
+  Can candidate classification avoid assuming a known count without using
+  evaluator truth?
+\item
+  Can escape direction and support geometry handle boundaries, obstacles,
+  overlapping/asymmetric basins, source ratios, reflections, noise, and delay?
+\item
+  Can simulation inputs be calibrated against measured sensor response with
+  uncertainty, while keeping raw voltage and minimization sign explicit?
+\item
+  Can the physical workflow reproduce complete local-fill-escape-second-
+  confirmation-\nolinkurl{GOAL\_HOLD} behavior across predeclared trials?
+\item
+  Can the shutdown validator model cross-publisher causal intervals without
+  weakening final-zero safety?
+\item
+  Which inherited style/packaging debt should be removed before a new broad
+  gate?
+\end{itemize}
+
+These are study areas, not chosen fixes. V2 requires a new Plan, status,
+versioned scenarios/parameters, acceptance gates, run roots, validation,
+checkpoint, handoff, and eventual V2 report. It must preserve V1's report,
+failed evidence, and denominators unchanged. No V2 branch, code, result, or
+readiness claim was created in Phase 10.
+
+\section{20. Appendices}\label{appendices}
+
+\subsection{Appendix A --- implementation-package coverage}\label{appendix-a-implementation-package-coverage}
+
+The package manifest contains 57 unique, present, Git-tracked path entries:
+13 root specifications/navigation documents, 23 prompts, 8 source-material
+items, 8 templates, and 5 tools. File modes are 52 regular \nolinkurl{100644} and five
+executable \nolinkurl{100755}. The package has 58 files because \nolinkurl{MANIFEST.md} does not
+list itself. The manifest is a path inventory dated before later work, not a
+content-integrity hash.
+
+Every entry has exactly one \nolinkurl{package\_manifest} row in
+\href{validation/phase_10_report_coverage.tsv}{\nolinkurl{phase\_10\_report\_coverage.tsv}}, with
+authority, outcome status, report section, and role. The groups are:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3000}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.4000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Package group
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Count
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Report use
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+specifications/navigation & 13 & Requirements, architecture, algorithm, states, data, gates, workflow, topics, risks, physical readiness, navigation. \\
+prompts & 23 & Durable Phase 00--10 Plan/Implement instructions plus prompt index. \\
+source material & 8 & Meeting audio/transcripts, consolidated decisions, and two whiteboards. \\
+templates & 8 & Phase lifecycle, metadata, audit, defaults, scenario, and topic-manifest forms. \\
+tools & 5 & Status initialization, context/document validation, checkpointing, and context bundling. \\
+\end{longtable}
+}
+
+Binary/audio/image inputs are summarized and indexed, not reproduced in this
+Markdown. \nolinkurl{templates/robust\_gaussian\_defaults.yaml} is a design reference;
+live source/launch and versioned scenario overrides are final parameter
+authority.
+
+\subsection{Appendix B --- phase and evidence index}\label{appendix-b-phase-and-evidence-index}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3000}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.4000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Artifact class
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Lossless grouping/count at Phase 10 audit
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Controlling use
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+base Phase 00--07 Plans & \nolinkurl{plans/phase\_0[0-7]\_plan.md}: 8 & Original per-phase contracts. \\
+Phase 08 Plans & \nolinkurl{plans/phase\_08*\_plan.md}: 12 & Base/subphase/version contracts. \\
+Phase 09/10 Plans & 1 each & Physical and documentation contracts. \\
+Phase 00--07 handoffs & base plus 05.5/07.5: 10 & Outcomes and dependency bridges. \\
+Phase 08 handoffs & 9 & Layered outcomes; 08.8 handoff controls terminal result. \\
+Phase 09 handoff & 1 append-only record & Later M8L/eighth amendments supersede its stale header. \\
+statuses & Phase 08, 09, 10: 3 & Append-only ledgers/current Phase 10 state. \\
+prior checkpoints & Phase 08 and 09: 2 & Material receipts; Phase 10 adds its own closeout checkpoint. \\
+Phase 08 validation & 97 tracked files: 77 Markdown, 20 JSON & Complete simulation failure/success/gate history. \\
+Phase 09 validation & 21 tracked files & Eight physical-run reports, six snapshot, three Pi, two qualification, two manifests. \\
+Phase 10 validation & coverage TSV and documentation validation & Machine coverage and exact closeout checks. \\
+\end{longtable}
+}
+
+The coverage TSV also has explicit \nolinkurl{phase\_result}, \nolinkurl{simulation\_result},
+\nolinkurl{physical\_milestone}, and \nolinkurl{physical\_attempt} rows so grouping cannot hide a
+failed or partial material outcome. Historical status/checkpoint absence is
+explicit. One historically referenced
+\nolinkurl{docs/codex/gesc\_gaussian/phase09\_physical\_interface\_inventory.md} never
+existed in Git and is not cited as evidence.
+
+\subsection{Appendix C --- interface, topic, and parameter indexes}\label{appendix-c-interface-topic-and-parameter-indexes}
+
+\begin{itemize}
+\tightlist
+\item
+  Section 8.2 lists all six robust and five compatibility messages.
+\item
+  Section 8.3 gives canonical runtime/evaluation topic roles.
+\item
+  Section 9 gives node/direct defaults, selected overrides, units, and
+  constraints for convergence, fill, supervisor, modified cost, controller,
+  recorder, scenario, evaluation, and analysis behavior.
+\item
+  \href{interface_map.md}{Interface map} records the final owner graph.
+\item
+  \href{topic_dictionary.md}{Topic dictionary} is the field/topic/default reference.
+\item
+  Current \nolinkurl{.msg}, launch XML, config JSON/YAML, and Python declarations remain
+  authoritative when historical prose differs.
+\end{itemize}
+
+\subsection{Appendix D --- experiment/run/artifact index}\label{appendix-d-experimentrunartifact-index}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Evidence family
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Retained location/index
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Scope
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Phase 05 accepted recording & \href{handoffs/phase_05_handoff.md}{Phase 05 handoff} & First complete 19-topic managed bag/final zero. \\
+Phase 06/07 runs & their handoffs and versioned roots under \nolinkurl{\~/Experiments/GESC-Gaussian/runs} & Scenario/analysis prerequisites. \\
+Phase 08 v1--v6 & Section 11.2 and 97-file validation group & Failed/corrected development and gates. \\
+Phase 08.7 & Section 11.3 & Correction probes and selected reproduction. \\
+Phase 08.8 & Section 11.4 and \href{validation/phase_08_8_final_report.md}{terminal report} & v8.0--v8.12, selected successes and broad failure. \\
+Phase 09 snapshots/transfers & Section 12.1--12.2 and Phase 09 validation group & Backup, hash, parity, transfer, rollback, static/check-only. \\
+Physical attempts & Section 12.3 and eight repair/validation reports & No-motion, partial-motion, convergence, and eighth behavioral success. \\
+High-volume products & exact external roots in Sections 11.5, 12.3, and evidence reports & Bags, summaries, CSVs, plots; retained outside Git. \\
+\end{longtable}
+}
+
+\subsection{Appendix E --- Git chronology}\label{appendix-e-git-chronology}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Boundary
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Commit(s)
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+audited baseline & \nolinkurl{e0c693e} \\
+observability & \nolinkurl{6eaab86}, \nolinkurl{2ba43f3} \\
+supervisor/profile & \nolinkurl{000f001}, \nolinkurl{3ebdf70}, \nolinkurl{571a193}, \nolinkurl{8cf93f5} \\
+robust fill & \nolinkurl{8717bf5}, \nolinkurl{e48355a}, \nolinkurl{8789693} \\
+escape/recenter & \nolinkurl{b0e024d}, \nolinkurl{212c284}, \nolinkurl{63744b0}, \nolinkurl{2e40388} \\
+recording/bridge & \nolinkurl{3982eb9} through \nolinkurl{a7df8cf}; bridge \nolinkurl{7cc9ace} \\
+scenario/analysis/prerequisite & \nolinkurl{b84518a}--\nolinkurl{8c6191d}; \nolinkurl{80d5c6a}; \nolinkurl{2a74001} \\
+terminal Phase 08.8 & final closeout \nolinkurl{9335da2}, receipt \nolinkurl{c04c222} \\
+Phase 09 snapshot/physical line & \nolinkurl{5b4c162} through current \nolinkurl{e3dd0ef} \\
+Phase 10 & parent \nolinkurl{e3dd0ef}; closeout commit containing this report with subject \texttt{docs(phase10): close GESC Gaussian V1 report and evidence} \\
+\end{longtable}
+}
+
+Use \texttt{git log --oneline --decorate} and each handoff for the full intermediate
+sequence. The exact Phase 10 object ID is Git metadata rather than
+self-embedded text; resolve it with the command in Section 1.
+
+\subsection{Appendix F --- glossary}\label{appendix-f-glossary}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Term
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Meaning
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+GESC & Gradient extremum-seeking control used by the existing filter/controller path. \\
+PDE/history & Existing position-dependent excitation/history signals used by the algorithm; not a new physical pose source. \\
+Basin/fill & A sampled local minimum and its positive Gaussian cost lift. \\
+Raw cost & Controller minimization input before Gaussian/affine contributions; physical value is \nolinkurl{-V}. \\
+Source score & Optional normalized/classification value, distinct from raw cost. \\
+Augmented cost & Weighted sum of raw, Gaussian, and affine components. \\
+Candidate & A convergence event being classified as undesired or goal. \\
+Formal pass & All predicates in one exact frozen contract passed. \\
+Scientific/behavioral pass & Intended behavior occurred even if an evidence/evaluator predicate failed; never automatically formal. \\
+Selected demonstration & Named fixed profile/layout evidence without broad-population inference. \\
+Readiness & Predeclared complete software/behavior gate, not mere launch/static/check-only success. \\
+Final zero & Stable base and, physically, rotation zero observed before recorder teardown. \\
+Vicon & Passive external evaluation odometry; never \nolinkurl{/odom} or controller input. \\
+M8L & Final implemented Phase 09 rotation-initialization repair preceding attempt eight. \\
+V1/V2 & Immutable current evidence line and a future separately planned robustness line. \\
+\end{longtable}
+}
+
+\subsection{Appendix G --- final answer in one paragraph}\label{appendix-g-final-answer-in-one-paragraph}
+
+V1 implemented the requested observable, switchable, adaptive GESC + Gaussian
+pipeline and demonstrated selected two-basin recovery in simulation and once
+on the physical robot. It retained substantial negative evidence and did not
+pass the broad simulation denominator, broad physical readiness, or a complete
+second-extremum physical acceptance. The complete V1 record is this report,
+its coverage/validation companions, the immutable phase artifacts, current
+source, and retained external runs---not any single success ratio in isolation.
+
+\end{document}

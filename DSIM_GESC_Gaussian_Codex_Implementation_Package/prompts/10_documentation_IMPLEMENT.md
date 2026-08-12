@@ -47,6 +47,32 @@ Rules:
 
 Implement the approved documentation plan.
 
+The required report deliverables are the exact, case-sensitive files:
+
+```text
+docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.pdf
+docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.tex
+docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.md
+```
+
+Make the PDF the canonical LaTeX-typeset, thesis-facing master report for the
+complete
+`DSIM_GESC_Gaussian_Codex_Implementation_Package` effort and all Phases 00-10
+results, with the `.tex` source and `.md` audit companion carrying the same
+substantive content. Include clear architecture/state/sequence diagrams and
+evidence graphs wherever they improve comprehension, while keeping
+incompatible denominators separate. Create the approved machine-readable report-coverage matrix and
+documentation-validation record, then update real navigation/README owners to
+lead to the report. Preserve every failed, partial, stopped, superseded, and
+withheld result. In particular, keep broad simulation/physical readiness
+failed and separately scope v8.10 `11/11`, v8.11 `6/6`, v8.12 visible `14/14`,
+varied `13/14`, three withheld cases, and the Phase 09 eighth-run `61/62`
+behavioral result. That physical run did not complete a second convergence or
+`GOAL_HOLD`; manual operator `Ctrl+C` remains the normal physical stop.
+
+Phase 10 is documentation-only. Do not run Gazebo or hardware, access or alter
+the Pi, change runtime behavior, create a V2 branch, or implement a V2 fix.
+
 Requirements:
 1. Update the repository's real READMEs rather than adding disconnected notes only.
 2. Include diagrams or Mermaid state/architecture figures where repository conventions permit.

@@ -1,5 +1,19 @@
 # GESC Gaussian Implementation Sequence
 
+> **V1 closeout (2026-08-12):** Phases 00–09 are complete historical inputs
+> and Phase 10 closes documentation only. The controlling whole-project result
+> is the LaTeX-typeset [FINAL_PROJECT_REPORT_V1.pdf](FINAL_PROJECT_REPORT_V1.pdf),
+> with its [LaTeX source](FINAL_PROJECT_REPORT_V1.tex),
+> [Markdown audit companion](FINAL_PROJECT_REPORT_V1.md), and
+> [machine coverage](validation/phase_10_report_coverage.tsv). Broad simulation
+> readiness and broad physical readiness failed. Scoped v8.10 primary `11/11`,
+> v8.11 secondary `6/6`, and v8.12 visible `14/14` results remain separate;
+> the varied v8.12 case was `13/14` with three withheld. The eighth physical
+> run is a selected behavioral success, not complete second-extremum
+> acceptance: it stopped before the second confirmation/`GOAL_HOLD` and passed
+> `61/62` completeness. This note supersedes older “current milestone” text
+> below without rewriting its dated history.
+
 This sequence maps Phases 01-10 to the audited repository. Each phase requires
 a new saved Plan and implementation handoff. Exact later-phase proposals may
 be narrowed by the authoritative phase Plan, but responsibilities must remain
@@ -595,3 +609,11 @@ docs/codex/gesc_gaussian/handoffs/phase_XX_handoff.md
 Later work must read all earlier handoffs. The current phase Plan controls
 approved intent; the handoffs and live repository control what was actually
 implemented.
+
+Phase 10's required immutable-named deliverable set is
+`docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.{pdf,tex,md}`, plus coverage,
+documentation validation, live status, checkpoint, and handoff. It changes no
+runtime interface or behavior. A future
+`feature/gesc-gaussian-robustness-v2` branch must start from the eventual
+committed V1 closeout and create new Plans/gates/evidence rather than changing
+V1 outcomes.

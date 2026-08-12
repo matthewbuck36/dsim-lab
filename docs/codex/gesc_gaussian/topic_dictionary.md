@@ -1,5 +1,19 @@
 # GESC Gaussian Topic and Message Dictionary
 
+> **Phase 10 V1 closure (2026-08-12):** The append-only text below includes
+> historical Phase 08 “current” statements. The controlling final result and
+> complete parameter/interface tables are in
+> [FINAL_PROJECT_REPORT_V1.md](FINAL_PROJECT_REPORT_V1.md), especially
+> Sections 8, 9, and Appendix C. The final typed set is `AlgorithmState`,
+> `AlgorithmEvent`, `GaussianFill`, `CostBreakdown`, `GescDiagnostics`, and
+> `ControlDiagnostics`, alongside five preserved legacy messages. `/odom` is
+> the physical algorithm pose; `/gesc_gaussian/evaluation/vicon_odom` is
+> passive `nav_msgs/Odometry`. Physical raw sensor/cost are `+V`/`-V`.
+> `controller_node`, `record_run`, and `validate_run` remain the sole command,
+> recorder, and validator owners. Direct launch remains legacy by default;
+> robust V1 is opt-in. Later v8.12/M8L/eighth-run evidence supersedes stale
+> status prose without changing any historical interface record.
+
 > Phases 01-07.5, the Phase 08 v2 harness, and the Phase 08.3 M1 offline
 > evidence contracts are implemented. Phase 04 passed its amended focused and
 > visible Gazebo/SIGINT gates, Phase 05 produced a complete retained sqlite3

@@ -23,3 +23,21 @@
 | Large Codex change or fresh chat loses context | Regressions and unfinished work | One phase per chat, Phase 00 audits, saved phase plans, validated handoffs, and commits |
 | New dependencies unavailable on TurtleBot | Physical launch fails | Prefer current ROS/Humble dependencies; audit first |
 | Unbounded robustness claim | Thesis claim is indefensible | Declare tested robustness envelope |
+
+## Phase 10 V1 closeout disposition
+
+The principal unresolved research risk is generalization beyond the selected
+two-source evidence. Broad simulation and physical readiness failed; v8.10
+primary `11/11`, v8.11 secondary `6/6`, and v8.12 visible `14/14` remain scoped
+successes, while the first varied v8.12 case was `13/14` and the other three
+were withheld. The eighth physical run demonstrated selected two-basin
+behavior but ended before a second convergence or `GOAL_HOLD`; its `61/62`
+completeness also retains one cross-topic shutdown-ordering false negative.
+
+These outcomes keep the unbounded-claim, evidence-ordering, sensor-cycle,
+runtime scheduling, storage, calibration, and arbitrary-layout risks open for
+future work. Phase 10 mitigates reporting risk through
+the LaTeX-typeset
+[`FINAL_PROJECT_REPORT_V1.pdf`](../docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.pdf)
+and its `.tex`/`.md` sources
+and does not authorize a hardware rerun or implement a V2 correction.

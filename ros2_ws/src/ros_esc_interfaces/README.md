@@ -1,5 +1,39 @@
 # ROS ESC
 
+## GESC + Gaussian V1 interface boundary (current)
+
+The authoritative interface, topic, ownership, sign/unit, and result reference
+is the LaTeX-typeset
+[FINAL_PROJECT_REPORT_V1.pdf](../../../docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.pdf),
+with [LaTeX](../../../docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.tex) and
+[Markdown](../../../docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.md)
+sources retained beside it,
+with the concise live mapping in the
+[interface map](../../../docs/codex/gesc_gaussian/interface_map.md). The generic
+package instructions below are retained for historical onboarding.
+
+The V1 source generates eleven ROS 2 message types. Six typed messages carry
+the robust GESC + Gaussian state and diagnostics:
+
+- `AlgorithmState`, `AlgorithmEvent`, and `GaussianFill` describe the hybrid
+  lifecycle and fill events;
+- `CostBreakdown` separates raw, Gaussian, affine, and augmented cost terms;
+  and
+- `GescDiagnostics` and `ControlDiagnostics` expose estimator and final-control
+  evidence.
+
+The five pre-existing compatibility messages—`Timekeeper`, `StampedFloat64`,
+`StampedFloat64MultiArray`, `StampedString`, and
+`StampedTransformMultiArray`—remain available to the established graph. They
+must not be used as substitutes for the typed robust contracts. There are no
+generated `.srv` interfaces in the current V1 source.
+
+`algorithm_profile:=legacy` remains the compatibility default. Active GESC +
+Gaussian operation explicitly selects `robust_gaussian_v1`; interface
+availability alone does not activate that profile or prove a run complete.
+The unified `record_run`/`validate_run` owners enforce the runtime evidence
+contract, while `analyze_run` and `summarize_matrix` consume retained products.
+
 This package contains custom ROS2 messages and services built to run with nodes 
 in the ros_esc package. This package is built as an ament_cmake package which is the
 only build type that currently allows for custom messages or services to be created

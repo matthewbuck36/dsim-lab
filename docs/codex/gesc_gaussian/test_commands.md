@@ -3255,3 +3255,132 @@ timeout --signal=TERM --kill-after=30s 1800s \
 It returned `1`, matching the terminal failed outcome, and wrote the V4 gate
 JSON, run manifest, validation report, failure report, and external terminal
 state. Do not rerun any command against this root.
+
+## Phase 10 V1 documentation closeout — 2026-08-12
+
+Phase 10 is documentation-only. It ran no ROS graph, Gazebo scenario/matrix,
+physical command, Pi access, transfer, or hardware test. The complete command
+record and caveats are in
+[`phase_10_documentation_validation.md`](validation/phase_10_documentation_validation.md).
+
+### Context and package-document gates
+
+```bash
+timeout 30s \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh \
+  10 implement
+timeout 30s \
+  DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_required_docs.sh
+```
+
+Both passed:
+
+```text
+Phase 10 implement context is complete.
+All Phase 00 audit documents exist.
+```
+
+### Coverage and report structure
+
+A bounded TSV/manifest/phase-artifact/report-heading checker passed:
+
+```text
+coverage_rows=174 manifest_exact=57 phase_artifacts=169
+expanded_covered=172 headings=20 simulation_results=44
+physical_attempts=8 issues=0
+```
+
+The three-row difference between phase artifacts and expanded coverage is
+expected: the 169 phase artifacts already include the self-indexed coverage
+matrix, and the expanded subject set adds the PDF/LaTeX/Markdown report set.
+All 57 package manifest paths are unique, present, and represented exactly
+once. A section-scoped table audit passed 16 Phase 08 v1-v6 rows, 17 Phase 08.7
+rows, 17 Phase 08.8 rows, and eight physical-attempt rows. An earlier whole-
+report row-token prototype overcounted identifiers reused in other tables; it
+made no file change and was replaced by the section-scoped checker.
+
+### Markdown links and structure
+
+The bounded local checker resolves repository-relative files/anchors, labels
+absolute/external retained paths separately, and checks balanced fences and
+Mermaid blocks. Its final aggregate is retained in the Phase 10 validation
+record. During the first audit it found five historical root-relative links to
+real `ros_esc` config files and one image link; those documentation-only links
+were corrected and the checker then passed.
+
+### Live interface, parameter, and command surfaces
+
+The following bounded, non-graph checks passed:
+
+- two launch XML files, four YAML files, one physical controller JSON, and the
+  selected wrapper's Bash syntax parsed;
+- 51 selected v8.12 profile values matched the versioned scenario YAML;
+- physical controller identity/gains/geometry/limits, `+V`/`-V`, `/odom`,
+  passive Vicon, rotation authority, recenter-off, and final-zero assertions
+  matched the read-only local snapshot;
+- `ros2 interface show` resolved all six robust messages;
+- source and installed package metadata exposed all six required evidence
+  entry points;
+- `--help` passed for `record_run`, `validate_run`, `run_scenario`,
+  `analyze_run`, and `summarize_matrix`; and
+- bounded `gazebo.launch.xml --show-args` exposed all six queried robust/
+  profile/interlock arguments without starting Gazebo.
+
+The corrected structured/source command returned:
+
+```text
+structured_parse=2_xml_4_yaml_1_json bash_syntax=pass
+selected_override_assertions=51 physical_boundary_assertions=pass
+entry_points_source=6
+installed_interfaces=6_pass
+cli_help=5_pass
+required_entry_points=6
+queried_launch_args=6
+```
+
+The first controller-config assertion used the prose names
+`wheel_separation`/`maximum_wheel_rpm`; the live JSON keys are
+`wheel_distance`/`wheel_max_rpm`. The initial assertion failed before any edit;
+the corrected key-exact check passed and the report retains the human-readable
+quantity names.
+
+### LaTeX/PDF build and inspection
+
+The authoritative LaTeX source compiled with a bounded Tectonic 0.17.0 run:
+
+```bash
+cd docs/codex/gesc_gaussian
+timeout 300s tectonic --keep-logs FINAL_PROJECT_REPORT_V1.tex
+pdfinfo FINAL_PROJECT_REPORT_V1.pdf
+pdffonts FINAL_PROJECT_REPORT_V1.pdf
+pdfimages -list FINAL_PROJECT_REPORT_V1.pdf
+pdftotext -layout FINAL_PROJECT_REPORT_V1.pdf FINAL_PROJECT_REPORT_V1.txt
+```
+
+The compile returned zero with no LaTeX error, missing-character, or overfull-
+box warning. The result is a 39-page letter PDF with all 16 fonts embedded and
+no raster images. Extracted text retained all 20 numbered sections and required
+scope markers. Rendered pages 1, 6, 7, 24, 28, 30, and 39 passed visual review,
+including six vector architecture/state/evidence/shutdown figures.
+
+Current shared canonical/snapshot parity was also checked read-only against
+the Phase 09 manifest:
+
+```text
+current_shared_source_parity=27_pass
+local_snapshot_regular_files=347 symlinks=0
+```
+
+### Claims, path scope, and Git checks
+
+Forbidden positive-readiness/V2/Vicon-control claims were absent. All 15
+required scoped-result and boundary tokens were present. Current changed/
+untracked paths were documentation or Phase 10 lifecycle artifacts only;
+there were zero unexpected paths, zero modified prior-phase artifacts, and
+zero staged files. `git diff --check` passed.
+
+The final report remains based on parent HEAD `e3dd0ef...` plus the Phase 10
+documentation closeout. The user authorized one local commit with exact
+subject `docs(phase10): close GESC Gaussian V1 report and evidence`; the commit
+containing these files is the authoritative boundary. The future V2 branch
+must be created only after, and from, that commit. Phase 10 did not create it.

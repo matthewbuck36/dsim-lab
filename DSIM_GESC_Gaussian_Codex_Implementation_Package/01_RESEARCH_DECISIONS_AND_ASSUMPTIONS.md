@@ -17,6 +17,31 @@ that experiment version.
 
 This document resolves the uncertainties from the meetings into one adopted implementation plan.
 
+## Phase 10 V1 evidence decision
+
+The final V1 claim is a selected-scenario result, not a broad robustness claim.
+Broad simulation readiness and broad physical readiness failed. The strongest
+selected simulation evidence is v8.10 primary `11/11`, v8.11 secondary `6/6`,
+and the v8.12 visible probe `14/14`. The first varied v8.12 case was `13/14`
+against the frozen predicates; the other three varied cases were withheld
+without retry.
+
+The eighth retained physical run is the first two-basin behavioral success: it
+converged at and classified the local basin, created one fill, used repulsive
+and assisted escape, returned to `SEARCH`, and reacquired the stronger-light
+region. It stopped before a second convergence or `GOAL_HOLD` and passed
+`61/62` completeness checks because cross-topic shutdown evidence ordering
+produced one retained false negative. Physical arrival remains manual operator
+`Ctrl+C`; `GOAL_HOLD` does not terminate the physical process.
+
+The LaTeX-typeset
+[`FINAL_PROJECT_REPORT_V1.pdf`](../docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.pdf),
+with its `.tex` source and `.md` audit companion, is the authoritative
+synthesis. Phase 10 changes documentation only and
+authorizes neither hardware use nor a V2 implementation. Any future
+`feature/gesc-gaussian-robustness-v2` work must preserve these V1 outcomes and
+create new versioned hypotheses and evidence.
+
 ## Fixed research decisions
 
 1. **Baseline controller:** gradient-descent extremum seeking control (GESC).

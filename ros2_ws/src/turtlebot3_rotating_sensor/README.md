@@ -1,8 +1,44 @@
 # Turtlebot3 Rotating Sensor
 
+## GESC + Gaussian V1 simulation route (current)
+
+Start with
+[FINAL_PROJECT_REPORT_V1.pdf](../../../docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.pdf)
+for the final architecture, frozen parameters, complete Phase 00-10 chronology,
+selected evidence, failed experiments, and limitations. The older installation,
+example-launch, and troubleshooting material below remains useful historical
+package documentation, but it is not a V1 acceptance recipe.
+The [LaTeX source](../../../docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.tex)
+and [Markdown audit companion](../../../docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.md)
+are retained beside the PDF.
+
+`launch/gazebo.launch.xml` deliberately defaults to
+`algorithm_profile:=legacy`. A GESC + Gaussian V1 launch must explicitly select
+`algorithm_profile:=robust_gaussian_v1`; audited runs additionally use the
+observability, recording-ready, and stop interlocks documented in the current
+[recording guide](../../../docs/codex/gesc_gaussian/recording_runs.md). Prefer
+the existing `ros2 run ros_esc record_run ...` or bounded
+`ros2 run ros_esc run_scenario ...` path so the launch is paired with metadata,
+deterministic scenario inputs, completeness checks, and final-zero evidence.
+Validate with `ros2 run ros_esc validate_run <run_directory>` and analyze
+retained products with `analyze_run`/`summarize_matrix`.
+
+In the robust graph, the supervisor owns algorithm state and `controller_node`
+owns the final `/cmd_vel`; this simulation package supplies the robot, rotating
+sensor, Gazebo environment, and launch wiring. The six robust typed interfaces
+are `AlgorithmState`, `AlgorithmEvent`, `GaussianFill`, `CostBreakdown`,
+`GescDiagnostics`, and `ControlDiagnostics`.
+
+Heavy-Ball scripts and paths, including material under
+`paper_recreations/heavy_ball_PDE_ESC`, are preserved historical/archive or
+compatibility inputs. They are not the active V1 algorithm profile. The V1
+evidence supports selected two-basin demonstrations only: broad simulation
+robustness failed, and physical evidence remained narrow and short of a formal
+second-extremum acceptance run.
+
 This package contains the URDF file that describes a Turtlebot Burger with a top mounted rotating sensor frame. In addition, this package provides several launch files that enable a user to utilize this URDF model either in RVIZ or Gazebo simulation. The URDF model makes use of Gazebo ROS2 Control in order to command the angular velocity of the rotating sensor  frame. To enable this, a configuration yaml file is included in the config folder, where two controllers related to Gazebo ROS2 Control are specified. This package is intended to be used with the ros_esc, ros_esc_interfaces, and extremum-seeking packages from the DSIM Lab Gitlab.
 
-![Visualization of the turtlebot vehicle with a rotating sensor frame.](/turtlebot_rotating_sensor_rviz_model.png)
+![Visualization of the turtlebot vehicle with a rotating sensor frame.](turtlebot_rotating_sensor_rviz_model.png)
 
 ## Author Information
 
@@ -135,8 +171,10 @@ user@machine:~$ ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml \
   light_3_x:=6.0 light_3_y:=3.0 light_3_intensity_lumens:=1500.0
 ```
 
-To use those light settings as the cost function, select a cost configuration
-that uses `Multi_Light_Source_Cost`, for example:
+The following retained example uses a cost configuration stored under a
+historical Heavy-Ball recreation path. `Multi_Light_Source_Cost` is shared
+compatibility code, but this path is not the active GESC + Gaussian V1 profile
+or an acceptance scenario:
 
 ```
 user@machine:~$ ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml \

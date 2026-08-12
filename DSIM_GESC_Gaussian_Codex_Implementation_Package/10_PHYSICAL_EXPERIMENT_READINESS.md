@@ -2,6 +2,32 @@
 
 <!-- MBuck 2026-08-04: Align the selected physical run with the established lab Vicon SOP, repaired Pi runtime, and a single Bash entry point. -->
 
+## Phase 10 V1 closeout notice — 2026-08-12
+
+This checklist is retained as the final selected-run operator procedure and
+historical provenance; Phase 10 does **not** authorize another hardware run,
+Pi access, transfer, calibration, or motion. The final Phase 09 M8L
+source/snapshot/transfer evidence and eighth-run validation supersede the older
+M8C-M8E "current" snapshots in the narrative below.
+
+The eighth retained physical run was the first selected two-basin behavioral
+success: local convergence/classification, one fill, repulsive plus assisted
+escape, return to `SEARCH`, and stronger-light reacquisition. It ended before
+a second convergence or `GOAL_HOLD` and passed `61/62` completeness checks;
+the sole failure was retained as cross-topic shutdown-ordering evidence. This
+is neither complete second-extremum acceptance nor broad physical readiness.
+See the
+[eighth-run validation](../docs/codex/gesc_gaussian/validation/phase_09_eighth_physical_run_validation.md)
+and
+the LaTeX-typeset
+[`FINAL_PROJECT_REPORT_V1.pdf`](../docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.pdf)
+with its `.tex`/`.md` sources.
+
+For any future separately planned and explicitly authorized selected run,
+manual operator `Ctrl+C` remains the normal stop. `GOAL_HOLD` does not
+terminate the physical process. No V2 branch or V2 behavior is created by this
+checklist or by Phase 10.
+
 This is the current Phase 09 M8C operator procedure with the M8D familiar-CSV
 recording amendment and M8E real-Pi runtime repair. It supersedes the earlier
 M8B commissioning sequence that required separate site files, stationary

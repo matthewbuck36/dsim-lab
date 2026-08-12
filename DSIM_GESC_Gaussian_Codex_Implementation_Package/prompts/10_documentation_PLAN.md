@@ -47,6 +47,27 @@ Plan repository documentation for:
 - migration from legacy behavior,
 - thesis-facing methods summary.
 
+The required Phase 10 report deliverables are the exact, case-sensitive paths:
+
+```text
+docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.pdf
+docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.tex
+docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.md
+```
+
+Plan a LaTeX-typeset PDF as the canonical reader-facing report, with the `.tex`
+source and `.md` audit companion carrying the same substantive content. It
+must be a self-contained report on the complete implementation package and all
+Phases 00-10 results, not a short README or selected-success summary. Include
+clear architecture/state/sequence diagrams and evidence graphs wherever they
+improve comprehension without pooling incompatible denominators.
+Also plan a machine-readable coverage matrix for every package-manifest entry,
+phase/subphase, material experiment version, result, and retained evidence
+class, plus a documentation-validation record. The final claim must preserve
+the failed broad simulation/physical readiness gates; selected v8.10 `11/11`,
+v8.11 `6/6`, v8.12 visible `14/14`, varied `13/14`, the three withheld cases,
+and Phase 09 eighth-run `61/62` result must retain their exact scopes.
+
 Identify stale or contradictory documentation that must be updated.
 Use the final live repository state and validated commands. Keep Heavy-Ball
 material only as clearly historical context; remove it from the active GESC +
@@ -73,6 +94,10 @@ The document must contain:
 - tests to add and commands to run,
 - stop conditions and risks,
 - assumptions requiring verification during implementation.
+
+The Plan must keep all work on `feature/gesc-gaussian-robustness-v1`, prohibit
+hardware/runtime execution, and treat a future
+`feature/gesc-gaussian-robustness-v2` branch as out of scope.
 
 Do not edit source code in Plan mode. Make the final Plan response complete
 enough to save without relying on the chat history. Before opening the Phase 10

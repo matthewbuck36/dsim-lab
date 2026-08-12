@@ -4,6 +4,31 @@
 
 The final claim is limited to the documented scenario family. The controller is not claimed to solve every arbitrary nonconvex function.
 
+## Terminal V1 gate disposition
+
+The broad simulation-ready and physical-ready gates **failed** for V1.
+Selected successes are reported independently of those failed broad gates:
+
+| Evidence set | V1 result | Scope |
+|---|---:|---|
+| v8.10 primary fixed layout | `11/11` | selected simulation scenario |
+| v8.11 secondary fixed layout | `6/6` | selected simulation scenario |
+| v8.12 visible probe | `14/14` | selected visible probe |
+| v8.12 first varied case | `13/14` | scientific behavior completed; one frozen predicate failed |
+| v8.12 remaining varied cases | `3` withheld | no retry after the frozen failure |
+| Phase 09 eighth physical run | `61/62` completeness | selected two-basin behavioral success only |
+
+The physical run ended before a second convergence or `GOAL_HOLD`, so it is
+not complete second-extremum acceptance. Manual operator `Ctrl+C` remains the
+normal physical stop, and `GOAL_HOLD` is not a process terminator. The detailed
+denominators, prior failures, and evidence limits are retained in
+the LaTeX-typeset
+[`FINAL_PROJECT_REPORT_V1.pdf`](../docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.pdf)
+and its `.tex`/`.md` sources.
+The gates below remain the historical V1 contract and a reference for future
+separately versioned work; they are not retroactively weakened by the selected
+results.
+
 ## Test hierarchy
 
 ### Level 1 — Unit tests
