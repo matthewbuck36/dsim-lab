@@ -56,6 +56,7 @@ class EstimatorConfig:
     sample_sync_tolerance_sec: float = 0.05
     maximum_position_speed_mps: float = 0.20
     outlier_mad_threshold: float = 3.5
+    position_increment_mad_floor_m: float = 1e-4
     estimation_window_sec: float = 8.0
     minimum_valid_samples: int = 40
     maximum_sample_age_sec: float = 12.0
@@ -93,6 +94,13 @@ class EstimatorConfig:
             raise ValueError("sample and iteration counts must be positive")
         if not math.isfinite(self.outlier_mad_threshold) or self.outlier_mad_threshold <= 0:
             raise ValueError("outlier MAD threshold must be finite and positive")
+        if (
+            not math.isfinite(self.position_increment_mad_floor_m)
+            or self.position_increment_mad_floor_m < 0.0
+        ):
+            raise ValueError(
+                "position increment MAD floor must be finite and nonnegative"
+            )
 
 
 @dataclass(frozen=True)
@@ -212,13 +220,19 @@ def synchronize_samples(
     )
 
 
-def _modified_z_scores(values):
+def _modified_z_scores(values, scale_floor=0.0):
     values = np.asarray(values, dtype=np.float64)
+    scale_floor = float(scale_floor)
+    if not math.isfinite(scale_floor) or scale_floor < 0.0:
+        raise ValueError(
+            "modified z-score scale floor must be finite and nonnegative"
+        )
     median = float(np.median(values))
     mad = float(np.median(np.abs(values - median)))
-    if mad <= np.finfo(np.float64).eps:
+    scale = max(mad, scale_floor)
+    if scale <= np.finfo(np.float64).eps:
         return np.zeros(values.shape, dtype=np.float64)
-    return 0.67448975 * np.abs(values - median) / mad
+    return 0.67448975 * np.abs(values - median) / scale
 
 
 def freeze_sample_window(
@@ -279,8 +293,15 @@ def freeze_sample_window(
     if len(preliminary) > 1:
         positions = np.array([[sample.x, sample.y] for sample in preliminary])
         increments = np.linalg.norm(np.diff(positions, axis=0), axis=1)
+        # Stationary wheel odometry can alternate by encoder-scale increments
+        # while its numeric MAD is near zero. Floor only the MAD denominator;
+        # the absolute speed-jump gate above remains unchanged.
         increment_outlier[1:] = (
-            _modified_z_scores(increments) > config.outlier_mad_threshold
+            _modified_z_scores(
+                increments,
+                scale_floor=config.position_increment_mad_floor_m,
+            )
+            > config.outlier_mad_threshold
         )
 
     kept = []

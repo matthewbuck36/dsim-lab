@@ -1,7 +1,7 @@
 # Phase 09 Live Status
 
-Last verified: `2026-08-05T00:41:54-07:00`
-Status: `M8L ROTATION INITIALIZATION RE-ARM HOST-QUALIFIED AND TRANSFERRED; 347/347 PARITY PASS; SEVENTH ZERO-MOTION RUN RETAINED; POST-CHANGE PI CHECK-ONLY NOT YET RUN`
+Last verified: `2026-08-18T21:02:38Z`
+Status: `M8O ESCAPE-START LATENCY CORRECTED DIRECTLY IN MOUNTED PI SOURCE; HOST QUALIFIED; PI BUILD/CHECK-ONLY AND PHYSICAL RE-RUN NOT RUN`
 
 ## Objective
 
@@ -1431,7 +1431,7 @@ No Pi build, ROS graph, serial device, pigpio daemon, Vicon client, recorder,
 or motion was started by Codex. Full evidence is in
 `docs/codex/gesc_gaussian/validation/phase_09_third_physical_run_repair.md`.
 
-## Current milestone
+## Historical M8M boundary
 
 **M8H SHARED CLOCK SOURCE REPAIR HOST-QUALIFIED / REVIEWED PI SOURCE TRANSFER
 COMPLETE / POST-REBOOT 347/347 FILE AND 435/435 INVENTORY PARITY PASS / THIRD
@@ -1923,3 +1923,176 @@ The next code action, if authorized, is the bounded offline M8M validator/test
 repair described above. Do not change the algorithm, controller, recorder
 lanes, rotation owner, leases, topics, `/odom` ownership, Vicon role, launch,
 wrapper, or legacy paths. No further physical run is planned tonight.
+
+## M8N stationary-odometry estimator correction — 2026-08-18
+
+The operator's retained run
+`20260818T131824869516Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_9991e716`
+is preserved unchanged. It reached first convergence and completed the
+counted-candidate window, but Gaussian fill construction rejected 18 of 40
+synchronized samples as position-increment MAD outliers and left only 22
+against the unchanged minimum of 40. The typed sequence is
+`SEARCH -> VERIFY_EXTREMUM -> DESIGN_OR_MERGE_FILL -> FAILSAFE`, with
+`FILL_REJECTED` reason 30, `insufficient valid synchronized samples`.
+Completeness is `60/62`; Vicon coverage, required topics, rotation ordering,
+CSV export, and terminal bag command zeros pass. This remains failed evidence.
+
+Read-only replay isolated the numerical cause. Stationary `/odom` alternated
+by approximately `25.311` and `50.621` micrometres while the increment median
+and MAD were approximately `1.6` nanometres. The resulting modified z-scores
+exceeded `10,000` despite physically negligible motion.
+
+The shared robust estimator now uses a finite, nonnegative
+`position_increment_mad_floor_m` parameter with default `0.0001 m`. It floors
+only the position-increment MAD denominator. The hard
+`maximum_position_speed_mps` rejection, raw-cost MAD, timestamp and finite
+checks, synchronization, 40-sample minimum, fill validation, supervisor
+failsafe, cost sign/units, topics, `/odom`, and Vicon evaluation boundary are
+unchanged. Legacy selection does not construct the robust estimator and its
+regression suite remains green.
+
+Exact retained-window replay with the new source keeps `40/40` samples,
+rejects zero position increments, and produces a valid fill with amplitude
+`0.499920`, exit radius `1.366771 m`, and confidence `0.614507`. Setting the
+new floor to `0.0` reproduces the prior result exactly: `22/40` valid and 18
+position-increment rejections.
+
+Host and snapshot validation:
+
+- robust Gaussian tests: `31 passed`;
+- observability contract: `15 passed`;
+- legacy behavior: `37 passed`;
+- supervisor integration: `62 passed`;
+- snapshot shared parity: `29 passed`;
+- remaining snapshot Phase 09 suite: `201 passed`;
+- critical Python lint, compile, and `git diff --check`: PASS;
+- canonical isolated build: three packages, PASS in `13.8 s` at
+  `/tmp/phase09_m8n_build.7XaecP`;
+- physical-snapshot isolated build: three packages, PASS in `15.0 s` at
+  `/tmp/phase09_m8n_snapshot_build.eeMnuK`; and
+- installed robust-node probe: declared/effective floor both `0.0001`.
+
+Two exploratory invocations are retained as non-acceptance diagnostics. The
+first canonical build selected the physical-only package name and omitted the
+canonical `turtlebot3_rotating_sensor` dependency; a clean correctly scoped
+retry passed. A later `colcon test` was launched from the canonical checkout
+against the snapshot build root, so package discovery omitted the physical
+package and exposed the documented inherited `ros_esc_interfaces` CMake-lint
+baseline; it was stopped and replaced by the explicit snapshot pytest suites
+above. Neither attempt changed source or ran hardware.
+
+The local physical snapshot backup is
+`/home/mattb/physical_TB3_files_snapshot/phase09_backups/20260818T203147Z_m8n_stationary_odom_mad`.
+Checkout/snapshot hashes match for the two runtime files:
+`cc0665556eefd84b4ae098fd7553cb9e32ef4b39a9159d98edcd8d6a75f43bb0`
+for `basin_estimator.py` and
+`58d3e6921a528ffc2bdfd87fcae1393c191414df099b067d432442d116a2ecfa`
+for `gaussian_fill_script.py`.
+
+The operator then explicitly authorized implementation in the mounted
+physical-Pi files. Both targets still matched their expected pre-M8N hashes,
+so the transfer did not overlap a Pi-side edit. The old files, their hashes,
+and a tar archive are retained on the Pi at
+`/home/pi/phase09_backups/20260818T204100Z_m8n_stationary_odom_mad`; the
+archive SHA-256 is
+`a7d81e0050085e2d3e83a292f567ef2af1642b086ec5ab57966a4a08532d5ded`.
+
+The checksum dry run named exactly the two Gaussian owners. Exact-file
+`rsync -rlptO --checksum` commands, without deletion, transferred only
+`basin_estimator.py` and `gaussian_fill_script.py`. A post-transfer dry run
+was empty. Checkout, snapshot, and mounted-Pi hashes now agree at
+`cc0665556eefd84b4ae098fd7553cb9e32ef4b39a9159d98edcd8d6a75f43bb0`
+and `58d3e6921a528ffc2bdfd87fcae1393c191414df099b067d432442d116a2ecfa`.
+Mounted-source shared parity passed `29` tests, mounted-source robust Gaussian
+regression passed `31`, both transferred files passed AST and fatal flake8,
+and an import probe resolved the mounted modules with default floor `0.0001`.
+
+Broader canonical legacy and observability suites are not valid whole-package
+mounted-source gates: the physical package intentionally omits the
+simulation-only `Multi_Light_Source_Cost` and retains a different legacy cost
+CLI. The exploratory invocations produced one collection error and
+`13 passed, 2 failed`, respectively; these are retained command-scope
+diagnostics and do not touch the transferred Gaussian owners. Their canonical
+and snapshot acceptance runs remain green above.
+
+No Pi build, Pi-terminal command, ROS graph, device, recorder, actuator,
+rotating frame, Vicon process, lamp, or robot was started. The operator-owned
+wrapper build and `--check-only` plus a fresh physical run remain unexecuted;
+M8N is installed in Pi source but is not yet physically validated.
+
+## Current milestone
+
+**M8N STATIONARY-ODOMETRY ESTIMATOR CORRECTION IMPLEMENTED / EXACT FAILED-BAG
+WINDOW REPLAYS FROM 22/40 TO 40/40 / DOWNSTREAM FILL VALID / HOST, SNAPSHOT,
+AND MOUNTED-PI SOURCE PARITY VERIFIED / PI CHECK-ONLY AND FRESH PHYSICAL
+VALIDATION NOT RUN.**
+
+## M8O escape-start history-scan latency correction — 2026-08-18
+
+The retained selected run
+`20260818T134743817066Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_d766a6ab`
+is preserved unchanged. M8N succeeded in this run: all `40/40` synchronized
+samples survived and one fill was created with amplitude `0.6965`, exit radius
+`1.366770829 m`, and confidence `0.605507`. The supervisor then transitioned
+`DESIGN_OR_MERGE_FILL -> ESCAPE_REPULSE -> FAILSAFE` with reason
+`source sample invalid or stale`. Completeness remains `60/62`; this is failed
+first-escape evidence, not physical acceptance.
+
+Typed bag decoding identified the first causal failure. Escape-start work
+occupied the supervisor's single callback lane for about `0.423 s`. Valid
+source messages recorded at `1787061029.1299770 s` and
+`1787061029.3272338 s` queued during that work, so the next timer evaluated
+the earlier processed receipt after the unchanged `0.50 s` freshness lease.
+The publisher did not stop. The expensive path was the approach-continuity
+scan making per-pose NumPy calls over 3,114 retained odometry poses. The later
+encoder/pigpio bad-file-descriptor traceback occurred during forced shutdown
+and is retained as a secondary diagnostic; it did not trigger this failsafe.
+
+The shared `approach_continuity_evidence` helper now validates and scans the
+history in one scalar pass. It still selects the newest pose strictly outside
+the frozen radius, preserves the earliest exact farthest-interior tie, rejects
+nonfinite poses/timestamps and non-increasing timestamps, and emits the same
+evidence fields. `_begin_escape` now freezes the pose-history tuple once and
+reuses it. The `0.50 s` source lease, state transitions, commands, controller
+ownership, fill/escape geometry, topics, sign/units, `/odom`, Vicon role,
+recording, wrapper, and legacy selection are unchanged.
+
+Exact retained-bag replay of 3,114 poses passes anchor/output equivalence at
+`rtol=1e-12`, `atol=1e-12`. The selected anchor is
+`(-0.749956581913305, 2.566785203322189)`, direction
+`(-0.753695973184382, 0.657223234529674)`, displacement
+`1.367396041716432 m`, age `108.461905479 s`, mode `outside_radius`.
+Fifty alternating host measurements report prior/corrected medians
+`0.023420/0.002196 s`, a `10.66x` speedup. Validation results are:
+
+- escape/recenter suite including a 3,114-pose fast-path regression: `67 passed`;
+- supervisor integration, state machine, and observability: `174 passed`;
+- legacy behavior: `37 passed`;
+- the escape/recenter suite resolving mounted-Pi source: `67 passed`;
+- mounted-source AST, fatal `flake8` (`E9,F63,F7,F82`), and diff checks: PASS; and
+- Phase 09 implement-context validation: PASS.
+
+Before the edit, both Pi targets matched the checkout and were retained at
+`/home/pi/phase09_backups/20260818T205807Z_m8o_escape_history_latency`.
+The archive SHA-256 is
+`18b0ccd2ca068462a951e32d5586afe79088e3da7a85eff37e6b73bd4e954c9c`.
+The corrected checkout and mounted-Pi hashes match at
+`d2d4a6edb0c539638b5a8ea50fa3f85b08c311591495b6708f9a91d26e246b27`
+for `escape_recenter.py` and
+`ffb5441fb0d8a9032af87a6d52a60a1ead371a6f45aaec4bf3ebeb1843e67144`
+for `supervisor_node_script.py`.
+
+Per the operator's instruction, the local physical snapshot was not read,
+modified, or used for transfer; checkout/Pi parity is authoritative for M8O
+and snapshot parity is intentionally not asserted. No Pi build, Pi-terminal
+command, overlay sourcing, ROS graph, Vicon process, device, recorder,
+actuation, lamp, or robot motion ran. Source-level qualification does not
+prove the physical timing outcome; the operator-owned Pi build/check-only and
+a fresh retained physical run remain required.
+
+## Current milestone
+
+**M8O ESCAPE-START HISTORY LATENCY CORRECTION IMPLEMENTED DIRECTLY IN MOUNTED
+PI SOURCE / RETAINED 3,114-POSE OUTPUT EQUIVALENCE PASS / HOST MEDIAN 10.66X
+FASTER / CHECKOUT-PI TWO-FILE PARITY PASS / LOCAL SNAPSHOT INTENTIONALLY
+UNTOUCHED / PI BUILD, CHECK-ONLY, AND PHYSICAL RE-RUN NOT RUN.**

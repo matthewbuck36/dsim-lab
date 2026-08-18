@@ -1,8 +1,8 @@
 # Phase 09 Handoff — Physical Source Integration and Lab-SOP Entry
 
-Date: `2026-08-04` (`America/Los_Angeles`)
+Date: `2026-08-18` (`America/Los_Angeles`)
 
-Current outcome: `M8E CLEAN ON-PI CHECK-ONLY, INSTALLED-SOURCE PARITY, REAL-PI SOURCE PARITY, AND LAB WALL-CLOCK INITIALIZATION PASS FOR CURRENT BOOT`
+Current outcome: `M8N CORRECTED SOURCE TRANSFERRED TO MOUNTED PI; SOURCE PARITY VERIFIED; PI CHECK-ONLY AND PHYSICAL RE-RUN NOT RUN`
 
 The current human operator follows the attached lab Vicon SOP and invokes bare
 `gesc_gaussian_two_source_voltage.bash`; no repository readiness tag,
@@ -1218,3 +1218,89 @@ The operator intentionally unmounted `/home/mattb/tb3-pi` after the run.
 Do not attempt mounted inspection or transfer until an explicit remount and
 authorization. Detailed evidence is in
 `docs/codex/gesc_gaussian/validation/phase_09_eighth_physical_run_validation.md`.
+
+## M8N post-run estimator correction handoff — 2026-08-18
+
+The newly retained physical run
+`20260818T131824869516Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_9991e716`
+failed at the first fill. Its exact event sequence reached counted-candidate
+classification, then emitted `FILL_REJECTED` reason 30 because stationary
+OpenCR odometry quantization caused 18 false position-increment MAD outliers.
+Only 22 of the required 40 samples remained, so the supervisor correctly
+entered `FAILSAFE`. Vicon, recording, CSV export, and bag terminal zeros pass;
+retain the attempt as failed evidence (`60/62` completeness).
+
+M8N adds `position_increment_mad_floor_m=0.0001` to the shared robust Gaussian
+estimator. It changes only the MAD denominator used for position increments.
+The hard speed-jump rejection and every existing sample, design, supervisor,
+recording, topic, sign/unit, pose-ownership, and evaluation gate remain in
+force. Exact bag replay changes `22/40` to `40/40` and produces a valid bounded
+fill; explicitly setting the floor to zero reproduces the original failure.
+
+The Git checkout and local physical snapshot are byte-identical for the two
+changed runtime owners. Focused/shared/legacy/snapshot validation passes, both
+isolated builds pass, and the installed snapshot node resolves the effective
+floor to `0.0001`. Full evidence is in
+`docs/codex/gesc_gaussian/validation/phase_09_m8n_stationary_odometry_estimator.md`.
+
+The operator subsequently authorized the reviewed two-file mounted-Pi source
+transfer. The pre-M8N files and a tar archive are retained at
+`/home/pi/phase09_backups/20260818T204100Z_m8n_stationary_odom_mad`; archive
+SHA-256 is
+`a7d81e0050085e2d3e83a292f567ef2af1642b086ec5ab57966a4a08532d5ded`.
+Checksum-scoped `rsync -rlptO` transferred only `basin_estimator.py` and
+`gaussian_fill_script.py`, without deletion. Checkout, snapshot, and mounted
+Pi now have hashes `cc066555...` and `58d3e692...`, and the post-transfer dry
+run is empty.
+
+Host-side validation resolving the mounted modules passed shared parity
+(`29`) and robust Gaussian (`31`) tests plus AST and fatal flake8. The new
+default imports from the mounted estimator as `0.0001`. Exploratory canonical
+legacy/observability tests are not valid whole-package mounted-source gates
+because the physical package intentionally omits the simulation-only
+multi-light owner and retains a different legacy cost CLI; their collection
+error and `13 passed, 2 failed` result are command-scope diagnostics, not M8N
+Gaussian regressions.
+
+No Pi build, Pi-terminal command, ROS graph, Vicon, device, recording,
+actuation, lamp, or robot motion ran. The next boundary is the operator-owned
+bare wrapper build and `--check-only`; even a passing check-only would not be
+physical validation. A fresh retained physical run is still required.
+
+## M8O post-run escape-start latency correction handoff — 2026-08-18
+
+Preserve
+`20260818T134743817066Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_d766a6ab`
+as a failed first-escape run (`60/62`). M8N worked and created a valid fill,
+but the supervisor entered `FAILSAFE` with `source sample invalid or stale`.
+Typed evidence shows valid 5 Hz source messages queued while synchronous
+escape-start initialization occupied the single executor lane for about
+`0.423 s`; the next timer then tested the old processed receipt beyond the
+unchanged `0.50 s` lease. The later encoder/pigpio shutdown traceback is
+secondary, not the initiating fault.
+
+M8O replaces the per-pose NumPy work in `approach_continuity_evidence` with a
+single scalar validation/selection pass and freezes `pose_history` once in
+`_begin_escape`. Selection rules, evidence values, validation failures, the
+source lease, state machine, commands, geometry, topics, ownership, recorder,
+wrapper, Vicon boundary, and legacy selection are unchanged.
+
+The exact retained 3,114-pose history produces equivalent output within
+`1e-12`; the host median changes from `23.420 ms` to `2.196 ms` (`10.66x`).
+Canonical tests pass `67` escape/recenter, `174` combined supervisor/state/
+observability, and `37` legacy cases. The `67` escape tests also pass while
+resolving the mounted source. Mounted AST and fatal lint pass.
+
+The pre-edit Pi sources and archive are retained under
+`/home/pi/phase09_backups/20260818T205807Z_m8o_escape_history_latency` with
+archive SHA-256
+`18b0ccd2ca068462a951e32d5586afe79088e3da7a85eff37e6b73bd4e954c9c`.
+Checkout and mounted Pi now match at `d2d4a6ed...` for
+`escape_recenter.py` and `ffb5441fb...` for `supervisor_node_script.py`.
+The operator explicitly requested no local-snapshot path for this correction;
+that snapshot was not read or changed, and M8O snapshot parity is not claimed.
+
+Codex did not build or source on the Pi and started no physical process. The
+operator must build/check the Pi overlay before the next bare wrapper run. A
+fresh retained run is necessary to determine whether the physical callback
+delay is resolved; host timing alone is not a physical-success claim.

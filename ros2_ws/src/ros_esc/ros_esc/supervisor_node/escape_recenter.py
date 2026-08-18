@@ -317,82 +317,78 @@ def approach_continuity_evidence(
     ordered = tuple(history)
     if not ordered:
         return None
-    positions = []
-    stamps = []
+    center_x = float(center[0])
+    center_y = float(center[1])
+    newest_outside = None
+    farthest = None
+    previous_stamp = None
+    current_stamp = None
+    timestamps_increase = True
     for sample in ordered:
         try:
-            positions.append(
-                _finite_vector(
-                    sample.position,
-                    "approach-continuity history position",
-                )
-            )
+            x = float(sample.x)
+            y = float(sample.y)
             stamp = float(sample.stamp_sec)
         except (AttributeError, TypeError, ValueError) as exc:
             raise ValueError(
                 "approach-continuity history samples must be finite poses"
             ) from exc
+        if not math.isfinite(x) or not math.isfinite(y):
+            raise ValueError(
+                "approach-continuity history samples must be finite poses"
+            )
         if not math.isfinite(stamp):
             raise ValueError(
                 "approach-continuity history timestamps must be finite"
             )
-        stamps.append(stamp)
-    if any(
-        stamps[index] >= stamps[index + 1]
-        for index in range(len(ordered) - 1)
-    ):
+        if previous_stamp is not None and previous_stamp >= stamp:
+            timestamps_increase = False
+        displacement_x = center_x - x
+        displacement_y = center_y - y
+        displacement_m = math.hypot(displacement_x, displacement_y)
+        candidate = (
+            x,
+            y,
+            stamp,
+            displacement_x,
+            displacement_y,
+            displacement_m,
+        )
+        if displacement_m > exclusion_radius_m + _EPSILON:
+            newest_outside = candidate
+        if farthest is None or displacement_m > farthest[-1]:
+            farthest = candidate
+        previous_stamp = stamp
+        current_stamp = stamp
+    if not timestamps_increase:
         raise ValueError(
             "approach-continuity history timestamps must increase"
         )
-    current_stamp = stamps[-1]
 
-    def evidence(index, displacement, displacement_m, mode):
-        sample = ordered[index]
-        direction = displacement / displacement_m
+    def evidence(candidate, mode):
+        x, y, stamp, displacement_x, displacement_y, displacement_m = (
+            candidate
+        )
         return ApproachContinuityEvidence(
-            anchor_x=float(sample.x),
-            anchor_y=float(sample.y),
-            anchor_stamp_sec=stamps[index],
-            direction_x=float(direction[0]),
-            direction_y=float(direction[1]),
+            anchor_x=x,
+            anchor_y=y,
+            anchor_stamp_sec=stamp,
+            direction_x=displacement_x / displacement_m,
+            direction_y=displacement_y / displacement_m,
             displacement_m=displacement_m,
-            history_age_sec=max(0.0, current_stamp - stamps[index]),
+            history_age_sec=max(0.0, current_stamp - stamp),
             exclusion_radius_m=float(exclusion_radius_m),
             anchor_mode=mode,
         )
 
-    for index, position in reversed(tuple(enumerate(positions))):
-        displacement = center - position
-        displacement_m = float(np.linalg.norm(displacement))
-        if displacement_m <= exclusion_radius_m + _EPSILON:
-            continue
-        return evidence(
-            index,
-            displacement,
-            displacement_m,
-            "outside_radius",
-        )
+    if newest_outside is not None:
+        return evidence(newest_outside, "outside_radius")
 
     if not interior_anchor_fallback_enabled:
         return None
-    farthest_index = 0
-    farthest_displacement = center - positions[0]
-    farthest_displacement_m = float(np.linalg.norm(farthest_displacement))
-    for index, position in enumerate(positions[1:], start=1):
-        displacement = center - position
-        displacement_m = float(np.linalg.norm(displacement))
-        if displacement_m > farthest_displacement_m:
-            farthest_index = index
-            farthest_displacement = displacement
-            farthest_displacement_m = displacement_m
-    if farthest_displacement_m < interior_anchor_min_displacement_m:
+    if farthest[-1] < interior_anchor_min_displacement_m:
         return None
-    return evidence(
-        farthest_index,
-        farthest_displacement,
-        farthest_displacement_m,
-        "interior_farthest",
-    )
+    return evidence(farthest, "interior_farthest")
 
 
 @dataclass(frozen=True)

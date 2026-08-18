@@ -134,6 +134,7 @@ class GaussianFill(Node):
             "sample_sync_tolerance_sec": 0.05,
             "maximum_position_speed_mps": 0.20,
             "outlier_mad_threshold": 3.5,
+            "position_increment_mad_floor_m": 0.0001,
             "maximum_cluster_samples": 4000,
             "estimation_window_sec": 8.0,
             "minimum_valid_samples": 40,
@@ -312,6 +313,9 @@ class GaussianFill(Node):
                 ),
                 outlier_mad_threshold=self._parameter_float(
                     "outlier_mad_threshold"
+                ),
+                position_increment_mad_floor_m=self._parameter_float(
+                    "position_increment_mad_floor_m"
                 ),
                 estimation_window_sec=self._parameter_float(
                     "estimation_window_sec"
@@ -1739,6 +1743,7 @@ class GaussianFill(Node):
                 "sample_sync_tolerance_sec",
                 "maximum_position_speed_mps",
                 "outlier_mad_threshold",
+                "position_increment_mad_floor_m",
                 "maximum_cluster_samples",
                 "estimation_window_sec",
                 "minimum_valid_samples",

@@ -1583,8 +1583,9 @@ class SupervisorNode(Node):
         record = self._record_for_fill(self.machine.active_escape_fill_id)
         if record is None:
             return "escape start fill has no active finite geometry"
+        pose_history = tuple(self.pose_history)
         approach = recent_approach(
-            tuple(self.pose_history), self.approach_history_window_sec
+            pose_history, self.approach_history_window_sec
         )
         geometry = EscapeGeometry(
             initial_fill_id=int(record["fill_id"]),
@@ -1609,7 +1610,7 @@ class SupervisorNode(Node):
         ):
             self.escape_approach_continuity = (
                 approach_continuity_evidence(
-                    tuple(self.pose_history),
+                    pose_history,
                     geometry.center,
                     geometry.exit_radius,
                     interior_anchor_fallback_enabled=(

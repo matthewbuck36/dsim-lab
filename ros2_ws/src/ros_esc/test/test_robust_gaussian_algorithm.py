@@ -571,6 +571,67 @@ def test_window_boundaries_timestamp_speed_mad_and_minimum_sample_failure():
         estimate_basin(window.samples[:2], config)
 
 
+def test_stationary_encoder_quantization_uses_position_mad_scale_floor():
+    # Reproduce the 2026-08-18 physical VERIFY_EXTREMUM window: the stopped
+    # OpenCR odometry alternated by one or two approximately 25.311 um steps,
+    # while sub-nanometre numeric jitter made the raw MAD nonzero.
+    encoder_levels = (
+        0, 0, 0, 0, 0, 1, 1, 1, 0, 0,
+        0, 0, -1, 0, 0, 0, -1, 0, -1, 1,
+        1, 0, 0, 0, -1, 0, -1, 1, -1, -1,
+        -1, -1, -1, -1, 0, -1, -1, 1, 1, 0,
+    )
+    encoder_step_m = 25.311e-6
+    samples = tuple(
+        sample(
+            0.1 + index * 0.2,
+            level * encoder_step_m + (index % 3) * 0.8e-9,
+            0.0,
+            -0.2,
+            state=2,
+        )
+        for index, level in enumerate(encoder_levels)
+    )
+
+    corrected = freeze_sample_window(samples, 8.0, EstimatorConfig())
+    assert corrected.input_count == 40
+    assert corrected.valid_count == 40
+    assert corrected.rejected["position_increment_mad"] == 0
+
+    prior_behavior = freeze_sample_window(
+        samples,
+        8.0,
+        EstimatorConfig(position_increment_mad_floor_m=0.0),
+    )
+    assert prior_behavior.valid_count == 22
+    assert prior_behavior.rejected["position_increment_mad"] == 18
+
+
+def test_position_mad_scale_floor_still_rejects_meaningful_increment():
+    samples = [
+        sample(
+            0.1 + index * 0.2,
+            (index % 3) * 0.8e-9,
+            0.0,
+            -0.2,
+            state=2,
+        )
+        for index in range(40)
+    ]
+    samples[20] = sample(4.1, 0.001, 0.0, -0.2, state=2)
+
+    window = freeze_sample_window(samples, 8.0, EstimatorConfig())
+    assert window.valid_count == 38
+    assert window.rejected["position_increment_mad"] == 2
+
+
+def test_position_mad_scale_floor_must_be_finite_and_nonnegative():
+    with pytest.raises(ValueError, match="MAD floor"):
+        EstimatorConfig(position_increment_mad_floor_m=-1e-4)
+    with pytest.raises(ValueError, match="MAD floor"):
+        EstimatorConfig(position_increment_mad_floor_m=float("nan"))
+
+
 def test_depth_only_fallback_and_orientation_and_retention_are_deterministic():
     line_samples = tuple(sample(i * 0.1, i * 0.01, 0.0, i * 0.01) for i in range(8))
     estimate = estimate_basin(

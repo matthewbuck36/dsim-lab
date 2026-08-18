@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
+from ros_esc.supervisor_node import escape_recenter as escape_recenter_module
 from ros_esc.supervisor_node.escape_recenter import (
     ApproachContinuityEvidence,
     DirectionConfig,
@@ -266,6 +267,39 @@ def test_approach_continuity_interior_exact_tie_uses_earliest_history_pose():
 
     assert evidence.anchor == pytest.approx([-0.6, 0.0])
     assert evidence.anchor_stamp_sec == pytest.approx(0.0)
+    assert evidence.direction == pytest.approx([1.0, 0.0])
+
+
+def test_approach_continuity_scans_physical_length_history_without_numpy_per_pose(
+    monkeypatch,
+):
+    history = [
+        pose(
+            index * 0.05,
+            -2.0 if index == 1200 else -0.25,
+            0.0,
+        )
+        for index in range(3114)
+    ]
+    finite_vector_calls = []
+    original_finite_vector = escape_recenter_module._finite_vector
+
+    def counting_finite_vector(values, name):
+        finite_vector_calls.append(name)
+        return original_finite_vector(values, name)
+
+    monkeypatch.setattr(
+        escape_recenter_module,
+        "_finite_vector",
+        counting_finite_vector,
+    )
+
+    evidence = approach_continuity_evidence(history, [0.0, 0.0], 1.0)
+
+    assert finite_vector_calls == ["approach-continuity fill center"]
+    assert evidence.anchor == pytest.approx([-2.0, 0.0])
+    assert evidence.anchor_stamp_sec == pytest.approx(60.0)
+    assert evidence.history_age_sec == pytest.approx(95.65)
     assert evidence.direction == pytest.approx([1.0, 0.0])
 
 

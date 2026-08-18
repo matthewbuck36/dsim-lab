@@ -1,53 +1,54 @@
 # Phase 09 checkpoint
 
 Checkpoint kind: precommit material-boundary snapshot
-Generated: 2026-08-05T08:12:36+00:00
-Base HEAD: 713b0c5c83b80ce0c862763a2292b724ba4ba345
+Generated: 2026-08-18T21:04:07+00:00
+Base HEAD: 43bdf051adf6dc6f816b7f01b537e7d7f5cac3fa
 Branch: feature/gesc-gaussian-robustness-v1
 Status: docs/codex/gesc_gaussian/status/phase_09_status.md
-Status sha256: 118ba9e2a46cf6b49ef89f0bada1dd4f9515a7fad3230968283c66d84c6e95c1
+Status sha256: fa35e35a6d514d0ac46e7793ebf1b6b8b9f1cb27c9018fc629f0b0b7b3df30d5
 Plan: docs/codex/gesc_gaussian/plans/phase_09_plan.md
-Plan sha256: 0867f3685e0a61b19ba726f2352e5ed39a7bb0dbf2fc8de669ccaaee5250a75a
-Unstaged diff sha256: 3566c3d98e736bcc7461b91ba681703d30ed601cf99d3edc24f93626effb638c
+Plan sha256: 35ee562d7fc825c6440d0bcac452a561cefcc8fe3d82fb71bfeb864fd6a7dce3
+Unstaged diff sha256: 502ab8c699035c4394c4ae8b99a60500af93ad4ccce417d0aca6e5bd5407af68
 Staged diff sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 ## Git state
-## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1 [ahead 194]
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_IMPLEMENT.md
- M DSIM_GESC_Gaussian_Codex_Implementation_Package/prompts/09_physical_PLAN.md
+## feature/gesc-gaussian-robustness-v1...origin/feature/gesc-gaussian-robustness-v1
  M docs/codex/gesc_gaussian/checkpoints/phase_09_checkpoint.txt
  M docs/codex/gesc_gaussian/handoffs/phase_09_handoff.md
  M docs/codex/gesc_gaussian/plans/phase_09_plan.md
  M docs/codex/gesc_gaussian/status/phase_09_status.md
-?? docs/codex/gesc_gaussian/validation/phase_09_eighth_physical_run_validation.md
-?? docs/codex/gesc_gaussian/validation/phase_09_seventh_physical_run_repair.md
-?? docs/codex/gesc_gaussian/validation/phase_09_sixth_physical_run_repair.md
+ M ros2_ws/src/ros_esc/ros_esc/gaussian_fill_node/basin_estimator.py
+ M ros2_ws/src/ros_esc/ros_esc/gaussian_fill_node/gaussian_fill_script.py
+ M ros2_ws/src/ros_esc/ros_esc/supervisor_node/escape_recenter.py
+ M ros2_ws/src/ros_esc/ros_esc/supervisor_node/supervisor_node_script.py
+ M ros2_ws/src/ros_esc/test/test_escape_recenter.py
+ M ros2_ws/src/ros_esc/test/test_robust_gaussian_algorithm.py
+?? docs/codex/gesc_gaussian/validation/phase_09_m8n_stationary_odometry_estimator.md
+?? docs/codex/gesc_gaussian/validation/phase_09_m8o_escape_start_history_latency.md
 
 ## Diff check
 unstaged and staged: pass
 
 ## Changed-file summary
- .../prompts/09_physical_IMPLEMENT.md               |  90 ++++++
- .../prompts/09_physical_PLAN.md                    |  85 ++++++
- .../checkpoints/phase_09_checkpoint.txt            |  58 +---
- .../gesc_gaussian/handoffs/phase_09_handoff.md     | 171 ++++++++++++
- docs/codex/gesc_gaussian/plans/phase_09_plan.md    | 202 ++++++++++++++
- docs/codex/gesc_gaussian/status/phase_09_status.md | 310 ++++++++++++++++++++-
- 6 files changed, 871 insertions(+), 45 deletions(-)
+ .../checkpoints/phase_09_checkpoint.txt            |  50 ++----
+ .../gesc_gaussian/handoffs/phase_09_handoff.md     |  90 ++++++++++-
+ docs/codex/gesc_gaussian/plans/phase_09_plan.md    | 116 +++++++++++++
+ docs/codex/gesc_gaussian/status/phase_09_status.md | 179 ++++++++++++++++++++-
+ .../ros_esc/gaussian_fill_node/basin_estimator.py  |  29 +++-
+ .../gaussian_fill_node/gaussian_fill_script.py     |   5 +
+ .../ros_esc/supervisor_node/escape_recenter.py     |  98 ++++++-----
+ .../supervisor_node/supervisor_node_script.py      |   5 +-
+ ros2_ws/src/ros_esc/test/test_escape_recenter.py   |  34 ++++
+ .../ros_esc/test/test_robust_gaussian_algorithm.py |  61 +++++++
+ 10 files changed, 569 insertions(+), 98 deletions(-)
 
 ## Current milestone snapshot
 ## Current milestone
 
-**M8L ROTATION INITIALIZATION RE-ARM PHYSICALLY PROVEN / EIGHTH RUN RETAINED
-AS FIRST TWO-BASIN BEHAVIORAL SUCCESS / ONE GAUSSIAN FILL AND ASSISTED ESCAPE
-CONFIRMED / STRONGER-LIGHT REACQUISITION CORROBORATED / FORMAL SECOND
-CONVERGENCE NOT REACHED / COMPLETENESS 61/62 WITH ONE SHUTDOWN EVIDENCE-ORDER
-FALSE NEGATIVE / M8M NOT IMPLEMENTED / PI SSHFS INTENTIONALLY UNMOUNTED.**
-
-The next code action, if authorized, is the bounded offline M8M validator/test
-repair described above. Do not change the algorithm, controller, recorder
-lanes, rotation owner, leases, topics, `/odom` ownership, Vicon role, launch,
-wrapper, or legacy paths. No further physical run is planned tonight.
+**M8O ESCAPE-START HISTORY LATENCY CORRECTION IMPLEMENTED DIRECTLY IN MOUNTED
+PI SOURCE / RETAINED 3,114-POSE OUTPUT EQUIVALENCE PASS / HOST MEDIAN 10.66X
+FASTER / CHECKOUT-PI TWO-FILE PARITY PASS / LOCAL SNAPSHOT INTENTIONALLY
+UNTOUCHED / PI BUILD, CHECK-ONLY, AND PHYSICAL RE-RUN NOT RUN.**
 
 
 This file describes the base HEAD and diff before the next commit; it is

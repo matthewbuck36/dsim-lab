@@ -2148,3 +2148,119 @@ The Pi SSHFS mount was intentionally unmounted by the operator after the run.
 Planning and host work may continue offline, but no mounted inspection or
 transfer may occur until a later explicit remount and authorization. Do not
 add a new physical preflight ceremony.
+
+### M8N stationary-odometry estimator correction amendment — 2026-08-18
+
+Preserve the failed selected run
+`20260818T131824869516Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_9991e716`
+unchanged. It reached the first qualified convergence, completed the
+nine-second counted-candidate verification, and then rejected the first fill:
+40 synchronized samples entered the robust estimator, but the position-
+increment MAD filter rejected 18 and left 22 against the unchanged minimum of
+40. The supervisor consequently entered `FAILSAFE`, the recorder revoked
+readiness, and the bag retained terminal zero commands. This is a failed
+first-fill attempt, not physical acceptance.
+
+Read-only replay of the exact retained sample window established a bounded
+numerical defect. While the robot was stationary in `VERIFY_EXTREMUM`, onboard
+odometry alternated by approximately 25.311 and 50.621 micrometres. The
+increment median and MAD were both approximately 1.6 nanometres, so harmless
+encoder quantization received modified z-scores above 10,000. Retaining all 40
+otherwise-valid samples through the existing estimator and designer produces
+a valid bounded fill; no later-stage relaxation is required.
+
+M8N is a Level B correction in the shared robust Gaussian estimator. Add one
+explicit finite, nonnegative position-increment MAD scale floor with a default
+of `0.0001 m`. The floor applies only to the robust position-increment MAD
+denominator; the absolute `maximum_position_speed_mps` rejection, timestamp
+ordering, finite-value checks, raw-cost MAD rejection, synchronization, fixed
+40-sample minimum, fill validation, supervisor fail-safe behavior, topics,
+cost sign and units, `/odom` ownership, and Vicon evaluation-only role remain
+unchanged. Keep the parameter available to both simulation and physical paths
+so shared algorithm parity is preserved; legacy behavior remains selectable
+and unaffected.
+
+Acceptance requires a deterministic regression reproducing the retained
+stationary quantization pattern, proof that all 40 samples survive with the
+floor, proof that disabling the floor reproduces the prior 22-sample result,
+and proof that a meaningful position jump is still rejected. Run the focused
+robust Gaussian tests plus relevant observability, legacy, and Phase 09
+regressions and a bounded isolated build. Keep regression tests in the Git
+checkout, because the source-only physical snapshot does not carry the
+canonical test tree. Mirror only the two reviewed shared runtime files into
+the local physical snapshot after a recoverable backup, then prove
+checkout/snapshot byte parity. Do not modify the mounted Pi,
+run a Pi build, start ROS or Vicon, open devices, record, actuate, or move the
+robot without separate explicit authorization.
+
+The operator explicitly authorized the M8N mounted-source transfer on
+2026-08-18. That authorization is limited to copying the already-reviewed
+snapshot versions of
+`ros_esc/ros_esc/gaussian_fill_node/basin_estimator.py` and
+`ros_esc/ros_esc/gaussian_fill_node/gaussian_fill_script.py` through the
+existing SSHFS mount. Before transfer, preserve the two current Pi files in a
+timestamped `phase09_backups` archive and recheck their expected pre-transfer
+hashes. Use checksum-scoped `rsync -rlptO` commands with no deletion, then
+prove checkout/snapshot/Pi byte parity and run bounded read-only host tests
+against the mounted source. This authorization does not include a Pi build,
+Pi-terminal command, ROS or Vicon startup, device access, recording,
+actuation, or robot motion.
+
+### M8O escape-start history-scan latency amendment — 2026-08-18
+
+Preserve the failed selected run
+`20260818T134743817066Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_d766a6ab`
+unchanged. M8N worked: the estimator accepted `40/40` samples and created one
+active fill with amplitude `0.6965`, exit radius `1.366770829 m`, and
+confidence `0.605507`. The supervisor then transitioned
+`DESIGN_OR_MERGE_FILL -> ESCAPE_REPULSE -> FAILSAFE`, with the exact failure
+`source sample invalid or stale`. Completeness is `60/62`; retain it as a
+failed first-escape attempt, not physical acceptance.
+
+Typed bag replay shows the source publisher remained valid near 5 Hz. The
+supervisor last processed the source message recorded at
+`1787061028.9260275 s`, accepted the fill and began the escape transition near
+`1787061029.0764339 s`, and did not finish escape-start initialization until
+about `1787061029.4999804 s`. Source messages recorded at
+`1787061029.1299770 s` and `1787061029.3272338 s` queued during that
+synchronous work. The next timer ran before those queued callbacks and tested
+the old receipt beyond the unchanged `0.50 s` lease. The approximately
+`0.423 s` escape-start callback occupied its single executor lane while
+`approach_continuity_evidence` repeatedly entered NumPy for each of 3,114 pose
+samples. This is a bounded computation/scheduling defect, not missing sensor
+data and not grounds to widen a freshness lease.
+
+M8O is a Level B runtime correction in the existing shared escape owner.
+Rewrite only the internal approach-continuity history scan as one scalar pass:
+retain complete finite-pose and strictly-increasing timestamp validation,
+select the newest pose strictly outside the frozen radius, preserve the
+earliest pose on an exact farthest-interior tie, and emit the same frozen
+evidence fields. In `_begin_escape`, freeze the pose-history tuple once and
+reuse it for the recent-approach and continuity calculations. Do not change
+the `0.50 s` source lease, add freshness grace, alter state transitions,
+commands, controller ownership, fill/escape geometry, topics, cost sign or
+units, `/odom` ownership, Vicon role, recorder, wrapper, or legacy selection.
+
+The operator explicitly authorized direct changes through the mounted SSHFS
+Pi tree and directed that this iteration not go through the local TurtleBot3
+snapshot. Keep checkout and mounted-Pi runtime owners byte-identical, but
+leave `/home/mattb/physical_TB3_files_snapshot` untouched and document the
+temporary snapshot divergence. Before editing the Pi, preserve the two
+current runtime files and their hashes under a timestamped Pi
+`phase09_backups` root. Acceptance requires exact retained-bag anchor/output
+equivalence, a focused long-history performance regression, existing escape,
+state-machine, supervisor, observability, and legacy regressions, mounted
+source AST/fatal lint, checkout/Pi hash equality, and a material-boundary
+checkpoint. Codex must not build or source on the Pi, start ROS or Vicon, open
+devices, record, actuate, or move the robot.
+
+M8O host/source execution is complete. The failed run and its `60/62`
+completeness result remain unchanged. The retained 3,114-pose history produces
+the same anchor, direction, displacement, age, and outside-radius mode within
+`1e-12`; the corrected scalar scan reduced the host median from `0.023420 s`
+to `0.002196 s` (`10.66x`). The pure escape suite passes `67` tests, the
+supervisor/state/observability set passes `174`, legacy passes `37`, and the
+same `67` escape tests pass while resolving the mounted source. Mounted AST
+and fatal lint pass, and checkout/Pi hashes match for both runtime owners. The
+local physical snapshot was neither read nor modified and is intentionally
+outside M8O parity. No Pi build or physical process was started.
