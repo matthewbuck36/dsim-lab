@@ -48,5 +48,5 @@ Historical scenario-runner and non-light-source HeavyBall scripts were retired
 from this active folder. Related baseline/reference material now lives under:
 
 ```text
-~/dsim-lab/writing/heavy_ball_PDE_ESC/archive/
+~/dsim-lab/docs/heavy_ball_PDE_ESC/archive/
 ```

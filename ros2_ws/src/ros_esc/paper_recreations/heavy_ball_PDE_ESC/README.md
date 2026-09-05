@@ -16,13 +16,13 @@ Historical baseline scenarios, reference-run scenarios, cost sweeps, controller
 variants, and work logs were moved out of the active ROS source tree:
 
 ```text
-~/dsim-lab/writing/heavy_ball_PDE_ESC/archive/
+~/dsim-lab/docs/heavy_ball_PDE_ESC/archive/
 ```
 
 Written reports and report figures live outside `ros2_ws`:
 
 ```text
-~/dsim-lab/writing/heavy_ball_PDE_ESC/
+~/dsim-lab/docs/heavy_ball_PDE_ESC/
 ```
 
 Gaussian-fill runs are enabled by `use_pde_extensions:=True` in
@@ -60,5 +60,5 @@ and do not consume the light-source lumen overrides.
 The consolidated 2026-05-13 work summary is:
 
 ```text
-~/dsim-lab/writing/heavy_ball_PDE_ESC/archive/work_logs/HBESC_session_summary_2026-05-13.md
+~/dsim-lab/docs/heavy_ball_PDE_ESC/archive/work_logs/HBESC_session_summary_2026-05-13.md
 ```

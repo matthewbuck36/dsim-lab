@@ -1,0 +1,671 @@
+You are implementing the approved Phase 09 Plan in the local physical
+TurtleBot3 source snapshot, or recovering a later dated continuation recorded
+by the Plan/status/handoff. The original M0-M7 implementation is strictly
+no-hardware. This prompt alone never authorizes mounting or writing the
+physical Raspberry Pi, executing a Pi command, launching ROS, accessing a
+device, actuating a mechanism, calibrating, or moving the TurtleBot3; only a
+current explicit user authorization may open the exact bounded continuation
+described below.
+
+## Recover the durable boundary
+
+Read completely:
+
+- `AGENTS.md`;
+- `docs/DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md`;
+- `docs/DSIM_GESC_Gaussian_Codex_Implementation_Package/01_RESEARCH_DECISIONS_AND_ASSUMPTIONS.md`;
+- `docs/DSIM_GESC_Gaussian_Codex_Implementation_Package/07_CODEX_WORKFLOW_AND_CONTEXT_RETENTION.md`;
+- `docs/DSIM_GESC_Gaussian_Codex_Implementation_Package/10_PHYSICAL_EXPERIMENT_READINESS.md`;
+- `docs/codex/gesc_gaussian/plans/phase_09_plan.md`;
+- `docs/codex/gesc_gaussian/status/phase_09_status.md`, if already present;
+- `docs/codex/gesc_gaussian/validation/phase_08_8_final_report.md`;
+- `docs/codex/gesc_gaussian/handoffs/phase_08_8_handoff.md`;
+- `docs/codex/gesc_gaussian/status/phase_08_status.md`; and
+- `docs/codex/gesc_gaussian/checkpoints/phase_08_checkpoint.txt`.
+
+Inspect current code, Git state, the saved Plan, and the physical snapshot
+before editing. The saved Plan is authoritative unless current evidence
+requires a bounded, documented correction under the Level A/B/C policy.
+
+Initialize the live status without overwriting a nonempty file, then run:
+
+```bash
+docs/DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/init_phase_status.sh 09
+docs/DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh 09 implement
+```
+
+The historical absence of a broad `simulation_ready=true` tag does not block
+the approved selected-scenario snapshot implementation. It also does not
+become a passing Phase 08 claim. Missing Plan/status context, an interface or
+ownership conflict, loss of simulation/physical parity, or any attempt to
+command hardware remains a stop.
+
+## Exact edit and hardware boundary
+
+Implement physical source changes only under:
+
+```text
+/home/mattb/physical_TB3_files_snapshot/pi/ros2_ws/src
+```
+
+Keep Phase 09 Plan, status, validation, manifests, checkpoints, and handoff in
+`/home/mattb/dsim-lab/docs/codex/gesc_gaussian/`.
+
+The snapshot is not Git-controlled. Before its first edit:
+
+1. create the approved recoverable source backup;
+2. record an exact source inventory and SHA-256 manifest;
+3. prove `/home/mattb/tb3-pi` is not mounted or accessed; and
+4. record the baseline paths and hashes in the live Phase 09 status.
+
+Do not edit `/home/mattb/tb3-pi`, use SSH/SSHFS, command motors, invoke a
+physical launch, or perform a physical sensor test. Do not copy generated
+`build`, `install`, `log`, cache, editor, Git-metadata, or runtime content.
+
+### M8B continuation boundary
+
+<!-- MBuck 2026-08-01: A fresh continuation must recover M8B state and preserve the exact commissioning order. -->
+
+The paragraph above is the original M0-M7 snapshot-only boundary. For an M8B
+continuation, first read the current Phase 09 Plan, status, handoff, and Pi
+transfer receipt. The M8B snapshot implementation, host-side qualification,
+and reviewed real-Pi source sync passed. The receipt records backup
+`/home/mattb/tb3-pi/phase09_backups/20260802T031409Z_m8b`, `345/345` matching
+regular-file hashes, and `432/432` matching inventory entries. Only a current
+explicit user authorization may permit another reviewed SSHFS source-only
+comparison/transfer. In that case, create and verify a new scoped rollback
+backup before write, transfer only exact manifest paths with no delete behavior
+or generated/runtime content,
+and require target hashes plus an empty final dry run. Do not execute a command
+on the Pi, build/source there, start ROS, open serial/GPIO, start Vicon live,
+command a mechanism, calibrate, operate lamps, or move the robot under source-
+transfer authority.
+
+The first future Pi-executed software gate is a separate bounded on-Pi
+build/source and installed-static check. It is currently `NOT RUN`; a host
+build or host test that reads SSHFS-mounted files cannot satisfy it.
+
+## Required implementation contract
+
+Integrate the current terminal, cumulative Phase 08 counted-source GESC +
+adaptive Gaussian behavior through v8.12 into the existing physical owners.
+Reuse or extend the snapshot's `ros_esc`, `ros_esc_interfaces`, and
+`turtlebot3_vehicle_nodes`; do not create a parallel algorithm or duplicate
+controller/recorder stack.
+
+The TurtleBot3 is shared laboratory equipment. Preserve every pre-existing ESC
+Bash run file, historical launch, and legacy configuration byte-for-byte
+against the sealed baseline. Do not extend the historical
+`light_gesc_gaussian_fill_experiment.launch.xml` in place. Put the selected
+Phase 09 orchestration in a new dedicated launch and point only the new managed
+Phase 09 wrapper and physical recorder target contract at it. A change that
+breaks or silently reroutes any legacy wrapper is a hard compatibility stop.
+
+### Final operator-entry and recording contract
+
+Name the selected new-only Bash entry point exactly
+`gesc_gaussian_two_source_voltage.bash` and its selected new-only launch
+exactly `gesc_gaussian_two_source.launch.xml`. Remove the superseded Phase
+09-only installed names rather than leaving ambiguous aliases. This rename may
+not touch any historical wrapper, launch, or configuration.
+
+The selected manual Bash entry point must change to the reviewed ROS 2
+workspace, run `colcon build --packages-select ros_esc_interfaces ros_esc
+turtlebot3_vehicle_nodes`, verify `install/setup.bash`, and then source that
+workspace before resolving installed package assets. Add an explanatory
+`MBuck <date>` comment and a regression assertion that build precedes source.
+Do not add this behavior to, or otherwise edit, a historical wrapper.
+
+Keep `ros2 run ros_esc record_run` as the only recorder, readiness owner, and
+shutdown/completeness owner. The selected wrapper must opt into a terminal tee
+and a bounded one-second live diagnostic summary while the same output remains
+in `console.log`. The summary should include readiness, voltage/raw cost,
+augmented-cost components, filter output, algorithm state/fill count,
+wheel/IMU odometry, unambiguously labeled Vicon evaluation pose/status, and
+final `vx`/`wz` when those inputs are available. Do not add `ros2 topic echo`,
+a live legacy CSV collector, or another bag process.
+
+Each selected run must automatically create one unique run directory and one
+sqlite3 rosbag containing all legacy sensor/encoder/odometry/filter/command/
+timekeeper streams plus the typed GESC/Gaussian diagnostics and both required
+evaluation-only Vicon streams. Retain metadata, resolved topics/parameters,
+notes, console output, completeness evidence, and
+validated SHA-256 copies of the calibration, selected profile, scenario
+metadata, controller, filter, and rotation files under that same run
+directory, together with the selected wrapper/launch and recorder topic/QoS
+contracts. Print the run directory at startup and completion. Preserve full
+Git provenance when available, but record an explicit nonfatal
+`git.available=false` state when the source-only physical workspace is not a
+Git checkout.
+
+### Evaluation-only Vicon and commissioning contract
+
+Wheel/IMU-backed `/odom` is the sole pose input to every controller,
+supervisor, PDE/history, modified-cost, fill-placement, and escape owner. Vicon
+is required evidence for an accepted selected two-source run, but only as
+`geometry_msgs/msg/PoseStamped` on
+`/gesc_gaussian/evaluation/vicon_pose` plus a canonical `std_msgs/msg/String`
+status heartbeat on `/gesc_gaussian/evaluation/vicon_status`. Require reviewed
+subject/segment identity, exact server-script hash, protocol/session,
+advancing packet sequence and Tracker frame, nonocclusion, finite normalized
+pose, freshness, and run coverage. These may gate recorder readiness and
+offline completeness; no Vicon value may be remapped, forwarded, or copied
+into `/odom`, motion, fill, ranking, escape, or stopping logic. Keep all legacy
+Vicon/odometry sources and launches byte-identical.
+
+Keep shipped calibration/profile/scenario templates inert. Create mutable
+calibration and primary/secondary metadata copies under
+`${XDG_CONFIG_HOME:-$HOME/.config}/dsim-lab/phase09` before the stationary
+preflight; keep the selected profile frozen. `--stationary-preflight` runs
+while uncalibrated with readiness false, selects a passive Phase-09-only
+timekeeper instead of the servo command owner, never authorizes motion, and
+fails on any base/rotation
+actuation or robust lifecycle advance. It must not self-certify. After an
+operator reviews the retained offline PASS,
+`--approve-stationary RUN_DIR --reviewer NAME` may set the persistent gate only
+when it consumes the exact same site-metadata bytes and retained hash-coupled
+evidence.
+
+Future execution order is immutable: (1) separate on-Pi build/installed-static
+gate; (2) calibration and primary/secondary metadata site copies; (3)
+uncalibrated/readiness-false/no-actuation
+`--stationary-preflight`; (4) review plus hash-coupled
+`--approve-stationary RUN_DIR --reviewer NAME`; (5) independent emergency-stop
+test followed by a separately authorized safe nontranslating/final-zero
+rehearsal; (6) real retained calibration; (7) `--check-only`; and (8) the bare
+`gesc_gaussian_two_source_voltage.bash` for the primary scenario with assigned
+operator/observer and typed `RUN`. The bare wrapper is the eventual normal
+primary entry point; there is no noninteractive motion bypass.
+
+### M8C lab-SOP one-command implementation amendment
+
+<!-- MBuck 2026-08-03: Supersede the M8B commissioning gates with the established lab SOP and one bare wrapper. -->
+
+This M8C amendment is controlling wherever it conflicts with the historical
+M8B commissioning text in this prompt. Retain M8B qualification, backup,
+transfer, parity, and failed/unrun evidence, but remove its operator gates from
+the selected runtime.
+
+Implement the normal human workflow from the attached
+`DSIM - TurtleBot3 Vicon Setup.pdf`: the operator prepares Vicon Tracker and
+runs the unchanged Windows `vicon-tracker-server.py`, then invokes bare
+`gesc_gaussian_two_source_voltage.bash` on the Pi. That wrapper must build
+exactly `ros_esc_interfaces`, `ros_esc`, and `turtlebot3_vehicle_nodes`, source
+the result, start `pigpiod` only if absent, start the sole selected managed
+recorder/launch, announce the run directory, and display bounded one-second
+diagnostics. It must not require a separate build command, site configuration,
+calibration approval, stationary preflight, `--check-only`, typed `RUN`, Vicon
+subject/segment entry, server-file SHA-256, handoff authorization, or a
+`PHYSICAL READY` tag.
+
+Leave `vicon-tracker-server.py` untouched. Reuse its legacy `struct.pack('7f')`
+transport and the existing odometry owner to expose Vicon only as
+`nav_msgs/msg/Odometry` on `/gesc_gaussian/evaluation/vicon_odom`. Wheel/IMU
+`/odom` remains the sole algorithm pose. Do not retain the M8B custom JSON
+evidence protocol or pose/status readiness gate in the selected graph. Missing,
+stale, or incomplete Vicon must remain visible in live output and make retained
+evaluation evidence incomplete, but it must never inhibit or stop motion.
+
+Preserve the existing managed `Ctrl+C` shutdown: readiness false, stop/final
+zero, rosbag coverage through the zero dwell, finalization, bounded validation,
+and retained run-directory output. Store the legacy streams, typed
+GESC/Gaussian diagnostics, and evaluation-only Vicon odometry in the same
+sqlite3 bag. Preserve every historical ESC wrapper/launch/configuration and its
+owner selection. Do not run live hardware during this implementation task.
+Record M8C validation and transfer outcomes only after direct verification; the
+current Phase 09 status/handoff now contain the completed host and Pi-parity
+results.
+
+### M8D familiar post-bag CSV implementation amendment
+
+<!-- MBuck 2026-08-03: Export familiar physical CSVs from the finalized authoritative bag without changing legacy owners. -->
+
+For the selected wrapper only, retain the runtime root
+`${HOME}/turtlebot_rotating_sensor_tests/gesc_gaussian_two_source/<UTC-date>/<run-id>/`.
+Keep its one sqlite3 rosbag as the sole recorder and source of truth. After a
+clean shutdown finalizes that bag, extend the existing `record_run` finalizer's
+validation path to atomically and idempotently export the following headerless
+files into the same run directory:
+
+- `encoder.csv`: `[timestamp, angle]`;
+- `cost_value.csv`: `[timestamp, augmented cost]` from `/cost_modified`;
+- `filter_value.csv`: `[timestamp, two filter values]`;
+- `control_value.csv`: `[timestamp, six command-array values]`; and
+- `odometry.csv`: `[timestamp, x, y, z, qw, qx, qy, qz]`, preserving legacy
+  Vicon/evaluation plotting semantics.
+
+Additionally export `raw_cost_value.csv` as `[timestamp, raw_cost]`, where
+`raw_cost=-voltage`, and `algorithm_odometry.csv` as
+`[timestamp, x, y, z, qw, qx, qy, qz]` from algorithm `/odom`. Write
+`legacy_csv_manifest.json` with the alias/topic mappings and semantics, row
+counts, byte sizes, SHA-256 hashes, and bounded errors. Treat any incomplete
+required export as a final-validation failure.
+
+Do not start a second bag process or live CSV collector. Keep the selected
+terminal diagnostics live while recording and make clear that CSVs appear only
+after clean shutdown and bag finalization. Preserve direct compatibility with
+the old `extract_test_data` column reader, but do not alter its top-level
+`Test_*` browser to discover nested run directories and do not fabricate
+`comments.txt`. This amendment supersedes the earlier no-CSV-equivalence text
+only for the selected wrapper's post-bag export. Keep every legacy wrapper,
+node, launch, and runtime behavior unchanged, and do not weaken or broaden any
+safety or hardware-readiness boundary.
+
+### Cumulative v8.12 source-selection rule
+
+Do not cherry-pick, blend, or independently merge v8.10, v8.11, and v8.12.
+They are successive experiment/evidence versions in one cumulative Git
+history. V8.10 retained the counted-candidate profile; v8.11 changed the
+simulation evaluator/schema without changing core runtime owners; and v8.12
+added the `interior_farthest` odometry-history fallback to the three existing
+supervisor files. The shared core runtime did not change between qualifying
+v8.12 commit `0263f1c` and Phase 08 terminal commit `c04c222`.
+
+Port the current terminal shared runtime files exactly and prove their
+source-to-snapshot hashes. Do not copy the v8.11 simulation evaluator or its
+source geometry into physical control. The selected physical wrapper must
+explicitly set:
+
+```text
+open_field_escape_interior_anchor_fallback_enabled=True
+open_field_escape_interior_anchor_min_displacement_m=0.50
+```
+
+Keep the shared node/launch default `False` for legacy and nonselected paths;
+the original `outside_radius` anchor retains priority. Preserve the historical
+v8.12 `13/14` formal result, while implementing the complete scientific
+behavior the user accepted. Stop if the saved Plan or implementation diff
+selects an older runtime boundary, disables the fallback in the selected
+wrapper, or introduces evaluator geometry into control.
+
+Preserve:
+
+- rotating photoresistor raw minimization cost and timestamp semantics;
+- wheel odometry and permitted IMU inputs;
+- known source count and counted-candidate raw-cost ranking;
+- adaptive typed Gaussian fill lifecycle and exact one-fill behavior for two
+  sources;
+- temporary affine/approach-continuity assistance, including the v8.12
+  interior-anchor fallback explicitly enabled by the selected physical wrapper
+  while remaining default-off for legacy/nonselected paths, plus direct and
+  assisted escape paths;
+- persistent Gaussian memory after affine assistance is cleared;
+- legacy profile selection plus byte-identical legacy Bash/launch/config entry
+  points;
+- canonical topics, public message semantics, cost sign/units, and the sole
+  physical `/cmd_vel` owner;
+- Phase 05 recording/final-zero contract; and
+- simulation/physical algorithm parity.
+
+Do not add GPS, Vicon, source position/role/intensity, room dimensions, global
+coordinates, SLAM, route planning, autonomous wall avoidance, or a physical
+coordinate-distance stop to control. Required Vicon evaluation evidence stays
+on its separate pose/status topics; no Vicon value may affect control, fill,
+escape, ranking, or stopping.
+
+Physical arrival remains operator `Ctrl+C`. The selected field assumption is
+open, obstacle-free, and human-managed. A future physical run must still prove
+stale-input stop, readiness false, final-zero ordering, recorder finalization,
+emergency stop, and scoped cleanup before motion is authorized.
+
+## Execution discipline
+
+Work one Plan milestone at a time. Before moving on:
+
+- run the milestone's focused static/offline tests;
+- record exact commands, outcomes, skips, and retained paths in
+  `docs/codex/gesc_gaussian/status/phase_09_status.md`;
+- inspect snapshot and repository diffs for unintended scope;
+- run `bash -n` for every Bash entry point, resolve every wrapper launch and
+  supplied argument, run installed `--show-args` for every unique referenced
+  launch, and verify all pre-existing wrapper/launch/config hashes;
+- update the before/after snapshot manifest and recoverable patch evidence;
+- run `checkpoint_phase.sh 09` at material boundaries; and
+- create only bounded, authorized `dsim-lab` commits for durable Phase 09
+  documentation/manifests. Never imply that external snapshot files were
+  captured by Git unless a retained patch or manifest proves them.
+
+Use bounded host-side checks only: static imports where dependencies exist,
+unit tests, syntax/YAML/XML parsing, interface comparison, launch construction
+without hardware, source-package builds that are compatible with the host,
+and recorder/configuration validation. Report Pi-only, hardware-only, serial,
+GPIO, Arduino, motor, live-topic, emergency-stop, and physical-motion checks as
+unexecuted—not passed.
+
+Label host builds and tests as host-side. Label checks that merely read the
+SSHFS tree as host-mounted-source checks. Neither is an on-Pi build, installed
+static check, live ROS graph, or hardware result.
+
+Do not weaken acceptance or safety checks merely to make host qualification
+green. Preserve every failed attempt and distinguish source integration,
+static readiness, and physical readiness.
+
+## Required closeout
+
+Write:
+
+```text
+docs/codex/gesc_gaussian/handoffs/phase_09_handoff.md
+```
+
+Also retain the final snapshot inventory, before/after SHA-256 manifests,
+reviewable source patch/diff, static validation report, reviewed SSHFS transfer
+manifest and receipt when authorized, Pi backup/rollback procedure, and exact
+hardware-deferred checklist. The static report must include shared-lab legacy
+hash, entry-point, Bash syntax, wrapper-to-launch compatibility, `/odom` versus
+Vicon isolation, and stationary no-actuation evidence.
+
+Close Phase 09 snapshot implementation only when the declared static criteria
+pass, every skip is explicit, the snapshot is recoverable, runtime is inactive,
+the live status and checkpoint are current, and Git plus external snapshot
+state are reported. Do not declare physical readiness or run the robot.
+
+Recommended bounded commit message:
+
+```text
+phase 09: integrate physical snapshot workflow
+```
+
+### M8E real-Pi runtime-repair continuation — 2026-08-04
+
+<!-- MBuck 2026-08-04: Preserve the repaired source-underlay/build/device path and the successful nonlaunching Pi evidence. -->
+
+For a current M8E continuation, read the Plan, status, handoff, operator
+checklist, and
+`docs/codex/gesc_gaussian/validation/phase_09_pi_runtime_repair.md`. The first
+bare attempt is retained failed commissioning evidence and must not be retried
+or relabeled. It failed before readiness because the wrapper omitted the
+established `~/turtlebot3_ws` underlay and selected installed Python was stale;
+no robot command or motion occurred.
+
+The corrected selected wrapper must continue to:
+
+- source `/opt/ros/humble` then `~/turtlebot3_ws/install/setup.bash`;
+- build only `ros_esc_interfaces`, `ros_esc`, and
+  `turtlebot3_vehicle_nodes` with `--symlink-install`;
+- construct the selected no-lidar base and complete experiment launch before
+  any recorder or hardware access;
+- require installed Python/source parity;
+- verify distinct readable/writable photoresistor and OpenCR devices;
+- preserve `/odom` as the sole algorithm pose and Vicon as evaluation-only;
+- retain the restored historical sound-profile entry point; and
+- leave every historical ESC wrapper/launch/config path unchanged.
+
+The human-operated on-Pi `--check-only` is now completed: three packages passed
+in `1 min 39 s`, installed parity passed with `63 + 21` Python files, device
+separation and both launch constructions passed, and no serial, pigpio, Vicon,
+ROS graph, recorder, or motion started. Following the earlier power cycle,
+source parity was `345/345` files and `433/433` inventory entries with all three
+build return codes zero; the final strengthened check-only was captured after
+the Pi was back online. Do not erase this evidence or demand it again for every
+run.
+
+The Pi has no RTC and DSIMOVERWATCH has no internet NTP route. Preserve Nick's
+package-README literal wall-clock `sudo date -s` procedure after each reboot
+and before starting ROS; do not replace it with Unix epoch, timezone/offset, or
+a timezone/NTP reconfiguration. The accepted initialization passed for the
+current powered session at `2026-08-04T17:54:22+00:00`; the superseded August 5
+epoch-copy attempt started no run. Then follow the attached Vicon lab SOP and
+invoke the bare wrapper. Do not add authorization files, typed confirmations,
+hash keys, manual handoff gates, or a separate build command. A real run must
+still prove live sensor protocol, `/odom`/IMU, Vicon evidence, motion,
+Ctrl+C/final zero, bag finalization, validation, familiar CSV export, and
+physical two-light behavior. Preserve unsuccessful physical evidence honestly.
+
+### Current M8F implementation continuation — first selected startup repair
+
+Read the M8F validation, Plan amendment, status, and handoff before acting. The
+failed run
+`20260804T201250796597Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_6d9b4ac3`
+is retained evidence: strict controller/filter parsers rejected the selected
+ROS parameter tail, readiness stayed false, `/cmd_vel` stayed empty, and no
+motion occurred.
+
+The reviewed repair is already present in both offline snapshot and Pi source.
+It preserves legacy parser defaults and every historical wrapper/launch,
+selects physical wall time through native controller/filter CLI options, and
+orders filter, rotation, photoresistor, and Vicon-client cleanup before ROS
+context shutdown. The unchanged Vicon server/protocol remains evaluation-only;
+`/odom` remains the sole algorithm pose. Host qualification and 345/345 source
+parity pass, but the post-M8F Pi install is not yet requalified.
+
+The next operator command is exactly one bare wrapper `--check-only` from its
+source directory. Require
+`Selected CLI parser compatibility check: PASS (physical=False, legacy
+default=True).`, the normal final check-only PASS, and confirmation that no
+runtime/device/motion started. Do not start another physical run until that
+output is reviewed. After it passes, return to the ordinary one-command bare
+experiment workflow; no extra authorization file or repeated check-only gate
+is required.
+
+The operator-run post-M8F check has now passed the three-package build in 14.4
+seconds, installed Python parity, selected physical `False`, legacy-default
+`True`, device separation, and launch construction without starting any
+runtime or hardware. Do not request another check-only unless the Pi reboots,
+source changes, or diagnosis requires it. The next human action is the ordinary
+Vicon/lab SOP and bare selected wrapper. Preserve and validate the resulting
+run regardless of success or failure.
+
+### Current M8G implementation continuation — selected startup timing
+
+Read the M8G validation, Plan/status amendments, and handoff. The second failed
+run reached OpenCR, `/odom`/IMU, encoder, evaluation-only Vicon, recording, and
+clean shutdown, but the selected 5-second algorithm grace expired before
+recorder-authorized rotation. Readiness never became true, all commands were
+zero, Timekeeper/source cost stayed absent, and no motion occurred.
+
+The reviewed source repair is already present in snapshot and Pi source. Only
+the selected wrapper and its test changed: explicit 45-second passive and
+45-second rotation recorder windows are covered by a selected-only 100-second
+controller/supervisor startup grace. The recorder remains the sole readiness
+owner; its lifecycle and nonzero-command gates are not relaxed. Shared 5-second
+defaults, algorithm code, and every historical ESC wrapper/launch remain
+unchanged. Host qualification and exact 345/345 source parity pass.
+
+The one human-operated post-source-change `--check-only` is now complete. All
+three packages built in 16.3 seconds; installed Python parity, selected
+physical `False`, legacy-default `True`, device separation, and launch
+construction passed; and pigpio, serial, Vicon, the ROS graph, recording, and
+motion did not start. The next human action is the ordinary Vicon/lab SOP and
+bare selected wrapper. Do not request another check-only unless the Pi reboots,
+source changes again, or diagnosis requires it. Preserve and validate the next
+retained run regardless of success or failure.
+
+### Current M8H implementation handoff — shared clock initialization
+
+Read the M8H Plan/status amendment and
+`docs/codex/gesc_gaussian/validation/phase_09_third_physical_run_repair.md`.
+Retain the third failed run
+`20260804T212226731572Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_309b9e71`
+unchanged. It failed before readiness when Gaussian fill's forced simulator
+clock was changed live to physical wall time, destroying a `/clock` waitable
+inside its multithreaded executor. Every recorded command was zero and no
+motion occurred.
+
+The shared helper and its five owner integrations are already implemented,
+host-qualified, and transferred through SSHFS. Focused three-way clock tests,
+the bounded two-thread enforcement probe, shared/legacy and complete Phase 09
+regressions, syntax/critical lint, and both isolated builds pass. Fresh
+post-reboot snapshot/Pi parity is 347/347 files and 435/435 inventory entries;
+the seven shared reviewed files match canonical/snapshot/Pi and the physical
+parity test matches snapshot/Pi. No Pi build, graph, device, recorder, or
+motion was started by Codex.
+
+Do not edit the repair again without new evidence. Preserve the Gaussian
+two-thread executor, algorithm behavior/tuning, public interfaces, recorder
+enforcement, all legacy wrappers/launches, `/odom`-only algorithm pose, and
+evaluation-only Vicon. The one operator-owned post-source-change check-only is
+now complete: all three packages, installed parity (`ros_esc=64`, physical
+package 21), selected physical `False`, legacy-default `True`, device
+separation, and launch construction passed without starting runtime or
+hardware. Mounted checks retain 347/347 source and 435/435 inventory parity.
+Do not request another check-only unless source changes or diagnosis requires
+it. The next human action is the ordinary Vicon/lab SOP and bare wrapper;
+preserve and validate the resulting run regardless of outcome.
+
+### Current M8I implementation handoff — runtime grace and rotation evidence
+
+Retain the fourth physical run
+`20260804T221143126652Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_b27fffe0`
+unchanged. It reached readiness, executed `SEARCH` for about 10.6 seconds,
+moved approximately 0.13 m net within the selected command ceilings, and then
+stopped cleanly after a recorder-only source/filter freshness false positive.
+The bag continued to receive both streams; no Gaussian fill occurred before
+shutdown.
+
+Implement only the reviewed M8I boundary. Preserve the 0.50-second startup
+snapshot, add a selected-physical runtime threshold of 1.50 seconds, and
+require 0.50 seconds of continuous heartbeat-only staleness before recorder
+revocation. Invalid/nonfinite/semantic faults remain immediate. Do not change
+the controller's independent 0.50-second freshness checks, rotation owner's
+independent freshness checks, speed limits, final-zero path, simulation
+defaults, or legacy selections.
+
+Make the rotation owner issue its first configured RPM command in the same
+tick that settling transitions to `RUNNING`. Make offline final-zero validation
+use the first authorization `true -> false` boundary after authorization,
+instead of the last repeated false heartbeat. Cover transient recovery,
+persistent stale revocation, immediate semantic fault, truthful first RUNNING
+status, and repeated-false shutdown ordering in tests. Back up snapshot and Pi
+before editing; transfer exactly the six reviewed source/test paths with no
+delete behavior; prove full parity; update Phase 09 evidence; and require one
+operator-run `--check-only` because installed source changes. Do not start ROS,
+devices, Vicon, recording, rotation, or motion from Codex.
+
+This implementation boundary is complete. Matching pre-edit backups are under
+`20260804T222620-0700_m8i_runtime_grace_rotation_evidence`; all declared host
+tests and the isolated three-package snapshot build pass; and read-only replay
+repairs final-rotation-zero evidence without relabeling the retained failed
+run. Exactly six reviewed files were copied through SSHFS with no source
+deletion. Snapshot/Pi parity is 347/347 files and 435/435 inventory entries,
+with zero generated source-cache directories. Codex started no Pi build,
+graph, device, Vicon client, recorder, rotation, or motion. Do not edit this
+repair again without new evidence. The next action is one human-run selected
+`--check-only`, followed on success by the ordinary Vicon/lab SOP and bare
+wrapper.
+
+### Current M8J implementation continuation — physical gate callback lane
+
+Retain the fifth selected run
+`20260804T224523162901Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_8d7f9b77`
+unchanged. M8I worked: source/filter/control/pose streams remained healthy.
+The stop instead followed matching approximately 1.572-second gaps in the two
+recorder-owned authorization topics while all other relevant bag streams
+continued below 0.25-second gaps. The rotation owner correctly stopped on its
+unchanged 0.50-second authorization lease; do not bypass its fault or the
+recorder's downstream invalid-status report.
+
+Implement only a physical recorder scheduling correction. Put the existing
+gate heartbeat timer in a dedicated mutually exclusive callback group and use
+an exactly two-thread executor for physical mode. Preserve the default callback
+group for subscriptions and live diagnostics, and preserve the single-threaded
+executor for simulation/legacy. Do not change gate topics/rate, controller or
+rotation leases, runtime/semantic checks, final zero, algorithms, selected
+launch/wrapper, or historical entry points. Add focused construction and
+bounded starvation tests, run complete Phase 09/canonical regressions and an
+isolated build, back up both roots, transfer only the recorder and its focused
+test with no delete behavior, prove exact parity, and update durable evidence.
+Codex must not run the Pi build or any physical process. The resulting Pi
+source change requires one human-operated `--check-only` before another bare
+experiment.
+
+This implementation boundary is complete. Matching recovery roots are under
+`20260804T225906-0700_m8j_physical_gate_lane`; the bounded physical starvation
+probe passed five repeated runs; complete snapshot, canonical recorder, and
+legacy/recording regressions plus the isolated build pass. Exactly two reviewed
+files were copied through SSHFS without source deletion. Snapshot/Pi parity is
+347/347 files and 435/435 inventory entries, with zero source-cache directories.
+Codex started no Pi build, graph, device, Vicon client, recorder, rotation, or
+motion. Do not edit this repair without new evidence. The next action is one
+human-run selected `--check-only`, followed on success by the ordinary
+Vicon/lab SOP and bare wrapper.
+
+### Current M8K implementation continuation — physical heartbeat lane
+
+Retain the sixth selected run
+`20260804T231459927630Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_2155c436`
+unchanged. M8J worked: both recorder-owned gate topics stayed below
+0.145-second gaps for the full 119.61-second authorized interval. The robot
+traveled 4.55 m by integrated onboard `/odom`, confirmed convergence, entered
+`VERIFY_EXTREMUM`, and stopped at zero normally. Before classification or a
+fill request, the recorder falsely revoked readiness because all of its shared
+default-group heartbeat observations aged together to 1.846-2.019 seconds,
+while the bag-recorded publishers remained below 0.255-second gaps.
+
+Implement only the approved M8K physical recorder scheduling correction.
+Preserve the M8J gate callback group. Add a dedicated mutually exclusive group
+for passive diagnostic subscriptions and the terminal diagnostic timer, leave
+safety-heartbeat and command-observation subscriptions in the default group,
+and use exactly three physical executor threads. Simulation and legacy remain
+single-threaded. Preserve all gate rates, leases, runtime/semantic checks,
+final zero, algorithms, tuning, topics, cost semantics, `/odom`,
+evaluation-only Vicon, selected launch/wrapper, and historical entry points.
+Add a bounded real-rclpy test that blocks diagnostics beyond the complete
+1.50-second stale bound plus 0.50-second grace while heartbeats and both gates
+remain live and authorization is not revoked. Repeat it five times, run full
+Phase 09/canonical regressions and an isolated build, transfer only the
+recorder and focused test through the reviewed SSHFS scope with no deletion,
+prove exact parity, and update durable evidence. Codex must not run a Pi build
+or any physical process. The Pi source change requires one human-operated
+`--check-only` before another bare experiment.
+
+This M8K implementation boundary is complete. Matching recovery roots and
+receipts are under
+`20260804T234106-0700_m8k_physical_heartbeat_lane`; all declared focused,
+complete Phase 09, canonical recorder/legacy, critical static, isolated-build,
+and installed-overlay gates pass. Exactly two reviewed files were copied
+through SSHFS without source deletion. Snapshot/Pi parity is `347/347` files
+and `435/435` inventory entries, with zero generated source caches. Codex
+started no Pi build, graph, device, Vicon client, recorder, rotation, actuator,
+or motion. Do not edit this repair without new evidence. The next action is
+one human-run selected `--check-only`, followed on success by the ordinary
+Vicon/lab SOP and bare wrapper.
+
+### Current M8L implementation continuation — rotation initialization re-arm
+
+Retain the seventh selected run
+`20260805T000043179553Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_d9eb86a8`
+unchanged. Readiness never became true, all 1,900 `/cmd_vel` messages remained
+zero, and rotation faulted on its 0.50-second authorization lease before
+alignment. Recorder gate heartbeats continued near 10 Hz; the failure was the
+rotation owner's pre-initialization timestamp aging while its single callback
+lane synchronously opened pigpio/PWM.
+
+The approved implementation is complete. The first true gate initializes
+hardware once, commands/publishes neutral zero, clears that consumed
+timestamp, and stays in `WAITING_AUTHORIZATION`; only a subsequent fresh true
+gate enters `ALIGNING`. Offline evidence accepts initialized-neutral waiting
+only after the authorization boundary. Strict preauthorization evidence, the
+post-arm 0.50-second lease, encoder lease, all fault/zero behavior, public
+schema, M8K recorder lanes, controller safety, algorithms, topics, `/odom`,
+evaluation-only Vicon, selected and historical entry points remain unchanged.
+
+Matching recovery roots and receipts are under
+`20260805T002822-0700_m8l_rotation_initialization_rearm`. All declared host
+tests and the fresh three-package isolated build pass. Exactly four reviewed
+files were copied through SSHFS without source deletion; parity is `347/347`
+files and `435/435` inventory entries with zero generated caches. Codex ran no
+Pi build or physical process. Do not edit this repair without new evidence.
+The next action is one human-run selected `--check-only`, followed on success
+by the ordinary Vicon/lab SOP and bare wrapper.
+
+### Current M8M implementation boundary — not yet authorized or implemented
+
+Retain
+`20260805T004605139747Z_physical_phase09_selected_primary_r1p5_a45_ratio1to4_cd83f78f`
+as the first physical two-basin behavioral success. It completed local
+classification, created and used one fill, escaped back to `SEARCH`, and
+reacquired the stronger signal, but the operator stopped before formal second
+convergence. Completeness passes `61/62`; only the offline validator rejects
+one in-flight `RUNNING` status 45 milliseconds after shutdown authority was
+first observed false. Exact rotation zero and terminal revoked/zero status
+followed at 67 and 92 milliseconds.
+
+Do not change source without authorization. The bounded candidate repair is
+offline validator plus focused test only: allow the pre-terminal distributed
+ordering transition within the existing safety bound, require exact terminal
+zero, and reject active/nonzero evidence after it. Runtime recorder,
+controller, rotation owner, leases, algorithms, topics, `/odom`, Vicon role,
+launches, wrappers, and legacy paths remain unchanged. The Pi SSHFS mount is
+intentionally unmounted; do not inspect or transfer until explicitly remounted
+and authorized.

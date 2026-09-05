@@ -10,7 +10,7 @@ multi_light_source_photoresistor.json  # multi-light rotating photoresistor map
 Retired sweep and baseline-report cost maps live in:
 
 ```text
-~/dsim-lab/writing/heavy_ball_PDE_ESC/archive/cost_function/
+~/dsim-lab/docs/heavy_ball_PDE_ESC/archive/cost_function/
 ```
 
 `multi_light_source_photoresistor.json` selects `Multi_Light_Source_Cost`.

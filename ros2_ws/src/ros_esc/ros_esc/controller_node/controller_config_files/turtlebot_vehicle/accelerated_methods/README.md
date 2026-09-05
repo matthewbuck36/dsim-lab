@@ -13,7 +13,7 @@ Retired baseline speed-regime configs were archived with the historical
 baseline scenarios under:
 
 ```text
-~/dsim-lab/writing/heavy_ball_PDE_ESC/archive/controller_configs/
+~/dsim-lab/docs/heavy_ball_PDE_ESC/archive/controller_configs/
 ```
 
 Keep future active HeavyBall controller variants in this folder and name them by

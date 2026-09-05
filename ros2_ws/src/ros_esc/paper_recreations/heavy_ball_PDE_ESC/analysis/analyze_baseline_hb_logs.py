@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Analyze baseline Heavy-Ball ESC experiment logs.
 
-The script reads the writing-folder baseline report manifest by default. Fill
+The script reads the docs-folder baseline report manifest by default. Fill
 in the run_folder column after each manual Gazebo run, then run this script to
 create a metrics CSV and, optionally, report figures.
 """
@@ -17,11 +17,11 @@ from statistics import mean, pstdev
 
 
 DEFAULT_MANIFEST = (
-    "~/dsim-lab/writing/heavy_ball_PDE_ESC/"
+    "~/dsim-lab/docs/heavy_ball_PDE_ESC/"
     "baseline_hb_report/baseline_hb_run_manifest.csv"
 )
 DEFAULT_OUTPUT_DIR = (
-    "~/dsim-lab/writing/heavy_ball_PDE_ESC/"
+    "~/dsim-lab/docs/heavy_ball_PDE_ESC/"
     "baseline_hb_report/figures"
 )
 
@@ -282,7 +282,7 @@ def main():
     parser.add_argument(
         "--output-csv",
         default=(
-            "~/dsim-lab/writing/heavy_ball_PDE_ESC/"
+            "~/dsim-lab/docs/heavy_ball_PDE_ESC/"
             "baseline_hb_report/baseline_hb_metrics.csv"
         ),
     )

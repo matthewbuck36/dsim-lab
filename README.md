@@ -21,13 +21,15 @@ broad physical readiness, or complete second-extremum physical acceptance.
 
 ## Repository map
 
+- [`docs`](docs/README.md): project documentation, implementation package,
+  and historical reports formerly under `writing/`.
 - [`ros2_ws/src/ros_esc`](ros2_ws/src/ros_esc/README.md): algorithm, recorder,
   validator, scenario runner, and analysis owners.
 - [`ros2_ws/src/ros_esc_interfaces`](ros2_ws/src/ros_esc_interfaces/README.md):
   six robust typed messages and five preserved compatibility messages.
 - [`ros2_ws/src/turtlebot3_rotating_sensor`](ros2_ws/src/turtlebot3_rotating_sensor/README.md):
   Gazebo model, launch graph, worlds, and simulation wrappers.
-- [`DSIM_GESC_Gaussian_Codex_Implementation_Package`](DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md):
+- [`DSIM_GESC_Gaussian_Codex_Implementation_Package`](docs/DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md):
   original requirements, source material, phase prompts, templates, and tools.
 - [`docs/codex/gesc_gaussian`](docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.pdf):
   Plans, statuses, handoffs, validation, technical reference, and final report.

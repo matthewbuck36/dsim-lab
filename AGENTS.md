@@ -2,6 +2,14 @@
 
 These instructions apply to the entire repository.
 
+## Documentation locations
+
+The implementation package lives at
+`docs/DSIM_GESC_Gaussian_Codex_Implementation_Package/`; run its tools from
+the repository root using that prefix. Reports formerly under `writing/` now
+live directly under `docs/`. The old root paths are compatibility symlinks for
+historical commands and frozen reports. Start at `docs/README.md` for navigation.
+
 ## Durable source of truth
 
 Do not rely on conversation memory to determine project state. Reconstruct it
