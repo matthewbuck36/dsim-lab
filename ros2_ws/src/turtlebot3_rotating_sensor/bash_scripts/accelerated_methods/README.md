@@ -44,7 +44,7 @@ The previous matrix/batch runner was retired to:
 Depreciated/2026-05-18/manual_testing_only/
 ```
 
-Historical scenario-runner and non-light-source HeavyBall scripts were retired
+Historical scenario-runner and non light-source HeavyBall scripts were retired
 from this active folder. Related baseline/reference material now lives under:
 
 ```text
