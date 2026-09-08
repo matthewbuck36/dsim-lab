@@ -15,9 +15,9 @@ here. Use these locations for new documentation references:
   and [archive](heavy_ball_PDE_ESC/archive/README.md).
 - [Relocation record](documentation_relocation.md): path mapping and validation.
 
-The root `DSIM_GESC_Gaussian_Codex_Implementation_Package` and `writing`
-entries are compatibility symlinks, not additional copies. Historical reports,
-commands, and manifests may retain those old paths. Phase outcomes are unchanged;
+The old root shortcuts have been removed. Historical reports, commands, and
+manifests may retain those old paths; use the [path mapping](documentation_relocation.md)
+to locate their targets under `docs/`. Phase outcomes are unchanged;
 the latest Phase 09 status still records physical validation outstanding after M8O.
 
 ## Current GESC + Gaussian V1 report

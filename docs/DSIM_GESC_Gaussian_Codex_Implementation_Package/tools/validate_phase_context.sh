@@ -43,7 +43,7 @@ if ! ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"; then
   exit 2
 fi
 
-PACKAGE="$ROOT/DSIM_GESC_Gaussian_Codex_Implementation_Package"
+PACKAGE="$ROOT/docs/DSIM_GESC_Gaussian_Codex_Implementation_Package"
 DOCS="$ROOT/docs/codex/gesc_gaussian"
 ACTIVE_SUBPHASE_PLAN=""
 PHASE08_V3_GATE_RESULTS="$DOCS/validation/phase_08_v3_gate_results.json"

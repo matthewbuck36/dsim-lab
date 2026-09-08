@@ -3,7 +3,7 @@
 1. Historical scenarios for this report are archived at:
 
 ```text
-~/dsim-lab/writing/heavy_ball_PDE_ESC/archive/scenarios/baseline_tests/
+~/dsim-lab/docs/heavy_ball_PDE_ESC/archive/scenarios/baseline_tests/
 ```
 
 The original scenario runner has been retired from the active ROS tree. These

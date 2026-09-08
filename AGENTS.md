@@ -7,8 +7,17 @@ These instructions apply to the entire repository.
 The implementation package lives at
 `docs/DSIM_GESC_Gaussian_Codex_Implementation_Package/`; run its tools from
 the repository root using that prefix. Reports formerly under `writing/` now
-live directly under `docs/`. The old root paths are compatibility symlinks for
-historical commands and frozen reports. Start at `docs/README.md` for navigation.
+live directly under `docs/`. The old root shortcuts have been removed; translate
+historical paths using `docs/documentation_relocation.md`. Start at
+`docs/README.md` for navigation.
+
+## V1 branch closure
+
+The user designated the final documentation-cleanup commit on 2026-09-08 as
+the last change to `feature/gesc-gaussian-robustness-v1`. Preserve this branch
+at that commit. Future edits and commits belong on a separate branch; do not
+amend or add commits to V1 unless the user explicitly reopens it. This closure
+does not change the recorded research outcomes or outstanding physical validation.
 
 ## Durable source of truth
 

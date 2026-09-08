@@ -1,8 +1,9 @@
 # START HERE — DSIM GESC + Robust Gaussian Implementation Package
 
 This package lives under `docs/` in the existing `dsim-lab` Git repository and
-can be used with the Codex extension in VS Code. Its original root path is a
-compatibility symlink for historical commands and frozen report links.
+can be used with the Codex extension in VS Code. Its original root shortcut
+has been removed; use the [path mapping](../documentation_relocation.md) for
+historical commands and frozen report links.
 
 ## Current entry point — Phase 10 V1 closeout
 

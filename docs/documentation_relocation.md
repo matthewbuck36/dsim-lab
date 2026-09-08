@@ -12,6 +12,76 @@ physical validation boundary remains as recorded in the Phase 09 status.
 | `writing/gesc_gaussian_source_fix_report.md` | `docs/gesc_gaussian_source_fix_report.md` |
 | `writing/heavy_ball_PDE_ESC/` | `docs/heavy_ball_PDE_ESC/` |
 
+## Root shortcut removal — 2026-09-08
+
+At the user's request, the two root compatibility symlinks have now been
+removed. Their target directories and contents remain under `docs/`; this
+step moves or deletes no document payload. The clean starting commit was
+`43f5520`. This is repository maintenance, not a reopened research phase.
+
+The audit found one active dependency on an alias: `validate_phase_context.sh`
+still assigned its package directory to the old root path. It now uses
+`$ROOT/docs/DSIM_GESC_Gaussian_Codex_Implementation_Package`. The status
+initializer already used that location. Agent instructions, documentation
+navigation, and the baseline Heavy-Ball report README now reflect the removal.
+No current ROS/Gazebo source, launch, or build dependency on either alias was
+found in the tracked-file audit.
+
+The intentional compatibility impact is limited to historical paths:
+
+- Old shell commands, saved bookmarks, coverage-table paths, and commands
+  copied from phase records need the prefix substitutions in the table above.
+- Five source-material/readiness links in the frozen V1 report now require
+  manual path translation. In its Markdown/LaTeX source, replace the leading
+  `../../../DSIM_GESC_Gaussian_Codex_Implementation_Package/` with
+  `../../DSIM_GESC_Gaussian_Codex_Implementation_Package/` when locating a
+  target. The PDF retains the same old link destinations. The frozen report
+  set remains byte-identical.
+- Archived Heavy-Ball scenario JSON files and historical report commands
+  retain `~/dsim-lab/writing/...` paths. For any future reuse, translate these
+  to `~/dsim-lab/docs/...` in a working copy. These scenarios are provenance
+  for a retired runner, not the current simulation workflow.
+
+All five report-link targets remain available:
+
+- [Source-material README](DSIM_GESC_Gaussian_Codex_Implementation_Package/source_material/README.md)
+- [Gaussian-escape whiteboard](DSIM_GESC_Gaussian_Codex_Implementation_Package/source_material/whiteboard_gaussian_escape.jpg)
+- [Switchable-cost/recenter whiteboard](DSIM_GESC_Gaussian_Codex_Implementation_Package/source_material/whiteboard_switchable_cost_recenter.jpeg)
+- [Consolidated meeting decisions](DSIM_GESC_Gaussian_Codex_Implementation_Package/source_material/CONSOLIDATED_MEETING_DECISIONS.md)
+- [Physical-readiness document](DSIM_GESC_Gaussian_Codex_Implementation_Package/10_PHYSICAL_EXPERIMENT_READINESS.md)
+
+Validation after removal:
+
+- Strict Phase 08, 09, and 10 implementation-context checks pass using the
+  three canonical commands recorded below. The Phase 00 required-documents
+  check and context-bundle generation also pass.
+- All five package shell tools pass `bash -n`.
+- The 2,063 tracked regular files present before removal remain present;
+  SHA-256 comparison confirms all except the six intended maintenance files
+  are unchanged, including all ROS source and frozen research evidence.
+- The before/after local-link audit finds ten newly unresolved references:
+  the same five historical targets in each of the frozen Markdown and LaTeX
+  reports. No other previously resolving Markdown/LaTeX link is lost.
+- `git diff --check` passes. No build, ROS graph, Gazebo experiment, physical
+  snapshot edit, or hardware operation is needed for this cleanup.
+
+Current audit artifacts are retained under `/tmp/dsim_remove_doc_aliases/`:
+`before.json`, `after.json`, `phase08.log`, `phase09.log`, `phase10.log`, and
+`context_bundle.txt`. These temporary artifacts supplement this durable record.
+
+On 2026-09-08, the user authorized committing this cleanup as the final change
+to `feature/gesc-gaussian-robustness-v1`. The commit containing this closure
+note is the final branch boundary; resolve its hash from Git. Future work
+belongs on a separate branch. Historical phase reports, statuses, checkpoints,
+failed results, and outstanding physical-validation requirements remain
+unchanged; this administrative closure makes no new research-readiness claim.
+
+## Original relocation record (before shortcut removal)
+
+The following describes the initial move and its validation at that time.
+Its compatibility-link claims and old-path invocation no longer describe the
+current checkout; use the current mapping above.
+
 All 58 tracked implementation-package files and 74 tracked writing files were
 moved. There were no destination-name conflicts. The root package path is a
 relative symlink to its canonical directory; `writing` is a relative symlink
