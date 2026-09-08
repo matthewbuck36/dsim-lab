@@ -7,7 +7,8 @@ are disabled so the marker does not physically block the robot.
 The model's SDF point light is not the source of the ROS cost value. For
 source-seeking experiments, `gazebo.launch.xml` passes
 `number_of_lights` and `light_N_x`, `light_N_y`, and
-`light_N_intensity_lumens` into `cost_function_node`. Cost configs that use
+`light_N_brightness_percent` (0–100) into `cost_function_node`.
+100% maps to a nominal 1600 lumens; legacy lumen flags remain supported. Cost configs that use
 `Multi_Light_Source_Cost` convert those values into the simulated rotating
 photoresistor cost map.
 

@@ -253,10 +253,15 @@ def build_launch_command(resolved, cost_path=None, gui=False):
         arguments.update({
             f'light_{index}_x': source['x_m'],
             f'light_{index}_y': source['y_m'],
-            f'light_{index}_intensity_lumens': source[
-                'relative_lumen_input'
-            ],
         })
+        if 'brightness_percent' in source:
+            arguments[f'light_{index}_brightness_percent'] = (
+                source['brightness_percent']
+            )
+        else:
+            arguments[f'light_{index}_intensity_lumens'] = (
+                source['relative_lumen_input']
+            )
     arguments.update(resolved['algorithm']['launch_overrides'])
     command = [
         'ros2', 'launch', 'turtlebot3_rotating_sensor', 'gazebo.launch.xml'

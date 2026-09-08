@@ -4,6 +4,7 @@ from setuptools import find_packages, setup
 
 package_name = 'ros_esc'
 scenario_files = [
+    'ros_esc/scenario_runner/scenarios/brightness_percent_example.yaml',
     'ros_esc/scenario_runner/scenarios/phase06_smoke.yaml',
     'ros_esc/scenario_runner/scenarios/phase06_catalog.yaml',
     'ros_esc/scenario_runner/scenarios/phase08_validation_support.yaml',

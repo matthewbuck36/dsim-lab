@@ -154,41 +154,38 @@ user@machine:~$ source install/setup.bash
 user@machine:~$ ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml
 ```
 
-To spawn light source models during a Gazebo simulation, set
-`number_of_lights` from 0 to 5 and define the corresponding `light_N_x`,
-`light_N_y`, and `light_N_intensity_lumens` values. The model is a compact
-cylinder and sphere assembly with a warm point light inside the globe. Its
-collision blocks are disabled so the marker does not physically block the
-robot. The model's rendered brightness is only a visual marker; the
-`light_N_intensity_lumens` launch values are consumed by compatible cost
-function objects such as `Multi_Light_Source_Cost`.
+For new light-source simulations, set `number_of_lights` from 0 to 5 and
+configure each source with `light_N_x`, `light_N_y`, and
+`light_N_brightness_percent` (0–100). The nominal mapping is 100% = 1600 lumens;
+25% = 400 and 50% = 800. The surface plot labels percentage-configured sources
+with `%`.
 
-```
-user@machine:~$ ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml \
-  number_of_lights:=3 \
-  light_1_x:=2.0 light_1_y:=2.0 light_1_intensity_lumens:=1000.0 \
-  light_2_x:=10.0 light_2_y:=10.0 light_2_intensity_lumens:=2500.0 \
-  light_3_x:=6.0 light_3_y:=3.0 light_3_intensity_lumens:=1500.0
-```
+The following example configures the existing multi-light cost model. It is
+an input example, not a validated GESC/Gaussian acceptance run; select the
+controller/profile appropriate to your experiment separately.
 
-The following retained example uses a cost configuration stored under a
-historical Heavy-Ball recreation path. `Multi_Light_Source_Cost` is shared
-compatibility code, but this path is not the active GESC + Gaussian V1 profile
-or an acceptance scenario:
-
-```
-user@machine:~$ ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml \
+```bash
+timeout --signal=INT --kill-after=10s 180s ros2 launch turtlebot3_rotating_sensor gazebo.launch.xml \
   cost_function_config_filepath:=~/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json \
   number_of_lights:=2 \
-  light_1_x:=2.0 light_1_y:=2.0 light_1_intensity_lumens:=1000.0 \
-  light_2_x:=10.0 light_2_y:=10.0 light_2_intensity_lumens:=2500.0
+  light_1_x:=1.0 light_1_y:=0.5 light_1_brightness_percent:=25.0 \
+  light_2_x:=3.5 light_2_y:=3.5 light_2_brightness_percent:=100.0
 ```
 
-`Multi_Light_Source_Cost` is the multi-light rotating photoresistor model.
-Lumens are interpreted relative to the cost config's
-`reference_intensity_lumens`; they are not an absolute photometric calibration.
-The legacy `Photoresistor_Interpolated_Map` remains available for older
-single-light ESC methods.
+The compatible cost JSON lives under the historical Heavy-Ball recreation
+path but its `Multi_Light_Source_Cost` owner is shared by simulation methods.
+The visible models are position markers with disabled collisions; their SDF
+point lights do not generate ROS sensor readings. Brightness affects the
+Python photoresistor cost model.
+
+For complete scenario/JSON examples, input validation, and recording details,
+see the [percentage brightness guide](../../../docs/simulation_brightness.md).
+The linear mapping is a simulation assumption, not a measured Hue dimming
+calibration. The fitted `reference_intensity_lumens` normalization and cost
+sign/units remain unchanged. Legacy `light_N_intensity_lumens` inputs/defaults
+and old wrappers are retained for reproducibility; a percentage overrides the
+legacy setting for that source. Set every enabled source's percentage in new
+Hue-style runs. The older `Photoresistor_Interpolated_Map` remains available.
 
 The older unnumbered manual-light launch arguments have been deprecated. New
 runs should use `number_of_lights` and `light_1_*` through `light_5_*`.

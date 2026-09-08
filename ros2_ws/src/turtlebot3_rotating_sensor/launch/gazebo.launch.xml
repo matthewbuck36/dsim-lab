@@ -246,9 +246,10 @@
     <arg name="supervisor_stop_topic" default="/gesc_gaussian/stop_requested"/>
 
     <!-- Streamlined light-source interface. Set number_of_lights from 0 to 5,
-    then define each light_N_x, light_N_y, and light_N_intensity_lumens. The
-    visible Gazebo markers and compatible light-source cost functions use the
-    same values. -->
+    then define each light_N_x, light_N_y, and light_N_brightness_percent.
+    Percent settings are 0..100, with 100 = nominal 1600 lumens. The default
+    legacy sentinel preserves historical lumen inputs; explicit percentages
+    override them. Markers show positions; the Python cost model owns sensing. -->
     <arg name="number_of_lights" default="0"/>
     <arg name="light_source_1_entity_name" default="manual_light_1"/>
     <arg name="light_source_1_model_filepath" default="$(find-pkg-share turtlebot3_rotating_sensor)/models/light_source/model.sdf"/>
@@ -258,6 +259,7 @@
     <arg name="light_source_1_roll" default="0.0"/>
     <arg name="light_source_1_pitch" default="0.0"/>
     <arg name="light_source_1_yaw" default="0.0"/>
+    <arg name="light_1_brightness_percent" default="legacy"/>
     <arg name="light_1_intensity_lumens" default="1000.0"/>
     <arg name="light_source_2_entity_name" default="manual_light_2"/>
     <arg name="light_source_2_model_filepath" default="$(find-pkg-share turtlebot3_rotating_sensor)/models/light_source/model.sdf"/>
@@ -267,6 +269,7 @@
     <arg name="light_source_2_roll" default="0.0"/>
     <arg name="light_source_2_pitch" default="0.0"/>
     <arg name="light_source_2_yaw" default="0.0"/>
+    <arg name="light_2_brightness_percent" default="legacy"/>
     <arg name="light_2_intensity_lumens" default="2500.0"/>
     <arg name="light_source_3_entity_name" default="manual_light_3"/>
     <arg name="light_source_3_model_filepath" default="$(find-pkg-share turtlebot3_rotating_sensor)/models/light_source/model.sdf"/>
@@ -276,6 +279,7 @@
     <arg name="light_source_3_roll" default="0.0"/>
     <arg name="light_source_3_pitch" default="0.0"/>
     <arg name="light_source_3_yaw" default="0.0"/>
+    <arg name="light_3_brightness_percent" default="legacy"/>
     <arg name="light_3_intensity_lumens" default="1500.0"/>
     <arg name="light_source_4_entity_name" default="manual_light_4"/>
     <arg name="light_source_4_model_filepath" default="$(find-pkg-share turtlebot3_rotating_sensor)/models/light_source/model.sdf"/>
@@ -285,6 +289,7 @@
     <arg name="light_source_4_roll" default="0.0"/>
     <arg name="light_source_4_pitch" default="0.0"/>
     <arg name="light_source_4_yaw" default="0.0"/>
+    <arg name="light_4_brightness_percent" default="legacy"/>
     <arg name="light_4_intensity_lumens" default="1200.0"/>
     <arg name="light_source_5_entity_name" default="manual_light_5"/>
     <arg name="light_source_5_model_filepath" default="$(find-pkg-share turtlebot3_rotating_sensor)/models/light_source/model.sdf"/>
@@ -294,6 +299,7 @@
     <arg name="light_source_5_roll" default="0.0"/>
     <arg name="light_source_5_pitch" default="0.0"/>
     <arg name="light_source_5_yaw" default="0.0"/>
+    <arg name="light_5_brightness_percent" default="legacy"/>
     <arg name="light_5_intensity_lumens" default="800.0"/>
 
     <!-- Set the default rotate frame configuration filepath -->
@@ -505,30 +511,40 @@
         $(var light_1_y)
         --light_source_1_intensity_lumens
         $(var light_1_intensity_lumens)
+        --light_source_1_brightness_percent
+        $(var light_1_brightness_percent)
         --light_source_2_x
         $(var light_2_x)
         --light_source_2_y
         $(var light_2_y)
         --light_source_2_intensity_lumens
         $(var light_2_intensity_lumens)
+        --light_source_2_brightness_percent
+        $(var light_2_brightness_percent)
         --light_source_3_x
         $(var light_3_x)
         --light_source_3_y
         $(var light_3_y)
         --light_source_3_intensity_lumens
         $(var light_3_intensity_lumens)
+        --light_source_3_brightness_percent
+        $(var light_3_brightness_percent)
         --light_source_4_x
         $(var light_4_x)
         --light_source_4_y
         $(var light_4_y)
         --light_source_4_intensity_lumens
         $(var light_4_intensity_lumens)
+        --light_source_4_brightness_percent
+        $(var light_4_brightness_percent)
         --light_source_5_x
         $(var light_5_x)
         --light_source_5_y
         $(var light_5_y)
         --light_source_5_intensity_lumens
         $(var light_5_intensity_lumens)
+        --light_source_5_brightness_percent
+        $(var light_5_brightness_percent)
         --enable_observability
         $(var enable_observability)
         --algorithm_profile
@@ -564,30 +580,40 @@
         $(var light_1_y)
         --light_source_1_intensity_lumens
         $(var light_1_intensity_lumens)
+        --light_source_1_brightness_percent
+        $(var light_1_brightness_percent)
         --light_source_2_x
         $(var light_2_x)
         --light_source_2_y
         $(var light_2_y)
         --light_source_2_intensity_lumens
         $(var light_2_intensity_lumens)
+        --light_source_2_brightness_percent
+        $(var light_2_brightness_percent)
         --light_source_3_x
         $(var light_3_x)
         --light_source_3_y
         $(var light_3_y)
         --light_source_3_intensity_lumens
         $(var light_3_intensity_lumens)
+        --light_source_3_brightness_percent
+        $(var light_3_brightness_percent)
         --light_source_4_x
         $(var light_4_x)
         --light_source_4_y
         $(var light_4_y)
         --light_source_4_intensity_lumens
         $(var light_4_intensity_lumens)
+        --light_source_4_brightness_percent
+        $(var light_4_brightness_percent)
         --light_source_5_x
         $(var light_5_x)
         --light_source_5_y
         $(var light_5_y)
         --light_source_5_intensity_lumens
         $(var light_5_intensity_lumens)
+        --light_source_5_brightness_percent
+        $(var light_5_brightness_percent)
         --enable_observability
         $(var enable_observability)
         --algorithm_profile
@@ -653,30 +679,40 @@
             $(var light_1_y)
             --light_source_1_intensity_lumens
             $(var light_1_intensity_lumens)
+            --light_source_1_brightness_percent
+            $(var light_1_brightness_percent)
             --light_source_2_x
             $(var light_2_x)
             --light_source_2_y
             $(var light_2_y)
             --light_source_2_intensity_lumens
             $(var light_2_intensity_lumens)
+            --light_source_2_brightness_percent
+            $(var light_2_brightness_percent)
             --light_source_3_x
             $(var light_3_x)
             --light_source_3_y
             $(var light_3_y)
             --light_source_3_intensity_lumens
             $(var light_3_intensity_lumens)
+            --light_source_3_brightness_percent
+            $(var light_3_brightness_percent)
             --light_source_4_x
             $(var light_4_x)
             --light_source_4_y
             $(var light_4_y)
             --light_source_4_intensity_lumens
             $(var light_4_intensity_lumens)
+            --light_source_4_brightness_percent
+            $(var light_4_brightness_percent)
             --light_source_5_x
             $(var light_5_x)
             --light_source_5_y
             $(var light_5_y)
             --light_source_5_intensity_lumens
             $(var light_5_intensity_lumens)
+            --light_source_5_brightness_percent
+            $(var light_5_brightness_percent)
         "
     />
 

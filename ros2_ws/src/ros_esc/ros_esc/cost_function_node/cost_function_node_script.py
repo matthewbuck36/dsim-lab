@@ -17,6 +17,10 @@ import time
 import json
 import argparse
 import numpy as np
+from ros_esc.cost_function_node.light_brightness import (
+    add_brightness_arguments,
+    light_sources_from_arguments,
+)
 import rclpy
 from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
@@ -97,6 +101,7 @@ class CostFunction(Node):
                 type=float,
                 default=None,
             )
+        add_brightness_arguments(parser)
         parser.add_argument("--enable_observability", default="False")
         parser.add_argument("--algorithm_profile", default="legacy")
         parser.add_argument(
@@ -212,15 +217,7 @@ class CostFunction(Node):
 
     def configure_light_source_cost(self, args):
         """Pass launch-time light source settings to compatible cost objects."""
-        light_sources = []
-        for light_idx in range(1, 6):
-            light_sources.append({
-                "x": getattr(args, f"light_source_{light_idx}_x"),
-                "y": getattr(args, f"light_source_{light_idx}_y"),
-                "intensity_lumens": getattr(
-                    args, f"light_source_{light_idx}_intensity_lumens"
-                ),
-            })
+        light_sources = light_sources_from_arguments(args)
 
         self.configured_light_source_count = args.light_source_count
         self.configured_light_sources = light_sources
@@ -232,6 +229,12 @@ class CostFunction(Node):
             args.light_source_count,
             light_sources,
         )
+        if args.light_source_count is not None or any(
+            "brightness_percent" in source
+            for source in self.cost_function.light_sources
+        ):
+            self.configured_light_sources = self.cost_function.light_sources
+            self.configured_light_source_count = len(self.configured_light_sources)
 
     def transform_callback(self, msg: StampedTransformMultiArray):
         """This function collects the array of transformation matrices from the input topic"""
@@ -437,6 +440,7 @@ class CostFunction(Node):
                     ("x_m", source["x"]),
                     ("y_m", source["y"]),
                     ("relative_intensity_input", source["intensity_lumens"]),
+                    ("brightness_percent", source.get("brightness_percent")),
                 )
                 for suffix, value in entries:
                     if value is not None and np.isfinite(value):

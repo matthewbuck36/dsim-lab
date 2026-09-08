@@ -38,6 +38,11 @@ broad physical readiness, or complete second-extremum physical acceptance.
 
 ## Minimal build
 
+New simulated light settings use `light_N_brightness_percent` (0–100), with
+100% mapped to a nominal 1600 lumens. See the
+[brightness guide](docs/simulation_brightness.md) for YAML/JSON examples and
+compatibility with existing lumen-based experiments.
+
 ```bash
 cd /home/mattb/dsim-lab/ros2_ws
 source /opt/ros/humble/setup.bash

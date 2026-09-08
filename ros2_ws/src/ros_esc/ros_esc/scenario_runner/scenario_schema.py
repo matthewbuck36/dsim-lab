@@ -8,6 +8,9 @@ import math
 from pathlib import Path
 import re
 
+from ros_esc.cost_function_node.light_brightness import (
+    brightness_percent_to_lumens,
+)
 from ros_esc.scenario_runner import aggregate_field_truth
 
 import yaml
@@ -235,7 +238,7 @@ CASE_KEYS = {
 START_KEYS = {'id', 'x_m', 'y_m', 'yaw_rad'}
 SOURCE_KEYS = {
     'id', 'x_m', 'y_m', 'relative_lumen_input', 'levels',
-    'evaluation_role',
+    'evaluation_role', 'brightness_percent',
 }
 ALGORITHM_KEYS = {'ablations', 'launch_overrides'}
 SUCCESS_KEYS = {
@@ -2443,10 +2446,11 @@ def load_suite(path):
             source_ids.add(source_id)
             has_intensity = 'relative_lumen_input' in source
             has_levels = 'levels' in source
-            if has_intensity == has_levels:
+            has_percent = 'brightness_percent' in source
+            if sum((has_intensity, has_levels, has_percent)) != 1:
                 raise ValueError(
                     f'{source_location} requires exactly one of '
-                    'relative_lumen_input or levels'
+                    'brightness_percent, relative_lumen_input or levels'
                 )
             role = str(source.get('evaluation_role', ''))
             if role not in EVALUATION_ROLES:
@@ -2459,7 +2463,16 @@ def load_suite(path):
                 'y_m': _number(source.get('y_m'), f'{source_location}.y_m'),
                 'evaluation_role': role,
             }
-            if has_intensity:
+            if has_percent:
+                percent = _number(
+                    source['brightness_percent'],
+                    f'{source_location}.brightness_percent', minimum=0.0,
+                )
+                normalized['brightness_percent'] = percent
+                normalized['relative_lumen_input'] = (
+                    brightness_percent_to_lumens(percent)
+                )
+            elif has_intensity:
                 normalized['relative_lumen_input'] = _number(
                     source['relative_lumen_input'],
                     f'{source_location}.relative_lumen_input', minimum=0.0,

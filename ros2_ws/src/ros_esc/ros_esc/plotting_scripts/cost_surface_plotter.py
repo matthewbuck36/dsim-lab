@@ -19,6 +19,10 @@ from rclpy.node import Node
 from ros_esc_interfaces.msg import StampedFloat64MultiArray
 
 from ros_esc.config_parsing import parse_object_config
+from ros_esc.cost_function_node.light_brightness import (
+    add_brightness_arguments,
+    light_sources_from_arguments,
+)
 
 
 def _create_transform(x_pos, y_pos, theta):
@@ -42,18 +46,14 @@ def _normalize_bool(value):
 
 
 def _parse_light_sources(args):
-    light_sources = []
-    for light_idx in range(1, 6):
-        light_sources.append({
-            "x": getattr(args, f"light_source_{light_idx}_x"),
-            "y": getattr(args, f"light_source_{light_idx}_y"),
-            "intensity_lumens": getattr(
-                args,
-                f"light_source_{light_idx}_intensity_lumens",
-            ),
-        })
+    return light_sources_from_arguments(args)
 
-    return light_sources
+
+def _light_label(index, light):
+    """Display the requested unit without relabeling historical inputs."""
+    if light.get('brightness_percent') is not None:
+        return f"L{index}: {light['brightness_percent']:g}%"
+    return f"L{index}: {light['intensity_lumens']:.0f} lm"
 
 
 def _configure_launch_lights(cost_function, args):
@@ -253,7 +253,7 @@ class CostSurfacePlot:
                 [z_value],
                 s=45,
                 marker="o",
-                label=f"L{light_idx}: {light['intensity_lumens']:.0f} lm",
+                label=_light_label(light_idx, light),
             )
 
         for fill_idx, (amplitude, mu_x, mu_y, sigma) in enumerate(
@@ -589,6 +589,7 @@ def build_parser():
             default=None,
         )
 
+    add_brightness_arguments(parser)
     return parser
 
 
@@ -622,6 +623,9 @@ def main():
             )
 
     lights = _parse_light_sources(args)
+    configured_lights = getattr(cost_function, "light_sources", [])
+    if any('brightness_percent' in light for light in configured_lights):
+        lights = configured_lights
 
     if args.live and not args.no_show:
         _run_live_plot(x_grid, y_grid, z_grid, args, lights)

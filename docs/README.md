@@ -7,6 +7,8 @@ here. Use these locations for new documentation references:
   specifications, phase prompts, templates, source material, and workflow tools.
 - [Phase records](codex/gesc_gaussian/implementation_sequence.md): plans,
   statuses, handoffs, and retained validation evidence.
+- [Simulated brightness percentages](simulation_brightness.md): new light
+  settings, nominal 1600-lumen mapping, and historical compatibility.
 - [Gaussian light-source sweep report](gaussian_fill_light_source_sweep_report.md).
 - [GESC Gaussian source-fix report](gesc_gaussian_source_fix_report.md).
 - [Heavy-Ball baseline report](heavy_ball_PDE_ESC/baseline_hb_report/README.md)

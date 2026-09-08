@@ -10,6 +10,7 @@ parameters.
 from abc import ABC, abstractmethod
 import numpy as np
 from ros_esc.config_parsing import parse_sympy_expression
+from ros_esc.cost_function_node.light_brightness import source_intensity_lumens
 
 # pylint: disable=too-few-public-methods
 class CostFunction(ABC):
@@ -330,7 +331,7 @@ class Multi_Light_Source_Cost(CostFunction):
             scale_map: radius scaling factor for the fitted curve.
             apply_adc: if true, quantize the aggregate resistance reading.
             reference_intensity_lumens: fitted-curve reference light intensity.
-            light_sources: list of dictionaries with x, y, intensity_lumens.
+            light_sources: x, y, brightness_percent (or legacy intensity_lumens).
         """
 
         self.mode = params.get("mode", "Voltage")
@@ -381,7 +382,7 @@ class Multi_Light_Source_Cost(CostFunction):
             try:
                 x_pos = float(source["x"])
                 y_pos = float(source["y"])
-                intensity_lumens = float(source["intensity_lumens"])
+                intensity_lumens = source_intensity_lumens(source)
             except KeyError as exc:
                 raise KeyError(
                     f"light source {source_idx} is missing required key {exc}."
@@ -395,6 +396,10 @@ class Multi_Light_Source_Cost(CostFunction):
                 "y": y_pos,
                 "intensity_lumens": intensity_lumens,
             })
+            if source.get("brightness_percent") is not None:
+                normalized_sources[-1]["brightness_percent"] = float(
+                    source["brightness_percent"]
+                )
 
         return normalized_sources
 
@@ -417,7 +422,12 @@ class Multi_Light_Source_Cost(CostFunction):
             source = light_sources[source_idx]
             missing_keys = [
                 key for key, value in source.items()
-                if key in ("x", "y", "intensity_lumens") and value is None
+                if value is None and (
+                    key in ("x", "y") or (
+                        key == "intensity_lumens"
+                        and source.get("brightness_percent") is None
+                    )
+                )
             ]
             if missing_keys:
                 raise ValueError(

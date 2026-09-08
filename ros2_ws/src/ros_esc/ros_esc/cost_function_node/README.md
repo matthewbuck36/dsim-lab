@@ -54,11 +54,16 @@ angle from the sensor x-axis to each light, evaluates the fitted photoresistor
 curve for each source, and combines the sources in conductance space before
 returning either resistance or negative voltage.
 
-Each source has an `x` position, `y` position, and `intensity_lumens`. Lumens are
-relative to `reference_intensity_lumens`; for example, 2000 lumens contributes
-twice the conductance delta of the fitted reference light when
-`reference_intensity_lumens` is 1000. This is not an absolute photometric
-calibration.
+Each new source has an `x` position, `y` position, and `brightness_percent`
+from 0 through 100. The nominal simulation conversion is
+`intensity_lumens = 16 * brightness_percent`, so 100% represents 1600 lumens.
+Zero means off. This linear assumption is not a measured Hue app calibration.
+Legacy `intensity_lumens` is still accepted, but cannot be combined with
+`brightness_percent` in the same JSON source. The existing fitted-curve
+`reference_intensity_lumens` normalization remains unchanged.
+
+See the [brightness guide](../../../../../docs/simulation_brightness.md) for
+launch/YAML input and recording details.
 
 Hardcoded equation configs using `Position_Based_Sympy_Expression` are still
 supported and ignore the light-source launch overrides.
@@ -76,8 +81,8 @@ Example config:
       "apply_adc": false,
       "reference_intensity_lumens": 1000.0,
       "light_sources": [
-        {"x": 2.0, "y": 2.0, "intensity_lumens": 1000.0},
-        {"x": 10.0, "y": 10.0, "intensity_lumens": 2500.0}
+        {"x": 2.0, "y": 2.0, "brightness_percent": 25.0},
+        {"x": 3.5, "y": 3.5, "brightness_percent": 100.0}
       ]
     }
   },
