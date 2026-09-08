@@ -12,7 +12,7 @@ historical commands and frozen reports. Start at `docs/README.md` for navigation
 
 ## Durable source of truth
 
-Do not rely on conversation memory to determine project state. Reconstruct it
+Do not rely solely on conversation memory to determine project state. Reconstruct it
 from, in order:
 
 1. current code, tests, resolved ROS interfaces, and launch graph;
