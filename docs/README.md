@@ -20,6 +20,14 @@ manifests may retain those old paths; use the [path mapping](documentation_reloc
 to locate their targets under `docs/`. Phase outcomes are unchanged;
 the latest Phase 09 status still records physical validation outstanding after M8O.
 
+## GESC + Gaussian V2 kickoff
+
+On 2026-09-08, `feature/gesc-gaussian-robustness-v2` began from the final V1
+commit `1af67c6` to re-attempt Gaussian algorithm robustness. This kickoff
+records the branch start; the V2 plan and acceptance criteria remain to be
+defined. V1 reports and retained results remain the inherited evidence
+baseline, and no V2 implementation or validation result is claimed yet.
+
 ## Current GESC + Gaussian V1 report
 
 The complete V1 project narrative and evidence boundary is the LaTeX-typeset
