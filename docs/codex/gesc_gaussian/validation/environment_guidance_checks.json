@@ -1,0 +1,233 @@
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "check": "simulation supervisor_use_sim_time",
+      "value": "True"
+    },
+    {
+      "check": "physical supervisor_use_sim_time",
+      "value": "False"
+    },
+    {
+      "check": "simulation observability_source_mode",
+      "value": "simulation"
+    },
+    {
+      "check": "physical observability_source_mode",
+      "value": "physical"
+    },
+    {
+      "check": "simulation pde_omega",
+      "value": "5.0"
+    },
+    {
+      "check": "physical pde_omega",
+      "value": "2.09439510239"
+    },
+    {
+      "check": "simulation pde_cost_history_topic",
+      "value": "/turtlebot3/cost_value_chatter"
+    },
+    {
+      "check": "physical pde_cost_history_topic",
+      "value": "/cost_modified"
+    },
+    {
+      "check": "physical use_sim_time",
+      "value": "False"
+    },
+    {
+      "check": "simulation launch startup timeout",
+      "value": "5.0"
+    },
+    {
+      "check": "physical photoresistor_serial_port",
+      "value": "/dev/ttyUSB0"
+    },
+    {
+      "check": "physical photoresistor_baud_rate",
+      "value": "9600"
+    },
+    {
+      "check": "physical photoresistor_serial_timeout_sec",
+      "value": "0.50"
+    },
+    {
+      "check": "physical turtlebot3_usb_port",
+      "value": "/dev/ttyACM0"
+    },
+    {
+      "check": "physical rotating_frame_init_angular_position",
+      "value": "-90"
+    },
+    {
+      "check": "physical rotation_settle_sec",
+      "value": "10.0"
+    },
+    {
+      "check": "physical rotation_authorization_stale_sec",
+      "value": "0.50"
+    },
+    {
+      "check": "physical rotation_encoder_stale_sec",
+      "value": "0.50"
+    },
+    {
+      "check": "simulation set_max_vx",
+      "value": 0.1
+    },
+    {
+      "check": "simulation set_max_wz",
+      "value": 0.5
+    },
+    {
+      "check": "physical set_max_vx",
+      "value": 0.05
+    },
+    {
+      "check": "physical set_max_wz",
+      "value": 0.3
+    },
+    {
+      "check": "simulation runtime heartbeat threshold",
+      "value": 0.5
+    },
+    {
+      "check": "physical runtime heartbeat threshold",
+      "value": 1.5
+    },
+    {
+      "check": "physical runtime heartbeat grace",
+      "value": 0.5
+    },
+    {
+      "check": "physical required node clocks",
+      "value": true
+    },
+    {
+      "check": "wrapper PHASE09_ALGORITHM_STARTUP_GRACE_SEC",
+      "value": "100.0"
+    },
+    {
+      "check": "wrapper PHASE09_PREFLIGHT_TIMEOUT_SEC",
+      "value": "45.0"
+    },
+    {
+      "check": "wrapper PHASE09_ROTATION_STARTUP_TIMEOUT_SEC",
+      "value": "45.0"
+    },
+    {
+      "check": "wrapper use_sim_time:=False",
+      "value": true
+    },
+    {
+      "check": "wrapper supervisor_use_sim_time:=False",
+      "value": true
+    },
+    {
+      "check": "wrapper enable_vicon_evaluation:=True",
+      "value": true
+    },
+    {
+      "check": "wrapper --evidence-file \"selected_profile=$PHASE09_SELECTED_PROFILE\"",
+      "value": true
+    },
+    {
+      "check": "wrapper --serial-device)",
+      "value": true
+    },
+    {
+      "check": "wrapper --opencr-device)",
+      "value": true
+    },
+    {
+      "check": "shared clock helper source parity",
+      "value": true
+    },
+    {
+      "check": "shared Gaussian source parity",
+      "value": true
+    },
+    {
+      "check": "tb3-pi unmounted",
+      "value": 1
+    },
+    {
+      "check": "deployed copy /home/mattb/physical_TB3_files_snapshot/README.md",
+      "value": true
+    },
+    {
+      "check": "deployed copy /home/mattb/physical_TB3_files_snapshot/AGENTS.md",
+      "value": true
+    },
+    {
+      "check": "deployed copy /home/mattb/tb3-pi/README.md",
+      "value": true
+    },
+    {
+      "check": "deployed copy /home/mattb/tb3-pi/AGENTS.md",
+      "value": true
+    },
+    {
+      "check": "balanced fences /home/mattb/dsim-lab/README.md",
+      "value": 0
+    },
+    {
+      "check": "balanced fences /home/mattb/dsim-lab/AGENTS.md",
+      "value": 0
+    },
+    {
+      "check": "balanced fences /home/mattb/dsim-lab/docs/environment_parameters.md",
+      "value": 0
+    },
+    {
+      "check": "balanced fences /home/mattb/dsim-lab/docs/environment_guides/README.md",
+      "value": 0
+    },
+    {
+      "check": "balanced fences /home/mattb/dsim-lab/docs/environment_guides/physical_snapshot_AGENTS.md",
+      "value": 0
+    },
+    {
+      "check": "balanced fences /home/mattb/dsim-lab/docs/environment_guides/physical_snapshot_README.md",
+      "value": 0
+    },
+    {
+      "check": "balanced fences /home/mattb/dsim-lab/docs/environment_guides/tb3_pi_AGENTS.md",
+      "value": 0
+    },
+    {
+      "check": "balanced fences /home/mattb/dsim-lab/docs/environment_guides/tb3_pi_README.md",
+      "value": 0
+    },
+    {
+      "check": "balanced fences /home/mattb/physical_TB3_files_snapshot/README.md",
+      "value": 0
+    },
+    {
+      "check": "balanced fences /home/mattb/physical_TB3_files_snapshot/AGENTS.md",
+      "value": 0
+    },
+    {
+      "check": "balanced fences /home/mattb/tb3-pi/README.md",
+      "value": 0
+    },
+    {
+      "check": "balanced fences /home/mattb/tb3-pi/AGENTS.md",
+      "value": 0
+    },
+    {
+      "check": "no runtime Git changes",
+      "value": true
+    }
+  ],
+  "local_links_checked": 25,
+  "markdown_files_checked": 12,
+  "external_sha256": {
+    "/home/mattb/physical_TB3_files_snapshot/README.md": "b1f849b1c6675e10f9f5bb62b45186988445246f692058f8fea0515393f339d1",
+    "/home/mattb/physical_TB3_files_snapshot/AGENTS.md": "efb781e337b37015769e05d7a1f1729a45da42496405d9123c01b5531d9a4b6e",
+    "/home/mattb/tb3-pi/README.md": "397e7c26be9b83a76bf538addbc2ebb750ae80c15da830b0a215d9e25de76ee5",
+    "/home/mattb/tb3-pi/AGENTS.md": "2ccee3ad50b0d1742d44a87533aaec1545012a2dd2075fd92589b164ffb31dfa"
+  }
+}

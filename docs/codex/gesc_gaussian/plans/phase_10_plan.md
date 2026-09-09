@@ -1,5 +1,40 @@
 # Phase 10 Plan — V1 Final Project Report and Documentation Closeout
 
+## 2026-09-08 amendment — root environment guidance
+
+The user explicitly reopened V1 for final documentation identifying the
+simulation and physical workspaces and their differing parameters. This
+amendment authorizes README/AGENTS documentation in `dsim-lab`, the external
+`physical_TB3_files_snapshot` root, and the **unmounted, local** `tb3-pi`
+directory. It supersedes the original snapshot documentation-write restriction
+only for these root guidance files. No runtime source/configuration edit,
+mount, remote transfer, build, hardware operation, or new experiment is part
+of this task. The frozen report and historical results remain intact.
+
+One milestone: trace effective simulation and selected physical launch,
+wrapper, profile, recorder, and clock settings; distinguish environment
+requirements from selected-case tuning and legacy defaults; update root
+READMEs and concise AGENTS rules. Retain versioned copies of the four external
+guidance files in `docs/environment_guides/` so the branch contains the entire
+documentation change. Explain that local mount-point files are hidden while
+mounted and cannot instruct an agent through that hidden path.
+
+Acceptance: source-backed differing parameter tables, matching deployed and
+versioned external documents, a rechecked unmounted destination before writes,
+valid documentation links/structure, existing focused clock regression tests,
+clean diff checks, and a durable validation record/status/handoff/checkpoint.
+No new implementation tests or ROS/Gazebo/hardware graph are required.
+The physical source evidence is the snapshot synchronized earlier on
+2026-09-08; the actual Pi is unavailable while unmounted.
+
+Final closure authorization (2026-09-08): the user requested a clean Git tree
+and designated this work as the final V1 change. Complete one local commit,
+`docs: close V1 with environment guidance`, containing the reviewed guidance
+and closure records. Verify a clean worktree after committing. This replaces
+the earlier final-commit boundary at `dca77ba`; do not amend or extend V1
+after this commit without an explicit reopening. No push or new branch is
+part of this closeout.
+
 ## Objective and scope
 
 Phase 10 will close the current

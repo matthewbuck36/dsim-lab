@@ -3,6 +3,44 @@
 This repository contains ROS 2 Humble/Gazebo research code for extremum-seeking
 control, including the completed V1 GESC + adaptive Gaussian evidence line.
 
+**V1 branch closed (2026-09-08).** The commit
+`docs: close V1 with environment guidance` is the final change to
+`feature/gesc-gaussian-robustness-v1`. Future work belongs on a separate branch
+unless the user explicitly reopens V1. Research evidence and physical
+validation limitations remain unchanged.
+
+## Environment: simulation / Gazebo
+
+This is the **simulation workspace**. The physical source copy is in
+`/home/mattb/physical_TB3_files_snapshot/pi/ros2_ws/src`; the live physical
+home is accessible through `/home/mattb/tb3-pi` only when SSHFS is mounted.
+Read [AGENTS.md](AGENTS.md) and the
+[simulation/physical parameter comparison](docs/environment_parameters.md)
+before copying configurations between them.
+
+| Differing setting | This simulation workspace | Selected physical workspace |
+| --- | --- | --- |
+| Algorithm-node `use_sim_time` | `True` | `False` |
+| `supervisor_use_sim_time` | `True` | `False` |
+| Controller/filter `--use-sim-time` | `True` | `False` |
+| `observability_source_mode` | `simulation` | `physical` |
+| Recorder `--mode` | `simulation` | `physical` |
+| Selected controller `set_max_vx` / `set_max_wz` | `0.1` m/s / `0.5` rad/s | `0.05` m/s / `0.30` rad/s |
+| Selected `pde_omega` | `5.0` rad/s | `2.09439510239` rad/s |
+| Selected launch `startup_timeout_sec` | `5.0` s | `100.0` s |
+
+The last three rows are selected-case tuning, not universal environment
+requirements. The full comparison records hardware-only settings, source and
+pose routing, recorder timing, file owners, and legacy exceptions. Shared
+algorithm parameters are omitted. Gazebo algorithm nodes use `/clock`; bag
+recording/watchdogs retain their existing independent timing. Shared node
+constructors must preserve an explicit physical `False` override.
+
+Use the selected scenario/wrapper to resolve parameters. Bare Gazebo launch
+retains legacy/HBESC defaults, and the physical profile YAML is a parameter
+record rather than a ROS parameter loader. Copying it alone does not select
+the physical settings.
+
 The canonical project summary is the LaTeX-typeset
 [GESC + Robust Gaussian V1 Final Project Report](docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.pdf).
 Its [LaTeX source](docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.tex) and

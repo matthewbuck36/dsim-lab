@@ -2,6 +2,32 @@
 
 These instructions apply to the entire repository.
 
+## Simulation and physical environment boundary
+
+- This checkout is the **simulation/Gazebo** workspace. Read
+  `docs/environment_parameters.md` before cross-environment edits; it records
+  verified differing values and the effective configuration owners.
+- Gazebo algorithm nodes use `use_sim_time=True`; selected physical nodes use
+  `False`, including `supervisor_use_sim_time`. Controller/filter use their
+  strict `--use-sim-time` CLI. Preserve explicit startup overrides in the
+  shared clock helper; never globally rewrite shared defaults based on which
+  machine stores the source. Do not force recorder/watchdog clocks to match.
+- Resolve the actual wrapper/scenario, launch overrides, selected JSON, and
+  node values. Bare launch legacy defaults and the physical selected-profile
+  evidence YAML are not the selected runtime configuration.
+- Keep physical JSON paths rooted at the Pi workspace, physical algorithm
+  pose from OpenCR `/odom`, and Vicon evaluation-only. Preserve the physical
+  selected speed ceilings; do not copy simulation tuning onto hardware.
+- `/home/mattb/physical_TB3_files_snapshot` is offline physical source.
+  `/home/mattb/tb3-pi` is a mount point: check `findmnt --mountpoint` before
+  interpreting it or writing there. Its local README/AGENTS files are hidden
+  while mounted. For physical work, explicitly read
+  `docs/environment_guides/tb3_pi_README.md` and
+  `docs/environment_guides/tb3_pi_AGENTS.md` from this always-visible checkout.
+- The root guides are instructions, not authorization to mount, transfer,
+  build on the Pi, start ROS/devices, or actuate hardware. Continue actions
+  already authorized by the user; otherwise keep the operator boundary.
+
 ## Documentation locations
 
 The implementation package lives at
@@ -13,11 +39,13 @@ historical paths using `docs/documentation_relocation.md`. Start at
 
 ## V1 branch closure
 
-The user designated the final documentation-cleanup commit on 2026-09-08 as
-the last change to `feature/gesc-gaussian-robustness-v1`. Preserve this branch
-at that commit. Future edits and commits belong on a separate branch; do not
-amend or add commits to V1 unless the user explicitly reopens it. This closure
-does not change the recorded research outcomes or outstanding physical validation.
+The user designated the environment-guidance closeout on 2026-09-08 as the
+**final change** to `feature/gesc-gaussian-robustness-v1`. The containing commit,
+`docs: close V1 with environment guidance`, supersedes the earlier closure at
+`dca77ba`. Preserve V1 at this final commit: do not amend or add commits unless
+the user explicitly reopens the branch. Future edits and commits belong on a
+separate branch. This closure leaves research outcomes and outstanding physical
+validation unchanged.
 
 ## Durable source of truth
 

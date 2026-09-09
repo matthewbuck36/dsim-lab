@@ -1,5 +1,38 @@
 # Phase 10 Handoff — V1 Final Project Report and Documentation Closeout
 
+## 2026-09-08 addendum — root environment guidance complete
+
+The user reopened V1 for final root documentation. The simulation README and
+AGENTS now identify its clock/mode boundary and link the source-backed
+`docs/environment_parameters.md`. Root README/AGENTS files were installed in
+the local physical snapshot and the unmounted local `tb3-pi` directory, with
+exact versioned copies in `docs/environment_guides/`. No real-Pi files were
+accessed or written. Mounted SSHFS hides the local mount-point instructions;
+use their tracked copies explicitly when working on a mounted tree.
+
+Verification passed: 55 source/copy/structure assertions, 25 local links,
+12 Markdown files, and the existing 16-test clock suite independently against
+each source tree. Context/required-document and diff checks passed. See
+[`environment_guidance_validation.md`](../validation/environment_guidance_validation.md)
+for exact commands, scope, local paths, and hashes. The current Phase 10
+checkpoint records this precommit documentation boundary on base `dca77ba`.
+The user subsequently authorized committing these files and closing V1 with
+the exact subject `docs: close V1 with environment guidance`. The containing
+commit is the final V1 branch change and supersedes `dca77ba`; verify a clean
+worktree after creation. Do not amend or extend it without an explicit user
+reopening. No push or new branch was requested.
+
+Resolve the final commit without embedding its own hash in its contents:
+
+```bash
+git log -1 --format=%H --grep='^docs: close V1 with environment guidance$' feature/gesc-gaussian-robustness-v1
+```
+
+No runtime parameters, shared algorithms, legacy behavior, frozen report,
+experimental results, or physical readiness claim changed. No required work
+remains for this bounded amendment. The original dated closeout below is
+preserved as history, including its older Git and physical-mount state.
+
 ## Objective completed
 
 Phase 10 completed the documentation-only closeout of the

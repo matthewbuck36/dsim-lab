@@ -1,5 +1,34 @@
 # Phase 10 Live Status
 
+## 2026-09-08 root environment guidance amendment
+
+Status: `COMPLETE` for this bounded documentation addition; the original
+report closeout below remains complete. Base HEAD `dca77ba`, clean V1 branch
+at task start. The user explicitly reopened V1 and authorized root guidance
+in the simulation checkout, local physical snapshot, and unmounted local
+mount-point directory. The Phase 10 implement-context preflight passed.
+
+Current milestone: root environment guidance delivered and verified. All
+three roots contain README/AGENTS guidance; the four external files match
+versioned copies under `docs/environment_guides/`. Source/link/copy checks
+passed 55 assertions, 25 local links, and 12 Markdown files. Existing clock
+regressions passed 16/16 against each source tree. Exact commands, checks,
+source scope, and hashes are in
+`validation/environment_guidance_validation.md` and its JSON companion.
+The user subsequently authorized the local closeout commit and designated it
+as the final V1 change: `docs: close V1 with environment guidance`. The
+containing commit closes this amendment and supersedes `dca77ba` as the final
+branch boundary. Future work requires a separate branch unless explicitly
+reopened; no push or branch creation is included. No implementation work remains.
+Runtime files, source parity, frozen results, and physical authorization are unchanged.
+`tb3-pi` is unmounted; physical source inspection uses the snapshot refreshed
+earlier on 2026-09-08. No live-Pi inspection or transfer is claimed.
+
+The dated sections below retain the original report closeout; this amendment
+supersedes their then-current milestone and snapshot write restriction only
+for the requested local root documentation. The final current checkpoint is
+regenerated after recording this completed amendment.
+
 Last verified: `2026-08-12T10:41:51-07:00`
 Status: `COMPLETE`
 
