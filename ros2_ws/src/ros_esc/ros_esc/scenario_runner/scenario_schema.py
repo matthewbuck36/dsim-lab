@@ -12,11 +12,18 @@ from ros_esc.cost_function_node.light_brightness import (
     brightness_percent_to_lumens,
 )
 from ros_esc.scenario_runner import aggregate_field_truth
+from ros_esc.scenario_runner.m4_scenario import ARRIVAL_SUITE_IDS
+from ros_esc.v2_direction_policy import THREE_CYCLE_POLICY, validate_policy
+from ros_esc.convergence_detector_node.centroid_contract import CENTROID_METRIC_MODES
+from ros_esc.convergence_detector_node.recurrent_contract import RECURRENT_MODE, RECURRENT_TOPIC
+from ros_esc.stationary_fill_protocol import STATIONARY_RECURRENT_FILL_REQUEST_TOPIC
 
 import yaml
 
 
 SCHEMA_VERSION = 14
+POST_RECOVERY_ARRIVAL_CRITERION = 'post_recovery_arrival_v1'
+QUALIFICATION_OBSERVATION_PURPOSE = 'qualification_observation'
 SUPPORTED_SCHEMA_VERSIONS = {
     1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
 }
@@ -106,6 +113,16 @@ SUCCESS_PREDICATES = {
     'escape_command_ownership',
 }
 LAUNCH_OVERRIDES = {
+    'controller_config_filepath',
+    'continuous_search_mode',
+    'v2_direction_policy',
+    'v2_verification_motion_mode',
+    'v2_verification_evidence_policy',
+    'recurrent_diagnostics_topic',
+    'stationary_recurrent_fill_request_topic',
+    'v2_qualification_observation_only',
+    'v2_candidate_radius_m',
+    'v2_candidate_epsilon_m',
     'approach_history_window_sec',
     'command_watchdog_rate_hz',
     'convergence_decay_rate',
@@ -115,6 +132,12 @@ LAUNCH_OVERRIDES = {
     'convergence_maximum_path_efficiency',
     'convergence_state_gating_enabled',
     'convergence_threshold',
+    'convergence_metric_mode',
+    'centroid_window_sec',
+    'centroid_epsilon_m',
+    'centroid_maximum_radius_m',
+    'centroid_maximum_gap_sec',
+    'centroid_invalid_status_heartbeat_enabled',
     'convergence_confirmation_policy',
     'convergence_confirmation_dwell_sec',
     'convergence_confirmation_exit_threshold_scale',
@@ -213,11 +236,12 @@ LAUNCH_OVERRIDES = {
 
 TOP_LEVEL_KEYS = {
     'schema_version', 'suite_id', 'description', 'mode', 'execution',
-    'metadata', 'level_map', 'defaults', 'frozen_profile', 'cases',
+    'metadata', 'level_map', 'defaults', 'frozen_profile', 'cases', 'purpose',
 }
 EXECUTION_KEYS = {
     'max_parallel_runs', 'gazebo_gui', 'runs_root', 'preflight_timeout_sec',
     'run_timeout_sec', 'wall_timeout_sec', 'shutdown_grace_sec',
+    'simulation_duration_sec',
     'stop_on_run_failure', 'stop_on_cleanup_failure',
 }
 METADATA_KEYS = {'experiment_version', 'operator_notes'}
@@ -244,7 +268,7 @@ ALGORITHM_KEYS = {'ablations', 'launch_overrides'}
 SUCCESS_KEYS = {
     'all_of', 'controller', 'ground_truth', 'minimum_saturation_samples',
     'collision_expected', 'result_scopes', 'local_recovery',
-    'staged_recovery',
+    'staged_recovery', 'criterion',
 }
 LOCAL_RECOVERY_KEYS = {
     'local_source_id',
@@ -367,6 +391,7 @@ EXECUTION_DEFAULTS = {
     'runs_root': '~/Experiments/GESC-Gaussian/runs',
     'preflight_timeout_sec': 60.0,
     'run_timeout_sec': 180.0,
+    'simulation_duration_sec': 0.0,
     'wall_timeout_sec': 480.0,
     'shutdown_grace_sec': 30.0,
     'stop_on_run_failure': False,
@@ -549,8 +574,80 @@ def _positive_integer(value, location):
     return value
 
 
+def configuration_file_path(value, location):
+    """Resolve an explicitly selected existing file without rewriting its input."""
+    if (not isinstance(value, str) or not value.strip()
+            or any(ord(character) < 32 or ord(character) == 127 for character in value)):
+        raise ValueError(f'{location} must be a nonempty file path string')
+    try:
+        path = Path(value).expanduser().resolve(strict=True)
+        if not path.is_file():
+            raise ValueError('not a regular file')
+    except (OSError, RuntimeError, ValueError) as error:
+        raise ValueError(f'{location} must select an existing file: {error}') from error
+    return path
+
+
 def _validate_correction_overrides(overrides, ablations, location):
     """Validate optional Phase 08.7 robust correction controls."""
+    if 'controller_config_filepath' in overrides:
+        configuration_file_path(overrides['controller_config_filepath'],
+                                f'{location}.controller_config_filepath')
+    if overrides.get('continuous_search_mode', 'stationary_v1') not in {'stationary_v1', 'rolling_gesc_v2'}:
+        raise ValueError(f'{location}.continuous_search_mode is unsupported')
+    validate_policy(overrides.get('v2_direction_policy', THREE_CYCLE_POLICY),
+                    continuous_search_mode=overrides.get('continuous_search_mode', 'stationary_v1'),
+                    use_sim_time=True)
+    if 'v2_qualification_observation_only' in overrides:
+        observation_only = _boolean(overrides['v2_qualification_observation_only'],
+                                    f'{location}.v2_qualification_observation_only')
+        if observation_only and overrides.get('continuous_search_mode') != 'rolling_gesc_v2':
+            raise ValueError(f'{location}.v2_qualification_observation_only requires rolling_gesc_v2')
+    for name in ('v2_candidate_radius_m', 'v2_candidate_epsilon_m'):
+        if name in overrides:
+            _number(overrides[name], f'{location}.{name}', positive=True)
+        elif overrides.get('continuous_search_mode') == 'rolling_gesc_v2':
+            raise ValueError(f'{location}.rolling_gesc_v2 requires explicit {name}')
+    metric_mode = overrides.get('convergence_metric_mode', 'pde_mean_v1')
+    if metric_mode not in {'pde_mean_v1', *CENTROID_METRIC_MODES, RECURRENT_MODE}:
+        raise ValueError(f'{location}.convergence_metric_mode is unsupported')
+    heartbeat = _boolean(overrides.get('centroid_invalid_status_heartbeat_enabled', False),
+                         f'{location}.centroid_invalid_status_heartbeat_enabled')
+    if heartbeat and metric_mode not in CENTROID_METRIC_MODES:
+        raise ValueError(f'{location}.centroid_invalid_status_heartbeat_enabled requires centroid mode')
+    for name in (
+        'centroid_window_sec',
+        'centroid_epsilon_m',
+        'centroid_maximum_radius_m',
+        'centroid_maximum_gap_sec',
+    ):
+        if name in overrides:
+            _number(overrides[name], f'{location}.{name}', positive=True)
+    verification_mode = overrides.get('v2_verification_motion_mode', 'rolling_neighborhood_v1')
+    if verification_mode not in ('rolling_neighborhood_v1', 'centered_tracking_v1'):
+        raise ValueError(f'{location}.v2_verification_motion_mode is unsupported')
+    if verification_mode == 'centered_tracking_v1':
+        if overrides.get('continuous_search_mode') != 'rolling_gesc_v2':
+            raise ValueError(f'{location}.centered verification requires rolling_gesc_v2')
+    from ros_esc.v2_lifecycle import validate_verification_evidence_policy
+    validate_verification_evidence_policy(
+        overrides.get('v2_verification_evidence_policy', 'angular_profiles_v1'),
+        simulation=True, continuous_search_mode=overrides.get('continuous_search_mode', 'stationary_v1'),
+        metric_mode=metric_mode, motion_mode=verification_mode,
+        algorithm_profile='robust_gaussian_v1')
+    if 'recurrent_diagnostics_topic' in overrides and overrides['recurrent_diagnostics_topic'] != RECURRENT_TOPIC:
+        raise ValueError(f'{location}.recurrent_diagnostics_topic differs from fixed contract')
+    if ('stationary_recurrent_fill_request_topic' in overrides and
+            overrides['stationary_recurrent_fill_request_topic'] != STATIONARY_RECURRENT_FILL_REQUEST_TOPIC):
+        raise ValueError(f'{location}.stationary_recurrent_fill_request_topic differs from fixed contract')
+    if metric_mode == RECURRENT_MODE and overrides.get('centroid_maximum_gap_sec', .5) > .5:
+        raise ValueError(f'{location}.recurrent source gap exceeds fixed .5 second limit')
+    if metric_mode in (*CENTROID_METRIC_MODES, RECURRENT_MODE) and not overrides.get(
+        'convergence_state_gating_enabled', False
+    ):
+        raise ValueError(
+            f'{location}.{metric_mode} requires convergence_state_gating_enabled'
+        )
     classification_mode = overrides.get(
         'extremum_classification_mode',
         'absolute_source_score',
@@ -799,20 +896,23 @@ def _validate_correction_overrides(overrides, ablations, location):
             'candidate_cost_mad_scale',
             'candidate_cost_required_rotations',
             'candidate_cost_rotation_period_sec',
-            'convergence_confirmation_dwell_sec',
-            'convergence_confirmation_exit_threshold_scale',
-            'convergence_confirmation_policy',
             'known_source_count',
             'operating_bounds_enabled',
             'robust_search_epoch_reset_enabled',
         }
+        if metric_mode == 'pde_mean_v1':
+            required.update({
+                'convergence_confirmation_dwell_sec',
+                'convergence_confirmation_exit_threshold_scale',
+                'convergence_confirmation_policy',
+            })
         missing = sorted(required - set(overrides))
         if missing:
             raise ValueError(
                 f'{location} counted-candidate contract omits: '
                 + ', '.join(missing)
             )
-        if confirmation_policy != 'qualified_dwell':
+        if metric_mode == 'pde_mean_v1' and confirmation_policy != 'qualified_dwell':
             raise ValueError(
                 f'{location} counted candidates require qualified dwell'
             )
@@ -1782,6 +1882,9 @@ def load_suite(path):
                 str(item) for item in sorted(SUPPORTED_SCHEMA_VERSIONS)
             )
         )
+    acquisition = document.get('purpose') == QUALIFICATION_OBSERVATION_PURPOSE
+    if 'purpose' in document and (not acquisition or schema_version != 2):
+        raise ValueError('purpose qualification_observation requires schema_version 2')
     if schema_version == 1 and (
         'frozen_profile' in document
         or any(
@@ -1947,7 +2050,7 @@ def load_suite(path):
             )
             if uses_schema_v6_fields:
                 break
-    if schema_version < 6 and uses_schema_v6_fields:
+    if schema_version < 6 and uses_schema_v6_fields and not acquisition:
         raise ValueError(
             'schema version 6 is required for recoverable-navigation fields'
         )
@@ -1988,7 +2091,7 @@ def load_suite(path):
             )
             if uses_schema_v7_fields:
                 break
-    if schema_version < 7 and uses_schema_v7_fields:
+    if schema_version < 7 and uses_schema_v7_fields and not acquisition:
         raise ValueError(
             'schema version 7 is required for progress-guidance fields'
         )
@@ -2012,7 +2115,7 @@ def load_suite(path):
             )
             if uses_schema_v8_fields:
                 break
-    if schema_version < 8 and uses_schema_v8_fields:
+    if schema_version < 8 and uses_schema_v8_fields and not acquisition:
         raise ValueError(
             'schema version 8 is required for counted open-field fields'
         )
@@ -2036,7 +2139,7 @@ def load_suite(path):
             )
             if uses_schema_v9_fields:
                 break
-    if schema_version < 9 and uses_schema_v9_fields:
+    if schema_version < 9 and uses_schema_v9_fields and not acquisition:
         raise ValueError(
             'schema version 9 is required for active-fill transit'
         )
@@ -2087,7 +2190,7 @@ def load_suite(path):
             )
             if uses_schema_v10_fields:
                 break
-    if schema_version < 10 and uses_schema_v10_fields:
+    if schema_version < 10 and uses_schema_v10_fields and not acquisition:
         raise ValueError(
             'schema version 10 is required for supervisor-owned assist'
         )
@@ -2172,7 +2275,7 @@ def load_suite(path):
             )
             if uses_schema_v14_fields:
                 break
-    if schema_version < 14 and uses_schema_v14_fields:
+    if schema_version < 14 and uses_schema_v14_fields and not acquisition:
         raise ValueError(
             'schema version 14 is required for interior approach-anchor '
             'fallback fields'
@@ -2192,16 +2295,30 @@ def load_suite(path):
     ):
         execution[name] = _boolean(execution[name], f'execution.{name}')
     for name in (
-        'preflight_timeout_sec', 'run_timeout_sec', 'wall_timeout_sec',
+        'preflight_timeout_sec', 'wall_timeout_sec',
         'shutdown_grace_sec',
     ):
         execution[name] = _number(
             execution[name], f'execution.{name}', positive=True
         )
+    execution['simulation_duration_sec'] = _number(
+        execution['simulation_duration_sec'], 'execution.simulation_duration_sec', minimum=0.0)
+    execution['run_timeout_sec'] = _number(
+        execution['run_timeout_sec'], 'execution.run_timeout_sec', minimum=0.0,
+        positive=execution['simulation_duration_sec'] == 0.0)
     if execution['wall_timeout_sec'] <= execution['run_timeout_sec']:
         raise ValueError(
             'execution.wall_timeout_sec must exceed run_timeout_sec'
         )
+    if acquisition and (
+        execution['simulation_duration_sec'] <= 0.0
+        or not execution['stop_on_run_failure']
+        or not execution['stop_on_cleanup_failure']
+    ):
+        raise ValueError('qualification observation requires positive simulation duration and both stop-on-failure policies')
+    if 'simulation_duration_sec' not in supplied_execution:
+        # Keep existing normalized scenario/evidence dictionaries unchanged.
+        execution.pop('simulation_duration_sec')
     execution['runs_root'] = str(execution['runs_root'])
 
     metadata = document.get('metadata', {})
@@ -2543,11 +2660,39 @@ def load_suite(path):
                 **frozen_profile['launch_overrides'],
                 **overrides,
             }
+        if (overrides.get('continuous_search_mode') == 'rolling_gesc_v2'
+                and profiles != ['robust_gaussian_v1']):
+            raise ValueError(f'{location}.rolling_gesc_v2 requires only robust_gaussian_v1')
+        if (overrides.get('convergence_metric_mode') == RECURRENT_MODE
+                and overrides.get('continuous_search_mode', 'stationary_v1') == 'stationary_v1'
+                and (schema_version < 14 or profiles != ['robust_gaussian_v1']
+                     or not ((suite_id == 'v2_method_development_v1' and acceptance_partition == 'development')
+                             or (suite_id in ARRIVAL_SUITE_IDS and acceptance_partition in ('development', 'holdout'))))):
+            raise ValueError(f'{location}.stationary recurrent requires the named schema14 robust development contract')
         _validate_correction_overrides(
             overrides,
             ablations,
             f'{location}.algorithm.launch_overrides',
         )
+        if acquisition:
+            local = [s for s in normalized_sources if s['evaluation_role'] == 'local_minimum']
+            global_sources = [s for s in normalized_sources if s['evaluation_role'] == 'goal']
+            if (
+                profiles != ['robust_gaussian_v1']
+                or overrides.get('continuous_search_mode') != 'rolling_gesc_v2'
+                or overrides.get('v2_qualification_observation_only') is not True
+                or overrides.get('extremum_classification_mode') != 'counted_candidates'
+                or overrides.get('known_source_count') != 2
+                or type(overrides.get('gaussian_fill_max_fills')) is not int
+                or overrides.get('gaussian_fill_max_fills') != 1
+                or len(normalized_sources) != 2 or len(local) != 1 or len(global_sources) != 1
+                or not (0.0 < local[0].get('relative_lumen_input', 0.0)
+                        < global_sources[0].get('relative_lumen_input', 0.0))
+                or any(not (bounds[0] <= s['x_m'] <= bounds[1]
+                            and bounds[2] <= s['y_m'] <= bounds[3]) for s in normalized_sources)
+                or validation_world or contacts_enabled
+            ):
+                raise ValueError(f'{location} qualification observation requires robust rolling observation-only counted mode, two ordered positive direct-input sources inside bounds, one fill, and no validation world/contacts')
         counted_open_field = bool(
             schema_version >= 8
             and overrides.get('extremum_classification_mode')
@@ -2666,6 +2811,27 @@ def load_suite(path):
 
         success = case.get('success', {})
         _unknown(success, SUCCESS_KEYS, f'{location}.success')
+        arrival_only = 'criterion' in success
+        if arrival_only and (
+            success['criterion'] != POST_RECOVERY_ARRIVAL_CRITERION
+            or schema_version < 14
+            or not ((suite_id == 'v2_method_development_v1' and acceptance_partition == 'development')
+                    or (suite_id in ARRIVAL_SUITE_IDS and acceptance_partition in ('development', 'holdout')))
+            or acceptance_family != 'counted_two_source_open_field'
+            or profiles != ['robust_gaussian_v1']
+            or not counted_open_field
+        ):
+            raise ValueError(
+                f'{location}.success.criterion requires the named schema14 '
+                'robust counted two-source development arrival contract'
+            )
+        completed_recovery_primary = bool(
+            schema_version == 14 and arrival_only and (
+                suite_id in ('m4_pilot_v12', 'm4_pilot_v13', 'm4_pilot_v14')
+                or (suite_id == 'v2_method_development_v1'
+                    and acceptance_partition == 'development'
+                    and overrides.get('v2_verification_evidence_policy') == 'recurrent_trapping_v1'))
+        )
         all_of = success.get(
             'all_of', ['recording_complete', 'cleanup_complete']
         )
@@ -2711,6 +2877,20 @@ def load_suite(path):
                 controller.get('forbidden_events', [])
             ),
         }
+        if acquisition:
+            forbidden = _contract_names(
+                controller.get('forbidden_events', []), ALGORITHM_EVENTS,
+                'EVENT_', f'{location}.success.controller.forbidden_events')
+            if (
+                len(all_of) != 3
+                or set(all_of) != {'recording_complete', 'cleanup_complete', 'no_forbidden_events'}
+                or not {'FAILSAFE', 'RECENTER_STARTED'} <= set(forbidden)
+                or normalized_controller['expected_terminal_state'] is not None
+                or normalized_controller['required_state_sequence']
+                or normalized_controller['required_events']
+            ):
+                raise ValueError(f'{location} qualification observation requires recording/cleanup/no-forbidden-event predicates, FAILSAFE and RECENTER_STARTED vetoes, and no lifecycle requirements')
+            normalized_controller['forbidden_events'] = forbidden
         if schema_version >= 3:
             controller_location = f'{location}.success.controller'
             contract_id = _identifier(
@@ -2863,6 +3043,16 @@ def load_suite(path):
             required_event_set = (
                 set(required_events) | set(required_event_sequence)
             )
+            if arrival_only and (
+                expected_terminal is not None
+                or 'GOAL_HOLD' in required_state_set
+                or 'GOAL_REACHED' in required_event_set
+                or {'controller_goal', 'expected_terminal_state'} & set(all_of)
+            ):
+                raise ValueError(
+                    f'{controller_location} arrival criterion cannot require '
+                    'a terminal state or controller-ranked goal'
+                )
             event_overlap = sorted(
                 required_event_set & set(forbidden_events)
             )
@@ -2937,6 +3127,8 @@ def load_suite(path):
                 f'{location}.algorithm.launch_overrides',
             )
             declared_predicates = {'required_state_path'}
+            if completed_recovery_primary:
+                declared_predicates.remove('required_state_path')
             if required_states:
                 declared_predicates.add('required_state_sequence')
             if required_events:
@@ -3649,12 +3841,14 @@ def load_suite(path):
                 'no_forbidden_states',
                 'no_forbidden_events',
             }
+            if completed_recovery_primary:
+                staged_core.remove('required_state_path')
             if counted_open_field:
                 staged_core.update({
-                    'controller_goal',
                     'ground_truth_goal',
-                    'expected_terminal_state',
                 })
+                if not arrival_only:
+                    staged_core.update({'controller_goal', 'expected_terminal_state'})
                 if supervisor_owned_assist_enabled:
                     staged_core.add(
                         'escape_command_ownership'
@@ -3674,7 +3868,18 @@ def load_suite(path):
                 [normalized_controller['required_state_path']],
             )
             if counted_open_field:
-                if supervisor_owned_assist_enabled:
+                if arrival_only:
+                    expected_counted_paths = {
+                        COUNTED_OPEN_FIELD_RECOVERY_STATE_PATH,
+                        COUNTED_OPEN_FIELD_ASSISTED_RECOVERY_STATE_PATH,
+                    } if counted_open_field_assisted else {
+                        COUNTED_OPEN_FIELD_RECOVERY_STATE_PATH,
+                    }
+                    counted_path_contract_valid = (
+                        {tuple(path) for path in controller_paths}
+                        == expected_counted_paths
+                    )
+                elif supervisor_owned_assist_enabled:
                     expected_counted_paths = (
                         {
                             COUNTED_OPEN_FIELD_STATE_PATH,
@@ -3718,20 +3923,21 @@ def load_suite(path):
                     normalized_controller['expected_verification_outcome']
                     != 'below_target_extremum'
                     or normalized_controller['expected_terminal_state']
-                    != 'GOAL_HOLD'
+                    != (None if arrival_only else 'GOAL_HOLD')
                     or not counted_path_contract_valid
                 ):
                     raise ValueError(
                         f'{controller_location} counted open-field contract '
-                        'must bind its declared local recovery followed by ranked '
-                        'GOAL_HOLD'
+                        'must bind its declared local recovery and selected '
+                        'arrival or ranked GOAL_HOLD criterion'
                     )
                 required_staged_events = {
                     'CONVERGENCE_CONFIRMED',
                     'FILL_CREATED',
                     'ESCAPE_STARTED',
-                    'GOAL_REACHED',
                 }
+                if not arrival_only:
+                    required_staged_events.add('GOAL_REACHED')
                 if (
                     counted_open_field_assisted
                     and (
@@ -3835,6 +4041,8 @@ def load_suite(path):
                     f'{location}.success ground truth and staged recovery '
                     'must declare the same global proximity boundary'
                 )
+            if arrival_only and staged_recovery['global_proximity_radius_m'] != 0.5:
+                raise ValueError(f'{location}.success arrival criterion requires the 0.5 m boundary')
             if len(normalized_starts) != 1:
                 raise ValueError(
                     f'{location} geometry profile requires exactly one start'
@@ -3862,6 +4070,8 @@ def load_suite(path):
             'ground_truth': normalized_ground_truth,
             'minimum_saturation_samples': minimum_saturation,
         }
+        if arrival_only:
+            normalized_success['criterion'] = POST_RECOVERY_ARRIVAL_CRITERION
         if local_recovery is not None:
             normalized_success['local_recovery'] = local_recovery
         if staged_recovery is not None:
@@ -4008,7 +4218,7 @@ def load_suite(path):
             })
         normalized_cases.append(normalized_case)
 
-    return {
+    normalized_suite = {
         'source_path': str(source_path),
         'schema_version': schema_version,
         'suite_id': suite_id,
@@ -4025,6 +4235,9 @@ def load_suite(path):
         'cases': normalized_cases,
         'original': document,
     }
+    if acquisition:
+        normalized_suite['purpose'] = QUALIFICATION_OBSERVATION_PURPOSE
+    return normalized_suite
 
 
 def _level_combinations(case, level_map):
@@ -4043,6 +4256,8 @@ def deterministic_case_key(resolved):
         'suite_id', 'case_id', 'profile', 'start', 'sources', 'bounds_m',
         'room_center_m', 'disturbances', 'algorithm', 'success', 'seed',
     ]
+    if 'purpose' in resolved:
+        fields.append('purpose')
     if resolved.get('schema_version', 1) >= 2:
         fields.extend(('validation', 'frozen_profile'))
     if resolved.get('schema_version', 1) >= 4:
@@ -4188,6 +4403,8 @@ def expand_suite(suite, case_ids=None):
                             'success': resolved_success,
                             'seed': seed,
                         }
+                        if 'purpose' in suite:
+                            resolved['purpose'] = suite['purpose']
                         if suite['schema_version'] >= 4:
                             resolved.update({
                                 'acceptance_family': case[

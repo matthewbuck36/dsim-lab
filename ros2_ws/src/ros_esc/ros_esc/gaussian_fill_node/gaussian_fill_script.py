@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from collections import deque
+from dataclasses import dataclass
 import math
 import time
 
@@ -49,6 +50,24 @@ from ros_esc.supervisor_node.state_machine import (
 
 ROBUST_FILL_CREATE = "ROBUST_FILL_CREATE"
 ROBUST_FILL_REDESIGN_PREFIX = "ROBUST_FILL_REDESIGN:"
+
+
+class StationaryAuthorityError(ValueError):
+    """A selected Arm B request lost its live precommit authority."""
+
+
+@dataclass(frozen=True)
+class RobustRequestContext:
+    request_timestamp: float
+    redesign_fill_id: object
+    request_ros_time: float
+    pose_snapshots: tuple
+    cost_snapshots: tuple
+    request_started_wall_sec: float
+    legacy_header: object = None
+    legacy_data: object = None
+    candidate_evidence: object = None
+    authority: object = None
 
 
 def robust_fill_redesign_target(header):
@@ -122,6 +141,31 @@ class GaussianFill(Node):
             "algorithm_event_topic", "/gesc_gaussian/algorithm_events"
         )
         self.declare_parameter("algorithm_profile", "legacy")
+        self.declare_parameter("continuous_search_mode", "stationary_v1")
+        self.declare_parameter('v2_verification_evidence_policy', 'angular_profiles_v1')
+        self.declare_parameter('v2_verification_motion_mode', 'rolling_neighborhood_v1')
+        self.declare_parameter('candidate_cost_mad_scale', 3.0)
+        self.declare_parameter("v2_run_id", "")
+        self.declare_parameter("v2_stream_config_json", "")
+        self.declare_parameter("v2_fill_command_topic", "/gesc_gaussian/v2/fill_commands")
+        self.declare_parameter("v2_fill_result_topic", "/gesc_gaussian/v2/fill_results")
+        self.declare_parameter("v2_search_epoch_topic", "/gesc_gaussian/v2/search_epoch")
+        self.v2_fill = None
+        self.stationary_fill = None
+        self.declare_parameter('convergence_metric_mode', 'pde_mean_v1')
+        self.declare_parameter('stationary_fill_request_topic', '/gesc_gaussian/v2/stationary_fill_requests')
+        self.declare_parameter('stationary_recurrent_fill_request_topic', '/gesc_gaussian/v2/stationary_recurrent_fill_requests')
+        self.declare_parameter('timekeeper_topic', '/timekeeper_chatter')
+        self.declare_parameter('centroid_maximum_gap_sec', 0.5)
+        self.declare_parameter('centroid_window_sec', 3.0)
+        self.declare_parameter('centroid_epsilon_m', 0.06)
+        self.declare_parameter('centroid_maximum_radius_m', 0.5)
+        self.declare_parameter('centroid_pose_stale_sec', 0.5)
+        self.declare_parameter('centroid_state_stale_sec', 0.5)
+        self.declare_parameter('fill_design_timeout_sec', 5.0)
+        self.declare_parameter('recording_ready_required', False)
+        self.declare_parameter('recording_ready_topic', '/gesc_gaussian/recording_ready')
+        self.declare_parameter('recording_ready_stale_sec', 0.5)
         self.declare_parameter("fill_request_topic", "/gesc_gaussian/fill_requests")
 
         # Robust estimator/designer/registry parameters. These do not affect
@@ -200,6 +244,14 @@ class GaussianFill(Node):
                 f"received {self.algorithm_profile!r}"
             )
         self.robust_profile = self.algorithm_profile == ROBUST_PROFILE
+        from ros_esc.v2_lifecycle import validate_verification_evidence_policy
+        self.verification_evidence_policy = validate_verification_evidence_policy(
+            str(self.get_parameter('v2_verification_evidence_policy').value),
+            simulation=bool(self.get_parameter('use_sim_time').value),
+            continuous_search_mode=str(self.get_parameter('continuous_search_mode').value),
+            metric_mode=str(self.get_parameter('convergence_metric_mode').value),
+            motion_mode=str(self.get_parameter('v2_verification_motion_mode').value),
+            algorithm_profile=self.algorithm_profile)
         self.enable_observability = bool(
             self.get_parameter("enable_observability").value
         ) or self.robust_profile
@@ -409,7 +461,15 @@ class GaussianFill(Node):
             )
 
         # ---- Subscribers ----
+        from ros_esc.stationary_fill_protocol import stationary_centroid_selected
+        self.stationary_centroid_enabled = stationary_centroid_selected(
+            str(self.get_parameter('convergence_metric_mode').value),
+            str(self.get_parameter('continuous_search_mode').value),
+            self.algorithm_profile, bool(self.get_parameter('use_sim_time').value))
         self.fill_request_callback_group = MutuallyExclusiveCallbackGroup()
+        self.stationary_authority_callback_group = (
+            MutuallyExclusiveCallbackGroup() if self.stationary_centroid_enabled
+            else self.fill_request_callback_group)
         self.sub_conv = self.create_subscription(
             StampedFloat64MultiArray,
             (
@@ -460,7 +520,7 @@ class GaussianFill(Node):
                 str(self.get_parameter("algorithm_state_topic").value),
                 self.algorithm_state_cb,
                 10,
-                callback_group=self.fill_request_callback_group,
+                callback_group=self.stationary_authority_callback_group,
             )
 
         # ---- Publisher ----
@@ -486,6 +546,16 @@ class GaussianFill(Node):
                 str(self.get_parameter("algorithm_event_topic").value),
                 10,
             )
+
+        mode = str(self.get_parameter("continuous_search_mode").value)
+        if mode not in ("stationary_v1", "rolling_gesc_v2"):
+            raise ValueError("unsupported continuous_search_mode")
+        if mode == "rolling_gesc_v2":
+            from ros_esc.gaussian_fill_node.v2_fill_runtime import MovingFillRuntime
+            self.v2_fill = MovingFillRuntime(self)
+        if self.stationary_centroid_enabled:
+            from ros_esc.gaussian_fill_node.stationary_fill import StationaryFillAdapter
+            self.stationary_fill = StationaryFillAdapter(self)
 
         self.get_logger().info(
             "GaussianFill ready (2D): "
@@ -513,6 +583,8 @@ class GaussianFill(Node):
     def pose_cb(self, msg: Odometry):
         """Buffer an absolute-ROS-stamped pose for robust synchronization."""
 
+        if self.v2_fill is not None:
+            self.v2_fill.pose_cb(msg)
         position = msg.pose.pose.position
         orientation = msg.pose.pose.orientation
         quaternion = np.array(
@@ -524,6 +596,7 @@ class GaussianFill(Node):
             np.all(np.isfinite(quaternion))
             and norm > 1e-9
             and np.all(np.isfinite([position.x, position.y]))
+            and (self.stationary_fill is None or msg.header.frame_id == 'odom')
         )
         if valid:
             quaternion = quaternion / norm
@@ -551,6 +624,11 @@ class GaussianFill(Node):
     def algorithm_state_cb(self, msg: AlgorithmState):
         """Cache the most recent valid robust controller mode."""
 
+        if self.stationary_fill is not None:
+            self.stationary_fill.state_cb(msg)
+            return
+        if self.v2_fill is not None:
+            self.v2_fill.state_cb(msg)
         if msg.state_valid and int(msg.state) > 0:
             self.latest_algorithm_state = msg
         else:
@@ -611,6 +689,18 @@ class GaussianFill(Node):
         request_ros_time = self.get_clock().now().nanoseconds * 1e-9
         pose_snapshots = tuple(self.pose_snapshots)
         cost_snapshots = tuple(self.cost_snapshots)
+        self._execute_robust_request(RobustRequestContext(
+            request_timestamp, redesign_fill_id, request_ros_time,
+            pose_snapshots, cost_snapshots, request_started_wall_sec,
+            legacy_header=msg.header, legacy_data=msg.data))
+
+    def _execute_robust_request(self, context):
+        """Common stationary fit; adapter admission cannot move its sample end."""
+        request_timestamp = context.request_timestamp
+        redesign_fill_id = context.redesign_fill_id
+        request_ros_time = context.request_ros_time
+        pose_snapshots, cost_snapshots = context.pose_snapshots, context.cost_snapshots
+        request_started_wall_sec = context.request_started_wall_sec
         lower_bound = max(
             request_ros_time - self.estimator_config.estimation_window_sec,
             request_ros_time - self.estimator_config.maximum_sample_age_sec,
@@ -697,9 +787,10 @@ class GaussianFill(Node):
         try:
             candidate_fill_evidence = (
                 decode_candidate_informed_fill_payload(
-                    msg.header,
-                    msg.data,
+                    context.legacy_header,
+                    context.legacy_data,
                 )
+                if context.legacy_header is not None else context.candidate_evidence
             )
         except (TypeError, ValueError) as exc:
             self._publish_robust_failure(
@@ -912,10 +1003,24 @@ class GaussianFill(Node):
             ),
             "design_escalations": design.design_escalations,
         }
+        try:
+            if context.authority is not None:
+                plan = self.fill_registry.stage_commit(
+                    values, samples,
+                    cluster_id=association.cluster_id if association.merge else None)
+                with self.stationary_fill.commit_guard(context.authority):
+                    old, active = self.fill_registry.commit_staged(plan)
+            elif association.merge:
+                old, active = self.fill_registry.commit_revision(
+                    association.cluster_id, values, samples)
+            else:
+                old, active = self.fill_registry.commit_new(values, samples)
+        except StationaryAuthorityError as exc:
+            self._publish_robust_failure(
+                AlgorithmEvent.EVENT_FILL_REJECTED, 36, str(exc),
+                request_timestamp, window, unmatched)
+            return
         if association.merge:
-            old, active = self.fill_registry.commit_revision(
-                association.cluster_id, values, samples
-            )
             self._publish_robust_fill(old)
             self._publish_event(
                 AlgorithmEvent.EVENT_FILL_SUPERSEDED,
@@ -930,8 +1035,6 @@ class GaussianFill(Node):
                 ],
                 fill_id=old.fill_id,
             )
-        else:
-            old, active = self.fill_registry.commit_new(values, samples)
         self._publish_robust_fill(active)
         self._publish_compatibility_fill(active)
         self._publish_robust_design_event(
@@ -974,14 +1077,14 @@ class GaussianFill(Node):
             for cluster in self.fill_registry.active_clusters
         ]
 
-    def _publish_robust_fill(self, version):
+    def _publish_robust_fill(self, version, frame_id=None):
         """Publish every field of one immutable robust lifecycle record."""
 
         msg = GaussianFillMessage()
         msg.stamp = self.get_clock().now().to_msg()
         msg.source_timestamp = float(version.source_timestamp)
         msg.source_timestamp_valid = math.isfinite(version.source_timestamp)
-        msg.frame_id = "odom"
+        msg.frame_id = "odom" if frame_id is None else frame_id
         msg.fill_id = int(version.fill_id)
         msg.cluster_id = int(version.cluster_id)
         msg.revision = int(version.revision)
@@ -1012,7 +1115,10 @@ class GaussianFill(Node):
         msg.design_escalations_valid = True
         msg.active = bool(version.active)
         msg.superseded = bool(version.superseded)
-        self.gaussian_fill_diagnostics_publisher.publish(msg)
+        if self.gaussian_fill_diagnostics_publisher is not None:
+            if getattr(self, 'stationary_fill', None) is not None:
+                self.stationary_fill.cache_publication(self.gaussian_fill_diagnostics_publisher, msg)
+            self.gaussian_fill_diagnostics_publisher.publish(msg)
 
     def _publish_compatibility_fill(self, version):
         out = StampedFloat64MultiArray()
@@ -1249,7 +1355,17 @@ class GaussianFill(Node):
         self.pde_cost_mean = mean_cost
         self.buf_cost = data
 
+    def destroy_node(self):
+        if self.stationary_fill is not None:
+            self.stationary_fill.close()
+        if self.v2_fill is not None:
+            self.v2_fill.close()
+        return super().destroy_node()
+
     def trigger_cb(self, msg: StampedFloat64MultiArray):
+        if self.v2_fill is not None or self.stationary_fill is not None:
+            return
+
         event_time = float(msg.timestamp)
         self.current_event_timestamp = event_time
 
@@ -1866,6 +1982,8 @@ class GaussianFill(Node):
         event.detail = detail
         event.value_names = list(value_names)
         event.values = [float(value) for value in values]
+        if getattr(self, 'stationary_fill', None) is not None:
+            self.stationary_fill.cache_publication(self.algorithm_event_publisher, event)
         self.algorithm_event_publisher.publish(event)
 
 

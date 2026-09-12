@@ -82,6 +82,27 @@ class Association:
     merge: bool
 
 
+@dataclass(frozen=True)
+class RegistrySnapshot:
+    """Detached, immutable inputs for a preparation worker."""
+
+    generation: int
+    next_id: int
+    clusters: Tuple[ClusterRecord, ...]
+
+
+@dataclass(frozen=True)
+class RegistryCommitPlan:
+    """Preconstructed state; staging consumes no identity or generation."""
+
+    generation: int
+    next_id: int
+    clusters: Tuple[ClusterRecord, ...]
+    history: Tuple[FillVersion, ...]
+    superseded: Optional[FillVersion]
+    active: FillVersion
+
+
 def association_probabilities(candidate_center, clusters, bandwidth_m):
     """Return stable softmax association probabilities ordered by cluster ID."""
 
@@ -162,6 +183,14 @@ class FillRegistry:
         self._clusters: Dict[int, ClusterRecord] = {}
         self._history = []
         self._next_id = 1
+        self._generation = 0
+
+    @property
+    def generation(self):
+        return self._generation
+
+    def snapshot(self):
+        return RegistrySnapshot(self._generation, self._next_id, self.active_clusters)
 
     @property
     def active_clusters(self):
@@ -227,39 +256,71 @@ class FillRegistry:
     def commit_new(self, version_values, samples):
         """Atomically commit a new cluster whose fill and cluster IDs match."""
 
-        identity = self._next_id
-        self._next_id += 1
-        version = FillVersion(
-            fill_id=identity,
-            cluster_id=identity,
-            revision=1,
-            **version_values,
-        )
-        retained = retain_cluster_samples(samples, self.config.maximum_cluster_samples)
-        self._clusters[identity] = ClusterRecord(version, retained)
-        self._history.append(version)
-        return None, version
+        return self.commit_staged(self.stage_commit(version_values, samples))
 
     def commit_revision(self, cluster_id, version_values, samples):
         """Atomically supersede one active version and commit its replacement."""
 
-        cluster_id = int(cluster_id)
-        cluster = self._clusters[cluster_id]
-        old_active = cluster.active_fill
-        superseded = replace(old_active, active=False, superseded=True)
+        return self.commit_staged(self.stage_commit(version_values, samples, cluster_id=cluster_id))
+
+    def stage_commit(self, version_values, samples, *, cluster_id=None,
+                     expected_generation=None, exact_target=None, strict=False):
+        """Construct every potentially failing value before changing the registry.
+
+        Legacy callers keep their existing sample-retention policy. V2 callers
+        supply prevalidated support and refuse conflict/decimation instead.
+        """
+        if expected_generation is not None and expected_generation != self._generation:
+            raise ValueError("registry generation changed")
+        old = None if cluster_id is None else self._clusters[int(cluster_id)].active_fill
+        if exact_target is not None and (old is None or exact_target != (
+                old.fill_id, old.cluster_id, old.revision)):
+            raise ValueError("active target revision changed")
         identity = self._next_id
+        active = FillVersion(fill_id=identity, cluster_id=identity if old is None else old.cluster_id,
+                             revision=1 if old is None else old.revision+1, **version_values)
+        source = tuple(samples)
+        if strict:
+            required = [*active.center, active.amplitude, *active.covariance.reshape(-1),
+                        active.sigma_major, active.sigma_minor, active.support_radius,
+                        active.exit_radius, active.confidence, active.fit_residual]
+            if (active.center.shape != (2,) or active.covariance.shape != (2, 2)
+                    or not all(math.isfinite(float(v)) for v in required)
+                    or active.amplitude < 0 or min(active.sigma_major, active.sigma_minor,
+                                                  active.support_radius, active.exit_radius) <= 0
+                    or not np.allclose(active.covariance, active.covariance.T, rtol=0, atol=1e-12)
+                    or np.min(np.linalg.eigvalsh(active.covariance)) <= 0
+                    or (active.fit_condition_number_valid and not math.isfinite(active.fit_condition_number))):
+                raise ValueError("invalid prepared fill geometry")
+            if not source or len(source) > self.config.maximum_cluster_samples:
+                raise ValueError("prepared support capacity")
+            stamps = [sample.stamp_sec for sample in source]
+            if any(not math.isfinite(stamp) for stamp in stamps) or any(
+                    right <= left for left, right in zip(stamps, stamps[1:])):
+                raise ValueError("prepared support order or conflict")
+            retained = source
+        else:
+            retained = retain_cluster_samples(source, self.config.maximum_cluster_samples)
+        superseded = None if old is None else replace(old, active=False, superseded=True)
+        clusters = dict(self._clusters)
+        clusters[active.cluster_id] = ClusterRecord(active, retained)
+        history = tuple(self._history) + (() if superseded is None else (superseded,)) + (active,)
+        return RegistryCommitPlan(self._generation, self._next_id,
+                                  tuple(clusters[key] for key in sorted(clusters)), history,
+                                  superseded, active)
+
+    def commit_staged(self, plan):
+        """Serialized linearization point; stale plans never consume an ID."""
+        if plan.generation != self._generation or plan.next_id != self._next_id:
+            raise ValueError("staged registry generation changed")
+        # Construct containers before mutation as well. No callback or yield is
+        # possible inside the owner callback's following assignments.
+        clusters = {cluster.active_fill.cluster_id: cluster for cluster in plan.clusters}
+        history = list(plan.history)
+        self._clusters, self._history = clusters, history
         self._next_id += 1
-        version = FillVersion(
-            fill_id=identity,
-            cluster_id=cluster_id,
-            revision=old_active.revision + 1,
-            **version_values,
-        )
-        retained = retain_cluster_samples(samples, self.config.maximum_cluster_samples)
-        self._clusters[cluster_id] = ClusterRecord(version, retained)
-        self._history.append(superseded)
-        self._history.append(version)
-        return superseded, version
+        self._generation += 1
+        return plan.superseded, plan.active
 
 
 def active_fill_value(point, versions: Sequence[FillVersion]):

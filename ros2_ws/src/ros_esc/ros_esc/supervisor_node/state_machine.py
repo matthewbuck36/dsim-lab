@@ -81,8 +81,20 @@ class StateMachineConfig:
     candidate_cost_pretrigger_rotations: int = 0
     candidate_cost_mad_scale: float = 3.0
     candidate_informed_fill_enabled: bool = False
+    moving_verification_enabled: bool = False
+    verification_evidence_policy: str = 'angular_profiles_v1'
+    qualification_observation_only: bool = False
 
     def __post_init__(self):
+        if self.verification_evidence_policy not in ('angular_profiles_v1', 'recurrent_trapping_v1'):
+            raise ValueError('unsupported verification evidence policy')
+        if self.verification_evidence_policy == 'recurrent_trapping_v1' and not (
+                self.moving_verification_enabled and self.extremum_classification_mode == COUNTED_CANDIDATES):
+            raise ValueError('recurrent trapping requires moving counted-candidate verification')
+        if not isinstance(self.qualification_observation_only, bool):
+            raise ValueError("qualification_observation_only must be boolean")
+        if self.qualification_observation_only and not self.moving_verification_enabled:
+            raise ValueError("qualification observation requires moving verification")
         mode = str(self.extremum_classification_mode).strip().lower()
         if mode not in VALID_EXTREMUM_CLASSIFICATION_MODES:
             raise ValueError(
@@ -169,7 +181,7 @@ class StateMachineConfig:
         ):
             raise ValueError("known_source_count must be a nonnegative integer")
         if self.extremum_classification_mode == COUNTED_CANDIDATES:
-            if self.known_source_count < 2:
+            if self.known_source_count < (1 if self.moving_verification_enabled else 2):
                 raise ValueError(
                     "counted-candidate classification requires at least two sources"
                 )
@@ -339,6 +351,9 @@ class TransitionInputs:
     candidate_cost_ready: bool = True
     candidate_cost_summary: Optional["CandidateCostSummary"] = None
     candidate_associated_with_fill: bool = False
+    candidate_informative: bool = False
+    candidate_verification_passed: bool = False
+    moving_candidate_cancelled: bool = False
     pose_valid: bool = True
     sensor_valid: bool = True
     explicit_stop: bool = False
@@ -352,6 +367,7 @@ class TransitionInputs:
     recenter_complete: bool = False
     recenter_recovery_requested: bool = False
     recenter_recovery_allowed: bool = False
+    moving_candidate_reason: str = ''
 
 
 @dataclass(frozen=True)
@@ -787,6 +803,11 @@ class SupervisorStateMachine:
     def weights(self) -> Tuple[float, float, float]:
         """Return explicit raw, Gaussian, and affine weights."""
 
+        if self.config.moving_verification_enabled and self.state == State.DESIGN_OR_MERGE_FILL:
+            if not self.design_returns_to_assist:
+                return (1.0, 1.0, 1.0 if self.post_recovery_guidance_active else 0.0)
+            return ((0.0, 1.0, 1.0) if self.config.open_field_escape_approach_continuity_enabled
+                    else STATE_WEIGHTS[State.ESCAPE_REPULSE])
         if self.state == State.SEARCH and self.post_recovery_guidance_active:
             return (1.0, 1.0, 1.0)
         if (
@@ -879,6 +900,11 @@ class SupervisorStateMachine:
         return self._transition(State.FAILSAFE, now_sec, "unknown supervisor state")
 
     def _step_search(self, now_sec, inputs):
+        # Q1 observes natural SEARCH motion. Earlier step() safety and recovery
+        # checks still run, and every other state's policy remains unchanged.
+        if self.config.qualification_observation_only:
+            self.convergence_started_sec = None
+            return None
         if inputs.convergence_confirmed:
             return self._transition(
                 State.VERIFY_EXTREMUM,
@@ -982,12 +1008,25 @@ class SupervisorStateMachine:
         return None
 
     def _step_counted_verify(self, now_sec, inputs):
+        if self.config.moving_verification_enabled:
+            if inputs.moving_candidate_cancelled:
+                reason = 'moving candidate cancelled; resume search'
+                if inputs.moving_candidate_reason:
+                    reason += '; ' + inputs.moving_candidate_reason
+                return self._transition(State.SEARCH, now_sec, reason)
         if inputs.candidate_associated_with_fill:
             return self._transition(
                 State.SEARCH,
                 now_sec,
                 "confirmed candidate associated with active fill; resume search",
             )
+
+        if self.config.moving_verification_enabled:
+            verified = (inputs.candidate_verification_passed
+                        if self.config.verification_evidence_policy == 'recurrent_trapping_v1'
+                        else inputs.candidate_informative)
+            if not verified:
+                return self._wait_for_candidate_cost_or_timeout(now_sec)
 
         if not inputs.candidate_cost_observed:
             return self._wait_for_candidate_cost_or_timeout(now_sec)
@@ -1070,11 +1109,14 @@ class SupervisorStateMachine:
     def _wait_for_candidate_cost_or_timeout(self, now_sec):
         if self.elapsed(now_sec) >= self.config.verification_max_sec:
             return self._transition(
-                State.FAILSAFE, now_sec, "candidate raw-cost verification timeout"
+                State.SEARCH if self.config.moving_verification_enabled else State.FAILSAFE,
+                now_sec, "candidate raw-cost verification timeout"
             )
         return None
 
     def _step_design(self, now_sec, inputs):
+        if self.config.moving_verification_enabled:
+            return self._step_moving_design(now_sec, inputs)
         if inputs.fill_result is not None:
             if not self._matching_fill_result(inputs.fill_source_timestamp):
                 return None
@@ -1143,6 +1185,39 @@ class SupervisorStateMachine:
 
         if self.elapsed(now_sec) >= self.config.fill_design_timeout_sec:
             return self._transition(State.FAILSAFE, now_sec, "fill design timeout")
+        return None
+
+    def _step_moving_design(self, now_sec, inputs):
+        # Registry accounting has already occurred in the typed adapter. Motion
+        # authorization is separate and is withheld until composer/filter ACK.
+        if self.design_returns_to_assist:
+            if self._escape_timed_out(now_sec):
+                return (self._recover_to_recenter(now_sec, 'redesign escape duration exhausted')
+                        if self.config.recoverable_navigation_enabled
+                        else self._transition(State.FAILSAFE, now_sec, 'redesign escape timeout'))
+            if inputs.stable_exit:
+                return self._transition(State.RECENTER if self.config.recenter_after_escape else State.SEARCH,
+                                        now_sec, 'stable escape exit during redesign')
+        if inputs.moving_candidate_cancelled or inputs.fill_result in ('rejected', 'retryable_rejected'):
+            reason = ('moving preparation cancelled; retain bounded escape'
+                      if self.design_returns_to_assist else 'moving preparation cancelled; resume search')
+            if inputs.moving_candidate_reason:
+                reason += '; ' + inputs.moving_candidate_reason
+            return self._transition(State.ESCAPE_ASSIST if self.design_returns_to_assist else State.SEARCH,
+                                    now_sec, reason)
+        if inputs.fill_result == 'success':
+            if inputs.fill_id is not None:
+                self.active_escape_fill_id = int(inputs.fill_id)
+                self.post_recovery_fill_id = int(inputs.fill_id)
+            self.post_recovery_guidance_active = False
+            self.post_recovery_guidance_started_sec = None
+            self.post_recovery_retry_count = 0
+            return self._transition(State.ESCAPE_ASSIST if self.design_returns_to_assist else State.ESCAPE_REPULSE,
+                                    now_sec, 'typed fill committed and objective acknowledged')
+        if self.elapsed(now_sec) >= self.config.fill_design_timeout_sec:
+            return self._transition(State.ESCAPE_ASSIST if self.design_returns_to_assist else State.SEARCH,
+                                    now_sec, 'moving preparation deadline; retain bounded escape'
+                                    if self.design_returns_to_assist else 'moving preparation deadline; resume search')
         return None
 
     def _step_repulse(self, now_sec, inputs):

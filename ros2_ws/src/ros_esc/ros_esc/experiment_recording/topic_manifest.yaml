@@ -46,6 +46,7 @@ topics:
   - {alias: sensor_rotation_command, topic: /velocity_controller/commands, type: std_msgs/msg/Float64MultiArray, modes: [simulation], required: true, minimum_messages: 1, coverage: none, singleton_publisher: true}
   - {alias: gaussian_fills, topic: /gesc_gaussian/gaussian_fills, type: ros_esc_interfaces/msg/GaussianFill, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: conditional_fill}
   - {alias: convergence_status, topic: /gesc_gaussian/convergence_status, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
+  - {alias: centroid_convergence_diagnostics, topic: /gesc_gaussian/v2/convergence_diagnostics, type: ros_esc_interfaces/msg/CentroidConvergenceDiagnostics, modes: [simulation], required: false, minimum_messages: 0, coverage: none}
   - {alias: fill_requests, topic: /gesc_gaussian/fill_requests, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
   - {alias: supervisor_command, topic: /gesc_gaussian/supervisor_command, type: geometry_msgs/msg/Twist, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
   - {alias: stop_requested, topic: /gesc_gaussian/stop_requested, type: std_msgs/msg/Bool, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
@@ -62,3 +63,20 @@ topics:
   - {alias: convergence_event, topic: /convergence_event, type: ros_esc_interfaces/msg/StampedFloat64MultiArray, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
   - {alias: tf, topic: /tf, type: tf2_msgs/msg/TFMessage, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
   - {alias: tf_static, topic: /tf_static, type: tf2_msgs/msg/TFMessage, modes: [simulation, physical], required: false, minimum_messages: 0, coverage: none}
+  - {alias: v2_source_provenance, topic: /gesc_gaussian/v2/source_sample_provenance, type: ros_esc_interfaces/msg/SourceSampleProvenance, modes: [simulation], required: false, minimum_messages: 0, coverage: none}
+  - {alias: v2_source_provenance_delayed, topic: /gesc_gaussian/simulation/source_sample_provenance_delayed, type: ros_esc_interfaces/msg/SourceSampleProvenance, modes: [simulation], required: false, minimum_messages: 0, coverage: none}
+  - {alias: v2_objective_cost, topic: /gesc_gaussian/v2/objective_cost_samples, type: ros_esc_interfaces/msg/ObjectiveCostSample, modes: [simulation], required: false, minimum_messages: 0, coverage: none}
+  - {alias: v2_direction_diagnostics, topic: /gesc_gaussian/v2/direction_diagnostics, type: ros_esc_interfaces/msg/GescDirectionDiagnostics, modes: [simulation], required: false, minimum_messages: 0, coverage: none}
+  - {alias: v2_direction_policy_diagnostics, topic: /gesc_gaussian/v2/direction_policy_diagnostics, type: ros_esc_interfaces/msg/GescDirectionPolicyDiagnostics, modes: [simulation], required: false, minimum_messages: 0, coverage: none}
+  - {alias: v2_search_epoch, topic: /gesc_gaussian/v2/search_epoch, type: ros_esc_interfaces/msg/SearchEpochContext, modes: [simulation], required: false, minimum_messages: 0, coverage: none}
+  - {alias: v2_detector_confirmation, topic: /gesc_gaussian/v2/detector_confirmation, type: ros_esc_interfaces/msg/DetectorConfirmation, modes: [simulation], required: false, minimum_messages: 0, coverage: none}
+  - {alias: v2_candidate_snapshots, topic: /gesc_gaussian/v2/candidate_snapshots, type: ros_esc_interfaces/msg/CandidateSnapshot, modes: [simulation], required: false, minimum_messages: 0, coverage: none}
+  - {alias: v2_recurrent_candidate_snapshots, topic: /gesc_gaussian/v2/recurrent_candidate_snapshots, type: ros_esc_interfaces/msg/RecurrentCandidateSnapshot, modes: [simulation], required: false, minimum_messages: 0, coverage: none}
+  - {alias: v2_verification_guidance, topic: /gesc_gaussian/v2/verification_guidance, type: ros_esc_interfaces/msg/VerificationGuidance, modes: [simulation], required: false, minimum_messages: 0, coverage: none}
+  - {alias: v2_pde_history_evidence, topic: /gesc_gaussian/v2/pde_history_evidence, type: ros_esc_interfaces/msg/PdeHistoryEvidence, modes: [simulation], required: false, minimum_messages: 0, coverage: none}
+  - {alias: v2_fill_commands, topic: /gesc_gaussian/v2/fill_commands, type: ros_esc_interfaces/msg/FillCommand, modes: [simulation], required: false, minimum_messages: 0, coverage: none}
+  - {alias: v2_recurrent_fill_commands, topic: /gesc_gaussian/v2/recurrent_fill_commands, type: ros_esc_interfaces/msg/RecurrentFillCommand, modes: [simulation], required: false, minimum_messages: 0, coverage: none}
+  - {alias: v2_fill_results, topic: /gesc_gaussian/v2/fill_results, type: ros_esc_interfaces/msg/FillResult, modes: [simulation], required: false, minimum_messages: 0, coverage: none}
+  - {alias: stationary_fill_requests, topic: /gesc_gaussian/v2/stationary_fill_requests, type: ros_esc_interfaces/msg/StationaryFillRequest, modes: [simulation], required: false, minimum_messages: 0, coverage: none}
+  - {alias: stationary_recurrent_fill_requests, topic: /gesc_gaussian/v2/stationary_recurrent_fill_requests, type: ros_esc_interfaces/msg/StationaryRecurrentFillRequest, modes: [simulation], required: false, minimum_messages: 0, coverage: none}
+  - {alias: recurrent_convergence_diagnostics, topic: /gesc_gaussian/v2/recurrent_convergence_diagnostics, type: ros_esc_interfaces/msg/RecurrentConvergenceDiagnostics, modes: [simulation], required: false, minimum_messages: 0, coverage: none}

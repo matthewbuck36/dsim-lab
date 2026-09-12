@@ -14,8 +14,11 @@ Please note this node is setup only for use in Gazebo simulation.
 
 import os
 import time
+from collections import OrderedDict
+from copy import deepcopy
 import json
 import argparse
+import math
 import numpy as np
 from ros_esc.cost_function_node.light_brightness import (
     add_brightness_arguments,
@@ -24,6 +27,7 @@ from ros_esc.cost_function_node.light_brightness import (
 import rclpy
 from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
+from rclpy.clock import Clock, ClockType
 import rclpy.parameter
 from rclpy.signals import SignalHandlerOptions
 from ros_esc.deferred_signal_shutdown import DeferredSignalShutdown
@@ -33,10 +37,15 @@ from ros_esc_interfaces.msg import (
     CostBreakdown,
     StampedFloat64MultiArray,
     StampedTransformMultiArray,
+    SourceSampleProvenance,
     Timekeeper,
 )
 from ros_esc.config_parsing import parse_object_config
 from ros_esc.supervisor_node.state_machine import ROBUST_PROFILE, VALID_PROFILES
+from ros_esc.v2_stream import (
+    ROLLING_MODE, relative_stamp_ns, sensor_geometry_descriptor, set_time,
+    stream_contract_id, validate_mode_identity,
+)
 
 
 class CostFunction(Node):
@@ -104,6 +113,11 @@ class CostFunction(Node):
         add_brightness_arguments(parser)
         parser.add_argument("--enable_observability", default="False")
         parser.add_argument("--algorithm_profile", default="legacy")
+        parser.add_argument('--continuous-search-mode', default='stationary_v1')
+        parser.add_argument('--v2-run-id', default='')
+        parser.add_argument('--v2-stream-config-json', default='')
+        parser.add_argument('--v2-sensor-geometry-config', default='')
+        parser.add_argument('--v2-provenance-topic', default='/gesc_gaussian/v2/source_sample_provenance')
         parser.add_argument(
             "--source_cost_topic",
             default="/gesc_gaussian/source_cost",
@@ -142,6 +156,36 @@ class CostFunction(Node):
                 f"received {self.algorithm_profile!r}"
             )
         self.robust_profile = self.algorithm_profile == ROBUST_PROFILE
+        self.v2_config = validate_mode_identity(
+            args.continuous_search_mode, self.algorithm_profile,
+            args.v2_run_id, args.v2_stream_config_json,
+        )
+        self.v2_enabled = args.continuous_search_mode == ROLLING_MODE
+        self.v2_run_id = args.v2_run_id
+        self.v2_origin_ns = None
+        self.v2_origin_invalid = False
+        self.v2_stream_id = None
+        self.v2_sequence = 1
+        self.v2_last_model_ns = None
+        self.v2_pending = OrderedDict()
+        self.v2_seen = OrderedDict()
+        self.v2_publications = OrderedDict()
+        self.v2_last_input_ns = None
+        self.v2_last_clock_ns = None
+        self.v2_active_packet = None
+        self.v2_last_fault = None
+        self.v2_fault_count = 0
+        self.v2_steady_now_ns = time.monotonic_ns
+        if self.v2_enabled:
+            geometry = sensor_geometry_descriptor(args.v2_sensor_geometry_config)
+            if any(self.v2_config[key] != value for key, value in geometry.items()):
+                raise ValueError('source sensor geometry differs from V2 stream contract')
+            if self.resolve_topic_name(args.input_timekeeping_topic) != self.v2_config['timekeeper_topic']:
+                raise ValueError('source Timekeeper differs from V2 stream contract')
+        self.v2_provenance_publisher = (
+            self.create_publisher(SourceSampleProvenance, args.v2_provenance_topic, 100)
+            if self.v2_enabled else None
+        )
         self.enable_observability = (
             _as_bool(args.enable_observability) or self.robust_profile
         )
@@ -214,6 +258,131 @@ class CostFunction(Node):
                 self.algorithm_state_publisher = self.create_publisher(
                     AlgorithmState, args.algorithm_state_topic, 10
                 )
+        if self._v2_acquisition_keys():
+            # A held/paused ROS clock must not suspend original-receipt expiry.
+            self.v2_admission_clock = Clock(clock_type=ClockType.STEADY_TIME)
+            self.v2_admission_timer = self.create_timer(
+                .01, self.poll_v2_pending, clock=self.v2_admission_clock
+            )
+
+    def _v2_acquisition_keys(self):
+        return bool(getattr(self, 'v2_enabled', False)
+                    and self.v2_config.get('cost_key_basis') == 'model_input_time')
+
+    def _v2_discard(self, reason, *, clear_pending=False, key=None):
+        """Keep faults explicit and retransmissions unable to refresh evidence."""
+        self.v2_last_fault = str(reason)
+        self.v2_fault_count += 1
+        if clear_pending:
+            self.v2_pending.clear()
+        if key is not None:
+            self.v2_seen[key] = None
+            self.v2_pending.pop(key, None)
+        while len(self.v2_seen) > 1024:
+            self.v2_seen.popitem(last=False)
+        self.get_logger().warning(f'V2 source transform discarded: {reason}')
+
+    def _v2_check_clock(self, now):
+        if self.v2_last_clock_ns is not None and now < self.v2_last_clock_ns:
+            self.v2_last_clock_ns = now
+            self.v2_last_input_ns = None
+            self.v2_last_model_ns = None
+            self._v2_discard('clock_rollback', clear_pending=True)
+            return False
+        self.v2_last_clock_ns = now
+        return True
+
+    def _v2_queue_transform(self, message):
+        now = self._clock.now().nanoseconds
+        if not self._v2_check_clock(now):
+            return
+        if self.v2_origin_ns is None or self.v2_origin_invalid:
+            self._v2_discard('unavailable_time_origin', clear_pending=True)
+            return
+        key = float(message.timestamp)
+        try:
+            model_ns = relative_stamp_ns(self.v2_origin_ns, key)
+            values = tuple(tuple(float(v) for v in (
+                t.translation.x, t.translation.y, t.translation.z,
+                t.rotation.x, t.rotation.y, t.rotation.z, t.rotation.w,
+            )) for t in message.transform_array)
+            if (len(values) != 1 or not all(math.isfinite(v) for row in values for v in row)
+                    or abs(sum(v*v for v in values[0][3:])-1.) > 1e-3
+                    or key < 0 or not -500_000_000 <= now-model_ns <= 500_000_000):
+                raise ValueError('invalid_or_out_of_window_transform')
+        except (ValueError, TypeError, OverflowError) as exc:
+            self._v2_discard(str(exc))
+            return
+        if key in self.v2_seen:
+            if self.v2_seen[key] is not None and self.v2_seen[key] != values:
+                self._v2_discard('conflicting_transform_key', key=key)
+                self._v2_publish_disputed_key(key, model_ns, now)
+            return
+        if self.v2_last_input_ns is not None and model_ns <= self.v2_last_input_ns:
+            self._v2_discard('transform_source_regression', key=key)
+            self._v2_publish_disputed_key(key, model_ns, now)
+            return
+        if len(self.v2_pending) >= 1024:
+            self._v2_discard('transform_capacity', clear_pending=True, key=key)
+            return
+        self.v2_last_input_ns = model_ns
+        self.v2_seen[key] = values
+        while len(self.v2_seen) > 1024:
+            self.v2_seen.popitem(last=False)
+        self.v2_pending[key] = (model_ns, deepcopy(message.transform_array),
+                                now, self.v2_steady_now_ns())
+        self.poll_v2_pending()
+
+    def _v2_publish_disputed_key(self, key, model_ns, notification_ns):
+        """Invalidate evidence for one key without inventing another cost sample."""
+        message = SourceSampleProvenance()
+        message.schema_version = 2
+        set_time(message.stamp, notification_ns)
+        set_time(message.time_origin, self.v2_origin_ns)
+        set_time(message.model_input_stamp, model_ns)
+        set_time(message.cost_publication_stamp, self.v2_publications.get(key, 0))
+        message.run_id = self.v2_run_id
+        message.stream_contract_id = self.v2_stream_id
+        message.frame_id = self.v2_config['frame_id']
+        message.source_sequence = self.v2_sequence
+        self.v2_sequence += 1
+        message.legacy_cost_source_timestamp_sec = key
+        # Both validity flags stay false and geometry/channel count stay empty.
+        self.v2_provenance_publisher.publish(message)
+
+    def _v2_packet_expired(self, packet, now):
+        model_ns, _, receipt_ns, receipt_steady_ns = packet
+        return (now-receipt_ns > 500_000_000 or now-model_ns > 500_000_000
+                or self.v2_steady_now_ns()-receipt_steady_ns > 500_000_000)
+
+    def poll_v2_pending(self):
+        """Admit detached transforms in received source order after clock coverage."""
+        now = self._clock.now().nanoseconds
+        if not self._v2_check_clock(now):
+            return
+        if self.v2_origin_ns is None or self.v2_origin_invalid:
+            self.v2_pending.clear()
+            return
+        while self.v2_pending:
+            key, packet = next(iter(self.v2_pending.items()))
+            if self._v2_packet_expired(packet, now):
+                self._v2_discard('transform_original_receipt_expired', key=key)
+                continue
+            if packet[0] > now:
+                break
+            self.v2_pending.pop(key)
+            self.transforms_tstamp = key
+            self.transforms = packet[1]
+            self.v2_active_packet = packet
+            try:
+                self.publish_cost_value()
+            except (ValueError, ArithmeticError) as exc:
+                self._v2_discard(f'transform_evaluation_failed: {exc}', key=key)
+            finally:
+                self.v2_active_packet = None
+            now = self._clock.now().nanoseconds
+            if not self._v2_check_clock(now):
+                return
 
     def configure_light_source_cost(self, args):
         """Pass launch-time light source settings to compatible cost objects."""
@@ -239,6 +408,10 @@ class CostFunction(Node):
     def transform_callback(self, msg: StampedTransformMultiArray):
         """This function collects the array of transformation matrices from the input topic"""
 
+        if self._v2_acquisition_keys():
+            self._v2_queue_transform(msg)
+            return
+
         # Get the array of transformation matrices from the message
         self.transforms = msg.transform_array
         # Get the timestamp from the message
@@ -250,6 +423,22 @@ class CostFunction(Node):
     def timekeeping_callback(self, msg: Timekeeper):
         """This function collects the information from the input timekeeping topic."""
 
+        if getattr(self, 'v2_enabled', False):
+            try:
+                origin_ns = relative_stamp_ns(0, msg.start_time)
+                if msg.mode != 'sim time':
+                    raise ValueError('V2 requires simulation Timekeeper')
+                if self.v2_origin_ns is None:
+                    self.v2_origin_ns = origin_ns
+                    self.v2_stream_id = stream_contract_id(self.v2_config, origin_ns)
+                elif origin_ns != self.v2_origin_ns:
+                    raise ValueError('V2 Timekeeper origin changed')
+            except (ValueError, TypeError, OverflowError):
+                self.v2_origin_invalid = True
+                if self._v2_acquisition_keys():
+                    self._v2_discard('invalid_time_origin', clear_pending=True)
+                return
+
         # Get the start time from the message
         self.start_time = msg.start_time
         # Get the timekeeping mode from the message
@@ -258,15 +447,22 @@ class CostFunction(Node):
     def publish_cost_value(self):
         """This function publishes the cost values to the output topic."""
 
+        acquisition_keys = self._v2_acquisition_keys()
+        if acquisition_keys and self.v2_active_packet is None:
+            self._v2_discard('transform_requires_clock_admission')
+            return
+
         # Ensure we have the data we need to publish
         if (self.start_time is not None) and (self.transforms is not None):
 
             # Initialize cost value array
             cost_values = []
+            evaluated_matrices = []
             # Calculate the cost for each sensor transformation matrix in the array
             for transform in self.transforms:
                 # Convert the transform object into a transformation matrix
                 tform_matrix = create_transform_matrix(transform)
+                evaluated_matrices.append(tform_matrix)
                 # Plug the transformation matrix and the current time into the cost function
                 cost_val = self.cost_function.cost_output(
                     self.transforms_tstamp, tform_matrix
@@ -302,6 +498,14 @@ class CostFunction(Node):
                 ])
                 raise Exception(warn_msg)
 
+            if acquisition_keys:
+                # Model evaluation may take time or coincide with clock rollback.
+                if (self.v2_origin_invalid or not self._v2_check_clock(t_publish.nanoseconds)
+                        or self.v2_active_packet[0] > t_publish.nanoseconds
+                        or self._v2_packet_expired(self.v2_active_packet, t_publish.nanoseconds)):
+                    self._v2_discard('transform_expired_during_evaluation', key=self.transforms_tstamp)
+                    return
+            source_key = self.transforms_tstamp if acquisition_keys else publish_time
             # Create message
             msg = StampedFloat64MultiArray()
             # Create the header
@@ -309,15 +513,58 @@ class CostFunction(Node):
             # Add the data
             msg.data = cost_values
             # Add the timestamp
-            msg.timestamp = publish_time
+            msg.timestamp = source_key
             # Publish the message
             self.cost_publisher.publish(msg)
+            if acquisition_keys:
+                self.v2_publications[source_key] = t_publish.nanoseconds
+                while len(self.v2_publications) > 1024:
+                    self.v2_publications.popitem(last=False)
+
+            if getattr(self, 'v2_enabled', False):
+                self.publish_v2_provenance(evaluated_matrices, source_key, t_publish.nanoseconds)
 
             if self.enable_observability:
                 self.publish_observability(
                     cost_values,
-                    source_timestamp=publish_time,
+                    source_timestamp=source_key,
                 )
+
+    def publish_v2_provenance(self, matrices, legacy_timestamp, publication_ns):
+        """Describe exactly the geometry and time used by the preceding raw sample."""
+        if self.v2_origin_ns is None or self.v2_origin_invalid:
+            return
+        message = SourceSampleProvenance()
+        message.schema_version = 2 if self._v2_acquisition_keys() else 1
+        set_time(message.stamp, publication_ns)
+        set_time(message.cost_publication_stamp, publication_ns)
+        set_time(message.time_origin, self.v2_origin_ns)
+        message.run_id = self.v2_run_id
+        message.stream_contract_id = self.v2_stream_id
+        message.frame_id = self.v2_config['frame_id']
+        message.source_sequence = self.v2_sequence
+        self.v2_sequence += 1
+        message.legacy_cost_source_timestamp_sec = float(legacy_timestamp)
+        message.channel_count = len(matrices)
+        message.model_input_stamp_valid = False
+        try:
+            model_ns = relative_stamp_ns(self.v2_origin_ns, self.transforms_tstamp)
+            valid = (self.v2_origin_ns <= model_ns <= publication_ns and
+                     (self.v2_last_model_ns is None or model_ns >= self.v2_last_model_ns))
+            set_time(message.model_input_stamp, model_ns)
+            message.model_input_stamp_valid = valid
+            self.v2_last_model_ns = model_ns
+        except (ValueError, TypeError, OverflowError):
+            pass
+        message.sensor_transform_valid = len(matrices) == 1 and all(
+            np.asarray(matrix).shape == (4, 4) and np.isfinite(matrix).all()
+            for matrix in matrices
+        )
+        if message.sensor_transform_valid:
+            message.sensor_x_m = [float(matrix[0, 3]) for matrix in matrices]
+            message.sensor_y_m = [float(matrix[1, 3]) for matrix in matrices]
+            message.sensor_world_phase_rad = [float(np.arctan2(matrix[1, 0], matrix[0, 0])) for matrix in matrices]
+        self.v2_provenance_publisher.publish(message)
 
     def publish_observability(self, cost_values, source_timestamp):
         """Publish opt-in typed mirrors after the unchanged legacy output."""

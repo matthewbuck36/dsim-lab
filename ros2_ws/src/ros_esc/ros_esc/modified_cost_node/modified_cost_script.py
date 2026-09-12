@@ -12,6 +12,7 @@ from ros_esc_interfaces.msg import (
     AlgorithmState,
     CostBreakdown,
     GaussianFill,
+    FillResult,
     StampedFloat64MultiArray,
     StampedTransformMultiArray,
 )
@@ -146,6 +147,13 @@ class ModifiedCost2D(Node):
         self.declare_parameter(
             "gaussian_fill_diagnostics_topic", "/gesc_gaussian/gaussian_fills"
         )
+        self.declare_parameter("continuous_search_mode", "stationary_v1")
+        self.declare_parameter("v2_fill_result_topic", "/gesc_gaussian/v2/fill_results")
+        self.declare_parameter("v2_run_id", "")
+        self.declare_parameter("v2_stream_config_json", "")
+        self.declare_parameter(
+            "v2_objective_cost_topic", "/gesc_gaussian/v2/objective_cost_samples"
+        )
 
         # Read parameters.
         self.bias_all = bool(self.get_parameter("bias_all_channels").value)
@@ -234,6 +242,7 @@ class ModifiedCost2D(Node):
         # Shape: (N, 2), where row 0 is newest.
         self.pde_history_xy = None
         self.algorithm_state = None
+        self.v2_composer = None
 
         # ---------------- ROS subscriptions/publication ----------------
 
@@ -331,6 +340,19 @@ class ModifiedCost2D(Node):
             f"PDE history topic: {self.input_pde_history_topic}, "
             f"use_pde_history_for_affine={self.use_pde_history_for_affine}"
         )
+        mode = str(self.get_parameter("continuous_search_mode").value)
+        if mode not in ("stationary_v1", "rolling_gesc_v2"):
+            raise ValueError("unsupported continuous_search_mode")
+        if mode == "rolling_gesc_v2":
+            if not self.robust_profile or not bool(self.get_parameter("use_sim_time").value):
+                raise ValueError("rolling GESC requires robust simulation profile")
+            from ros_esc.modified_cost_node.v2_objective import V2ObjectiveComposer
+            self.v2_composer = V2ObjectiveComposer(self)
+            from ros_esc.modified_cost_node.v2_fill_activation import AtomicFillActivation
+            self.v2_fill_activation = AtomicFillActivation(self)
+            self.v2_fill_result_subscription = self.create_subscription(
+                FillResult, str(self.get_parameter("v2_fill_result_topic").value),
+                self.v2_fill_activation.accept, 100)
 
     def _now_sec(self) -> float:
         return self.get_clock().now().nanoseconds * 1e-9
@@ -485,6 +507,8 @@ class ModifiedCost2D(Node):
     def robust_fill_cb(self, msg: GaussianFill):
         """Apply typed anisotropic fill lifecycle updates without stacking revisions."""
 
+        if getattr(self, "v2_composer", None) is not None:
+            return  # Canonical mirrors are observational in continuous mode.
         cluster_id = int(msg.cluster_id)
         fill_id = int(msg.fill_id)
         revision = int(msg.revision)
@@ -648,6 +672,10 @@ class ModifiedCost2D(Node):
     def source_cost_cb(self, msg: CostBreakdown):
         """Consume synchronized raw cost and source score in robust mode."""
 
+        if getattr(self, "v2_composer", None) is not None:
+            self.v2_composer.add_raw(msg)
+            return
+
         if (
             not msg.source_timestamp_valid
             or not np.isfinite(msg.source_timestamp)
@@ -670,10 +698,10 @@ class ModifiedCost2D(Node):
         """
         self._apply_cost(msg, None)
 
-    def _apply_cost(self, msg, source_breakdown):
+    def _apply_cost(self, msg, source_breakdown, v2_provenance=None):
         """Apply legacy or state-weighted cost composition once per sample."""
 
-        if self.xy is None and self.sensor_xy is None:
+        if self.xy is None and self.sensor_xy is None and v2_provenance is None:
             return
 
         if self.robust_profile and self.algorithm_state is None:
@@ -684,11 +712,23 @@ class ModifiedCost2D(Node):
         if cost_vals.size == 0:
             return
 
+        sensor_xy = self.sensor_xy
+        composition_time = None
+        composition_ns = None
+        if v2_provenance is not None:
+            sensor_xy = np.column_stack(
+                (v2_provenance.sensor_x_m, v2_provenance.sensor_y_m)
+            )
+            composition_ns = self.get_clock().now().nanoseconds
+            composition_time = composition_ns * 1e-9
+
         # Preferred path: evaluate correction per sensor channel.
-        if self.sensor_xy is not None and self.sensor_xy.shape[0] == cost_vals.size:
+        if sensor_xy is not None and sensor_xy.shape[0] == cost_vals.size:
             components = [
-                self._bias_components_at_xy(float(x), float(y))
-                for x, y in self.sensor_xy
+                (self._bias_components_at_xy(float(x), float(y))
+                 if composition_time is None else
+                 self._bias_components_at_xy(float(x), float(y), composition_time))
+                for x, y in sensor_xy
             ]
             gaussian_cost = np.array(
                 [component[0] for component in components], dtype=np.float64
@@ -742,7 +782,15 @@ class ModifiedCost2D(Node):
         out.header = "Modified Cost 2D"
         out.timestamp = msg.timestamp
         out.data = [float(v) for v in cost_out.tolist()]
+        if v2_provenance is not None and not np.all(np.isfinite(cost_out)):
+            return
         self.pub.publish(out)
+
+        if v2_provenance is not None:
+            self.v2_composer.publish_objective(
+                v2_provenance, cost_vals, gaussian_cost, affine_cost, cost_out,
+                composition_ns,
+            )
 
         if self.enable_observability:
             self._publish_observability(
@@ -871,7 +919,7 @@ class ModifiedCost2D(Node):
 
         return float(bias)
 
-    def _affine_bias_at_xy(self, x: float, y: float) -> float:
+    def _affine_bias_at_xy(self, x: float, y: float, at_time=None) -> float:
         """
         Compute total decaying affine correction at position (x,y):
 
@@ -888,7 +936,7 @@ class ModifiedCost2D(Node):
         if not terms:
             return 0.0
 
-        now = self._now_sec()
+        now = self._now_sec() if at_time is None else float(at_time)
         total = 0.0
         kept_terms = []
 
@@ -927,11 +975,12 @@ class ModifiedCost2D(Node):
         """
         return self._bias_components_at_xy(x, y)[2]
 
-    def _bias_components_at_xy(self, x: float, y: float):
+    def _bias_components_at_xy(self, x: float, y: float, at_time=None):
         """Evaluate each correction exactly once and retain its decomposition."""
 
         gaussian = self._gaussian_bias_at_xy(x, y)
-        affine = self._affine_bias_at_xy(x, y)
+        affine = (self._affine_bias_at_xy(x, y) if at_time is None else
+                  self._affine_bias_at_xy(x, y, at_time))
         return gaussian, affine, gaussian + affine
 
     def _publish_observability(

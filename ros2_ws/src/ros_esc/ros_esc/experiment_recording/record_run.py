@@ -26,6 +26,7 @@ import rclpy
 from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
 from rclpy.parameter import Parameter, parameter_value_to_python
+from rclpy.qos import QoSProfile, ReliabilityPolicy
 from rclpy.signals import SignalHandlerOptions
 from ros_esc.deferred_signal_shutdown import DeferredSignalShutdown
 from ros_esc_interfaces.msg import (
@@ -37,6 +38,15 @@ import rosbag2_py
 from rosidl_runtime_py.utilities import get_message
 from std_msgs.msg import Bool
 import yaml
+from ros_esc.v2_stream import (
+    relative_stamp_ns, stream_contract_id, time_to_ns, validate_mode_identity,
+)
+from ros_esc.v2_direction_policy import (
+    THREE_CYCLE_POLICY, MOVING_CYCLE_POLICY, POLICY_DIAGNOSTICS_TOPIC,
+    POLICY_SCHEMA_VERSION, policy_config_sha256, policy_metadata,
+    validate_policy, validate_policy_metadata,
+)
+from ros_esc.convergence_detector_node.centroid_contract import CENTROID_METRIC_MODES
 
 
 VALID_MODES = {"simulation", "physical"}
@@ -575,7 +585,63 @@ def resolve_operational_heartbeat_aliases(config, metadata):
             replacements.get(alias, alias)
             for alias in aliases
         ]
+    identity = v2_identity_from_metadata(metadata)
+    if identity is not None:
+        aliases.extend([
+            'v2_source_provenance_delayed' if float(disturbances.get('sensor_delay_sec', 0.0)) > 0 else 'v2_source_provenance',
+            'v2_objective_cost', 'v2_direction_diagnostics',
+        ])
+        if identity.get('direction_policy', {}).get('policy_name') == MOVING_CYCLE_POLICY:
+            aliases.append('v2_direction_policy_diagnostics')
     return aliases
+
+
+def v2_identity_from_metadata(metadata):
+    """Validate only explicitly selected V2 metadata, leaving older records valid."""
+    runner = metadata.get('scenario_runner', {})
+    identity = runner.get('v2_identity') if isinstance(runner, dict) else None
+    policy_record = runner.get('direction_policy') if isinstance(runner, dict) else None
+    algorithm = runner.get('algorithm', {}) if isinstance(runner, dict) else {}
+    overrides = algorithm.get('launch_overrides', {}) if isinstance(algorithm, dict) else {}
+    if not isinstance(overrides, dict):
+        raise ValueError('direction policy launch overrides must be a mapping')
+    declared_policy = overrides.get('v2_direction_policy', THREE_CYCLE_POLICY)
+    selected_mode = identity.get('continuous_search_mode', 'stationary_v1') if isinstance(identity, dict) else 'stationary_v1'
+    policy = validate_policy(declared_policy,
+                             continuous_search_mode=selected_mode,
+                             algorithm_profile=metadata.get('algorithm_profile'),
+                             use_sim_time=metadata.get('mode') == 'simulation')
+    if policy_record is not None:
+        if validate_policy_metadata(policy_record) != policy:
+            raise ValueError('direction policy metadata differs from selected launch override')
+    elif policy == MOVING_CYCLE_POLICY:
+        raise ValueError('moving direction policy requires its explicit descriptor metadata')
+    if identity is None:
+        return None
+    if not isinstance(identity, dict):
+        raise ValueError('V2 metadata identity must be a mapping')
+    if 'direction_policy' in identity:
+        raise ValueError('direction policy metadata must be a scenario_runner sibling of v2_identity')
+    config = validate_mode_identity(
+        identity.get('continuous_search_mode'), metadata.get('algorithm_profile'),
+        identity.get('run_id'), identity.get('stream_config'),
+        simulation=metadata.get('mode') == 'simulation',
+    )
+    if config is None:
+        raise ValueError('V2 metadata identity requires rolling_gesc_v2')
+    result = {**identity, 'stream_config': config}
+    from ros_esc.v2_lifecycle import validate_verification_evidence_policy
+    evidence_policy = validate_verification_evidence_policy(
+        overrides.get('v2_verification_evidence_policy', 'angular_profiles_v1'),
+        simulation=metadata.get('mode') == 'simulation', continuous_search_mode=selected_mode,
+        metric_mode=overrides.get('convergence_metric_mode', 'pde_mean_v1'),
+        motion_mode=overrides.get('v2_verification_motion_mode', 'rolling_neighborhood_v1'),
+        algorithm_profile=metadata.get('algorithm_profile'))
+    if evidence_policy == 'recurrent_trapping_v1':
+        result['verification_evidence_policy'] = evidence_policy
+    if policy_record is not None:
+        result['direction_policy'] = policy_metadata(policy)
+    return result
 
 
 def require_operational_topics(entries, heartbeat_aliases):
@@ -605,6 +671,299 @@ def require_operational_topics(entries, heartbeat_aliases):
     ]
 
 
+def stationary_centroid_config_from_target(target):
+    """Resolve the selected Arm B recording contract from the actual launch argv."""
+    from ros_esc.convergence_detector_node.recurrent_contract import RECURRENT_MODE
+    from ros_esc.stationary_fill_protocol import stationary_contract
+    if not isinstance(target, (list, tuple)):
+        raise ValueError('recording target must be an argv list')
+    values = dict(str(token).split(':=', 1) for token in target if ':=' in str(token))
+    metric_mode = values.get('convergence_metric_mode', 'pde_mean_v1')
+    recurrent = metric_mode == RECURRENT_MODE
+    if not (values.get('algorithm_profile') == 'robust_gaussian_v1'
+            and metric_mode in (*CENTROID_METRIC_MODES, RECURRENT_MODE)
+            and values.get('continuous_search_mode', 'stationary_v1') == 'stationary_v1'):
+        return None
+    contract = stationary_contract(metric_mode)
+    request_topic = values.get(contract['request_topic_parameter'], contract['request_topic'])
+    if request_topic != contract['request_topic']:
+        raise ValueError('stationary request topic differs from its typed contract')
+    informed = values.get('candidate_informed_fill_enabled', 'False').strip().lower()
+    if informed not in ('true', 'false'):
+        raise ValueError('candidate_informed_fill_enabled must be true or false')
+    config = dict(schema_version=1, request_topic=request_topic, frame_id='odom',
+                  metric_mode=values['convergence_metric_mode'],
+                  source_pose_topic=values.get('algorithm_pose_topic', '/odom'),
+                  timekeeper_topic=values.get('stationary_timekeeper_topic',
+                      '/' + values.get('entity_name', 'turtlebot3') + '/timekeeper_chatter'),
+                  diagnostics_topic=values.get(contract['diagnostics_topic_parameter'],
+                                               contract['diagnostics_topic']),
+                  candidate_informed_fill_enabled=informed == 'true')
+    if recurrent:
+        if config['diagnostics_topic'] != contract['diagnostics_topic']:
+            raise ValueError('stationary recurrent diagnostic topic differs from its typed contract')
+        config.update({key: contract[key] for key in
+                       ('request_alias', 'request_type', 'diagnostics_alias')})
+    for field, argument, default in (
+        ('window_sec', 'centroid_window_sec', 3.0),
+        ('epsilon_m', 'centroid_epsilon_m', 0.06),
+        ('maximum_radius_m', 'centroid_maximum_radius_m', 0.5),
+        ('maximum_source_gap_sec', 'centroid_maximum_gap_sec', 0.5),
+        ('pose_freshness_sec', 'centroid_pose_stale_sec', 0.5),
+        ('state_freshness_sec', 'centroid_state_stale_sec', 0.5),
+        ('design_timeout_sec', 'fill_design_timeout_sec', 5.0),
+    ):
+        if recurrent and field in ('window_sec', 'epsilon_m', 'maximum_radius_m'):
+            continue  # Fixed recurrent branch rules have no centroid W/epsilon selection.
+        try:
+            value = float(values.get(argument, default))
+            if not math.isfinite(value * 1e9) or value <= 0 or round(value * 1e9) < 1:
+                raise ValueError()
+        except (TypeError, ValueError, OverflowError):
+            raise ValueError(argument + ' must be finite positive and representable') from None
+        config[field] = value
+    return config
+
+
+def _require_stationary_recording_topics(entries, stationary):
+    """Keep event presence/type and immutable selected stationary configuration."""
+    if stationary is None:
+        return entries
+    request_alias = stationary.get('request_alias', 'stationary_fill_requests')
+    expected = {
+        request_alias: (stationary['request_topic'], stationary.get(
+            'request_type', 'ros_esc_interfaces/msg/StationaryFillRequest')),
+        'timekeeper': (stationary['timekeeper_topic'], 'ros_esc_interfaces/msg/Timekeeper'),
+    }
+    by_alias = {entry['alias']: entry for entry in entries}
+    for alias, (topic, wire_type) in expected.items():
+        entry = by_alias.get(alias)
+        if entry is None or entry['topic'] != topic or entry['type'] != wire_type:
+            raise ValueError('selected stationary stream missing or incompatible: ' + alias)
+        if ('stationary_centroid_config' in entry
+                and entry['stationary_centroid_config'] != stationary):
+            raise ValueError('recorded stationary configuration differs from selected launch argv')
+    return [dict(entry, required=True, minimum_messages=0, singleton_publisher=True,
+                 algorithm_required=True, coverage='none', stationary_centroid_config=stationary)
+            if entry['alias'] == request_alias else dict(entry) for entry in entries]
+
+
+def require_selected_algorithm_topics(entries, mode, target):
+    """Retain opt-in algorithm evidence without imposing it on inherited runs."""
+    if not isinstance(target, (list, tuple)):
+        raise ValueError('recording target must be an argv list')
+    assignments = dict(
+        str(token).split(':=', 1) for token in target if ':=' in str(token)
+    )
+    heartbeat_raw = assignments.get('centroid_invalid_status_heartbeat_enabled', 'false').strip().lower()
+    if heartbeat_raw not in ('true', 'false'):
+        raise ValueError('centroid_invalid_status_heartbeat_enabled must be true or false')
+    heartbeat = heartbeat_raw == 'true'
+    if heartbeat and (mode != 'simulation' or assignments.get(
+            'convergence_metric_mode', 'pde_mean_v1').strip().lower() not in CENTROID_METRIC_MODES):
+        raise ValueError('centroid_invalid_status_heartbeat_enabled requires centroid simulation')
+    for entry in entries:
+        if (heartbeat and entry.get('alias') == 'centroid_convergence_diagnostics'
+                and 'algorithm_metric_mode' in entry
+                and 'algorithm_invalid_status_heartbeat_enabled' not in entry):
+            raise ValueError('recorded centroid descriptor lacks selected invalid-status heartbeat')
+        if ('algorithm_invalid_status_heartbeat_enabled' in entry
+                and entry.get('alias') != 'recurrent_convergence_diagnostics'):
+            recorded = entry['algorithm_invalid_status_heartbeat_enabled']
+            if (entry.get('alias') != 'centroid_convergence_diagnostics'
+                    or type(recorded) is not bool or recorded != heartbeat):
+                raise ValueError('recorded centroid invalid-status heartbeat differs from selected argv')
+    direction_policy = validate_policy(
+        assignments.get('v2_direction_policy', THREE_CYCLE_POLICY),
+        continuous_search_mode=assignments.get('continuous_search_mode', 'stationary_v1'),
+        algorithm_profile=assignments.get('algorithm_profile'), use_sim_time=mode == 'simulation',
+    )
+    from ros_esc.supervisor_node.centered_verification import CENTERED_MODE, GUIDANCE_TOPIC, LEGACY_MODE, MODES
+    verification_mode = assignments.get('v2_verification_motion_mode', LEGACY_MODE)
+    from ros_esc.v2_lifecycle import validate_verification_evidence_policy
+    evidence_policy = validate_verification_evidence_policy(
+        assignments.get('v2_verification_evidence_policy', 'angular_profiles_v1'),
+        simulation=mode == 'simulation',
+        continuous_search_mode=assignments.get('continuous_search_mode', 'stationary_v1'),
+        metric_mode=assignments.get('convergence_metric_mode', 'pde_mean_v1'),
+        motion_mode=verification_mode, algorithm_profile=assignments.get('algorithm_profile'))
+    if verification_mode not in MODES or (verification_mode == CENTERED_MODE and
+            (mode != 'simulation' or assignments.get('continuous_search_mode') != 'rolling_gesc_v2')):
+        raise ValueError('centered verification recording requires selected rolling simulation')
+    if assignments.get('continuous_search_mode', 'stationary_v1') != 'stationary_v1':
+        config = validate_mode_identity(
+            assignments.get('continuous_search_mode'), assignments.get('algorithm_profile'),
+            assignments.get('v2_run_id'), assignments.get('v2_stream_config_json'),
+            simulation=mode == 'simulation',
+        )
+        required_topics = {config[key] for key in (
+            'raw_cost_topic', 'source_cost_topic', 'augmented_cost_topic',
+            'objective_cost_topic', 'provenance_topic', 'pose_topic',
+            'encoder_topic', 'timekeeper_topic',
+        )}
+        direction_topic = assignments.get('v2_direction_diagnostics_topic', '/gesc_gaussian/v2/direction_diagnostics')
+        required_topics.add(direction_topic)
+        if verification_mode == CENTERED_MODE:
+            required_topics.add(GUIDANCE_TOPIC)
+        if direction_policy == MOVING_CYCLE_POLICY:
+            required_topics.add(POLICY_DIAGNOSTICS_TOPIC)
+        required_topics.add(assignments.get('v2_source_provenance_topic', '/gesc_gaussian/v2/source_sample_provenance'))
+        missing = required_topics - {entry['topic'] for entry in entries}
+        if missing:
+            raise ValueError('V2 selected streams are absent from recording: ' + ', '.join(sorted(missing)))
+        expected_types = {
+            config['provenance_topic']: 'ros_esc_interfaces/msg/SourceSampleProvenance',
+            config['objective_cost_topic']: 'ros_esc_interfaces/msg/ObjectiveCostSample',
+            direction_topic: 'ros_esc_interfaces/msg/GescDirectionDiagnostics',
+        }
+        if verification_mode == CENTERED_MODE:
+            expected_types[GUIDANCE_TOPIC] = 'ros_esc_interfaces/msg/VerificationGuidance'
+        if direction_policy == MOVING_CYCLE_POLICY:
+            expected_types[POLICY_DIAGNOSTICS_TOPIC] = 'ros_esc_interfaces/msg/GescDirectionPolicyDiagnostics'
+        for entry in entries:
+            if entry['topic'] in expected_types and entry['type'] != expected_types[entry['topic']]:
+                raise ValueError('V2 selected stream has incompatible recorded type')
+        entries = [
+            {**entry, 'required': True, 'minimum_messages': max(1, int(entry.get('minimum_messages', 0))),
+             'singleton_publisher': True, 'algorithm_required': True, 'coverage': 'motion',
+             'v2_run_id': assignments['v2_run_id'], 'v2_stream_config': config}
+            if entry['topic'] in required_topics else dict(entry)
+            for entry in entries
+        ]
+        lifecycle_types = {
+            '/gesc_gaussian/v2/search_epoch': 'SearchEpochContext',
+            '/gesc_gaussian/v2/detector_confirmation': 'DetectorConfirmation',
+            '/gesc_gaussian/v2/candidate_snapshots': 'CandidateSnapshot',
+            '/gesc_gaussian/v2/fill_commands': 'FillCommand',
+            '/gesc_gaussian/v2/fill_results': 'FillResult',
+        }
+        if evidence_policy == 'recurrent_trapping_v1':
+            del lifecycle_types['/gesc_gaussian/v2/candidate_snapshots']
+            del lifecycle_types['/gesc_gaussian/v2/fill_commands']
+            lifecycle_types.update({
+                '/gesc_gaussian/v2/recurrent_candidate_snapshots': 'RecurrentCandidateSnapshot',
+                '/gesc_gaussian/v2/recurrent_fill_commands': 'RecurrentFillCommand'})
+        if assignments.get('convergence_metric_mode', 'pde_mean_v1') == 'pde_mean_v1':
+            lifecycle_types['/gesc_gaussian/v2/pde_history_evidence'] = 'PdeHistoryEvidence'
+        missing = set(lifecycle_types) - {entry['topic'] for entry in entries}
+        if missing:
+            raise ValueError('V2 lifecycle streams are absent from recording: ' + ', '.join(sorted(missing)))
+        for entry in entries:
+            wire_type = lifecycle_types.get(entry['topic'])
+            if wire_type is None:
+                continue
+            if entry['type'] != 'ros_esc_interfaces/msg/' + wire_type:
+                raise ValueError('V2 lifecycle stream has incompatible recorded type')
+            # Event absence is valid: a constant/uninformative field can produce
+            # no candidate, command or result. Presence/type is still recorded.
+            entry.update(required=True, singleton_publisher=True,
+                         algorithm_required=True, coverage='none',
+                         minimum_messages=1 if wire_type == 'SearchEpochContext' else 0,
+                         v2_lifecycle_protocol=1, v2_run_id=assignments['v2_run_id'],
+                         v2_stream_config=config)
+    metric_mode = assignments.get('convergence_metric_mode', '').strip().lower()
+    from ros_esc.convergence_detector_node.recurrent_contract import RECURRENT_MODE
+    if metric_mode == RECURRENT_MODE:
+        entries = _require_recurrent_recording_topics(entries, mode, assignments)
+        return _require_stationary_recording_topics(
+            entries, stationary_centroid_config_from_target(target))
+    if any(entry.get('algorithm_metric_mode') == RECURRENT_MODE for entry in entries):
+        raise ValueError('recorded recurrent metric mode differs from selected launch argv')
+    if metric_mode not in CENTROID_METRIC_MODES:
+        return [dict(entry) for entry in entries]
+    if mode != 'simulation':
+        raise ValueError(metric_mode + ' recording requires simulation')
+    alias = 'centroid_convergence_diagnostics'
+    selected = next((entry for entry in entries if entry['alias'] == alias), None)
+    expected_topic = assignments.get(
+        'convergence_diagnostics_topic', '/gesc_gaussian/v2/convergence_diagnostics'
+    )
+    if selected is None or selected['topic'] != expected_topic or selected['type'] != (
+        'ros_esc_interfaces/msg/CentroidConvergenceDiagnostics'
+    ):
+        raise ValueError('selected centroid detector has no matching typed recording topic')
+    if ('algorithm_metric_mode' in selected
+            and selected['algorithm_metric_mode'] != metric_mode):
+        raise ValueError('recorded centroid metric mode differs from selected launch argv')
+    pose_topic = assignments.get('algorithm_pose_topic', '/odom')
+    if not pose_topic.strip() or pose_topic not in {
+        entry['topic'] for entry in entries
+    }:
+        raise ValueError('selected centroid pose topic is absent from recording')
+    limits = {}
+    for name in ('centroid_maximum_gap_sec', 'centroid_pose_stale_sec'):
+        try:
+            value = float(assignments.get(name, '0.5'))
+        except (TypeError, ValueError):
+            raise ValueError(f'{name} must be finite positive seconds') from None
+        if (not math.isfinite(value * 1e9)
+                or value <= 0 or round(value * 1e9) < 1):
+            raise ValueError(f'{name} must be finite positive seconds')
+        limits[name] = value
+    stationary = stationary_centroid_config_from_target(target)
+    entries = _require_stationary_recording_topics(entries, stationary)
+    # A valid sample may arrive up to its source-freshness allowance late.
+    diagnostic_gap = sum(limits.values())
+    if not math.isfinite(diagnostic_gap * 1e9):
+        raise ValueError('centroid diagnostic timing bound is not finite')
+    return [
+        {**entry, 'required': True,
+         'minimum_messages': max(1, int(entry.get('minimum_messages', 0))),
+         'singleton_publisher': True, 'algorithm_required': True,
+         'coverage': 'motion', 'algorithm_source_pose_topic': pose_topic,
+         'algorithm_metric_mode': metric_mode,
+         'algorithm_maximum_source_gap_sec': limits['centroid_maximum_gap_sec'],
+         'algorithm_clock_admission': 'centroid_original_receipt_v1',
+         'algorithm_pose_stale_sec': limits['centroid_pose_stale_sec'],
+         'algorithm_maximum_diagnostic_gap_sec': diagnostic_gap,
+         **({'algorithm_invalid_status_heartbeat_enabled': True} if heartbeat else {})}
+        if entry['alias'] == alias else dict(entry)
+        for entry in entries
+    ]
+
+
+def _require_recurrent_recording_topics(entries, mode, assignments):
+    """Select the explicit recurrent contract inside the existing recorder."""
+    from ros_esc.convergence_detector_node.recurrent_contract import RECURRENT_MODE, RECURRENT_TOPIC
+    if (mode != 'simulation' or assignments.get('continuous_search_mode', 'stationary_v1')
+            not in ('stationary_v1', 'rolling_gesc_v2')
+            or assignments.get('algorithm_profile') != 'robust_gaussian_v1'):
+        raise ValueError('recurrent recording requires selected robust simulation')
+    alias = 'recurrent_convergence_diagnostics'
+    topic = assignments.get('recurrent_diagnostics_topic', RECURRENT_TOPIC)
+    selected = next((entry for entry in entries if entry['alias'] == alias), None)
+    if (topic != RECURRENT_TOPIC or selected is None or selected['topic'] != topic
+            or selected['type'] != 'ros_esc_interfaces/msg/RecurrentConvergenceDiagnostics'):
+        raise ValueError('selected recurrent detector has no matching typed recording topic')
+    pose = assignments.get('algorithm_pose_topic', '/odom')
+    if not pose.strip() or pose not in {entry['topic'] for entry in entries}:
+        raise ValueError('selected recurrent pose topic is absent from recording')
+    limits = {}
+    for name in ('centroid_maximum_gap_sec', 'centroid_pose_stale_sec'):
+        try:
+            value = float(assignments.get(name, '.5'))
+            if not math.isfinite(value * 1e9) or value <= 0 or round(value * 1e9) < 1:
+                raise ValueError()
+        except (ValueError, TypeError, OverflowError):
+            raise ValueError(name + ' must be finite positive seconds') from None
+        limits[name] = value
+    gap = sum(limits.values())
+    if not math.isfinite(gap * 1e9):
+        raise ValueError('recurrent diagnostic timing bound is not finite')
+    metadata = dict(algorithm_source_pose_topic=pose, algorithm_metric_mode=RECURRENT_MODE,
+        algorithm_maximum_source_gap_sec=limits['centroid_maximum_gap_sec'],
+        algorithm_clock_admission='recurrent_original_receipt_v1',
+        algorithm_pose_stale_sec=limits['centroid_pose_stale_sec'],
+        algorithm_maximum_diagnostic_gap_sec=gap,
+        algorithm_invalid_status_heartbeat_enabled=True)
+    for key, value in metadata.items():
+        if key in selected and (type(selected[key]) is not type(value) or selected[key] != value):
+            raise ValueError('recorded recurrent descriptor differs from selected launch argv: ' + key)
+    return [dict(entry, required=True, minimum_messages=max(1, int(entry.get('minimum_messages', 0))),
+                 singleton_publisher=True, algorithm_required=True, coverage='motion', **metadata)
+            if entry['alias'] == alias else dict(entry) for entry in entries]
+
+
 def validate_operational_target_coupling(config, metadata, target):
     """Cross-check delayed-input metadata against the launched graph argv."""  # noqa: Q000
     if tuple(target[:len(SIMULATION_TARGET_PREFIX)]) != (
@@ -625,6 +984,29 @@ def validate_operational_target_coupling(config, metadata, target):
         raise ValueError(
             'operational target algorithm_profile does not match metadata'
         )
+    identity = v2_identity_from_metadata(metadata)
+    mode = assignments.get('continuous_search_mode', 'stationary_v1')
+    selected_policy = validate_policy(assignments.get('v2_direction_policy', THREE_CYCLE_POLICY),
+                                      continuous_search_mode=mode, algorithm_profile=expected_profile,
+                                      use_sim_time=metadata.get('mode') == 'simulation')
+    recorded_policy = (identity or {}).get('direction_policy', {}).get('policy_name', THREE_CYCLE_POLICY)
+    if selected_policy != recorded_policy:
+        raise ValueError('V2 target direction policy differs from recording metadata')
+    if mode != 'stationary_v1' or identity is not None:
+        if identity is None:
+            raise ValueError('rolling_gesc_v2 requires matching retained identity metadata')
+        stream_config = validate_mode_identity(mode, expected_profile, assignments.get('v2_run_id'), assignments.get('v2_stream_config_json'))
+        if stream_config != identity['stream_config'] or assignments['v2_run_id'] != identity['run_id']:
+            raise ValueError('V2 target identity differs from recording metadata')
+        for key, argument, default in (
+            ('raw_cost_topic', 'algorithm_raw_cost_topic', '/turtlebot3/cost_value_chatter'),
+            ('source_cost_topic', 'algorithm_source_cost_topic', '/gesc_gaussian/source_cost'),
+            ('pose_topic', 'algorithm_pose_topic', '/odom'),
+            ('provenance_topic', 'v2_algorithm_provenance_topic', '/gesc_gaussian/v2/source_sample_provenance'),
+            ('objective_cost_topic', 'v2_objective_cost_topic', '/gesc_gaussian/v2/objective_cost_samples'),
+        ):
+            if stream_config[key] != assignments.get(argument, default):
+                raise ValueError(f'V2 target stream mismatch: {key}')
     for argument in ('use_pde_extensions', 'recording_ready_required'):
         if assignments.get(argument, '').lower() != 'true':
             raise ValueError(
@@ -702,6 +1084,39 @@ def validate_operational_target_coupling(config, metadata, target):
             resolved_consumers[field][argument] = actual_topic
     resolved['consumer_topics'] = resolved_consumers
     return resolved
+
+
+def resolve_operational_target_config(entries, config, metadata, target):
+    """Derive the selected source graph only after its target/identity validates."""
+    resolved_config = dict(config)
+    resolved_config['target_disturbance_coupling'] = (
+        validate_operational_target_coupling(config, metadata, target)
+    )
+    resolved_entries = [dict(entry) for entry in entries]
+    if v2_identity_from_metadata(metadata) is None:
+        return resolved_entries, resolved_config
+
+    # The validated manifest retains the inherited two-publisher contract.
+    # Only this opt-in simulation graph uses the unchanged Gazebo plugin alone.
+    joint = next((entry for entry in resolved_entries
+                  if entry['alias'] == 'joint_states'), None)
+    if (joint is None or joint['topic'] != '/joint_states'
+            or joint['type'] != 'sensor_msgs/msg/JointState'
+            or set(joint['modes']) != {'simulation'} or not joint['required']
+            or set(joint.get('expected_publishers', ())) != {
+                '/joint_state_broadcaster', '/turtlebot3_joint_state'}
+            or joint.get('timestamp_ordering') != MULTI_PUBLISHER_TIMESTAMP_ORDERING):
+        raise ValueError('V2 joint source requires the canonical inherited manifest contract')
+    controllers = list(config.get('required_active_controllers', ()))
+    if not set(REQUIRED_SIMULATION_CONTROLLERS).issubset(controllers):
+        raise ValueError('V2 joint source requires the validated simulation controller contract')
+    joint.update(expected_publishers=['/turtlebot3_joint_state'],
+                 singleton_publisher=True, timestamp_ordering=DEFAULT_TIMESTAMP_ORDERING)
+    resolved_config['required_active_controllers'] = [
+        name for name in controllers if name != 'joint_state_broadcaster'
+    ]
+    resolved_config['continuous_search_mode'] = 'rolling_gesc_v2'
+    return resolved_entries, resolved_config
 
 
 def load_metadata_input(path, mode):
@@ -885,10 +1300,78 @@ def operational_heartbeat_errors(
     return errors
 
 
-def operational_message_error(alias, message, mode, algorithm_profile):
+def v2_message_identity_error(message, identity, origin_ns, *, allow_unbound=False,
+                              protocol_version=None, schema_field='schema_version'):
+    """Check an envelope independently of direction confidence/readiness."""
+    if message is None:
+        return 'V2 message unavailable'
+    if hasattr(message, 'policy_id') and hasattr(message, 'diagnostic'):
+        from ros_esc.v2_lifecycle import recurrent_proof_payload
+        try:
+            recurrent_proof_payload(message)
+            if identity.get('verification_evidence_policy') != 'recurrent_trapping_v1':
+                return 'V2 unselected recurrent trapping wrapper'
+            message = message.snapshot if hasattr(message, 'snapshot') else message.command
+        except (ValueError, TypeError, AttributeError):
+            return 'V2 invalid recurrent trapping wrapper'
+    config = identity['stream_config']
+    expected_version = (config['schema_version'] if protocol_version is None
+                        else protocol_version)
+    if (getattr(message, schema_field, None) != expected_version or message.run_id != identity['run_id']
+            or message.frame_id != config['frame_id']):
+        return 'V2 schema/run/frame identity mismatch'
+    if allow_unbound and not message.stream_contract_id:
+        return None
+    if origin_ns is None:
+        return 'V2 Timekeeper origin unavailable'
+    try:
+        message_origin = time_to_ns(message.time_origin)
+        time_to_ns(message.stamp)
+    except (ValueError, TypeError, AttributeError):
+        return 'V2 absolute envelope timestamp invalid'
+    if (message_origin != origin_ns or message.stream_contract_id != stream_contract_id(config, origin_ns)):
+        return 'V2 stream contract/origin mismatch'
+    return None
+
+
+def v2_policy_identity_error(message, identity, origin_ns, *, allow_unbound=False):
+    """Check the additive policy envelope without inventing source schema3."""
+    error = v2_message_identity_error(message, identity, origin_ns,
+                                      allow_unbound=allow_unbound,
+                                      schema_field='source_schema_version')
+    if error:
+        return error
+    policy = identity.get('direction_policy', {}).get('policy_name', THREE_CYCLE_POLICY)
+    if (getattr(message, 'policy_schema_version', None) != POLICY_SCHEMA_VERSION
+            or getattr(message, 'direction_policy', None) != policy
+            or getattr(message, 'policy_config_sha256', None) != policy_config_sha256(policy)
+            or getattr(message, 'output_units', None) != 'cost_units_per_metre'
+            or getattr(message, 'configured_mean_weight', None) != (.75 if policy == MOVING_CYCLE_POLICY else .5)):
+        return 'V2 direction policy identity/configuration mismatch'
+    return None
+
+
+def operational_message_error(alias, message, mode, algorithm_profile, v2_identity=None, v2_origin_ns=None):
     """Return why a fresh operational heartbeat is not usable."""  # noqa: Q000
     if message is None:
         return f'operational heartbeat has no message: {alias}'
+    if v2_identity is not None:
+        if alias.startswith('v2_'):
+            identity_check = v2_policy_identity_error if alias == 'v2_direction_policy_diagnostics' else v2_message_identity_error
+            error = identity_check(message, v2_identity, v2_origin_ns)
+            if error:
+                return error
+            if alias in ('v2_source_provenance', 'v2_source_provenance_delayed'):
+                if (not message.model_input_stamp_valid or not message.sensor_transform_valid
+                        or message.source_sequence <= 0 or message.channel_count != 1
+                        or any(len(values) != 1 for values in (message.sensor_x_m, message.sensor_y_m, message.sensor_world_phase_rad))
+                        or not all(math.isfinite(value) for values in (message.sensor_x_m, message.sensor_y_m, message.sensor_world_phase_rad) for value in values)):
+                    return 'operational V2 source provenance invalid'
+            elif alias == 'v2_objective_cost' and not message.valid:
+                return 'operational V2 objective composition invalid'
+            # Startup diagnostics deliberately need no full/qualified cycle.
+        elif alias == 'algorithm_state' and (not message.run_id_valid or message.run_id != v2_identity['run_id']):
+            return 'operational supervisor run identity differs from V2 recording'
     if alias in ('pose', 'simulation_pose_delayed'):
         pose = message.pose.pose
         numeric = (
@@ -1052,6 +1535,28 @@ def controller_state_error(
     return None
 
 
+def _simulation_duration_ns(mode, seconds, clock_entry):
+    """Validate the optional duration without changing legacy wall-time limits."""
+    if isinstance(seconds, bool) or not isinstance(seconds, (int, float)) or not math.isfinite(seconds) or seconds < 0:
+        raise ValueError('simulated duration must be finite and nonnegative; zero disables it')
+    if seconds == 0:
+        return 0
+    if mode != 'simulation':
+        raise ValueError('simulated duration is only available in simulation mode')
+    if (
+        not isinstance(clock_entry, dict)
+        or clock_entry.get('alias') != 'clock'
+        or clock_entry.get('type') != 'rosgraph_msgs/msg/Clock'
+        or not isinstance(clock_entry.get('topic'), str)
+        or not clock_entry['topic']
+    ):
+        raise ValueError('simulated duration requires the selected manifest clock alias')
+    duration = relative_stamp_ns(0, seconds)
+    if duration <= 0:
+        raise ValueError('simulated duration must represent at least one nanosecond')
+    return duration
+
+
 class RecordingCoordinator(Node):
     """Own readiness/stop publications and shutdown-zero observations."""
 
@@ -1066,9 +1571,27 @@ class RecordingCoordinator(Node):
         required_controllers=(),
         mode=None,
         algorithm_profile=None,
+        v2_identity=None,
+        sim_duration_sec=0.0,
+        clock_entry=None,
     ):
+        duration_ns = _simulation_duration_ns(mode, sim_duration_sec, clock_entry)
         super().__init__("gesc_gaussian_recording_coordinator")
         self._state_lock = threading.RLock()
+        self.sim_duration_ns = duration_ns
+        self.duration_clock_topic = clock_entry['topic'] if duration_ns else None
+        self.duration_clock_ns = None
+        self.duration_clock_received_at = None
+        self.duration_origin_ns = None
+        self.duration_clock_error = None
+        self.duration_clock_subscription = None
+        if duration_ns:
+            self.duration_clock_subscription = self.create_subscription(
+                get_message(clock_entry['type']),
+                clock_entry['topic'],
+                self._duration_clock_callback,
+                QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT),
+            )
         self.ready = False
         self.ready_topic = ready_topic
         self.ready_publisher = self.create_publisher(Bool, ready_topic, 10)
@@ -1090,6 +1613,9 @@ class RecordingCoordinator(Node):
         self.heartbeat_stale_sec = float(heartbeat_stale_sec)
         self.mode = mode
         self.algorithm_profile = algorithm_profile
+        self.v2_identity = v2_identity
+        self.v2_origin_ns = None
+        self.v2_origin_error = None
         self.operational_epoch_monotonic = None
         self.controller_manager_service = controller_manager_service
         self.required_controllers = tuple(required_controllers)
@@ -1123,6 +1649,63 @@ class RecordingCoordinator(Node):
         )
         self.create_timer(1.0 / max(1e-6, ready_rate_hz), self.publish_ready)
         self.publish_ready()
+
+    def _duration_clock_callback(self, message):
+        """Use actual selected Clock payloads; never substitute receipt time."""
+        received_at = time.monotonic()
+        with self._state_lock:
+            if self.duration_clock_error is not None:
+                return
+            try:
+                current = time_to_ns(message.clock)
+                if self.duration_clock_ns is not None and current < self.duration_clock_ns:
+                    raise ValueError('selected simulation clock moved backward')
+            except (AttributeError, ValueError, TypeError, OverflowError) as exc:
+                self.duration_clock_error = str(exc)
+                return
+            self.duration_clock_ns = current
+            self.duration_clock_received_at = received_at
+
+    def _duration_readiness_errors(self, now):
+        """A duration origin must exist and be fresh when motion is authorized."""
+        if not getattr(self, 'sim_duration_ns', 0):
+            return []
+        if self.duration_clock_error is not None:
+            return ['simulation duration clock fault: ' + self.duration_clock_error]
+        if self.duration_clock_ns is None:
+            return ['simulation duration requires selected clock before readiness']
+        age = now - self.duration_clock_received_at
+        if not 0.0 <= age <= self.heartbeat_stale_sec:
+            return ['simulation duration clock receipt is stale before readiness']
+        if self.duration_clock_ns + self.sim_duration_ns > 2_147_483_647_999_999_999:
+            return ['simulation duration target exceeds ROS clock range']
+        return []
+
+    def simulation_duration_snapshot(self):
+        """Retain both selected source-clock bounds and their completion status."""
+        with self._state_lock:
+            duration = getattr(self, 'sim_duration_ns', 0)
+            origin = getattr(self, 'duration_origin_ns', None)
+            latest = getattr(self, 'duration_clock_ns', None)
+            error = getattr(self, 'duration_clock_error', None)
+            elapsed = None if origin is None or latest is None else latest - origin
+            return {
+                'enabled': bool(duration),
+                'requested_sec': duration / 1_000_000_000,
+                'clock_topic': getattr(self, 'duration_clock_topic', None),
+                'ready_clock_ns': origin,
+                'latest_clock_ns': latest,
+                'target_clock_ns': None if origin is None else origin + duration,
+                'elapsed_sec': None if elapsed is None else elapsed / 1_000_000_000,
+                'completed': bool(duration and elapsed is not None and elapsed >= duration and error is None),
+                'clock_error': error,
+            }
+
+    def simulation_duration_complete(self):
+        snapshot = self.simulation_duration_snapshot()
+        if snapshot['clock_error'] is not None:
+            raise RuntimeError('simulation duration clock fault: ' + snapshot['clock_error'])
+        return snapshot['completed']
 
     def publish_ready(self):
         message = Bool()
@@ -1158,6 +1741,17 @@ class RecordingCoordinator(Node):
             observed = time.monotonic()
             self.heartbeat_observed_at[alias] = observed
             self.heartbeat_messages[alias] = message
+            if alias == 'timekeeper' and getattr(self, 'v2_identity', None) is not None:
+                try:
+                    origin = relative_stamp_ns(0, message.start_time)
+                    if message.mode != 'sim time':
+                        raise ValueError('non-simulation Timekeeper')
+                    if self.v2_origin_ns is None:
+                        self.v2_origin_ns = origin
+                    elif self.v2_origin_ns != origin:
+                        raise ValueError('Timekeeper origin changed')
+                except (ValueError, TypeError, OverflowError) as exc:
+                    self.v2_origin_error = str(exc)
             if (
                 alias == 'algorithm_state'
                 and not getattr(
@@ -1219,6 +1813,10 @@ class RecordingCoordinator(Node):
             now,
             self.heartbeat_stale_sec,
         )
+        if getattr(self, 'v2_origin_error', None):
+            errors.append('V2 origin conflict: ' + self.v2_origin_error)
+        with self._state_lock:
+            errors.extend(self._duration_readiness_errors(now))
         errors.extend(
             'pre-readiness lifecycle violation: ' + violation['error']
             for violation in lifecycle_violations
@@ -1231,6 +1829,8 @@ class RecordingCoordinator(Node):
                     heartbeat_messages.get(alias),
                     self.mode,
                     self.algorithm_profile,
+                    v2_identity=getattr(self, 'v2_identity', None),
+                    v2_origin_ns=getattr(self, 'v2_origin_ns', None),
                 )
                 if observed is not None
                 else None
@@ -1246,6 +1846,13 @@ class RecordingCoordinator(Node):
 
     def _save_operational_snapshot(self, snapshot):
         with self._state_lock:
+            if getattr(self, 'v2_identity', None) is not None:
+                snapshot['v2_identity'] = {
+                    'run_id': self.v2_identity['run_id'], 'time_origin_ns': self.v2_origin_ns,
+                    'stream_contract_id': (stream_contract_id(self.v2_identity['stream_config'], self.v2_origin_ns)
+                                           if self.v2_origin_ns is not None else None),
+                    'origin_error': self.v2_origin_error,
+                }
             self.last_operational_snapshot = snapshot
 
     def operational_snapshot(self):
@@ -1419,6 +2026,8 @@ class RecordingCoordinator(Node):
             snapshot['authorization_passed'] = not errors
             self.last_operational_snapshot = snapshot
             if not errors:
+                if getattr(self, 'sim_duration_ns', 0) and self.duration_origin_ns is None:
+                    self.duration_origin_ns = self.duration_clock_ns
                 self.ready = True
                 self.authorization_ever_succeeded = True
                 self.preauthorization_monitoring_closed = True
@@ -1962,6 +2571,27 @@ def _default_asset(name):
     return Path(get_package_share_directory("ros_esc")) / "experiment_recording" / name
 
 
+def _wait_for_recording_duration(
+    node, target_process, bag_process, shutdown, duration_sec, sim_duration_sec=0.0,
+):
+    """Keep process failures ahead of optional completion, with one stop owner."""
+    ready_started = time.monotonic()
+    while True:
+        if shutdown.requested:
+            raise KeyboardInterrupt
+        if target_process.poll() is not None:
+            raise RuntimeError(f'target exited before requested shutdown: {target_process.returncode}')
+        if bag_process.poll() is not None:
+            raise RuntimeError(f'rosbag exited before requested shutdown: {bag_process.returncode}')
+        if sim_duration_sec > 0.0 and node.simulation_duration_complete():
+            return 'simulation_duration_elapsed'
+        if duration_sec > 0.0 and time.monotonic() - ready_started >= duration_sec:
+            if sim_duration_sec > 0.0:
+                raise TimeoutError('wall duration elapsed before requested simulation duration')
+            return 'wall_duration_elapsed'
+        time.sleep(0.1)
+
+
 def _parser():
     parser = argparse.ArgumentParser(
         description="Record one simulation or physical GESC/Gaussian run."
@@ -1975,6 +2605,10 @@ def _parser():
     parser.add_argument("--run-id")
     parser.add_argument("--storage-id", default="sqlite3")
     parser.add_argument("--duration-sec", type=float, default=0.0)
+    parser.add_argument(
+        '--sim-duration-sec', type=float, default=0.0,
+        help='Optional simulation Clock duration from first readiness; zero disables it.',
+    )
     parser.add_argument("--preflight-timeout-sec", type=float, default=45.0)
     parser.add_argument("--recorder-ready-timeout-sec", type=float, default=15.0)
     parser.add_argument("--shutdown-zero-timeout-sec", type=float, default=3.0)
@@ -2007,20 +2641,20 @@ def run(arguments):
         metadata_input,
     )
     entries = require_operational_topics(entries, heartbeat_aliases)
+    if operational_config:
+        operational_config['resolved_heartbeat_aliases'] = heartbeat_aliases
+        entries, operational_config = resolve_operational_target_config(
+            entries, operational_config, metadata_input, target,
+        )
+    entries = require_selected_algorithm_topics(entries, arguments.mode, target)
     entries_by_alias = {entry['alias']: entry for entry in entries}
+    sim_duration_sec = getattr(arguments, 'sim_duration_sec', 0.0)
+    clock_entry = entries_by_alias.get('clock')
+    _simulation_duration_ns(arguments.mode, sim_duration_sec, clock_entry)
     heartbeat_entries = [
         entries_by_alias[alias]
         for alias in heartbeat_aliases
     ]
-    if operational_config:
-        operational_config['resolved_heartbeat_aliases'] = heartbeat_aliases
-        operational_config['target_disturbance_coupling'] = (
-            validate_operational_target_coupling(
-                operational_config,
-                metadata_input,
-                target,
-            )
-        )
     if arguments.storage_id != manifest.get('storage_id', 'sqlite3'):
         raise ValueError('requested storage backend is not allowed by the manifest')
     if arguments.storage_id not in rosbag2_py.get_registered_writers():
@@ -2028,6 +2662,9 @@ def run(arguments):
     run_id = validate_run_id(
         arguments.run_id or generate_run_id(arguments.mode, metadata_input["scenario_id"])
     )
+    v2_identity = v2_identity_from_metadata(metadata_input)
+    if v2_identity is not None and (not arguments.run_id or run_id != v2_identity['run_id']):
+        raise ValueError('V2 recorder requires --run-id matching its launched shared identity')
     now = _utc_now()
     run_directory = (
         Path(arguments.runs_root).expanduser().resolve()
@@ -2122,6 +2759,9 @@ def run(arguments):
             ),
             mode=arguments.mode,
             algorithm_profile=metadata_input['algorithm_profile'],
+            v2_identity=v2_identity,
+            sim_duration_sec=sim_duration_sec,
+            clock_entry=clock_entry,
         )
         executor = SingleThreadedExecutor()
         executor.add_node(node)
@@ -2361,6 +3001,8 @@ def run(arguments):
             'post_capture_barrier_passed_at_utc'
         ] = _iso_now()
         metadata["recording"]["ready_at_utc"] = _iso_now()
+        if sim_duration_sec > 0.0:
+            metadata['recording']['simulation_duration'] = node.simulation_duration_snapshot()
         metadata["resolved_topics_path"] = "resolved_topics.yaml"
         metadata["resolved_parameters_path"] = "resolved_parameters.yaml"
         atomic_yaml(run_directory / 'resolved_topics.yaml', resolved)
@@ -2368,19 +3010,17 @@ def run(arguments):
         node.publish_ready()
         console.log("record_run", "preflight passed; motion readiness true")
 
-        ready_started = time.monotonic()
-        while True:
-            if shutdown.requested:
-                raise KeyboardInterrupt
-            if target_process.poll() is not None:
-                raise RuntimeError(f"target exited before requested shutdown: {target_process.returncode}")
-            if bag_process.poll() is not None:
-                raise RuntimeError(f"rosbag exited before requested shutdown: {bag_process.returncode}")
-            if arguments.duration_sec > 0.0 and time.monotonic() - ready_started >= arguments.duration_sec:
-                break
-            time.sleep(0.1)
+        metadata['recording']['completion_reason'] = _wait_for_recording_duration(
+            node, target_process, bag_process, shutdown,
+            arguments.duration_sec, sim_duration_sec,
+        )
     except KeyboardInterrupt:
-        if not metadata['recording'].get('readiness_ever_true'):
+        if sim_duration_sec > 0.0 and (
+            node is None or not node.simulation_duration_snapshot()['completed']
+        ):
+            run_failure = 'KeyboardInterrupt: requested simulation duration was not completed'
+            metadata['recording']['failure_stage'] = current_stage
+        elif not metadata['recording'].get('readiness_ever_true'):
             run_failure = (
                 'KeyboardInterrupt: operator requested shutdown before '
                 'readiness'
@@ -2392,6 +3032,8 @@ def run(arguments):
         metadata['recording']['failure_stage'] = current_stage
         console.log("record_run", run_failure)
     finally:
+        if sim_duration_sec > 0.0 and node is not None:
+            metadata['recording']['simulation_duration'] = node.simulation_duration_snapshot()
         try:
             console.log(
                 'record_run',

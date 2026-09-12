@@ -18,7 +18,9 @@ Please note this node is setup only for use in Gazebo simulation.
 
 import os
 import argparse
+from collections import OrderedDict
 import json
+import math
 import numpy as np
 import rclpy
 from rclpy.node import Node
@@ -27,6 +29,7 @@ from ros_esc_interfaces.msg import Timekeeper, StampedFloat64MultiArray, Stamped
 from geometry_msgs.msg import Transform
 from nav_msgs.msg import Odometry
 from ros_esc.config_parsing import parse_object_config
+from ros_esc.v2_stream import ROLLING_MODE, STATIONARY_MODE, relative_stamp_ns
 
 class SensorPosition(Node):
     """This class calculates the global position of sensors in Gazebo simulation."""
@@ -84,12 +87,20 @@ class SensorPosition(Node):
         parser.add_argument('input_timekeeping_topic', type=str, help=inp_timekeeping_topic_msg)
         parser.add_argument('output_topic', type=str, help=out_topic_msg)
         parser.add_argument('config', type=str, help=config_msg)
+        parser.add_argument('--continuous-search-mode', default=STATIONARY_MODE,
+                            choices=(STATIONARY_MODE, ROLLING_MODE))
         args = parser.parse_args()
 
         # Initialize variables
         self.start_time = None
         self.odom_data = None
         self.encoder_angles = None
+        self.v2_enabled = args.continuous_search_mode == ROLLING_MODE
+        self.v2_origin_ns = None
+        self.v2_origin_invalid = False
+        self.v2_last_source_ns = None
+        self.v2_seen = OrderedDict()
+        self.v2_source_key = None
 
         # Initialize a list to hold transform objects
         self.objects_list = []
@@ -158,13 +169,61 @@ class SensorPosition(Node):
     def encoder_callback(self, msg: StampedFloat64MultiArray):
         """This function collects the encoder readings."""
 
+        if self.v2_enabled:
+            if self.v2_origin_ns is None or self.v2_origin_invalid:
+                return
+            try:
+                stamp = relative_stamp_ns(self.v2_origin_ns, msg.timestamp)
+                values = tuple(float(value) for value in msg.data)
+                now = self._clock.now().nanoseconds
+                if (len(values) != len(self.objects_list)
+                        or not values or not all(math.isfinite(v) for v in values)
+                        or stamp < self.v2_origin_ns or not -500_000_000 <= now-stamp <= 500_000_000):
+                    raise ValueError('invalid acquisition')
+                if msg.timestamp in self.v2_seen:
+                    if self.v2_seen[msg.timestamp] is not None and self.v2_seen[msg.timestamp] != values:
+                        self._v2_forward_disputed(msg.timestamp, values, 'conflicting acquisition')
+                    return
+                if self.v2_last_source_ns is not None and stamp <= self.v2_last_source_ns:
+                    self._v2_forward_disputed(msg.timestamp, values, 'acquisition regression or timestamp collision')
+                    return
+                self.v2_seen[msg.timestamp] = values
+                while len(self.v2_seen) > 1024:
+                    self.v2_seen.popitem(last=False)
+                self.v2_last_source_ns = stamp
+                self.v2_source_key = float(msg.timestamp)
+            except (ValueError, TypeError, OverflowError) as exc:
+                self.get_logger().warning(f'V2 sensor pose input discarded: {exc}')
+                return
+
         # Collect the encoder information
         self.encoder_angles = msg.data
         # Publish our sensor position
         self.publish_sensor_position()
 
+    def _v2_forward_disputed(self, key, values, reason):
+        """Preserve one finite contradictory transform for the source owner to flag."""
+        self.v2_seen[key] = None
+        while len(self.v2_seen) > 1024:
+            self.v2_seen.popitem(last=False)
+        self.get_logger().warning(f'V2 sensor pose forwards disputed input once: {reason}')
+        self.v2_source_key = float(key)
+        self.encoder_angles = list(values)
+        self.publish_sensor_position()
+
     def timekeeping_callback(self, msg: Timekeeper):
         """This function collects the timekeeper information to reference."""
+
+        if self.v2_enabled:
+            try:
+                origin = relative_stamp_ns(0, msg.start_time)
+                if msg.mode != 'sim time' or (self.v2_origin_ns is not None and origin != self.v2_origin_ns):
+                    raise ValueError('invalid or changed origin')
+                self.v2_origin_ns = origin
+            except (ValueError, TypeError, OverflowError) as exc:
+                self.v2_origin_invalid = True
+                self.get_logger().warning(f'V2 sensor pose Timekeeper rejected: {exc}')
+                return
 
         # Collect the start time of the experiment to reference
         self.start_time = msg.start_time
@@ -223,7 +282,7 @@ class SensorPosition(Node):
             # Subtract the reference start time from simulation time
             publish_time = float(t_publish.nanoseconds*1e-9) - self.start_time
             # # Add the timestamp
-            msg.timestamp = publish_time
+            msg.timestamp = self.v2_source_key if self.v2_enabled else publish_time
 
             # Publish the message
             self.sensor_pose_publisher.publish(msg)

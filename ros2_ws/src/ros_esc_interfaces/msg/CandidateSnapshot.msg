@@ -1,0 +1,47 @@
+# Lifecycle protocol version, independent of nested stream-observation schema.
+uint16 schema_version
+builtin_interfaces/Time stamp
+builtin_interfaces/Time time_origin
+string run_id
+string stream_contract_id
+string frame_id
+uint64 search_epoch
+uint64 candidate_id
+uint64 objective_revision
+uint64 detector_confirmation_sequence
+uint64 snapshot_revision
+string metric_mode
+builtin_interfaces/Time confirmation_stamp
+builtin_interfaces/Time accepted_at
+builtin_interfaces/Time evidence_start
+builtin_interfaces/Time evidence_end
+float64 center_x_m
+float64 center_y_m
+float64 neighborhood_radius_m
+float64 centroid_tolerance_m
+float64 convergence_score_m
+bool convergence_score_valid
+float64 legacy_r_mean_m2
+bool legacy_r_mean_valid
+float64 candidate_cost_estimate
+float64 candidate_cost_mad
+float64 candidate_cost_uncertainty
+float64 candidate_cost_lower
+float64 candidate_cost_upper
+float64 information_amplitude
+float64 information_disagreement
+float64 information_floor
+bool informative
+uint32 completed_revolutions
+uint32 pretrigger_revolutions
+uint32 verification_revolutions
+builtin_interfaces/Time[] revolution_start
+builtin_interfaces/Time[] revolution_end
+uint32[] revolution_sample_start
+uint32[] revolution_sample_end
+SynchronizedObservation[] observations
+# First valid filter diagnostic received by the supervisor for each observation.
+# This is publication-state provenance, not acquisition state or bag receipt order.
+uint8[] observation_filter_state
+builtin_interfaces/Time[] observation_filter_stamp
+string evidence_sha256

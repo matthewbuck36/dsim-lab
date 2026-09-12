@@ -44,6 +44,8 @@ class PDEHistory(Node):
         self.declare_parameter("omega", 5.0)
         self.declare_parameter("cfl", 0.9)  # < 1 for stability
         self.declare_parameter("algorithm_profile", "legacy")
+        from ros_esc.v2_epoch import declare_epoch_parameters
+        declare_epoch_parameters(self)
         self.declare_parameter(
             "robust_search_epoch_reset_enabled", False
         )
@@ -114,6 +116,15 @@ class PDEHistory(Node):
             "/pde_history",
             10
         )
+        self.v2_evidence = None
+        mode = str(self.get_parameter('continuous_search_mode').value)
+        if mode == 'rolling_gesc_v2':
+            if not self.search_epoch_reset_enabled:
+                raise ValueError('rolling PDE requires robust_search_epoch_reset_enabled')
+            from ros_esc.pde_history_node.v2_evidence import V2PdeEvidence
+            self.v2_evidence = V2PdeEvidence(self)
+        elif mode != 'stationary_v1':
+            raise ValueError('unsupported continuous_search_mode')
 
         self.get_logger().info(
             f"PDEHistory: N={self.N}, k={self.k}, omega={self.omega:.3f}, "
@@ -123,11 +134,19 @@ class PDEHistory(Node):
 
     def algorithm_state_cb(self, msg):
         """Arm one reset for the next finite pose on each SEARCH entry."""
+        if self.v2_evidence is not None:
+            return  # The authoritative epoch context owns opt-in resets.
         boundary = self.search_epoch_gate.update(msg)
         if boundary == SearchEpochGate.ENTERED:
             self.search_epoch_reset_pending = True
 
     def cb(self, msg: Odometry):
+        if self.v2_evidence is not None:
+            self.v2_evidence.receive_pose(msg)
+            return
+        self._legacy_pose_cb(msg)
+
+    def _legacy_pose_cb(self, msg: Odometry):
         # Current position boundary input p=[x,y]
         p = np.array(
             [msg.pose.pose.position.x, msg.pose.pose.position.y],
@@ -191,6 +210,8 @@ class PDEHistory(Node):
         out.timestamp = float(stamp_sec)
         out.data = self.U.reshape(-1).tolist()
         self.pub.publish(out)
+        if self.v2_evidence is not None:
+            self.v2_evidence.publish(out)
 
 
 def main():

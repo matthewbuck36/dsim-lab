@@ -27,6 +27,7 @@ from ros_esc_interfaces.msg import (
 )
 from ros_esc.config_parsing import parse_filter_config
 from ros_esc.supervisor_node.state_machine import ROBUST_PROFILE, VALID_PROFILES
+from ros_esc.v2_direction_policy import THREE_CYCLE_POLICY, DIRECTION_POLICIES, validate_policy
 
 class CustomFilter(Node):
     """This class creates a custom filter for use in Gazebo simulation."""
@@ -34,9 +35,9 @@ class CustomFilter(Node):
     # pylint: disable=too-many-instance-attributes
 
     def __init__(self):
+        args = parse_filter_arguments()
         super().__init__("custom_filter")
 
-        args = parse_filter_arguments()
         # MBuck 2026-08-04: preserve simulation time for every historical
         # wrapper while allowing the selected physical launch to request wall
         # time through this node's own strict command-line interface.
@@ -55,6 +56,7 @@ class CustomFilter(Node):
         self.input_value = None
         self.input_value_timestamp = None
         self.encoder_value = None
+        self.v2_adapter = None
         self.algorithm_profile = str(args.algorithm_profile).strip()
         if self.algorithm_profile not in VALID_PROFILES:
             raise ValueError(
@@ -121,10 +123,16 @@ class CustomFilter(Node):
             self.gesc_diagnostics_publisher = self.create_publisher(
                 GescDiagnostics, args.gesc_diagnostics_topic, 10
             )
+        if getattr(args, "continuous_search_mode", "stationary_v1") == "rolling_gesc_v2":
+            from ros_esc.filter_node.v2_runtime import RollingFilterAdapter
+            self.v2_adapter = RollingFilterAdapter(self, args)
 
     def input_value_callback(self, msg: StampedFloat64MultiArray):
         """This collects the input value, then uses the filter, then publishes the result."""
 
+        if getattr(self, "v2_adapter", None) is not None:
+            self.v2_adapter.add_augmented(msg)
+            return
         # Get the input value
         input_value = msg.data
         # Get the input timestamp
@@ -137,6 +145,9 @@ class CustomFilter(Node):
     def encoder_value_callback(self, msg: StampedFloat64MultiArray):
         """This collects the encoder value."""
 
+        if getattr(self, "v2_adapter", None) is not None:
+            self.v2_adapter.add_encoder(msg)
+            return
         # Get the encoder value
         encoder_value = msg.data
         # Convert the encoder value to a numpy array
@@ -149,6 +160,8 @@ class CustomFilter(Node):
         self.start_time = msg.start_time
         # Get the timekeeping mode from the message
         self.timekeeping_mode = msg.mode
+        if getattr(self, "v2_adapter", None) is not None:
+            self.v2_adapter.set_timekeeper(msg)
 
     def publish_filter_value(self):
         """This function publishes the output value coming from the custom filter."""
@@ -244,6 +257,7 @@ class CustomFilter(Node):
         state_before,
         state_derivative,
         state_after,
+        dither_phase=None,
     ):
         """Publish the values used by the unchanged filter evaluation."""
 
@@ -272,7 +286,10 @@ class CustomFilter(Node):
         diagnostics.filter_state_derivative = derivative_values
         diagnostics.filter_state_after = after_values
 
-        if self.combine_data and self.encoder_value.size > 0:
+        if dither_phase is not None:
+            diagnostics.dither_phase_rad = float(dither_phase)
+            diagnostics.dither_phase_valid = bool(np.isfinite(dither_phase))
+        elif self.combine_data and self.encoder_value is not None and self.encoder_value.size > 0:
             diagnostics.dither_phase_rad = float(self.encoder_value.flat[0])
             diagnostics.dither_phase_valid = bool(
                 np.isfinite(diagnostics.dither_phase_rad)
@@ -404,7 +421,21 @@ def parse_filter_arguments(arguments=None):
         default="/gesc_gaussian/gesc_diagnostics",
     )
     parser.add_argument("--use-sim-time", type=_argument_bool, default=True)
-    return parser.parse_args(arguments)
+    parser.add_argument("--continuous-search-mode", dest="continuous_search_mode",
+                        choices=("stationary_v1", "rolling_gesc_v2"), default="stationary_v1")
+    parser.add_argument("--v2-run-id", default="")
+    parser.add_argument("--v2-stream-config-json", default="")
+    parser.add_argument("--v2-direction-diagnostics-topic",
+                        default="/gesc_gaussian/v2/direction_diagnostics")
+    parser.add_argument("--v2-direction-policy", choices=DIRECTION_POLICIES,
+                        default=THREE_CYCLE_POLICY)
+    parser.add_argument("--algorithm-state-topic", default="/gesc_gaussian/algorithm_state")
+    parsed = parser.parse_args(arguments)
+    validate_policy(parsed.v2_direction_policy,
+                    continuous_search_mode=parsed.continuous_search_mode,
+                    algorithm_profile=str(parsed.algorithm_profile).strip(),
+                    use_sim_time=parsed.use_sim_time)
+    return parsed
 
 
 def _as_bool(value):

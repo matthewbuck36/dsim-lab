@@ -9,6 +9,7 @@ import uuid
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 import numpy as np
+from rcl_interfaces.msg import ParameterDescriptor
 import rclpy
 from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
@@ -65,6 +66,7 @@ from ros_esc.supervisor_node.state_machine import (
     TransitionInputs,
     encode_candidate_informed_fill_payload,
 )
+from ros_esc.stationary_fill_protocol import stationary_centroid_selected
 
 
 ROBUST_FILL_CREATE = "ROBUST_FILL_CREATE"
@@ -131,6 +133,14 @@ class SupervisorNode(Node):
             parameter_overrides=parameter_overrides,
         )
         self._declare_parameters()
+        self.moving_v2 = None
+        self.stationary_centroid = None
+        moving_mode = str(self.get_parameter("continuous_search_mode").value) == "rolling_gesc_v2"
+        from ros_esc.supervisor_node.centered_verification import CENTERED_MODE, LEGACY_MODE, MODES
+        verification_mode = self._string('v2_verification_motion_mode')
+        if verification_mode not in MODES or (verification_mode == CENTERED_MODE and
+                (not moving_mode or not bool(self.get_parameter('use_sim_time').value))):
+            raise ValueError('centered tracking requires selected rolling simulation')
         profile = str(self.get_parameter("algorithm_profile").value).strip()
         if profile != ROBUST_PROFILE:
             raise ValueError(
@@ -138,17 +148,33 @@ class SupervisorNode(Node):
                 f"{ROBUST_PROFILE}"
             )
         self.algorithm_profile = profile
+        from ros_esc.v2_lifecycle import validate_verification_evidence_policy
+        evidence_policy = validate_verification_evidence_policy(
+            self._string('v2_verification_evidence_policy'),
+            simulation=bool(self.get_parameter('use_sim_time').value),
+            continuous_search_mode=self._string('continuous_search_mode'),
+            metric_mode=self._string('convergence_metric_mode'),
+            motion_mode=verification_mode, algorithm_profile=profile)
+        stationary_centroid_mode = stationary_centroid_selected(
+            self._string('convergence_metric_mode'), self._string('continuous_search_mode'),
+            self.algorithm_profile, bool(self.get_parameter('use_sim_time').value))
 
         now_sec = self._now_sec()
         self.started_sec = now_sec
         self.machine = SupervisorStateMachine(
             now_sec=now_sec,
             config=StateMachineConfig(
+                moving_verification_enabled=moving_mode,
+                verification_evidence_policy=evidence_policy,
+                qualification_observation_only=self.get_parameter(
+                    "v2_qualification_observation_only"
+                ).value,
                 convergence_hold_sec=self._float("convergence_hold_sec"),
                 goal_score_threshold=self._float("goal_score_threshold"),
                 goal_hold_sec=self._float("goal_hold_sec"),
                 undesired_score_hold_sec=self._float("undesired_score_hold_sec"),
-                verification_max_sec=self._float("verification_max_sec"),
+                verification_max_sec=(20.0 if verification_mode == CENTERED_MODE else 12.0)
+                    if moving_mode else self._float("verification_max_sec"),
                 fill_design_timeout_sec=self._float("fill_design_timeout_sec"),
                 escape_max_sec=self._float("escape_max_sec"),
                 open_field_escape_assist_enabled=bool(
@@ -216,7 +242,7 @@ class SupervisorNode(Node):
                 candidate_cost_rotation_period_sec=self._positive_float(
                     "candidate_cost_rotation_period_sec"
                 ),
-                candidate_cost_required_rotations=self._positive_int(
+                candidate_cost_required_rotations=3 if moving_mode else self._positive_int(
                     "candidate_cost_required_rotations"
                 ),
                 candidate_cost_pretrigger_rotations=self._nonnegative_int(
@@ -529,9 +555,18 @@ class SupervisorNode(Node):
                     'post-recovery source resume requires recoverable '
                     'navigation'
                 )
-        self.run_id = uuid.uuid4().hex
+        from ros_esc.v2_stream import validate_mode_identity
+        mode = str(self.get_parameter('continuous_search_mode').value)
+        shared_run_id = str(self.get_parameter('v2_run_id').value)
+        v2_config = validate_mode_identity(
+            mode, self.algorithm_profile, shared_run_id,
+            str(self.get_parameter('v2_stream_config_json').value),
+            simulation=bool(self.get_parameter('use_sim_time').value),
+        )
+        self.run_id = shared_run_id if mode == 'rolling_gesc_v2' else uuid.uuid4().hex
         self.latest_pose_receipt_sec = None
         self.latest_pose_valid = False
+        self.latest_pose_frame_id = None
         self.latest_pose = None
         self.latest_pose_sequence = 0
         self.pose_history = deque(maxlen=20000)
@@ -625,6 +660,15 @@ class SupervisorNode(Node):
             10,
         )
 
+        if moving_mode:
+            from ros_esc.supervisor_node.v2_supervisor import MovingSupervisor
+            self.moving_v2 = MovingSupervisor(
+                self, v2_config, self._float("v2_candidate_radius_m"),
+                self._float("v2_candidate_epsilon_m"))
+        elif stationary_centroid_mode:
+            from ros_esc.supervisor_node.stationary_centroid import StationaryCentroidAdapter
+            self.stationary_centroid = StationaryCentroidAdapter(self)
+
         publish_rate = max(1e-6, self._float("supervisor_publish_rate_hz"))
         self.timer = self.create_timer(1.0 / publish_rate, self.timer_callback)
         self._publish_state_and_command(now_sec)
@@ -632,6 +676,31 @@ class SupervisorNode(Node):
     def _declare_parameters(self):
         defaults = {
             "algorithm_profile": ROBUST_PROFILE,
+            'continuous_search_mode': 'stationary_v1',
+            'convergence_metric_mode': 'pde_mean_v1',
+            'convergence_diagnostics_topic': '/gesc_gaussian/v2/convergence_diagnostics',
+            'stationary_fill_request_topic': '/gesc_gaussian/v2/stationary_fill_requests',
+            'stationary_recurrent_fill_request_topic': '/gesc_gaussian/v2/stationary_recurrent_fill_requests',
+            'recurrent_diagnostics_topic': '/gesc_gaussian/v2/recurrent_convergence_diagnostics',
+            'timekeeper_topic': '/timekeeper',
+            'centroid_window_sec': 3.0,
+            'centroid_epsilon_m': 0.06,
+            'centroid_maximum_radius_m': 0.5,
+            'centroid_maximum_gap_sec': 0.5,
+            'centroid_pose_stale_sec': 0.5,
+            'centroid_state_stale_sec': 0.5,
+            'v2_run_id': '',
+            'v2_stream_config_json': '',
+            'v2_candidate_radius_m': 0.0,
+            'v2_candidate_epsilon_m': 0.0,
+            'v2_verification_motion_mode': 'rolling_neighborhood_v1',
+            'v2_verification_evidence_policy': 'angular_profiles_v1',
+            'v2_verification_controller_config_filepath': '',
+            'v2_qualification_observation_only': False,
+            'v2_direction_diagnostics_topic': '/gesc_gaussian/v2/direction_diagnostics',
+            'recording_ready_required': False,
+            'recording_ready_topic': '/gesc_gaussian/recording_ready',
+            'recording_ready_stale_sec': 0.50,
             "supervisor_publish_rate_hz": 20.0,
             'supervisor_command_stale_sec': 0.50,
             "startup_timeout_sec": 5.0,
@@ -721,7 +790,12 @@ class SupervisorNode(Node):
             "directional_controller_selected": True,
         }
         for name, value in defaults.items():
-            self.declare_parameter(name, value)
+            if name == 'v2_qualification_observation_only':
+                self.declare_parameter(
+                    name, value, ParameterDescriptor(read_only=True)
+                )
+            else:
+                self.declare_parameter(name, value)
 
     def _float(self, name):
         return float(self.get_parameter(name).value)
@@ -763,7 +837,10 @@ class SupervisorNode(Node):
             return "robust profile requires Directional_Controller"
         return None
 
-    def pose_callback(self, msg):
+    def pose_callback(self, msg, *, v2_admitted=False, receipt_ns=None):
+        if self.moving_v2 is not None and not v2_admitted:
+            if not self.moving_v2.add_pose(msg):
+                return
         values = np.array(
             [
                 msg.pose.pose.position.x,
@@ -780,7 +857,8 @@ class SupervisorNode(Node):
         self.latest_pose_valid = bool(
             np.all(np.isfinite(values)) and quat_norm > 1e-9
         )
-        receipt_sec = self._now_sec()
+        self.latest_pose_frame_id = str(msg.header.frame_id)
+        receipt_sec = self._now_sec() if receipt_ns is None else receipt_ns * 1e-9
         self.latest_pose_receipt_sec = receipt_sec
         self.latest_pose_sequence += 1
         if self.latest_pose_valid:
@@ -790,15 +868,19 @@ class SupervisorNode(Node):
                 2.0 * (w_value * z_value + x_value * y_value),
                 1.0 - 2.0 * (y_value ** 2 + z_value ** 2),
             )
+            pose_stamp_sec = receipt_sec
+            if self.moving_v2 is not None:
+                from ros_esc.v2_stream import time_to_ns
+                pose_stamp_sec = time_to_ns(msg.header.stamp) * 1e-9
             self.latest_pose = Pose2D(
-                receipt_sec,
+                pose_stamp_sec,
                 float(values[0]),
                 float(values[1]),
                 yaw,
             )
-            if not self.pose_history or receipt_sec > self.pose_history[-1].stamp_sec:
+            if not self.pose_history or pose_stamp_sec > self.pose_history[-1].stamp_sec:
                 self.pose_history.append(self.latest_pose)
-            elif receipt_sec == self.pose_history[-1].stamp_sec:
+            elif pose_stamp_sec == self.pose_history[-1].stamp_sec:
                 self.pose_history[-1] = self.latest_pose
 
     def source_callback(self, msg):
@@ -886,6 +968,8 @@ class SupervisorNode(Node):
         )
 
     def convergence_callback(self, msg):
+        if self.stationary_centroid is not None:
+            return
         data = np.asarray(msg.data, dtype=np.float64)
         if data.size != 8 or not np.all(np.isfinite(data)):
             self.latest_convergence = None
@@ -898,8 +982,13 @@ class SupervisorNode(Node):
         self.latest_convergence = copied
         self.latest_convergence_receipt_sec = self._now_sec()
 
-    def fill_callback(self, msg):
+    def fill_callback(self, msg, *, authoritative=False):
+        if self.moving_v2 is not None and not authoritative:
+            return  # Canonical mirror is not activation authority in V2.
         if not msg.source_timestamp_valid:
+            return
+        if (self.stationary_centroid is not None
+                and not self.stationary_centroid.result_known(float(msg.source_timestamp))):
             return
         cluster_id = int(msg.cluster_id)
         fill_id = int(msg.fill_id)
@@ -962,21 +1051,26 @@ class SupervisorNode(Node):
             len(self.active_fill_records),
         )
 
+    def _candidate_center(self):
+        if self.stationary_centroid is not None:
+            return self.stationary_centroid.candidate_center()
+        if self.latest_convergence is None or len(self.latest_convergence.data) != 8:
+            return None
+        return self.latest_convergence.data[3:5]
+
     def _candidate_associated_with_active_fill(self):
         """Return whether the confirmed event center lies in an active fill."""
 
         if (
             self.machine.config.extremum_classification_mode
             != COUNTED_CANDIDATES
-            or self.latest_convergence is None
-            or len(self.latest_convergence.data) != 8
             or not self.active_fill_records
         ):
             return False
-        center = np.asarray(
-            self.latest_convergence.data[3:5],
-            dtype=np.float64,
-        )
+        candidate_center = self._candidate_center()
+        if candidate_center is None:
+            return False
+        center = np.asarray(candidate_center, dtype=np.float64)
         if center.size != 2 or not np.all(np.isfinite(center)):
             return False
         for record in self.active_fill_records.values():
@@ -1002,7 +1096,8 @@ class SupervisorNode(Node):
             self.stop_requested = True
 
     def event_callback(self, msg):
-        if msg.event_type == AlgorithmEvent.EVENT_CONVERGENCE_CONFIRMED:
+        if (msg.event_type == AlgorithmEvent.EVENT_CONVERGENCE_CONFIRMED
+                and self.stationary_centroid is None):
             snapshot = convergence_snapshot_from_confirmation(
                 msg, fallback=self.latest_convergence
             )
@@ -1024,6 +1119,9 @@ class SupervisorNode(Node):
             )
             and msg.source_timestamp_valid
         ):
+            if (self.stationary_centroid is not None
+                    and not self.stationary_centroid.result_known(float(msg.source_timestamp))):
+                return
             self.pending_fill_result = (
                 (
                     'retryable_rejected'
@@ -1044,6 +1142,8 @@ class SupervisorNode(Node):
         now_sec = self._now_sec()
         self.current_supervisor_command = Twist()
         try:
+            if self.stationary_centroid is not None:
+                self.stationary_centroid.poll()
             if (
                 not self.configuration_published
                 and self.latest_pose_receipt_sec is not None
@@ -1057,11 +1157,15 @@ class SupervisorNode(Node):
                     self._handle_transition(transition, now_sec)
                 self.graph_fault = None
             if self.machine.state != State.FAILSAFE:
+                if self.moving_v2 is not None:
+                    self.moving_v2.drain_poses()
                 geometry_fault = self._prepare_geometry(now_sec)
                 if geometry_fault is not None:
                     self._force_failsafe(now_sec, geometry_fault)
                 else:
                     inputs = self._transition_inputs(now_sec)
+                    if self.moving_v2 is not None:
+                        inputs = self.moving_v2.inputs(inputs)
                     transition = self.machine.step(now_sec, inputs)
                     if inputs.convergence_confirmed:
                         self.pending_convergence_confirmation_receipt_sec = None
@@ -1168,6 +1272,8 @@ class SupervisorNode(Node):
             self._float("stale_sensor_sec"),
             now_sec,
         )
+        if self.stationary_centroid is not None:
+            convergence_confirmed = self.stationary_centroid.confirmation_ready(round(now_sec * 1e9))
         fill_result = self.pending_fill_result or (None, None, None, None)
         counted_mode = (
             self.machine.config.extremum_classification_mode
@@ -1239,6 +1345,12 @@ class SupervisorNode(Node):
         )
 
     def _handle_transition(self, transition, now_sec):
+        if self.moving_v2 is not None:
+            self.moving_v2.on_transition(transition)
+        if self.stationary_centroid is not None:
+            self.stationary_centroid.on_transition(transition)
+            if self.machine.state != transition.current:
+                return
         if transition.current == State.VERIFY_EXTREMUM:
             if self.candidate_cost_search_window is not None:
                 self.candidate_cost_pretrigger_minima = tuple(
@@ -1264,7 +1376,8 @@ class SupervisorNode(Node):
             self.candidate_cost_pretrigger_minima = ()
             if self.candidate_cost_search_window is not None:
                 self.candidate_cost_search_window.reset()
-        if transition.current == State.DESIGN_OR_MERGE_FILL:
+        if (transition.current == State.DESIGN_OR_MERGE_FILL and self.moving_v2 is None
+                and self.stationary_centroid is None):
             if self.latest_convergence is None:
                 self._force_failsafe(
                     now_sec, "fill request has no convergence snapshot"
@@ -1567,6 +1680,10 @@ class SupervisorNode(Node):
         self.current_supervisor_command = Twist()
         transition = self.machine.force_failsafe(now_sec, reason)
         if transition is not None:
+            if self.moving_v2 is not None:
+                self.moving_v2.on_transition(transition)
+            if self.stationary_centroid is not None:
+                self.stationary_centroid.on_transition(transition)
             self._publish_transition(transition, now_sec)
             if "timeout" in transition.reason:
                 self._publish_event(
@@ -3228,6 +3345,9 @@ class SupervisorNode(Node):
                 "open_field_escape_active_fill_transit_enabled"
             )
             values.append(1.0)
+        if self.moving_v2 is not None:
+            names.append("v2_qualification_observation_only")
+            values.append(float(self.machine.config.qualification_observation_only))
         self._publish_event(
             AlgorithmEvent.EVENT_CONFIGURATION,
             now_sec,
@@ -3256,7 +3376,12 @@ class SupervisorNode(Node):
         state.previous_state_valid = self.machine.previous_state is not None
         state.transition_reason = self.machine.transition_reason
         state.transition_reason_valid = True
-        state.state_elapsed_sec = self.machine.elapsed(now_sec)
+        elapsed_now_sec = now_sec
+        if self.stationary_centroid is not None:
+            # The typed request deadline is bound to this exact source-time
+            # DESIGN entry, even if /clock advanced during the callback.
+            elapsed_now_sec = (state.stamp.sec * 1_000_000_000 + state.stamp.nanosec) * 1e-9
+        state.state_elapsed_sec = self.machine.elapsed(elapsed_now_sec)
         state.state_elapsed_valid = True
         state.active_fill_count = self.machine.active_fill_count
         state.active_fill_count_valid = True
@@ -3312,6 +3437,9 @@ class SupervisorNode(Node):
                     State.ESCAPE_ASSIST,
                     State.RECENTER,
                 )
+                or (self.moving_v2 is not None
+                    and self.machine.state == State.DESIGN_OR_MERGE_FILL
+                    and self.machine.design_returns_to_assist)
                 or (
                     self.machine.state == State.SEARCH
                     and self.machine.post_recovery_guidance_active
@@ -3350,6 +3478,13 @@ class SupervisorNode(Node):
         ):
             taper = self._post_recovery_affine_taper()
             weights[2] = self.post_recovery_affine_weight * taper
+        if self.moving_v2 is not None:
+            if self.machine.state == State.SEARCH:
+                self.moving_v2.search_weights = tuple(weights)
+            elif self.machine.state == State.VERIFY_EXTREMUM or (
+                    self.machine.state == State.DESIGN_OR_MERGE_FILL
+                    and not self.machine.design_returns_to_assist):
+                weights = list(self.moving_v2.search_weights)
         state.sensor_weight = weights[0]
         state.gaussian_weight = weights[1]
         state.affine_weight = weights[2]
@@ -3357,6 +3492,9 @@ class SupervisorNode(Node):
         state.failsafe = self.machine.state == State.FAILSAFE
         state.failsafe_valid = True
         self.state_publisher.publish(state)
+        if self.moving_v2 is not None:
+            self.moving_v2.publish_context()
+            self.moving_v2.publish_guidance(state)
         command = (
             self.current_supervisor_command
             if (
@@ -3437,6 +3575,8 @@ class SupervisorNode(Node):
         )
 
     def destroy_node(self):
+        if self.moving_v2 is not None:
+            self.moving_v2.cancel("supervisor_shutdown")
         self.command_publisher.publish(Twist())
         return super().destroy_node()
 

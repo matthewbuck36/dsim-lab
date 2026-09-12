@@ -24,9 +24,21 @@ the latest Phase 09 status still records physical validation outstanding after M
 
 On 2026-09-08, `feature/gesc-gaussian-robustness-v2` began from the final V1
 commit `1af67c6` to re-attempt Gaussian algorithm robustness. This kickoff
-records the branch start; the V2 plan and acceptance criteria remain to be
-defined. V1 reports and retained results remain the inherited evidence
-baseline, and no V2 implementation or validation result is claimed yet.
+records the branch start. V1 reports and retained results remain the inherited evidence
+baseline. The approved [V2 implementation plan](codex/gesc_gaussian/v2/plan.md)
+defines the convergence and continuous-search work; its
+[live status](codex/gesc_gaussian/v2/status.md) records implementation and
+validation progress without changing V1 outcomes.
+For current V2 work, start with the
+[V2 fresh-chat handoff](codex/gesc_gaussian/v2/fresh_chat_handoff.md), which
+records Test D's **user-accepted simulation completion on 2026-09-11** and the
+next discussion: physical source integration and compatibility. The
+[16-run closeout](codex/gesc_gaussian/v2/r25_five_case_completion_handoff.md) and
+[latest demonstrations](codex/gesc_gaussian/v2/visible_advisor_demos_20260911.md)
+retain the selected evidence. The 30% detector-delay target is retired;
+earlier bugs are deferred and GOAL_HOLD remains optional for arrival acceptance.
+No further simulation work is scheduled. Physical implementation/validation and
+broader research claims are separate; the historical study limitations remain.
 
 ## Current GESC + Gaussian V1 report
 

@@ -14,9 +14,11 @@ import time
 import json
 import argparse
 import math
+import re
 import rclpy
 import numpy as np
 from rclpy.executors import SingleThreadedExecutor
+from rclpy.clock import Clock, ClockType
 from rclpy.node import Node
 from rclpy.signals import SignalHandlerOptions
 import rclpy.parameter
@@ -33,6 +35,14 @@ from std_msgs.msg import Bool
 from ros_esc.deferred_signal_shutdown import DeferredSignalShutdown
 from ros_esc.config_parsing import parse_object_config
 from ros_esc.supervisor_node.state_machine import ROBUST_PROFILE, VALID_PROFILES
+from ros_esc.v2_stream import (ROLLING_MODE, STATIONARY_MODE, relative_stamp_ns,
+                              time_to_ns, stream_contract_id, validate_stream_config)
+from ros_esc.controller_node.clock_admission import ClockAdmission, FRESHNESS_NS
+from ros_esc.v2_lifecycle import hash_payload, message_payload
+from ros_esc.supervisor_node.centered_verification import (
+    APPROACH_NS, CENTERED_MODE, COLLECTION_NS, GUIDANCE_TOPIC, LEGACY_MODE, MODES, TOTAL_NS)
+
+CENTERED_EXPIRY_WAIT = 'centered verification expired; waiting for supervisor state'
 
 class CustomController(Node):
     """This class creates a custom controller for use in experimentation."""
@@ -40,9 +50,8 @@ class CustomController(Node):
     # pylint: disable=too-many-instance-attributes
 
     def __init__(self):
-        super().__init__("custom_controller")
-
         args = parse_controller_arguments()
+        super().__init__("custom_controller")
         # MBuck 2026-08-04: retain the historical simulation-time default while
         # allowing the Phase 09 physical wrapper to select wall time without
         # forwarding ROS arguments into this node's strict legacy CLI parser.
@@ -67,6 +76,27 @@ class CustomController(Node):
                 f"received {self.algorithm_profile!r}"
             )
         self.robust_profile = self.algorithm_profile == ROBUST_PROFILE
+        self.v2_enabled = args.continuous_search_mode == ROLLING_MODE
+        self.v2_run_id = args.v2_run_id
+        self.verification_motion_mode = args.v2_verification_motion_mode
+        self.verification_stream_config = (validate_stream_config(args.v2_stream_config_json)
+            if self.verification_motion_mode == CENTERED_MODE else None)
+        self.verification_guidance = {}
+        self.verification_guidance_frontier = None
+        self.verification_guidance_input_fault = None
+        self.verification_expired_lease = None
+        self.v2_clock_sec = None
+        self.v2_origin_ns = None
+        self.v2_origin_fault = False
+        self.v2_last_state_source_ns = None
+        self.v2_pose_source_ns = None
+        self.v2_input_source_ns = None
+        self.v2_admission = ClockAdmission() if self.v2_enabled else None
+        self.v2_admission_faults = {}
+        self.v2_active_steady = {}
+        self.v2_state_fenced = False
+        self.v2_pose_frame = None
+        self.v2_admission_generation = 0
         self.open_field_escape_supervisor_owned_assist_enabled = _as_bool(
             args.open_field_escape_supervisor_owned_assist_enabled
         )
@@ -117,6 +147,11 @@ class CustomController(Node):
             type(self.controller_obj).__name__ == "Directional_Controller"
             and hasattr(self.controller_obj, "saturate_command")
         )
+        if self.verification_motion_mode == CENTERED_MODE and (
+                not self.robust_controller_compatible or
+                (self.controller_obj.k_vx, self.controller_obj.k_wz,
+                 self.controller_obj.max_vx, self.controller_obj.max_wz) != (.5, 5., .1, .5)):
+            raise ValueError('centered verification requires validated .5/5 controller with .1/.5 limits')
 
         # Create a subscriber to the input value topic
         # This will give us the input values our custom controller will operate on
@@ -180,21 +215,42 @@ class CustomController(Node):
                 self.recording_ready_callback,
                 10,
             )
+        self.verification_guidance_subscriber = None
+        if self.verification_motion_mode == CENTERED_MODE:
+            from ros_esc_interfaces.msg import VerificationGuidance
+            self.verification_guidance_subscriber = self.create_subscription(
+                VerificationGuidance, GUIDANCE_TOPIC, self.verification_guidance_callback, 50)
         if self.robust_profile or self.recording_ready_required:
             watchdog_rate = max(1e-6, float(args.command_watchdog_rate_hz))
             self.watchdog_timer = self.create_timer(
                 1.0 / watchdog_rate, self.watchdog_callback
             )
+        # A held simulation clock must not hold the receipt watchdog. This
+        # timer only admits covered samples and enforces the existing bounds.
+        self.v2_admission_timer = None
+        if self.v2_enabled:
+            self.v2_admission_timer = self.create_timer(
+                .02, self._v2_admission_tick,
+                clock=Clock(clock_type=ClockType.STEADY_TIME))
 
     def input_value_callback(self, msg: StampedFloat64MultiArray):
         """This function collects the input values."""
 
+        if self.v2_enabled:
+            self._v2_receive('filter', msg)
+            return
+        self._admit_input_value(msg, None)
+
+    def _admit_input_value(self, msg, receipt):
         # Get the input values
         self.input_value = msg.data
         # Get the input timestamp
         self.input_value_timestamp = msg.timestamp
-        self.input_receipt_sec = self._now_sec()
+        self.input_receipt_sec = receipt if receipt is not None else self._now_sec()
         # Use the controller and publish the result
+        self._evaluate_control_safely()
+
+    def _evaluate_control_safely(self):
         try:
             self.publish_control_value()
         except Exception as exc:
@@ -208,6 +264,12 @@ class CustomController(Node):
     def state_callback(self, msg: Odometry):
         """This function collects the robot's state."""
 
+        if self.v2_enabled:
+            self._v2_receive('pose', msg)
+            return
+        self._admit_pose(msg, None)
+
+    def _admit_pose(self, msg, receipt):
         # Get the vehicle's position
         x_pos = msg.pose.pose.position.x
         y_pos = msg.pose.pose.position.y
@@ -229,26 +291,143 @@ class CustomController(Node):
 
         # Update our state
         self.state_value = np.array([x_pos, y_pos, z_pos, roll, pitch, yaw])
-        self.pose_receipt_sec = self._now_sec()
+        self.pose_receipt_sec = receipt if receipt is not None else self._now_sec()
 
     def supervisor_state_callback(self, msg: AlgorithmState):
         """Receive command authorization from the robust supervisor."""
 
+        if self.v2_enabled:
+            self._v2_receive('state', msg)
+            return
         self.latest_algorithm_state = msg
         self.supervisor_state_receipt_sec = self._now_sec()
-        if msg.state not in (
-            AlgorithmState.STATE_SEARCH,
-            AlgorithmState.STATE_ESCAPE_REPULSE,
-            AlgorithmState.STATE_ESCAPE_ASSIST,
-            AlgorithmState.STATE_RECENTER,
-        ):
+        if not self._motion_authorized(self.latest_algorithm_state):
             self._publish_zero("supervisor state disallows motion", report_fault=False)
 
     def supervisor_command_callback(self, msg: Twist):
         """Receive the Phase 02 zero command and future Phase 04 extension."""
 
+        receipt = self._v2_now_sec() if self.v2_enabled else None
+        steady = time.monotonic_ns() if self.v2_enabled else None
         self.supervisor_command = _twist_to_six(msg)
-        self.supervisor_command_receipt_sec = self._now_sec()
+        self.supervisor_command_receipt_sec = receipt if receipt is not None else self._now_sec()
+        if self.v2_enabled:
+            self.v2_active_steady['command'] = steady
+
+    def verification_guidance_callback(self, message):
+        """Retain exact state companions without refreshing repeated receipts."""
+        from copy import deepcopy
+        now = round(self._v2_now_sec()*1e9)
+        steady = time.monotonic_ns()
+        try:
+            stamp = time_to_ns(message.state_stamp)
+            if not -FRESHNESS_NS <= now-stamp <= FRESHNESS_NS:
+                return
+            if (message.schema_version != 2 or message.publication_sequence <= 0
+                    or re.fullmatch(r'[0-9a-f]{64}', message.state_sha256) is None):
+                raise ValueError('centered guidance revision identity invalid')
+            # Preserve an expired original VERIFY lease before a new revision
+            # can replace its companion. This grants no command authorization.
+            self._verification_guidance_fault(self.latest_algorithm_state)
+            fingerprint = hash_payload(message_payload(message))
+            previous = self.verification_guidance_frontier
+            if previous is not None:
+                if message.publication_sequence < previous[0]:
+                    raise ValueError('centered guidance sequence regressed')
+                if message.publication_sequence == previous[0]:
+                    if fingerprint != previous[1]:
+                        raise ValueError('conflicting centered guidance sequence')
+                    self._evaluate_control_safely()
+                    return
+            self.verification_guidance = {k: v for k, v in self.verification_guidance.items()
+                                          if now-k[0] <= FRESHNESS_NS}
+            key = (stamp, message.state_sha256)
+            if key not in self.verification_guidance and len(self.verification_guidance) >= 64:
+                raise ValueError('centered guidance capacity')
+            self.verification_guidance[key] = (deepcopy(message), now, steady, fingerprint)
+            self.verification_guidance_frontier = (message.publication_sequence, fingerprint)
+            self.verification_guidance_input_fault = None
+            self._evaluate_control_safely()
+        except (ValueError, TypeError, OverflowError) as error:
+            self.verification_guidance_input_fault = str(error)
+            self._publish_zero('centered guidance invalid: '+str(error), report_fault=True)
+
+    @staticmethod
+    def _guidance_state_key(state):
+        return (time_to_ns(state.stamp), hash_payload(message_payload(state)))
+
+    def _centered_state(self, state):
+        return bool(getattr(self, 'verification_motion_mode', LEGACY_MODE) == CENTERED_MODE
+            and state is not None and (state.state == AlgorithmState.STATE_VERIFY_EXTREMUM
+                or (state.state == AlgorithmState.STATE_DESIGN_OR_MERGE_FILL
+                    and state.previous_state_valid
+                    and state.previous_state == AlgorithmState.STATE_VERIFY_EXTREMUM)))
+
+    def _verification_guidance_fault(self, state):
+        if not self._centered_state(state):
+            return None
+        now = round(self._v2_now_sec()*1e9)
+        key, state_hash = self._guidance_state_key(state)
+        if self.verification_guidance_input_fault is not None:
+            return self.verification_guidance_input_fault
+        item = self.verification_guidance.get((key, state_hash))
+        if item is None:
+            return ('startup waiting for centered guidance' if 0 <= now-key <= FRESHNESS_NS
+                    else 'centered guidance missing')
+        message, receipt, steady, _ = item
+        if (not message.valid and message.reason == 'centered_preparation_pending'
+                and state.state == AlgorithmState.STATE_DESIGN_OR_MERGE_FILL):
+            return 'startup waiting for centered preparation'
+        try:
+            source = time_to_ns(message.pose_stamp)
+            accepted = time_to_ns(message.accepted_at)
+            admitted = time_to_ns(message.collection_admitted_at)
+            verification_end = time_to_ns(message.verification_expires_at)
+            command_end = time_to_ns(message.command_expires_at)
+            expected_end = (min(admitted+COLLECTION_NS, accepted+TOTAL_NS)
+                            if message.collection_started else accepted+APPROACH_NS)
+            if (message.schema_version != 2 or not message.valid or message.mode != CENTERED_MODE
+                    or message.run_id != self.v2_run_id or message.algorithm_state != state.state
+                    or time_to_ns(message.stamp) != key
+                    or message.stream_contract_id != stream_contract_id(
+                        self.verification_stream_config, self.v2_origin_ns)
+                    or message.frame_id != self.v2_pose_frame
+                    or message.candidate_id <= 0 or message.search_epoch <= 0
+                    or not accepted <= key < command_end
+                    or verification_end != expected_end
+                    or (message.collection_started and not accepted <= admitted <= min(key, accepted+APPROACH_NS))
+                    or (not message.collection_started and admitted != 0)
+                    or (state.state == AlgorithmState.STATE_VERIFY_EXTREMUM and command_end != verification_end)
+                    or (state.state == AlgorithmState.STATE_DESIGN_OR_MERGE_FILL and
+                        (not message.collection_started or command_end > verification_end+5_000_000_000))
+                    or not all(0 <= now-v <= FRESHNESS_NS for v in (key, source, receipt))
+                    or not 0 <= time.monotonic_ns()-steady <= FRESHNESS_NS
+                    or not all(math.isfinite(v) for v in (message.center_x_m, message.center_y_m,
+                                                          message.linear_x_mps, message.angular_z_radps))
+                    or abs(message.linear_x_mps) > self.controller_obj.max_vx
+                    or abs(message.angular_z_radps) > self.controller_obj.max_wz):
+                return 'centered guidance identity, validity, bounds or deadline invalid'
+            if state.state == AlgorithmState.STATE_VERIFY_EXTREMUM:
+                lease = (message.run_id, message.stream_contract_id, message.search_epoch,
+                         message.candidate_id, accepted,
+                         admitted if message.collection_started else None)
+                previous = getattr(self, 'verification_expired_lease', None)
+                if previous is not None:
+                    if lease[:5] != previous[:5] or (previous[5] is not None and lease[5] != previous[5]):
+                        return 'centered verification expired lease identity changed'
+                    # The existing once-only admission may arrive after approach
+                    # expiry; its original accepted/admitted clocks stay fixed.
+                    self.verification_expired_lease = lease
+                if now >= command_end:
+                    if now-command_end > FRESHNESS_NS:
+                        return 'centered guidance identity, validity, bounds or deadline invalid'
+                    self.verification_expired_lease = lease
+                    return CENTERED_EXPIRY_WAIT
+            elif now >= command_end:
+                return 'centered guidance identity, validity, bounds or deadline invalid'
+        except (ValueError, TypeError, OverflowError):
+            return 'centered guidance malformed'
+        return None
 
     def recording_ready_callback(self, msg: Bool):
         """Accept a fresh true recorder heartbeat or immediately force zero."""
@@ -261,6 +440,18 @@ class CustomController(Node):
     def timekeeping_callback(self, msg: Timekeeper):
         """This function collects the information from the input timekeeping topic."""
 
+        if self.v2_enabled:
+            self._v2_now_sec()
+            try:
+                origin = relative_stamp_ns(0, msg.start_time)
+                if msg.mode != 'sim time' or (self.v2_origin_ns is not None and origin != self.v2_origin_ns):
+                    raise ValueError('changed or invalid time origin')
+                self.v2_origin_ns = origin
+            except (ValueError, TypeError, OverflowError):
+                self.v2_origin_fault = True
+                self._v2_clear_authorization()
+                self._publish_zero('changed or invalid V2 time origin', report_fault=False)
+                return
         # Get the start time from the message
         self.start_time = msg.start_time
         # Get the timekeeping mode from the message
@@ -303,6 +494,7 @@ class CustomController(Node):
                     if (
                         recording_fault is None
                         and not fault.startswith("startup waiting")
+                        and fault != CENTERED_EXPIRY_WAIT
                     ):
                         self._emit_local_fault_once(fault)
                     combined_unsaturated = np.zeros(6, dtype=np.float64)
@@ -314,6 +506,15 @@ class CustomController(Node):
                 combined_unsaturated = np.zeros(6, dtype=np.float64)
                 supervisor_report = -gesc_unsaturated
                 output = np.zeros(6, dtype=np.float64)
+            if self.v2_enabled:
+                # Computation may span a clock/readiness boundary. Authorize
+                # again immediately before constructing the outgoing command.
+                final_fault = self._robust_fault_reason()
+                if (final_fault is not None or self._recording_fault_reason() is not None
+                        or not self._motion_authorized(self.latest_algorithm_state)):
+                    combined_unsaturated = np.zeros(6, dtype=np.float64)
+                    supervisor_report = -gesc_unsaturated
+                    output = np.zeros(6, dtype=np.float64)
             # Convert the values to floats
             output = [float(x) for x in output]
 
@@ -469,10 +670,211 @@ class CustomController(Node):
     def _now_sec(self):
         return self.get_clock().now().nanoseconds * 1e-9
 
+    def _v2_clear_authorization(self):
+        self.latest_algorithm_state = None
+        self.supervisor_state_receipt_sec = None
+        self.supervisor_command_receipt_sec = None
+        self.pose_receipt_sec = None
+        self.input_receipt_sec = None
+        self.v2_pose_source_ns = None
+        self.v2_input_source_ns = None
+        self.v2_last_state_source_ns = None
+        self.state_value = self.input_value = None
+        self.v2_admission.clear()
+        self.v2_admission_faults.clear()
+        self.v2_active_steady.clear()
+        self.v2_state_fenced = False
+        self.v2_pose_frame = None
+        self.v2_admission_generation += 1
+        self.verification_guidance.clear()
+        self.verification_guidance_input_fault = None
+
+    def _v2_limit_ns(self, kind):
+        seconds = {'pose': self.stale_pose_sec, 'filter': self.stale_filter_sec,
+                   'state': self.supervisor_state_stale_sec}[kind]
+        return min(FRESHNESS_NS, round(seconds * 1e9))
+
+    def _v2_reject(self, kind, reason):
+        self.v2_admission.discard(kind)
+        self.v2_admission_faults[kind] = str(reason)
+        self.v2_active_steady.pop(kind, None)
+        if kind == 'state':
+            self.latest_algorithm_state = self.supervisor_state_receipt_sec = None
+            self.v2_state_fenced = True
+        elif kind == 'pose':
+            self.state_value = self.pose_receipt_sec = self.v2_pose_source_ns = None
+        else:
+            self.input_value = self.input_receipt_sec = self.v2_input_source_ns = None
+        self._publish_zero(str(reason), report_fault=self._recording_fault_reason() is None)
+
+    def _v2_receive(self, kind, msg):
+        # Capture both clocks before parsing/copying. Polling never refreshes
+        # these original receipts, including when the source initially leads.
+        receipt_ns = round(self._v2_now_sec() * 1e9)
+        steady_ns = time.monotonic_ns()
+        try:
+            if self.v2_origin_fault:
+                raise ValueError('V2 time origin changed')
+            if kind == 'filter':
+                source_ns = relative_stamp_ns(self.v2_origin_ns, msg.timestamp)
+                if len(msg.data) != 2 or not all(math.isfinite(value) for value in msg.data):
+                    raise ValueError('V2 filter input invalid')
+            elif kind == 'pose':
+                source_ns = time_to_ns(msg.header.stamp)
+                p, q = msg.pose.pose.position, msg.pose.pose.orientation
+                values = (p.x, p.y, p.z, q.x, q.y, q.z, q.w)
+                if (not msg.header.frame_id or not all(math.isfinite(v) for v in values)
+                        or not math.isclose(sum(v*v for v in values[3:]), 1., abs_tol=1e-6)
+                        or (self.v2_pose_frame is not None and msg.header.frame_id != self.v2_pose_frame)):
+                    raise ValueError('V2 pose frame or values invalid')
+            else:
+                source_ns = time_to_ns(msg.stamp)
+                fault = self._v2_state_payload_fault_reason(msg)
+                if fault:
+                    raise ValueError(fault)
+            if source_ns < (self.v2_origin_ns or 0):
+                raise ValueError(f'V2 {kind} source before time origin')
+            added = self.v2_admission.receive(
+                kind, source_ns, receipt_ns, steady_ns, msg, limit_ns=self._v2_limit_ns(kind),
+                fingerprint=hash_payload(message_payload(msg)))
+            if added and kind == 'pose':
+                self.v2_pose_frame = msg.header.frame_id
+            if kind == 'state' and not self._state_allows_motion(msg):
+                # A future stop revokes authority immediately. Older queued
+                # SEARCH samples cannot override this fence on their admission.
+                self.v2_state_fenced = True
+                if source_ns > receipt_ns or not added:
+                    self._publish_zero('supervisor state disallows motion', report_fault=False)
+            self._v2_drain()
+            if not added and kind == 'filter':
+                # A duplicate may arrive after another authorization input or
+                # readiness changes. Reevaluate only the admitted sample; its
+                # original receipts remain unchanged, including while pending.
+                self._evaluate_control_safely()
+        except (ValueError, TypeError, OverflowError) as error:
+            self._v2_reject(kind, str(error))
+
+    def _v2_drain(self):
+        # Authorize all covered state revisions before any filter can command.
+        # Same-tick publication revisions retain their original receive order.
+        for kind in ('state', 'pose', 'filter'):
+            now_ns, steady_ns = round(self._v2_now_sec() * 1e9), time.monotonic_ns()
+            generation = self.v2_admission_generation
+            try:
+                items = self.v2_admission.covered(
+                    kind, now_ns, steady_ns, limit_ns=self._v2_limit_ns(kind))
+            except ValueError as error:
+                self._v2_reject(kind, str(error))
+                continue
+            for item in items:
+                # Recheck after earlier admissions/copies/controller work.
+                current_ns, current_steady = round(self._v2_now_sec()*1e9), time.monotonic_ns()
+                if generation != self.v2_admission_generation:
+                    return
+                if (item.source_ns < (self.v2_origin_ns or 0)
+                        or not 0 <= current_ns-item.source_ns <= self._v2_limit_ns(kind)
+                        or not 0 <= current_ns-item.receipt_ns <= self._v2_limit_ns(kind)
+                        or not 0 <= current_steady-item.steady_ns <= self._v2_limit_ns(kind)):
+                    self._v2_reject(kind, f'V2 {kind} admission expired')
+                    break
+                self.v2_admission_faults.pop(kind, None)
+                self.v2_active_steady[kind] = item.steady_ns
+                if kind == 'state':
+                    # Observe old authority before accepting a later state at
+                    # the same deadline; a phase revision cannot renew it.
+                    self._verification_guidance_fault(self.latest_algorithm_state)
+                    self.latest_algorithm_state = item.message
+                    if item.message.state != AlgorithmState.STATE_VERIFY_EXTREMUM:
+                        self.verification_expired_lease = None
+                    self.supervisor_state_receipt_sec = item.receipt_ns * 1e-9
+                    self.v2_last_state_source_ns = item.source_ns
+                    self.v2_state_fenced = any(
+                        not self._state_allows_motion(entry.message)
+                        for entry in self.v2_admission.pending['state'])
+                    if not self._motion_authorized(item.message):
+                        self._publish_zero('supervisor state disallows motion', report_fault=False)
+                elif kind == 'pose':
+                    self.v2_pose_source_ns = item.source_ns
+                    self._admit_pose(item.message, item.receipt_ns * 1e-9)
+                else:
+                    self.v2_input_source_ns = item.source_ns
+                    self._admit_input_value(item.message, item.receipt_ns * 1e-9)
+
+    def _v2_admission_tick(self):
+        self._v2_drain()
+        self.watchdog_callback()
+
+    def _v2_now_sec(self):
+        now = self._now_sec()
+        if (not math.isfinite(now) or now < 0 or
+                (self.v2_clock_sec is not None and now < self.v2_clock_sec)):
+            self._v2_clear_authorization()
+        self.v2_clock_sec = now
+        return now
+
+    def _v2_state_payload_fault_reason(self, state):
+        try:
+            if (state is None or not state.state_valid or not state.weights_valid
+                    or state.algorithm_profile != ROBUST_PROFILE
+                    or not state.run_id_valid or state.run_id != self.v2_run_id
+                    or not state.failsafe_valid
+                    or state.failsafe != (state.state == AlgorithmState.STATE_FAILSAFE)
+                    or state.state not in range(1, 9)
+                    or not all(math.isfinite(v) for v in
+                               (state.sensor_weight, state.gaussian_weight, state.affine_weight))):
+                return 'V2 selected supervisor state invalid'
+        except (ValueError, TypeError, OverflowError):
+            return 'V2 selected supervisor state invalid'
+        return None
+
+    def _v2_state_fault_reason(self, state, now):
+        fault = self._v2_state_payload_fault_reason(state)
+        if fault is not None:
+            return fault
+        try:
+            stamp = time_to_ns(state.stamp)
+            if ((self.v2_origin_ns is not None and stamp < self.v2_origin_ns)
+                    or not 0 <= now-stamp*1e-9 <= min(.5, self.supervisor_state_stale_sec)
+                    or (self.v2_last_state_source_ns is not None
+                        and stamp < self.v2_last_state_source_ns)):
+                return 'V2 supervisor source stale, future or regressed'
+        except (ValueError, TypeError, OverflowError):
+            return 'V2 supervisor source invalid'
+        return None
+
+    def _motion_authorized(self, state):
+        """One state authorization policy for callbacks, combination and watchdog."""
+        if not getattr(self, 'robust_profile', True):
+            return True
+        if state is None:
+            return False
+        if getattr(self, 'v2_enabled', False):
+            now = self._v2_now_sec()
+            receipt = self.supervisor_state_receipt_sec
+            if (self.v2_origin_fault or self.v2_origin_ns is None
+                    or self.v2_state_fenced
+                    or self._v2_state_fault_reason(state, now) is not None
+                    or receipt is None or not 0 <= now-receipt <= min(.5, self.supervisor_state_stale_sec)):
+                return False
+        return self._state_allows_motion(state) and self._verification_guidance_fault(state) is None
+
+    def _state_allows_motion(self, state):
+        if getattr(self, 'v2_enabled', False):
+            if state.state == AlgorithmState.STATE_VERIFY_EXTREMUM:
+                return True
+            if state.state == AlgorithmState.STATE_DESIGN_OR_MERGE_FILL:
+                return state.previous_state_valid and state.previous_state in (
+                    AlgorithmState.STATE_VERIFY_EXTREMUM, AlgorithmState.STATE_ESCAPE_REPULSE)
+        return state.state in (
+            AlgorithmState.STATE_SEARCH, AlgorithmState.STATE_ESCAPE_REPULSE,
+            AlgorithmState.STATE_ESCAPE_ASSIST, AlgorithmState.STATE_RECENTER)
+
     def _robust_fault_reason(self):
-        now_sec = self._now_sec()
+        now_sec = self._v2_now_sec() if getattr(self, 'v2_enabled', False) else self._now_sec()
         if not self.robust_controller_compatible:
             return "robust profile requires Directional_Controller"
+        if getattr(self, 'v2_enabled', False) and self.v2_admission_faults:
+            return next(iter(self.v2_admission_faults.values()))
         startup_elapsed_sec = now_sec - self.controller_started_sec
         startup_waiting = (
             not self.robust_inputs_ready
@@ -494,6 +896,28 @@ class CustomController(Node):
                     return f"startup waiting for {name}"
                 return f"{name} missing or stale"
         state = self.latest_algorithm_state
+        guidance_fault = self._verification_guidance_fault(state)
+        if guidance_fault is not None and guidance_fault != CENTERED_EXPIRY_WAIT:
+            return guidance_fault
+        if getattr(self, 'v2_enabled', False):
+            if self.v2_origin_fault or self.v2_origin_ns is None:
+                return 'V2 time origin unavailable or changed'
+            state_fault = self._v2_state_fault_reason(state, now_sec)
+            if state_fault is not None:
+                return state_fault
+            for name, source, limit in (
+                    ('pose', self.v2_pose_source_ns, self.stale_pose_sec),
+                    ('filter input', self.v2_input_source_ns, self.stale_filter_sec)):
+                if (source is None or source < self.v2_origin_ns
+                        or not 0 <= now_sec-source*1e-9 <= min(.5, limit)):
+                    return f'V2 {name} source missing, stale or future'
+            steady = time.monotonic_ns()
+            for kind, limit in (('pose', self.stale_pose_sec), ('filter', self.stale_filter_sec),
+                                ('state', self.supervisor_state_stale_sec),
+                                ('command', self.supervisor_command_stale_sec)):
+                receipt = self.v2_active_steady.get(kind)
+                if receipt is None or not 0 <= steady-receipt <= min(FRESHNESS_NS, round(limit*1e9)):
+                    return f'V2 {kind} original steady receipt missing or stale'
         if (
             state is None
             or not state.state_valid
@@ -556,10 +980,24 @@ class CustomController(Node):
         if not np.all(np.isfinite(numeric)):
             return "nonfinite controller input"
         self.robust_inputs_ready = True
-        return None
+        return guidance_fault
 
     def _authorized_combination(self, gesc_command, supervisor_command):
+        if not self._motion_authorized(self.latest_algorithm_state):
+            return np.zeros(6, dtype=np.float64)
         state = self.latest_algorithm_state.state
+        if getattr(self, 'v2_enabled', False):
+            if (state == AlgorithmState.STATE_VERIFY_EXTREMUM
+                    or (state == AlgorithmState.STATE_DESIGN_OR_MERGE_FILL
+                        and self.latest_algorithm_state.previous_state == AlgorithmState.STATE_VERIFY_EXTREMUM)):
+                if self._centered_state(self.latest_algorithm_state):
+                    message = self.verification_guidance[self._guidance_state_key(self.latest_algorithm_state)][0]
+                    return np.array([message.linear_x_mps, 0., 0., 0., 0., message.angular_z_radps])
+                return np.asarray(gesc_command, dtype=np.float64)
+            if state == AlgorithmState.STATE_DESIGN_OR_MERGE_FILL:
+                # Redesign entered from REPULSE keeps its existing escape
+                # objective/command owner; the supervisor retains its deadline.
+                state = AlgorithmState.STATE_ESCAPE_REPULSE
         supervisor_owned_assist = getattr(
             self,
             "open_field_escape_supervisor_owned_assist_enabled",
@@ -606,18 +1044,9 @@ class CustomController(Node):
         if recording_fault is not None:
             fault = recording_fault
         state = self.latest_algorithm_state
-        motion_authorized = (
-            not self.robust_profile
-            or (state is not None
-            and state.state in (
-                AlgorithmState.STATE_SEARCH,
-                AlgorithmState.STATE_ESCAPE_REPULSE,
-                AlgorithmState.STATE_ESCAPE_ASSIST,
-                AlgorithmState.STATE_RECENTER,
-            ))
-        )
+        motion_authorized = self._motion_authorized(state)
         if fault is not None and recording_fault is None:
-            if not fault.startswith("startup waiting"):
+            if not fault.startswith("startup waiting") and fault != CENTERED_EXPIRY_WAIT:
                 self._emit_local_fault_once(fault)
         if fault is not None or not motion_authorized:
             self._publish_zero(fault or "supervisor state disallows motion", report_fault=False)
@@ -761,7 +1190,22 @@ def parse_controller_arguments(arguments=None):
     )
     parser.add_argument("--recording_ready_stale_sec", type=float, default=0.5)
     parser.add_argument("--use-sim-time", type=_argument_bool, default=True)
-    return parser.parse_args(arguments)
+    parser.add_argument('--continuous-search-mode', default=STATIONARY_MODE,
+                        choices=(STATIONARY_MODE, ROLLING_MODE))
+    parser.add_argument('--v2-run-id', default='')
+    parser.add_argument('--v2-verification-motion-mode', default=LEGACY_MODE, choices=MODES)
+    parser.add_argument('--v2-stream-config-json', default='')
+    parsed = parser.parse_args(arguments)
+    if parsed.v2_verification_motion_mode == CENTERED_MODE:
+        if parsed.continuous_search_mode != ROLLING_MODE:
+            parser.error('centered verification requires rolling_gesc_v2')
+        validate_stream_config(parsed.v2_stream_config_json)
+    if parsed.continuous_search_mode == ROLLING_MODE:
+        if parsed.algorithm_profile != ROBUST_PROFILE or not parsed.use_sim_time:
+            parser.error('rolling_gesc_v2 requires robust_gaussian_v1 simulation')
+        if re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,127}', parsed.v2_run_id) is None:
+            parser.error('rolling_gesc_v2 requires an explicit valid shared v2_run_id')
+    return parsed
 
 
 def _as_bool(value):

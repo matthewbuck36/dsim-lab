@@ -1,0 +1,2161 @@
+{
+  "all_json_receipt_byte_hashes": [
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_01.json",
+      "sha256": "a58197a9c685248ffa246e186bd841bde8f699ad1141e68edcdedc24495a7b29",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_02.json",
+      "sha256": "610931b65bfbdc92207c302711d81b320e438141004ac1233d594c325b1cef96",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_03.json",
+      "sha256": "66131e0917b2f054b56403076381f51713aa4fcce15cecd421e9cb811b5eb766",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_04.json",
+      "sha256": "9ddc338dad4c779f5fb6774c7e1a69079b471de56a4986017304b0db540dda87",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_05.json",
+      "sha256": "fde7d9fb9888b6babaf1d5037db0fcff595eb6e244a929f28198af75667c49d3",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_06.json",
+      "sha256": "54f9a5f16ca7071cd5f6ad24eeccaad9892de5bd9fe405afe711127b8bfcbd95",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_07.json",
+      "sha256": "1d55a8aba513786b71d26ac045211e1f4dc6a17b73d2c3f976710b0c2761ddcb",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_08.json",
+      "sha256": "4832293c43e90e5fff17626c4c76cfd363b9eb2c754e142c00e60c7b3de6ad78",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_09.json",
+      "sha256": "771846f09c673421872bb052d46a715cb9b38add8046e25c60360df0a1c40966",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_10.json",
+      "sha256": "8297ffba9e61f5b765f91ed1fb346961c81e9848defc90bab62eb0aad6e3c56d",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_11.json",
+      "sha256": "8737add4dc068301a2414e930bbe83b201182294ce3922a19e14d55266b50419",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_12.json",
+      "sha256": "ad9afb1c14e8226694d7745ff904085a76e355466cebbe0e2ef892f6037e7e92",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_13.json",
+      "sha256": "34e5a177fdbbd612a56e8049e2a3d2ea239b1afde04386a3f8a00e2586ba1d72",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_14.json",
+      "sha256": "73c947999b661ba11a61ad7c16e73d9ecc4f18bc1370d26e7966fb76ea1072aa",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_15.json",
+      "sha256": "577d320651bb0887d777b7c2aff010ca4bc5fcd9cf9e36797a1970c3e6992a94",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_16.json",
+      "sha256": "a63b9068ca913c778b8c1578d57cabbe5d6ddb717f56fdbda48e9e6be8345cc5",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_17.json",
+      "sha256": "630b978b23459197ab99c2459b9d2aa691ab7a087993e5d95891637d81950406",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_18.json",
+      "sha256": "3dae413b59cd10ac4cbf37a78b1df6f2d93e2e7457d89c7b1a92ac6118d3a085",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_19.json",
+      "sha256": "93283256c1f5e92bae8a0c3c5917aa7ca0b24b195f8dff084c45c20c72b6e473",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_20.json",
+      "sha256": "6b4279ea54c6d37657f94fed88db9ae2c5af9badabd2bae45ff1001f090aa16c",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_21.json",
+      "sha256": "02e2d4021b4abf4fcca902eb7ddd2ae5a17a1bd9fc448744afc51f1e360f5654",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_22.json",
+      "sha256": "09b04153ea260c469b3950c19a027e053b3106375680461bfc795b477ed793a5",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_23.json",
+      "sha256": "cd00005d58d1a932af3b16f1b23b7a665df97ba4ce8599527644c01801659cb8",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19801_24.json",
+      "sha256": "3f576c12d9c8e83a9eb42906113f45991b07fcc7ea1064b74f646c03c8bb40b8",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_01.json",
+      "sha256": "0ed46f9c0d54bc847d30aea41b6ad6ab2d0aebdc56f6837bcc6372f60bc47671",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_02.json",
+      "sha256": "044904bd43c58ad6c1854b411c9cea869f29f0cb3808f8fef86fee64dc4b34a2",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_03.json",
+      "sha256": "334a7063938a7317784c4c2d7f748574c8d45e5ad9d9ee5234f5b9145ac80d01",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_04.json",
+      "sha256": "cb51cbdaf6ffffd3396cb654f1602422c229c64ecd7bb5a87314df24f6e965c9",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_05.json",
+      "sha256": "399c9ad0d7d7a65239efea286b5f7957f29f4562a9821b3ada57f6b7c095b7a5",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_06.json",
+      "sha256": "62c74b436c8552abd4b3ae89b2ffeef31bd3dd7468be6f360f910aaa43f5de61",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_07.json",
+      "sha256": "60edd9e8f08522a576037cfeb36a3690187fa315ec1da1bb606e645b7645b123",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_08.json",
+      "sha256": "77c850c3dac7b265bfd085afc486eab52da5b42ae05d9ed93e48d7a57ce50f1d",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_09.json",
+      "sha256": "6b78671e80062c24985f8e64fac141e38754561e5d2e6a13771629cda98c2069",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_10.json",
+      "sha256": "dbbbf2f259cff832bc7e207dbc06cbb56f83fbc567c7a08b3a18754fd16a09cc",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_11.json",
+      "sha256": "e194000182f1e0aa49504a448aa737b570ba1729ff6f64408e01b679a5a6052c",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_12.json",
+      "sha256": "1bde7a88af9451133637db18c88e8f680128e006af62fc3b7adb68ea57c9097a",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_13.json",
+      "sha256": "7f85f4c11bd68241302502ffd7795ee6319921d18e743c9297fd28b90d5e5ea6",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_14.json",
+      "sha256": "1a5d5283c4e0986ed607ae1be6ee44e2d52f2ac4f089cbe51e0ba696c26f16cb",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_15.json",
+      "sha256": "e7065104e79085e331fedba017a233c87cca0f39ee9468ec39c5405365bf8209",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_16.json",
+      "sha256": "9744b647cacc5ab33d50a53b78eaa20fee6b570a26714eaf2a479323592e5cdc",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_17.json",
+      "sha256": "f8d172a4573ef0a4a1f6e9bbecb240b982ede0504b3963b20fa40392c153de20",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_18.json",
+      "sha256": "efdbe8ef94793995774be4bfebba455ca5f464f7b87de7429f4e23942b611361",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_19.json",
+      "sha256": "71cba1da9de0c229c8df19a9cd565188f870d8168b3cfe8859552cd2c4e68e7e",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_20.json",
+      "sha256": "3edd5b6a93d42f9ff84c7f41b98e3c28b36a003033d86f5d8bdfd867cb8f33c1",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_21.json",
+      "sha256": "a69f2cd34526a0a919db84507215c3f21079d525ae77b9286d9052af4a04e633",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_22.json",
+      "sha256": "97ced341e18107ff2fc6529c15753db0931b40ce7e4d9d553cc43c58e001c8dc",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_23.json",
+      "sha256": "182eb8c9b1ada678ead10f0eca480bc574ef7bbbb15313a2c9b830dbca82a26c",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19811_24.json",
+      "sha256": "b54bc957d4a4853fd043fc896067d100be36445c207fb17ce26ff3b9a30d0328",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_01.json",
+      "sha256": "f17c8d1e4bc10306342064caf11ee5d721a5b35522a69cd7db1765d6093f40b3",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_02.json",
+      "sha256": "59f4caeb049f70b42f7d06b2a216d6958e3a80afef172db6d5ac2f3161a06fe9",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_03.json",
+      "sha256": "375091502e04fdfb551ac397a25e5ecbbced15a57cb50aeaeb173825b451ce49",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_04.json",
+      "sha256": "d86c1087e42b732a8990a8bb905c0890dc21e3c2d0e12f771cc3c4892840d411",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_05.json",
+      "sha256": "818e16950ed3da771856a13755fe21d9d9c6a9629bf5d6038f544c8a9db0be48",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_06.json",
+      "sha256": "a5e4f90da86ec9162b784ca4e94b52c3fa75f7634698b74e07b2b7a0791f02cc",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_07.json",
+      "sha256": "0b38136f83bac4e1853755e7924172eef9f8de7ac51c9d5f4b08eeb7ad1b0777",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_08.json",
+      "sha256": "506207bef8329e72802ea6674250801f4044df78e5fd60b1057f728890f6b7a9",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_09.json",
+      "sha256": "20e7d7e93f33d51e626040a541ff8b20861c9eabb4525ea1e6844f4a4d5c420e",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_10.json",
+      "sha256": "560b02d85dd11cfd66b24ee5db1e09055483b1b77968d145123ea6535e94eda5",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_11.json",
+      "sha256": "62e599c87c540b630a26e996cf3584e3056918c3f88c6225e8d83b0564192648",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_12.json",
+      "sha256": "1138f93670c6afadbbdefcf48ab13049c9638db13a82d7f1664e414a3a9a8329",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_13.json",
+      "sha256": "ce9b8c34fc260a817e3b520f53fcb426f0acecb1b64b18da0ab8c2d3069ff5c9",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_14.json",
+      "sha256": "015f5d046497fd14915d469ed92e71b72171e7cabb79c7995ae8b5cc0083e8c0",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_15.json",
+      "sha256": "06d2bb8d8f03cfb0f54ebe7b2df9397eff0ac116f189c84dd2d3c32a480676e7",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_16.json",
+      "sha256": "62396d8dc487c26e09d3788274e5de11403db2fe1a6167fadfd2a178b8095bd7",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_17.json",
+      "sha256": "ba9b43a5a4eeec88255a9a05a0d9b6cf6e78eabfeaea064e8504bd7ad418ff33",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_18.json",
+      "sha256": "1bd4f7ee07460b30808aab3114c93bc30b5afb71080c017122d76420acbb6725",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_19.json",
+      "sha256": "f30079157a7339480ccd7f8cd20f69dfd8c5dacf7d922330c5a7cd2530f25f21",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_20.json",
+      "sha256": "f632ba41f85ec738baf21cc03cb43fbefc9275c3fbd004178c6cbe809fd39704",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_21.json",
+      "sha256": "311c575e2f4fd8079f50d33d58dd69c43f3d3bedb367212274ae180de5bef869",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_22.json",
+      "sha256": "16ffba9f41e077cf39d38094c2b4f03d0b02e4143f3b9bd0711890d7e6e0e5fc",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_23.json",
+      "sha256": "1303b81a573a5c02e2a4e8907a76150e22ce2832816683ef1cc14a9c16e4f9ad",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19851_24.json",
+      "sha256": "0ca816d27b8a696735df00b1087771c01db89553b79362c5a48b5e1f3e90e000",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_01.json",
+      "sha256": "d0fe214a7282db31ab1d1e6d08141ce4b717e2f40dfe97278980c80e88cb220f",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_02.json",
+      "sha256": "c3678a934031a2622fb7a383de53effc9d02d66f29458b7ab77c084a5ed1cbf8",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_03.json",
+      "sha256": "fb1a22f292ee11b71cb0d6967fe1f6b38be3b47941b6e8ab420e518c9f84c6ea",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_04.json",
+      "sha256": "1c3b8cf321d34a416acb97d96aa7762ceff301cdc580a3fab33632cd5c932341",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_05.json",
+      "sha256": "01d7a61d03b936f81f86bca77f6cdf107c96277283bdc83a46477f52722f4ee0",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_06.json",
+      "sha256": "bd4851014e33746e2ba36a36987687e8aad37b2201667f1db45c4dfdcabe13b3",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_07.json",
+      "sha256": "a30bfb85b680754102ea983c503968b21c86b613fa11cba56ee199de9f81abcc",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_08.json",
+      "sha256": "cd53e204d58f8c91482e41fd6df1bf77e18f66c94991bff17b32fc8befe7aa95",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_09.json",
+      "sha256": "c8d0566982c6d00357e4fa34dee2bda40eec9efaf81fe0cc27eef1f369a2f93f",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_10.json",
+      "sha256": "ec7114fe550efbc6ff4d0a89ed0d141af14f872251cfefecc219d82c70cb0e87",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_11.json",
+      "sha256": "3f8186375964712e9b4bc5a32566817c8818a5723950cd55870fee561362fb74",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_12.json",
+      "sha256": "074771ae8846662fe3d790563ef8f20df631b9a7eb1d9e7e7a20e6182e1507f7",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_13.json",
+      "sha256": "aa43e766f56c1ba9e30f92fe8b1c00a1227d0f520de1de9f044e19715884c924",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_14.json",
+      "sha256": "d22c82b6d66643f36dd187ef56bf10fbbc17124bab02fe498900dff4a17efcf8",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_15.json",
+      "sha256": "0c43ccae6079b0e8e0d7f10cd57de6e7c13aca9ba02548255951cc27f77f28f7",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_16.json",
+      "sha256": "9e8c6ae36e90da99d7f90742c63c39ebf63b6e0983063728989acf5d934f1cc9",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_17.json",
+      "sha256": "ed4e228ed46a0e15c268f9a4092700e3b763e06e07e8989a66795051db78b475",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_18.json",
+      "sha256": "6c843fa40a119df2b71ffce708b33dc9265a097520aa4df802179a55c3e8234d",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_19.json",
+      "sha256": "e3f3dad0d9f7c29294c1bf82ef9292315ab476dc4e6a43e5c12c897b5739691d",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_20.json",
+      "sha256": "dfba73a3c1ac602ecbfde63e820f2596537d90c7180cd306da9af5a548202b4e",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_21.json",
+      "sha256": "35bf6b055be10f4d9633cc7d3d592e495b7fd8eb92264d5e7732b5ce6bed240b",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_22.json",
+      "sha256": "8476ece25aa27db12ba50c87a6e194ca84aa6de32cf9433337c60a8a1f0dba4b",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_23.json",
+      "sha256": "71f7652507f5f1e7edbec628cd7434ffdb0bb7299b8b4691802e21288c11d9de",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19901_24.json",
+      "sha256": "efab070a4d4109f60dcfe8786ae6664763ba67a59e32e2c3525f592ba598ed1e",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_01.json",
+      "sha256": "8ccabf031cfb4be2f350859da44eec22fb42d79f72c5fa9cbea66b0172a27525",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_02.json",
+      "sha256": "9c2225c9552c759c25a29563a12c63c12b82b920f204dbefc0a053f12732d86b",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_03.json",
+      "sha256": "154cff624d17fd27e435efe46170d254ea1b19755c2b44ec7b76e519d076846e",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_04.json",
+      "sha256": "3556c0c3e703c182d7ebc5c19b54cfae674a405bd0531e02a81d84d4627fe7d9",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_05.json",
+      "sha256": "10beb7d83d7f76ff012057eb245b990e21ceaf16e5c6ebb3afa038efdca49c28",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_06.json",
+      "sha256": "e0e124bc1c3d34eb45bc32826e74f65fb7be4643e25e32f7f9bdaee30d132a04",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_07.json",
+      "sha256": "b34e6a8ecdf5eee913965824da6ebf46ce2776f1ae1f607a9b69c69bc39f3013",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_08.json",
+      "sha256": "93b22f20892f00d6753f1b6f6aaa17dc577f0826a326d4c0c6b481f8c638fa81",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_09.json",
+      "sha256": "656ae1887bcf58bb5e21da4468e822056eb77c466ac5ce2387a1fd1a4f74bfc4",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_10.json",
+      "sha256": "1f4e9dbee59950242e40c03f9b3a03cf9e7e61225be2f66f93ac1bbba7d54161",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_11.json",
+      "sha256": "e865233355abf68e20a9acc151f43d677f18b888de4ade097297ec63e1b97178",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_12.json",
+      "sha256": "ccb05b942ccfe692766bfe6451fcd4dc8231b5f1ee18d5a88ea82ebd22f68142",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_13.json",
+      "sha256": "a81c4bb1d7e679f14b62dcca40022e17ad708cd5e1a0cfd88cb663f78c802d54",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_14.json",
+      "sha256": "4929285d7d0551551464735bfcfbe62ca85f7dfb05e9b53ea461681783b38500",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_15.json",
+      "sha256": "cea848ecdd9058089dbc8b04675a9ae5ec1170c4bc9286e909f0ead9a4fff611",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_16.json",
+      "sha256": "1bdc0d84e63fb4aa48cd90614472e7309359611c1c506f885a55bf80d84f4dca",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_17.json",
+      "sha256": "ad861c6c9a0eb74ec97f7fdc468fa88143899249e00be6bf39796778f97da713",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_18.json",
+      "sha256": "781bb94a72e62edac2d68eb7925466f8cb562f394292df05c32ab98cd76dff0e",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_19.json",
+      "sha256": "8ecf0351f8f3e36229279137bdadbb08c7fac5649313a68abd70f810fc4d576a",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_20.json",
+      "sha256": "66bd8dda1b65d8fe97732ef2f7837251137306e20c1602127ab4a2e7bc39f12b",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_21.json",
+      "sha256": "9973445d71604ab1028540a08bd7113c568ed4f4854007495a2c2f7dd2b00d43",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_22.json",
+      "sha256": "5538293f9bcfb6591d69a784abd4cc33cafc50b5c3a60f80e4b9c43b920a74b3",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_23.json",
+      "sha256": "d66e327549de30a3b69dcc58dd8009a27ba88be0ce3ab47e3dd6bcc5d0161bd2",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19911_24.json",
+      "sha256": "f60ee1acb6b57463416b4836a85e2abd763678f65e54aa5ff3e8e29c8b5e22d8",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_01.json",
+      "sha256": "cd5eb1f65d01f2218d448568c39acc7209d1d3c236ed10bcad9aaad73220103e",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_02.json",
+      "sha256": "e31b392bd58735f3b0b6c6b0e27209a3c0385ba3ed8d8047c63745472bc37eb5",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_03.json",
+      "sha256": "560344dff82359726f48d6828ceda0b92faabfcda6accee3f20a303b60af26b9",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_04.json",
+      "sha256": "a551ae5f4b495c5dd8dee90e8c3854ee91fddbbdf7c4ffdc43ebcfb9e0ea3490",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_05.json",
+      "sha256": "b06fa785cc5ee7f65a532061af62847092fac15d148723c0003748472797e7f2",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_06.json",
+      "sha256": "b710756f26c88bc46e51725733823362f0ffd3921e54f75525a0e93cceb929ae",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_07.json",
+      "sha256": "b7bb1b2227a668d909bb64784c967e17eafc92d23394ae88bc0d4047d8f79b6f",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_08.json",
+      "sha256": "145246b50a285123138154dd1359c36c592f7c566415abd6cae2a89f1b27b379",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_09.json",
+      "sha256": "2cf9f5acba0f28bc56037db9a540ae79142aa68f4de95fc45a9be3f8bf63e64d",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_10.json",
+      "sha256": "b76eb593b05f3b810ef1bbd5e1de64bff7b63983061828e4ab7a138cddefd0b1",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_11.json",
+      "sha256": "f2ae431056db0d2f2ce8f4fa653a2eafcd13ef038712f39712b9256af844cfb6",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_12.json",
+      "sha256": "074ee38b911ebdcc2f902a04fd2a682224e4810867904c753b8a08d3578608ac",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_13.json",
+      "sha256": "7fe0be9fccac3a09c97b534383aa8b50d2f1bfd163c0a78fc80c0c9f4a38fd41",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_14.json",
+      "sha256": "49b3bca067ad2f9399d882df15b536b0f3df32fbb22fbabb28b72baf893fadb7",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_15.json",
+      "sha256": "53608e42da79c8d5fc60ba9e95bbe59796bd0c27f89bb19d66c0a2245e3347c4",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_16.json",
+      "sha256": "a58e5b3813e27edba32dfc5b5c3bb22944c5fdfd47b4ea0b830b228cd5d4de97",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_17.json",
+      "sha256": "534f19ee5ffe0e79616bc973dfe9b67473fff8ad1ef2d34e74c1e532aac005fd",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_18.json",
+      "sha256": "3c2984397302d806809f4aa7cc0561475a85a683634e93bb527dda901299b0bd",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_19.json",
+      "sha256": "aed7ee949667361873c78761cea7d82582478fb24da8b1420bf3efe6e9a2c0c3",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_20.json",
+      "sha256": "86abfc0373f500a70f910241b543d9f25ac051aaa8024b453b315c348420b8fd",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_21.json",
+      "sha256": "4a1794daafbcd2f6752f15a367bae379ed6f93ac74ea71c58d9d220c3ff43d78",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_22.json",
+      "sha256": "1210bc7e9698697bf051af5e24b39d92303ddaed5b314d8666bc2d70b6816a8f",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_23.json",
+      "sha256": "e2a829f4e21303c1bf87039edf2a51daf1c3d40f1d2d84ac41c2d9bce522fc4c",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_19931_24.json",
+      "sha256": "d3453372f0c17e55070ef06370a0168106bae9f9bbba34ddd3fa95d75b91e670",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_01.json",
+      "sha256": "ab8a77ecf055fcb482df0f9c7c03c56d8ac20282fbc40d99261084bfa7a6766a",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_02.json",
+      "sha256": "1eece3c344e6c5ef9c5beb374772ffbeb3610ede9a693844ed6004e389cc779d",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_03.json",
+      "sha256": "1a03c4ba9f4b8972ba69adb852f942ec711c155f6d824242b97b1040904346a0",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_04.json",
+      "sha256": "30d4751f417aa762ef4ace088a3adbe612ef9a6689dfc2ddb158e8f074b8d73b",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_05.json",
+      "sha256": "8c9af115f1259c7547e922235b80f001d988c628bada7f998b277a62212524c7",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_06.json",
+      "sha256": "16c787f894ce1d9849952d1f2bdd655d338d4a3bc9e3d16f99159e5e4c893387",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_07.json",
+      "sha256": "f7cd67fa1d905e84277d0cbf903b27a45b152d73f3951c85bac4e8e805828779",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_08.json",
+      "sha256": "99b8ddccc064c1adc0e81aaccb8283bcc70f521d4cd91772ba632f00d39e9c2c",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_09.json",
+      "sha256": "2c7d78c78210ce8bc7e4af58300e2e234c2896e14fe80848bf57acfb2aa1e025",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_10.json",
+      "sha256": "a2c7d5ffb56297f50e70eedd2fc6da1f886d88f023f35fae9f99f77ac14f575f",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_11.json",
+      "sha256": "041ca61324efb57f934a8332cf5bc884e070281ef207d20d016b69d97ba91751",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_12.json",
+      "sha256": "ca85b8e119fd817d7ca31c32b39fc70e6a9d23c651122355e3a3692067ab5be8",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_13.json",
+      "sha256": "ed0f33deb5ae80079a8374d1090cb39489b6b7d5b1ad0d2e367f7fce25bac4ef",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_14.json",
+      "sha256": "0c68edab5512e92047a0ee27c67de7d1b50270a6744e554f8687641c6d851f00",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_15.json",
+      "sha256": "093a87d9833ba8365e110bae033e3e0c4a613c682cb13f3e0841ad7cd74590e5",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_16.json",
+      "sha256": "da16270be2ef14eed1f672c4f53d3fa83ac486eb432838ddb6b19976dd59003b",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_17.json",
+      "sha256": "d7ad3f58f37224704716a82bcb30d136f825b00e8149dc355c58dabd0dbf3abc",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_18.json",
+      "sha256": "d11e9f327a6222cb3ee4956b099fb9dcae201673813e3863fd8641f501468bbe",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_19.json",
+      "sha256": "63c99d836b2bc7e825eb326f97ef25ed565902d86a41190d147afb523ea70fc2",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_20.json",
+      "sha256": "06f3e7a91d0b7402791deae687a26698f31d2d682a1f044731d2ca4a72776be8",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_21.json",
+      "sha256": "8a2c0d3ef0ef713ff60bad0dcfc8a0043dde5cdb828b73d8fd20780859b02a48",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_22.json",
+      "sha256": "6201493e799755e081df10e72002856d54053cc5dac5b60212ea0db3ced7a3c1",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_23.json",
+      "sha256": "f150f55b761a4d44199f7ebda0d8b18a29175ba842ecc29c2a4d90c569a8c249",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20001_24.json",
+      "sha256": "daaa2181e5623ba049f884d3dc59f1a5a8606860760b4a60287b7fe134a4fe09",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_01.json",
+      "sha256": "58370406b3df562805b4a22f18eb730d00291ae9446d60f3506b0346e90e80dc",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_02.json",
+      "sha256": "ed4516d7f1e540d7698c2475c0d47ac6dfb77036ce4b00fb4f44913e0f97d442",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_03.json",
+      "sha256": "e451370e83485ef0dd8e0ca835de9a0963ecfb9cacbe1b88776ffcc2dbc5f47c",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_04.json",
+      "sha256": "8c1aae517762691cfd9619d2c1b6a8fb0be5394e617890e4d6f4571dbf1fe904",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_05.json",
+      "sha256": "4cc221522dc07e6fa79b5f9b8e2729d7125a9ca51e5b0e001a765009d51a1f2d",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_06.json",
+      "sha256": "341b9873f8f581113dbd6cc5c308d4d08d8d2a8c1f8a8a915a2b7938ce5e2515",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_07.json",
+      "sha256": "7b240ae23ab786973fc44f1f0636901c5c62e7976970cec370d25d90b9e92eb4",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_08.json",
+      "sha256": "b08a8cbfaa70ab44dbceb6525d0a35271446cdeb88ef34e3ab18f5e9974851f1",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_09.json",
+      "sha256": "fda65a82ef3f4dd4d13f9efee7006562c29b837710351324620e76f06a01dec4",
+      "size_bytes": 704
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_10.json",
+      "sha256": "b26596f9579fa6f6f871d523c4271cdac2010deafc39c176662a44ef8e29a2a5",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_11.json",
+      "sha256": "ee139b3ac2c69f5b0d80f0119c2f75af9dbb193aa3daa710e076a70759303014",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_12.json",
+      "sha256": "c9e433480c90b62ff886e61cef8595fb0e84c8f90803a6723a8026d497838508",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_13.json",
+      "sha256": "cdcfd21dd33f03611fc304ed16852ae8da3d9dd43229183abad8bf95664e2d1d",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_14.json",
+      "sha256": "41431ec0ed71361b6db558abcf794b6df7a0361158e782b81c1f4c3cf7ed1077",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_15.json",
+      "sha256": "b60f8fa54f632c2e36a84353060549e36ef848678c4a7f2d2255bf7387cf2f61",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_16.json",
+      "sha256": "4ae97eceaff48b9ce45c04f3e320236a7508ce36aacc1c668eb0093d91a2f172",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_17.json",
+      "sha256": "04273521c4f2a4b86a592fb08af666ea9768be30c7c1d19aec9e7adfd255b7ba",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_18.json",
+      "sha256": "e84e4b1d0ed2806407a2a3268b6c1a085cdbae5507fbac08ea5bae2b358def1e",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_19.json",
+      "sha256": "be4ca84b9c60811761cdbe9719d4109a4d5f70667bfdb4e0839c8a0db063c9cf",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_20.json",
+      "sha256": "668f5ddf0fa040cccca675f5899f8ac6164ad71e44bf1addd6bdede62f1d185b",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_21.json",
+      "sha256": "f068b104475f3e58ca81a87d1b09b170d28990b29810b4ab07af7dea386177a3",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_22.json",
+      "sha256": "dcb241f5e165e5c6601ca405e3f22ba7c169d6acf5a1a5b88e2b60f1cb0eebee",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_23.json",
+      "sha256": "3405380c835c10446070844572d5ccc48fad35117335a8a2ad27605018f211cd",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/anchor_20031_24.json",
+      "sha256": "36a15869c88d7f34d07855eafada75e95d66c850e52f46a06bb827680d4b82ca",
+      "size_bytes": 705
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/inputs_19801.json",
+      "sha256": "9b10116e3ea037334493cba4654b808acc5ff0f06299843b3f06eb69ec55be31",
+      "size_bytes": 436
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/inputs_19811.json",
+      "sha256": "b23589867f19b54cf0bb206b76a1906b39ce8623994169857c5bd9d143343d89",
+      "size_bytes": 436
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/inputs_19851.json",
+      "sha256": "f1e795ce4b10952c6b5566897ba21fbe559965321eb0a4fbdf55dafdf850bded",
+      "size_bytes": 436
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/inputs_19901.json",
+      "sha256": "5b11ff2656ca7e0dae83f526ef0818ca5faedaf68df1b351ac256b06a31c2c3e",
+      "size_bytes": 436
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/inputs_19911.json",
+      "sha256": "64721734c87f52879583a371d73301cd7b7c232684752c61eab38fdf6290c5d5",
+      "size_bytes": 436
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/inputs_19931.json",
+      "sha256": "32f884589a91d4267dcf61fcc960505c50617725d8074d0c01fd1bb20181fb55",
+      "size_bytes": 436
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/inputs_20001.json",
+      "sha256": "ae2b6ef398b3f173d090ac597dc0f588a00b4ac8e2d8ec4638f9da46d2d5e7bd",
+      "size_bytes": 436
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/inputs_20031.json",
+      "sha256": "96fd085865fddd09a2abf991506913aab0d65e6c29717e52e5823d092062a4e9",
+      "size_bytes": 436
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/method_outputs_19801.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size_bytes": 3
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/method_outputs_19811.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size_bytes": 3
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/method_outputs_19851.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size_bytes": 3
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/method_outputs_19901.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size_bytes": 3
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/method_outputs_19911.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size_bytes": 3
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/method_outputs_19931.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size_bytes": 3
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/method_outputs_20001.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size_bytes": 3
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/method_outputs_20031.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size_bytes": 3
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/references.json",
+      "sha256": "1e40fb153b01933bff798e245129838e15ea496892b0a78d930300492c26e6df",
+      "size_bytes": 151444
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/started.json",
+      "sha256": "d501ba36cedc91cae0a3c37b4147faf6f1c9dc5b43a5fddf7d32446ab76b6982",
+      "size_bytes": 142275
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/targets.json",
+      "sha256": "af252d54d3047ac047a9693641f2baf8f34ceac5ca036873831f3e02ad88ce1d",
+      "size_bytes": 87099
+    }
+  ],
+  "configuration_preflight_receipts": [
+    {
+      "captured_robot_description_hashes": [
+        "037758dd657fe9f66f098d222557d86071a16376a9fb9953c41aafaa9a20417f"
+      ],
+      "geometry_binding": {
+        "joint_position_m": [
+          0.0,
+          0.0,
+          0.355
+        ],
+        "rotation_axis": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "sensor_geometry_path": "/home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/urdf/turtlebot3_rotating_sensor.urdf",
+        "sensor_geometry_sha256": "6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425",
+        "sensor_offset_rpy_rad": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sensor_offset_xyz_m": [
+          0.18,
+          0.0,
+          0.015
+        ],
+        "sensor_transform": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.18
+          ],
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.015
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "sensor_transform_config_path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json",
+        "sensor_transform_config_sha256": "8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5"
+      },
+      "recorded_launch_sha256": "cef47e7f936fda748b64ddf6cecad0e183496423b05bba38590abec65f0509ec",
+      "run_id": "20260731T173056885644Z_simulation_phase08_v8_10_primary_visible_probe-v8_10_primary_probe_r1p5_a45_h25_19801-robus_d984451c",
+      "seed": 19801,
+      "selected_algorithm_topics": {
+        "algorithm_pose_topic": "/odom",
+        "algorithm_raw_cost_topic": "/turtlebot3/cost_value_chatter",
+        "algorithm_source_cost_topic": "/gesc_gaussian/source_cost"
+      },
+      "selected_configurations": {
+        "cost_function_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json",
+          "sha256": "7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741"
+        },
+        "filter_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json",
+          "sha256": "f1cfd23a9c60e08780a4477f23cacc80a9e0c75b127448291e321756de7a2dce"
+        },
+        "sensor_transform_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json",
+          "sha256": "8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5"
+        }
+      }
+    },
+    {
+      "captured_robot_description_hashes": [
+        "037758dd657fe9f66f098d222557d86071a16376a9fb9953c41aafaa9a20417f"
+      ],
+      "geometry_binding": {
+        "joint_position_m": [
+          0.0,
+          0.0,
+          0.355
+        ],
+        "rotation_axis": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "sensor_geometry_path": "/home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/urdf/turtlebot3_rotating_sensor.urdf",
+        "sensor_geometry_sha256": "6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425",
+        "sensor_offset_rpy_rad": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sensor_offset_xyz_m": [
+          0.18,
+          0.0,
+          0.015
+        ],
+        "sensor_transform": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.18
+          ],
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.015
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "sensor_transform_config_path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json",
+        "sensor_transform_config_sha256": "8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5"
+      },
+      "recorded_launch_sha256": "cef47e7f936fda748b64ddf6cecad0e183496423b05bba38590abec65f0509ec",
+      "run_id": "20260731T174647872704Z_simulation_phase08_v8_10_primary_repeats-v8_10_primary_repeat_r1p5_a45_h25-robust_gaussian__0c6fce1d",
+      "seed": 19811,
+      "selected_algorithm_topics": {
+        "algorithm_pose_topic": "/odom",
+        "algorithm_raw_cost_topic": "/turtlebot3/cost_value_chatter",
+        "algorithm_source_cost_topic": "/gesc_gaussian/source_cost"
+      },
+      "selected_configurations": {
+        "cost_function_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json",
+          "sha256": "7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741"
+        },
+        "filter_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json",
+          "sha256": "f1cfd23a9c60e08780a4477f23cacc80a9e0c75b127448291e321756de7a2dce"
+        },
+        "sensor_transform_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json",
+          "sha256": "8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5"
+        }
+      }
+    },
+    {
+      "captured_robot_description_hashes": [
+        "037758dd657fe9f66f098d222557d86071a16376a9fb9953c41aafaa9a20417f"
+      ],
+      "geometry_binding": {
+        "joint_position_m": [
+          0.0,
+          0.0,
+          0.355
+        ],
+        "rotation_axis": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "sensor_geometry_path": "/home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/urdf/turtlebot3_rotating_sensor.urdf",
+        "sensor_geometry_sha256": "6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425",
+        "sensor_offset_rpy_rad": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sensor_offset_xyz_m": [
+          0.18,
+          0.0,
+          0.015
+        ],
+        "sensor_transform": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.18
+          ],
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.015
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "sensor_transform_config_path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json",
+        "sensor_transform_config_sha256": "8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5"
+      },
+      "recorded_launch_sha256": "cef47e7f936fda748b64ddf6cecad0e183496423b05bba38590abec65f0509ec",
+      "run_id": "20260731T191433826976Z_simulation_phase08_v8_10_secondary_visible_probe-v8_10_secondary_probe_r1p5_a67p5_h25_19851_5cffc8a7",
+      "seed": 19851,
+      "selected_algorithm_topics": {
+        "algorithm_pose_topic": "/odom",
+        "algorithm_raw_cost_topic": "/turtlebot3/cost_value_chatter",
+        "algorithm_source_cost_topic": "/gesc_gaussian/source_cost"
+      },
+      "selected_configurations": {
+        "cost_function_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json",
+          "sha256": "7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741"
+        },
+        "filter_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json",
+          "sha256": "f1cfd23a9c60e08780a4477f23cacc80a9e0c75b127448291e321756de7a2dce"
+        },
+        "sensor_transform_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json",
+          "sha256": "8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5"
+        }
+      }
+    },
+    {
+      "captured_robot_description_hashes": [
+        "8121b3cee804b0045e42568924e0cfe3766d0892f206cf69f7ccd1a0d7939c35"
+      ],
+      "geometry_binding": {
+        "joint_position_m": [
+          0.0,
+          0.0,
+          0.355
+        ],
+        "rotation_axis": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "sensor_geometry_path": "/home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/urdf/turtlebot3_rotating_sensor.urdf",
+        "sensor_geometry_sha256": "6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425",
+        "sensor_offset_rpy_rad": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sensor_offset_xyz_m": [
+          0.18,
+          0.0,
+          0.015
+        ],
+        "sensor_transform": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.18
+          ],
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.015
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "sensor_transform_config_path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json",
+        "sensor_transform_config_sha256": "8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5"
+      },
+      "recorded_launch_sha256": "cef47e7f936fda748b64ddf6cecad0e183496423b05bba38590abec65f0509ec",
+      "run_id": "20260731T210056770365Z_simulation_phase08_v8_11_secondary_visible_probe-v8_11_secondary_probe_r1p5_a67p5_h25_19901_c0544b8e",
+      "seed": 19901,
+      "selected_algorithm_topics": {
+        "algorithm_pose_topic": "/odom",
+        "algorithm_raw_cost_topic": "/turtlebot3/cost_value_chatter",
+        "algorithm_source_cost_topic": "/gesc_gaussian/source_cost"
+      },
+      "selected_configurations": {
+        "cost_function_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json",
+          "sha256": "7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741"
+        },
+        "filter_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json",
+          "sha256": "f1cfd23a9c60e08780a4477f23cacc80a9e0c75b127448291e321756de7a2dce"
+        },
+        "sensor_transform_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json",
+          "sha256": "8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5"
+        }
+      }
+    },
+    {
+      "captured_robot_description_hashes": [
+        "8121b3cee804b0045e42568924e0cfe3766d0892f206cf69f7ccd1a0d7939c35"
+      ],
+      "geometry_binding": {
+        "joint_position_m": [
+          0.0,
+          0.0,
+          0.355
+        ],
+        "rotation_axis": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "sensor_geometry_path": "/home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/urdf/turtlebot3_rotating_sensor.urdf",
+        "sensor_geometry_sha256": "6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425",
+        "sensor_offset_rpy_rad": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sensor_offset_xyz_m": [
+          0.18,
+          0.0,
+          0.015
+        ],
+        "sensor_transform": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.18
+          ],
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.015
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "sensor_transform_config_path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json",
+        "sensor_transform_config_sha256": "8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5"
+      },
+      "recorded_launch_sha256": "cef47e7f936fda748b64ddf6cecad0e183496423b05bba38590abec65f0509ec",
+      "run_id": "20260731T211245658756Z_simulation_phase08_v8_11_secondary_repeats-v8_11_secondary_repeats_r1p5_a67p5_h25-robust_ga_b9e46a70",
+      "seed": 19911,
+      "selected_algorithm_topics": {
+        "algorithm_pose_topic": "/odom",
+        "algorithm_raw_cost_topic": "/turtlebot3/cost_value_chatter",
+        "algorithm_source_cost_topic": "/gesc_gaussian/source_cost"
+      },
+      "selected_configurations": {
+        "cost_function_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json",
+          "sha256": "7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741"
+        },
+        "filter_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json",
+          "sha256": "f1cfd23a9c60e08780a4477f23cacc80a9e0c75b127448291e321756de7a2dce"
+        },
+        "sensor_transform_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json",
+          "sha256": "8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5"
+        }
+      }
+    },
+    {
+      "captured_robot_description_hashes": [
+        "8121b3cee804b0045e42568924e0cfe3766d0892f206cf69f7ccd1a0d7939c35"
+      ],
+      "geometry_binding": {
+        "joint_position_m": [
+          0.0,
+          0.0,
+          0.355
+        ],
+        "rotation_axis": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "sensor_geometry_path": "/home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/urdf/turtlebot3_rotating_sensor.urdf",
+        "sensor_geometry_sha256": "6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425",
+        "sensor_offset_rpy_rad": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sensor_offset_xyz_m": [
+          0.18,
+          0.0,
+          0.015
+        ],
+        "sensor_transform": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.18
+          ],
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.015
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "sensor_transform_config_path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json",
+        "sensor_transform_config_sha256": "8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5"
+      },
+      "recorded_launch_sha256": "cef47e7f936fda748b64ddf6cecad0e183496423b05bba38590abec65f0509ec",
+      "run_id": "20260731T215508693457Z_simulation_phase08_v8_11_broad_matrix-v8_11_matrix_r1p25_a45_ratio1to3_19931-robust_gaussia_056336a1",
+      "seed": 19931,
+      "selected_algorithm_topics": {
+        "algorithm_pose_topic": "/odom",
+        "algorithm_raw_cost_topic": "/turtlebot3/cost_value_chatter",
+        "algorithm_source_cost_topic": "/gesc_gaussian/source_cost"
+      },
+      "selected_configurations": {
+        "cost_function_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json",
+          "sha256": "7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741"
+        },
+        "filter_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json",
+          "sha256": "f1cfd23a9c60e08780a4477f23cacc80a9e0c75b127448291e321756de7a2dce"
+        },
+        "sensor_transform_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json",
+          "sha256": "8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5"
+        }
+      }
+    },
+    {
+      "captured_robot_description_hashes": [
+        "cbdf5e2e917fd0163dd7621f6d40f82c50db78b93a579571e33ffdcafdb60941"
+      ],
+      "geometry_binding": {
+        "joint_position_m": [
+          0.0,
+          0.0,
+          0.355
+        ],
+        "rotation_axis": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "sensor_geometry_path": "/home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/urdf/turtlebot3_rotating_sensor.urdf",
+        "sensor_geometry_sha256": "6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425",
+        "sensor_offset_rpy_rad": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sensor_offset_xyz_m": [
+          0.18,
+          0.0,
+          0.015
+        ],
+        "sensor_transform": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.18
+          ],
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.015
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "sensor_transform_config_path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json",
+        "sensor_transform_config_sha256": "8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5"
+      },
+      "recorded_launch_sha256": "0af6f477168df5a43bdce1d8f55b21cbd41031663714e6ebc517172d2861b193",
+      "run_id": "20260731T231351648763Z_simulation_phase08_v8_12_interior_anchor_visible_probe-v8_12_interior_anchor_r1p25_a45_rati_439a8eac",
+      "seed": 20001,
+      "selected_algorithm_topics": {
+        "algorithm_pose_topic": "/odom",
+        "algorithm_raw_cost_topic": "/turtlebot3/cost_value_chatter",
+        "algorithm_source_cost_topic": "/gesc_gaussian/source_cost"
+      },
+      "selected_configurations": {
+        "cost_function_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json",
+          "sha256": "7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741"
+        },
+        "filter_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json",
+          "sha256": "f1cfd23a9c60e08780a4477f23cacc80a9e0c75b127448291e321756de7a2dce"
+        },
+        "sensor_transform_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json",
+          "sha256": "8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5"
+        }
+      }
+    },
+    {
+      "captured_robot_description_hashes": [
+        "cbdf5e2e917fd0163dd7621f6d40f82c50db78b93a579571e33ffdcafdb60941"
+      ],
+      "geometry_binding": {
+        "joint_position_m": [
+          0.0,
+          0.0,
+          0.355
+        ],
+        "rotation_axis": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "sensor_geometry_path": "/home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/urdf/turtlebot3_rotating_sensor.urdf",
+        "sensor_geometry_sha256": "6a49d4ea96315e9d81cfddd30ad2ab9e1210c809af1e301f188f861760ebf425",
+        "sensor_offset_rpy_rad": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sensor_offset_xyz_m": [
+          0.18,
+          0.0,
+          0.015
+        ],
+        "sensor_transform": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.18
+          ],
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.015
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "sensor_transform_config_path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json",
+        "sensor_transform_config_sha256": "8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5"
+      },
+      "recorded_launch_sha256": "0af6f477168df5a43bdce1d8f55b21cbd41031663714e6ebc517172d2861b193",
+      "run_id": "20260731T233137972843Z_simulation_phase08_v8_12_broad_matrix-v8_12_matrix_r1p25_a45_ratio1to3_20031-robust_gaussia_6efe976a",
+      "seed": 20031,
+      "selected_algorithm_topics": {
+        "algorithm_pose_topic": "/odom",
+        "algorithm_raw_cost_topic": "/turtlebot3/cost_value_chatter",
+        "algorithm_source_cost_topic": "/gesc_gaussian/source_cost"
+      },
+      "selected_configurations": {
+        "cost_function_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/paper_recreations/heavy_ball_PDE_ESC/cost_function/multi_light_source_photoresistor.json",
+          "sha256": "7a5f883e901070707bc37dc673bf27af6387fe650720fc0c84dca11767632741"
+        },
+        "filter_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json",
+          "sha256": "f1cfd23a9c60e08780a4477f23cacc80a9e0c75b127448291e321756de7a2dce"
+        },
+        "sensor_transform_config_filepath": {
+          "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json",
+          "sha256": "8fcfb1e2c9e7a8d1463936ab525c2a1533b60bc0548391ca8cf3b3941ffc99b5"
+        }
+      }
+    }
+  ],
+  "counts": {
+    "anchor_receipts": 192,
+    "anchored_field_or_harmonic_results": 0,
+    "empty_method_output_arrays": 8,
+    "final_summaries": 1,
+    "input_traces": 8,
+    "json_receipts": 211,
+    "missing_causal_anchors": 192,
+    "normalized_source_observations": 0,
+    "numeric_target_timestamps": 0,
+    "started": 1,
+    "targets": 1
+  },
+  "elapsed_seconds": 79.66610028599825,
+  "evidence_version": "m2-reference-v1",
+  "execution_launcher_version": "v1b",
+  "experiment_version_closed": true,
+  "fixed_population_seeds": [
+    19801,
+    19811,
+    19851,
+    19901,
+    19911,
+    19931,
+    20001,
+    20031
+  ],
+  "generated_utc": "2026-09-09T07:00:17.100989+00:00",
+  "holdout_accessed_by_this_attempt": false,
+  "input_qualification": [
+    {
+      "missing_causal_anchors": 24,
+      "observation_count": 0,
+      "qualification": {
+        "origin_ns": null,
+        "qualified": false,
+        "reason": "source regression or conflicting duplicate",
+        "selected_aliases": {
+          "algorithm_pose_topic": "pose",
+          "algorithm_raw_cost_topic": "raw_cost_legacy"
+        }
+      },
+      "run_id": "20260731T173056885644Z_simulation_phase08_v8_10_primary_visible_probe-v8_10_primary_probe_r1p5_a45_h25_19801-robus_d984451c",
+      "seed": 19801,
+      "target_slots": 24,
+      "trace": {
+        "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/inputs_19801.json",
+        "sha256": "9b10116e3ea037334493cba4654b808acc5ff0f06299843b3f06eb69ec55be31",
+        "size_bytes": 436
+      }
+    },
+    {
+      "missing_causal_anchors": 24,
+      "observation_count": 0,
+      "qualification": {
+        "origin_ns": null,
+        "qualified": false,
+        "reason": "source regression or conflicting duplicate",
+        "selected_aliases": {
+          "algorithm_pose_topic": "pose",
+          "algorithm_raw_cost_topic": "raw_cost_legacy"
+        }
+      },
+      "run_id": "20260731T174647872704Z_simulation_phase08_v8_10_primary_repeats-v8_10_primary_repeat_r1p5_a45_h25-robust_gaussian__0c6fce1d",
+      "seed": 19811,
+      "target_slots": 24,
+      "trace": {
+        "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/inputs_19811.json",
+        "sha256": "b23589867f19b54cf0bb206b76a1906b39ce8623994169857c5bd9d143343d89",
+        "size_bytes": 436
+      }
+    },
+    {
+      "missing_causal_anchors": 24,
+      "observation_count": 0,
+      "qualification": {
+        "origin_ns": null,
+        "qualified": false,
+        "reason": "source regression or conflicting duplicate",
+        "selected_aliases": {
+          "algorithm_pose_topic": "pose",
+          "algorithm_raw_cost_topic": "raw_cost_legacy"
+        }
+      },
+      "run_id": "20260731T191433826976Z_simulation_phase08_v8_10_secondary_visible_probe-v8_10_secondary_probe_r1p5_a67p5_h25_19851_5cffc8a7",
+      "seed": 19851,
+      "target_slots": 24,
+      "trace": {
+        "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/inputs_19851.json",
+        "sha256": "f1e795ce4b10952c6b5566897ba21fbe559965321eb0a4fbdf55dafdf850bded",
+        "size_bytes": 436
+      }
+    },
+    {
+      "missing_causal_anchors": 24,
+      "observation_count": 0,
+      "qualification": {
+        "origin_ns": null,
+        "qualified": false,
+        "reason": "source regression or conflicting duplicate",
+        "selected_aliases": {
+          "algorithm_pose_topic": "pose",
+          "algorithm_raw_cost_topic": "raw_cost_legacy"
+        }
+      },
+      "run_id": "20260731T210056770365Z_simulation_phase08_v8_11_secondary_visible_probe-v8_11_secondary_probe_r1p5_a67p5_h25_19901_c0544b8e",
+      "seed": 19901,
+      "target_slots": 24,
+      "trace": {
+        "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/inputs_19901.json",
+        "sha256": "5b11ff2656ca7e0dae83f526ef0818ca5faedaf68df1b351ac256b06a31c2c3e",
+        "size_bytes": 436
+      }
+    },
+    {
+      "missing_causal_anchors": 24,
+      "observation_count": 0,
+      "qualification": {
+        "origin_ns": null,
+        "qualified": false,
+        "reason": "source regression or conflicting duplicate",
+        "selected_aliases": {
+          "algorithm_pose_topic": "pose",
+          "algorithm_raw_cost_topic": "raw_cost_legacy"
+        }
+      },
+      "run_id": "20260731T211245658756Z_simulation_phase08_v8_11_secondary_repeats-v8_11_secondary_repeats_r1p5_a67p5_h25-robust_ga_b9e46a70",
+      "seed": 19911,
+      "target_slots": 24,
+      "trace": {
+        "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/inputs_19911.json",
+        "sha256": "64721734c87f52879583a371d73301cd7b7c232684752c61eab38fdf6290c5d5",
+        "size_bytes": 436
+      }
+    },
+    {
+      "missing_causal_anchors": 24,
+      "observation_count": 0,
+      "qualification": {
+        "origin_ns": null,
+        "qualified": false,
+        "reason": "source regression or conflicting duplicate",
+        "selected_aliases": {
+          "algorithm_pose_topic": "pose",
+          "algorithm_raw_cost_topic": "raw_cost_legacy"
+        }
+      },
+      "run_id": "20260731T215508693457Z_simulation_phase08_v8_11_broad_matrix-v8_11_matrix_r1p25_a45_ratio1to3_19931-robust_gaussia_056336a1",
+      "seed": 19931,
+      "target_slots": 24,
+      "trace": {
+        "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/inputs_19931.json",
+        "sha256": "32f884589a91d4267dcf61fcc960505c50617725d8074d0c01fd1bb20181fb55",
+        "size_bytes": 436
+      }
+    },
+    {
+      "missing_causal_anchors": 24,
+      "observation_count": 0,
+      "qualification": {
+        "origin_ns": null,
+        "qualified": false,
+        "reason": "source regression or conflicting duplicate",
+        "selected_aliases": {
+          "algorithm_pose_topic": "pose",
+          "algorithm_raw_cost_topic": "raw_cost_legacy"
+        }
+      },
+      "run_id": "20260731T231351648763Z_simulation_phase08_v8_12_interior_anchor_visible_probe-v8_12_interior_anchor_r1p25_a45_rati_439a8eac",
+      "seed": 20001,
+      "target_slots": 24,
+      "trace": {
+        "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/inputs_20001.json",
+        "sha256": "ae2b6ef398b3f173d090ac597dc0f588a00b4ac8e2d8ec4638f9da46d2d5e7bd",
+        "size_bytes": 436
+      }
+    },
+    {
+      "missing_causal_anchors": 24,
+      "observation_count": 0,
+      "qualification": {
+        "origin_ns": null,
+        "qualified": false,
+        "reason": "source regression or conflicting duplicate",
+        "selected_aliases": {
+          "algorithm_pose_topic": "pose",
+          "algorithm_raw_cost_topic": "raw_cost_legacy"
+        }
+      },
+      "run_id": "20260731T233137972843Z_simulation_phase08_v8_12_broad_matrix-v8_12_matrix_r1p25_a45_ratio1to3_20031-robust_gaussia_6efe976a",
+      "seed": 20031,
+      "target_slots": 24,
+      "trace": {
+        "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1/inputs_20031.json",
+        "sha256": "96fd085865fddd09a2abf991506913aab0d65e6c29717e52e5823d092062a4e9",
+        "size_bytes": 436
+      }
+    }
+  ],
+  "interpretation": "All eight input normalization attempts stopped on source regression or conflicting duplicate before yielding observations. No direction-quality or averaging-availability denominator exists. Zero recorded counts are evidence unavailability, not measured 0% algorithm performance. No gate waived or setting selected.",
+  "inventory": {
+    "path": "/home/mattb/dsim-lab/docs/codex/gesc_gaussian/v2/validation/baseline_inventory.json",
+    "sha256": "eae9b60fc2f6f3e638f7ee9e56fd52174176fb4495de78bb145640eddb93e90d",
+    "size_bytes": 693725
+  },
+  "invocation_exit_code": 0,
+  "launchers": [
+    {
+      "exact_script_text": "#!/usr/bin/env bash\nset -euo pipefail\ncd /home/mattb/dsim-lab\nsource /opt/ros/humble/setup.bash\nsource /home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/install/local_setup.bash\nexport PYTHONPATH=\"/home/mattb/dsim-lab/ros2_ws/src/ros_esc:/home/mattb/dsim-lab/extremum-seeking/src${PYTHONPATH:+:$PYTHONPATH}\"\ntimeout 300s python3 - <<'PY'\nimport json\nimport time\nfrom ros_esc.plotting_scripts.gesc_gaussian_bag_analysis import freeze_v2_direction_references\nstarted = time.monotonic()\nresult = freeze_v2_direction_references(\n    '/home/mattb/dsim-lab/docs/codex/gesc_gaussian/v2/validation/baseline_inventory.json',\n    '/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1',\n)\nkeys = ('fixed_anchor_count', 'completed_anchor_count', 'qualified_reference_count',\n        'informative_reference_count', 'eligible_informative_count',\n        'eligible_v2_median_error_deg', 'eligible_v2_p90_error_deg',\n        'averaging_availability', 'unavailable_reasons')\nprint(json.dumps({**{key: result.get(key) for key in keys},\n                  'elapsed_sec': time.monotonic()-started}, sort_keys=True, allow_nan=False))\nPY\n",
+      "exit_code": 1,
+      "log": {
+        "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_reference_command_v1.log",
+        "sha256": "8e1897c5e8601d54ab323b996c58cf689eba7afb53430d60b2cd025a21083673",
+        "size_bytes": 78
+      },
+      "outcome": "ROS setup rejected unset optional variable before Python",
+      "outer_tool_wrapper": "Not recorded by launcher; exact retained script body is included.",
+      "reproduction_entrypoint": "bash /home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_reference_command_v1.sh > /home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_reference_command_v1.log 2>&1",
+      "scientific_timeout_seconds": 300,
+      "script": {
+        "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_reference_command_v1.sh",
+        "sha256": "01df2ffc54faa7c53b5c21190c7d5214b612c4ec7a72ba5b796a5a678a3d4175",
+        "size_bytes": 1133
+      },
+      "version": "v1"
+    },
+    {
+      "exact_script_text": "#!/usr/bin/env bash\nset -eo pipefail\ncd /home/mattb/dsim-lab\nsource /opt/ros/humble/setup.bash\nsource /home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/install/local_setup.bash\nexport PYTHONPATH=\"/home/mattb/dsim-lab/ros2_ws/src/ros_esc:/home/mattb/dsim-lab/extremum-seeking/src${PYTHONPATH:+:$PYTHONPATH}\"\ntimeout 300s python3 - <<'PY'\nimport json\nimport time\nfrom ros_esc.plotting_scripts.gesc_gaussian_bag_analysis import freeze_v2_direction_references\nstarted = time.monotonic()\nresult = freeze_v2_direction_references(\n    '/home/mattb/dsim-lab/docs/codex/gesc_gaussian/v2/validation/baseline_inventory.json',\n    '/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1',\n)\nkeys = ('fixed_anchor_count', 'completed_anchor_count', 'qualified_reference_count',\n        'informative_reference_count', 'eligible_informative_count',\n        'eligible_v2_median_error_deg', 'eligible_v2_p90_error_deg',\n        'averaging_availability', 'unavailable_reasons')\nprint(json.dumps({**{key: result.get(key) for key in keys},\n                  'elapsed_sec': time.monotonic()-started}, sort_keys=True, allow_nan=False))\nPY\n",
+      "exit_code": 1,
+      "log": {
+        "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_reference_command_v1a.log",
+        "sha256": "85fabc498978d574233d062437607cf59f2de6fb15d30178b80eaf750d13c2a8",
+        "size_bytes": 822
+      },
+      "outcome": "Python configuration preflight rejected incorrectly scoped robot_description lookup",
+      "outer_tool_wrapper": "Not recorded by launcher; exact retained script body is included.",
+      "reproduction_entrypoint": "bash /home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_reference_command_v1a.sh > /home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_reference_command_v1a.log 2>&1",
+      "scientific_timeout_seconds": 300,
+      "script": {
+        "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_reference_command_v1a.sh",
+        "sha256": "176deadbf18e8033960af6b59a6f48c5bb329ec687b46a57d379dae8c9741d5e",
+        "size_bytes": 1132
+      },
+      "version": "v1a"
+    },
+    {
+      "exact_script_text": "#!/usr/bin/env bash\nset -eo pipefail\ncd /home/mattb/dsim-lab\nsource /opt/ros/humble/setup.bash\nsource /home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/install/local_setup.bash\nexport PYTHONPATH=\"/home/mattb/dsim-lab/ros2_ws/src/ros_esc:/home/mattb/dsim-lab/extremum-seeking/src${PYTHONPATH:+:$PYTHONPATH}\"\ntimeout 300s python3 - <<'PY'\nimport json\nimport time\nfrom ros_esc.plotting_scripts.gesc_gaussian_bag_analysis import freeze_v2_direction_references\nstarted = time.monotonic()\nresult = freeze_v2_direction_references(\n    '/home/mattb/dsim-lab/docs/codex/gesc_gaussian/v2/validation/baseline_inventory.json',\n    '/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1',\n)\nkeys = ('fixed_anchor_count', 'completed_anchor_count', 'qualified_reference_count',\n        'informative_reference_count', 'eligible_informative_count',\n        'eligible_v2_median_error_deg', 'eligible_v2_p90_error_deg',\n        'averaging_availability', 'unavailable_reasons')\nprint(json.dumps({**{key: result.get(key) for key in keys},\n                  'elapsed_sec': time.monotonic()-started}, sort_keys=True, allow_nan=False))\nPY\n",
+      "exit_code": 0,
+      "log": {
+        "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_reference_command_v1b.log",
+        "sha256": "13cb3fa2a6274105f9c02eea214f07793651d2358b973d1b80ad1d7e0093b43a",
+        "size_bytes": 2776
+      },
+      "outcome": "Finite fixed reference completed with all source inputs unavailable",
+      "outer_tool_wrapper": "Not recorded by launcher; exact retained script body is included.",
+      "reproduction_entrypoint": "bash /home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_reference_command_v1b.sh > /home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_reference_command_v1b.log 2>&1",
+      "scientific_timeout_seconds": 300,
+      "script": {
+        "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_reference_command_v1b.sh",
+        "sha256": "0fc4b8f8129539a8663681d00592e039d7f17151e99df594cbc265014bd3bbca",
+        "size_bytes": 1142
+      },
+      "version": "v1b"
+    }
+  ],
+  "original_output_directory_absent": true,
+  "output_directory": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m2_references_v1_recovery1",
+  "schema_version": 1,
+  "source_owners_verified": [
+    {
+      "expected_sha256": "17b9231d0d8ada8835a61574f15d3492d3c4b780b153be9873b7e283260df7cb",
+      "matches_completed_attempt": true,
+      "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/plotting_scripts/gesc_gaussian_bag_analysis.py",
+      "sha256": "17b9231d0d8ada8835a61574f15d3492d3c4b780b153be9873b7e283260df7cb",
+      "size_bytes": 200266
+    },
+    {
+      "expected_sha256": "614332ebbaa0d654b11b8f0c7304bf980ea3e7d693172e471dc999d703f51aed",
+      "matches_completed_attempt": true,
+      "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/plotting_scripts/v2_direction_reference.py",
+      "sha256": "614332ebbaa0d654b11b8f0c7304bf980ea3e7d693172e471dc999d703f51aed",
+      "size_bytes": 24840
+    },
+    {
+      "expected_sha256": "b9b0e8b483dc4d7ac2fd392b7ef7ed57a8cb95ebb600124dc5d964b4cf0190c5",
+      "matches_completed_attempt": true,
+      "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/scenario_runner/aggregate_field_truth.py",
+      "sha256": "b9b0e8b483dc4d7ac2fd392b7ef7ed57a8cb95ebb600124dc5d964b4cf0190c5",
+      "size_bytes": 72051
+    },
+    {
+      "expected_sha256": "b54cf0baa3e068c471c424b2f629d3fa896c30187040769ca27808d5c7f77886",
+      "matches_completed_attempt": true,
+      "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/cost_function_node/cost_function_objects/cost_function_objects.py",
+      "sha256": "b54cf0baa3e068c471c424b2f629d3fa896c30187040769ca27808d5c7f77886",
+      "size_bytes": 23099
+    },
+    {
+      "expected_sha256": "d158915f459681a8955df1b7940526b0148d4aae2463125c27b586df58287555",
+      "matches_completed_attempt": true,
+      "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/config_parsing.py",
+      "sha256": "d158915f459681a8955df1b7940526b0148d4aae2463125c27b586df58287555",
+      "size_bytes": 25356
+    },
+    {
+      "expected_sha256": "6800641655b2967cd7a53f4daca3f20317f5787c888355fc29e67ee80afec775",
+      "matches_completed_attempt": true,
+      "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/filter_node/rolling_gesc.py",
+      "sha256": "6800641655b2967cd7a53f4daca3f20317f5787c888355fc29e67ee80afec775",
+      "size_bytes": 36352
+    },
+    {
+      "expected_sha256": "c7e47ecac2b1d334319fd2c7941e2c043e57b4c5490b38f31c6ec55c0eb455a8",
+      "matches_completed_attempt": true,
+      "path": "/home/mattb/dsim-lab/extremum-seeking/src/extremum_seeking/filters/base_filters.py",
+      "sha256": "c7e47ecac2b1d334319fd2c7941e2c043e57b4c5490b38f31c6ec55c0eb455a8",
+      "size_bytes": 14545
+    },
+    {
+      "expected_sha256": "f1cfd23a9c60e08780a4477f23cacc80a9e0c75b127448291e321756de7a2dce",
+      "matches_completed_attempt": true,
+      "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json",
+      "sha256": "f1cfd23a9c60e08780a4477f23cacc80a9e0c75b127448291e321756de7a2dce",
+      "size_bytes": 2035
+    },
+    {
+      "expected_sha256": "cb1493928c5bbb03f9ca787156c55b0a380bdfc2b445295d21d7a65cbda4a225",
+      "matches_completed_attempt": true,
+      "path": "/home/mattb/dsim-lab/docs/codex/gesc_gaussian/v2/m2_reference_plan.md",
+      "sha256": "cb1493928c5bbb03f9ca787156c55b0a380bdfc2b445295d21d7a65cbda4a225",
+      "size_bytes": 10084
+    }
+  ],
+  "source_snapshots": [
+    {
+      "artifacts": [
+        {
+          "path": "/home/mattb/Experiments/GESC-Gaussian/v2/checkpoints/m2_pre_reference_v1/source_and_evidence.tar.gz",
+          "sha256": "3251f8cce2c903b1c6c5f403720bdd7b3f733b1fe0c3023606674dc757634080",
+          "size_bytes": 460421
+        },
+        {
+          "path": "/home/mattb/Experiments/GESC-Gaussian/v2/checkpoints/m2_pre_reference_v1/staged.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "path": "/home/mattb/Experiments/GESC-Gaussian/v2/checkpoints/m2_pre_reference_v1/unstaged.patch",
+          "sha256": "3e49fe4372e71760c042e56e84fc1c198f95c2023708fed7a952ef346ba5e11c",
+          "size_bytes": 254868
+        }
+      ],
+      "captured_file_count": 76,
+      "created_utc": "2026-09-09T06:41:24.981858+00:00",
+      "manifest": {
+        "path": "/home/mattb/Experiments/GESC-Gaussian/v2/checkpoints/m2_pre_reference_v1/manifest.json",
+        "sha256": "22de2c6fc4032bfbee87ab9be1182de59e9b5deca3db44dd91e77823eca67059",
+        "size_bytes": 15550
+      }
+    },
+    {
+      "artifacts": [
+        {
+          "path": "/home/mattb/Experiments/GESC-Gaussian/v2/checkpoints/m2_pre_reference_recovery1/source_and_evidence.tar.gz",
+          "sha256": "92606203ce54d8a7aea306df39d63944a379c113b168b6dcf083c403ca51c504",
+          "size_bytes": 467494
+        },
+        {
+          "path": "/home/mattb/Experiments/GESC-Gaussian/v2/checkpoints/m2_pre_reference_recovery1/staged.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        {
+          "path": "/home/mattb/Experiments/GESC-Gaussian/v2/checkpoints/m2_pre_reference_recovery1/unstaged.patch",
+          "sha256": "859b54a5ae512404d74af635f4387d51c436f267b8433f863c7f6464e994427b",
+          "size_bytes": 254911
+        }
+      ],
+      "captured_file_count": 80,
+      "created_utc": "2026-09-09T06:51:35.406079+00:00",
+      "manifest": {
+        "path": "/home/mattb/Experiments/GESC-Gaussian/v2/checkpoints/m2_pre_reference_recovery1/manifest.json",
+        "sha256": "7cd41134614401905a1f5e853e4f1d22ec9a8bef3d0a1473844df6f3f9a290a6",
+        "size_bytes": 16240
+      }
+    }
+  ],
+  "status": "EVIDENCE_UNAVAILABLE",
+  "summary": {
+    "averaging_availability": null,
+    "causal_anchor_count": 0,
+    "claim": "stationary_augmented_reference_on_retained_input_proxies",
+    "completed_anchor_count": 192,
+    "eligible_informative_count": 0,
+    "eligible_matched_direction_count": 0,
+    "eligible_missing_method_direction_count": 0,
+    "eligible_v2_median_error_deg": null,
+    "eligible_v2_p90_error_deg": null,
+    "exact_source_anchor_count": 0,
+    "fixed_anchor_count": 192,
+    "fully_observed_input_cycle_count": 0,
+    "informative_reference_count": 0,
+    "legacy_median_error_deg": null,
+    "matched_informative_count": 0,
+    "method_comparison_qualified": false,
+    "numerically_qualified_anchor_count": 0,
+    "objective_reconstructable_anchor_count": 0,
+    "proxy_source_anchor_count": 0,
+    "qualified_constant_rate_cycle_count": 0,
+    "qualified_reference_count": 0,
+    "runtime_transport_qualified": false,
+    "unavailable_reasons": {
+      "missing_causal_anchor": 192
+    },
+    "v2_median_error_deg": null,
+    "v2_p90_error_deg": null,
+    "version": "m2-reference-v1"
+  },
+  "supporting_records": [
+    {
+      "path": "/home/mattb/dsim-lab/docs/codex/gesc_gaussian/v2/validation/m2_reference_launcher_note.md",
+      "sha256": "14deac7762adbb7278b3e847fde0a1b61ced19cd3b103bdb27ffa258dc60530b",
+      "size_bytes": 2176
+    },
+    {
+      "path": "/home/mattb/dsim-lab/docs/codex/gesc_gaussian/v2/validation/m2_reference_preflight_recovery.md",
+      "sha256": "53ec9247f299d9c6cfe0aee4020d70f336c0db7148f6cc618e33c912879eb848",
+      "size_bytes": 5152
+    },
+    {
+      "path": "/home/mattb/dsim-lab/docs/codex/gesc_gaussian/v2/m2_reference_preflight_recovery.md",
+      "sha256": "f7a96ade707431869b32828ae54adb1579d01dee4078056c3005c251741ac529",
+      "size_bytes": 2139
+    },
+    {
+      "path": "/home/mattb/dsim-lab/docs/codex/gesc_gaussian/v2/m2_reference_plan.md",
+      "sha256": "cb1493928c5bbb03f9ca787156c55b0a380bdfc2b445295d21d7a65cbda4a225",
+      "size_bytes": 10084
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/m2_reference_preflight_recovery_checks_v1.sh",
+      "sha256": "60bc6480942629f5dff537271b118c398f6c4892b604bfe9fc74251beae234df",
+      "size_bytes": 601
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/m2_reference_binding_preflight_v1.py",
+      "sha256": "5f93cf57e4b55e4f7a7f54a63841e332980a91981e4fe92793f9d1cdfc3d6117",
+      "size_bytes": 2007
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/m2_reference_preflight_recovery_tests_v1.log",
+      "sha256": "3b0276895199f2853252766d006226bd48270cb4e36f89f2ce2b5e8131e24794",
+      "size_bytes": 180
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/m2_reference_binding_preflight_v1.log",
+      "sha256": "045909299bef76b2b9c9f78dcb19dc8c5023db16d8bf000f944282d40a664eda",
+      "size_bytes": 11063
+    }
+  ],
+  "verification": {
+    "all_192_anchor_receipts_equal_final_rows": true,
+    "all_211_json_parsed": true,
+    "all_target_input_hash_references_match": true,
+    "both_checkpoint_archive_and_patch_hashes_match_manifests": true,
+    "nine_source_owner_hashes_match_started_and_final_and_current": true,
+    "report_generation_opened_no_bags_and_constructed_no_models": true
+  }
+}

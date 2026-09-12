@@ -1,0 +1,175 @@
+{
+  "version": "q1-controller-clock-source-v1",
+  "status": "SOURCE_AND_FOCUSED_TRANSPORT_PASS",
+  "cwd": "/home/mattb/dsim-lab",
+  "commands": [
+    {
+      "name": "moving_v1",
+      "command": "source /opt/ros/humble/setup.bash\nsource /home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/install/local_setup.bash\nROS_DOMAIN_ID=178 DSIM_M3_TEST_ARTIFACT_DIR=/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_v1 PYTHONPATH=extremum-seeking/src:$PYTHONPATH timeout 90s python3 -m pytest -q ros2_ws/src/ros_esc/test/test_v2_controller_motion.py > /home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_moving_v1.log 2>&1",
+      "outcome": "1 failed, 57 passed in 2.47s",
+      "log": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_moving_v1.log"
+    },
+    {
+      "name": "v2",
+      "command": "source /opt/ros/humble/setup.bash\nsource /home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/install/local_setup.bash\nROS_DOMAIN_ID=178 DSIM_M3_TEST_ARTIFACT_DIR=/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_v2 PYTHONPATH=extremum-seeking/src:$PYTHONPATH timeout 90s python3 -m pytest -q ros2_ws/src/ros_esc/test/test_v2_controller_motion.py ros2_ws/src/ros_esc/test/test_q1_controller_clock.py > /home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_v2.log 2>&1",
+      "outcome": "1 failed, 95 passed in 21.92s",
+      "log": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_v2.log"
+    },
+    {
+      "name": "v3",
+      "command": "source /opt/ros/humble/setup.bash\nsource /home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/install/local_setup.bash\nROS_DOMAIN_ID=178 DSIM_M3_TEST_ARTIFACT_DIR=/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_v3 PYTHONPATH=extremum-seeking/src:$PYTHONPATH timeout 90s python3 -m pytest -q ros2_ws/src/ros_esc/test/test_v2_controller_motion.py ros2_ws/src/ros_esc/test/test_q1_controller_clock.py > /home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_v3.log 2>&1",
+      "outcome": "1 failed, 96 passed in 3.07s",
+      "log": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_v3.log"
+    },
+    {
+      "name": "v4",
+      "command": "source /opt/ros/humble/setup.bash\nsource /home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/install/local_setup.bash\nROS_DOMAIN_ID=178 DSIM_M3_TEST_ARTIFACT_DIR=/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_v4 PYTHONPATH=extremum-seeking/src:$PYTHONPATH timeout 90s python3 -m pytest -q ros2_ws/src/ros_esc/test/test_v2_controller_motion.py ros2_ws/src/ros_esc/test/test_q1_controller_clock.py ros2_ws/src/ros_esc/test/test_q1_controller_clock_transport.py > /home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_v4.log 2>&1",
+      "outcome": "98 passed in 3.44s",
+      "log": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_v4.log"
+    },
+    {
+      "name": "v5",
+      "command": "source /opt/ros/humble/setup.bash\nsource /home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/install/local_setup.bash\nROS_DOMAIN_ID=178 DSIM_M3_TEST_ARTIFACT_DIR=/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_v5 PYTHONPATH=extremum-seeking/src:$PYTHONPATH timeout 90s python3 -m pytest -q ros2_ws/src/ros_esc/test/test_v2_controller_motion.py ros2_ws/src/ros_esc/test/test_q1_controller_clock.py ros2_ws/src/ros_esc/test/test_q1_controller_clock_transport.py > /home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_v5.log 2>&1",
+      "outcome": "103 passed in 3.44s",
+      "log": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_v5.log"
+    },
+    {
+      "name": "legacy_v1",
+      "command": "source /opt/ros/humble/setup.bash\nsource /home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/install/local_setup.bash\nROS_DOMAIN_ID=178 PYTHONPATH=extremum-seeking/src:$PYTHONPATH timeout 120s python3 -m pytest -q ros2_ws/src/ros_esc/test/test_legacy_behavior.py ros2_ws/src/ros_esc/test/test_deferred_signal_shutdown.py ros2_ws/src/ros_esc/test/test_observability_contract.py -k \"controller or recording or supervisor_owned_assist or sigint or robust_startup or signal_request\" > /home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_legacy_v1.log 2>&1",
+      "outcome": "19 passed, 34 deselected in 1.03s",
+      "log": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_legacy_v1.log"
+    },
+    {
+      "name": "legacy_v2",
+      "command": "source /opt/ros/humble/setup.bash\nsource /home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/install/local_setup.bash\nROS_DOMAIN_ID=178 PYTHONPATH=extremum-seeking/src:$PYTHONPATH timeout 120s python3 -m pytest -q ros2_ws/src/ros_esc/test/test_legacy_behavior.py ros2_ws/src/ros_esc/test/test_deferred_signal_shutdown.py ros2_ws/src/ros_esc/test/test_observability_contract.py -k \"controller or recording or supervisor_owned_assist or sigint or robust_startup or signal_request\" > /home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_legacy_v2.log 2>&1",
+      "outcome": "19 passed, 34 deselected in 1.08s",
+      "log": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_legacy_v2.log"
+    },
+    {
+      "name": "transport_v1",
+      "command": "source /opt/ros/humble/setup.bash\nsource /home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/install/local_setup.bash\nROS_DOMAIN_ID=182 PYTHONPATH=extremum-seeking/src:$PYTHONPATH timeout 60s python3 -m pytest -q ros2_ws/src/ros_esc/test/test_q1_controller_clock_transport.py > /home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_transport_v1.log 2>&1",
+      "outcome": "1 failed in 0.69s; 27 leading sources exercised before exact float receipt assertion failed",
+      "log": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_transport_v1.log"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_legacy_v1.log",
+      "bytes": 114,
+      "sha256": "54dbb9029820bbc1cbc4a278506e300e59cbe83c33135fd574456170b5b9d2bc"
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_legacy_v2.log",
+      "bytes": 114,
+      "sha256": "b1f3c260da1b0f4fcff0bfbe71de6a3a8ef486acfa235b69c129fae79d27b308"
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_moving_v1.log",
+      "bytes": 2580,
+      "sha256": "5a296b02d160121d67cd7041ccfa4e520ee0a45ea79a2ae3db3e446e13caa63f"
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_transport_v1.log",
+      "bytes": 5554,
+      "sha256": "146a7a2ff945115fd8d7cbb6badb3f79ec46e70d280cf0a338a2bcf9616a4a15"
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_v2.log",
+      "bytes": 3260,
+      "sha256": "73e403abc5bbc5b89d7f76a125ff77457dd3b0a966718be8ab0111af109a0b7e"
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_v3.log",
+      "bytes": 1386,
+      "sha256": "00d66709d7acc5f7ca2ce59fcd17e2a4614670dde6de2b022cae7458ace4e9ae"
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_v4.log",
+      "bytes": 179,
+      "sha256": "456bdf116e56d4f66c9c4d761e2585e278636048de856e5c6aad88d269b08105"
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_v5.log",
+      "bytes": 180,
+      "sha256": "74427a040afcf5d21c39c2df2b200aac679200516febf2aae6a09b0914dbd9a0"
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_v1/controller_sigint_1788949808467573581.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_v2/controller_sigint_1788949955476924093.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_v3/controller_sigint_1788950028728568281.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_v4/controller_sigint_1788950160916872870.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/builds/initial/q1_controller_clock_v5/controller_sigint_1788950331648231710.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/controller_node/controller_node_script.py",
+      "bytes": 50141,
+      "sha256": "e4e5fe6f4e635b9d3591efb6868f8ef1ed25ba8711b58cfd1be765b7c1eb2dee"
+    },
+    {
+      "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/ros_esc/controller_node/clock_admission.py",
+      "bytes": 2908,
+      "sha256": "485e1a820a0693a57beb702f96d17a853fd9e6608114b952f3345b2d7339c2e9"
+    },
+    {
+      "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/test/test_v2_controller_motion.py",
+      "bytes": 15775,
+      "sha256": "1da9daa24a1cbe03588e6447c848538702b61141fd1f1a7e7350b75c221ceab4"
+    },
+    {
+      "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/test/test_q1_controller_clock.py",
+      "bytes": 12115,
+      "sha256": "6379673f2951d03ea62ea81ddfe22e6da3d47473fc43b805f29b52a25663f95c"
+    },
+    {
+      "path": "/home/mattb/dsim-lab/ros2_ws/src/ros_esc/test/test_q1_controller_clock_transport.py",
+      "bytes": 6899,
+      "sha256": "bf3f18c967bd88ad449bd3029262e62b6fdb9aab88428e44edc62d81a6ab4a2d"
+    },
+    {
+      "path": "/home/mattb/dsim-lab/docs/codex/gesc_gaussian/v2/validation/q1_controller_clock.md",
+      "bytes": 8642,
+      "sha256": "9a4ff72d4e35b2a289298f8d60eca67f789647a3367ca85f91e9e47faf28a5b8"
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/qualification/q1_primary_shadow_v1_recovery1/diagnostics/controller_clock_fault.json",
+      "bytes": 3846,
+      "sha256": "9f7320bf3f8da381dda57ab1c377f99d187bdf902496bbbaeffdec8bdff47575"
+    }
+  ],
+  "limits": [
+    "No Gazebo run, field performance or research qualification. Prior Q1 acquisitions remain failed.",
+    "Parent integrated/build/release evidence is recorded independently; tests here do not release another acquisition."
+  ],
+  "other_checks": [
+    {
+      "command": "bash docs/DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh v2 implement",
+      "outcome": "PASS; tool output only"
+    },
+    {
+      "command": "python3 -m py_compile ros2_ws/src/ros_esc/ros_esc/controller_node/controller_node_script.py ros2_ws/src/ros_esc/ros_esc/controller_node/clock_admission.py ros2_ws/src/ros_esc/test/test_q1_controller_clock.py ros2_ws/src/ros_esc/test/test_q1_controller_clock_transport.py",
+      "outcome": "PASS"
+    },
+    {
+      "command": "git diff --check -- ros2_ws/src/ros_esc/ros_esc/controller_node/controller_node_script.py ros2_ws/src/ros_esc/test/test_v2_controller_motion.py",
+      "outcome": "PASS"
+    }
+  ]
+}

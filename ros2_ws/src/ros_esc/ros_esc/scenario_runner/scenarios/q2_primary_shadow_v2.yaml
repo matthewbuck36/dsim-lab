@@ -1,0 +1,311 @@
+mode: simulation
+defaults:
+  bounds_m:
+  - -1.0
+  - 5.0
+  - -1.0
+  - 5.0
+  room_center_m:
+  - 2.0
+  - 2.0
+  validation_world: false
+  simulation_contacts_enabled: false
+  disturbances:
+    sensor_noise:
+      model: none
+      bound: 0.0
+    sensor_delay_sec: 0.0
+    pose_delay_sec: 0.0
+level_map: {}
+schema_version: 2
+purpose: qualification_observation
+suite_id: q2_primary_shadow_v2
+description: Four fixed primary-field source-correct observation runs; acquisition
+  checks only, independent qualification is evaluated separately.
+execution:
+  max_parallel_runs: 1
+  gazebo_gui: false
+  runs_root: /home/mattb/Experiments/GESC-Gaussian/v2/qualification/q2_primary_shadow_v2/runs
+  preflight_timeout_sec: 60.0
+  run_timeout_sec: 0.0
+  simulation_duration_sec: 125.0
+  wall_timeout_sec: 180.0
+  shutdown_grace_sec: 45.0
+  stop_on_run_failure: true
+  stop_on_cleanup_failure: true
+metadata:
+  experiment_version: q2-primary-shadow-v2
+  operator_notes: Simulation-only prospective qualification; no candidate intervention.
+    Fixed discovery seeds26090931/32, sealed confirmation26090933/34. First case visible.
+    Scientific gates are external to acquisition success.
+frozen_profile:
+  profile_id: q2_primary_shadow_v2
+  launch_overrides:
+    convergence_min_fill_periods: 2.0
+    convergence_state_gating_enabled: true
+    convergence_minimum_path_length_m: 0.2
+    convergence_maximum_path_efficiency: 0.5
+    convergence_confirmation_policy: qualified_dwell
+    convergence_confirmation_dwell_sec: 6.0
+    convergence_confirmation_exit_threshold_scale: 1.5
+    robust_search_epoch_reset_enabled: true
+    gaussian_fill_covariance_scale: 2.5
+    gaussian_fill_sigma_floor_m: 0.5
+    gaussian_fill_sigma_ceiling_m: 1.25
+    gaussian_fill_amplitude_depth_scale: 1.5
+    gaussian_fill_amplitude_max: 6.25
+    gaussian_fill_exit_sigma: 2.7
+    gaussian_fill_max_fills: 1
+    gaussian_fill_minimum_valid_samples: 40
+    gaussian_fill_reuse_retained_samples_on_redesign: true
+    extremum_classification_mode: counted_candidates
+    known_source_count: 2
+    candidate_cost_rotation_period_sec: 3.0
+    candidate_cost_required_rotations: 3
+    candidate_cost_pretrigger_rotations: 6
+    candidate_cost_mad_scale: 3.0
+    candidate_informed_fill_enabled: true
+    candidate_informed_fill_amplitude_scale: 1.25
+    operating_bounds_enabled: false
+    open_field_escape_assist_enabled: true
+    open_field_escape_approach_continuity_enabled: true
+    open_field_escape_active_fill_transit_enabled: true
+    open_field_escape_supervisor_owned_assist_enabled: true
+    modified_cost_affine_gain: 0.5
+    modified_cost_affine_decay_rate: 5.0e-07
+    modified_cost_affine_max_age: 35.0
+    modified_cost_affine_direction_sign: 1.0
+    post_recovery_guidance_enabled: false
+    recoverable_navigation_enabled: false
+    stall_window_sec: 3.0
+    minimum_radial_progress_m: 0.05
+    goal_score_threshold: 0.95
+    goal_score_rotation_period_sec: 3.0
+    goal_score_required_rotations: 2
+    goal_hold_sec: 3.0
+    undesired_score_hold_sec: 3.0
+    verification_max_sec: 12.0
+    fill_design_timeout_sec: 5.0
+    escape_max_sec: 35.0
+    escape_exit_hold_sec: 1.0
+    fill_avoidance_margin_m: 0.1
+    approach_history_window_sec: 0.5
+    continuous_search_mode: rolling_gesc_v2
+    v2_direction_policy: moving_cycle_coherence_v1
+    v2_qualification_observation_only: true
+    convergence_metric_mode: centroid_windows_v2
+    centroid_window_sec: 6.0
+    centroid_epsilon_m: 0.3
+    centroid_maximum_radius_m: 0.75
+    centroid_maximum_gap_sec: 0.5
+    v2_candidate_radius_m: 0.75
+    v2_candidate_epsilon_m: 0.15
+cases:
+- case_id: q2_discovery_residence
+  family: open_field
+  description: discovery residence exposure; natural motion, no forced confinement.
+  status: executable_unverified
+  profiles:
+  - robust_gaussian_v1
+  seeds:
+  - 26090931
+  starts:
+  - id: discovery_residence
+    x_m: 0.8497226717798214
+    y_m: 1.3184726717798212
+    yaw_rad: -0.8850668158886104
+  sources:
+  - id: local
+    x_m: 1.0606601717798214
+    y_m: 1.0606601717798212
+    relative_lumen_input: 400.0
+    evaluation_role: local_minimum
+  - id: global
+    x_m: 3.5
+    y_m: 3.5
+    relative_lumen_input: 1600.0
+    evaluation_role: goal
+  algorithm:
+    ablations:
+      gaussian_fill_enabled: true
+      affine_assist_enabled: true
+      recenter_enabled: false
+    launch_overrides: {}
+  success:
+    all_of:
+    - recording_complete
+    - cleanup_complete
+    - no_forbidden_events
+    controller:
+      expected_terminal_state: null
+      required_state_sequence: []
+      required_events: []
+      forbidden_events:
+      - FAILSAFE
+      - RECENTER_STARTED
+      - FILL_CREATED
+      - FILL_MERGED
+      - FILL_SUPERSEDED
+      - ESCAPE_STARTED
+      - GOAL_REACHED
+    ground_truth:
+      goal_source_ids:
+      - global
+      final_position_tolerance_m: 0.5
+    minimum_saturation_samples: 0
+- case_id: q2_discovery_approach
+  family: open_field
+  description: discovery approach exposure; natural motion, no forced confinement.
+  status: executable_unverified
+  profiles:
+  - robust_gaussian_v1
+  seeds:
+  - 26090932
+  starts:
+  - id: discovery_approach
+    x_m: 0.0
+    y_m: 0.0
+    yaw_rad: 0.7853981633974482
+  sources:
+  - id: local
+    x_m: 1.0606601717798214
+    y_m: 1.0606601717798212
+    relative_lumen_input: 400.0
+    evaluation_role: local_minimum
+  - id: global
+    x_m: 3.5
+    y_m: 3.5
+    relative_lumen_input: 1600.0
+    evaluation_role: goal
+  algorithm:
+    ablations:
+      gaussian_fill_enabled: true
+      affine_assist_enabled: true
+      recenter_enabled: false
+    launch_overrides: {}
+  success:
+    all_of:
+    - recording_complete
+    - cleanup_complete
+    - no_forbidden_events
+    controller:
+      expected_terminal_state: null
+      required_state_sequence: []
+      required_events: []
+      forbidden_events:
+      - FAILSAFE
+      - RECENTER_STARTED
+      - FILL_CREATED
+      - FILL_MERGED
+      - FILL_SUPERSEDED
+      - ESCAPE_STARTED
+      - GOAL_REACHED
+    ground_truth:
+      goal_source_ids:
+      - global
+      final_position_tolerance_m: 0.5
+    minimum_saturation_samples: 0
+- case_id: q2_confirmation_residence
+  family: open_field
+  description: confirmation residence exposure; natural motion, no forced confinement.
+  status: executable_unverified
+  profiles:
+  - robust_gaussian_v1
+  seeds:
+  - 26090933
+  starts:
+  - id: confirmation_residence
+    x_m: 1.2715976717798214
+    y_m: 0.8028476717798212
+    yaw_rad: 2.256525837701183
+  sources:
+  - id: local
+    x_m: 1.0606601717798214
+    y_m: 1.0606601717798212
+    relative_lumen_input: 400.0
+    evaluation_role: local_minimum
+  - id: global
+    x_m: 3.5
+    y_m: 3.5
+    relative_lumen_input: 1600.0
+    evaluation_role: goal
+  algorithm:
+    ablations:
+      gaussian_fill_enabled: true
+      affine_assist_enabled: true
+      recenter_enabled: false
+    launch_overrides: {}
+  success:
+    all_of:
+    - recording_complete
+    - cleanup_complete
+    - no_forbidden_events
+    controller:
+      expected_terminal_state: null
+      required_state_sequence: []
+      required_events: []
+      forbidden_events:
+      - FAILSAFE
+      - RECENTER_STARTED
+      - FILL_CREATED
+      - FILL_MERGED
+      - FILL_SUPERSEDED
+      - ESCAPE_STARTED
+      - GOAL_REACHED
+    ground_truth:
+      goal_source_ids:
+      - global
+      final_position_tolerance_m: 0.5
+    minimum_saturation_samples: 0
+- case_id: q2_confirmation_approach
+  family: open_field
+  description: confirmation approach exposure; natural motion, no forced confinement.
+  status: executable_unverified
+  profiles:
+  - robust_gaussian_v1
+  seeds:
+  - 26090934
+  starts:
+  - id: confirmation_approach
+    x_m: 0.0
+    y_m: 2.1213203435596424
+    yaw_rad: -0.7853981633974482
+  sources:
+  - id: local
+    x_m: 1.0606601717798214
+    y_m: 1.0606601717798212
+    relative_lumen_input: 400.0
+    evaluation_role: local_minimum
+  - id: global
+    x_m: 3.5
+    y_m: 3.5
+    relative_lumen_input: 1600.0
+    evaluation_role: goal
+  algorithm:
+    ablations:
+      gaussian_fill_enabled: true
+      affine_assist_enabled: true
+      recenter_enabled: false
+    launch_overrides: {}
+  success:
+    all_of:
+    - recording_complete
+    - cleanup_complete
+    - no_forbidden_events
+    controller:
+      expected_terminal_state: null
+      required_state_sequence: []
+      required_events: []
+      forbidden_events:
+      - FAILSAFE
+      - RECENTER_STARTED
+      - FILL_CREATED
+      - FILL_MERGED
+      - FILL_SUPERSEDED
+      - ESCAPE_STARTED
+      - GOAL_REACHED
+    ground_truth:
+      goal_source_ids:
+      - global
+      final_position_tolerance_m: 0.5
+    minimum_saturation_samples: 0

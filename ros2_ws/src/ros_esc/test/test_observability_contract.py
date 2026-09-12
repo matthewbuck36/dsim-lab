@@ -642,5 +642,6 @@ def test_controller_spawners_allow_bounded_gazebo_startup_latency():
     assert forwarded == {
         'controller_spawner_load_recovery_enabled': (
             '$(var controller_spawner_load_recovery_enabled)'
-        )
+        ),
+        'continuous_search_mode': '$(var continuous_search_mode)',
     }

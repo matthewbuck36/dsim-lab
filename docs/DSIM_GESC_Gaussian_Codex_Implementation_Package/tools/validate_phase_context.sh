@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: validate_phase_context.sh <phase 0-10> <plan|implement> [--strict-history]" >&2
+  echo "Usage: validate_phase_context.sh <phase 0-10|v2> <plan|implement> [--strict-history]" >&2
 }
 
 if [[ "$#" -lt 2 || "$#" -gt 3 ]]; then
@@ -23,7 +23,7 @@ if [[ "$#" -eq 3 ]]; then
   STRICT_HISTORY=true
 fi
 
-if [[ ! "$PHASE_INPUT" =~ ^(0?[0-9]|10)$ ]]; then
+if [[ "$PHASE_INPUT" != "v2" && ! "$PHASE_INPUT" =~ ^(0?[0-9]|10)$ ]]; then
   echo "Invalid phase: $PHASE_INPUT" >&2
   usage
   exit 2
@@ -35,8 +35,13 @@ if [[ "$STAGE" != "plan" && "$STAGE" != "implement" ]]; then
   exit 2
 fi
 
-PHASE_NUMBER=$((10#$PHASE_INPUT))
-printf -v PHASE "%02d" "$PHASE_NUMBER"
+if [[ "$PHASE_INPUT" == "v2" ]]; then
+  PHASE_NUMBER=-1
+  PHASE=v2
+else
+  PHASE_NUMBER=$((10#$PHASE_INPUT))
+  printf -v PHASE "%02d" "$PHASE_NUMBER"
+fi
 
 if ! ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"; then
   echo "Unable to locate the Git repository root." >&2
@@ -75,6 +80,16 @@ required=(
 )
 historical=()
 missing=0
+
+if [[ "$PHASE" == "v2" ]]; then
+  required+=(
+    "$ROOT/docs/README.md"
+    "$ROOT/docs/environment_parameters.md"
+    "$DOCS/implementation_sequence.md"
+    "$DOCS/handoffs/phase_10_handoff.md"
+    "$DOCS/v2/plan.md"
+  )
+fi
 
 if (( PHASE_NUMBER > 0 )); then
   required+=(
@@ -135,10 +150,13 @@ if (( PHASE_NUMBER >= 9 )); then
 fi
 
 if [[ "$STAGE" == "implement" ]]; then
-  required+=(
-    "$DOCS/plans/phase_${PHASE}_plan.md"
-    "$DOCS/status/phase_${PHASE}_status.md"
-  )
+  if [[ "$PHASE" == "v2" ]]; then
+    status="$DOCS/v2/status.md"
+  else
+    required+=("$DOCS/plans/phase_${PHASE}_plan.md")
+    status="$DOCS/status/phase_${PHASE}_status.md"
+  fi
+  required+=("$status")
 fi
 
 for path in "${required[@]}"; do
@@ -177,7 +195,6 @@ if (( missing != 0 )); then
 fi
 
 if [[ "$STAGE" == "implement" ]]; then
-  status="$DOCS/status/phase_${PHASE}_status.md"
   headings=(
     "## Verified repository state"
     "## Current milestone"

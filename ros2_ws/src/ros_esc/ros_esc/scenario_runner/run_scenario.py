@@ -4,11 +4,15 @@
 
 import argparse
 import bisect
+import ctypes
 import datetime as dt
+import errno
 import itertools
+import hashlib
 import json
 import math
 import os
+import platform
 from pathlib import Path
 import re
 import shutil
@@ -16,6 +20,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import uuid
 
@@ -32,6 +37,11 @@ from ros_esc.experiment_recording.record_run import (
     atomic_yaml,
     validate_run_id,
 )
+from ros_esc.v2_stream import (
+    canonical_json, sensor_geometry_descriptor, validate_mode_identity,
+    validate_stream_config,
+)
+from ros_esc.v2_direction_policy import THREE_CYCLE_POLICY, policy_metadata, validate_policy
 
 from ros_esc_interfaces.msg import (
     AlgorithmEvent,
@@ -46,17 +56,42 @@ from std_msgs.msg import Bool
 
 import yaml
 
+from .m4_scenario import ARRIVAL_SUITE_IDS
 from .scenario_schema import (
+    configuration_file_path,
     COUNTED_OPEN_FIELD_ASSISTED_RECOVERY_STATE_PATH,
     COUNTED_OPEN_FIELD_RECOVERY_STATE_PATH,
     expand_suite,
     load_suite,
+    POST_RECOVERY_ARRIVAL_CRITERION,
     STAGED_RECOVERY_STATE_PATHS,
 )
 
 
 def _repository_root():
     """Resolve the live checkout without assuming its module layout."""
+    # Ordinary imports must not spawn Git inside a single-process science job.
+    # Explicit repository/discovery/configuration overrides still belong to Git;
+    # presentation settings such as GIT_PAGER do not change checkout selection.
+    git_selection_overridden = any(
+        name in (
+            'GIT_DIR', 'GIT_WORK_TREE', 'GIT_COMMON_DIR',
+            'GIT_CEILING_DIRECTORIES', 'GIT_DISCOVERY_ACROSS_FILESYSTEM',
+        ) or name.startswith('GIT_CONFIG')
+        for name in os.environ
+    )
+    if not git_selection_overridden:
+        try:
+            cwd = Path.cwd().resolve()
+            for parent in (cwd, *cwd.parents):
+                marker = parent / '.git'
+                if marker.is_dir() or marker.is_file():
+                    if (parent / 'ros2_ws/src/ros_esc').is_dir():
+                        return parent
+                    # A nested unrelated repository is a discovery boundary.
+                    break
+        except OSError:
+            pass
     try:
         root = Path(subprocess.run(
             ['git', 'rev-parse', '--show-toplevel'],
@@ -94,6 +129,7 @@ GESC_FILTER = (
     / 'ros_esc/filter_node/filter_config_files/turtlebot_vehicle/'
     'gradient_methods/gesc_filter_full_rotation.json'
 )
+SENSOR_GEOMETRY = ROS_ESC_ROOT / 'ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json'
 VALIDATION_WORLD = (
     REPOSITORY_ROOT
     / 'ros2_ws/src/turtlebot3_rotating_sensor/worlds/'
@@ -116,6 +152,7 @@ EVENT_NAMES = {
 }
 RUN_ID_SAFE = re.compile('[^A-Za-z0-9._-]+')
 CANCEL_ESCALATION_SEC = 5.0
+MAX_TRACKED_PROCESSES = 4096
 # A graceful branch-boundary stop still has to close the bag, finalize Phase 05
 # metadata, and run the offline completeness validator.  A full 240-second bag
 # can require materially longer than the process-tree shutdown allowance, so
@@ -154,7 +191,35 @@ def _launch_value(value):
     return str(value)
 
 
-def build_launch_command(resolved, cost_path=None, gui=False):
+def build_v2_stream_config(resolved):
+    """Resolve one descriptor used by every opted-in owner and retained metadata."""
+    disturbances = resolved['disturbances']
+    sensor_delayed = disturbances['sensor_delay_sec'] > 0.0
+    pose_delayed = disturbances['pose_delay_sec'] > 0.0
+    return validate_stream_config({
+        'schema_version': 2, 'cost_key_basis': 'model_input_time',
+        'selected_channel': 0, 'frame_id': 'odom',
+        'raw_cost_topic': ('/gesc_gaussian/simulation/raw_cost_delayed' if sensor_delayed else '/turtlebot3/cost_value_chatter'),
+        'source_cost_topic': ('/gesc_gaussian/simulation/source_cost_delayed' if sensor_delayed else '/gesc_gaussian/source_cost'),
+        'provenance_topic': ('/gesc_gaussian/simulation/source_sample_provenance_delayed' if sensor_delayed else '/gesc_gaussian/v2/source_sample_provenance'),
+        'pose_topic': ('/gesc_gaussian/simulation/pose_delayed' if pose_delayed else '/odom'),
+        'encoder_topic': '/turtlebot3/encoder_chatter',
+        'timekeeper_topic': '/turtlebot3/timekeeper_chatter',
+        'augmented_cost_topic': '/cost_modified',
+        'objective_cost_topic': '/gesc_gaussian/v2/objective_cost_samples',
+        **sensor_geometry_descriptor(SENSOR_GEOMETRY),
+    })
+
+
+def resolve_controller_config_filepath(overrides):
+    """Share explicit controller selection between launch and recorder metadata."""
+    if 'controller_config_filepath' not in overrides:
+        return GESC_CONTROLLER
+    return configuration_file_path(overrides['controller_config_filepath'],
+                                   'controller_config_filepath')
+
+
+def build_launch_command(resolved, cost_path=None, gui=False, run_id=None):
     """Build the exact existing Gazebo launch argv without shell evaluation."""
     ablations = resolved['algorithm']['ablations']
     bounds = resolved['bounds_m']
@@ -263,6 +328,21 @@ def build_launch_command(resolved, cost_path=None, gui=False):
                 source['relative_lumen_input']
             )
     arguments.update(resolved['algorithm']['launch_overrides'])
+    arguments['controller_config_filepath'] = str(resolve_controller_config_filepath(
+        resolved['algorithm']['launch_overrides']))
+    mode = arguments.get('continuous_search_mode', 'stationary_v1')
+    validate_policy(arguments.get('v2_direction_policy', THREE_CYCLE_POLICY),
+                    continuous_search_mode=mode, algorithm_profile=resolved['profile'],
+                    use_sim_time=True)
+    if mode != 'stationary_v1':
+        config = build_v2_stream_config(resolved)
+        validate_mode_identity(mode, resolved['profile'], run_id, config)
+        arguments.update({
+            'v2_run_id': run_id,
+            'v2_stream_config_json': canonical_json(config),
+            'v2_algorithm_provenance_topic': config['provenance_topic'],
+            'sensor_transform_config_filepath': str(SENSOR_GEOMETRY),
+        })
     command = [
         'ros2', 'launch', 'turtlebot3_rotating_sensor', 'gazebo.launch.xml'
     ]
@@ -272,7 +352,7 @@ def build_launch_command(resolved, cost_path=None, gui=False):
     return command
 
 
-def build_metadata(resolved, operator, experiment_version, operator_notes):
+def build_metadata(resolved, operator, experiment_version, operator_notes, run_id=None):
     """Generate recording metadata from the same resolved launch object."""
     scenario_runner = {
         'schema_version': resolved['schema_version'],
@@ -292,6 +372,22 @@ def build_metadata(resolved, operator, experiment_version, operator_notes):
         'algorithm': resolved['algorithm'],
         'success': resolved['success'],
     }
+    if 'purpose' in resolved:
+        scenario_runner['purpose'] = resolved['purpose']
+    mode = resolved['algorithm']['launch_overrides'].get('continuous_search_mode', 'stationary_v1')
+    overrides = resolved['algorithm']['launch_overrides']
+    policy = validate_policy(overrides.get('v2_direction_policy', THREE_CYCLE_POLICY),
+                             continuous_search_mode=mode, algorithm_profile=resolved['profile'],
+                             use_sim_time=True)
+    if 'v2_direction_policy' in overrides:
+        scenario_runner['direction_policy'] = policy_metadata(policy)
+    if mode != 'stationary_v1':
+        config = build_v2_stream_config(resolved)
+        validate_mode_identity(mode, resolved['profile'], run_id, config)
+        scenario_runner['v2_identity'] = {
+            'continuous_search_mode': mode, 'run_id': run_id,
+            'stream_config': config, 'time_origin_binding': 'first_valid_simulation_timekeeper',
+        }
     if resolved.get('schema_version', 1) >= 4:
         scenario_runner.update({
             'acceptance_family': resolved['acceptance_family'],
@@ -367,7 +463,8 @@ def build_metadata(resolved, operator, experiment_version, operator_notes):
         'parameter_files': [
             str(MULTI_LIGHT_COST),
             str(GESC_FILTER),
-            str(GESC_CONTROLLER),
+            str(resolve_controller_config_filepath(resolved['algorithm']['launch_overrides'])),
+            *([str(SENSOR_GEOMETRY)] if mode == 'rolling_gesc_v2' else []),
         ],
         'human_intervention': False,
         'operator_notes': operator_notes,
@@ -384,7 +481,7 @@ def build_record_command(
     launch_command,
 ):
     """Build exact Phase 05 recorder argv."""
-    return [
+    command = [
         'ros2', 'run', 'ros_esc', 'record_run',
         '--mode', 'simulation',
         '--metadata-input', str(metadata_path),
@@ -393,9 +490,10 @@ def build_record_command(
         '--duration-sec', str(execution['run_timeout_sec']),
         '--preflight-timeout-sec', str(execution['preflight_timeout_sec']),
         '--target-exit-timeout-sec', str(execution['shutdown_grace_sec']),
-        '--',
-        *launch_command,
     ]
+    if execution.get('simulation_duration_sec', 0.0) > 0.0:
+        command.extend(['--sim-duration-sec', str(execution['simulation_duration_sec'])])
+    return [*command, '--', *launch_command]
 
 
 def resolved_noise_config(resolved, output_path):
@@ -445,44 +543,97 @@ def find_run_directory(runs_root, run_id):
     return matches[0]
 
 
-def ros_graph_nodes():
+def ros_graph_nodes(*, strict=False, absolute_deadline=None, require_shared_daemon=False):
     """Return the current ROS node set without changing the graph."""
+    if require_shared_daemon and not strict:
+        raise ValueError('shared daemon admission requires strict graph inspection')
+    if strict:
+        remaining = _deadline_remaining(absolute_deadline)
+        if remaining <= 0:
+            raise TimeoutError('ROS graph inspection deadline exhausted')
+        owner = '_native_development_graph_baseline' if require_shared_daemon else '_native_ros_graph_nodes'
+        command = [sys.executable, '-c',
+            'import json; from ros_esc.scenario_runner.run_scenario import '
+            f'{owner}; print(json.dumps(sorted({owner}())))']
+        result = subprocess.run(command, check=True, capture_output=True, text=True,
+                                timeout=min(5., remaining))
+        names = json.loads(result.stdout)
+        if not isinstance(names, list) or any(not isinstance(name, str) or not name.startswith('/')
+                                               for name in names):
+            raise ValueError('ROS graph inspection returned malformed names')
+        return set(names)
     try:
-        rclpy.init(args=[])
-        node = rclpy.create_node(
-            f'phase06_graph_probe_{uuid.uuid4().hex[:8]}'
-        )
-        rclpy.spin_once(node, timeout_sec=0.25)
-        names = {
-            (
-                f"{namespace.rstrip('/')}/{name}"
-                if namespace != '/' else f'/{name}'
-            )
-            for name, namespace in node.get_node_names_and_namespaces()
-            if name != node.get_name()
-        }
-        node.destroy_node()
-        rclpy.try_shutdown()
-        return names
+        return _native_ros_graph_nodes()
     except Exception:
         if rclpy.ok():
             rclpy.try_shutdown()
         return set()
 
 
-def session_processes(session_id):
+def _native_development_graph_baseline():
+    """Admit one exact shared daemon inside the strict owner's five-second child."""
+    from types import SimpleNamespace
+    from ros2cli.node.daemon import DaemonNode
+
+    def identity(daemon):
+        name, namespace = daemon.get_name(), daemon.get_namespace()
+        if (not isinstance(name, str) or not name or '/' in name
+                or not isinstance(namespace, str) or not namespace.startswith('/')):
+            raise ValueError('shared daemon identity is malformed')
+        return name, namespace
+
+    end = time.monotonic() + 5.0
+    with DaemonNode(SimpleNamespace()) as daemon:
+        initial = identity(daemon)
+        full_name = initial[1].rstrip('/') + '/' + initial[0]
+        while time.monotonic() < end:
+            observed = _native_ros_graph_nodes()
+            if identity(daemon) != initial:
+                raise ValueError('shared daemon identity changed during graph admission')
+            if full_name in observed:
+                return observed
+            time.sleep(.05)
+    raise TimeoutError('shared daemon was absent from independent native graph')
+
+
+def _native_ros_graph_nodes():
+    """Native discovery probe; selected callers isolate even teardown in a child."""
+    node = None
+    rclpy.init(args=[])
+    try:
+        node = rclpy.create_node(f'phase06_graph_probe_{uuid.uuid4().hex[:8]}')
+        rclpy.spin_once(node, timeout_sec=0.25)
+        return {(f"{namespace.rstrip('/')}/{name}" if namespace != '/' else f'/{name}')
+                for name, namespace in node.get_node_names_and_namespaces()
+                if name != node.get_name()}
+    finally:
+        if node is not None:
+            node.destroy_node()
+        rclpy.try_shutdown()
+
+
+def session_processes(session_id, *, strict=False, absolute_deadline=None):
     """Return live processes in the exact session created for one run."""
     try:
+        timeout = 5.0
+        if strict:
+            timeout = min(timeout, _deadline_remaining(absolute_deadline))
+            if timeout <= 0:
+                raise TimeoutError('process inspection deadline exhausted')
         output = subprocess.run(
             ['ps', '-eo', 'pid=,sid=,stat=,comm='],
-            check=True, capture_output=True, text=True, timeout=5.0,
+            check=True, capture_output=True, text=True, timeout=timeout,
         ).stdout
     except (OSError, subprocess.SubprocessError):
+        if strict:
+            raise
         return [{'pid': None, 'error': 'process inspection failed'}]
     survivors = []
     for line in output.splitlines():
         fields = line.split(None, 3)
         if len(fields) != 4:
+            if strict:
+                raise ValueError('malformed process inspection row')
             continue
         pid, sid, state, command = fields
         if int(sid) == int(session_id) and not state.startswith('Z'):
@@ -493,8 +644,88 @@ def session_processes(session_id):
     return survivors
 
 
-def cleanup_evidence(baseline_nodes, session_id, settle_sec=5.0):
+def cleanup_evidence(baseline_nodes, session_id, settle_sec=5.0, *, strict=False,
+                     absolute_deadline=None, process_ownership=None,
+                     process_ownership_mode='observed_tree_v1'):
     """Wait for graph settling and report exact-node/process contamination."""
+    if process_ownership_mode not in ('observed_tree_v1', 'subreaper_v2', 'subreaper_group_v3'):
+        raise ValueError('unknown process ownership mode')
+    selected_reaper = process_ownership_mode in ('subreaper_v2', 'subreaper_group_v3')
+    if selected_reaper and not strict:
+        raise ValueError('subreaper cleanup requires strict inspection')
+    if strict:
+        if _deadline_remaining(absolute_deadline) <= 0:
+            result = {'passed': False, 'strict': True,
+                    'inspection_errors': ['cleanup deadline exhausted before inspection']}
+            if selected_reaper:
+                result.update(process_ownership_mode=process_ownership_mode,
+                    inspection_performed=False, remaining_new_nodes=None,
+                    remaining_session_processes=None, remaining_owned_processes=None,
+                    absolute_deadline=absolute_deadline)
+            return result
+        end = min(time.monotonic() + settle_sec, absolute_deadline)
+        errors, survivors, live, new_nodes = [], [], {}, set()
+        inspected = {'graph': False, 'sessions': False, 'identities': False}
+        ownership = process_ownership or {}
+        identities = {int(item['pid']): item for item in ownership.get('identities', [])}
+        root_identity = identities.get(session_id)
+        if selected_reaper:
+            proof = ownership.get('kernel_proof', {})
+            if (ownership.get('mode') != process_ownership_mode
+                    or (process_ownership_mode == 'subreaper_group_v3'
+                        and ownership.get('signal_strategy') != 'initial_unreaped_root_group_sigint_then_adopted_pidfd')
+                    or ownership.get('root_pid') != session_id
+                    or ownership.get('inspection_complete') is not True
+                    or not all(proof.get(key) is True for key in (
+                        'baseline_echild', 'subreaper_verified', 'root_reaped',
+                        'final_echild', 'scope_exclusive', 'sigchld_valid',
+                        'state_restored', 'complete'))):
+                return {'passed': False, 'strict': True,
+                    'process_ownership_mode': process_ownership_mode,
+                    'inspection_performed': False,
+                    'inspection_errors': ['kernel descendant ownership proof is incomplete'],
+                    'remaining_new_nodes': None, 'remaining_session_processes': None,
+                    'remaining_owned_processes': None, 'absolute_deadline': absolute_deadline}
+        elif (not ownership.get('inspection_complete') or root_identity is None
+                or root_identity.get('session_id') != session_id):
+            errors.append('inner recorder ownership is absent or incomplete')
+        sessions = {session_id, *ownership.get('session_ids', []),
+                    *(item['session_id'] for item in identities.values())}
+        while not errors:
+            try:
+                new_nodes = ros_graph_nodes(strict=True, absolute_deadline=absolute_deadline) - set(baseline_nodes)
+                inspected['graph'] = True
+                survivors = [item for sid in sorted(sessions) for item in session_processes(
+                    sid, strict=True, absolute_deadline=absolute_deadline)]
+                inspected['sessions'] = True
+                live = _live_snapshot_processes(identities, strict=True)
+                inspected['identities'] = True
+            except Exception as error:
+                errors.append(f'{type(error).__name__}: {error}')
+                break
+            if not new_nodes and not survivors and not live:
+                break
+            remaining = min(end, absolute_deadline) - time.monotonic()
+            if remaining <= 0:
+                break
+            time.sleep(min(.25, remaining))
+        result = {'passed': not errors and not new_nodes and not survivors and not live,
+                'strict': True, 'inspection_errors': errors,
+                'baseline_nodes': sorted(baseline_nodes),
+                'remaining_new_nodes': sorted(new_nodes),
+                'inspected_session_ids': sorted(sessions),
+                'remaining_session_processes': survivors,
+                'remaining_owned_processes': list(live.values()),
+                'absolute_deadline': absolute_deadline,
+                'completed_monotonic': time.monotonic()}
+        if selected_reaper:
+            result.update(process_ownership_mode=process_ownership_mode,
+                          inspection_performed=all(inspected.values()), inspections=inspected)
+            for field, check in (('remaining_new_nodes', 'graph'),
+                ('remaining_session_processes', 'sessions'), ('remaining_owned_processes', 'identities')):
+                if not inspected[check]:
+                    result[field] = None
+        return result
     deadline = time.monotonic() + settle_sec
     new_nodes = set()
     survivors = []
@@ -514,6 +745,412 @@ def cleanup_evidence(baseline_nodes, session_id, settle_sec=5.0):
     }
 
 
+def _track_owned_processes(process, audit):
+    """Retain nested-session identities in the existing selected process loop."""
+    if audit is None:
+        return
+    if _ACTIVE_SUBREAPER is not None and audit is _ACTIVE_SUBREAPER.audit:
+        _ACTIVE_SUBREAPER.observe(process)
+        return
+    try:
+        snapshot = _snapshot_process_tree(process.pid, strict=True)
+        root = snapshot[process.pid]
+        if root['session_id'] != process.pid:
+            raise ValueError('recorder leader does not own its new session')
+        previous = {item['pid']: item for item in audit['identities']}
+        if process.pid in previous and previous[process.pid]['start_ticks'] != root['start_ticks']:
+            raise ValueError('recorder leader identity changed')
+        sessions = set(audit['session_ids']) | {item['session_id'] for item in snapshot.values()}
+        if (len(set(previous) | set(snapshot)) > MAX_TRACKED_PROCESSES
+                or len(sessions) > MAX_TRACKED_PROCESSES):
+            raise ValueError('owned-process tracking capacity exceeded')
+        previous.update(snapshot)
+        audit['identities'] = list(previous.values())
+        audit['session_ids'] = sorted(sessions)
+    except Exception as error:
+        audit['inspection_complete'] = False
+        if len(audit['inspection_errors']) < 16:
+            audit['inspection_errors'].append(f'{type(error).__name__}: {error}')
+
+
+def _process_tracking(enabled):
+    if enabled and _ACTIVE_SUBREAPER is not None:
+        return _ACTIVE_SUBREAPER.audit
+    return ({'inspection_complete': True, 'inspection_errors': [], 'identities': [],
+             'session_ids': [], 'capacity': MAX_TRACKED_PROCESSES,
+             'scope': 'observed owned identities and sessions; no unseen-future descendant proof'}
+            if enabled else None)
+
+
+# The selected runner is the sole launcher/waiter during this scope. Its shared
+# daemon and synchronous graph probes must be fully reaped before entry/after
+# exit. Native ROS threads may exist, but may not create unrelated child jobs.
+_SUBREAPER_LOCK = threading.Lock()
+_ACTIVE_SUBREAPER = None
+_WAIT_ALL = 0x40000000  # Linux __WALL: include non-SIGCHLD clone children.
+
+
+def _subreaper_setting(value=None):
+    if sys.platform != 'linux' or platform.machine() != 'x86_64':
+        raise RuntimeError('subreaper_v2 supports the verified Linux x86_64 ABI only')
+    libc = ctypes.CDLL(None, use_errno=True)
+    if value is not None:
+        if libc.prctl(36, ctypes.c_ulong(value), 0, 0, 0) != 0:
+            raise OSError(ctypes.get_errno(), 'PR_SET_CHILD_SUBREAPER failed')
+    selected = ctypes.c_int()
+    if libc.prctl(37, ctypes.byref(selected), 0, 0, 0) != 0:
+        raise OSError(ctypes.get_errno(), 'PR_GET_CHILD_SUBREAPER failed')
+    return selected.value
+
+
+def _subreaper_sigchld():
+    """Read the native glibc action; Python's cached getsignal is insufficient."""
+    if sys.platform != 'linux' or platform.machine() != 'x86_64':
+        raise RuntimeError('SIGCHLD inspection requires verified Linux x86_64 ABI')
+    libc = ctypes.CDLL(None, use_errno=True)
+    try:
+        version_function = libc.gnu_get_libc_version
+    except AttributeError as error:
+        raise RuntimeError('SIGCHLD inspection requires the verified glibc ABI') from error
+    version_function.restype = ctypes.c_char_p
+    version = version_function()
+    if not version:
+        raise RuntimeError('native glibc version could not be verified')
+    class Action(ctypes.Structure):
+        _fields_ = [('handler', ctypes.c_void_p), ('mask', ctypes.c_ulong * 16),
+                    ('flags', ctypes.c_int), ('restorer', ctypes.c_void_p)]
+    action = Action()
+    if libc.sigaction(signal.SIGCHLD, None, ctypes.byref(action)):
+        raise OSError(ctypes.get_errno(), 'native SIGCHLD inspection failed')
+    if action.handler is not None or action.flags & 2:  # SIG_IGN/custom or SA_NOCLDWAIT
+        raise RuntimeError('subreaper requires native SIGCHLD default and no SA_NOCLDWAIT')
+    return {'handler': 'SIG_DFL', 'flags': action.flags, 'libc': 'glibc',
+            'libc_version': version.decode('ascii')}
+
+
+def _subreaper_wait_peek():
+    """Return ECHILD distinctly from a running child and an unconsumed exit."""
+    try:
+        return os.waitid(os.P_ALL, 0, os.WEXITED | os.WNOHANG | os.WNOWAIT | _WAIT_ALL)
+    except ChildProcessError as error:
+        if error.errno == errno.ECHILD:
+            return 'ECHILD'
+        raise
+
+
+class _SubreaperOwner:
+    """Exclusive, bounded kernel ancestry witness for the existing process owner.
+
+    Procfs observations support scoped signaling and diagnostics. Only ECHILD
+    after the Popen root was reaped establishes exhaustion. No auxiliary Popen
+    may be launched or reaped concurrently inside this selected owner scope.
+    """
+    def __init__(self, absolute_deadline, shutdown_grace_sec, *, escalation_sec=None,
+                 process_ownership_mode='subreaper_v2'):
+        _deadline_remaining(absolute_deadline)
+        if process_ownership_mode not in ('subreaper_v2', 'subreaper_group_v3'):
+            raise ValueError('unknown kernel process ownership mode')
+        self.mode = process_ownership_mode
+        self.end, self.grace = absolute_deadline, shutdown_grace_sec
+        self.escalation = CANCEL_ESCALATION_SEC if escalation_sec is None else escalation_sec
+        self.work_end = self.end
+        self.process, self.active, self.previous, self.closed = None, False, None, False
+        self._sent = set()
+        self._root_identity = None
+        self._group_graceful_attempted = self._group_graceful_failed = False
+        self.audit = {'mode': self.mode, 'owner_pid': os.getpid(), 'root_pid': None,
+            'inspection_complete': True, 'inspection_errors': [], 'enumeration_races': [],
+            'identities': [], 'session_ids': [], 'reaped_descendants': [], 'signals': [],
+            'capacity': MAX_TRACKED_PROCESSES, 'absolute_deadline': self.end,
+            'scope': 'exclusive child/reaping scope; kernel subreaper ancestry exhaustion',
+            'kernel_proof': dict.fromkeys(('baseline_echild', 'subreaper_verified',
+                'root_reaped', 'final_echild', 'scope_exclusive', 'sigchld_valid',
+                'state_restored', 'complete'), False)}
+        if self.mode == 'subreaper_group_v3':
+            self.audit['signal_strategy'] = 'initial_unreaped_root_group_sigint_then_adopted_pidfd'
+
+    def start(self):
+        global _ACTIVE_SUBREAPER
+        if not _SUBREAPER_LOCK.acquire(blocking=False):
+            raise RuntimeError('another selected child/reaper scope is active')
+        try:
+            self.previous = _subreaper_setting()
+            if self.previous != 0:
+                raise RuntimeError('preexisting subreaper ownership is incompatible')
+            self.audit['sigchld_action'] = _subreaper_sigchld()
+            if _subreaper_wait_peek() != 'ECHILD':
+                raise RuntimeError('exclusive subreaper baseline has preexisting children')
+            if not hasattr(os, 'pidfd_open') or not hasattr(signal, 'pidfd_send_signal'):
+                raise RuntimeError('subreaper scoped signaling requires pidfd support')
+            if _subreaper_setting(1) != 1:
+                raise RuntimeError('subreaper enable verification failed')
+            self.active = True
+            if _subreaper_wait_peek() != 'ECHILD':
+                raise RuntimeError('children appeared during exclusive scope establishment')
+            self.audit['kernel_proof'].update(baseline_echild=True,
+                subreaper_verified=True, scope_exclusive=True, sigchld_valid=True)
+            _ACTIVE_SUBREAPER = self
+            return self
+        except BaseException:
+            if self.active and _subreaper_wait_peek() == 'ECHILD':
+                _subreaper_setting(self.previous)
+            _SUBREAPER_LOCK.release()
+            raise
+
+    def _error(self, error):
+        self.audit['inspection_complete'] = False
+        if len(self.audit['inspection_errors']) < 16:
+            self.audit['inspection_errors'].append(f'{type(error).__name__}: {error}')
+
+    def _retain(self, snapshot):
+        if self.mode == 'subreaper_group_v3' and self.process is not None:
+            root = snapshot.get(self.process.pid)
+            if root is not None:
+                if self._root_identity is None:
+                    self._root_identity = dict(root)
+                elif root['start_ticks'] != self._root_identity['start_ticks']:
+                    raise RuntimeError('registered root identity changed')
+        identities = {(item['pid'], item['start_ticks']): item for item in self.audit['identities']}
+        for item in snapshot.values():
+            identities[(item['pid'], item['start_ticks'])] = item
+        sessions = set(self.audit['session_ids']) | {item['session_id'] for item in snapshot.values()}
+        if len(identities) > MAX_TRACKED_PROCESSES or len(sessions) > MAX_TRACKED_PROCESSES:
+            raise ValueError('subreaper observed identity capacity exceeded')
+        self.audit['identities'] = list(identities.values())
+        self.audit['session_ids'] = sorted(sessions)
+
+    def observe(self, process):
+        if self.process is None:
+            self.process = process
+            self.audit['root_pid'] = process.pid
+        if self.process is not process:
+            self._error(ValueError('unregistered concurrent Popen owner'))
+            return
+        try:
+            self._retain(_snapshot_process_tree(process.pid, strict=True))
+        except ProcessLookupError as error:
+            try:
+                self._retain(getattr(error, 'owned_process_snapshot', {}))
+                if len(self.audit['enumeration_races']) >= MAX_TRACKED_PROCESSES:
+                    raise ValueError('subreaper enumeration race capacity exceeded')
+                self.audit['enumeration_races'].append({'monotonic': time.monotonic(),
+                    'error': str(error), 'partial_pids': sorted(getattr(error, 'owned_process_snapshot', {})),
+                    'inspection_pid': getattr(error, 'inspection_pid', None),
+                    'inspection_stage': getattr(error, 'inspection_stage', 'tree_enumeration')})
+            except Exception as capacity_error:
+                self._error(capacity_error)
+        except Exception as error:
+            self._error(error)
+
+    def _drain(self):
+        """Popen retains root status; targeted waits reap only adopted exits."""
+        for _ in range(MAX_TRACKED_PROCESSES):
+            status = _subreaper_wait_peek()
+            if status == 'ECHILD':
+                if self.process is not None and self.process.returncode is None:
+                    raise RuntimeError('root disappeared from kernel wait ownership before Popen reaped it')
+                self.audit['kernel_proof'].update(root_reaped=self.process is not None,
+                                                  final_echild=True)
+                return True
+            if status is None:
+                return False
+            if self.process is not None and status.si_pid == self.process.pid:
+                if self.process.returncode is not None:
+                    raise RuntimeError('kernel root exit conflicts with recorded Popen return code')
+                self.process.poll()  # The registered Popen alone owns this status.
+            else:
+                pid, exit_status = os.waitpid(status.si_pid, os.WNOHANG | _WAIT_ALL)
+                if pid != status.si_pid:
+                    raise RuntimeError('adopted child status changed during exclusive wait')
+                if len(self.audit['reaped_descendants']) >= MAX_TRACKED_PROCESSES:
+                    raise ValueError('subreaper adopted status capacity exceeded')
+                self.audit['reaped_descendants'].append({'pid': pid, 'wait_status': exit_status})
+        raise ValueError('subreaper wait-drain capacity exceeded')
+
+    def _direct_children(self):
+        """Union owner thread children; an empty census never proves exhaustion."""
+        children = set()
+        tasks = list(Path(f'/proc/{os.getpid()}/task').iterdir())
+        if len(tasks) > MAX_TRACKED_PROCESSES:
+            raise ValueError('subreaper thread census capacity exceeded')
+        for task in tasks:
+            try:
+                children.update(_process_children(int(task.name), strict=True))
+            except ProcessLookupError:
+                continue  # A thread exit is discharged only by final kernel proof.
+        if len(children) > MAX_TRACKED_PROCESSES:
+            raise ValueError('subreaper direct-child capacity exceeded')
+        return children
+
+    def _signal_direct(self, signum):
+        for pid in self._direct_children():
+            identity = _process_identity(pid, strict=True)
+            if identity is None:
+                continue
+            if identity['parent_pid'] != os.getpid():
+                raise RuntimeError('candidate is not an exclusively owned direct child')
+            self._retain({pid: identity})
+            key = (pid, identity['start_ticks'], int(signum))
+            if key in self._sent or identity['state'] == 'Z':
+                continue
+            # An unreaped direct child cannot have its PID recycled while this
+            # exclusive waiter is paused. Recheck after opening the kernel fd.
+            try:
+                descriptor = os.pidfd_open(pid, 0)
+            except ProcessLookupError:
+                continue
+            try:
+                current = _process_identity(pid, strict=True)
+                if current is None:
+                    continue
+                if (current['start_ticks'] != identity['start_ticks']
+                        or current['parent_pid'] != os.getpid()):
+                    raise RuntimeError('owned child identity changed before pidfd signal')
+                signal.pidfd_send_signal(descriptor, signum)
+                self._sent.add(key)
+                self.audit['signals'].append({'pid': pid, 'start_ticks': identity['start_ticks'],
+                    'signal': int(signum), 'pidfd': True,
+                    **({'transport': 'adopted_or_direct_pidfd', 'sent': True,
+                        'monotonic': time.monotonic(),
+                        'phase': {signal.SIGINT: 'graceful', signal.SIGTERM: 'terminate',
+                                  signal.SIGKILL: 'kill'}[signum]}
+                       if self.mode == 'subreaper_group_v3' else {})})
+            except ProcessLookupError:
+                pass
+            finally:
+                os.close(descriptor)
+
+    def _signal_initial_root_group(self):
+        """Send one graceful SIGINT while the exclusive owner pins the root.
+
+        The unreaped direct child reserves PID=SID=PGID. No waiter runs between
+        the kernel/identity guard and killpg. Only this original group receives
+        the signal; the recorder retains its separately sessioned bag/target.
+        """
+        self._group_graceful_attempted = True
+        row = {'transport': 'killpg_unreaped_root', 'phase': 'graceful',
+            'signal': int(signal.SIGINT), 'pidfd': False, 'sent': False,
+            'monotonic': time.monotonic(), 'no_reap_guard': False,
+            'process_group_id': self.process.pid,
+            'leader_identity': dict(self._root_identity or {})}
+        self.audit['signals'].append(row)
+        if self.process.returncode is not None:
+            row.update(context='root_already_reaped_use_adopted_pidfds',
+                       completed_monotonic=time.monotonic())
+            return
+        try:
+            if self._root_identity is None:
+                raise RuntimeError('original root identity unavailable for graceful group signal')
+            # WNOWAIT checks actual wait ownership, including a retained zombie,
+            # without stealing the Popen status or releasing the pinned PID.
+            try:
+                os.waitid(os.P_PID, self.process.pid,
+                    os.WEXITED | os.WNOHANG | os.WNOWAIT | _WAIT_ALL)
+            except ChildProcessError as error:
+                raise RuntimeError('root is no longer exclusively wait-owned') from error
+            current = _process_identity(self.process.pid, strict=True)
+            original = self._root_identity
+            if (current is None or current['pid'] != self.process.pid
+                    or original['pid'] != self.process.pid
+                    or current['start_ticks'] != original['start_ticks']
+                    or any(identity['parent_pid'] != os.getpid()
+                        or identity['session_id'] != self.process.pid
+                        or identity['process_group_id'] != self.process.pid
+                        for identity in (original, current))):
+                raise RuntimeError('unreaped root parent/session/group identity guard failed')
+            if _deadline_remaining(self.end) <= 0:
+                raise TimeoutError('graceful group signal exceeded original deadline')
+            row.update(leader_identity=dict(current), no_reap_guard=True,
+                       monotonic=time.monotonic())
+            # Do not poll/wait/reap here: the original direct child pins the
+            # group number even if it exits between this guard and the send.
+            os.killpg(self.process.pid, signal.SIGINT)
+            row['sent'] = True
+            self._sent.add((self.process.pid, original['start_ticks'], int(signal.SIGINT)))
+        except Exception as error:
+            self._group_graceful_failed = True
+            row['error'] = f'{type(error).__name__}: {error}'
+            raise
+        finally:
+            row['completed_monotonic'] = time.monotonic()
+
+    def _signal_phase(self, signum):
+        if self.mode == 'subreaper_group_v3' and signum == signal.SIGINT:
+            if not self._group_graceful_attempted:
+                self._signal_initial_root_group()
+            # A failed guard is not permission to use weaker graceful delivery.
+            # While the recorder's wrapper remains, let its owner finalize all
+            # resources; even previously adopted target descendants must wait.
+            if self._group_graceful_failed or self.process.returncode is None:
+                return
+        self._signal_direct(signum)
+
+    def cancel(self, process, grace_sec, drain_output):
+        self.observe(process)
+        output = None
+        interrupt_end = min(self.end-2*self.escalation, time.monotonic()+grace_sec)
+        term_end = min(self.end-self.escalation, max(time.monotonic(), interrupt_end)+self.escalation)
+        kill_end = min(self.end, max(time.monotonic(), term_end)+self.escalation)
+        phases = ((signal.SIGINT, interrupt_end), (signal.SIGTERM, term_end),
+                  (signal.SIGKILL, kill_end))
+        for signum, phase_end in phases:
+            while True:
+                try:
+                    if self._drain():
+                        break
+                    self._signal_phase(signum)
+                except Exception as error:
+                    self._error(error)
+                remaining = min(phase_end, self.end)-time.monotonic()
+                if remaining <= 0:
+                    break
+                time.sleep(min(.05, remaining))
+            if self.audit['kernel_proof']['final_echild']:
+                break
+        if drain_output and process.returncode is not None:
+            try:
+                output, _ = process.communicate(timeout=_deadline_remaining(self.end))
+            except subprocess.TimeoutExpired as error:
+                output = error.output
+                if isinstance(output, bytes):
+                    output = output.decode('utf-8', errors='replace')
+        return output
+
+    def finish(self):
+        global _ACTIVE_SUBREAPER
+        if self.closed:
+            return self.audit
+        try:
+            if self.process is not None:
+                if not self._drain():
+                    self.cancel(self.process, self.grace, False)
+                self._drain()
+            else:
+                self.audit['kernel_proof']['final_echild'] = _subreaper_wait_peek() == 'ECHILD'
+            if _subreaper_setting() != 1 or _subreaper_sigchld() != self.audit['sigchld_action']:
+                raise RuntimeError('subreaper or native SIGCHLD ownership changed')
+            if not self.audit['kernel_proof']['final_echild']:
+                raise RuntimeError('kernel children remain at ownership deadline')
+        except Exception as error:
+            self._error(error)
+        finally:
+            proof = self.audit['kernel_proof']
+            if proof['final_echild']:
+                try:
+                    proof['state_restored'] = _subreaper_setting(self.previous) == self.previous
+                except Exception as error:
+                    self._error(error)
+            proof['complete'] = bool(self.audit['inspection_complete'] and time.monotonic() <= self.end
+                and all(proof[key] for key in ('baseline_echild', 'subreaper_verified', 'root_reaped',
+                    'final_echild', 'scope_exclusive', 'sigchld_valid', 'state_restored')))
+            self.audit['inspection_complete'] = proof['complete']
+            self.audit['completed_monotonic'] = time.monotonic()
+            _ACTIVE_SUBREAPER = None
+            _SUBREAPER_LOCK.release()
+            self.closed = True
+        return self.audit
+
+
 def ensure_ros_daemon():
     """Start shared ros2cli discovery outside any per-run process session."""
     subprocess.run(
@@ -522,19 +1159,31 @@ def ensure_ros_daemon():
     )
 
 
-def _process_identity(pid):
+def _process_identity(pid, *, strict=False):
     """Read one Linux process identity without trusting a reusable PID."""
     try:
         stat_text = Path(f'/proc/{int(pid)}/stat').read_text(
             encoding='utf-8'
         )
-    except (OSError, ValueError):
+    except OSError as error:
+        if isinstance(error, FileNotFoundError) or error.errno in (errno.ENOENT, errno.ESRCH):
+            return None
+        if strict:
+            raise
+        return None
+    except ValueError:
+        if strict:
+            raise
         return None
     closing_parenthesis = stat_text.rfind(')')
     if closing_parenthesis < 0:
+        if strict:
+            raise ValueError('malformed procfs process identity')
         return None
     fields = stat_text[closing_parenthesis + 2:].split()
     if len(fields) <= 19:
+        if strict:
+            raise ValueError('incomplete procfs process identity')
         return None
     try:
         return {
@@ -546,39 +1195,70 @@ def _process_identity(pid):
             'start_ticks': int(fields[19]),
         }
     except ValueError:
+        if strict:
+            raise
         return None
 
 
-def _process_children(pid):
+def _process_children(pid, *, strict=False):
     """Read the direct children of one process from procfs."""
     try:
         children_text = Path(
             f'/proc/{int(pid)}/task/{int(pid)}/children'
         ).read_text(encoding='utf-8')
         return [int(value) for value in children_text.split()]
-    except (OSError, ValueError):
+    except OSError as error:
+        if strict:
+            if (isinstance(error, FileNotFoundError)
+                    or error.errno in (errno.ENOENT, errno.ESRCH)):
+                if _process_identity(pid, strict=True) is None:
+                    # A vanished process may have left unobserved descendants.
+                    # Absence here cannot establish exhaustive tree inspection.
+                    raise ProcessLookupError(errno.ESRCH,
+                        'process disappeared before child enumeration') from error
+            raise
+        return []
+    except ValueError:
+        if strict:
+            raise
         return []
 
 
-def _snapshot_process_tree(root_pid):
+def _snapshot_process_tree(root_pid, *, strict=False):
     """Snapshot descendants, including nested sessions, before signaling."""
     snapshot = {}
     pending = [int(root_pid)]
-    while pending:
-        pid = pending.pop()
-        if pid in snapshot:
-            continue
-        identity = _process_identity(pid)
-        if identity is None:
-            continue
-        snapshot[pid] = identity
-        pending.extend(_process_children(pid))
+    stage = 'identity'
+    try:
+        while pending:
+            pid = pending.pop()
+            if pid in snapshot:
+                continue
+            stage = 'identity'
+            identity = (_process_identity(pid, strict=True) if strict
+                        else _process_identity(pid))
+            if identity is None:
+                if strict:
+                    raise ProcessLookupError(errno.ESRCH,
+                        'process disappeared before tree enumeration')
+                continue
+            snapshot[pid] = identity
+            stage = 'children'
+            pending.extend(_process_children(pid, strict=True) if strict
+                           else _process_children(pid))
+    except Exception as error:
+        if strict:
+            error.owned_process_snapshot = dict(snapshot)
+            error.inspection_pid = pid
+            error.inspection_stage = stage
+        raise
     return snapshot
 
 
-def _matching_process(identity):
+def _matching_process(identity, *, strict=False):
     """Return the current identity only when the snapshotted PID is unchanged."""
-    current = _process_identity(identity['pid'])
+    current = (_process_identity(identity['pid'], strict=True) if strict
+               else _process_identity(identity['pid']))
     if current is None or current['state'] == 'Z':
         return None
     if current['start_ticks'] != identity['start_ticks']:
@@ -586,11 +1266,12 @@ def _matching_process(identity):
     return current
 
 
-def _live_snapshot_processes(snapshot):
+def _live_snapshot_processes(snapshot, *, strict=False):
     """Return unchanged, non-zombie processes from one owned tree snapshot."""
     live = {}
     for pid, identity in snapshot.items():
-        current = _matching_process(identity)
+        current = (_matching_process(identity, strict=True) if strict
+                   else _matching_process(identity))
         if current is not None:
             live[pid] = current
     return live
@@ -615,13 +1296,14 @@ def _owned_process_groups(snapshot, live):
     return groups
 
 
-def _signal_owned_process_group(process_group_id, identities, signum):
+def _signal_owned_process_group(process_group_id, identities, signum, *, strict=False):
     """Signal a group only while an original member still matches procfs."""
     if process_group_id <= 0 or process_group_id == os.getpgrp():
         return False
     safe_member_found = False
     for identity in identities:
-        current = _matching_process(identity)
+        current = (_matching_process(identity, strict=True) if strict
+                   else _matching_process(identity))
         if (
             current is not None
             and current['process_group_id'] == process_group_id
@@ -637,13 +1319,52 @@ def _signal_owned_process_group(process_group_id, identities, signum):
     return True
 
 
+def _deadline_remaining(absolute_deadline):
+    """Return one monotonic budget; expiration never starts a new interval."""
+    if (isinstance(absolute_deadline, bool)
+            or not isinstance(absolute_deadline, (int, float))
+            or not math.isfinite(absolute_deadline)):
+        raise ValueError('absolute_deadline must be finite monotonic seconds')
+    return max(0.0, absolute_deadline - time.monotonic())
+
+
 def _wait_for_cancelled_tree(
     process,
     snapshot,
     timeout_sec,
     drain_output,
+    *,
+    absolute_deadline=None,
 ):
     """Wait boundedly for the leader and every snapshotted descendant."""
+    if absolute_deadline is not None:
+        _deadline_remaining(absolute_deadline)
+        if (isinstance(timeout_sec, bool)
+                or not isinstance(timeout_sec, (int, float))
+                or not math.isfinite(timeout_sec) or timeout_sec < 0.0):
+            raise ValueError('selected wait timeout must be finite nonnegative seconds')
+        wait_end = min(absolute_deadline, time.monotonic() + timeout_sec)
+        output = None
+        remaining = _deadline_remaining(wait_end)
+        if remaining > 0.0:
+            try:
+                if drain_output:
+                    output, _ = process.communicate(timeout=remaining)
+                else:
+                    process.wait(timeout=remaining)
+            except subprocess.TimeoutExpired as error:
+                output = error.output
+                if isinstance(output, bytes):
+                    output = output.decode('utf-8', errors='replace')
+        while True:
+            leader_reaped = process.poll() is not None  # WNOHANG, including at expiry.
+            live = _live_snapshot_processes(snapshot, strict=True)
+            if leader_reaped and not live:
+                return True, live, output
+            remaining = _deadline_remaining(wait_end)
+            if remaining <= 0.0:
+                return leader_reaped, live, output
+            time.sleep(min(0.05, remaining))
     timeout_sec = max(0.0, timeout_sec)
     deadline = time.monotonic() + timeout_sec
     leader_reaped = False
@@ -677,8 +1398,121 @@ def _wait_for_cancelled_tree(
                 leader_reaped = False
 
 
-def _cancel_scoped_process(process, shutdown_grace_sec, drain_output):
-    """Stop the interrupted record tree, including its nested sessions."""
+def _cancel_scoped_process(process, shutdown_grace_sec, drain_output, *, absolute_deadline=None):
+    """Stop the owned tree. Selected deadline calls return stdout plus an audit."""
+    if _ACTIVE_SUBREAPER is not None and _ACTIVE_SUBREAPER.process is process:
+        output = _ACTIVE_SUBREAPER.cancel(process, shutdown_grace_sec, drain_output)
+        if absolute_deadline is None:
+            return output
+        return {'stdout': output, 'audit': _ACTIVE_SUBREAPER.audit}
+    if absolute_deadline is not None:
+        _deadline_remaining(absolute_deadline)
+        for value in (shutdown_grace_sec, CANCEL_ESCALATION_SEC):
+            if (isinstance(value, bool) or not isinstance(value, (int, float))
+                    or not math.isfinite(value) or value < 0.0):
+                raise ValueError('selected shutdown intervals must be finite nonnegative seconds')
+        audit_limit = 256
+        audit = {
+            'absolute_deadline': absolute_deadline,
+            'started_monotonic': time.monotonic(),
+            'inspection_complete': True,
+            'inspection_errors': [],
+            'signals': [],
+            'signals_count': 0,
+            'audit_truncated': False,
+        }
+        snapshot, live, output = {}, {}, None
+        leader_reaped = False
+        try:
+            snapshot = _snapshot_process_tree(process.pid, strict=True)
+            if process.pid not in snapshot:
+                audit['inspection_complete'] = False
+                audit['inspection_errors'].append('original root identity unavailable')
+            live = _live_snapshot_processes(snapshot, strict=True)
+        except Exception as error:
+            audit['inspection_complete'] = False
+            audit['inspection_errors'].append(f'{type(error).__name__}: {error}')
+            snapshot.update(getattr(error, 'owned_process_snapshot', {}))
+            # Failed enumeration must not hide its failure, but an independently
+            # verified direct-child identity still permits a scoped stop attempt.
+            try:
+                root = _process_identity(process.pid, strict=True)
+                if root is not None:
+                    snapshot.setdefault(process.pid, root)
+                live = _live_snapshot_processes(snapshot, strict=True)
+            except Exception:
+                live = dict(snapshot)
+        audit['owned_snapshot_count'] = len(snapshot)
+        audit['owned_snapshot'] = [snapshot[pid] for pid in sorted(snapshot)[:audit_limit]]
+        audit['audit_truncated'] = len(snapshot) > audit_limit
+        signal_levels = {}
+
+        def signal_group(group, identities, signum):
+            try:
+                signalled = _signal_owned_process_group(group, identities, signum, strict=True)
+            except Exception as error:
+                audit['inspection_complete'] = False
+                if len(audit['inspection_errors']) < 8:
+                    audit['inspection_errors'].append(f'{type(error).__name__}: {error}')
+                signalled = False
+            audit['signals_count'] += 1
+            if len(audit['signals']) < audit_limit:
+                audit['signals'].append({'process_group_id': group,
+                    'signal': int(signum), 'signalled': signalled})
+            else:
+                audit['audit_truncated'] = True
+            return signalled
+
+        def wait(interval):
+            nonlocal leader_reaped, live, output
+            try:
+                leader_reaped, live, captured = _wait_for_cancelled_tree(
+                    process, snapshot, interval, drain_output,
+                    absolute_deadline=absolute_deadline)
+                if captured is not None:
+                    output = captured
+            except Exception as error:
+                audit['inspection_complete'] = False
+                if len(audit['inspection_errors']) < 8:
+                    audit['inspection_errors'].append(f'{type(error).__name__}: {error}')
+                # Do not convert failed inspection into an empty/clean tree.
+                live = dict(snapshot)
+                try:
+                    leader_reaped = process.poll() is not None
+                except Exception:
+                    leader_reaped = False
+
+        root = snapshot.get(process.pid)
+        if root is not None and root['process_group_id'] == process.pid:
+            if signal_group(process.pid, [root], signal.SIGINT):
+                signal_levels[process.pid] = 1
+        # Unlike the default path, unavailable identity never permits a raw
+        # killpg fallback. Reserve escalation before allocating graceful wait.
+        graceful = min(shutdown_grace_sec, max(0.0,
+            _deadline_remaining(absolute_deadline) - 3 * CANCEL_ESCALATION_SEC))
+        wait(graceful)
+        escalation_signals = (signal.SIGINT, signal.SIGTERM, signal.SIGKILL)
+        for _ in escalation_signals:
+            if leader_reaped and not live and audit['inspection_complete']:
+                break
+            groups = _owned_process_groups(snapshot, live)
+            for group, identities in groups.items():
+                level = signal_levels.get(group, 0)
+                if level < len(escalation_signals):
+                    if signal_group(group, identities, escalation_signals[level]):
+                        signal_levels[group] = level + 1
+            wait(min(CANCEL_ESCALATION_SEC, _deadline_remaining(absolute_deadline)))
+        audit.update(
+            completed_monotonic=time.monotonic(), leader_reaped=leader_reaped,
+            remaining_owned_count=(len(live) if audit['inspection_complete'] else None),
+            remaining_owned=[live[pid] for pid in sorted(live)[:audit_limit]],
+        )
+        audit['audit_truncated'] |= len(live) > audit_limit
+        audit['deadline_exhausted'] = audit['completed_monotonic'] >= absolute_deadline
+        audit['cleanup_complete'] = bool(audit['inspection_complete']
+            and not audit['audit_truncated'] and not audit['deadline_exhausted']
+            and leader_reaped and not live)
+        return {'stdout': output, 'audit': audit}
     snapshot = _snapshot_process_tree(process.pid)
     signal_levels = {}
     captured_output = None
@@ -749,6 +1583,7 @@ def _run_record_to_boundary(
     anchor_state,
     boundary_state,
     boundary_required_events,
+    *, strict_process_tracking=False,
 ):
     """Observe a development branch boundary and request orderly shutdown."""
     context = rclpy.context.Context()
@@ -785,6 +1620,7 @@ def _run_record_to_boundary(
 
     timed_out = False
     boundary_stop = False
+    ownership = _process_tracking(strict_process_tracking)
     try:
         rclpy.init(context=context)
         context_initialized = True
@@ -808,6 +1644,8 @@ def _run_record_to_boundary(
             10,
         )
         with tempfile.TemporaryFile(mode='w+t', encoding='utf-8') as output:
+            if _ACTIVE_SUBREAPER is not None and time.monotonic() >= _ACTIVE_SUBREAPER.work_end:
+                raise TimeoutError('selected setup exhausted the original work deadline before launch')
             process = subprocess.Popen(
                 command,
                 cwd=REPOSITORY_ROOT,
@@ -817,7 +1655,11 @@ def _run_record_to_boundary(
                 start_new_session=True,
             )
             deadline = time.monotonic() + wall_timeout_sec
+            if _ACTIVE_SUBREAPER is not None:
+                deadline = min(deadline, _ACTIVE_SUBREAPER.work_end)
+            _track_owned_processes(process, ownership)
             while process.poll() is None:
+                _track_owned_processes(process, ownership)
                 remaining = deadline - time.monotonic()
                 if remaining <= 0.0:
                     timed_out = True
@@ -882,7 +1724,7 @@ def _run_record_to_boundary(
                     cleanup_error = exc
         if primary_error is None and cleanup_error is not None:
             raise cleanup_error
-    return {
+    result = {
         'return_code': process.returncode,
         'timed_out': timed_out,
         'stdout': stdout,
@@ -896,6 +1738,17 @@ def _run_record_to_boundary(
             observed['events'] & set(boundary_required_events)
         ),
     }
+    if ownership is not None:
+        result['process_ownership'] = ownership
+    return result
+
+
+def _requires_ranked_goal(resolved):
+    return bool(
+        resolved.get('algorithm', {}).get('launch_overrides', {}).get(
+            'extremum_classification_mode') == 'counted_candidates'
+        and resolved.get('success', {}).get('criterion') != POST_RECOVERY_ARRIVAL_CRITERION
+    )
 
 
 def _run_record_to_global_proximity(
@@ -903,8 +1756,11 @@ def _run_record_to_global_proximity(
     wall_timeout_sec,
     shutdown_grace_sec,
     resolved,
+    *, strict_process_tracking=False,
 ):
     """Stop only at a verified post-recovery global odometry sample."""
+    from copy import deepcopy
+
     context = rclpy.context.Context()
     context_initialized = False
     node = None
@@ -912,15 +1768,26 @@ def _run_record_to_global_proximity(
     node_added = False
     process = None
     primary_error = None
+    ownership = _process_tracking(strict_process_tracking)
     sequence = 0
     state_messages = []
     event_messages = []
     fill_records = []
+    centroid_records, timekeeper_records = [], []
+    centroid_selection = _m4_centroid_event_selection(resolved)
+    pde_selection = _m4_pde_event_selection(resolved)
+    typed_timestamp_selected = centroid_selection is not None or pde_selection is not None
+    confirmation_records, legacy_records = [], []
     observed = {
         'stage_a': False,
         'fill_cardinality': False,
         'stage_a_evidence': None,
+        'stage_a_completion_evidence': None,
         'stage_error': None,
+        'centroid_event_timestamp_bindings': [],
+        'centroid_event_timestamp_binding_error': None,
+        'pde_event_timestamp_bindings': [],
+        'pde_event_timestamp_binding_error': None,
         'stage_a_monitor_started_sim_sec': None,
         'stage_a_latest_sim_sec': None,
         'stage_a_timeout': False,
@@ -939,11 +1806,12 @@ def _run_record_to_global_proximity(
         'controller_ranked_goal_evidence': None,
     }
     staged_contract = resolved['success']['staged_recovery']
-    requires_ranked_goal = bool(
+    observes_ranked_goal = bool(
         resolved.get('algorithm', {}).get('launch_overrides', {}).get(
             'extremum_classification_mode'
         ) == 'counted_candidates'
     )
+    requires_ranked_goal = _requires_ranked_goal(resolved)
     sources = {source['id']: source for source in resolved['sources']}
     global_source = sources[staged_contract['global_source_id']]
 
@@ -953,6 +1821,18 @@ def _run_record_to_global_proximity(
         return sequence
 
     def refresh_stage_a():
+        selected_events = event_messages
+        binding_error = None
+        if centroid_selection is not None:
+            selected_events, bindings, binding_error = _centroid_convergence_evaluation_events(
+                resolved, state_messages, event_messages, centroid_records, timekeeper_records)
+            observed['centroid_event_timestamp_bindings'] = bindings
+            observed['centroid_event_timestamp_binding_error'] = binding_error
+        elif pde_selection is not None:
+            selected_events, bindings, binding_error = _moving_pde_convergence_evaluation_events(
+                resolved, state_messages, event_messages, confirmation_records, legacy_records, timekeeper_records)
+            observed['pde_event_timestamp_bindings'] = bindings
+            observed['pde_event_timestamp_binding_error'] = binding_error
         (
             stage_a_passed,
             cardinality_passed,
@@ -961,13 +1841,44 @@ def _run_record_to_global_proximity(
         ) = _staged_recovery_evidence(
             resolved,
             state_messages,
-            event_messages,
+            selected_events,
             fill_records,
         )
-        observed['stage_a'] = stage_a_passed is True
-        observed['fill_cardinality'] = cardinality_passed is True
+        observed['stage_a'] = stage_a_passed is True and binding_error is None
+        observed['fill_cardinality'] = cardinality_passed is True and binding_error is None
         observed['stage_a_evidence'] = evidence
-        observed['stage_error'] = error
+        observed['stage_error'] = binding_error or error
+        if (
+            typed_timestamp_selected
+            and observed['stage_a_completion_evidence'] is None
+            and observed['stage_a']
+            and observed['fill_cardinality']
+            and observed['stage_error'] is None
+        ):
+            # Historical completion advances the clock only. The current
+            # full-history verdict above still controls new acceptance.
+            observed['stage_a_completion_evidence'] = deepcopy(evidence)
+
+    def centroid_callback(message):
+        if message.confirmed:
+            centroid_records.append((next_sequence(), message))
+            refresh_stage_a()
+
+    def confirmation_callback(message):
+        confirmation_records.append((next_sequence(), message))
+        refresh_stage_a()
+
+    def legacy_callback(message):
+        legacy_records.append((next_sequence(), message))
+        refresh_stage_a()
+
+    def timekeeper_callback(message):
+        # Preserve all distinct origins/modes; exact heartbeat repeats add no
+        # new authority. Ordinary cross-topic arrival can complete a pending join.
+        if not any((old.mode, old.start_time) == (message.mode, message.start_time)
+                   for _, old in timekeeper_records):
+            timekeeper_records.append((next_sequence(), message))
+            refresh_stage_a()
 
     def state_callback(message):
         state_messages.append((next_sequence(), message))
@@ -977,7 +1888,7 @@ def _run_record_to_global_proximity(
         callback_sequence = next_sequence()
         event_messages.append((callback_sequence, message))
         if (
-            requires_ranked_goal
+            observes_ranked_goal
             and message.event_type == AlgorithmEvent.EVENT_GOAL_REACHED
         ):
             try:
@@ -1042,10 +1953,21 @@ def _run_record_to_global_proximity(
             return
         if observed['stage_a_monitor_started_sim_sec'] is None:
             observed['stage_a_monitor_started_sim_sec'] = sample_sim_sec
-        if (
-            not observed['stage_a']
-            or not observed['fill_cardinality']
-        ):
+        current_evidence_valid = (
+            observed['stage_a'] and observed['fill_cardinality']
+            and (not typed_timestamp_selected or observed['stage_error'] is None)
+        )
+        completion_evidence = (
+            observed['stage_a_completion_evidence']
+            if typed_timestamp_selected
+            else observed['stage_a_evidence']
+        )
+        stage_a_complete = (
+            completion_evidence is not None
+            if typed_timestamp_selected
+            else current_evidence_valid
+        )
+        if not stage_a_complete:
             observed['stage_a_latest_sim_sec'] = sample_sim_sec
             stage_a_timeout = staged_contract.get('stage_a_timeout_sec')
             if stage_a_timeout is not None:
@@ -1070,7 +1992,7 @@ def _run_record_to_global_proximity(
             return
         if observed['post_stage_a_started_sim_sec'] is None:
             observed['stage_a_latest_sim_sec'] = sample_sim_sec
-        completion_sequence = observed['stage_a_evidence'].get(
+        completion_sequence = completion_evidence.get(
             'stage_a_completion_stamp'
         )
         if (
@@ -1087,7 +2009,8 @@ def _run_record_to_global_proximity(
         )
         approach_radius = staged_contract.get('global_approach_radius_m')
         if (
-            approach_radius is not None
+            current_evidence_valid
+            and approach_radius is not None
             and not observed['global_approach']
             and distance <= approach_radius
         ):
@@ -1101,7 +2024,8 @@ def _run_record_to_global_proximity(
             }
         closer_radius = staged_contract.get('global_closer_radius_m')
         if (
-            closer_radius is not None
+            current_evidence_valid
+            and closer_radius is not None
             and not observed['global_closer']
             and distance <= closer_radius
         ):
@@ -1113,7 +2037,7 @@ def _run_record_to_global_proximity(
                 'proximity_radius_m': closer_radius,
                 'interpolation_used': False,
             }
-        if not observed['fill_cardinality']:
+        if not typed_timestamp_selected and not observed['fill_cardinality']:
             return
         ranked_goal_sequence = None
         ranked_goal_ready = not requires_ranked_goal
@@ -1123,7 +2047,8 @@ def _run_record_to_global_proximity(
                 ranked_goal_sequence = ranked_goal['callback_sequence']
                 ranked_goal_ready = sample_sequence > ranked_goal_sequence
         if (
-            ranked_goal_ready
+            current_evidence_valid
+            and ranked_goal_ready
             and distance <= staged_contract['global_proximity_radius_m']
         ):
             observed['global_proximity'] = True
@@ -1202,7 +2127,22 @@ def _run_record_to_global_proximity(
             odometry_callback,
             10,
         )
+        if centroid_selection is not None:
+            from ros_esc_interfaces.msg import CentroidConvergenceDiagnostics, RecurrentConvergenceDiagnostics, Timekeeper
+            diagnostic_type = (RecurrentConvergenceDiagnostics if centroid_selection['metric_mode'] ==
+                               'recurrent_geometry_v3' else CentroidConvergenceDiagnostics)
+            node.create_subscription(diagnostic_type,
+                centroid_selection['diagnostic_topic'], centroid_callback, 10)
+            node.create_subscription(Timekeeper,
+                centroid_selection['timekeeper_topic'], timekeeper_callback, 10)
+        elif pde_selection is not None:
+            from ros_esc_interfaces.msg import DetectorConfirmation, StampedFloat64MultiArray, Timekeeper
+            node.create_subscription(DetectorConfirmation, pde_selection['confirmation_topic'], confirmation_callback, 10)
+            node.create_subscription(StampedFloat64MultiArray, pde_selection['legacy_topic'], legacy_callback, 10)
+            node.create_subscription(Timekeeper, pde_selection['timekeeper_topic'], timekeeper_callback, 10)
         with tempfile.TemporaryFile(mode='w+t', encoding='utf-8') as output:
+            if _ACTIVE_SUBREAPER is not None and time.monotonic() >= _ACTIVE_SUBREAPER.work_end:
+                raise TimeoutError('selected setup exhausted the original work deadline before launch')
             process = subprocess.Popen(
                 command,
                 cwd=REPOSITORY_ROOT,
@@ -1212,7 +2152,11 @@ def _run_record_to_global_proximity(
                 start_new_session=True,
             )
             deadline = time.monotonic() + wall_timeout_sec
+            if _ACTIVE_SUBREAPER is not None:
+                deadline = min(deadline, _ACTIVE_SUBREAPER.work_end)
+            _track_owned_processes(process, ownership)
             while process.poll() is None:
+                _track_owned_processes(process, ownership)
                 remaining = deadline - time.monotonic()
                 if remaining <= 0.0:
                     timed_out = True
@@ -1306,6 +2250,14 @@ def _run_record_to_global_proximity(
             post_stage_a_timeout_stop
         ),
         'stage_a_observed_live': observed['stage_a'],
+        **({'centroid_event_timestamp_bindings_live': observed['centroid_event_timestamp_bindings'],
+            'centroid_event_timestamp_binding_error_live': observed['centroid_event_timestamp_binding_error'],
+            'stage_a_completion_evidence_live': observed['stage_a_completion_evidence']}
+           if centroid_selection is not None else {}),
+        **({'pde_event_timestamp_bindings_live': observed['pde_event_timestamp_bindings'],
+            'pde_event_timestamp_binding_error_live': observed['pde_event_timestamp_binding_error'],
+            'stage_a_completion_evidence_live': observed['stage_a_completion_evidence']}
+           if pde_selection is not None else {}),
         'fill_cardinality_observed_live': observed['fill_cardinality'],
         'stage_a_monitor_started_sim_sec_live': observed[
             'stage_a_monitor_started_sim_sec'
@@ -1345,6 +2297,8 @@ def _run_record_to_global_proximity(
             'global_closer_observed_live': observed['global_closer'],
             'global_closer_sample_live': observed['global_closer_sample'],
         })
+    if ownership is not None:
+        result['process_ownership'] = ownership
     return result
 
 
@@ -1356,8 +2310,97 @@ def run_record_process(
     boundary_state=None,
     boundary_required_events=None,
     staged_recovery=None,
+    *,
+    absolute_deadline=None,
+    strict_process_tracking=False,
+    process_ownership_mode='observed_tree_v1',
+):
+    """Select the preserved tree owner or an exclusive kernel ancestry witness."""
+    if process_ownership_mode not in ('observed_tree_v1', 'subreaper_v2', 'subreaper_group_v3'):
+        raise ValueError('unknown process ownership mode')
+    arguments = dict(anchor_state=anchor_state, boundary_state=boundary_state,
+        boundary_required_events=boundary_required_events, staged_recovery=staged_recovery)
+    if process_ownership_mode == 'observed_tree_v1':
+        return _run_record_process_observed(command, wall_timeout_sec, shutdown_grace_sec,
+            **arguments, absolute_deadline=absolute_deadline,
+            strict_process_tracking=strict_process_tracking)
+    if absolute_deadline is None:
+        raise ValueError('subreaper_v2 requires an explicit absolute deadline')
+    for value in (wall_timeout_sec, shutdown_grace_sec, CANCEL_ESCALATION_SEC):
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
+            raise ValueError('selected process timing must be finite nonnegative seconds')
+    reserve = shutdown_grace_sec + 3*CANCEL_ESCALATION_SEC
+    started = time.monotonic()
+    work_end = min(started+wall_timeout_sec, absolute_deadline-reserve)
+    if wall_timeout_sec <= 0 or work_end <= started:
+        raise ValueError('subreaper_v2 has insufficient work and shutdown reserve')
+    owner = _SubreaperOwner(absolute_deadline, shutdown_grace_sec,
+        process_ownership_mode=process_ownership_mode).start()
+    owner.work_end = work_end
+    try:
+        remaining = work_end-time.monotonic()
+        if remaining <= 0:
+            raise ValueError('subreaper setup exhausted its work budget')
+        # The existing plain/specialized polling and scientific callbacks are
+        # unchanged. Their selected tracker/cancellation use this one owner.
+        result = _run_record_process_observed(command, remaining, shutdown_grace_sec,
+            **arguments, strict_process_tracking=True)
+    except BaseException as error:
+        error.process_ownership = owner.finish()
+        error.execution_deadline_audit = {'absolute_deadline': absolute_deadline,
+            'started_monotonic': started, 'work_deadline': work_end,
+            'shutdown_reserve_sec': reserve, 'completed_monotonic': time.monotonic(),
+            'deadline_exhausted': time.monotonic() >= absolute_deadline,
+            'owned_descendant_cleanup_proven': owner.audit['kernel_proof']['complete']}
+        raise
+    else:
+        result['process_ownership'] = owner.finish()
+        result['deadline_audit'] = {'absolute_deadline': absolute_deadline,
+            'started_monotonic': started, 'work_deadline': work_end,
+            'shutdown_reserve_sec': reserve, 'completed_monotonic': time.monotonic(),
+            'deadline_exhausted': time.monotonic() >= absolute_deadline,
+            'work_timed_out': result['timed_out'],
+            'owned_descendant_cleanup_proven': owner.audit['kernel_proof']['complete']}
+        return result
+
+
+def _run_record_process_observed(
+    command,
+    wall_timeout_sec,
+    shutdown_grace_sec,
+    anchor_state=None,
+    boundary_state=None,
+    boundary_required_events=None,
+    staged_recovery=None,
+    *,
+    absolute_deadline=None,
+    strict_process_tracking=False,
 ):
     """Run record_run with a wall timeout and scoped session escalation."""
+    deadline_audit = None
+    if absolute_deadline is not None:
+        remaining = _deadline_remaining(absolute_deadline)
+        if any(value is not None for value in (
+                anchor_state, boundary_state, boundary_required_events, staged_recovery)):
+            raise ValueError('absolute_deadline supports only the plain outer process route')
+        for value, name in ((wall_timeout_sec, 'wall_timeout_sec'),
+                            (shutdown_grace_sec, 'shutdown_grace_sec'),
+                            (CANCEL_ESCALATION_SEC, 'CANCEL_ESCALATION_SEC')):
+            if (isinstance(value, bool) or not isinstance(value, (int, float))
+                    or not math.isfinite(value) or value < 0.0):
+                raise ValueError(name + ' must be finite nonnegative seconds')
+        reserve = shutdown_grace_sec + 3 * CANCEL_ESCALATION_SEC
+        if wall_timeout_sec <= 0.0 or remaining <= reserve:
+            raise ValueError('absolute_deadline has insufficient work and shutdown reserve')
+        started = time.monotonic()
+        deadline_audit = {
+            'absolute_deadline': absolute_deadline,
+            'started_monotonic': started,
+            'work_deadline': min(started + wall_timeout_sec, absolute_deadline - reserve),
+            'shutdown_reserve_sec': reserve,
+            'cancellation': None,
+            'owned_descendant_cleanup_proven': False,
+        }
     if boundary_state is not None and staged_recovery is not None:
         raise ValueError('only one live graceful-stop contract is allowed')
     if staged_recovery is not None:
@@ -1366,6 +2409,7 @@ def run_record_process(
             wall_timeout_sec,
             shutdown_grace_sec,
             staged_recovery,
+            **({'strict_process_tracking': True} if strict_process_tracking else {}),
         )
     if boundary_state is not None:
         return _run_record_to_boundary(
@@ -1375,7 +2419,12 @@ def run_record_process(
             anchor_state,
             boundary_state,
             list(boundary_required_events or []),
+            **({'strict_process_tracking': True} if strict_process_tracking else {}),
         )
+    if deadline_audit is not None and _deadline_remaining(absolute_deadline) <= reserve:
+        raise ValueError('absolute_deadline no longer has work and shutdown reserve before launch')
+    if _ACTIVE_SUBREAPER is not None and time.monotonic() >= _ACTIVE_SUBREAPER.work_end:
+        raise TimeoutError('selected setup exhausted the original work deadline before launch')
     process = subprocess.Popen(
         command,
         cwd=REPOSITORY_ROOT,
@@ -1385,26 +2434,72 @@ def run_record_process(
         start_new_session=True,
     )
     timed_out = False
+    ownership = _process_tracking(strict_process_tracking)
+    _track_owned_processes(process, ownership)
     try:
         try:
-            output, _ = process.communicate(timeout=wall_timeout_sec)
-        except subprocess.TimeoutExpired:
+            work_timeout = (wall_timeout_sec if deadline_audit is None
+                            else _deadline_remaining(deadline_audit['work_deadline']))
+            if deadline_audit is not None and work_timeout <= 0.0:
+                raise subprocess.TimeoutExpired(command, 0.0)
+            if ownership is None:
+                output, _ = process.communicate(timeout=work_timeout)
+            else:
+                work_end = time.monotonic() + work_timeout
+                if _ACTIVE_SUBREAPER is not None:
+                    work_end = min(work_end, _ACTIVE_SUBREAPER.work_end)
+                while True:
+                    _track_owned_processes(process, ownership)
+                    remaining = work_end - time.monotonic()
+                    if remaining <= 0:
+                        raise subprocess.TimeoutExpired(command, work_timeout)
+                    try:
+                        output, _ = process.communicate(timeout=min(.1, remaining))
+                        break
+                    except subprocess.TimeoutExpired:
+                        if time.monotonic() >= work_end:
+                            raise
+        except subprocess.TimeoutExpired as error:
             timed_out = True
-            output = _cancel_scoped_process(
-                process,
-                shutdown_grace_sec,
-                drain_output=True,
-            )
+            if deadline_audit is None:
+                output = _cancel_scoped_process(
+                    process, shutdown_grace_sec, drain_output=True)
+            else:
+                deadline_audit['work_end_monotonic'] = time.monotonic()
+                cancellation = _cancel_scoped_process(
+                    process, shutdown_grace_sec, drain_output=True,
+                    absolute_deadline=absolute_deadline)
+                deadline_audit['cancellation'] = cancellation['audit']
+                output = cancellation['stdout']
+                if output is None:
+                    output = error.output
+                    if isinstance(output, bytes):
+                        output = output.decode('utf-8', errors='replace')
             if output is None:
                 output = ''
-    except BaseException:
-        _cancel_scoped_process(
-            process,
-            shutdown_grace_sec,
-            drain_output=True,
-        )
+    except BaseException as error:
+        if deadline_audit is None:
+            _cancel_scoped_process(process, shutdown_grace_sec, drain_output=True)
+        else:
+            deadline_audit.setdefault('work_end_monotonic', time.monotonic())
+            try:
+                cancellation = _cancel_scoped_process(
+                    process, shutdown_grace_sec, drain_output=True,
+                    absolute_deadline=absolute_deadline)
+                deadline_audit['cancellation'] = cancellation['audit']
+            except BaseException as cleanup_error:
+                deadline_audit['cancellation_error'] = (
+                    f'{type(cleanup_error).__name__}: {cleanup_error}')
+            deadline_audit['completed_monotonic'] = time.monotonic()
+            deadline_audit['deadline_exhausted'] = (
+                deadline_audit['completed_monotonic'] >= absolute_deadline)
+            deadline_audit['work_timed_out'] = timed_out
+            if deadline_audit['cancellation'] is not None:
+                deadline_audit['owned_descendant_cleanup_proven'] = (
+                    deadline_audit['cancellation']['cleanup_complete'])
+            error.execution_deadline_audit = deadline_audit
         raise
-    return {
+    result = {
         'return_code': process.returncode,
         'timed_out': timed_out,
         'stdout': output,
@@ -1416,6 +2511,19 @@ def run_record_process(
         'boundary_required_events': [],
         'boundary_required_events_observed': [],
     }
+    if deadline_audit is not None:
+        deadline_audit.setdefault('work_end_monotonic', time.monotonic())
+        deadline_audit['completed_monotonic'] = time.monotonic()
+        deadline_audit['deadline_exhausted'] = (
+            deadline_audit['completed_monotonic'] >= absolute_deadline)
+        deadline_audit['work_timed_out'] = timed_out
+        if deadline_audit['cancellation'] is not None:
+            deadline_audit['owned_descendant_cleanup_proven'] = (
+                deadline_audit['cancellation']['cleanup_complete'])
+        result['deadline_audit'] = deadline_audit
+    if ownership is not None:
+        result['process_ownership'] = ownership
+    return result
 
 
 def _subsequence(required, observed):
@@ -1897,6 +3005,272 @@ def _message_source_timestamp(message):
     ):
         return None
     return value
+
+
+def _m4_centroid_event_selection(resolved):
+    """Resolve only the explicitly selected M4 centroid evaluator route."""
+    from ros_esc.convergence_detector_node.centroid_contract import CENTROID_METRIC_MODES
+    from ros_esc.convergence_detector_node.recurrent_contract import RECURRENT_MODE, RECURRENT_TOPIC
+    values = resolved.get('algorithm', {}).get('launch_overrides', {})
+    if (resolved.get('suite_id') not in ('m4_pilot_v1', 'm4_pilot_v2', 'm4_pilot_v3', 'm4_pilot_v4', 'm4_pilot_v5', 'm4_pilot_v6', 'm4_pilot_v7', 'm4_pilot_v8', 'm4_pilot_v9', *ARRIVAL_SUITE_IDS, 'v2_method_development_v1')
+            or values.get('convergence_metric_mode', 'pde_mean_v1') not in (*CENTROID_METRIC_MODES, RECURRENT_MODE)):
+        return None
+    moving = values.get('continuous_search_mode', 'stationary_v1') == 'rolling_gesc_v2'
+    if values['convergence_metric_mode'] == RECURRENT_MODE and not moving:
+        if resolved.get('suite_id') not in ('v2_method_development_v1', *ARRIVAL_SUITE_IDS):
+            raise ValueError('stationary recurrent evaluation requires selected method development simulation')
+    delayed = resolved.get('disturbances', {}).get('pose_delay_sec', 0.) > 0
+    return dict(metric_mode=values['convergence_metric_mode'],
+        diagnostic_topic=(values.get('recurrent_diagnostics_topic', RECURRENT_TOPIC)
+            if values['convergence_metric_mode'] == RECURRENT_MODE else
+            values.get('convergence_diagnostics_topic', '/gesc_gaussian/v2/convergence_diagnostics')),
+        timekeeper_topic=(build_v2_stream_config(resolved)['timekeeper_topic'] if moving else
+                          values.get('stationary_timekeeper_topic', '/turtlebot3/timekeeper_chatter')),
+        pose_topic=values.get('algorithm_pose_topic',
+            '/gesc_gaussian/simulation/pose_delayed' if delayed else '/odom'),
+        window_sec=values.get('centroid_window_sec', 3.),
+        epsilon_m=values.get('centroid_epsilon_m', .06),
+        maximum_radius_m=values.get('centroid_maximum_radius_m', .5),
+        maximum_source_gap_sec=values.get('centroid_maximum_gap_sec', .5),
+        pose_freshness_sec=values.get('centroid_pose_stale_sec', .5))
+
+
+def _m4_pde_event_selection(resolved):
+    """Opt in only the existing explicit moving-PDE evaluation suites."""
+    values = resolved.get('algorithm', {}).get('launch_overrides', {})
+    if (resolved.get('suite_id') not in (*ARRIVAL_SUITE_IDS, 'v2_method_development_v1')
+            or values.get('continuous_search_mode', 'stationary_v1') != 'rolling_gesc_v2'
+            or values.get('convergence_metric_mode', 'pde_mean_v1') != 'pde_mean_v1'):
+        return None
+    config = build_v2_stream_config(resolved)
+    return dict(stream_config=config, timekeeper_topic=config['timekeeper_topic'],
+                confirmation_topic='/gesc_gaussian/v2/detector_confirmation',
+                legacy_topic='/gesc_gaussian/convergence_status')
+
+
+def _moving_pde_convergence_evaluation_events(resolved, state_messages, event_messages,
+                                      confirmation_records=(), legacy_records=(),
+                                      timekeeper_records=()):
+    """Bind canonical PDE mirrors before adapting a detached evaluator copy.
+
+    The public PDE coordinate is the legacy model clock. The typed confirmation
+    supplies actual input support, also retained by the snapshot and fill.
+    Missing cross-topic joins remain pending live and errors in the final audit.
+    """
+    from copy import deepcopy
+    from ros_esc.experiment_recording.record_run import v2_message_identity_error
+    from ros_esc.v2_lifecycle import FRESHNESS_NS, hash_payload, message_payload
+    from ros_esc.v2_stream import relative_stamp_ns, time_to_ns
+    selected = _m4_pde_event_selection(resolved)
+    if selected is None:
+        return event_messages, [], None
+    audit = []
+    try:
+        origins = set()
+        for _, message in timekeeper_records:
+            if message.mode != 'sim time':
+                raise ValueError('PDE Timekeeper mode is not simulation')
+            origins.add(relative_stamp_ns(0, message.start_time))
+        if len(origins) != 1:
+            raise ValueError('PDE confirmation lacks one immutable observed Timekeeper origin')
+        origin = next(iter(origins))
+        runs = {m.run_id for _, m in state_messages if m.run_id_valid and m.run_id
+                and m.state_valid and m.algorithm_profile == 'robust_gaussian_v1'}
+        if len(runs) != 1:
+            raise ValueError('PDE confirmation lacks one selected supervisor run')
+        identity = dict(run_id=next(iter(runs)), stream_config=selected['stream_config'])
+        confirmed, epochs = {}, {}
+        for _, message in confirmation_records:
+            error = v2_message_identity_error(message, identity, origin, protocol_version=1)
+            if error:
+                raise ValueError(error)
+            times = [time_to_ns(getattr(message, key)) for key in
+                     ('epoch_started_at', 'history_start', 'history_end', 'source_stamp', 'stamp')]
+            epoch_start, lo, hi, source, publication = times
+            vector = list(message.legacy_snapshot)
+            if (message.metric_mode != 'pde_mean_v1' or message.history_kind != 'pde_input_support'
+                    or message.source_stamp_kind != 'pose_input' or not message.valid
+                    or not message.legacy_r_mean_valid or message.convergence_score_valid
+                    or any(type(getattr(message, key)) is not int or getattr(message, key) <= 0
+                           for key in ('search_epoch', 'confirmation_sequence', 'context_sequence'))
+                    or not origin <= epoch_start <= lo <= hi == source <= publication
+                    or publication-source > FRESHNESS_NS or len(vector) != 8
+                    or not all(math.isfinite(v) for v in (*vector, message.legacy_r_mean_m2,
+                                                          message.center_x_m, message.center_y_m))
+                    or message.legacy_r_mean_m2 < 0 or vector[1] != message.legacy_r_mean_m2
+                    or vector[3:5] != [message.center_x_m, message.center_y_m]):
+                raise ValueError('PDE confirmation metric, identity or support bounds invalid')
+            key = (message.search_epoch, message.confirmation_sequence)
+            digest = hash_payload(message_payload(message))
+            if key in confirmed and confirmed[key][0] != digest:
+                raise ValueError('conflicting typed PDE confirmation identity')
+            if message.search_epoch in epochs and epochs[message.search_epoch] != key:
+                raise ValueError('multiple PDE confirmations in one epoch')
+            epochs[message.search_epoch] = key
+            confirmed[key] = (digest, message)
+        fields = ('metric', 'r_mean_m2', 'decay', 'fill_center_x_m', 'fill_center_y_m',
+                  'mean_old_x_m', 'mean_old_y_m', 'count_remaining')
+        normalized, matched, event_identities = [], set(), {}
+        for bag_stamp, event in event_messages:
+            if event.event_type != AlgorithmEvent.EVENT_CONVERGENCE_CONFIRMED:
+                normalized.append((bag_stamp, event))
+                continue
+            names = list(event.value_names)
+            values = _event_value_map(event)
+            original = _message_source_timestamp(event)
+            if (len(names) != len(set(names)) or not set(fields).issubset(values)
+                    or not all(math.isfinite(v) for v in values.values()) or original is None):
+                raise ValueError('PDE public convergence fields or timestamp invalid')
+            vector = [values[name] for name in fields]
+            publication = time_to_ns(event.stamp)
+            candidates = [(key, digest, message) for key, (digest, message) in confirmed.items()
+                if vector == list(message.legacy_snapshot)
+                and 0 <= publication-time_to_ns(message.stamp) <= FRESHNESS_NS]
+            if len(candidates) != 1:
+                raise ValueError('PDE public convergence lacks one unique typed confirmation')
+            key, typed_digest, message = candidates[0]
+            mirrors = {hash_payload(message_payload(m)): m for _, m in legacy_records
+                if m.header == 'CONVERGENCE_STATUS' and math.isfinite(m.timestamp)
+                and m.timestamp == original and list(m.data) == vector}
+            if len(mirrors) != 1:
+                raise ValueError('PDE public convergence lacks one exact canonical legacy mirror')
+            event_digest = hash_payload(message_payload(event))
+            if key in event_identities and event_identities[key] != event_digest:
+                raise ValueError('conflicting public PDE convergence identity')
+            event_identities[key] = event_digest
+            relative = (time_to_ns(message.source_stamp)-origin)*1e-9
+            private = deepcopy(event)
+            private.source_timestamp, private.source_timestamp_valid = relative, True
+            normalized.append((bag_stamp, private))
+            matched.add(key)
+            audit.append(dict(event_bag_or_callback_stamp=bag_stamp, event_sha256=event_digest,
+                confirmation_sha256=typed_digest, legacy_sha256=next(iter(mirrors)),
+                run_id=message.run_id, metric_mode=message.metric_mode, search_epoch=key[0],
+                confirmation_sequence=key[1], time_origin_ns=origin,
+                confirmation_source_stamp_ns=time_to_ns(message.source_stamp),
+                confirmation_publication_stamp_ns=time_to_ns(message.stamp),
+                event_publication_stamp_ns=publication, original_source_timestamp=original,
+                relative_source_timestamp=relative,
+                scope='private inherited evaluator coordinate; public payload and decision clock unchanged'))
+        if confirmed.keys()-matched:
+            raise ValueError('typed PDE confirmation lacks matching public convergence event')
+        return normalized, audit, None
+    except (AttributeError, TypeError, ValueError, OverflowError, KeyError) as exc:
+        return event_messages, audit, 'M4 PDE convergence timestamp binding: '+str(exc)
+
+
+def _centroid_convergence_evaluation_events(resolved, state_messages, event_messages,
+                                            centroid_records=(), timekeeper_records=()):
+    """Join typed confirmations before private inherited timestamp adaptation.
+
+    Public AlgorithmEvent has no centroid experiment-relative timestamp. Only
+    an exact named metric/geometry/epoch/sequence match and immutable observed
+    origin may supply one to an evaluator copy. Bag/callback order stays intact.
+    Missing cross-topic inputs are pending live and errors at final bag audit.
+    """
+    from copy import deepcopy
+    from ros_esc.convergence_detector_node.centroid_contract import centroid_diagnostic_errors
+    from ros_esc.convergence_detector_node.recurrent_contract import RECURRENT_MODE, recurrent_diagnostic_errors
+    from ros_esc.stationary_fill_protocol import (
+        centroid_configuration_errors, stationary_diagnostic_origin_errors,
+    )
+    from ros_esc.v2_lifecycle import FRESHNESS_NS, hash_payload, message_payload
+    from ros_esc.v2_stream import relative_stamp_ns, time_to_ns
+    selected = _m4_centroid_event_selection(resolved)
+    if selected is None:
+        return event_messages, [], None
+    audit = []
+    try:
+        origins = set()
+        for _, message in timekeeper_records:
+            if message.mode != 'sim time':
+                raise ValueError('centroid Timekeeper mode is not simulation')
+            origins.add(relative_stamp_ns(0, message.start_time))
+        if len(origins) != 1:
+            raise ValueError('centroid confirmation lacks one immutable observed Timekeeper origin')
+        origin = next(iter(origins))
+        runs = {message.run_id for _, message in state_messages
+                if getattr(message, 'run_id_valid', False) and message.run_id
+                and message.state_valid and message.algorithm_profile == 'robust_gaussian_v1'}
+        confirmed = {}
+        for _, diagnostic in centroid_records:
+            if diagnostic is None or not diagnostic.confirmed:
+                continue
+            check_diagnostic = (recurrent_diagnostic_errors if selected['metric_mode'] ==
+                                RECURRENT_MODE else centroid_diagnostic_errors)
+            errors = check_diagnostic([diagnostic],
+                expected_source_pose_topic=selected['pose_topic'], supervisor_run_ids=runs,
+                maximum_source_gap_sec=selected['maximum_source_gap_sec'], allow_clock_admission=True,
+                expected_frame_id='odom', pose_freshness_sec=selected['pose_freshness_sec'],
+                expected_metric_mode=selected['metric_mode'])
+            if selected['metric_mode'] != RECURRENT_MODE:
+                errors += centroid_configuration_errors(diagnostic, selected['window_sec'],
+                    selected['epsilon_m'], selected['maximum_radius_m'],
+                    expected_metric_mode=selected['metric_mode'])
+            elif resolved['algorithm']['launch_overrides'].get(
+                    'continuous_search_mode', 'stationary_v1') == 'stationary_v1':
+                errors += stationary_diagnostic_origin_errors(diagnostic, origin, RECURRENT_MODE)
+            if len(runs) != 1 or errors or time_to_ns(diagnostic.history_start) < origin:
+                raise ValueError('; '.join(errors) or 'centroid confirmation run/origin binding invalid')
+            key = (int(diagnostic.search_epoch), int(diagnostic.confirmation_sequence))
+            digest = hash_payload(message_payload(diagnostic))
+            if key in confirmed and confirmed[key][0] != digest:
+                raise ValueError('conflicting typed centroid confirmation identity')
+            confirmed[key] = (digest, diagnostic)
+        normalized, matched, event_identities = [], set(), {}
+        fields = ('score_m', 'confinement_radius_m', 'fill_center_x_m', 'fill_center_y_m',
+                  'search_epoch', 'confirmation_sequence')
+        for bag_stamp, message in event_messages:
+            if message.event_type != AlgorithmEvent.EVENT_CONVERGENCE_CONFIRMED:
+                normalized.append((bag_stamp, message))
+                continue
+            if len(message.value_names) != len(fields) or set(message.value_names) != set(fields):
+                raise ValueError('centroid convergence event does not carry the exact typed identity fields')
+            values = _event_value_map(message)
+            if not all(math.isfinite(values[name]) for name in fields):
+                raise ValueError('centroid convergence event values are nonfinite')
+            key = (int(values['search_epoch']), int(values['confirmation_sequence']))
+            if (key[0] <= 0 or key[1] <= 0 or key !=
+                    (values['search_epoch'], values['confirmation_sequence']) or key not in confirmed):
+                raise ValueError('centroid convergence event lacks matching typed confirmation')
+            diagnostic_digest, diagnostic = confirmed[key]
+            if any(values[name] != value for name, value in (
+                    ('score_m', diagnostic.score_m), ('confinement_radius_m', diagnostic.confinement_radius_m),
+                    ('fill_center_x_m', diagnostic.center_x_m), ('fill_center_y_m', diagnostic.center_y_m))):
+                raise ValueError('centroid convergence event center/score/radius differs from typed confirmation')
+            if not 0 <= time_to_ns(message.stamp)-time_to_ns(diagnostic.stamp) <= FRESHNESS_NS:
+                raise ValueError('centroid convergence event publication lacks bounded typed ordering')
+            support_stamp = (diagnostic.history_end if selected['metric_mode'] == RECURRENT_MODE
+                             else diagnostic.source_stamp)
+            relative = (time_to_ns(support_stamp)-origin)*1e-9
+            if message.source_timestamp_valid and _message_source_timestamp(message) != relative:
+                raise ValueError('existing centroid event relative timestamp conflicts with typed origin')
+            event_digest = hash_payload(message_payload(message))
+            if key in event_identities and event_identities[key] != event_digest:
+                raise ValueError('conflicting convergence event identity')
+            event_identities[key] = event_digest
+            private = message
+            if not message.source_timestamp_valid:
+                private = deepcopy(message)
+                private.source_timestamp, private.source_timestamp_valid = relative, True
+            normalized.append((bag_stamp, private))
+            matched.add(key)
+            audit.append(dict(event_bag_or_callback_stamp=bag_stamp, event_sha256=event_digest,
+                diagnostic_sha256=diagnostic_digest, metric_mode=diagnostic.metric_mode,
+                run_id=diagnostic.run_id, search_epoch=key[0], confirmation_sequence=key[1],
+                time_origin_ns=origin, diagnostic_source_stamp_ns=time_to_ns(diagnostic.source_stamp),
+                diagnostic_publication_stamp_ns=time_to_ns(diagnostic.stamp),
+                relative_source_timestamp=relative,
+                scope='private inherited evaluator coordinate; public event and primary decision clock unchanged'))
+            if selected['metric_mode'] == RECURRENT_MODE:
+                audit[-1].update(diagnostic_history_end_ns=time_to_ns(diagnostic.history_end),
+                    evaluator_coordinate='confirmed_history_end',
+                    evaluator_source_stamp_ns=time_to_ns(support_stamp))
+        if confirmed.keys()-matched:
+            raise ValueError('typed centroid confirmation lacks matching convergence event')
+        return normalized, audit, None
+    except (AttributeError, TypeError, ValueError, OverflowError, KeyError) as exc:
+        return event_messages, audit, 'M4 centroid convergence timestamp binding: '+str(exc)
 
 
 def _event_value_map(message):
@@ -3185,7 +4559,13 @@ def _supervisor_owned_escape_assist_evidence(
         'fill_to_exit_distance_m': exit_radius,
         'fill_to_exit_alignment': exit_alignment,
     })
-    if exit_alignment < 0.80:
+    alignment_required = (
+        resolved.get('success', {}).get('criterion') != POST_RECOVERY_ARRIVAL_CRITERION
+    )
+    if not alignment_required:
+        evidence.update(exit_alignment_required=False, exit_alignment_threshold=0.80,
+                        exit_alignment_passed=exit_alignment >= 0.80)
+    if alignment_required and exit_alignment < 0.80:
         return failed('measured fill-to-exit alignment is below 0.80')
 
     search_weights = [
@@ -3945,7 +5325,13 @@ def _direct_escape_repulse_ownership_evidence(
     )
     if measured_distance < exit_radius:
         return failed('direct measured exit is inside the frozen exit radius')
-    if alignment < 0.80:
+    alignment_required = (
+        resolved.get('success', {}).get('criterion') != POST_RECOVERY_ARRIVAL_CRITERION
+    )
+    if not alignment_required:
+        evidence.update(exit_alignment_required=False, exit_alignment_threshold=0.80,
+                        exit_alignment_passed=alignment >= 0.80)
+    if alignment_required and alignment < 0.80:
         return failed('direct measured fill-to-exit alignment is below 0.80')
 
     evidence.update({
@@ -4217,6 +5603,19 @@ def _bag_outcomes(run_directory, resolved):
         '/odom': Odometry,
         '/gesc_gaussian/simulation/contacts': ContactsState,
     }
+    centroid_selection = _m4_centroid_event_selection(resolved)
+    pde_selection = _m4_pde_event_selection(resolved)
+    if centroid_selection is not None:
+        from ros_esc_interfaces.msg import CentroidConvergenceDiagnostics, RecurrentConvergenceDiagnostics, Timekeeper
+        wanted[centroid_selection['diagnostic_topic']] = (
+            RecurrentConvergenceDiagnostics if centroid_selection['metric_mode'] ==
+            'recurrent_geometry_v3' else CentroidConvergenceDiagnostics)
+        wanted[centroid_selection['timekeeper_topic']] = Timekeeper
+    elif pde_selection is not None:
+        from ros_esc_interfaces.msg import DetectorConfirmation, StampedFloat64MultiArray, Timekeeper
+        wanted[pde_selection['confirmation_topic']] = DetectorConfirmation
+        wanted[pde_selection['legacy_topic']] = StampedFloat64MultiArray
+        wanted[pde_selection['timekeeper_topic']] = Timekeeper
     records = {name: [] for name in wanted}
     while reader.has_next():
         topic, serialized, bag_stamp = reader.read_next()
@@ -4286,6 +5685,19 @@ def _bag_outcomes(run_directory, resolved):
         in records['/gesc_gaussian/gaussian_fills'] if inside(stamp)
     ]
     fills = [message for unused_stamp, message in fill_records]
+    centroid_bindings, centroid_binding_error = [], None
+    pde_bindings, pde_binding_error = [], None
+    if centroid_selection is not None:
+        event_messages, centroid_bindings, centroid_binding_error = _centroid_convergence_evaluation_events(
+            resolved, state_messages, event_messages,
+            [(stamp, message) for stamp, message in records[centroid_selection['diagnostic_topic']]
+             if inside(stamp)], records[centroid_selection['timekeeper_topic']])
+    elif pde_selection is not None:
+        event_messages, pde_bindings, pde_binding_error = _moving_pde_convergence_evaluation_events(
+            resolved, state_messages, event_messages,
+            [(stamp, message) for stamp, message in records[pde_selection['confirmation_topic']] if inside(stamp)],
+            [(stamp, message) for stamp, message in records[pde_selection['legacy_topic']] if inside(stamp)],
+            records[pde_selection['timekeeper_topic']])
     collision_expected = resolved['success'].get('collision_expected')
     state_records, state_error = _canonical_state_records(state_messages)
     event_records, event_error = _canonical_event_records(event_messages)
@@ -4295,7 +5707,7 @@ def _bag_outcomes(run_directory, resolved):
         1 for message in diagnostics if any(message.saturation_flags)
     )
     final_position = None
-    outcome_error = state_error or event_error
+    outcome_error = pde_binding_error or centroid_binding_error or state_error or event_error
     (
         route_blocker_encountered,
         route_blocker_fill_center,
@@ -4359,7 +5771,7 @@ def _bag_outcomes(run_directory, resolved):
     outcome_error = outcome_error or escape_command_ownership_error
     ranked_goal_stamp = (
         ranked_goal_evidence.get('event_bag_stamp')
-        if ranked_goal_passed and ranked_goal_evidence
+        if _requires_ranked_goal(resolved) and ranked_goal_passed and ranked_goal_evidence
         else None
     )
     (
@@ -4375,7 +5787,7 @@ def _bag_outcomes(run_directory, resolved):
     )
     outcome_error = outcome_error or proximity_error
     if (
-        ranked_goal_passed is False
+        _requires_ranked_goal(resolved) and ranked_goal_passed is False
         and global_proximity_passed is True
     ):
         global_proximity_passed = False
@@ -4666,6 +6078,12 @@ def _bag_outcomes(run_directory, resolved):
         'observed_local_recovery': local_recovery_evidence,
         'local_recovery_stage_passed': stage_a_passed,
         'local_recovery_stage': stage_a_evidence,
+        **({'centroid_event_timestamp_bindings': centroid_bindings,
+            'centroid_event_timestamp_binding_error': centroid_binding_error}
+           if centroid_selection is not None else {}),
+        **({'pde_event_timestamp_bindings': pde_bindings,
+            'pde_event_timestamp_binding_error': pde_binding_error}
+           if pde_selection is not None else {}),
         'fill_cardinality_passed': fill_cardinality_passed,
         'post_recovery_global_proximity_passed': (
             global_proximity_passed
@@ -4912,6 +6330,23 @@ def classify_result(
         infrastructure_reason = (
             'run-scoped ROS graph or process cleanup failed'
         )
+    elif (_m4_centroid_event_selection(resolved) is not None
+          or _m4_pde_event_selection(resolved) is not None):
+        if process_result.get('staged_monitor_error'):
+            infrastructure_status = 'live_monitor_evidence_failed'
+            infrastructure_reason = process_result['staged_monitor_error']
+        elif (
+            process_result.get('stage_a_completion_evidence_live') is not None
+            and (
+                process_result.get('stage_a_observed_live') is False
+                or process_result.get('fill_cardinality_observed_live') is False
+            )
+        ):
+            infrastructure_status = 'live_monitor_evidence_failed'
+            infrastructure_reason = (
+                'latest live recovery/cardinality evidence failed after '
+                'Stage A completion'
+            )
     status = 'passed' if passed else 'failed'
     if infrastructure_status != 'completed':
         passed = False
@@ -5080,10 +6515,37 @@ def execute_suite(
     summary_output=None,
     gui=False,
     dry_run=False,
+    run_id=None,
+    *, strict_cleanup=False, cleanup_deadline=None,
+    process_ownership_mode='observed_tree_v1',
 ):
     """Validate, expand, and optionally execute one serial simulation suite."""
+    if process_ownership_mode not in ('observed_tree_v1', 'subreaper_v2', 'subreaper_group_v3'):
+        raise ValueError('unknown process ownership mode')
     suite = load_suite(scenario_path)
+    selected_modes = {'m4_pilot_v2': 'subreaper_v2', 'm4_pilot_v3': 'subreaper_group_v3',
+                      'm4_pilot_v4': 'subreaper_group_v3', 'm4_pilot_v5': 'subreaper_group_v3',
+                      'm4_pilot_v6': 'subreaper_group_v3',
+                      'm4_pilot_v7': 'subreaper_group_v3',
+                      'm4_pilot_v8': 'subreaper_group_v3',
+                      'm4_pilot_v9': 'subreaper_group_v3',
+                      **dict.fromkeys(ARRIVAL_SUITE_IDS, 'subreaper_group_v3'),
+                      'v2_method_development_v1': 'subreaper_group_v3'}
+    if (not dry_run and (suite['suite_id'] in selected_modes
+            or process_ownership_mode != 'observed_tree_v1')
+            and (selected_modes.get(suite['suite_id']) != process_ownership_mode or not strict_cleanup)):
+        raise ValueError('M4 v2/v3 requires its exact explicit ownership mode and strict cleanup')
     resolved_runs, unsupported = expand_suite(suite, case_ids=case_ids)
+    if strict_cleanup and (len(resolved_runs) != 1 or run_id is None
+                           or _deadline_remaining(cleanup_deadline) <= 0):
+        raise ValueError('strict cleanup requires one explicit run and a future absolute deadline')
+    explicit_run_id = None
+    if run_id is not None:
+        if not isinstance(run_id, str):
+            raise ValueError('explicit run_id must be a string')
+        explicit_run_id = validate_run_id(run_id)
+        if len(resolved_runs) != 1:
+            raise ValueError('explicit run_id requires exactly one expanded run')
     execution = deepcopy_mapping(suite['execution'])
     if runs_root is not None:
         execution['runs_root'] = str(runs_root)
@@ -5106,11 +6568,16 @@ def execute_suite(
         'dry_run': dry_run,
         'runs': [],
     }
+    if 'purpose' in suite:
+        summary['purpose'] = suite['purpose']
     if not dry_run:
         ensure_ros_daemon()
-    baseline_nodes = ros_graph_nodes() if not dry_run else set()
+    baseline_nodes = (ros_graph_nodes(strict=True, absolute_deadline=cleanup_deadline,
+                      **({'require_shared_daemon': True}
+                         if suite['suite_id'] in ('v2_method_development_v1', *ARRIVAL_SUITE_IDS) else {}))
+                      if strict_cleanup else ros_graph_nodes()) if not dry_run else set()
     for resolved in resolved_runs:
-        run_id = generate_scenario_run_id(resolved)
+        run_id = explicit_run_id or generate_scenario_run_id(resolved)
         with tempfile.TemporaryDirectory(prefix='gesc_phase06_') as temporary:
             temporary_path = Path(temporary)
             noise_path = resolved_noise_config(
@@ -5121,12 +6588,14 @@ def execute_suite(
                 operator,
                 suite['metadata']['experiment_version'],
                 suite['metadata']['operator_notes'],
+                run_id=run_id,
             )
             metadata_path = temporary_path / 'metadata.yaml'
             atomic_yaml(metadata_path, metadata)
             launch = build_launch_command(
                 resolved, cost_path=noise_path,
                 gui=execution['gazebo_gui'],
+                run_id=run_id,
             )
             record = build_record_command(
                 resolved, run_id, metadata_path, root, execution, launch
@@ -5142,6 +6611,8 @@ def execute_suite(
                     'record_argv': record,
                     'metadata': metadata,
                 }
+                if 'purpose' in resolved:
+                    dry_run_record['purpose'] = resolved['purpose']
                 if resolved['schema_version'] >= 3:
                     dry_run_record['activation_contract'] = (
                         resolved['success']['controller']
@@ -5177,10 +6648,19 @@ def execute_suite(
                 record,
                 execution['wall_timeout_sec'],
                 execution['shutdown_grace_sec'],
+                **({'strict_process_tracking': True} if strict_cleanup else {}),
+                **({'process_ownership_mode': process_ownership_mode,
+                    'absolute_deadline': cleanup_deadline}
+                   if process_ownership_mode != 'observed_tree_v1' else {}),
                 **boundary_arguments,
             )
             cleanup = cleanup_evidence(
-                baseline_nodes, process_result['session_id']
+                baseline_nodes, process_result['session_id'],
+                **({'strict': True, 'absolute_deadline': cleanup_deadline,
+                    'process_ownership': process_result.get('process_ownership')}
+                   if strict_cleanup else {}),
+                **({'process_ownership_mode': process_ownership_mode}
+                   if process_ownership_mode != 'observed_tree_v1' else {}),
             )
             try:
                 run_directory = find_run_directory(root, run_id)
@@ -5244,6 +6724,16 @@ def execute_suite(
                 'classification': classification,
             }
             result['record_stdout_tail'] = record_stdout[-4000:]
+            if strict_cleanup:
+                result['launch_argv'] = list(launch)
+                actual_cost = noise_path if noise_path is not None else MULTI_LIGHT_COST
+                captured_cost = (Path(run_directory) / 'resolved_cost_function.json'
+                                 if noise_path is not None and run_directory is not None
+                                 else actual_cost)
+                result['captured_cost_configuration'] = {
+                    'argv_path': str(actual_cost), 'path': str(captured_cost),
+                    'sha256': hashlib.sha256(Path(actual_cost).read_bytes()).hexdigest(),
+                }
             if run_directory is not None:
                 _write_run_artifacts(
                     run_directory, suite['source_path'], resolved, result,
@@ -5288,10 +6778,17 @@ def _parser():
     parser.add_argument('scenario_yaml')
     parser.add_argument('--operator', required=True)
     parser.add_argument('--case-id', action='append', default=[])
+    parser.add_argument('--run-id', help='Explicit immutable identity; requires exactly one expanded run.')
     parser.add_argument('--runs-root')
     parser.add_argument('--summary-output')
     parser.add_argument('--gui', action='store_true')
     parser.add_argument('--dry-run', action='store_true')
+    parser.add_argument('--strict-cleanup', action='store_true',
+                        help='Require bounded explicit graph and owned nested-session cleanup evidence.')
+    parser.add_argument('--cleanup-deadline', type=float,
+                        help='Absolute monotonic end for selected cleanup; outer owner bounds the child.')
+    parser.add_argument('--process-ownership-mode', default='observed_tree_v1',
+                        choices=('observed_tree_v1', 'subreaper_v2', 'subreaper_group_v3'))
     return parser
 
 
@@ -5326,6 +6823,11 @@ def main(args=None):
             summary_output=arguments.summary_output,
             gui=arguments.gui,
             dry_run=arguments.dry_run,
+            run_id=arguments.run_id,
+            **({'strict_cleanup': True, 'cleanup_deadline': arguments.cleanup_deadline}
+               if arguments.strict_cleanup else {}),
+            **({'process_ownership_mode': arguments.process_ownership_mode}
+               if arguments.process_ownership_mode != 'observed_tree_v1' else {}),
         )
     except Exception as exc:
         print(

@@ -1,0 +1,701 @@
+{
+  "calibration": {
+    "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m1_calibration_v1/calibration.json",
+    "sha256": "9b10b120dc7cd59b07e08536e246d79919f1f36fce73898056b42ab48c7c898b",
+    "size_bytes": 703443
+  },
+  "exact_executed_commands": {
+    "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m1_executed_commands.json",
+    "sha256": "9926239c275048c275aee4d421d75e59b215bcacefaad8566dcb891cd1813151",
+    "size_bytes": 13631
+  },
+  "geometries": [
+    {
+      "artifact": {
+        "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m1_labels_v1a/geometry_1.json",
+        "sha256": "1c8894470340bc1118ff94a9d417de44d8a4efef828729dd4af936a6fec25666",
+        "size_bytes": 10700
+      },
+      "basins": [
+        {
+          "agreeing_successful_starts": 1,
+          "center_xy": [
+            1.245954117915994,
+            1.281649745069449
+          ],
+          "interior": true,
+          "quadrature_72_to_144_difference": 0.012258985572244502,
+          "qualified": false,
+          "ring_depth_raw_cost": 0.002438212590742575,
+          "ring_inside_bounds": true,
+          "source_id": "local"
+        },
+        {
+          "agreeing_successful_starts": 1,
+          "center_xy": [
+            3.4999999983579144,
+            3.178587606532869
+          ],
+          "interior": true,
+          "quadrature_72_to_144_difference": 0.007923005716833229,
+          "qualified": false,
+          "ring_depth_raw_cost": 0.004694209381535641,
+          "ring_inside_bounds": true,
+          "source_id": "global"
+        }
+      ]
+    },
+    {
+      "artifact": {
+        "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m1_labels_v1a/geometry_2.json",
+        "sha256": "e5e3c481047e88460483ac27ecb67c6725d7272b5d30c7be4180d2fc87797590",
+        "size_bytes": 10688
+      },
+      "basins": [
+        {
+          "agreeing_successful_starts": 1,
+          "center_xy": [
+            0.5739042246111438,
+            1.673996206059227
+          ],
+          "interior": true,
+          "quadrature_72_to_144_difference": 0.012252195178387486,
+          "qualified": false,
+          "ring_depth_raw_cost": 0.001924970331941278,
+          "ring_inside_bounds": true,
+          "source_id": "local"
+        },
+        {
+          "agreeing_successful_starts": 1,
+          "center_xy": [
+            3.4999999977195886,
+            3.178763639259448
+          ],
+          "interior": true,
+          "quadrature_72_to_144_difference": 0.007931537709387926,
+          "qualified": false,
+          "ring_depth_raw_cost": 0.004781714160860581,
+          "ring_inside_bounds": true,
+          "source_id": "global"
+        }
+      ]
+    },
+    {
+      "artifact": {
+        "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m1_labels_v1a/geometry_3.json",
+        "sha256": "2603b01b80edcf4b8173980afbc8d3d0e2b5ac1e097813483a4528abecba62c6",
+        "size_bytes": 10676
+      },
+      "basins": [
+        {
+          "agreeing_successful_starts": 2,
+          "center_xy": [
+            1.0881564728619058,
+            1.088047753067928
+          ],
+          "interior": true,
+          "quadrature_72_to_144_difference": 0.012704663150723841,
+          "qualified": false,
+          "ring_depth_raw_cost": 0.01669216949605789,
+          "ring_inside_bounds": true,
+          "source_id": "local"
+        },
+        {
+          "agreeing_successful_starts": 1,
+          "center_xy": [
+            3.4999999965649367,
+            3.178596094555061
+          ],
+          "interior": true,
+          "quadrature_72_to_144_difference": 0.007923157135136291,
+          "qualified": false,
+          "ring_depth_raw_cost": 0.004679472187215011,
+          "ring_inside_bounds": true,
+          "source_id": "global"
+        }
+      ]
+    }
+  ],
+  "grid_rows": [
+    {
+      "epsilon_m": 0.03,
+      "max_radius_m": 0.25,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 62,
+      "window_seconds": 3.0
+    },
+    {
+      "epsilon_m": 0.03,
+      "max_radius_m": 0.5,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 62,
+      "window_seconds": 3.0
+    },
+    {
+      "epsilon_m": 0.03,
+      "max_radius_m": 0.75,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 62,
+      "window_seconds": 3.0
+    },
+    {
+      "epsilon_m": 0.06,
+      "max_radius_m": 0.25,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 62,
+      "window_seconds": 3.0
+    },
+    {
+      "epsilon_m": 0.06,
+      "max_radius_m": 0.5,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 62,
+      "window_seconds": 3.0
+    },
+    {
+      "epsilon_m": 0.06,
+      "max_radius_m": 0.75,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 62,
+      "window_seconds": 3.0
+    },
+    {
+      "epsilon_m": 0.12,
+      "max_radius_m": 0.25,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 3,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 62,
+      "window_seconds": 3.0
+    },
+    {
+      "epsilon_m": 0.12,
+      "max_radius_m": 0.5,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 3,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 62,
+      "window_seconds": 3.0
+    },
+    {
+      "epsilon_m": 0.12,
+      "max_radius_m": 0.75,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 3,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 62,
+      "window_seconds": 3.0
+    },
+    {
+      "epsilon_m": 0.24,
+      "max_radius_m": 0.25,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 7,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 62,
+      "window_seconds": 3.0
+    },
+    {
+      "epsilon_m": 0.24,
+      "max_radius_m": 0.5,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 7,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 62,
+      "window_seconds": 3.0
+    },
+    {
+      "epsilon_m": 0.24,
+      "max_radius_m": 0.75,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 7,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 62,
+      "window_seconds": 3.0
+    },
+    {
+      "epsilon_m": 0.03,
+      "max_radius_m": 0.25,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 70,
+      "window_seconds": 6.0
+    },
+    {
+      "epsilon_m": 0.03,
+      "max_radius_m": 0.5,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 70,
+      "window_seconds": 6.0
+    },
+    {
+      "epsilon_m": 0.03,
+      "max_radius_m": 0.75,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 70,
+      "window_seconds": 6.0
+    },
+    {
+      "epsilon_m": 0.06,
+      "max_radius_m": 0.25,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 70,
+      "window_seconds": 6.0
+    },
+    {
+      "epsilon_m": 0.06,
+      "max_radius_m": 0.5,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 70,
+      "window_seconds": 6.0
+    },
+    {
+      "epsilon_m": 0.06,
+      "max_radius_m": 0.75,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 70,
+      "window_seconds": 6.0
+    },
+    {
+      "epsilon_m": 0.12,
+      "max_radius_m": 0.25,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 70,
+      "window_seconds": 6.0
+    },
+    {
+      "epsilon_m": 0.12,
+      "max_radius_m": 0.5,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 70,
+      "window_seconds": 6.0
+    },
+    {
+      "epsilon_m": 0.12,
+      "max_radius_m": 0.75,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 70,
+      "window_seconds": 6.0
+    },
+    {
+      "epsilon_m": 0.24,
+      "max_radius_m": 0.25,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 1,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 74,
+      "window_seconds": 6.0
+    },
+    {
+      "epsilon_m": 0.24,
+      "max_radius_m": 0.5,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 1,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 74,
+      "window_seconds": 6.0
+    },
+    {
+      "epsilon_m": 0.24,
+      "max_radius_m": 0.75,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 1,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 74,
+      "window_seconds": 6.0
+    },
+    {
+      "epsilon_m": 0.03,
+      "max_radius_m": 0.25,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 71,
+      "window_seconds": 9.0
+    },
+    {
+      "epsilon_m": 0.03,
+      "max_radius_m": 0.5,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 71,
+      "window_seconds": 9.0
+    },
+    {
+      "epsilon_m": 0.03,
+      "max_radius_m": 0.75,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 71,
+      "window_seconds": 9.0
+    },
+    {
+      "epsilon_m": 0.06,
+      "max_radius_m": 0.25,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 71,
+      "window_seconds": 9.0
+    },
+    {
+      "epsilon_m": 0.06,
+      "max_radius_m": 0.5,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 71,
+      "window_seconds": 9.0
+    },
+    {
+      "epsilon_m": 0.06,
+      "max_radius_m": 0.75,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 71,
+      "window_seconds": 9.0
+    },
+    {
+      "epsilon_m": 0.12,
+      "max_radius_m": 0.25,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 71,
+      "window_seconds": 9.0
+    },
+    {
+      "epsilon_m": 0.12,
+      "max_radius_m": 0.5,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 71,
+      "window_seconds": 9.0
+    },
+    {
+      "epsilon_m": 0.12,
+      "max_radius_m": 0.75,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 71,
+      "window_seconds": 9.0
+    },
+    {
+      "epsilon_m": 0.24,
+      "max_radius_m": 0.25,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 71,
+      "window_seconds": 9.0
+    },
+    {
+      "epsilon_m": 0.24,
+      "max_radius_m": 0.5,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 71,
+      "window_seconds": 9.0
+    },
+    {
+      "epsilon_m": 0.24,
+      "max_radius_m": 0.75,
+      "qualified": false,
+      "retained_common_positive_count": 0,
+      "retained_negative_event_count": 0,
+      "retained_positive_detected_count": 0,
+      "retained_unknown_event_count": 0,
+      "synthetic_case_count": 79,
+      "synthetic_passed_count": 71,
+      "window_seconds": 9.0
+    }
+  ],
+  "label_contract": {
+    "path": "/home/mattb/dsim-lab/docs/codex/gesc_gaussian/v2/validation/m1_labels_contract.md",
+    "sha256": "d7410f523ffffa92709f3514a9811f8bfbb019da49679a9ea172457f06c6b18e",
+    "size_bytes": 7569
+  },
+  "label_source_patch": {
+    "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m1_labels_v1a/label_owner_source.patch",
+    "sha256": "fdd0efce92504ccd3c7affb5fc4370489e3dea059bde6c3e02bb6d38a6841e8a",
+    "size_bytes": 43924
+  },
+  "labels": {
+    "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m1_labels_v1a/labels.json",
+    "sha256": "70890350ef896c042a947bb50d3c1ff882bb555efb1e5e6c23afb3a6555884ad",
+    "size_bytes": 133033
+  },
+  "limitations": [
+    "No independent retained positive/negative spatial labels; zero denominator is unavailable evidence, not success.",
+    "Unknown numerical candidate events are not true-positive claims.",
+    "Recorded authority freshness uses a timing proxy, not exact callback/wall-monotonic reconstruction.",
+    "Replay does not establish counterfactual trajectory or latency improvement after intervention."
+  ],
+  "logs": [
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m1_labels_v1.log",
+      "sha256": "a091eceb8598887e341c39d1b82acdad107264f71f804576db3bb3de53e4b7b7",
+      "size_bytes": 4608
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m1_labels_v1a.log",
+      "sha256": "6454061aea63fd86fbb1a3d52ec5599516bba5e7342efe3a82e31033104079eb",
+      "size_bytes": 5352
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m1_calibration_v1.log",
+      "sha256": "5c47a41c5dffb5f9a1ef07e15d6c40563e783b2e743915814b5d06106f763119",
+      "size_bytes": 12909
+    },
+    {
+      "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m1_replay_tests.log",
+      "sha256": "0a12ae10d049d2ad618b93184c4e9c933f7396f2e768c3d8e2891b68e27819bd",
+      "size_bytes": 99
+    }
+  ],
+  "publication_status": "v1 failed int64 serialization; v1a complete",
+  "retained_eligibility": [
+    {
+      "eligible_pose_samples": 7335,
+      "history_invalidation_generations": 106,
+      "pose_samples": 8661,
+      "search_epochs": [
+        "1",
+        "2"
+      ],
+      "seed": 19801,
+      "spatial_label_count": 0
+    },
+    {
+      "eligible_pose_samples": 10690,
+      "history_invalidation_generations": 71,
+      "pose_samples": 11840,
+      "search_epochs": [
+        "1",
+        "2"
+      ],
+      "seed": 19811,
+      "spatial_label_count": 0
+    },
+    {
+      "eligible_pose_samples": 5621,
+      "history_invalidation_generations": 70,
+      "pose_samples": 10607,
+      "search_epochs": [
+        "1",
+        "2"
+      ],
+      "seed": 19851,
+      "spatial_label_count": 0
+    },
+    {
+      "eligible_pose_samples": 5741,
+      "history_invalidation_generations": 139,
+      "pose_samples": 6994,
+      "search_epochs": [
+        "1",
+        "2"
+      ],
+      "seed": 19901,
+      "spatial_label_count": 0
+    },
+    {
+      "eligible_pose_samples": 5734,
+      "history_invalidation_generations": 68,
+      "pose_samples": 6991,
+      "search_epochs": [
+        "1",
+        "2"
+      ],
+      "seed": 19911,
+      "spatial_label_count": 0
+    },
+    {
+      "eligible_pose_samples": 2191,
+      "history_invalidation_generations": 108,
+      "pose_samples": 10609,
+      "search_epochs": [
+        "1"
+      ],
+      "seed": 19931,
+      "spatial_label_count": 0
+    },
+    {
+      "eligible_pose_samples": 5421,
+      "history_invalidation_generations": 86,
+      "pose_samples": 6547,
+      "search_epochs": [
+        "1",
+        "2"
+      ],
+      "seed": 20001,
+      "spatial_label_count": 0
+    },
+    {
+      "eligible_pose_samples": 5705,
+      "history_invalidation_generations": 72,
+      "pose_samples": 6973,
+      "search_epochs": [
+        "1",
+        "2"
+      ],
+      "seed": 20031,
+      "spatial_label_count": 0
+    }
+  ],
+  "retained_input_count": 8,
+  "retained_spatial_labels": 0,
+  "schema_version": 1,
+  "scientific_status": "FAILED_FIXED_CALIBRATION_V1",
+  "selected_setting": null,
+  "source_patch": {
+    "path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m1_calibration_v1/analyzer_source.patch",
+    "sha256": "b06f685bfc1f008013c45d6aea26b569e8260614624de3f6166df255cb3f83a3",
+    "size_bytes": 45075
+  },
+  "synthetic_case_count": 79,
+  "synthetic_negative_count": 52,
+  "synthetic_negative_detections_across_grid": 0,
+  "synthetic_positive_count": 27,
+  "test_result": "33 passed"
+}

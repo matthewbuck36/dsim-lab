@@ -14,7 +14,7 @@ from rclpy.node import Node
 from rclpy.signals import SignalHandlerOptions
 
 from ros_esc.deferred_signal_shutdown import DeferredSignalShutdown
-from ros_esc_interfaces.msg import CostBreakdown
+from ros_esc_interfaces.msg import CostBreakdown, SourceSampleProvenance
 from ros_esc_interfaces.msg import StampedFloat64MultiArray
 from std_msgs.msg import Bool
 
@@ -90,6 +90,9 @@ class SimulationDisturbanceNode(Node):
             '/gesc_gaussian/simulation/pose_delayed',
         )
         self.declare_parameter('sensor_delay_sec', 0.0)
+        self.declare_parameter('continuous_search_mode', 'stationary_v1')
+        self.declare_parameter('provenance_input_topic', '/gesc_gaussian/v2/source_sample_provenance')
+        self.declare_parameter('provenance_output_topic', '/gesc_gaussian/simulation/source_sample_provenance_delayed')
         self.declare_parameter('pose_delay_sec', 0.0)
         self.declare_parameter('publish_rate_hz', 100.0)
         self.declare_parameter('contact_probe_enabled', False)
@@ -107,6 +110,18 @@ class SimulationDisturbanceNode(Node):
         self.raw_queue = DelayQueue(sensor_delay)
         self.source_queue = DelayQueue(sensor_delay)
         self.pose_queue = DelayQueue(pose_delay)
+        mode = self._text('continuous_search_mode')
+        if mode not in ('stationary_v1', 'rolling_gesc_v2'):
+            raise ValueError('unsupported continuous_search_mode')
+        self.provenance_queue = DelayQueue(sensor_delay) if mode == 'rolling_gesc_v2' else None
+        if self.provenance_queue is not None:
+            self.provenance_publisher = self.create_publisher(
+                SourceSampleProvenance, self._text('provenance_output_topic'), 100,
+            )
+            self.create_subscription(
+                SourceSampleProvenance, self._text('provenance_input_topic'),
+                lambda message: self._enqueue(self.provenance_queue, message), 100,
+            )
         self.latest_pose = None
         self.recording_ready = False
         self.contact_probe_requested = False
@@ -221,6 +236,9 @@ class SimulationDisturbanceNode(Node):
             self.raw_publisher.publish(message)
         for message in self.source_queue.pop_ready(now_ns):
             self.source_publisher.publish(message)
+        if getattr(self, 'provenance_queue', None) is not None:
+            for message in self.provenance_queue.pop_ready(now_ns):
+                self.provenance_publisher.publish(message)
         for message in self.pose_queue.pop_ready(now_ns):
             self.pose_publisher.publish(message)
 

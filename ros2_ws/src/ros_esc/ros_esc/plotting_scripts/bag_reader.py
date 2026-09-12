@@ -141,8 +141,13 @@ def _with_readiness(record, start, end):
     )
 
 
-def read_run_bag(run_directory):
-    """Read the run's resolved sqlite3 bag and classify readiness records."""
+def read_run_bag(run_directory, *, aliases=None):
+    """Read a bag, optionally selecting resolved aliases plus readiness.
+
+    The default still loads the complete historical analysis contract. A
+    caller selecting inputs can exclude algorithm outputs during independent
+    labeling and avoid decoding large, unrelated PDE histories.
+    """
     run_directory = Path(run_directory).expanduser().resolve()
     resolved_path = run_directory / 'resolved_topics.yaml'
     resolved = load_yaml(resolved_path)
@@ -167,6 +172,21 @@ def read_run_bag(run_directory):
         item.name: item.type
         for item in reader.get_all_topics_and_types()
     }
+    if aliases is not None:
+        selected = set(aliases) | {'recording_ready'}
+        unknown = selected - topics_by_alias.keys()
+        if unknown:
+            raise ValueError(f'unknown resolved aliases: {sorted(unknown)}')
+        selected_topics = {
+            topics_by_alias[alias]['topic'] for alias in selected
+        }
+        reader.set_filter(rosbag2_py.StorageFilter(
+            topics=sorted(selected_topics),
+        ))
+        topic_types = {
+            topic: type_name for topic, type_name in topic_types.items()
+            if topic in selected_topics
+        }
     classes = {
         topic: get_message(type_name)
         for topic, type_name in topic_types.items()

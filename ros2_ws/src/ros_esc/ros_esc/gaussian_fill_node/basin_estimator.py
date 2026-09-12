@@ -239,6 +239,8 @@ def freeze_sample_window(
     samples: Iterable[BasinSample],
     request_ros_time: float,
     config: EstimatorConfig,
+    *,
+    snapshot_bounds=None,
 ) -> FilteredWindow:
     """Freeze one time-bounded window and reject invalid/jump/MAD samples."""
 
@@ -259,6 +261,12 @@ def freeze_sample_window(
     previous_position = None
     lower = request_ros_time - config.estimation_window_sec
     age_lower = request_ros_time - config.maximum_sample_age_sec
+    if snapshot_bounds is not None:
+        lower, upper = (float(value) for value in snapshot_bounds)
+        if not math.isfinite(lower) or not math.isfinite(upper) or upper < lower:
+            raise ValueError("invalid immutable snapshot bounds")
+        age_lower = lower
+        request_ros_time = upper
     for sample in source:
         stamp = float(sample.stamp_sec)
         if not math.isfinite(stamp) or stamp < lower or stamp < age_lower or stamp > request_ros_time:
@@ -526,3 +534,138 @@ def estimate_basin(samples: Sequence[BasinSample], config: EstimatorConfig):
         spatial_coverage=spatial_coverage,
         samples=samples,
     )
+
+
+def _field_covariance(value):
+    """Validate empirical q/B covariance without filling unsupported directions."""
+    covariance = np.asarray(value, dtype=float)
+    if covariance.shape != (6, 6) or not np.isfinite(covariance).all():
+        raise ValueError('invalid_field_covariance')
+    scale = max(float(np.max(np.abs(covariance))), np.finfo(float).tiny)
+    if np.max(np.abs(covariance-covariance.T)) > 1e-10*scale:
+        raise ValueError('asymmetric_field_covariance')
+    covariance = .5*(covariance+covariance.T)
+    eigenvalues, eigenvectors = np.linalg.eigh(covariance)
+    tolerance = 1e-10*max(float(np.max(np.abs(eigenvalues))), np.finfo(float).tiny)
+    if eigenvalues[0] < -tolerance:
+        raise ValueError('indefinite_field_covariance')
+    # Only numerical negative roundoff is removed; zero directions stay zero.
+    eigenvalues = np.maximum(eigenvalues, 0.)
+    return covariance, eigenvalues, eigenvectors, tolerance
+
+
+def field_standardized_error(delta, covariance):
+    """Joint empirical error norm; nonzero error in a null direction is unavailable.
+
+    This statistic is calibrated on a declared noise population. It is not a
+    universal confidence level and excludes spatial and harmonic model error.
+    """
+    result = {'valid': False, 'score': None, 'reason': None}
+    try:
+        delta = np.asarray(delta, dtype=float)
+        if delta.shape != (6,) or not np.isfinite(delta).all():
+            raise ValueError('invalid_field_difference')
+        _, eigenvalues, eigenvectors, tolerance = _field_covariance(covariance)
+        coordinates = eigenvectors.T@delta
+        positive = eigenvalues > tolerance
+        null_error = float(np.linalg.norm(coordinates[~positive]))
+        roundoff = 1e-12*max(1., float(np.linalg.norm(delta)))
+        if null_error > roundoff:
+            raise ValueError('unbounded_error_in_covariance_nullspace')
+        score = float(np.linalg.norm(coordinates[positive]/np.sqrt(eigenvalues[positive])))
+        if not math.isfinite(score):
+            raise ValueError('nonfinite_standardized_error')
+        result.update(valid=True, score=score, covariance_rank=int(np.sum(positive)),
+                      nullspace_error=null_error)
+    except (TypeError, ValueError, np.linalg.LinAlgError) as exc:
+        result['reason'] = str(exc)
+    return result
+
+
+def verify_local_attraction(full, first, second, positions, center, *,
+                            error_multiplier, change_cutoff):
+    """Conservative raw-GESC field contraction and observed zero-region check.
+
+    Field ordering is [qx,qy,Bxx,Bxy,Byx,Byy]. The full fit and chronological
+    halves must share an anchor and output map. This pure component neither
+    certifies a scalar/global minimum nor authorizes a fill or robot motion.
+    """
+    result = {'valid': False, 'admitted': False, 'reason': None,
+              'zero_displacement': None, 'zero_radius': None}
+    try:
+        k, cutoff = float(error_multiplier), float(change_cutoff)
+        if not math.isfinite(k) or k <= 0 or not math.isfinite(cutoff) or cutoff < 0:
+            raise ValueError('invalid_attraction_calibration')
+        center = np.asarray(center, dtype=float)
+        positions = np.asarray(positions, dtype=float)
+        if (center.shape != (2,) or positions.ndim != 2 or positions.shape[1] != 2
+                or len(positions) < 3 or not np.isfinite(center).all()
+                or not np.isfinite(positions).all()):
+            raise ValueError('invalid_observed_spatial_support')
+        vectors, covariances, spans, maps = [], [], [], []
+        for fit in (full, first, second):
+            if not isinstance(fit, dict) or fit.get('valid') is not True:
+                raise ValueError('field_fit_unavailable')
+            vector = np.asarray(fit['field_vector'], dtype=float)
+            anchor = np.asarray(fit['center_xy'], dtype=float)
+            mapping = np.asarray(fit['output_map'], dtype=float)
+            start, end = float(fit['source_start_sec']), float(fit['source_end_sec'])
+            count = fit['sample_count']
+            if (vector.shape != (6,) or not np.isfinite(vector).all()
+                    or anchor.shape != (2,) or not np.allclose(anchor, center, rtol=0, atol=1e-12)
+                    or mapping.shape != (2, 6) or not np.isfinite(mapping).all()
+                    or not all(math.isfinite(v) for v in (start, end)) or start >= end
+                    or isinstance(count, bool) or not isinstance(count, (int, np.integer))
+                    or count < 2):
+                raise ValueError('invalid_field_fit_contract')
+            covariance, _, _, _ = _field_covariance(fit['field_covariance'])
+            vectors.append(vector)
+            covariances.append(covariance)
+            spans.append((start, end, count))
+            maps.append(mapping)
+        if not all(np.allclose(mapping, maps[0], rtol=0, atol=1e-12) for mapping in maps[1:]):
+            raise ValueError('field_output_map_mismatch')
+        whole, early, late = spans
+        if (abs(early[0]-whole[0]) > 1e-9 or abs(late[1]-whole[1]) > 1e-9
+                or not 0 < late[0]-early[1] <= .1+1e-9
+                or early[2]+late[2] != whole[2] or whole[2] != len(positions)):
+            raise ValueError('chronological_field_support_mismatch')
+        from scipy.spatial import ConvexHull, QhullError
+        try:
+            hull = ConvexHull(positions-center)
+        except QhullError as exc:
+            raise ValueError('degenerate_observed_spatial_support') from exc
+        difference = field_standardized_error(vectors[1]-vectors[2], covariances[1]+covariances[2])
+        result['half_consistency'] = difference
+        if not difference['valid']:
+            raise ValueError('half_consistency_unavailable')
+        q, jacobian = vectors[0][:2], vectors[0][2:].reshape(2, 2)
+        covariance = covariances[0]
+        bq = k*math.sqrt(max(0., float(np.linalg.eigvalsh(covariance[:2, :2])[-1])))
+        bB = k*math.sqrt(max(0., float(np.linalg.eigvalsh(covariance[2:, 2:])[-1])))
+        maximum_symmetric_eigenvalue = float(np.linalg.eigvalsh(.5*(jacobian+jacobian.T))[-1])
+        margin = -maximum_symmetric_eigenvalue-bB
+        result.update(valid=True, error_multiplier=k, change_cutoff=cutoff,
+                      vector_error_bound=bq, jacobian_error_bound=bB,
+                      maximum_symmetric_eigenvalue=maximum_symmetric_eigenvalue,
+                      restoring_margin=margin, hull_vertex_count=len(hull.vertices))
+        if difference['score'] > cutoff:
+            result['reason'] = 'field_changed_between_halves'
+            return result
+        if margin <= 0:
+            result['reason'] = 'restoring_response_not_established'
+            return result
+        zero = -np.linalg.solve(jacobian, q)
+        radius = (bq+bB*float(np.linalg.norm(zero)))/margin
+        equations = hull.equations
+        clearance = float(np.min(-(equations[:, :2]@zero+equations[:, 2])
+                                  /np.linalg.norm(equations[:, :2], axis=1)))
+        if not np.isfinite(zero).all() or not all(math.isfinite(v) for v in (radius, clearance)):
+            raise ValueError('nonfinite_zero_region')
+        result.update(zero_displacement=zero.tolist(), zero_radius=radius,
+                      zero_hull_clearance=clearance,
+                      admitted=bool(clearance > radius),
+                      reason=None if clearance > radius else 'zero_region_not_inside_observed_support')
+    except (KeyError, TypeError, ValueError, np.linalg.LinAlgError) as exc:
+        result.update(valid=False, admitted=False, reason=str(exc))
+    return result

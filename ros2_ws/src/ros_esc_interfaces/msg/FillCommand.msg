@@ -1,0 +1,27 @@
+# Lifecycle protocol version, independent of nested stream-observation schema.
+uint16 schema_version
+builtin_interfaces/Time stamp
+builtin_interfaces/Time time_origin
+string run_id
+string stream_contract_id
+string frame_id
+uint64 search_epoch
+uint64 candidate_id
+uint64 objective_revision
+uint8 PREPARE=1
+uint8 ACTIVATE=2
+uint8 CANCEL=3
+uint8 operation
+uint64 command_sequence
+uint64 preparation_id
+uint64 expected_registry_generation
+builtin_interfaces/Time expires_at
+uint64 target_fill_id
+uint64 target_cluster_id
+uint32 target_revision
+string evidence_sha256
+string prepared_sha256
+string reason
+CandidateSnapshot snapshot
+bool redesign
+uint8 return_state

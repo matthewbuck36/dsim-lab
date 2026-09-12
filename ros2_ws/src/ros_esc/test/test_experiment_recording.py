@@ -2355,11 +2355,11 @@ def test_durable_json_is_strict_and_rejects_nonfinite_values(tmp_path):
     json.dumps(converted, allow_nan=False)
 
 
-def test_run_validator_wires_event_stream_freshness_and_causality(
+def _run_validator_synthetic_fixture(
     monkeypatch,
     tmp_path,
 ):
-    """Exercise the complete report wiring without creating a real bag."""
+    """Share the existing complete-report setup without creating a real bag."""
     topics = {
         'algorithm_events': (
             '/gesc_gaussian/algorithm_events',
@@ -2594,6 +2594,24 @@ def test_run_validator_wires_event_stream_freshness_and_causality(
             lambda *_args, **_kwargs: (bag_types, messages),
         )
         return validate_run_directory(tmp_path, write_report=False)
+
+    return SimpleNamespace(
+        validate=validate, clocks=clocks, metadata=metadata, resolved=resolved,
+        topics=topics, request=request, clean_state=clean_state,
+        nonzero_command=nonzero_command, zero_command=zero_command,
+    )
+
+
+def test_run_validator_wires_event_stream_freshness_and_causality(
+    monkeypatch,
+    tmp_path,
+):
+    """Exercise the complete report wiring without creating a real bag."""
+    fixture = _run_validator_synthetic_fixture(monkeypatch, tmp_path)
+    validate, request = fixture.validate, fixture.request
+    metadata, resolved = fixture.metadata, fixture.resolved
+    clean_state = fixture.clean_state
+    nonzero_command, zero_command = fixture.nonzero_command, fixture.zero_command
 
     convergence = _event(10, 1.0, 'candidate')
     fill = _event(

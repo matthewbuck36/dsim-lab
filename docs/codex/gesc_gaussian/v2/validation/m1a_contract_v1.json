@@ -1,0 +1,133 @@
+{
+  "acceptance": {
+    "all_synthetic_positives": true,
+    "all_uncensored_retained_positives": true,
+    "nonempty_retained_positive_denominator": true,
+    "selection_order": [
+      "median_positive_detector_delay_sec",
+      "max_radius_m",
+      "epsilon_m",
+      "window_seconds"
+    ],
+    "unknown_events_are_true_positives": false,
+    "zero_retained_negative_events": true,
+    "zero_synthetic_negatives": true
+  },
+  "calibration_grid": {
+    "epsilon_m": [
+      0.24,
+      0.3,
+      0.36,
+      0.48
+    ],
+    "max_radius_m": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "window_seconds": [
+      3.0,
+      6.0,
+      9.0
+    ]
+  },
+  "development_seeds": [
+    19801,
+    19811,
+    19851,
+    19901,
+    19911,
+    19931,
+    20001,
+    20031
+  ],
+  "execution": {
+    "automatic_retry": false,
+    "calibration_attempt_name": "m1a_calibration_v1",
+    "calibration_timeout_sec": 300,
+    "detector_import_after_labels_frozen": true,
+    "exclusive_atomic_receipts": true,
+    "focused_test_timeout_sec": 180,
+    "label_attempt_name": "m1a_labels_v1",
+    "label_timeout_sec": 600
+  },
+  "geometry": {
+    "angle_end_rad": 6.283185307179586,
+    "angle_start_rad": 0.0,
+    "boundary_contact_allowed": false,
+    "boundary_tolerance_m": 1e-09,
+    "cell_connectivity": 4,
+    "cell_stencil": "four_corners_and_center",
+    "center_passes": 1,
+    "claim": "finite_sampled_operational_enclosure_not_continuous_certificate",
+    "cost_definition": "average_of_two_stationary_raw_cost_means",
+    "epsabs_integral": 6.283185307179586e-07,
+    "epsrel": 1e-07,
+    "error_definition": "max(two_reported_mean_errors,absolute_mean_disagreement)",
+    "error_floor": 1e-08,
+    "fill_holes": false,
+    "grid_spacing_m": 0.046875,
+    "grid_vertex_count_per_axis": 33,
+    "include_source_bearings_and_antipodes": true,
+    "level_fraction": 0.5,
+    "maximum_geometry_groups": 3,
+    "maximum_locations_per_source": 2241,
+    "maximum_source_enclosures": 6,
+    "mean_error_ceiling": 1e-06,
+    "mean_method": "scipy.integrate.quad",
+    "minimum_barrier_error_ratio_strict": 10,
+    "minimum_positive_cells": 4,
+    "negative_exclusion": "cells_incident_to_low_component_plus_one_chebyshev_cell",
+    "outer_edge_midpoints": true,
+    "partition_step_degrees": 30,
+    "positive_membership": "interior_of_accepted_closed_cell_union",
+    "quad_limit": 128,
+    "required_cell_components": 1,
+    "required_vertex_components": 1,
+    "second_partition_shift_degrees": 15,
+    "segment_membership": "grid_crossings_endpoints_and_open_subsegment_midpoints",
+    "square_half_width_m": 0.75,
+    "vertex_connectivity": 8,
+    "warning_policy": "source_unknown",
+    "whole_square_inside_bounds_required": true
+  },
+  "holdout_seeds": [
+    19812,
+    19813,
+    19814,
+    19815,
+    19816,
+    19817,
+    19818,
+    19819,
+    19820,
+    19912,
+    19913,
+    19914,
+    19915
+  ],
+  "inventory_sha256": "eae9b60fc2f6f3e638f7ee9e56fd52174176fb4495de78bb145640eddb93e90d",
+  "plan_path": "docs/codex/gesc_gaussian/v2/m1a_plan.md",
+  "plan_sha256": "fb1e6462efa51c5004a7032ee3fa607707403280cee67b4cd70d97499a492ce3",
+  "prior_labels_path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m1_labels_v1a/labels.json",
+  "prior_labels_sha256": "70890350ef896c042a947bb50d3c1ff882bb555efb1e5e6c23afb3a6555884ad",
+  "schema_version": 1,
+  "status": "frozen",
+  "synthetic_case_count": 79,
+  "synthetic_inputs_path": "/home/mattb/Experiments/GESC-Gaussian/v2/replay/m1_labels_v1a/synthetic_inputs.json",
+  "synthetic_inputs_sha256": "4eb9cf3799616e1664e16e8b60f633c2051bf6fda697a83fad67fa3e1bdd136c",
+  "temporal": {
+    "all_source_enclosures_required_for_negative": true,
+    "common_positive_support_sec": 54,
+    "first_opportunity_censors_epoch": true,
+    "maximum_source_gap_sec": 0.5,
+    "negative_net_distance_m": 0.12,
+    "negative_net_to_path_ratio": 0.8,
+    "negative_progress_sec": 6,
+    "negative_start_boundary": "interpolate_exact_end_minus_six_seconds",
+    "positive_opportunities_per_search_epoch": 1,
+    "positive_residence_sec": 12,
+    "synchronization_tolerance_sec": 0.05
+  },
+  "version": "m1a-enclosure-v1"
+}

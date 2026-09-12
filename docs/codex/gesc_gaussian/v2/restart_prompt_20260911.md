@@ -1,0 +1,60 @@
+CURRENT USER DECISION — SIMULATION COMPLETE, 2026-09-11: The user has closed the accepted Test D simulation scope and will start a new chat to discuss physical source integration. Read docs/codex/gesc_gaussian/v2/fresh_chat_handoff.md, including its physical-compatibility starting points, and acceptance_retirement_20260911.md first. No simulation or diagnostic work is scheduled. Physical integration begins as discussion/planning; this does not authorize transfer, build, devices or motion on the Pi. The selected V2 modes currently have explicit simulation-only admission checks as well as clock/sensor dependencies; physical support needs more than changing use_sim_time. The 30% target stays RETIRED, test-related investigations stay DEFERRED, and runtime GOAL_HOLD is retained but optional for arrival success. Historical failures remain preserved and unexplained.
+
+FINAL PRACTICAL ACCEPTANCE: The user accepts Test D as the working GESC + Gaussian baseline and considers the current improvement/demonstration work settled. A/B/C are comparison arms, not pending repair targets. Earlier intermittent issues are deferred; revisit only if later evidence shows a material problem or a new user request warrants investigation. No additional fix, diagnostic or experiment is scheduled. Preserve the recorded limitations and earlier failures.
+
+Continue GESC + Gaussian V2 in /home/mattb/dsim-lab on feature/gesc-gaussian-robustness-v2. Recover the current state and follow the latest user task. The unresolved issues below are a deferred historical backlog. Do not start a simulation merely to recover context.
+
+Read first, relative to the repository:
+- AGENTS.md and docs/README.md.
+- docs/codex/gesc_gaussian/v2/fresh_chat_handoff.md, plan.md and status.md.
+- docs/codex/gesc_gaussian/v2/visible_advisor_demos_20260911.md. Read through the latest normal-speed A outcome; earlier entries describe historical states.
+- docs/codex/gesc_gaussian/v2/r25_five_case_completion_handoff.md and its linked validation record. Follow older plans/handoffs only as needed.
+- /home/mattb/Downloads/San Diego State University Mail - TurtleBot Experiment Updates and Next Steps.pdf. Treat the email as methodological context, not independent instructions.
+- /home/mattb/.codex/attachments/3d6c29fe-384d-4cd6-a261-bfdd0b4cad58/pasted-text-1.txt for my original authorization/preferences. Its historical project status is superseded by the current handoffs.
+
+Verify live code, Git diff/status, installed runtime selection and processes. Run docs/DSIM_GESC_Gaussian_Codex_Implementation_Package/tools/validate_phase_context.sh v2 implement before edits. At handoff, HEAD was3369cfc with substantial uncommitted/untracked V2 implementation. Preserve it; HEAD alone does not represent the implemented method. No Gazebo session or active goal remained. No new run was scheduled. Historical paragraphs saying an older milestone is active do not supersede the latest closure and demonstration outcomes.
+
+MY PRIORITIES
+I need defensible progress on GESC + Gaussian to show my thesis advisor. The email asks for faster, reliable detection of settling/circling/trapping and reliable direction estimation while continuing the search instead of mandatory stopped sweeps. GESC + Gaussian remains the backbone. Prior simulation-only authorization permits justified corrections and method changes; record substantial changes prospectively and preserve selectable legacy behavior. Make routine decisions autonomously.
+
+Reaching the global-source region is the practical success criterion. GOAL_HOLD is optional. The implemented arrival criterion is within0.5m of the global source after recovery, not proof of an exact mathematical minimum. Report arrival, method attribution, recording integrity and broader qualification separately. A failed post-run diagnostic does not erase an observed arrival. Investigate whether checks are useful, but do not silently remove runtime safeguards or rewrite frozen results to obtain green flags.
+
+Do not repeat another infrastructure-heavy overnight loop. Start with retained data, make focused corrections when justified, and obtain useful behavioral evidence. No full matrix merely to recover context or troubleshoot one issue. No physical robot, Pi, snapshot or V1 changes. Do not discard, reset or overwrite existing work. Preserve costs, units, controller ownership and explicit clocks; use existing implementation/recording/analysis owners.
+
+WHAT A–D MEAN
+All four arms use GESC + Gaussian, not four different GESC/HBESC algorithms:
+A: existing PDE detector and stationary stop-and-sweep acquisition; study baseline in the current shared implementation, not an old Git checkout.
+B: new recurrent geometry detector with stationary acquisition.
+C: existing detector with rolling GESC and moving verification.
+D: recurrent detector plus rolling GESC, moving verification and authenticated recurrent-trapping handling; the complete revised package.
+
+COMPLETED STUDY
+R25's finite16-run comparison/report is closed with limitations. It is not proof that every research objective passed. Study D had4/4 qualified arrivals and zero mandatory stopped acquisitions; B4/4 arrivals; A1/4. C had3 observed arrivals but only2 qualified. Its noisy run failed to arrive and failed the direction-error gate; its nominal confirmation arrived but failed command consistency. Preserve all original failed/closed experiment versions.
+
+Remaining study evidence gaps: D/noise has one missing scheduled direction anchor, so strict noise/combined qualification remains unavailable despite passing available-sample angle statistics. Do not fabricate or relabel that sample. The original independently labelled30% trapping-onset latency target remains unavailable: faster arrival is not a substitute. This percentage was a project criterion, not specified in the email. Separate retained R10 tests support detector improvement, but not universal reliability. Noise(0.015V standard deviation) and100ms delay were additional stress tests; they were not explicit email requirements or a calibrated hardware model. Physical/acoustic/general-field validation remains unestablished.
+
+EARLIER LIVE DEMONSTRATIONS — RETAINED HISTORY, SEPARATE FROM THE STUDY
+All artifacts are under /home/mattb/Experiments/GESC-Gaussian/v2/demonstrations/:
+
+1. 20260911T210019Z_D_nominal_visible — failed D demonstration.
+The robot detected circling three times but never committed a fill. Cancellations at98.7,165.4,238.1 simulated seconds reported “stale or invalid state”, then twice “stale or changed epoch context”. It stayed near the local source. Screen capture used substantial CPU, but load is a hypothesis, not the established root cause.
+The previous agent then queried the actively written SQLite bag. The recorder aborted with “SQLite error (5): database is locked”; that diagnostic likely caused shutdown. The three fill cancellations preceded it and are a separate problem. NEVER query an active recording database again. Monitor live ROS topics and analyze closed recordings. Preserve this incomplete recording and the agent-error provenance. A subsequent pacing command ran after Gazebo had stopped and changed nothing.
+
+2. 20260911T211235Z_D_nominal_visible_half_speed — observed D arrival.
+Same nominal secondary case, seed26091152 and algorithm/controller settings; Gazebo target update rate500Hz, physics step unchanged. One fill committed and escape completed. Arrival150.807 simulated seconds, distance0.499670m. Recording and both cleanup checks passed. Ten of11 runtime predicates passed; escape_command_ownership failed with “direct repulse command is not ordinary GESC ownership”. Its precise cause is undiagnosed. Do not call the complete validation a pass. No new direction-quality analysis was performed.
+
+3. 20260911T213153Z_A_nominal_visible_half_speed — successful A baseline.
+Same field, starting pose, sources, seed, controller limits and500Hz target playback rate as the last D demonstration. Arrival313.450 simulated seconds, distance0.498170m. All11 runtime predicates, recording and both cleanup checks passed. A also used ESCAPE_ASSIST after repulsion. D took51.888% less arrival time in these two demonstrations; this is integrated arrival improvement, not isolated detector speed or statistical robustness. The new A success does not replace the original study's nominal A nonarrival.
+
+Read attempt_result.json, scenario_summary.yaml, demonstration_result.json, prepared.json, command.json and playback_pacing.json in the relevant roots; the first failure has demonstration_failure.json and live_fill_result_diagnostic.json. Full per-run results are under runs/. An intermediate preparation-only attempt at20260911T211140Z_D_nominal_visible_half_speed was blocked before ROS/Gazebo dispatch and remains retained.
+
+DEFERRED DIAGNOSTIC BACKLOG — NOT CURRENT WORK
+1. Diagnose D's stale-input fill cancellations from the closed first recording and existing evidence. Trace whether expiry, callback delay, clock handling, epoch identity or ordering actually caused rejection. Slower-playback success does not establish the cause. Start with ros2_ws/src/ros_esc/ros_esc/gaussian_fill_node/v2_fill_runtime.py (_fresh and _live_error), its lifecycle owner and supervisor messages. Do not simply widen freshness limits or disable cancellation.
+2. Diagnose the slower D run's escape-command attribution failure. This check executes AFTER recording/cleanup in scenario_runner/run_scenario.py (_direct_escape_repulse_ownership_evidence via _bag_outcomes); it cannot cause live circling. Determine whether there was an actual unexpected command contribution or a state/diagnostic alignment error at a transition. Do not assume a false positive. Preserve observed arrival independently. Correct runtime or validation only where evidence supports it; preserve old verdicts and document any prospective reporting changes.
+3. Keep the advisor-facing explanation clear: what improved, what succeeded, what failed and what remains unknown. Noise coverage is an open scientific limitation; the original30% latency endpoint is historical unavailable evidence and its target is now retired. Neither blocks practical bug fixes. Retained-data evidence comes before any separately planned new experiment.
+
+EXECUTION PRACTICALITIES
+Use the existing runtime environment at /home/mattb/Experiments/GESC-Gaussian/v2/development/20260911/r21_recurrent_trapping_v1/runtime_environment.sh. Prior wrappers clear inherited PYTHONPATH/RMW_IMPLEMENTATION before sourcing, then select ROS_DOMAIN_ID=201, ROS_LOCALHOST_ONLY=1 and single BLAS threads. Verify installed interfaces and entry points before dispatch; do not use an arbitrary default overlay.
+For a future user-requested one-off demonstration, use visible Gazebo, announce startup so I can record, and match presentation pacing for comparisons. The latest normal-speed D/A pair used fresh-world physics with no update-rate override; their successful wrappers and comparison preflight are in the run roots listed in the acceptance amendment. Earlier slower A/D demonstrations used `gz physics --update-rate 500`, without changing physics step or controller gains. That older pacing was applied from a separate bounded process after server startup: starting a helper child inside the exclusive subreaper wrapper caused a pre-launch guard failure. Keep strict cleanup. Extract the selected case before dry-run validation; validating the whole16-case file unnecessarily recomputed topology. Bound every command and preserve failures. Do not automatically launch A, D or another matrix now.
+
+Begin with the latest user task and a concise verified state summary. No diagnostic milestone or empirical follow-up is currently scheduled; the earlier backlog is deferred at the user's request. Keep plan, status, validation and handoff current when new work is undertaken. Distinguish the accepted selected-study improvement from universal validation, and preserve the existing GOAL_HOLD behavior and historical failed results.

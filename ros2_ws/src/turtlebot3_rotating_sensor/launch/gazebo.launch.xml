@@ -56,6 +56,18 @@
     <arg name="escape_policy" default="conditional_gaussian_fill"/>
     <arg name="pde_omega" default="5.0"/>
     <arg name="convergence_threshold" default="0.2"/>
+    <arg name="convergence_metric_mode" default="pde_mean_v1"/>
+    <arg name="centroid_window_sec" default="3.0"/>
+    <arg name="centroid_epsilon_m" default="0.06"/>
+    <arg name="centroid_maximum_radius_m" default="0.50"/>
+    <arg name="centroid_maximum_gap_sec" default="0.50"/>
+    <arg name="centroid_pose_stale_sec" default="0.50"/>
+    <arg name="centroid_state_stale_sec" default="0.50"/>
+    <arg name="centroid_invalid_status_heartbeat_enabled" default="False"/>
+    <arg name="stationary_fill_request_topic" default="/gesc_gaussian/v2/stationary_fill_requests"/>
+    <arg name="stationary_recurrent_fill_request_topic" default="/gesc_gaussian/v2/stationary_recurrent_fill_requests"/>
+    <arg name="stationary_timekeeper_topic" default="/$(var entity_name)/timekeeper_chatter"/>
+    <arg name="convergence_diagnostics_topic" default="/gesc_gaussian/v2/convergence_diagnostics"/>
     <arg name="convergence_decay_rate" default="0.15"/>
     <arg name="convergence_min_fill_periods" default="2.0"/>
     <arg name="convergence_state_gating_enabled" default="False"/>
@@ -223,6 +235,21 @@
     <arg name="recording_ready_required" default="False"/>
     <arg name="recording_ready_topic" default="/gesc_gaussian/recording_ready"/>
     <arg name="recording_ready_stale_sec" default="0.50"/>
+    <arg name="continuous_search_mode" default="stationary_v1"/>
+    <arg name="v2_direction_policy" default="three_cycle_v1"/>
+    <arg name="v2_candidate_radius_m" default="0.0"/>
+    <arg name="v2_candidate_epsilon_m" default="0.0"/>
+    <arg name="v2_verification_motion_mode" default="rolling_neighborhood_v1"/>
+    <arg name="v2_verification_evidence_policy" default="angular_profiles_v1"/>
+    <arg name="recurrent_diagnostics_topic" default="/gesc_gaussian/v2/recurrent_convergence_diagnostics"/>
+    <arg name="v2_qualification_observation_only" default="false"/>
+    <arg name="v2_run_id" default=""/>
+    <arg name="v2_stream_config_json" default=""/>
+    <arg name="v2_source_provenance_topic" default="/gesc_gaussian/v2/source_sample_provenance"/>
+    <arg name="v2_algorithm_provenance_topic" default="/gesc_gaussian/v2/source_sample_provenance"/>
+    <arg name="v2_objective_cost_topic" default="/gesc_gaussian/v2/objective_cost_samples"/>
+    <arg name="v2_direction_diagnostics_topic" default="/gesc_gaussian/v2/direction_diagnostics"/>
+    <arg name="v2_delayed_provenance_topic" default="/gesc_gaussian/simulation/source_sample_provenance_delayed"/>
     <arg name="source_cost_topic" default="/gesc_gaussian/source_cost"/>
     <!-- Default-off simulation validation routing. Canonical source topics
     remain published even when algorithm consumers use delayed relays. -->
@@ -333,6 +360,7 @@
     <!-- Load the controllers -->
     <include file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/control.launch.py">
         <arg name="controller_spawner_load_recovery_enabled" value="$(var controller_spawner_load_recovery_enabled)"/>
+        <arg name="continuous_search_mode" value="$(var continuous_search_mode)"/>
     </include>
 
     <executable
@@ -341,6 +369,9 @@
             ros2 run ros_esc simulation_disturbance_node
             --ros-args
             -p use_sim_time:=True
+            -p continuous_search_mode:=$(var continuous_search_mode)
+            -p provenance_input_topic:=$(var v2_source_provenance_topic)
+            -p provenance_output_topic:=$(var v2_delayed_provenance_topic)
             -p raw_cost_input_topic:=/turtlebot3/cost_value_chatter
             -p source_cost_input_topic:=$(var source_cost_topic)
             -p pose_input_topic:=/odom
@@ -471,6 +502,7 @@
         $(var entity_name)/encoder_chatter
         --joint_names
         $(var joint_name_1)
+        --continuous-search-mode=$(var continuous_search_mode)
     "
     />
 
@@ -491,6 +523,7 @@
         $(var entity_name)/timekeeper_chatter
         $(var entity_name)/sensor_transform_chatter
         $(var sensor_transform_config_filepath)
+        --continuous-search-mode=$(var continuous_search_mode)
     "
     />
 
@@ -561,6 +594,12 @@
         $(var algorithm_event_topic)
         --observability_source_mode
         $(var observability_source_mode)
+
+        --continuous-search-mode=$(var continuous_search_mode)
+        --v2-run-id=$(var v2_run_id)
+        --v2-stream-config-json=$(var v2_stream_config_json)
+        --v2-sensor-geometry-config=$(var sensor_transform_config_filepath)
+        --v2-provenance-topic=$(var v2_source_provenance_topic)
     "
     />
 
@@ -630,6 +669,12 @@
         $(var algorithm_event_topic)
         --observability_source_mode
         $(var observability_source_mode)
+
+        --continuous-search-mode=$(var continuous_search_mode)
+        --v2-run-id=$(var v2_run_id)
+        --v2-stream-config-json=$(var v2_stream_config_json)
+        --v2-sensor-geometry-config=$(var sensor_transform_config_filepath)
+        --v2-provenance-topic=$(var v2_source_provenance_topic)
     "
     />
 
@@ -716,7 +761,13 @@
         "
     />
 
-    <!-- Optional PDE extension nodes -->
+    <!-- Optional PDE extension nodes.
+         Humble tokenizes static command fragments before substitutions: quotes
+         must close inside each static fragment. The V2 parameter wrappers emit
+         YAML single-quoted strings (including empty legacy defaults). Valid V2
+         run IDs and stream descriptors contain no apostrophes by v2_stream's
+         fixed identity/topic/frame/geometry grammar. CLI substitutions below
+         remain atomic arguments and need no shell quoting. -->
     <executable
         if="$(var use_pde_extensions)"
         cmd="
@@ -745,6 +796,11 @@
             -p algorithm_state_topic:=$(var algorithm_state_topic)
             -p algorithm_event_topic:=$(var algorithm_event_topic)
             -p observability_source_mode:=$(var observability_source_mode)
+
+            -p continuous_search_mode:=$(var continuous_search_mode)
+            -p &quot;v2_run_id:='&quot;$(var v2_run_id)&quot;'&quot;
+            -p &quot;v2_stream_config_json:='&quot;$(var v2_stream_config_json)&quot;'&quot;
+            -p v2_objective_cost_topic:=$(var v2_objective_cost_topic)
         "
     />
 
@@ -753,6 +809,9 @@
         cmd="
             ros2 run ros_esc pde_history_node
             --ros-args
+            -p continuous_search_mode:=$(var continuous_search_mode)
+            -p &quot;v2_run_id:='&quot;$(var v2_run_id)&quot;'&quot;
+            -p &quot;v2_stream_config_json:='&quot;$(var v2_stream_config_json)&quot;'&quot;
             -p omega:=$(var pde_omega)
             -p algorithm_profile:=$(var algorithm_profile)
             -p robust_search_epoch_reset_enabled:=$(var robust_search_epoch_reset_enabled)
@@ -779,6 +838,23 @@
         cmd="
             ros2 run ros_esc convergence_detector_node
             --ros-args
+            -p continuous_search_mode:=$(var continuous_search_mode)
+            -p &quot;v2_run_id:='&quot;$(var v2_run_id)&quot;'&quot;
+            -p &quot;v2_stream_config_json:='&quot;$(var v2_stream_config_json)&quot;'&quot;
+            -p convergence_metric_mode:=$(var convergence_metric_mode)
+            -p centroid_window_sec:=$(var centroid_window_sec)
+            -p centroid_epsilon_m:=$(var centroid_epsilon_m)
+            -p centroid_maximum_radius_m:=$(var centroid_maximum_radius_m)
+            -p centroid_maximum_gap_sec:=$(var centroid_maximum_gap_sec)
+            -p centroid_pose_stale_sec:=$(var centroid_pose_stale_sec)
+            -p centroid_state_stale_sec:=$(var centroid_state_stale_sec)
+            -p centroid_invalid_status_heartbeat_enabled:=$(var centroid_invalid_status_heartbeat_enabled)
+            -p convergence_diagnostics_topic:=$(var convergence_diagnostics_topic)
+            -p recurrent_diagnostics_topic:=$(var recurrent_diagnostics_topic)
+            -p pose_topic:=$(var algorithm_pose_topic)
+            -p recording_ready_required:=$(var recording_ready_required)
+            -p recording_ready_topic:=$(var recording_ready_topic)
+            -p recording_ready_stale_sec:=$(var recording_ready_stale_sec)
             -p omega:=$(var pde_omega)
             -p threshold:=$(var convergence_threshold)
             -p decay_rate:=$(var convergence_decay_rate)
@@ -802,6 +878,27 @@
         cmd="
             ros2 run ros_esc gaussian_fill_node
             --ros-args
+            -p candidate_cost_mad_scale:=$(var candidate_cost_mad_scale)
+            -p v2_fill_command_topic:=$(eval &quot;'/gesc_gaussian/v2/recurrent_fill_commands' if '$(var v2_verification_evidence_policy)' == 'recurrent_trapping_v1' else '/gesc_gaussian/v2/fill_commands'&quot;)
+            -p v2_verification_evidence_policy:=$(var v2_verification_evidence_policy)
+            -p v2_verification_motion_mode:=$(var v2_verification_motion_mode)
+            -p convergence_metric_mode:=$(var convergence_metric_mode)
+            -p stationary_fill_request_topic:=$(var stationary_fill_request_topic)
+            -p stationary_recurrent_fill_request_topic:=$(var stationary_recurrent_fill_request_topic)
+            -p timekeeper_topic:=$(var stationary_timekeeper_topic)
+            -p centroid_window_sec:=$(var centroid_window_sec)
+            -p centroid_epsilon_m:=$(var centroid_epsilon_m)
+            -p centroid_maximum_radius_m:=$(var centroid_maximum_radius_m)
+            -p centroid_maximum_gap_sec:=$(var centroid_maximum_gap_sec)
+            -p centroid_pose_stale_sec:=$(var centroid_pose_stale_sec)
+            -p centroid_state_stale_sec:=$(var centroid_state_stale_sec)
+            -p fill_design_timeout_sec:=$(var fill_design_timeout_sec)
+            -p recording_ready_required:=$(var recording_ready_required)
+            -p recording_ready_topic:=$(var recording_ready_topic)
+            -p recording_ready_stale_sec:=$(var recording_ready_stale_sec)
+            -p continuous_search_mode:=$(var continuous_search_mode)
+            -p &quot;v2_run_id:='&quot;$(var v2_run_id)&quot;'&quot;
+            -p &quot;v2_stream_config_json:='&quot;$(var v2_stream_config_json)&quot;'&quot;
             -p escape_policy:=$(var escape_policy)
             -p amplitude:=$(var gaussian_fill_amplitude)
             -p min_sigma:=$(var gaussian_fill_min_sigma)
@@ -817,7 +914,7 @@
             -p enable_observability:=$(var enable_observability)
             -p algorithm_profile:=$(var algorithm_profile)
             -p fill_request_topic:=$(var fill_request_topic)
-            -p pose_topic:=$(var gaussian_fill_pose_topic)
+            -p pose_topic:=$(eval &quot;'$(var algorithm_pose_topic)' if ('$(var algorithm_profile)' == 'robust_gaussian_v1' and '$(var convergence_metric_mode)' in ('centroid_windows_v2', 'centroid_two_block_v2', 'recurrent_geometry_v3') and '$(var continuous_search_mode)' == 'stationary_v1') else '$(var gaussian_fill_pose_topic)'&quot;)
             -p source_cost_topic:=$(var algorithm_source_cost_topic)
             -p algorithm_state_topic:=$(var algorithm_state_topic)
             -p estimation_channel_index:=$(var gaussian_fill_estimation_channel_index)
@@ -874,6 +971,28 @@
         cmd="
             ros2 run ros_esc supervisor_node
             --ros-args
+            -p convergence_metric_mode:=$(var convergence_metric_mode)
+            -p stationary_fill_request_topic:=$(var stationary_fill_request_topic)
+            -p stationary_recurrent_fill_request_topic:=$(var stationary_recurrent_fill_request_topic)
+            -p recurrent_diagnostics_topic:=$(var recurrent_diagnostics_topic)
+            -p timekeeper_topic:=$(var stationary_timekeeper_topic)
+            -p centroid_window_sec:=$(var centroid_window_sec)
+            -p centroid_epsilon_m:=$(var centroid_epsilon_m)
+            -p centroid_maximum_radius_m:=$(var centroid_maximum_radius_m)
+            -p centroid_maximum_gap_sec:=$(var centroid_maximum_gap_sec)
+            -p centroid_pose_stale_sec:=$(var centroid_pose_stale_sec)
+            -p centroid_state_stale_sec:=$(var centroid_state_stale_sec)
+            -p convergence_diagnostics_topic:=$(var convergence_diagnostics_topic)
+            -p v2_direction_diagnostics_topic:=$(var v2_direction_diagnostics_topic)
+            -p recording_ready_required:=$(var recording_ready_required)
+            -p recording_ready_topic:=$(var recording_ready_topic)
+            -p recording_ready_stale_sec:=$(var recording_ready_stale_sec)
+            -p v2_candidate_radius_m:=$(var v2_candidate_radius_m)
+            -p v2_candidate_epsilon_m:=$(var v2_candidate_epsilon_m)
+            -p v2_verification_motion_mode:=$(var v2_verification_motion_mode)
+            -p v2_verification_controller_config_filepath:=$(var controller_config_filepath)
+            -p v2_verification_evidence_policy:=$(var v2_verification_evidence_policy)
+            -p v2_qualification_observation_only:=$(var v2_qualification_observation_only)
             -p use_sim_time:=$(var supervisor_use_sim_time)
             -p algorithm_profile:=$(var algorithm_profile)
             -p supervisor_publish_rate_hz:=$(var supervisor_publish_rate_hz)
@@ -962,6 +1081,10 @@
             -p algorithm_event_topic:=$(var algorithm_event_topic)
             -p gaussian_fill_diagnostics_topic:=$(var gaussian_fill_diagnostics_topic)
             -p pde_extensions_enabled:=$(var use_pde_extensions)
+
+            -p continuous_search_mode:=$(var continuous_search_mode)
+            -p &quot;v2_run_id:='&quot;$(var v2_run_id)&quot;'&quot;
+            -p &quot;v2_stream_config_json:='&quot;$(var v2_stream_config_json)&quot;'&quot;
         "
     />
 
@@ -984,6 +1107,13 @@
         $(var algorithm_profile)
         --gesc_diagnostics_topic
         $(var gesc_diagnostics_topic)
+
+        --continuous-search-mode=$(var continuous_search_mode)
+        --v2-run-id=$(var v2_run_id)
+        --v2-stream-config-json=$(var v2_stream_config_json)
+        --v2-direction-diagnostics-topic=$(var v2_direction_diagnostics_topic)
+        --v2-direction-policy=$(var v2_direction_policy)
+        --algorithm-state-topic=$(var algorithm_state_topic)
     "
     />
 
@@ -1005,6 +1135,13 @@
         $(var algorithm_profile)
         --gesc_diagnostics_topic
         $(var gesc_diagnostics_topic)
+
+        --continuous-search-mode=$(var continuous_search_mode)
+        --v2-run-id=$(var v2_run_id)
+        --v2-stream-config-json=$(var v2_stream_config_json)
+        --v2-direction-diagnostics-topic=$(var v2_direction_diagnostics_topic)
+        --v2-direction-policy=$(var v2_direction_policy)
+        --algorithm-state-topic=$(var algorithm_state_topic)
     "
     />
 
@@ -1012,6 +1149,10 @@
         <!-- Launch the controller node -->
         <executable cmd="
             ros2 run ros_esc controller_node
+            --continuous-search-mode=$(var continuous_search_mode)
+            --v2-run-id=$(var v2_run_id)
+            --v2-verification-motion-mode=$(var v2_verification_motion_mode)
+            --v2-stream-config-json=$(var v2_stream_config_json)
             $(var entity_name)/filter_value_chatter
             $(var algorithm_pose_topic)
             $(var entity_name)/timekeeper_chatter

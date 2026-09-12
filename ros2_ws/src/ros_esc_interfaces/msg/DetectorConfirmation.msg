@@ -1,0 +1,27 @@
+# Lifecycle protocol version, independent of nested stream-observation schema.
+uint16 schema_version
+builtin_interfaces/Time stamp
+builtin_interfaces/Time time_origin
+string run_id
+string stream_contract_id
+string frame_id
+uint64 search_epoch
+uint64 context_sequence
+builtin_interfaces/Time epoch_started_at
+builtin_interfaces/Time source_stamp
+builtin_interfaces/Time history_start
+builtin_interfaces/Time history_end
+string metric_mode
+string history_kind
+string source_stamp_kind
+uint64 confirmation_sequence
+uint64 detector_local_epoch
+float64 center_x_m
+float64 center_y_m
+float64 convergence_score_m
+bool convergence_score_valid
+float64 legacy_r_mean_m2
+bool legacy_r_mean_valid
+float64[] legacy_snapshot
+bool valid
+string reason
