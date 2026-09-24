@@ -113,6 +113,7 @@ SUCCESS_PREDICATES = {
     'escape_command_ownership',
 }
 LAUNCH_OVERRIDES = {
+    'simulation_sensor_update_rate_hz',
     'controller_config_filepath',
     'continuous_search_mode',
     'v2_direction_policy',
@@ -2660,6 +2661,9 @@ def load_suite(path):
                 **frozen_profile['launch_overrides'],
                 **overrides,
             }
+        if 'simulation_sensor_update_rate_hz' in overrides:
+            _number(overrides['simulation_sensor_update_rate_hz'],
+                    f'{location}.simulation_sensor_update_rate_hz', positive=True)
         if (overrides.get('continuous_search_mode') == 'rolling_gesc_v2'
                 and profiles != ['robust_gaussian_v1']):
             raise ValueError(f'{location}.rolling_gesc_v2 requires only robust_gaussian_v1')

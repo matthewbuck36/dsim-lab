@@ -892,7 +892,12 @@ class RollingGesc:
         gaps.extend(b.stamp_ns - a.stamp_ns for a, b in zip(self._points, self._points[1:])
                     if b.stamp_ns > start.stamp_ns and a.stamp_ns < end.stamp_ns)
         gap = max(gaps)
-        covered = (all(c >= self.config.min_sector_samples for c in counts)
+        # This branch's moving policy is the explicitly identified 5 Hz
+        # experiment. Retain actual full revolutions and temporal support;
+        # only its sector population requirement is disabled.
+        density_valid = (self.config.direction_policy == MOVING_CYCLE_POLICY
+                         or all(c >= self.config.min_sector_samples for c in counts))
+        covered = (density_valid
                    and gap <= self.config.max_gap_ns and duration <= self.config.max_cycle_duration_ns)
         return CycleSummary(start.stamp_ns, end.stamp_ns, start.phase, end.phase,
                             mean, tuple(counts), sum(counts), gap, covered)

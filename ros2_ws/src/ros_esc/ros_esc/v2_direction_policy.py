@@ -58,6 +58,10 @@ def policy_descriptor(policy):
         )
     else:
         descriptor.update(
+            experiment='nominal_5hz_density_relaxation_20260924',
+            experimental_sector_density_gate='disabled',
+            minimum_samples_per_sector=0,
+            experimental_recurrent_raw_minimum_samples_per_sector=1,
             confidence_rule='current_cycle_coherence_lower_bound_v1',
             coherence_threshold=.25,
             norm_representation='source_piecewise_linear_phase_clipped_v1',

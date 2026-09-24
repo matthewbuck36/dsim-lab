@@ -2,6 +2,7 @@
 <robot name="turtlebot3_rotating_sensor"
   xmlns:xacro="http://ros.org/wiki/xacro">
 
+  <xacro:arg name="simulation_sensor_update_rate_hz" default="30.0"/>
   <xacro:arg name="simulation_contacts_enabled" default="false"/>
   <xacro:arg
     name="simulation_contacts_topic"
@@ -462,7 +463,7 @@
         <!-- <namespace>/tb3</namespace> -->
         <remapping>~/out:=joint_states</remapping>
       </ros>
-      <update_rate>30</update_rate>
+      <update_rate>$(arg simulation_sensor_update_rate_hz)</update_rate>
 
       <!-- Publish the rotating frame joints in order here.
       These joints will appead in the joint state message

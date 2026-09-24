@@ -67,11 +67,15 @@ class MovingEvidence:
 class MovingRawEvidence:
     """Latest-three revolution evidence, with explicit resets and finite caps."""
 
-    def __init__(self, *, max_observations=20000, max_snapshot=4000):
+    def __init__(self, *, max_observations=20000, max_snapshot=4000,
+                 min_sector_samples=2):
         if max_observations < 4 or max_snapshot < 4:
             raise ValueError('evidence capacities must be at least four')
+        if type(min_sector_samples) is not int or min_sector_samples not in (1, 2):
+            raise ValueError('raw evidence needs one or two actual samples per sector')
         self.max_observations = max_observations
         self.max_snapshot = max_snapshot
+        self.min_sector_samples = min_sector_samples
         self.epoch = None
         self.epoch_start_ns = 0
         self.reset_sequence = 0
@@ -248,7 +252,8 @@ class MovingRawEvidence:
         stamps = [r.stamp_ns for r in self.records]
         left = max(0, bisect_left(stamps, lo) - (lo not in stamps))
         right = min(len(stamps) - 1, bisect_left(stamps, hi))
-        qualified = (0 < duration <= 30 and all(len(c) >= 2 for c in costs)
+        qualified = (0 < duration <= 30
+                     and all(len(c) >= self.min_sector_samples for c in costs)
                      and all(v[2] > 0 for v in sector_integral))
         centroid = tuple(v / duration for v in integral)
         sectors = tuple((v[0] / v[2], v[1] / v[2]) if v[2] else (0., 0.) for v in sector_integral)
@@ -360,17 +365,6 @@ def snapshot_raw_evidence(snapshot, *, evidence_policy='angular_profiles_v1', ma
                        ('revolution_start', 'revolution_end',
                         'revolution_sample_start', 'revolution_sample_end'))):
             raise ValueError('invalid raw snapshot population')
-        core = MovingRawEvidence()
-        core.start_epoch(s.search_epoch, time_to_ns(s.time_origin))
-        reset = core.reset_sequence
-        for obs, state, publication in zip(s.observations, s.observation_filter_state,
-                                           s.observation_filter_stamp):
-            if state not in (1, 2, 3, 4, 5) or not core.add(obs, state, time_to_ns(publication)):
-                raise ValueError('invalid original raw support')
-            if core.reset_sequence != reset:
-                raise ValueError('raw support was interrupted')
-        if len(core.records) != n:
-            raise ValueError('raw support was lost')
         bounds = [(time_to_ns(lo), time_to_ns(hi))
                   for lo, hi in zip(s.revolution_start, s.revolution_end)]
         if (time_to_ns(s.evidence_start) != bounds[0][0]
@@ -378,8 +372,47 @@ def snapshot_raw_evidence(snapshot, *, evidence_policy='angular_profiles_v1', ma
                 or any(lo >= hi for lo, hi in bounds)
                 or any(a[1] > b[0] for a, b in zip(bounds, bounds[1:]))):
             raise ValueError('invalid declared raw cycle bounds')
+        stamps = [time_to_ns(obs.source_stamp) for obs in s.observations]
+        if (any(a >= b for a, b in zip(stamps, stamps[1:]))
+                or len({obs.observation_id for obs in s.observations}) != n
+                or len({obs.source_sequence for obs in s.observations}) != n):
+            raise ValueError('raw support order or identity conflict')
+        # The producer selects the last three eligible cycles, not necessarily
+        # adjacent cycles, and retains only their original bracketing support.
+        # Replay overlapping support together; never invent or interpolate the
+        # omitted history between disjoint groups. Each group still passes the
+        # unchanged source-gap, phase-order and finite-data admission checks.
+        groups = []
+        for lo, hi in bounds:
+            left, right = bisect_left(stamps, lo), bisect_left(stamps, hi)
+            if right == n or left == n or (left == 0 and stamps[left] > lo):
+                raise ValueError('unbracketed raw cycle')
+            left -= stamps[left] != lo
+            if groups and left <= groups[-1][1]:
+                groups[-1][1] = max(groups[-1][1], right)
+            else:
+                groups.append([left, right])
+        replayed = []
+        for left, right in groups:
+            core = MovingRawEvidence(min_sector_samples=(
+                1 if evidence_policy == 'recurrent_trapping_v1' else 2))
+            core.start_epoch(s.search_epoch, time_to_ns(s.time_origin))
+            reset = core.reset_sequence
+            for index in range(left, right + 1):
+                state = s.observation_filter_state[index]
+                if state not in (1, 2, 3, 4, 5) or not core.add(
+                        s.observations[index], state, time_to_ns(s.observation_filter_stamp[index])):
+                    raise ValueError('invalid original raw support')
+                if core.reset_sequence != reset:
+                    raise ValueError('raw support was interrupted')
+            replayed.append(core)
+        if (sum(len(core.records) for core in replayed) != n
+                or len({core.direction for core in replayed}) != 1):
+            raise ValueError('raw support was lost or phase direction changed')
         cycles = []
         for lo, hi in bounds:
+            core = next(core for core in replayed
+                        if core.records[0].stamp_ns <= lo < hi <= core.records[-1].stamp_ns)
             a, b = core._point(lo), core._point(hi)
             # Source boundaries were rounded to nanoseconds by _crossing.
             # Their maximum half-ns phase error is bounded by the adjacent
@@ -391,6 +424,9 @@ def snapshot_raw_evidence(snapshot, *, evidence_policy='angular_profiles_v1', ma
             if abs(abs(b[1] - a[1]) - TAU) > tolerance:
                 raise ValueError('declared raw support is not one complete rotation')
             cycles.append(core._cycle(a[:2], b[:2]))
+        records = [record for core in replayed for record in core.records]
+        core = replayed[0]
+        core.records = records
         core.cycles = cycles
         result = core.evaluate((s.center_x_m, s.center_y_m), s.neighborhood_radius_m,
             s.centroid_tolerance_m, time_to_ns(s.confirmation_stamp),

@@ -264,6 +264,7 @@
     <arg name="simulation_raw_cost_delayed_topic" default="/gesc_gaussian/simulation/raw_cost_delayed"/>
     <arg name="simulation_source_cost_delayed_topic" default="/gesc_gaussian/simulation/source_cost_delayed"/>
     <arg name="simulation_pose_delayed_topic" default="/gesc_gaussian/simulation/pose_delayed"/>
+    <arg name="simulation_sensor_update_rate_hz" default="30.0"/>
     <arg name="simulation_contacts_enabled" default="False"/>
     <arg name="simulation_contacts_topic" default="/gesc_gaussian/simulation/contacts"/>
     <arg name="simulation_contact_probe_enabled" default="False"/>
@@ -353,6 +354,7 @@
 
     <!-- Publish URDF file in robot_description topic -->
     <include file="$(find-pkg-share turtlebot3_rotating_sensor)/launch/robot_description.launch.py">
+        <arg name="simulation_sensor_update_rate_hz" value="$(var simulation_sensor_update_rate_hz)"/>
         <arg name="simulation_contacts_enabled" value="$(var simulation_contacts_enabled)"/>
         <arg name="simulation_contacts_topic" value="$(var simulation_contacts_topic)"/>
     </include>

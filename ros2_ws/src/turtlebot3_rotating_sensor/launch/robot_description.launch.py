@@ -35,6 +35,8 @@ def generate_launch_description():
             'use_sim_time': True,
             'robot_description': Command([
                 'xacro ', urdf_desc_path,
+                ' simulation_sensor_update_rate_hz:=',
+                LaunchConfiguration('simulation_sensor_update_rate_hz'),
                 ' simulation_contacts_enabled:=',
                 LaunchConfiguration('simulation_contacts_enabled'),
                 ' simulation_contacts_topic:=',
@@ -47,6 +49,10 @@ def generate_launch_description():
     # create and return launch description object
     return LaunchDescription(
         [
+            DeclareLaunchArgument(
+                'simulation_sensor_update_rate_hz',
+                default_value='30.0',
+            ),
             DeclareLaunchArgument(
                 'simulation_contacts_enabled',
                 default_value='False',

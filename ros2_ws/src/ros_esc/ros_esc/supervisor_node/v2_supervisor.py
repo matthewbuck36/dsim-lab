@@ -102,7 +102,11 @@ class MovingSupervisor:
         self.nomination_tombstones = set()
         self.nomination_fault = False
         self.nomination_not_before_ns = self.started
-        self.raw = MovingRawEvidence()
+        # Recurrent trapping is admitted only for centered rolling simulation.
+        # This branch's 5 Hz experiment keeps real medians in every sector but
+        # drops the second-sample density requirement; other modes stay strict.
+        self.raw = MovingRawEvidence(min_sector_samples=(
+            1 if self.recurrent_trapping else 2))
         self.raw.start_epoch(self.epoch, self.started)
         self.candidate = None
         self.candidate_sequence = 0

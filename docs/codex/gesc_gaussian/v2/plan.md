@@ -1,3 +1,9 @@
+> **Git closeout,2026-09-24:** [Preserved 5 Hz work and validation](validation/low_rate_git_closeout_20260924.md). Earlier uncommitted-state statements are historical; this closeout commits the completed experiment and deployment handoffs on the experimental branch.
+
+> **Physical mobile5Hz deployment,2026-09-24:** [Installed launcher and handoff](physical_mobile_5hz_handoff.md). User runs it and stops with Ctrl+C; no default timed cutoff. Software/deployment checks passed; no physical run performed. Increased-rate goal remains paused.
+
+> **5 Hz experiment closed, 2026-09-24:** [Result and handoff](low_rate_5hz_handoff.md), [plan](low_rate_5hz_plan.md), and [status](low_rate_5hz_status.md). Run_05 demonstrated fill, assisted escape and global arrival at 5 Hz/20 RPM; strict original coverage completeness remains FAIL. Accepted Test D below is preserved. Physical increased-rate commissioning stays paused.
+
 # V2 Plan: Faster convergence detection and continuous GESC search
 
 **Simulation scope COMPLETE by user acceptance, 2026-09-11.** The next topic
