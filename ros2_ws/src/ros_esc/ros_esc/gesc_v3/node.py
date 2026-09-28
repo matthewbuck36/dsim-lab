@@ -19,6 +19,7 @@ from ros_esc_interfaces.msg import (
 from ros_esc.config_parsing import parse_object_config
 from ros_esc.deferred_signal_shutdown import DeferredSignalShutdown
 from ros_esc.profiles import resolve_profile
+from .clock_delivery import ClockDelivery
 from .core import V3Core
 from .observation_node import pose_from_message, seconds, set_stamp
 from .records import CoreConfig, Observation, Pose
@@ -65,6 +66,9 @@ class V3Controller(Node):
             controller = parse_object_config(json.load(stream))
         self.worker = worker or NumericalWorker()
         self.core = V3Core(controller, self.worker, config)
+        self.delivery = ({kind: ClockDelivery(config.input_expiry)
+                          for kind in ('pose', 'observation')}
+                         if selected['use_sim_time'] else None)
         topics = selected['topics']
         self.command_topic = topics['command']
         self.command_publisher = self.create_publisher(Twist, topics['command'], 10)
@@ -97,7 +101,15 @@ class V3Controller(Node):
             pose = pose_from_message(message)
         except (ValueError, TypeError, OverflowError):
             return
-        self.core.update_pose(pose, now, time.monotonic())
+        steady = time.monotonic()
+        if self.core.pose is not None and pose.frame != self.core.pose.frame:
+            self.core.fault(now, 'pose_frame_changed')
+            return
+        if self.delivery is not None:
+            self.delivery['pose'].add(pose.stamp, pose, now, steady)
+            self._drain_delivery(now, steady)
+        else:
+            self.core.update_pose(pose, now, steady)
 
     def observation_callback(self, message):
         now = self.now_seconds()
@@ -109,7 +121,31 @@ class V3Controller(Node):
             observation = observation_from_message(message)
         except (ValueError, TypeError, OverflowError):
             return
-        if self.core.ingest_observation(observation, now, time.monotonic()):
+        steady = time.monotonic()
+        if self.delivery is not None:
+            if observation.valid():
+                self.delivery['observation'].add(observation.stamp, observation, now, steady,
+                    available_at=max(observation.stamp, observation.receipt_stamp))
+            self._drain_delivery(now, steady)
+        else:
+            self._ingest_observation(observation, now, steady)
+
+    def _drain_delivery(self, now, steady):
+        if self.delivery is None:
+            return
+        if self.core.last_tick is not None and now < self.core.last_tick:
+            self.core.fault(now, 'clock_discontinuity')
+        if self.core.terminal:
+            for queue in self.delivery.values():
+                queue.clear()
+            return
+        for record in self.delivery['pose'].ready(now, steady):
+            self.core.update_pose(record.value, now, steady, receipt_steady=record.steady)
+        for record in self.delivery['observation'].ready(now, steady):
+            self._ingest_observation(record.value, now, steady, receipt_steady=record.steady)
+
+    def _ingest_observation(self, observation, now, steady, *, receipt_steady=None):
+        if self.core.ingest_observation(observation, now, steady, receipt_steady=receipt_steady):
             # Canonical plotting interfaces remain output-only. They cannot
             # feed another controller or serve as motion authorization.
             try:
@@ -137,7 +173,9 @@ class V3Controller(Node):
     def tick(self):
         now = self.now_seconds()
         try:
-            command = self.core.tick(now, time.monotonic())
+            steady = time.monotonic()
+            self._drain_delivery(now, steady)
+            command = self.core.tick(now, steady)
         except Exception as error:
             command = self.core.fault(now, f'control_exception: {type(error).__name__}: {error}')
             self.get_logger().error(self.core.reason)
@@ -220,19 +258,22 @@ def main(args=None):
     rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
     node = None
     executor = SingleThreadedExecutor()
-    try:
-        with DeferredSignalShutdown() as shutdown:
+    # Launchers may forward a second signal after the process group receives
+    # the first one. Keep both signals deferred through final zero and worker /
+    # executor cleanup, not only while callbacks are running.
+    with DeferredSignalShutdown() as shutdown:
+        try:
             node = V3Controller()
             executor.add_node(node)
             while rclpy.ok() and not shutdown.requested:
                 executor.spin_once(timeout_sec=.05)
-    finally:
-        if node is not None:
-            node.stop()
-            executor.remove_node(node)
-            node.destroy_node()
-        executor.shutdown()
-        rclpy.try_shutdown()
+        finally:
+            if node is not None:
+                node.stop()
+                executor.remove_node(node)
+                node.destroy_node()
+            executor.shutdown()
+            rclpy.try_shutdown()
 
 
 if __name__ == '__main__':

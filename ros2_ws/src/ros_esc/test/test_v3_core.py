@@ -558,6 +558,51 @@ def test_recurrent_geometry_keeps_pose_observations_between_cost_samples():
     assert core.observation.stamp==10.  # no fabricated source-cost observation
 
 
+def test_queued_pose_checks_detector_freshness_at_current_time_not_old_receipt():
+    core=make_core()
+    feed(core,10.,steady=200.05)
+    count=core.detector.retained_point_count
+    assert core.update_pose(Pose(10.03,.001,0.,0.),10.1,200.1,receipt_steady=200.03)
+    assert core.detector.retained_point_count==count+1
+    assert core.pose_received==200.03
+    assert core.observation_received==200.05
+    assert core._fresh(10.1,200.1) is None
+    assert core._fresh(10.1,200.03)=='direction_expired'  # Previous counterexample.
+
+
+def test_queued_observation_commits_ready_fill_using_current_pose_freshness():
+    core=make_core()
+    feed(core,10.,steady=200.)
+    key=arm_design(core)
+    core.worker.results.append(JobResult(key,value=prepared_proposal()))
+    core.tick(10.05,200.05)
+    assert core.ready_proposal is not None
+    assert core.update_pose(Pose(10.09,.002,0.,0.),10.1,200.1,receipt_steady=200.09)
+    assert not core._fresh_pose(10.1,200.08)  # Old receipt is earlier than this pose.
+    assert core.ingest_observation(observation(10.08,2,x=.001),10.1,200.1,
+                                   receipt_steady=200.08)
+    assert core.registry.generation==1 and core.registry.active_count==1
+    assert core.observation_received==200.08 and core.pose_received==200.09
+    assert core.objective_revision==1
+
+
+@pytest.mark.parametrize('receipt',[199.5,200.2,math.nan])
+def test_queued_receipt_age_rejection_cannot_renew_input_or_commit(receipt):
+    core=make_core()
+    feed(core,10.,steady=200.)
+    key=arm_design(core)
+    core.worker.results.append(JobResult(key,value=prepared_proposal()))
+    core.tick(10.05,200.05)
+    assert not core.update_pose(Pose(10.08,.002,0.,0.),10.1,200.1,receipt_steady=receipt)
+    assert not core.ingest_observation(observation(10.08,2),10.1,200.1,
+                                       receipt_steady=receipt)
+    assert core.pose_received==core.observation_received==200.
+    assert core.pose.stamp==core.observation.stamp==10.
+    assert core.registry.generation==0 and core.ready_proposal is not None
+    assert core.tick(10.1,200.6)==Command()
+    assert core.availability=='WAITING_INPUT' and core.registry.generation==0
+
+
 def test_nomination_keeps_detector_evaluation_source_time(monkeypatch):
     core=make_core();drive(core)
     result=SimpleNamespace(confirmed_event=True,mean_xy=(.001,0.),

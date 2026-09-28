@@ -2,13 +2,16 @@
 """Adapt observed cost/pose/encoder messages into one timestamped observation."""
 
 import math
+import time
 import uuid
 
 import rclpy
+from rclpy.clock import Clock, ClockType
 from rclpy.node import Node
 from rclpy.parameter import Parameter
 
 from ros_esc.profiles import resolve_profile
+from .clock_delivery import ClockDelivery
 from .observation import ObservationBuilder
 from .records import Pose
 
@@ -72,6 +75,10 @@ class SensorObservationNode(Node):
         self.basis = 'estimated' if selected['use_sim_time'] else 'receipt'
         self.builder = ObservationBuilder(uuid.uuid4().hex, radius=settings['sensor_radius_m'],
                                           expiry=settings['input_expiry_sec'])
+        self.delivery = ({kind: ClockDelivery(self.builder.expiry)
+                          for kind in ('pose', 'phase', 'cost')}
+                         if selected['use_sim_time'] else None)
+        self.pending_steady = None
         self.origin = None
         self.last_clock = None
         self.fault = None
@@ -81,7 +88,8 @@ class SensorObservationNode(Node):
         self.create_subscription(StampedFloat64MultiArray, selected['topics']['encoder'], self.phase_callback, 10)
         self.create_subscription(StampedFloat64MultiArray, selected['topics']['cost'], self.cost_callback, 10)
         self.create_subscription(Timekeeper, selected['topics']['timekeeper'], self.timekeeper_callback, 10)
-        self.create_timer(1 / settings['control_hz'], self.poll)
+        self.steady_clock = Clock(clock_type=ClockType.STEADY_TIME)
+        self.create_timer(1 / settings['control_hz'], self.poll, clock=self.steady_clock)
 
     def now_seconds(self):
         now = self.get_clock().now().nanoseconds * 1e-9
@@ -113,6 +121,9 @@ class SensorObservationNode(Node):
             self.fault = reason
             self.builder.fault = reason
             self.builder.pending = None
+            if self.delivery:
+                for queue in self.delivery.values():
+                    queue.clear()
             self._notice(reason, now)
 
     def timekeeper_callback(self, message):
@@ -149,6 +160,11 @@ class SensorObservationNode(Node):
             if pose.frame != self.expected_frame:
                 self._fault('pose_frame_changed', now)
                 return
+            if self.delivery is not None:
+                if not self.delivery['pose'].add(pose.stamp, pose, now, time.monotonic()):
+                    raise ValueError('pose_stale_or_future')
+                self.poll()
+                return
             if not 0 <= now - pose.stamp <= self.builder.expiry:
                 raise ValueError('pose_stale_or_future')
             self.builder.add_pose(pose)
@@ -164,6 +180,11 @@ class SensorObservationNode(Node):
             stamp = self._relative(message.timestamp)
             if len(message.data) != 1 or not math.isfinite(message.data[0]):
                 raise ValueError('invalid_phase')
+            if self.delivery is not None:
+                if not self.delivery['phase'].add(stamp, float(message.data[0]), now, time.monotonic()):
+                    raise ValueError('phase_stale_or_future')
+                self.poll()
+                return
             if not 0 <= now - stamp <= self.builder.expiry:
                 raise ValueError('phase_stale_or_future')
             # The environment's encoder owns its calibration; never apply the
@@ -181,11 +202,17 @@ class SensorObservationNode(Node):
             stamp = self._relative(message.timestamp)
             if len(message.data) != 1 or not math.isfinite(message.data[0]):
                 raise ValueError('invalid_cost')
+            if self.delivery is not None:
+                if not self.delivery['cost'].add(stamp, float(message.data[0]), now, time.monotonic()):
+                    raise ValueError('cost_stale_or_future')
+                self.poll()
+                return
             if not 0 <= now - stamp <= self.builder.expiry:
                 raise ValueError('cost_stale_or_future')
             if not self.builder.add_cost(stamp, float(message.data[0]), now,
                                          basis=self.basis, uncertainty=math.nan):
                 raise ValueError(self.builder.reason)
+            self.pending_steady = time.monotonic()
             self.poll()
         except (TypeError, ValueError, OverflowError) as error:
             self._notice(str(error), now)
@@ -194,7 +221,26 @@ class SensorObservationNode(Node):
         now = self.now_seconds()
         if self.fault:
             return
+        steady = time.monotonic()
+        if self.delivery is not None:
+            for record in self.delivery['pose'].ready(now, steady):
+                self.builder.add_pose(record.value)
+            for record in self.delivery['phase'].ready(now, steady):
+                self.builder.add_phase(record.stamp, record.value)
+            for record in self.delivery['cost'].ready(now, steady):
+                if self.builder.add_cost(record.stamp, record.value, record.receipt,
+                                         basis=self.basis, uncertainty=math.nan):
+                    self.pending_steady = record.steady
+                    self._publish_ready(now, steady)
+        self._publish_ready(now, steady)
+
+    def _publish_ready(self, now, steady):
         pending = self.builder.pending
+        if (pending is not None and self.pending_steady is not None
+                and not 0 <= steady-self.pending_steady <= self.builder.expiry):
+            self.builder.pending = None
+            self._notice('sample_expired_or_future', now)
+            return
         observation = self.builder.take(now)
         if observation is None:
             if pending is not None and self.builder.pending is None:

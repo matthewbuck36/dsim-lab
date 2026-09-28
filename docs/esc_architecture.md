@@ -44,6 +44,13 @@ not keep the last command fresh. The initial input expiry is 0.5 s. A command
 published at shutdown is software evidence, not proof of measured wheel stop
 or protection against a frozen OS, process kill, failed transport or actuator.
 
+Gazebo sensor messages and `/clock` arrive independently. The two simulation
+input boundaries retain at most32 records per stream with at most125ms clock
+lead, releasing them only after the actual clock catches up. Source stamps and
+first receipt times remain unchanged; waiting cannot renew the0.5s expiry.
+Physical future timestamps retain immediate rejection. This handles simulation
+clock delivery order; it is not an Arduino transport or uncertainty model.
+
 Research activity is local SEARCH, VERIFY, DESIGN and ESCAPE. Candidate failure
 has no authority to latch the entire run into failure. Best-source ranking is
 an informational event, never automatic goal hold.

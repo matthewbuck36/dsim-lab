@@ -156,3 +156,63 @@ def test_process_sigint_publishes_final_zero(graph, tmp_path):
             process.kill()
             process.wait(timeout=2.)
         log.close()
+
+
+def test_repeated_sigint_during_real_process_cleanup_keeps_final_zero(graph, tmp_path):
+    _, driver, executor = graph
+    environment = dict(os.environ, ROS_DOMAIN_ID='189', ROS_LOCALHOST_ONLY='1')
+    marker = tmp_path/'worker_cleanup.txt'
+    log_path = tmp_path/'repeated_signals_controller.log'
+    # Deliberately expose the real main() cleanup window. The actual numerical
+    # worker still starts and closes; only its close latency is extended.
+    script = '''
+import sys
+import time
+from pathlib import Path
+from ros_esc.gesc_v3 import node as runtime
+
+class SlowCloseWorker(runtime.NumericalWorker):
+    def close(self):
+        marker = Path(sys.argv[1])
+        marker.write_text('closing')
+        time.sleep(.4)
+        super().close()
+        marker.write_text('closed')
+
+if __name__ == '__main__':
+    runtime.NumericalWorker = SlowCloseWorker
+    runtime.main(args=['--ros-args', '-p', 'environment:=physical',
+                       '-p', 'use_sim_time:=false'])
+'''
+    with log_path.open('w') as log:
+        process = subprocess.Popen([sys.executable, '-c', script, str(marker)],
+            env=environment, stdout=log, stderr=subprocess.STDOUT)
+        try:
+            deadline = time.monotonic()+8.
+            while not any(vx != 0 for _, vx, _ in driver.commands) and time.monotonic() < deadline:
+                assert process.poll() is None
+                run_for(driver, executor, .2)
+            assert any(vx != 0 for _, vx, _ in driver.commands)
+            process.send_signal(signal.SIGINT)
+            deadline = time.monotonic()+2.
+            while not marker.exists() and time.monotonic() < deadline:
+                assert process.poll() is None
+                executor.spin_once(timeout_sec=.01)
+            assert marker.read_text() == 'closing'
+            process.send_signal(signal.SIGINT)
+            time.sleep(.02)
+            assert process.poll() is None
+            process.send_signal(signal.SIGINT)
+            deadline = time.monotonic()+3.
+            while process.poll() is None and time.monotonic() < deadline:
+                executor.spin_once(timeout_sec=.02)
+            assert process.wait(timeout=1.) == 0
+            assert marker.read_text() == 'closed'
+            for _ in range(10):
+                executor.spin_once(timeout_sec=.01)
+            assert driver.commands[-1][1:] == (0., 0.)
+            assert 'KeyboardInterrupt' not in log_path.read_text()
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait(timeout=2.)

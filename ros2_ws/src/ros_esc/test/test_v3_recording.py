@@ -171,3 +171,56 @@ def test_motion_metrics_do_not_combine_different_pose_frames():
     assert report['motion']['pose_frames'] == ['map', 'odom']
     assert report['motion']['net_displacement_m'] is None
     assert report['motion']['path_length_m'] is None
+
+
+def test_recorder_started_before_best_effort_clock_records_late_publisher(tmp_path):
+    """Exercise real CLI discovery; a command-list assertion misses QoS races."""
+    import os
+    import subprocess
+    import rclpy
+    import rosbag2_py
+    from rclpy.context import Context
+    from rclpy.node import Node
+    from rclpy.qos import qos_profile_sensor_data
+    from rosgraph_msgs.msg import Clock
+    from ros_esc.run_tools.record_bag import stop_bag
+
+    bag = tmp_path / 'late_clock'
+    log = tmp_path / 'late_clock.log'
+    environment = dict(os.environ, ROS_DOMAIN_ID='195', ROS_LOCALHOST_ONLY='1')
+    context = Context()
+    node = None
+    with log.open('w') as stream:
+        process = subprocess.Popen(bag_command(bag, topics=['/clock']), env=environment,
+                                   stdout=stream, stderr=subprocess.STDOUT,
+                                   start_new_session=True)
+        try:
+            deadline = time.monotonic() + 8
+            while 'Listening for topics' not in log.read_text() and time.monotonic() < deadline:
+                assert process.poll() is None, log.read_text()
+                time.sleep(.05)
+            assert 'Listening for topics' in log.read_text(), log.read_text()
+            rclpy.init(context=context, domain_id=195)
+            node = Node('late_clock_test', context=context)
+            publisher = node.create_publisher(Clock, '/clock', qos_profile_sensor_data)
+            deadline = time.monotonic() + 5
+            sequence = 0
+            while time.monotonic() < deadline:
+                message = Clock()
+                sequence += 1
+                message.clock.sec = sequence
+                publisher.publish(message)
+                time.sleep(.05)
+        finally:
+            stop_bag(process, tail_sec=0)
+            if node is not None:
+                node.destroy_node()
+            context.try_shutdown()
+    assert process.returncode == 0, log.read_text()
+    reader = rosbag2_py.SequentialReader()
+    reader.open(rosbag2_py.StorageOptions(uri=str(bag), storage_id='sqlite3'),
+                rosbag2_py.ConverterOptions('', ''))
+    recorded = []
+    while reader.has_next():
+        recorded.append(reader.read_next()[0])
+    assert recorded.count('/clock') >= 10, log.read_text()

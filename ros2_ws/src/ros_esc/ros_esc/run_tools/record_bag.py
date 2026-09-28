@@ -26,8 +26,10 @@ def bag_command(output, environment='simulation', topics=None):
         selected.append('/clock')
     if not selected or any(not topic.startswith('/') for topic in selected):
         raise ValueError('recording needs absolute ROS topic names')
+    # Discover each publisher before choosing its QoS. Precreating unpublished
+    # subscriptions defaults to reliable and misses Gazebo's best-effort clock.
     return ['ros2', 'bag', 'record', '-o', str(output), '-s', 'sqlite3',
-            '--include-unpublished-topics', *dict.fromkeys(selected)]
+            *dict.fromkeys(selected)]
 
 
 def stop_bag(process, tail_sec=0.5):

@@ -124,6 +124,11 @@ shim or a documentation-only change. No Pi changes or physical operations.
 
 ## Handoff / subsequent work
 
+Gazebo pilots are now authorized and active; follow the
+[pilot plan](gazebo_plan.md) and [live results](gazebo_status.md) for subsequent
+integration findings and corrections. The refactor validation below remains
+the original software checkpoint, not a claim that Gazebo pilots passed.
+
 The software refactor is complete. Next is a separately scoped Gazebo V3
 observation-model and behavioral test milestone using realistic acquisition,
 arm-speed, timing, loss and resource constraints. Preserve working physical V1.

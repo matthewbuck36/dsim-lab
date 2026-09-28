@@ -62,7 +62,7 @@ The shared launch has six options:
 A bounded headless example, with recording disabled:
 
 ```bash
-timeout --signal=INT --kill-after=15s 120s ros2 launch \
+timeout --foreground --signal=INT --kill-after=15s 120s ros2 launch \
   turtlebot3_rotating_sensor gazebo.launch.py \
   profile:=gesc_v3 gui:=false plot:=false record:=false
 ```
@@ -70,6 +70,11 @@ timeout --signal=INT --kill-after=15s 120s ros2 launch \
 Closing the plot or losing the recorder does not stop the algorithm. Physical
 runs have no automatic plotting; their adapters remain in the separate
 `turtlebot3_vehicle_nodes` workspace, outside this checkout.
+
+For automated bounds, `--foreground` sends the deadline signal to launch, which
+forwards it to its directly owned processes. This avoids a second simultaneous
+process-group interrupt during cleanup. Allow the shutdown grace to complete
+and verify that the bag closed and the launched processes exited.
 
 ## Configuration and analysis
 

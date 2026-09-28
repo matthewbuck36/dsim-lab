@@ -111,17 +111,20 @@ class V3Core:
         self.samples.clear()
         self.emit(now, 'search_epoch', reason)
 
-    def update_pose(self, pose, now, steady):
+    def update_pose(self, pose, now, steady, *, receipt_steady=None):
+        """Evaluate freshness now while retaining the original callback receipt."""
+        receipt = steady if receipt_steady is None else receipt_steady
         if self.terminal or not pose.valid():
             return False
         if self.pose is not None and pose.frame != self.pose.frame:
             self.fault(now, 'pose_frame_changed')
             return False
-        if not 0 <= now-pose.stamp <= self.config.input_expiry:
+        if (not 0 <= now-pose.stamp <= self.config.input_expiry
+                or not 0 <= steady-receipt <= self.config.input_expiry):
             return False
         if self.pose is not None and pose.stamp <= self.pose.stamp:
             return False
-        self.pose, self.pose_received = pose, steady
+        self.pose, self.pose_received = pose, receipt
         self.pose_history.append(Pose2D(pose.stamp, pose.x, pose.y, pose.yaw))
         if self.activity == 'SEARCH' and self.source_instance is not None and self._fresh(now, steady) is None:
             try:
@@ -134,12 +137,15 @@ class V3Core:
                 self._search_epoch(pose.stamp, 'detector_data_rejected')
         return True
 
-    def ingest_observation(self, observation, now, steady):
+    def ingest_observation(self, observation, now, steady, *, receipt_steady=None):
+        """Use current evaluation time, without renewing a queued sample's age."""
+        receipt = steady if receipt_steady is None else receipt_steady
         if self.terminal or not observation.valid():
             return False
         expiry = self.config.input_expiry
         if (not 0 <= now-observation.stamp <= expiry
                 or not 0 <= now-observation.receipt_stamp <= expiry
+                or not 0 <= steady-receipt <= expiry
                 or observation.pose_support_age > .05
                 or observation.phase_support_age > .05):
             return False
@@ -197,7 +203,7 @@ class V3Core:
         except (ValueError, ArithmeticError):
             self.emit(now, 'sample_rejected', 'invalid_objective_or_demodulation')
             return False
-        self.observation, self.observation_received = observation, steady
+        self.observation, self.observation_received = observation, receipt
         self.last_objective = objective
         stamp = ns(observation.stamp)
         # Raw evidence is never replaced by augmented objective values.

@@ -11,6 +11,7 @@ from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchD
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch_ros.substitutions import ExecutableInPackage
 
 from ros_esc.profiles import resolve_profile
 
@@ -20,6 +21,13 @@ def _boolean(value):
     if value not in ("true", "false"):
         raise ValueError(f"expected true or false, got {value!r}")
     return value == "true"
+
+
+def ros_process(command, **kwargs):
+    # Launch the installed CLI itself so SIGINT reaches the process that owns
+    # its ROS handles. A `ros2 run` wrapper can leave its child alive on shutdown.
+    return ExecuteProcess(cmd=[ExecutableInPackage(package="ros_esc", executable=command[0]),
+                               *command[1:]], output="screen", **kwargs)
 
 
 def algorithm_commands(profile):
@@ -78,8 +86,7 @@ def _launch(context):
             "-x", str(start["x"]), "-y", str(start["y"]), "-Y", str(start["yaw"]),
         ], output="screen"),
     ]
-    actions.extend(ExecuteProcess(cmd=["ros2", "run", "ros_esc", *command], output="screen")
-                   for command in algorithm_commands(profile))
+    actions.extend(ros_process(command) for command in algorithm_commands(profile))
     if profile["algorithm"] == "gesc_v3":
         parameters = {"profile": get("profile"), "environment": get("environment"), "use_sim_time": True}
         actions += [
@@ -87,15 +94,15 @@ def _launch(context):
             Node(package="ros_esc", executable="controller_node", arguments=["--v3"], parameters=[parameters], output="screen"),
         ]
     if plotting:
-        actions.append(ExecuteProcess(cmd=["ros2", "run", "ros_esc", "live_plot_node", "--mode", "2D",
-                                           "--odom-topic", profile["topics"]["pose"],
-                                           "--cost-topic", profile["topics"]["cost"]], output="screen"))
+        actions.append(ros_process(["live_plot_node", "--mode", "2D",
+                                    "--odom-topic", profile["topics"]["pose"],
+                                    "--cost-topic", profile["topics"]["cost"]]))
     if recording:
         run_name = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ") + f"-{os.getpid()}"
         output = Path(get("output")).expanduser() / run_name
-        actions.append(ExecuteProcess(cmd=["ros2", "run", "ros_esc", "record_bag", "--output", str(output),
-                                           "--environment", "simulation"], output="screen",
-                                      sigterm_timeout="12.0", sigkill_timeout="2.0"))
+        actions.append(ros_process(["record_bag", "--output", str(output),
+                                    "--environment", "simulation"],
+                                   sigterm_timeout="12.0", sigkill_timeout="2.0"))
     return actions
 
 

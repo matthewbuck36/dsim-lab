@@ -161,6 +161,8 @@ def test_launch_describes_observers_without_starting_graph(monkeypatch):
     def command_text(action):
         return " ".join(perform_substitutions(context, word) for word in action.cmd)
     observer_commands = [command_text(action) for action in actions if type(action) is ExecuteProcess]
+    assert all(command.startswith("/") and "ros2 run" not in command
+               for command in observer_commands)
     assert sum("live_plot_node" in command for command in observer_commands) == 1
     assert sum("record_bag" in command for command in observer_commands) == 1
     assert sum(isinstance(action, Node) for action in actions) == 3  # spawn, observation, control
@@ -169,3 +171,20 @@ def test_launch_describes_observers_without_starting_graph(monkeypatch):
     context.launch_configurations.update(environment="physical")
     with pytest.raises(ValueError, match="external physical workspace"):
         module._launch(context)
+
+
+def test_gazebo_launch_owns_server_and_gui_without_wrapper_children():
+    from launch import LaunchContext
+    from launch.utilities import perform_substitutions
+    spec = importlib.util.spec_from_file_location("test_empty_world", SIMULATION / "launch/empty_world.launch.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    context = LaunchContext()
+    context.launch_configurations.update(gazebo_gui="true", world="/tmp/test.world")
+    commands = [[perform_substitutions(context, word) for word in action.cmd]
+                for action in module._start(context)]
+    assert [command[0] for command in commands] == ["gzserver", "gzclient"]
+    assert commands[0][-1] == "/tmp/test.world"
+    assert commands[1] == ["gzclient", "--verbose"]
+    context.launch_configurations.update(gazebo_gui="false")
+    assert len(module._start(context)) == 1

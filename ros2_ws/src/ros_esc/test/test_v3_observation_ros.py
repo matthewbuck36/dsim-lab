@@ -31,7 +31,7 @@ def test_stamp_and_pose_conversion_preserve_observed_frame():
 
 
 @pytest.fixture
-def adapter():
+def adapter(request):
     import rclpy
     from rclpy.context import Context
     from rclpy.parameter import Parameter
@@ -40,8 +40,10 @@ def adapter():
         pytest.skip('build the eight-interface V3 package before ROS adapter tests')
     context = Context()
     rclpy.init(context=context, domain_id=188)
+    environment = getattr(request, 'param', 'physical')
     node = SensorObservationNode(context=context, parameter_overrides=[
-        Parameter('environment', value='physical'), Parameter('use_sim_time', value=False)])
+        Parameter('environment', value=environment),
+        Parameter('use_sim_time', value=environment == 'gazebo')])
     output = []
     node.publisher = SimpleNamespace(publish=output.append)
     now = [100.]
@@ -104,11 +106,12 @@ def test_expired_sample_drops_and_fresh_sample_recovers(adapter):
 
 
 @pytest.mark.parametrize('fault', ['time_origin_changed', 'clock_discontinuity', 'pose_frame_changed'])
+@pytest.mark.parametrize('adapter', ['physical', 'gazebo'], indirect=True)
 def test_integrity_fault_is_reported_and_never_silently_remapped(adapter, fault):
     node, now, output, messages = adapter
-    node.timekeeper_callback(messages.Timekeeper(mode='real time', start_time=99.))
+    node.timekeeper_callback(messages.Timekeeper(mode=node.expected_mode, start_time=99.))
     if fault == 'time_origin_changed':
-        node.timekeeper_callback(messages.Timekeeper(mode='real time', start_time=99.1))
+        node.timekeeper_callback(messages.Timekeeper(mode=node.expected_mode, start_time=99.1))
     elif fault == 'clock_discontinuity':
         now[0] = 98.
         node.poll()
@@ -117,7 +120,7 @@ def test_integrity_fault_is_reported_and_never_silently_remapped(adapter, fault)
     assert node.fault == fault
     assert output[-1].reason == fault and output[-1].valid is False
     now[0] = 101.
-    node.timekeeper_callback(messages.Timekeeper(mode='real time', start_time=99.))
+    node.timekeeper_callback(messages.Timekeeper(mode=node.expected_mode, start_time=99.))
     send_pose(node, 101.)
     node.phase_callback(messages.StampedFloat64MultiArray(timestamp=2., data=[0.]))
     node.cost_callback(messages.StampedFloat64MultiArray(timestamp=2., data=[-2.]))
@@ -129,3 +132,80 @@ def test_initial_timekeeper_can_precede_clock_delivery(adapter):
     now[0] = 0.
     node.timekeeper_callback(messages.Timekeeper(mode='real time', start_time=99.))
     assert node.origin == 99. and node.fault is None
+
+
+@pytest.mark.parametrize('adapter', ['gazebo'], indirect=True)
+def test_simulated_clock_lead_waits_then_preserves_actual_observation(adapter, monkeypatch):
+    from ros_esc.gesc_v3 import observation_node as runtime
+    node, now, output, messages = adapter
+    steady = [200.]
+    monkeypatch.setattr(runtime, 'time', SimpleNamespace(monotonic=lambda: steady[0]))
+    now[0] = 45.9
+    node.timekeeper_callback(messages.Timekeeper(mode='sim time', start_time=40.))
+    send_pose(node, 45.901, x=1.)
+    node.phase_callback(messages.StampedFloat64MultiArray(timestamp=5.901, data=[.2]))
+    node.cost_callback(messages.StampedFloat64MultiArray(timestamp=5.901, data=[-2.]))
+    node.poll()
+    assert not output
+    assert node.builder.sequence == 0
+    now[0], steady[0] = 45.95, 200.05
+    node.poll()
+    valid = [message for message in output if message.valid]
+    assert len(valid) == 1
+    assert seconds(valid[0].stamp) == pytest.approx(45.901)
+    assert seconds(valid[0].receipt_stamp) == pytest.approx(45.9)
+    assert valid[0].source_pose.x == 1.
+    assert valid[0].phase_rad == pytest.approx(.2)
+    assert valid[0].timestamp_basis == valid[0].ESTIMATED_TIME
+    node.poll()
+    assert len([message for message in output if message.valid]) == 1
+
+
+@pytest.mark.parametrize('adapter', ['gazebo'], indirect=True)
+def test_frozen_sim_clock_cannot_revive_old_buffered_cost(adapter, monkeypatch):
+    from ros_esc.gesc_v3 import observation_node as runtime
+    node, now, output, messages = adapter
+    steady = [200.]
+    monkeypatch.setattr(runtime, 'time', SimpleNamespace(monotonic=lambda: steady[0]))
+    node.timekeeper_callback(messages.Timekeeper(mode='sim time', start_time=99.))
+    send_pose(node, 100.01)
+    node.phase_callback(messages.StampedFloat64MultiArray(timestamp=1.01, data=[.2]))
+    node.cost_callback(messages.StampedFloat64MultiArray(timestamp=1.01, data=[-2.]))
+    steady[0] = 200.6
+    node.poll()
+    now[0] = 100.1
+    node.poll()
+    assert not any(message.valid for message in output)
+    assert node.builder.sequence == 0
+
+
+def test_physical_future_input_is_rejected_without_buffering(adapter):
+    node, now, output, messages = adapter
+    node.timekeeper_callback(messages.Timekeeper(mode='real time', start_time=99.))
+    send_pose(node, 100.01)
+    node.phase_callback(messages.StampedFloat64MultiArray(timestamp=1.01, data=[.2]))
+    node.cost_callback(messages.StampedFloat64MultiArray(timestamp=1.01, data=[-2.]))
+    now[0] = 100.1
+    node.poll()
+    assert node.delivery is None
+    assert not any(message.valid for message in output)
+
+
+@pytest.mark.parametrize('adapter', ['gazebo'], indirect=True)
+def test_released_cost_waiting_support_keeps_original_steady_expiry(adapter, monkeypatch):
+    from ros_esc.gesc_v3 import observation_node as runtime
+    node, now, output, messages = adapter
+    steady = [200.]
+    monkeypatch.setattr(runtime, 'time', SimpleNamespace(monotonic=lambda: steady[0]))
+    node.timekeeper_callback(messages.Timekeeper(mode='sim time', start_time=99.))
+    node.cost_callback(messages.StampedFloat64MultiArray(timestamp=1.01, data=[-2.]))
+    now[0], steady[0] = 100.1, 200.1
+    node.poll()
+    assert node.builder.pending is not None
+    assert node.pending_steady == 200.
+    steady[0] = 200.6
+    send_pose(node, 100.01)
+    node.phase_callback(messages.StampedFloat64MultiArray(timestamp=1.01, data=[.2]))
+    node.poll()
+    assert node.builder.pending is None
+    assert not any(message.valid for message in output)
