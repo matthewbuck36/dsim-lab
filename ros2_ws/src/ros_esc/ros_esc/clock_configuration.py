@@ -16,7 +16,7 @@ def apply_legacy_sim_time_default(node):
     explicit startup selection was preserved.
     """
 
-    # MBuck 2026-08-04: Never replace an explicit Phase 09 wall-time choice;
+    # MBuck 2026-08-04: Never replace an explicit V1 wall-time choice;
     # avoiding a live True -> False switch also avoids destroying /clock while
     # a multithreaded executor owns its QoS waitable.
     overrides = getattr(node, "_parameter_overrides", None)

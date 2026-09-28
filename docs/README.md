@@ -1,5 +1,11 @@
 # Project documentation
 
+Active work: [ESC usage](esc_usage.md), [architecture and recovery](esc_architecture.md),
+[environment](environment_parameters.md), [software checks](esc_testing.md), [preserved history](esc_history.md), and
+[V3 refactor status](codex/gesc_gaussian/v3/refactor_status.md). The original ESC
+methods and V3 are the active runtime; historical phase documents below retain
+their original evidence limits.
+
 The implementation package and the former `writing/` contents are collected
 here. Use these locations for new documentation references:
 
@@ -20,6 +26,18 @@ manifests may retain those old paths; use the [path mapping](documentation_reloc
 to locate their targets under `docs/`. Phase outcomes are unchanged;
 the latest Phase 09 status still records physical validation outstanding after M8O.
 
+## GESC + Gaussian V3 planning history
+
+The [V3 plan](codex/gesc_gaussian/v3/plan.md),
+[ranked fault inventory](codex/gesc_gaussian/v3/fault_inventory.md), and
+[planning status](codex/gesc_gaussian/v3/status.md) begin a separate Gazebo
+investigation on 2026-09-25. Continuous base translation during Gaussian
+verification/design remains required. The first target models the restored
+physical V1's approximately 5 Hz sensing, nonuniform arm rotation, limited
+speed, and imperfect timing. Physical V1 remains protected; V2 physical
+commissioning remains paused and unqualified. No V3 implementation or runtime
+qualification is claimed by these planning documents.
+
 ## GESC + Gaussian V2 kickoff
 
 On 2026-09-08, `feature/gesc-gaussian-robustness-v2` began from the final V1
@@ -29,7 +47,7 @@ baseline. The approved [V2 implementation plan](codex/gesc_gaussian/v2/plan.md)
 defines the convergence and continuous-search work; its
 [live status](codex/gesc_gaussian/v2/status.md) records implementation and
 validation progress without changing V1 outcomes.
-For current V2 work, start with the
+For the preserved V2 closeout, start with the
 [V2 fresh-chat handoff](codex/gesc_gaussian/v2/fresh_chat_handoff.md), which
 records Test D's **user-accepted simulation completion on 2026-09-11** and the
 next discussion: physical source integration and compatibility. The
@@ -37,7 +55,7 @@ next discussion: physical source integration and compatibility. The
 [latest demonstrations](codex/gesc_gaussian/v2/visible_advisor_demos_20260911.md)
 retain the selected evidence. The 30% detector-delay target is retired;
 earlier bugs are deferred and GOAL_HOLD remains optional for arrival acceptance.
-No further simulation work is scheduled. Physical implementation/validation and
+At that V2 closeout, no further simulation work was scheduled. Physical implementation/validation and
 broader research claims are separate; the historical study limitations remain.
 
 ## Current GESC + Gaussian V1 report

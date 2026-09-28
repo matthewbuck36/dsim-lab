@@ -2,10 +2,44 @@
 
 """This script holds helper functions used in live plots created by the data collection node."""
 
+import math
 import threading
-import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
+
+MAX_LIVE_SAMPLES = 5000
+
+
+def append_position(data, stamp, x, y, z):
+    """Store a bounded position history without touching Matplotlib artists."""
+    values = tuple(float(value) for value in (stamp, x, y, z))
+    if not all(math.isfinite(value) for value in values):
+        return False
+    with data['lock']:
+        for name, value in zip(('position_tstamps', 'x_position', 'y_position', 'z_position'), values):
+            data[name].append(value)
+            del data[name][:-MAX_LIVE_SAMPLES]
+    return True
+
+
+def append_cost(data, stamp, values):
+    """Callbacks only append numbers; GUI work stays on the display thread."""
+    stamp, values = float(stamp), tuple(float(value) for value in values)
+    if not values or not all(math.isfinite(value) for value in (stamp, *values)):
+        return False
+    with data['lock']:
+        if data['num_distinct_cost_values'] is None:
+            data['num_distinct_cost_values'] = len(values)
+            for index in range(len(values)):
+                data[f'cost_value_{index}'] = []
+        if len(values) != data['num_distinct_cost_values']:
+            return False
+        data['cost_value_tstamps'].append(stamp)
+        del data['cost_value_tstamps'][:-MAX_LIVE_SAMPLES]
+        for index, value in enumerate(values):
+            data[f'cost_value_{index}'].append(value)
+            del data[f'cost_value_{index}'][:-MAX_LIVE_SAMPLES]
+    return True
 
 # Initialize variables for live plots
 # pylint: disable=too-many-statements
@@ -169,6 +203,12 @@ def update_plot(frame, live_plot_data):
         if live_plot_data["num_distinct_cost_values"] is not None:
             # Loop over all distinct cost values
             for i in range(live_plot_data["num_distinct_cost_values"]):
+                if f'cost_value_line_{i}' not in live_plot_data:
+                    colors = live_plot_data['colors']
+                    line, = live_plot_data['ax3'].plot(
+                        [], [], color=colors[i % len(colors)], label=f'Cost {i + 1}')
+                    live_plot_data[f'cost_value_line_{i}'] = line
+                    live_plot_data['ax3'].legend()
                 # Set the data for this distinct cost value line
                 live_plot_data[f"cost_value_line_{i}"].set_data(
                     cost_value_tstamps,
@@ -211,10 +251,8 @@ def _trim_live_plot_series(live_plot_data):
         len(live_plot_data["y_position"]),
         len(live_plot_data["z_position"]),
     )
-    live_plot_data["position_tstamps"] = live_plot_data["position_tstamps"][-position_length:]
-    live_plot_data["x_position"] = live_plot_data["x_position"][-position_length:]
-    live_plot_data["y_position"] = live_plot_data["y_position"][-position_length:]
-    live_plot_data["z_position"] = live_plot_data["z_position"][-position_length:]
+    for name in ('position_tstamps', 'x_position', 'y_position', 'z_position'):
+        live_plot_data[name] = live_plot_data[name][-position_length:] if position_length else []
 
     if live_plot_data["num_distinct_cost_values"] is None:
         return
@@ -223,9 +261,9 @@ def _trim_live_plot_series(live_plot_data):
     for i in range(live_plot_data["num_distinct_cost_values"]):
         cost_length = min(cost_length, len(live_plot_data[f"cost_value_{i}"]))
 
-    live_plot_data["cost_value_tstamps"] = live_plot_data["cost_value_tstamps"][-cost_length:]
+    live_plot_data["cost_value_tstamps"] = live_plot_data["cost_value_tstamps"][-cost_length:] if cost_length else []
     for i in range(live_plot_data["num_distinct_cost_values"]):
-        live_plot_data[f"cost_value_{i}"] = live_plot_data[f"cost_value_{i}"][-cost_length:]
+        live_plot_data[f"cost_value_{i}"] = live_plot_data[f"cost_value_{i}"][-cost_length:] if cost_length else []
 
 def reduce_timestamps(time_hist, tstamp_data):
     """This reduces the total number of timestamps to only keep the most recent data."""

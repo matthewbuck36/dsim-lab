@@ -1,5 +1,43 @@
 # Simulation and physical environment parameters
 
+## Active V3 simulation and protected physical V1
+
+The active Gazebo entrypoint is `gazebo.launch.py` with a named profile. Read
+[usage](esc_usage.md), [architecture](esc_architecture.md) and the
+[refactor status](codex/gesc_gaussian/v3/refactor_status.md) for current behavior.
+The selected physical installation remains restored V1; no V3 deployment is
+part of this refactor. The [restoration evidence](esc_history.md) owns the
+54-degree offset, fixed approximately 5 Hz Arduino application and nominal
+20 RPM settings. Earlier 354-degree or selectable 10/15 Hz instructions are
+superseded. Measured arm speed in the retained operator run was about 17.2 RPM.
+
+| Owner | Active V3 Gazebo | External physical adapter contract |
+| --- | --- | --- |
+| Algorithm time | `use_sim_time=True`, Gazebo `/clock` | `False`, system time |
+| Expiry/command cadence | source time plus steady receipt age; 20 Hz steady watchdog | Same software semantics; hardware stop behavior needs separate qualification |
+| Algorithm pose | Observed `/odom` | OpenCR `/odom`; Vicon evaluation only |
+| Cost/phase | Modeled 5 Hz cost, observed joint phase | Serial cost, calibrated encoder phase; no fabricated ADC timestamp/sequence |
+| Arm | nominal 20 RPM, observed phase | nominal 20 RPM; speed variation must be measured |
+| Selected V3 gains/caps | controller JSON: k_vx0.5, k_wz5, max_vx0.05, max_wz0.30 | Not deployed; preserve working physical V1 configuration |
+| Plotting | Automatic interactive Matplotlib; off headless | Off |
+| Recording | Optional standard bag; records `/clock` without forcing recorder clock | Optional observer contract; no control readiness |
+| Source owner | This checkout | Pi and `physical_TB3_files_snapshot`; physical package stays external |
+
+Built-ins resolve installed JSON/module resources. Physical adapters must use
+Pi-local paths and must not import a laptop snapshot path. Calibration belongs
+to acquisition: do not add the 54-degree offset again to an already calibrated
+angle, or apply it to a Gazebo joint. The shared algorithm receives observed
+pose, angle and cost; simulator source locations/brightness remain in the
+model/analysis configuration. Optional nearest support carries its actual age,
+and unknown acquisition uncertainty remains unknown.
+
+## Historical V1 selected comparison (2026-09-08)
+
+The material below documents the old selected V1 graph and its original
+owners. Its supervisor/recorder/scenario parameters are historical, not active
+V3 launch arguments. Retain it to interpret old evidence; do not apply those
+settings to V3 or overwrite restored physical source from this checkout.
+
 Verified from source on 2026-09-08. `dsim-lab` is the simulation/Gazebo checkout.
 `physical_TB3_files_snapshot/pi` is an offline copy of physical Pi source;
 `tb3-pi` exposes the physical Pi home only while SSHFS is mounted. Running a

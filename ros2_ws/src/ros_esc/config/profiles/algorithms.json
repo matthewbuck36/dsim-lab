@@ -1,0 +1,317 @@
+{
+  "adagrad_bnf_rotation_acoustic": {
+    "algorithm": "legacy",
+    "append_encoder": true,
+    "configs": {
+      "controller": "assets/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/adaptive_methods/adagrad_controller_bnf_rotation_acoustic.json",
+      "cost": "assets/ros_esc/cost_function_node/cost_function_config_files/static_2D_acoustic.json",
+      "filter": "assets/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/adaptive_methods/adagrad_filter_bnf_rotation.json",
+      "rotation": "assets/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/bnf_rotation_acoustic.json",
+      "sensor": "assets/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"
+    },
+    "start": {
+      "x": 0.0,
+      "y": 0.0,
+      "yaw": 0.0
+    }
+  },
+  "adagrad_bnf_rotation_resistance": {
+    "algorithm": "legacy",
+    "append_encoder": true,
+    "configs": {
+      "controller": "assets/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/adaptive_methods/adagrad_controller_bnf_rotation_resistance.json",
+      "cost": "assets/ros_esc/cost_function_node/cost_function_config_files/static_2D_photoresistor_resistance_map.json",
+      "filter": "assets/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/adaptive_methods/adagrad_filter_bnf_rotation.json",
+      "rotation": "assets/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/bnf_rotation.json",
+      "sensor": "assets/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"
+    },
+    "start": {
+      "x": 0.0,
+      "y": 0.0,
+      "yaw": 0.0
+    }
+  },
+  "adagrad_bnf_rotation_voltage": {
+    "algorithm": "legacy",
+    "append_encoder": true,
+    "configs": {
+      "controller": "assets/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/adaptive_methods/adagrad_controller_bnf_rotation_voltage.json",
+      "cost": "assets/ros_esc/cost_function_node/cost_function_config_files/static_2D_photoresistor_voltage_map.json",
+      "filter": "assets/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/adaptive_methods/adagrad_filter_bnf_rotation.json",
+      "rotation": "assets/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/bnf_rotation.json",
+      "sensor": "assets/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"
+    },
+    "start": {
+      "x": 0.0,
+      "y": 0.0,
+      "yaw": 0.0
+    }
+  },
+  "adagrad_full_rotation_acoustic": {
+    "algorithm": "legacy",
+    "append_encoder": true,
+    "configs": {
+      "controller": "assets/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/adaptive_methods/adagrad_controller_full_rotation_acoustic.json",
+      "cost": "assets/ros_esc/cost_function_node/cost_function_config_files/static_2D_acoustic.json",
+      "filter": "assets/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/adaptive_methods/adagrad_filter_full_rotation.json",
+      "rotation": "assets/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation_acoustic.json",
+      "sensor": "assets/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"
+    },
+    "start": {
+      "x": 0.0,
+      "y": 0.0,
+      "yaw": 0.0
+    }
+  },
+  "adagrad_full_rotation_resistance": {
+    "algorithm": "legacy",
+    "append_encoder": true,
+    "configs": {
+      "controller": "assets/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/adaptive_methods/adagrad_controller_full_rotation_resistance.json",
+      "cost": "assets/ros_esc/cost_function_node/cost_function_config_files/static_2D_photoresistor_resistance_map.json",
+      "filter": "assets/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/adaptive_methods/adagrad_filter_full_rotation.json",
+      "rotation": "assets/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation.json",
+      "sensor": "assets/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"
+    },
+    "start": {
+      "x": 0.0,
+      "y": 0.0,
+      "yaw": 0.0
+    }
+  },
+  "adagrad_full_rotation_voltage": {
+    "algorithm": "legacy",
+    "append_encoder": true,
+    "configs": {
+      "controller": "assets/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/adaptive_methods/adagrad_controller_full_rotation_voltage.json",
+      "cost": "assets/ros_esc/cost_function_node/cost_function_config_files/static_2D_photoresistor_voltage_map.json",
+      "filter": "assets/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/adaptive_methods/adagrad_filter_full_rotation.json",
+      "rotation": "assets/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation.json",
+      "sensor": "assets/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"
+    },
+    "start": {
+      "x": 0.0,
+      "y": 0.0,
+      "yaw": 0.0
+    }
+  },
+  "angular_tuning": {
+    "algorithm": "legacy",
+    "append_encoder": true,
+    "configs": {
+      "controller": "assets/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/gradient_methods/angular_tuning_controller_voltage.json",
+      "cost": "assets/ros_esc/cost_function_node/cost_function_config_files/static_2D_photoresistor_voltage_map.json",
+      "filter": "assets/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/angular_tuning_filter.json",
+      "rotation": "assets/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/no_rotation.json",
+      "sensor": "assets/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"
+    },
+    "start": {
+      "x": 0.0,
+      "y": 0.0,
+      "yaw": 0.0
+    }
+  },
+  "forward_tuning": {
+    "algorithm": "legacy",
+    "append_encoder": true,
+    "configs": {
+      "controller": "assets/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/gradient_methods/forward_tuning_controller_voltage.json",
+      "cost": "assets/ros_esc/cost_function_node/cost_function_config_files/static_2D_photoresistor_voltage_map.json",
+      "filter": "assets/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/forward_tuning_filter.json",
+      "rotation": "assets/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/no_rotation.json",
+      "sensor": "assets/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"
+    },
+    "start": {
+      "x": 0.0,
+      "y": 0.0,
+      "yaw": 0.0
+    }
+  },
+  "gesc_bnf_rotation_acoustic": {
+    "algorithm": "legacy",
+    "append_encoder": true,
+    "configs": {
+      "controller": "assets/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/gradient_methods/gesc_controller_bnf_rotation_acoustic.json",
+      "cost": "assets/ros_esc/cost_function_node/cost_function_config_files/static_2D_acoustic.json",
+      "filter": "assets/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_bnf_rotation.json",
+      "rotation": "assets/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/bnf_rotation_acoustic.json",
+      "sensor": "assets/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"
+    },
+    "start": {
+      "x": 0.0,
+      "y": 0.0,
+      "yaw": 0.0
+    }
+  },
+  "gesc_bnf_rotation_voltage": {
+    "algorithm": "legacy",
+    "append_encoder": true,
+    "configs": {
+      "controller": "assets/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/gradient_methods/gesc_controller_bnf_rotation_voltage.json",
+      "cost": "assets/ros_esc/cost_function_node/cost_function_config_files/static_2D_photoresistor_voltage_map.json",
+      "filter": "assets/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_bnf_rotation.json",
+      "rotation": "assets/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/bnf_rotation.json",
+      "sensor": "assets/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"
+    },
+    "start": {
+      "x": 0.0,
+      "y": 0.0,
+      "yaw": 0.0
+    }
+  },
+  "gesc_full_rotation_acoustic": {
+    "algorithm": "legacy",
+    "append_encoder": true,
+    "configs": {
+      "controller": "assets/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/gradient_methods/gesc_controller_full_rotation_acoustic.json",
+      "cost": "assets/ros_esc/cost_function_node/cost_function_config_files/static_2D_acoustic.json",
+      "filter": "assets/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json",
+      "rotation": "assets/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation_acoustic.json",
+      "sensor": "assets/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"
+    },
+    "start": {
+      "x": 0.0,
+      "y": 0.0,
+      "yaw": 0.0
+    }
+  },
+  "gesc_v3": {
+    "algorithm": "gesc_v3",
+    "append_encoder": true,
+    "configs": {
+      "controller": "assets/gesc_v3/controller.json",
+      "cost": "assets/gesc_v3/cost.json",
+      "filter": "assets/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json",
+      "rotation": "assets/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation.json",
+      "sensor": "assets/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"
+    },
+    "start": {
+      "x": 0.0,
+      "y": 0.0,
+      "yaw": 0.0
+    },
+    "v3": {
+      "arm_rpm": 20.0,
+      "coherence_expiry_sec": 0.5,
+      "control_hz": 20.0,
+      "encoder_offset_deg": 54.0,
+      "fill_timeout_sec": 5.0,
+      "input_expiry_sec": 0.5,
+      "maximum_fit_samples": 4000,
+      "sample_rate_hz": 5.0,
+      "sensor_radius_m": 0.18
+    }
+  },
+  "hb_acoustic": {
+    "algorithm": "legacy",
+    "append_encoder": true,
+    "configs": {
+      "controller": "assets/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/gradient_methods/forward_tuning_controller_voltage.json",
+      "cost": "assets/ros_esc/cost_function_node/cost_function_config_files/static_2D_acoustic.json",
+      "filter": "assets/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/forward_tuning_filter.json",
+      "rotation": "assets/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation.json",
+      "sensor": "assets/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"
+    },
+    "start": {
+      "x": 0.0,
+      "y": 0.0,
+      "yaw": 0.0
+    }
+  },
+  "hbesc_full_rotation_voltage": {
+    "algorithm": "legacy",
+    "append_encoder": true,
+    "configs": {
+      "controller": "assets/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/accelerated_methods/hbesc_controller_full_rotation_voltage.json",
+      "cost": "assets/ros_esc/cost_function_node/cost_function_config_files/static_2D_photoresistor_voltage_map.json",
+      "filter": "assets/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/gesc_filter_full_rotation.json",
+      "rotation": "assets/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation.json",
+      "sensor": "assets/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"
+    },
+    "start": {
+      "x": 0.0,
+      "y": 0.0,
+      "yaw": 0.0
+    }
+  },
+  "lie_bracket": {
+    "algorithm": "legacy",
+    "append_encoder": true,
+    "configs": {
+      "controller": "assets/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/gradient_methods/lie_bracket_controller_voltage.json",
+      "cost": "assets/ros_esc/cost_function_node/cost_function_config_files/static_2D_photoresistor_voltage_map.json",
+      "filter": "assets/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/gradient_methods/lie_bracket_filter.json",
+      "rotation": "assets/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/no_rotation.json",
+      "sensor": "assets/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"
+    },
+    "start": {
+      "x": 0.0,
+      "y": 0.0,
+      "yaw": 0.0
+    }
+  },
+  "rmsprop_bnf_rotation": {
+    "algorithm": "legacy",
+    "append_encoder": true,
+    "configs": {
+      "controller": "assets/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/adaptive_methods/rmsprop_controller_bnf_rotation.json",
+      "cost": "assets/ros_esc/cost_function_node/cost_function_config_files/static_2D_photoresistor_resistance_map.json",
+      "filter": "assets/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/adaptive_methods/rmsprop_filter_bnf_rotation.json",
+      "rotation": "assets/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/bnf_rotation.json",
+      "sensor": "assets/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"
+    },
+    "start": {
+      "x": 0.0,
+      "y": 0.0,
+      "yaw": 0.0
+    }
+  },
+  "rmsprop_bnf_rotation_acoustic": {
+    "algorithm": "legacy",
+    "append_encoder": true,
+    "configs": {
+      "controller": "assets/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/adaptive_methods/rmsprop_controller_bnf_rotation.json",
+      "cost": "assets/ros_esc/cost_function_node/cost_function_config_files/static_2D_acoustic.json",
+      "filter": "assets/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/adaptive_methods/rmsprop_filter_bnf_rotation.json",
+      "rotation": "assets/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/bnf_rotation.json",
+      "sensor": "assets/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"
+    },
+    "start": {
+      "x": 0.0,
+      "y": 0.0,
+      "yaw": 0.0
+    }
+  },
+  "rmsprop_full_rotation": {
+    "algorithm": "legacy",
+    "append_encoder": true,
+    "configs": {
+      "controller": "assets/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/adaptive_methods/rmsprop_controller_full_rotation.json",
+      "cost": "assets/ros_esc/cost_function_node/cost_function_config_files/static_2D_quadratic.json",
+      "filter": "assets/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/adaptive_methods/rmsprop_filter_full_rotation.json",
+      "rotation": "assets/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation.json",
+      "sensor": "assets/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"
+    },
+    "start": {
+      "x": 0.0,
+      "y": 0.0,
+      "yaw": 0.0
+    }
+  },
+  "rmsprop_full_rotation_acoustic": {
+    "algorithm": "legacy",
+    "append_encoder": true,
+    "configs": {
+      "controller": "assets/ros_esc/controller_node/controller_config_files/turtlebot_vehicle/adaptive_methods/rmsprop_controller_full_rotation.json",
+      "cost": "assets/ros_esc/cost_function_node/cost_function_config_files/static_2D_acoustic.json",
+      "filter": "assets/ros_esc/filter_node/filter_config_files/turtlebot_vehicle/adaptive_methods/rmsprop_filter_full_rotation.json",
+      "rotation": "assets/ros_esc/rotate_frame_node/rotate_frame_config_files/turtlebot_vehicle/full_rotation.json",
+      "sensor": "assets/ros_esc/sensor_pose_node/transform_config_files/turtlebot_rotating_sensor.json"
+    },
+    "start": {
+      "x": 0.0,
+      "y": 0.0,
+      "yaw": 0.0
+    }
+  }
+}

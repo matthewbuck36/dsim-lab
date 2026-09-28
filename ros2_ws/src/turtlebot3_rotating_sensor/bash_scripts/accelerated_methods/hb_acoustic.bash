@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Source the built workspace once before running this alias.
+exec ros2 launch turtlebot3_rotating_sensor gazebo.launch.py \
+    profile:=hb_acoustic environment:=gazebo "$@"

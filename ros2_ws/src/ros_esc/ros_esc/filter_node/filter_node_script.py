@@ -1,364 +1,24 @@
 #!/usr/bin/env python3
+"""Original configurable ESC filter, with bounded integration and source-age checks."""
 
-"""The filter node which allows custom filters to be used with ROS2 communication.
-The user will pass in a custom filter configuration that is written out in a json
-configuration file, or passed in as a string. This node will construct that
-configuration, making use of filters and parameter ODEs built in the extremum
-seeking package.
-"""
-
-# pylint: disable=wildcard-import
-
-import os
-import time
-import json
 import argparse
-import rclpy
+import json
+import math
+from pathlib import Path
+
 import numpy as np
-from rclpy.executors import SingleThreadedExecutor
+import rclpy
 from rclpy.node import Node
-from rclpy.signals import SignalHandlerOptions
-import rclpy.parameter
-from ros_esc.deferred_signal_shutdown import DeferredSignalShutdown
-from ros_esc_interfaces.msg import (
-    GescDiagnostics,
-    StampedFloat64MultiArray,
-    Timekeeper,
-)
+from rclpy.executors import ExternalShutdownException
+from rclpy.parameter import Parameter
+from ros_esc_interfaces.msg import Timekeeper, StampedFloat64MultiArray
 from ros_esc.config_parsing import parse_filter_config
-from ros_esc.supervisor_node.state_machine import ROBUST_PROFILE, VALID_PROFILES
-from ros_esc.v2_direction_policy import THREE_CYCLE_POLICY, DIRECTION_POLICIES, validate_policy
 
-class CustomFilter(Node):
-    """This class creates a custom filter for use in Gazebo simulation."""
-
-    # pylint: disable=too-many-instance-attributes
-
-    def __init__(self):
-        args = parse_filter_arguments()
-        super().__init__("custom_filter")
-
-        # MBuck 2026-08-04: preserve simulation time for every historical
-        # wrapper while allowing the selected physical launch to request wall
-        # time through this node's own strict command-line interface.
-        self.set_parameters([
-            rclpy.parameter.Parameter(
-                "use_sim_time",
-                rclpy.Parameter.Type.BOOL,
-                bool(args.use_sim_time),
-            )
-        ])
-
-        # Initialize variables
-        self.prev_time = 0
-        self.start_time = None
-        self.timekeeping_mode = None
-        self.input_value = None
-        self.input_value_timestamp = None
-        self.encoder_value = None
-        self.v2_adapter = None
-        self.algorithm_profile = str(args.algorithm_profile).strip()
-        if self.algorithm_profile not in VALID_PROFILES:
-            raise ValueError(
-                f"algorithm_profile must be one of {VALID_PROFILES}; "
-                f"received {self.algorithm_profile!r}"
-            )
-        self.enable_observability = (
-            _as_bool(args.enable_observability)
-            or self.algorithm_profile == ROBUST_PROFILE
-        )
-
-        # Specify if we want to combine cost values and encoder values
-        self.combine_data = False
-        if args.combine_enc_data == 'True':
-            self.combine_data = True
-
-        # Parse custom filter input
-        if args.json_config is not None:
-            # Expand the filepath if the ~ character is used
-            config_filepath = os.path.expanduser(args.json_config)
-            # Open the json file
-            with open(config_filepath, encoding='utf-8') as file:
-                # Convert into a dictionary
-                config_dict = json.load(file)
-                # Parse that configuration dictionary into a filter object
-                self.custom_filter, self.z_vec = parse_filter_config(config_dict, [])
-
-        # elif args.string_config is not None:
-        #     # Convert into a dictionary
-        #     config_dict = json.load(args.string_config)
-        #     # Parse that configuration dictionary into a filter object
-        #     self.custom_filter, self.z_vec = parse_filter_config(config_dict, [])
-
-        # # If no filter input is given, raise an exception
-        # elif args.string_config is None and args.json_config is None:
-        #     raise Exception("No filter configuration specified,"+
-        #                     "please input a json file or a dictionary string to parse.")
-
-        # Create a subscriber to the user input topic
-        # This will give us the input values our custom filter will operate on
-        self.cost_subscriber = self.create_subscription(
-            StampedFloat64MultiArray, args.inp_value_topic, self.input_value_callback, 10
-        )
-
-        # Create a subscriber to the user input encoder topic
-        # This will give us the input values our custom filter will operate on
-        self.encoder_subscriber = self.create_subscription(
-            StampedFloat64MultiArray, args.inp_encoder_topic, self.encoder_value_callback, 10
-        )
-
-        # Create a subscriber to the timekeeping topic
-        # This will give us timekeeping information to reference
-        self.timekeeping_subscriber = self.create_subscription(
-            Timekeeper, args.inp_timekeeping_topic, self.timekeeping_callback, 10
-        )
-
-        # Create a publisher
-        # This will publish the output of our custom filter to the output topic
-        self.filter_publisher = self.create_publisher(
-            StampedFloat64MultiArray, args.out_topic, 10
-        )
-        self.gesc_diagnostics_publisher = None
-        if self.enable_observability:
-            self.gesc_diagnostics_publisher = self.create_publisher(
-                GescDiagnostics, args.gesc_diagnostics_topic, 10
-            )
-        if getattr(args, "continuous_search_mode", "stationary_v1") == "rolling_gesc_v2":
-            from ros_esc.filter_node.v2_runtime import RollingFilterAdapter
-            self.v2_adapter = RollingFilterAdapter(self, args)
-
-    def input_value_callback(self, msg: StampedFloat64MultiArray):
-        """This collects the input value, then uses the filter, then publishes the result."""
-
-        if getattr(self, "v2_adapter", None) is not None:
-            self.v2_adapter.add_augmented(msg)
-            return
-        # Get the input value
-        input_value = msg.data
-        # Get the input timestamp
-        self.input_value_timestamp = msg.timestamp
-        # Convert the input value to a numpy array
-        self.input_value = np.array(input_value)
-        # Evaluate with the custom filter and publish
-        self.publish_filter_value()
-
-    def encoder_value_callback(self, msg: StampedFloat64MultiArray):
-        """This collects the encoder value."""
-
-        if getattr(self, "v2_adapter", None) is not None:
-            self.v2_adapter.add_encoder(msg)
-            return
-        # Get the encoder value
-        encoder_value = msg.data
-        # Convert the encoder value to a numpy array
-        self.encoder_value = np.array(encoder_value)
-
-    def timekeeping_callback(self, msg: Timekeeper):
-        """This function collects the information from the input timekeeping topic."""
-
-        # Get the start time from the message
-        self.start_time = msg.start_time
-        # Get the timekeeping mode from the message
-        self.timekeeping_mode = msg.mode
-        if getattr(self, "v2_adapter", None) is not None:
-            self.v2_adapter.set_timekeeper(msg)
-
-    def publish_filter_value(self):
-        """This function publishes the output value coming from the custom filter."""
-
-        # Ensure we have the data we need to publish
-        # pylint: disable=line-too-long
-        if (self.start_time is not None) and (self.input_value is not None) and (self.encoder_value is not None):
-            # Initialize the current time
-            current_time = float(self.input_value_timestamp)
-            # Initialize the current input
-            filter_input = np.array(self.input_value)
-
-            # If we want to combine with encoder data
-            if self.combine_data:
-                input_val = np.concatenate([filter_input, self.encoder_value])
-            else:
-                input_val = self.input_value
-
-            state_before = np.array(self.z_vec, dtype=np.float64, copy=True)
-
-            # Input the cost value into the filter, save the result
-            filter_output = self.custom_filter.filter_output(
-                self.z_vec,
-                input_val,
-                current_time
-            )
-            # Convert the values to floats
-            output = [float(x) for x in filter_output]
-
-            # Calculate the change in filter state
-            z_vec_dot = self.custom_filter.differential_equation(
-                current_time, self.z_vec, input_val
-            )
-
-            # Check if this is a valid filter state
-            # Update the filter state vector z with a forward euler step
-            self.z_vec = self.check_filter_valid_state(
-                self.prev_time, current_time, input_val, self.z_vec, z_vec_dot
-            )
-
-            # Update the previous timestamp
-            self.prev_time = current_time
-
-            # Get the publish time depending on the timekeeping mode
-            # If the timekeeper message indicates we're using sim time
-            if self.timekeeping_mode == "sim time":
-                # Get the publish sim time
-                t_publish = self._clock.now()
-                # Subtract the reference start time from simulation time
-                publish_time = float(t_publish.nanoseconds*1e-9) - self.start_time
-
-            # If the timekeeper message indicates we're using real time
-            elif self.timekeeping_mode == "real time":
-                # Get the publish real time
-                t_publish = time.time()
-                # Subtract the reference start time from real time
-                publish_time = float(t_publish) - self.start_time
-
-            # Otherwise, raise an error
-            else:
-                warn_msg = "\n".join([
-                    "Timekeeping mode must be either 'sim time' or ",
-                    "'real time', invalid entry: "+str(self.timekeeping_mode)
-                ])
-                raise Exception(warn_msg)
-
-            # Create the message
-            msg = StampedFloat64MultiArray()
-            # Create the header
-            msg.header = "Filter Value"
-            # Add the timestamp
-            msg.timestamp = publish_time
-            # Add the data
-            msg.data = output
-            # Publish the message
-            self.filter_publisher.publish(msg)
-
-            if self.enable_observability:
-                self.publish_gesc_diagnostics(
-                    current_time,
-                    input_val,
-                    output,
-                    state_before,
-                    z_vec_dot,
-                    self.z_vec,
-                )
-
-    def publish_gesc_diagnostics(
-        self,
-        source_timestamp,
-        filter_input,
-        filter_output,
-        state_before,
-        state_derivative,
-        state_after,
-        dither_phase=None,
-    ):
-        """Publish the values used by the unchanged filter evaluation."""
-
-        input_values = _float_list(filter_input)
-        output_values = _float_list(filter_output)
-        before_values = _float_list(state_before)
-        derivative_values = _float_list(state_derivative)
-        after_values = _float_list(state_after)
-
-        diagnostics = GescDiagnostics()
-        diagnostics.stamp = self.get_clock().now().to_msg()
-        diagnostics.source_timestamp = float(source_timestamp)
-        diagnostics.source_timestamp_valid = bool(
-            np.isfinite(source_timestamp)
-        )
-        diagnostics.valid = bool(
-            np.all(np.isfinite(input_values))
-            and np.all(np.isfinite(output_values))
-            and np.all(np.isfinite(before_values))
-            and np.all(np.isfinite(derivative_values))
-            and np.all(np.isfinite(after_values))
-        )
-        diagnostics.filter_input = input_values
-        diagnostics.filter_output = output_values
-        diagnostics.filter_state_before = before_values
-        diagnostics.filter_state_derivative = derivative_values
-        diagnostics.filter_state_after = after_values
-
-        if dither_phase is not None:
-            diagnostics.dither_phase_rad = float(dither_phase)
-            diagnostics.dither_phase_valid = bool(np.isfinite(dither_phase))
-        elif self.combine_data and self.encoder_value is not None and self.encoder_value.size > 0:
-            diagnostics.dither_phase_rad = float(self.encoder_value.flat[0])
-            diagnostics.dither_phase_valid = bool(
-                np.isfinite(diagnostics.dither_phase_rad)
-            )
-        else:
-            diagnostics.dither_phase_rad = float("nan")
-            diagnostics.dither_phase_valid = False
-        diagnostics.dither_amplitude_m = float("nan")
-        diagnostics.dither_amplitude_valid = False
-        diagnostics.dither_angular_frequency_rad_sec = float("nan")
-        diagnostics.dither_angular_frequency_valid = False
-        self.gesc_diagnostics_publisher.publish(diagnostics)
-
-    # pylint: disable=too-many-arguments
-    # pylint: disable=line-too-long
-    def check_filter_valid_state(self, previous_time, current_time, orig_input_val, orig_z_vec, orig_z_vec_dot):
-        """This function checks if the filter states are valid.
-
-        If the filter state is invalid, we loop through and check if
-        using smaller dt timesteps causes the filter state to be valid
-        and then update the filter state with a the timestep that works.
-        """
-
-        # Calculate the origional change in time
-        orig_dt = current_time - previous_time
-        # Calculate the next filter state
-        z_vec_new = orig_z_vec + orig_dt * orig_z_vec_dot
-        # If we have an invalid state
-        if not self.custom_filter.valid_state(z_vec_new):
-            # Create a counting variable
-            m = 1 # pylint: disable=invalid-name
-            # Continue looping while we have an infeasible result
-            while not self.custom_filter.valid_state(z_vec_new):
-                # Increment the count
-                m += 1 # pylint: disable=invalid-name
-                # Redefine the change in time
-                time_increment = orig_dt / m
-                # Initialize another counting variable
-                p = 0 # pylint: disable=invalid-name
-                # Compare p to m
-                while p < m:
-                    # On first iteration, this runs
-                    if p == 0:
-                        # Calculate the change in filter state
-                        dz_value = self.custom_filter.differential_equation(
-                            current_time, orig_z_vec, orig_input_val
-                        )
-                        # Increment the new filter state
-                        z_vec_new = orig_z_vec + time_increment * dz_value
-
-                    # On all other iterations
-                    else:
-                        # Calculate the change in filter state
-                        dz_value = self.custom_filter.differential_equation(
-                            current_time + p*time_increment, z_vec_new, orig_input_val
-                        )
-                        # Increment the new filter state
-                        z_vec_new += time_increment * dz_value
-
-                    # Increment p
-                    p += 1 # pylint: disable=invalid-name
-
-        # Return the new filter state
-        return z_vec_new
+INPUT_EXPIRY_SEC = 0.5
+MAX_REFINEMENT_EVALUATIONS = 64
 
 
 def _argument_bool(value):
-    """Parse an explicit command-line boolean without silently accepting typos."""
-
     if isinstance(value, bool):
         return value
     normalized = str(value).strip().lower()
@@ -370,110 +30,143 @@ def _argument_bool(value):
 
 
 def parse_filter_arguments(arguments=None):
-    """Parse the preserved filter CLI plus its additive clock selector."""
-
-    description_msg = "\n".join([
-        "This filter node is used to create a custom filter to operate on input values. ",
-        "Custom filter architecture must make use of base filter and parameter ODE ",
-        "objects from the extremum seeking package. These filters are used to compute ",
-        "derivative estimates which will be used in the extremum seeking controller."
-        ])
-    inp_value_topic_msg = "\n".join([
-        "Please enter the input topic that is sending values to evaluate with the ",
-        "custom filter, e.g. '/cost_value_chatter'."
-    ])
-    inp_encoder_topic_msg = "\n".join([
-        "Please enter the input topic that is sending encoder data to evaluate with the ",
-        "custom filter, e.g. '/encoder_chatter'."
-    ])
-    inp_timekeeping_topic_msg = "\n".join([
-        "Please enter the input topic that is sending timekeeping information to reference ",
-        "e.g. '/timekeeper_chatter'."
-    ])
-    out_topic_msg = "\n".join([
-        "Please enter the output topic you want this node to publish to, ",
-        "e.g. '/filter_value_chatter'."
-    ])
-    file_msg = "\n".join([
-        "Please input the filepath to a .json file that describes the architecture ",
-        "of the custom filter."
-    ])
-    encoder_inp_msg = "\n".join([
-        "Use this option to combine encoder data with cost value data and input the combined ",
-        "vector into the custom filter as the input, please select: 'True' or 'False'."
-    ])
-    parser = argparse.ArgumentParser(description=description_msg)
-    parser.add_argument('inp_value_topic', type=str, help=inp_value_topic_msg)
-    parser.add_argument('inp_encoder_topic', type=str, help=inp_encoder_topic_msg)
-    parser.add_argument('inp_timekeeping_topic', type=str, help=inp_timekeeping_topic_msg)
-    parser.add_argument('out_topic', type=str, help=out_topic_msg)
-    parser.add_argument('--filter_file', type=str, dest="json_config", help=file_msg)
-    parser.add_argument(
-        '--append_encoder_data',
-        type=str,
-        dest="combine_enc_data",
-        help=encoder_inp_msg,
-    )
-    parser.add_argument("--enable_observability", default="False")
-    parser.add_argument("--algorithm_profile", default="legacy")
-    parser.add_argument(
-        "--gesc_diagnostics_topic",
-        default="/gesc_gaussian/gesc_diagnostics",
-    )
+    parser = argparse.ArgumentParser(description=__doc__)
+    for name in ("inp_value_topic", "inp_encoder_topic", "inp_timekeeping_topic", "out_topic"):
+        parser.add_argument(name)
+    parser.add_argument("--filter_file", dest="json_config", required=True)
+    parser.add_argument("--append_encoder_data", "--combine_enc_data", dest="combine_enc_data",
+                        type=_argument_bool, default=False)
     parser.add_argument("--use-sim-time", type=_argument_bool, default=True)
-    parser.add_argument("--continuous-search-mode", dest="continuous_search_mode",
-                        choices=("stationary_v1", "rolling_gesc_v2"), default="stationary_v1")
-    parser.add_argument("--v2-run-id", default="")
-    parser.add_argument("--v2-stream-config-json", default="")
-    parser.add_argument("--v2-direction-diagnostics-topic",
-                        default="/gesc_gaussian/v2/direction_diagnostics")
-    parser.add_argument("--v2-direction-policy", choices=DIRECTION_POLICIES,
-                        default=THREE_CYCLE_POLICY)
-    parser.add_argument("--algorithm-state-topic", default="/gesc_gaussian/algorithm_state")
-    parsed = parser.parse_args(arguments)
-    validate_policy(parsed.v2_direction_policy,
-                    continuous_search_mode=parsed.continuous_search_mode,
-                    algorithm_profile=str(parsed.algorithm_profile).strip(),
-                    use_sim_time=parsed.use_sim_time)
-    return parsed
+    return parser.parse_args(arguments)
 
 
-def _as_bool(value):
-    """Parse existing launch-style string booleans."""
+def advance_filter_state(custom_filter, previous_time, current_time, inputs, state, derivative):
+    """Retain original Euler/refinement order within a finite derivative budget.
 
-    if isinstance(value, bool):
-        return value
-    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+    The ordinary valid one-step path is unchanged. Failed candidates are
+    retried from the original state with m=2,3,... subdivisions, using the
+    original evaluation times. Exhaustion never publishes a partial result.
+    """
+    dt = current_time - previous_time
+    if not math.isfinite(dt) or dt < 0:
+        raise ValueError("filter time is invalid")
+    state = np.asarray(state, dtype=float)
+    candidate = state + dt * np.asarray(derivative, dtype=float)
+    if np.isfinite(candidate).all() and custom_filter.valid_state(candidate):
+        return candidate
+    evaluations = 1  # caller supplied the first derivative
+    for subdivisions in range(2, MAX_REFINEMENT_EVALUATIONS + 1):
+        if evaluations + subdivisions > MAX_REFINEMENT_EVALUATIONS:
+            break
+        candidate = state.copy()
+        increment = dt / subdivisions
+        for part in range(subdivisions):
+            change = np.asarray(custom_filter.differential_equation(
+                current_time + part * increment, candidate, inputs), dtype=float)
+            evaluations += 1
+            candidate = candidate + increment * change
+        if np.isfinite(candidate).all() and custom_filter.valid_state(candidate):
+            return candidate
+    raise ValueError("filter refinement exhausted its 64-evaluation budget")
 
 
-def _float_list(values):
-    """Flatten numeric filter data into ROS-compatible Python floats."""
+class CustomFilter(Node):
+    def __init__(self):
+        args = parse_filter_arguments()
+        super().__init__("custom_filter")
+        self.set_parameters([Parameter("use_sim_time", Parameter.Type.BOOL, args.use_sim_time)])
+        config = json.loads(Path(args.json_config).expanduser().read_text())
+        self.custom_filter, initial = parse_filter_config(config, [])
+        self.initial_state = np.asarray(initial, dtype=float)
+        self.z_vec = self.initial_state.copy()
+        self.prev_time = 0.0
+        self.last_input_stamp = None
+        self.start_time = None
+        self.encoder_value = None
+        self.encoder_timestamp = None
+        self.combine_data = args.combine_enc_data
+        self.filter_publisher = self.create_publisher(StampedFloat64MultiArray, args.out_topic, 10)
+        self.create_subscription(StampedFloat64MultiArray, args.inp_value_topic, self.input_value_callback, 10)
+        self.create_subscription(StampedFloat64MultiArray, args.inp_encoder_topic, self.encoder_value_callback, 10)
+        self.create_subscription(Timekeeper, args.inp_timekeeping_topic, self.timekeeping_callback, 10)
 
-    return [float(value) for value in np.asarray(values).reshape(-1)]
+    def timekeeping_callback(self, msg):
+        expected = "sim time" if self.get_parameter("use_sim_time").value else "real time"
+        if not math.isfinite(msg.start_time) or msg.mode != expected:
+            self.start_time = None
+            return
+        if self.start_time != msg.start_time:
+            self._reset(0.0)
+            self.last_input_stamp = None
+            self.encoder_value = None
+            self.encoder_timestamp = None
+        self.start_time = msg.start_time
+
+    def _fresh(self, stamp):
+        if self.start_time is None or not math.isfinite(stamp):
+            return False
+        age = self.get_clock().now().nanoseconds * 1e-9 - (self.start_time + stamp)
+        return -1e-6 <= age <= INPUT_EXPIRY_SEC
+
+    def encoder_value_callback(self, msg):
+        values = np.asarray(msg.data, dtype=float)
+        if (self._fresh(msg.timestamp) and values.size and np.isfinite(values).all()
+                and (self.encoder_timestamp is None or msg.timestamp > self.encoder_timestamp)):
+            self.encoder_value = values
+            self.encoder_timestamp = msg.timestamp
+
+    def _reset(self, stamp):
+        self.z_vec = self.initial_state.copy()
+        self.prev_time = stamp
+
+    def input_value_callback(self, msg):
+        stamp = msg.timestamp
+        values = np.asarray(msg.data, dtype=float)
+        if (not self._fresh(stamp) or not values.size or not np.isfinite(values).all()
+                or (self.last_input_stamp is not None and stamp <= self.last_input_stamp)):
+            return
+        if self.combine_data:
+            if self.encoder_value is None or not self._fresh(self.encoder_timestamp):
+                return
+            values = np.concatenate((values, self.encoder_value))
+        self.last_input_stamp = stamp
+        if stamp - self.prev_time > INPUT_EXPIRY_SEC:
+            self._reset(stamp)
+        try:
+            # Preserve original pre-step output ordering and controller-facing API.
+            output = np.asarray(self.custom_filter.filter_output(self.z_vec, values, stamp)).reshape(-1)
+            if not np.isfinite(output).all():
+                raise ValueError("nonfinite filter output")
+            derivative = self.custom_filter.differential_equation(stamp, self.z_vec, values)
+            next_state = advance_filter_state(self.custom_filter, self.prev_time, stamp,
+                                              values, self.z_vec, derivative)
+        except (ValueError, TypeError, IndexError, ArithmeticError, AssertionError, np.linalg.LinAlgError) as exc:
+            self._reset(stamp)
+            self.get_logger().warning(f"filter sample dropped; state reset: {exc}")
+            return
+        self.z_vec = next_state
+        self.prev_time = stamp
+        message = StampedFloat64MultiArray()
+        message.header = "Filter Value"
+        message.timestamp = stamp
+        message.data = output.astype(float).tolist()
+        self.filter_publisher.publish(message)
+
+    def check_filter_valid_state(self, previous_time, current_time, orig_input_val, orig_z_vec, orig_z_vec_dot):
+        return advance_filter_state(self.custom_filter, previous_time, current_time,
+                                    orig_input_val, orig_z_vec, orig_z_vec_dot)
 
 
 def main(args=None):
-    """This will initialize and launch the custom filter node."""
-
-    rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
+    rclpy.init(args=args)
     node = CustomFilter()
-    executor = SingleThreadedExecutor()
-    executor.add_node(node)
-    with DeferredSignalShutdown() as shutdown:
-        try:
-            while rclpy.ok() and not shutdown.requested:
-                executor.spin_once(timeout_sec=0.05)
-        except KeyboardInterrupt:
-            shutdown.request()
-        finally:
-            executor.remove_node(node)
-            try:
-                executor.shutdown()
-            finally:
-                try:
-                    node.destroy_node()
-                finally:
-                    rclpy.try_shutdown()
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
 
 
 if __name__ == "__main__":

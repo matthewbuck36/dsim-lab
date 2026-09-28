@@ -1,0 +1,93 @@
+# Running ESC in Gazebo
+
+This checkout runs the original ESC methods and the V3 development algorithm.
+Gaussian V1/V2 are frozen references; the working physical V1 installation is
+unchanged. Software checks do not establish Gazebo behavior or physical
+qualification. See [architecture](esc_architecture.md) and [history](esc_history.md).
+
+## Build and source
+
+Use a fresh terminal with ROS 2 Humble and this workspace, without an archived
+workspace overlay. Install the local numerical library once, then build after
+source or configuration changes:
+
+```bash
+cd /home/mattb/dsim-lab
+source /opt/ros/humble/setup.bash
+timeout 120s python3 -m pip install --user --no-deps -e ./extremum-seeking
+cd ros2_ws
+timeout 300s colcon build --symlink-install \
+  --packages-select ros_esc_interfaces ros_esc turtlebot3_rotating_sensor
+source install/setup.bash
+```
+
+In later terminals, source `/opt/ros/humble/setup.bash` and
+`/home/mattb/dsim-lab/ros2_ws/install/setup.bash`. Run commands never build or
+rewrite JSON. Gazebo and its ROS plugins belong to the simulation environment;
+the shared algorithm core does not require Gazebo or Matplotlib imports.
+
+## Run one method
+
+Interactive V3 starts Gazebo, the original Matplotlib live plot, and optional
+rosbag recording:
+
+```bash
+ros2 launch turtlebot3_rotating_sensor gazebo.launch.py profile:=gesc_v3
+```
+
+The 19 Bash aliases select named profiles. For example, choose one of:
+
+```bash
+cd /home/mattb/dsim-lab/ros2_ws/src/turtlebot3_rotating_sensor/bash_scripts
+bash gradient_methods/gesc_full_rotation_acoustic.bash
+bash adaptive_methods/rmsprop_full_rotation.bash
+bash gradient_methods/gesc_v3.bash
+```
+
+Each run continues until **Ctrl+C**, including after a best-source event. Allow
+shutdown to finish so the controller and arm can publish zero commands and the
+bag can close. A zero command record alone does not prove measured stopping.
+
+The shared launch has six options:
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `profile` | `gesc_v3` | Installed algorithm name or custom profile JSON |
+| `environment` | `gazebo` | This launch supports Gazebo only |
+| `gui` | `true` | Display Gazebo; false also disables live plotting |
+| `plot` | `auto` | Automatic interactive Matplotlib plot; `false` disables it |
+| `record` | `true` | Optional ordinary rosbag; failure never gates control |
+| `output` | `~/Experiments/ESC` | Root for a new uniquely named bag directory |
+
+A bounded headless example, with recording disabled:
+
+```bash
+timeout --signal=INT --kill-after=15s 120s ros2 launch \
+  turtlebot3_rotating_sensor gazebo.launch.py \
+  profile:=gesc_v3 gui:=false plot:=false record:=false
+```
+
+Closing the plot or losing the recorder does not stop the algorithm. Physical
+runs have no automatic plotting; their adapters remain in the separate
+`turtlebot3_vehicle_nodes` workspace, outside this checkout.
+
+## Configuration and analysis
+
+Algorithm/environment profiles and their numerical JSON files live in
+[`ros_esc/config/profiles`](../ros2_ws/src/ros_esc/config/profiles). Installed
+profiles are resolved from the selected workspace. Built-in object references
+use Python module names; custom original JSON objects may still use `filepath`.
+The V3 controller JSON owns its effective gains and speed caps. Scene parameters
+belong to the modeled cost configuration, not the controller's observations.
+
+Analyze a **closed** ordinary bag directory; no project manifest is required:
+
+```bash
+timeout 120s ros2 run ros_esc analyze_bag "/path/to/closed_bag" --csv
+```
+
+The default output is a new sibling directory ending in `_analysis`, containing
+`summary.json`, available plots and optional CSVs. Use `--output /path/to/new_dir`
+for another destination. Missing topics or measurements remain unavailable;
+analysis does not turn incomplete evidence into qualification. Keep bags and
+analysis products under `~/Experiments`, outside Git.

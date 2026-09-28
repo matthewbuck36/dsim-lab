@@ -1,0 +1,20 @@
+{
+  "gazebo": {
+    "mode": "simulation",
+    "use_sim_time": true,
+    "entity": "turtlebot3",
+    "frame_id": "odom",
+    "plot": true,
+    "sensor_support_rate_hz": 30.0,
+    "world": "gazebo_empty.world"
+  },
+  "physical": {
+    "mode": "physical",
+    "use_sim_time": false,
+    "entity": "turtlebot3",
+    "frame_id": "odom",
+    "plot": false,
+    "sensor_support_rate_hz": null,
+    "world": null
+  }
+}

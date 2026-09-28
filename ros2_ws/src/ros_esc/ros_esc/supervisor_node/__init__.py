@@ -1,1 +1,0 @@
-"""Robust Gaussian supervisor package."""

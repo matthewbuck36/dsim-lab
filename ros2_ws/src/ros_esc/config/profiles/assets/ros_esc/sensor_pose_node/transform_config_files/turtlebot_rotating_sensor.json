@@ -1,0 +1,44 @@
+{
+  "rotating_frame_one": {
+    "module": "ros_esc.sensor_pose_node.transform_objects.transform_objects",
+    "object_name": "Transform_Odom_To_Sensor_Pose",
+    "params": {
+      "joint_position": [
+        0,
+        0,
+        0.355
+      ],
+      "rotation_axis": [
+        0,
+        0,
+        1
+      ],
+      "sensor_transform": [
+        [
+          1,
+          0,
+          0,
+          0.18
+        ],
+        [
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0.015
+        ],
+        [
+          0,
+          0,
+          0,
+          1
+        ]
+      ]
+    }
+  }
+}

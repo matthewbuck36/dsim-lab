@@ -7,7 +7,10 @@ converting them to object so that they can be used in experiments.
 
 # pylint: disable=wildcard-import
 import os
+import importlib
 import importlib.util
+import inspect
+from copy import deepcopy
 import numpy as np
 import extremum_seeking as es
 from extremum_seeking.filters import * # pylint: disable=unused-wildcard-import
@@ -21,95 +24,42 @@ from ros_esc.controller_node.controller_objects import * # pylint: disable=unuse
 
 # The following methods are used to parse objects defined within config files:
 
-def parse_object_config(config_dict):
-    """This is used by to parse an object specified in a configuration file.
-
-    This function makes use of the importlib library to import a python
-    script as a module in the middle of the code's execution. The desired
-    object from that python module is collected. The object is intitialized
-    with additional dictionaries specified in the config and then returned.
-
-    Reference:
-    https://www.geeksforgeeks.org/how-to-import-a-python-module-given-the-full-path/
-    """
-
-    # Get the filepath to the desired object's script
-    filepath_str = config_dict["filepath"]
-    # Get the script name from the filepath
-    script_name = filepath_str.split("/")[-1]
-    # Remove the tag at the end of the script name
-    script_name = script_name.split(".")[0]
-    # Get the name of the object to look for in that file
+def _object_class(config_dict):
+    """Resolve installed built-ins or an explicitly supplied custom file."""
+    if ("module" in config_dict) == ("filepath" in config_dict):
+        raise ValueError("object config requires exactly one of module or filepath")
     object_name = config_dict["object_name"]
-    # Redefine the filepath to accomodate the user's home directory
-    filepath = os.path.expanduser(config_dict["filepath"])
+    if "module" in config_dict:
+        module = importlib.import_module(config_dict["module"])
+    else:
+        filepath = os.path.expanduser(config_dict["filepath"])
+        script_name = os.path.splitext(os.path.basename(filepath))[0]
+        spec = importlib.util.spec_from_file_location(script_name, filepath)
+        if spec is None or spec.loader is None:
+            raise ImportError(f"cannot import configured object file: {filepath}")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    if not hasattr(module, object_name):
+        raise ValueError(f"configured object {object_name!r} is unavailable")
+    return getattr(module, object_name)
 
-    # Specify the module that needs to be imported
-    spec = importlib.util.spec_from_file_location(script_name, filepath)
-    # Creates a new module based on spec
-    module = importlib.util.module_from_spec(spec)
-    # Executes the module in its own namespace when a module is imported or reloaded
-    spec.loader.exec_module(module)
-    # Check if this is an object that exists in that script
-    warn_msg = '\n'.join([
-        "Object '"+str(object_name),
-        "' does not exist in script at "+str(filepath_str)
-    ])
-    assert hasattr(module, object_name), warn_msg
-    # Get the correct object class from the module
-    object_class = getattr(module, object_name)
 
-    # Delete the path and object name keys from the dict
-    del config_dict["filepath"]
-    del config_dict["object_name"]
+def parse_object_config(config_dict):
+    """Construct an object without changing the caller's configuration.
 
-    # Instantiate the object with the keys from the dictionary
-    instantiated_obj = object_class(**config_dict)
+    Built-ins use installed Python module names. Existing custom JSON files
+    with ``filepath`` remain supported, including nested controller ODEs.
+    """
+    config = deepcopy(config_dict)
+    object_class = _object_class(config)
+    for key in ("module", "filepath", "object_name"):
+        config.pop(key, None)
+    return object_class(**config)
 
-    return instantiated_obj
 
 def parse_object_into_str(config_dict):
-    """This function returns the object code as a string.
-
-    Note that the "return output" string of text denotes the end of the code
-    for a particular object. This method will parse the object as a string from
-    "class {object_name}" to the end specified by "return output".
-
-    This method is used by the data collection node to document the
-    object used in an experiment for future reference. This function
-    will read the file at the specified filepath. It searches for the
-    specified object, then returns the object code as a string.
-    """
-
-    # Get the filepath to the object's script
-    filepath_str = config_dict["filepath"]
-    # Get the script name from the filepath
-    script_name = filepath_str.split("/")[-1]
-    # Remove the tag at the end of the script name
-    script_name = script_name.split(".")[0]
-    # Get the name of the object to look for in that file
-    object_name = config_dict["object_name"]
-    # Redefine the filepath to accomodate the user's home directory
-    filepath = os.path.expanduser(config_dict["filepath"])
-
-    # Open the script at the filepath
-    with open(filepath, mode='r', encoding='utf-8') as file:
-        # Read the file
-        file_text = file.read()
-        # Split the string of text up by defined classes
-        split_text = file_text.split("class "+object_name)
-        # Keep everything after the split
-        text = split_text[1]
-        # Split the string of text up by the object ending indicator text
-        # which denotes the end of the code for each object
-        text = text.split("return output")
-        # Keep everything before the first split,
-        # this is the code describing the object
-        obj_code = text[0] + "return output"
-        # Collect the object written as a string
-        object_str = "class "+object_name+obj_code
-
-    return object_str
+    """Return optional source documentation without formatting constraints."""
+    return inspect.getsource(_object_class(config_dict))
 
 # The following methods are used to parse config files for specific nodes:
 
@@ -124,6 +74,10 @@ def parse_filter_config(config_dict, filter_state_vector):
     This function will parse and return the custom filter using filter objects from the
     extremum seeking package.
     """
+
+    # Constructors and function parsing may transform nested configuration.
+    # Keep the public JSON object reusable for profile checks and repeated runs.
+    config_dict = deepcopy(config_dict)
 
     # Initialize the custom filter
     custom_filter = None

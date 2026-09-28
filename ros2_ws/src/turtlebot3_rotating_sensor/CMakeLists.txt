@@ -5,18 +5,8 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# find dependencies
+# This package installs simulation resources; runtime dependencies are in package.xml.
 find_package(ament_cmake REQUIRED)
-find_package(urdf REQUIRED)
-find_package(rclpy REQUIRED)
-find_package(gazebo_ros REQUIRED)
-find_package(xacro REQUIRED)
-# for control
-find_package(ros2_control REQUIRED)
-find_package(gazebo_ros2_control REQUIRED)
-find_package(joint_state_broadcaster REQUIRED)
-find_package(joint_trajectory_controller REQUIRED)
-find_package(velocity_controllers REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -44,10 +34,9 @@ install(
 )
 
 install(
-  PROGRAMS
-    scripts/idempotent_controller_spawner.py
-  DESTINATION
-    lib/${PROJECT_NAME}
+  DIRECTORY bash_scripts
+  DESTINATION share/${PROJECT_NAME}
+  USE_SOURCE_PERMISSIONS
 )
 
 ament_package()

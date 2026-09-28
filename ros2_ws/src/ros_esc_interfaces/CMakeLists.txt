@@ -15,46 +15,15 @@ find_package(rclpy REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
 
-  # add custom messages from msg folder here
-  # example: "msg/Example.msg"
   "msg/Timekeeper.msg"
   "msg/StampedFloat64.msg"
   "msg/StampedFloat64MultiArray.msg"
   "msg/StampedString.msg"
   "msg/StampedTransformMultiArray.msg"
-  "msg/CostBreakdown.msg"
-  "msg/GescDiagnostics.msg"
-  "msg/CentroidConvergenceDiagnostics.msg"
-  "msg/RecurrentConvergenceDiagnostics.msg"
-  "msg/StationaryFillRequest.msg"
-  "msg/StationaryRecurrentFillRequest.msg"
-  "msg/SourceSampleProvenance.msg"
-  "msg/ObjectiveCostSample.msg"
-  "msg/SynchronizedObservation.msg"
-  "msg/GescDirectionDiagnostics.msg"
-  "msg/GescDirectionPolicyDiagnostics.msg"
-  "msg/SearchEpochContext.msg"
-  "msg/DetectorConfirmation.msg"
-  "msg/PdeHistoryEvidence.msg"
-  "msg/CandidateSnapshot.msg"
-  "msg/RecurrentCandidateSnapshot.msg"
-  "msg/VerificationGuidance.msg"
-  "msg/FillCommand.msg"
-  "msg/RecurrentFillCommand.msg"
-  "msg/FillResult.msg"
-  "msg/ControlDiagnostics.msg"
-  "msg/GaussianFill.msg"
-  "msg/AlgorithmState.msg"
+  "msg/SensorObservation.msg"
   "msg/AlgorithmEvent.msg"
+  "msg/GaussianFill.msg"
 
-  # add custom services from srv folder here
-  # example: "srv/Example.srv"
-
-
-  
-  # add any packages that the above messages depend on here
-  # for example, in the case that one of the above messages depended
-  # on a geometry message, write this below: geometry_msgs
   DEPENDENCIES
   builtin_interfaces
   geometry_msgs

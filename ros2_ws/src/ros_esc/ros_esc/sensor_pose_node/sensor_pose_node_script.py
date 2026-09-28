@@ -1,293 +1,70 @@
 #!/usr/bin/env python3
+"""Observed odometry plus encoder angle -> sensor transform at the encoder stamp."""
 
-"""The sensor pose node obtains the transformation matrices describing the
-position and orientation of sensors attached to rotating sensor frames with
-respect to some global reference frame. This node utilizes a forward kinematic
-method to calculate the transformation matrix describing the sensor. This method
-requires 'odom' data which contains position and orientation data of the vehicle's
-chassis with respect to the global reference frame, the angular position values
-of the rotating sensor frames, and additional information described in a sensor
-transform configuration file. This additional information includes the rotating
-sensor frame's rotation axis with respect to the vehicle chassis, the rotating sensor
-frame joint position with respect to the vehicle chassis, and a transform matrix
-specifying where the sensor is placed on the rotating frame with respect to the
-rotating sensor frame joint.
-
-Please note this node is setup only for use in Gazebo simulation.
-"""
-
-import os
 import argparse
-from collections import OrderedDict
 import json
 import math
+from pathlib import Path
+
 import numpy as np
 import rclpy
 from rclpy.node import Node
-import rclpy.parameter
-from ros_esc_interfaces.msg import Timekeeper, StampedFloat64MultiArray, StampedTransformMultiArray
+from rclpy.executors import ExternalShutdownException
 from geometry_msgs.msg import Transform
 from nav_msgs.msg import Odometry
+from ros_esc_interfaces.msg import Timekeeper, StampedFloat64MultiArray, StampedTransformMultiArray
+from ros_esc.clock_configuration import apply_legacy_sim_time_default
 from ros_esc.config_parsing import parse_object_config
-from ros_esc.v2_stream import ROLLING_MODE, STATIONARY_MODE, relative_stamp_ns
+
 
 class SensorPosition(Node):
-    """This class calculates the global position of sensors in Gazebo simulation."""
-
-    # pylint: disable=too-many-instance-attributes
-
     def __init__(self):
         super().__init__("sensor_position_node")
-
-        # Tell this node to use simulation time by setting this parameter
-        # This means anytime we use the command 'self._clock.now()' it returns
-        # the current simulation time, rather than the current system time.
-        self.set_parameters([
-            rclpy.parameter.Parameter('use_sim_time',rclpy.Parameter.Type.BOOL, True)
-        ])
-
-        # For parsing the input arguments
-        description_msg = "\n".join([
-            "This sensor pose node is used to calculate the transformation matrix describing ",
-            "sensors attached to rotating sensor frames. This transformation matrix contains ",
-            "both the position and orientation of the sensor with respect to some global ",
-            "reference frame. This node utilizes a forward kinematic method to compute the ",
-            "sensor's transformation matrix. The user can configure this computation with ",
-            "a sensor transform configuration file which initializes a transform object. ",
-            "This node always gives 'odom' data which contains the position and orientation ",
-            "of the vehicle chassis w.r.t. the global reference frame, and rotating sensor ",
-            "frame angular position data. The node always calls the object's ",
-            "'transform_output' method expecting a transformation matrix representing the ",
-            "sensor's pose w.r.t. the global frame. Note each rotating sensor frame ",
-            "can have transformation object configured differently."
-        ])
-        inp_odom_topic_msg = "\n".join([
-            "Please enter the input topic that is sending the position & orientation data ",
-            "with respect to the global reference frame, e.g. '/odom'."
-        ])
-        inp_enc_topic_msg = "\n".join([
-            "Please enter the input topic that is sending the encoder data, ",
-            "e.g. '/encoder_chatter'."
-        ])
-        inp_timekeeping_topic_msg = "\n".join([
-            "Please enter the input topic that is sending timekeeping information to reference ",
-            "e.g. '/timekeeper_chatter'."
-        ])
-        out_topic_msg = "\n".join([
-            "Please enter the output topic you want this node to publish to, ",
-            "e.g. '/sensor_pose_chatter'."
-        ])
-        config_msg = "\n".join([
-            "Please enter the filepath to a transformation config json file as a string, ",
-            "this file should describe the configuration of the rotating sensor frames."
-        ])
-        parser = argparse.ArgumentParser(description=description_msg)
-        parser.add_argument('input_odom_topic', type=str, help=inp_odom_topic_msg)
-        parser.add_argument('input_enc_topic', type=str, help=inp_enc_topic_msg)
-        parser.add_argument('input_timekeeping_topic', type=str, help=inp_timekeeping_topic_msg)
-        parser.add_argument('output_topic', type=str, help=out_topic_msg)
-        parser.add_argument('config', type=str, help=config_msg)
-        parser.add_argument('--continuous-search-mode', default=STATIONARY_MODE,
-                            choices=(STATIONARY_MODE, ROLLING_MODE))
+        apply_legacy_sim_time_default(self)
+        parser = argparse.ArgumentParser(description=__doc__)
+        for name in ("input_odom_topic", "input_enc_topic", "input_timekeeping_topic", "output_topic", "config"):
+            parser.add_argument(name)
         args = parser.parse_args()
-
-        # Initialize variables
+        config = json.loads(Path(args.config).expanduser().read_text())
+        self.objects_list = [parse_object_config(value) for value in config.values()]
         self.start_time = None
         self.odom_data = None
-        self.encoder_angles = None
-        self.v2_enabled = args.continuous_search_mode == ROLLING_MODE
-        self.v2_origin_ns = None
-        self.v2_origin_invalid = False
-        self.v2_last_source_ns = None
-        self.v2_seen = OrderedDict()
-        self.v2_source_key = None
+        self.sensor_pose_publisher = self.create_publisher(StampedTransformMultiArray, args.output_topic, 10)
+        self.create_subscription(Odometry, args.input_odom_topic, self.pose_callback, 10)
+        self.create_subscription(StampedFloat64MultiArray, args.input_enc_topic, self.encoder_callback, 10)
+        self.create_subscription(Timekeeper, args.input_timekeeping_topic, self.timekeeping_callback, 10)
 
-        # Initialize a list to hold transform objects
-        self.objects_list = []
-
-        # Expand the filepath if the ~ character is used
-        config_filepath = os.path.expanduser(args.config)
-
-        # Open the json file
-        with open(config_filepath, encoding='utf-8') as file:
-            # Convert into a dictionary
-            config_dict = json.load(file)
-        # Loop through the entries in the config dict
-        for entry in config_dict:
-            # Get the transform config dictionary
-            transform_obj_dict = config_dict[entry]
-            # Parse the transform configuration
-            transform_obj = parse_object_config(transform_obj_dict)
-            # Append to list
-            self.objects_list.append(transform_obj)
-
-        # Create a subscriber to the input odometry topic
-        # This allows us to extract the vehicle pose (x, y, z, roll, pitch, yaw)
-        self.pose_subscriber = self.create_subscription(
-            Odometry, args.input_odom_topic, self.pose_callback, 10
-        )
-
-        # Create a subscriber to the input encoder reading topic
-        # This allows us to extract the encoder readings
-        self.encoder_subscriber = self.create_subscription(
-            StampedFloat64MultiArray, args.input_enc_topic, self.encoder_callback, 10
-        )
-
-        # Create a subscriber to the timekeeping topic
-        # This will tell give timekeeping information to reference
-        self.timekeeping_subscriber = self.create_subscription(
-            Timekeeper, args.input_timekeeping_topic, self.timekeeping_callback, 10
-        )
-
-        # Create a publisher
-        # This will publish the transformation matrices describing
-        # the sensors at the end of the rotating frames
-        self.sensor_pose_publisher = self.create_publisher(
-            StampedTransformMultiArray, args.output_topic, 10
-        )
-
-    def pose_callback(self, msg: Odometry):
-        """This updates the transformation from the odom frame to the vehicle's footprint."""
-
-        # Get the vehicle's position
-        x_pos = msg.pose.pose.position.x
-        y_pos = msg.pose.pose.position.y
-        z_pos = msg.pose.pose.position.z
-
-        # Note we have to use the quaternion angles given to us
-        # by msg.pose.pose.orientation to calculate our r, p, y angles
-        # For reference, see eqns (11a-c):
-        # https://danceswithcode.net/engineeringnotes/quaternions/quaternions.html
-        quat_w = msg.pose.pose.orientation.w
-        quat_x = msg.pose.pose.orientation.x
-        quat_y = msg.pose.pose.orientation.y
-        quat_z = msg.pose.pose.orientation.z
-
-        # Package this position and orientation data into an array
-        self.odom_data = [x_pos, y_pos, z_pos, quat_w, quat_x, quat_y, quat_z]
-
-    def encoder_callback(self, msg: StampedFloat64MultiArray):
-        """This function collects the encoder readings."""
-
-        if self.v2_enabled:
-            if self.v2_origin_ns is None or self.v2_origin_invalid:
-                return
-            try:
-                stamp = relative_stamp_ns(self.v2_origin_ns, msg.timestamp)
-                values = tuple(float(value) for value in msg.data)
-                now = self._clock.now().nanoseconds
-                if (len(values) != len(self.objects_list)
-                        or not values or not all(math.isfinite(v) for v in values)
-                        or stamp < self.v2_origin_ns or not -500_000_000 <= now-stamp <= 500_000_000):
-                    raise ValueError('invalid acquisition')
-                if msg.timestamp in self.v2_seen:
-                    if self.v2_seen[msg.timestamp] is not None and self.v2_seen[msg.timestamp] != values:
-                        self._v2_forward_disputed(msg.timestamp, values, 'conflicting acquisition')
-                    return
-                if self.v2_last_source_ns is not None and stamp <= self.v2_last_source_ns:
-                    self._v2_forward_disputed(msg.timestamp, values, 'acquisition regression or timestamp collision')
-                    return
-                self.v2_seen[msg.timestamp] = values
-                while len(self.v2_seen) > 1024:
-                    self.v2_seen.popitem(last=False)
-                self.v2_last_source_ns = stamp
-                self.v2_source_key = float(msg.timestamp)
-            except (ValueError, TypeError, OverflowError) as exc:
-                self.get_logger().warning(f'V2 sensor pose input discarded: {exc}')
-                return
-
-        # Collect the encoder information
-        self.encoder_angles = msg.data
-        # Publish our sensor position
-        self.publish_sensor_position()
-
-    def _v2_forward_disputed(self, key, values, reason):
-        """Preserve one finite contradictory transform for the source owner to flag."""
-        self.v2_seen[key] = None
-        while len(self.v2_seen) > 1024:
-            self.v2_seen.popitem(last=False)
-        self.get_logger().warning(f'V2 sensor pose forwards disputed input once: {reason}')
-        self.v2_source_key = float(key)
-        self.encoder_angles = list(values)
-        self.publish_sensor_position()
-
-    def timekeeping_callback(self, msg: Timekeeper):
-        """This function collects the timekeeper information to reference."""
-
-        if self.v2_enabled:
-            try:
-                origin = relative_stamp_ns(0, msg.start_time)
-                if msg.mode != 'sim time' or (self.v2_origin_ns is not None and origin != self.v2_origin_ns):
-                    raise ValueError('invalid or changed origin')
-                self.v2_origin_ns = origin
-            except (ValueError, TypeError, OverflowError) as exc:
-                self.v2_origin_invalid = True
-                self.get_logger().warning(f'V2 sensor pose Timekeeper rejected: {exc}')
-                return
-
-        # Collect the start time of the experiment to reference
+    def timekeeping_callback(self, msg):
         self.start_time = msg.start_time
 
-    def publish_sensor_position(self):
-        """This function publishes the global (x,y,z) coordinates of the sensors as an array."""
+    def pose_callback(self, msg):
+        p, q = msg.pose.pose.position, msg.pose.pose.orientation
+        values = [p.x, p.y, p.z, q.w, q.x, q.y, q.z]
+        if all(math.isfinite(value) for value in values):
+            self.odom_data = values
 
-        # Ensure we have all the data we need to publish
-        # pylint: disable=line-too-long
-        if (self.encoder_angles is not None) and (self.odom_data is not None) and (self.start_time is not None):
-            # Initialize output list
-            output_list = []
+    def encoder_callback(self, msg):
+        if self.start_time is None or self.odom_data is None:
+            return
+        if (len(msg.data) != len(self.objects_list) or not math.isfinite(msg.timestamp)
+                or not all(math.isfinite(value) for value in msg.data)):
+            return
+        output = StampedTransformMultiArray()
+        output.header = "Sensor Transformation Matrices"
+        output.timestamp = msg.timestamp
+        for transform_object, angle in zip(self.objects_list, msg.data):
+            matrix = transform_object.transform_output(self.odom_data, angle)
+            if not np.isfinite(matrix).all():
+                return
+            transform = Transform()
+            transform.translation.x, transform.translation.y, transform.translation.z = map(float, matrix[:3, 3])
+            qw, qx, qy, qz = calculate_quaternions(matrix)
+            transform.rotation.w, transform.rotation.x = float(qw), float(qx)
+            transform.rotation.y, transform.rotation.z = float(qy), float(qz)
+            output.transform_array.append(transform)
+        self.sensor_pose_publisher.publish(output)
 
-            # Loop through encoder angles, calculate the sensor pose for each frame
-            for entry in enumerate(self.encoder_angles):
-                # Get the index of the transformation matrix to update
-                index = entry[0]
-                # Get the encoder angular position reading
-                angular_position = entry[1]
-                # Get the transform object to use
-                transform_object = self.objects_list[index]
 
-                # Use the object to calculate the sensor's transformation matrix
-                transform_matrix = transform_object.transform_output(
-                    self.odom_data, angular_position
-                )
-
-                # Create a transform message
-                tform_msg = Transform()
-                # Extract the translation portion from the transform matrix
-                tform_msg.translation.x = transform_matrix[0][3]
-                tform_msg.translation.y = transform_matrix[1][3]
-                tform_msg.translation.z = transform_matrix[2][3]
-
-                # Calculate the quaternions from the transform matrix
-                qw, qx, qy, qz = calculate_quaternions(transform_matrix) # pylint: disable=invalid-name
-                # Assign these to the message
-                tform_msg.rotation.w = qw
-                tform_msg.rotation.x = qx
-                tform_msg.rotation.y = qy
-                tform_msg.rotation.z = qz
-
-                # Append this to output
-                output_list.append(tform_msg)
-
-            # Construct the message
-            msg = StampedTransformMultiArray()
-            # Add the list of transforms
-            msg.transform_array = output_list
-
-            # Add the header information
-            msg.header = "Sensor Transformation Matrices"
-
-            # Get the publish sim time
-            t_publish = self._clock.now()
-            # Subtract the reference start time from simulation time
-            publish_time = float(t_publish.nanoseconds*1e-9) - self.start_time
-            # # Add the timestamp
-            msg.timestamp = self.v2_source_key if self.v2_enabled else publish_time
-
-            # Publish the message
-            self.sensor_pose_publisher.publish(msg)
-
-# pylint: disable=too-many-locals
 def calculate_quaternions(transform_matrix):
     """This calculates quaternion angles from a transformation matrix.
 
@@ -346,18 +123,18 @@ def calculate_quaternions(transform_matrix):
 
     return qw, qx, qy, qz # pylint: enable=invalid-name
 
-def main(args=None):
-    """This will initialize and launch the node."""
 
+def main(args=None):
     rclpy.init(args=args)
     node = SensorPosition()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
         node.destroy_node()
         rclpy.try_shutdown()
+
 
 if __name__ == "__main__":
     main()

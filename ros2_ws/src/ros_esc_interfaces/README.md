@@ -1,93 +1,22 @@
-# ROS ESC
+# ESC interfaces
 
-## GESC + Gaussian V1 interface boundary (current)
+Eight message types support the original ESC methods and V3:
 
-The authoritative interface, topic, ownership, sign/unit, and result reference
-is the LaTeX-typeset
-[FINAL_PROJECT_REPORT_V1.pdf](../../../docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.pdf),
-with [LaTeX](../../../docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.tex) and
-[Markdown](../../../docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.md)
-sources retained beside it,
-with the concise live mapping in the
-[interface map](../../../docs/codex/gesc_gaussian/interface_map.md). The generic
-package instructions below are retained for historical onboarding.
+| Messages | Role |
+| --- | --- |
+| `Timekeeper`, `StampedFloat64`, `StampedFloat64MultiArray`, `StampedString`, `StampedTransformMultiArray` | Original method compatibility |
+| `SensorObservation` | One adapter-owned raw cost, observed phase/pose, source and receipt times, source identity, validity and timing uncertainty |
+| `AlgorithmEvent`, `GaussianFill` | Output-only V3 telemetry |
 
-The V1 source generates eleven ROS 2 message types. Six typed messages carry
-the robust GESC + Gaussian state and diagnostics:
+`SensorObservation` distinguishes host sequence from an optional device sequence
+and declares its timestamp basis. Unknown acquisition uncertainty is `NaN`, not
+zero. The core receives observed data rather than simulated source positions.
+Algorithm state and objective revisions remain local; there is no active
+state-heartbeat or fill-acknowledgment protocol. The base command remains the
+standard `geometry_msgs/Twist` on `/cmd_vel`.
 
-- `AlgorithmState`, `AlgorithmEvent`, and `GaussianFill` describe the hybrid
-  lifecycle and fill events;
-- `CostBreakdown` separates raw, Gaussian, affine, and augmented cost terms;
-  and
-- `GescDiagnostics` and `ControlDiagnostics` expose estimator and final-control
-  evidence.
-
-The five pre-existing compatibility messages—`Timekeeper`, `StampedFloat64`,
-`StampedFloat64MultiArray`, `StampedString`, and
-`StampedTransformMultiArray`—remain available to the established graph. They
-must not be used as substitutes for the typed robust contracts. There are no
-generated `.srv` interfaces in the current V1 source.
-
-`algorithm_profile:=legacy` remains the compatibility default. Active GESC +
-Gaussian operation explicitly selects `robust_gaussian_v1`; interface
-availability alone does not activate that profile or prove a run complete.
-The unified `record_run`/`validate_run` owners enforce the runtime evidence
-contract, while `analyze_run` and `summarize_matrix` consume retained products.
-
-This package contains custom ROS2 messages and services built to run with nodes 
-in the ros_esc package. This package is built as an ament_cmake package which is the
-only build type that currently allows for custom messages or services to be created
-and installed. The build type for ros_esc is ament_python, therefore the custom messages
-and services must be imported from this directory to be used.
-
-This package was created using [this documentation](https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Custom-ROS2-Interfaces.html) for reference.
-
-## Author Information
-
-Nicholas Calkins
-
-Dynamic Systems and Intelligent Machines (DSIM)
-
-San Diego State University (SDSU)
-
-email: ncalkins8746@sdsu.edu
-
-## Installation Instructions
-
-The following commands assume the user is downloading this package into a ROS workspace
-named "ros2_ws" under their home directory "~". If the user is downloading this package
-elsewhere, please update the terminal commands shown here accordingly.
-
-This package can either be downloaded via git using 
-
-```
-user@machine:~$ cd ~/dsim-lab/ros2_ws/src
-user@machine:~$ git clone https://gitlab.com/dsim-lab/ros-packages/ros_esc_interfaces.git
-```
-
-for those who have access to the DSIM Lab Gitlab group. Otherwise one will need to download
-the package directly via some compressed file.
-
-## Adding Custom Messages or Services
-
-To add custom messages or services to this package, please create a new branch off of origin
-main and then push any commits to the new branch. Once complete, please submit a merge request
-so that a DSIM Lab Gitlab maintainer can evaluate the changes and complete a merge.
-
-## Viewing Custom Messages or Services
-
-Please ensure that ROS created the custom messages correctly by using the following terminal commands:
-```
-user@machine:~$ cd ~/dsim-lab/ros2_ws
-user@machine:~$ colcon build --packages-select ros_esc_interfaces
-user@machine:~$ source install/setup.bash
-user@machine:~$ ros2 interface show ros_esc_interfaces/msg/{custom_msg_name}
-```
-
-Please ensure that ROS created the custom services correctly by using the following terminal commands:
-```
-user@machine:~$ cd ~/dsim-lab/ros2_ws
-user@machine:~$ colcon build --packages-select ros_esc_interfaces
-user@machine:~$ source install/setup.bash
-user@machine:~$ ros2 interface show ros_esc_interfaces/src/{custom_srv_name}
-```
+See [usage](../../../docs/esc_usage.md),
+[architecture](../../../docs/esc_architecture.md), and
+[history](../../../docs/esc_history.md). Message availability is not runtime or
+physical qualification. Previous interfaces and detailed documentation remain
+in the frozen history and pre-refactor archive.

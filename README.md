@@ -1,102 +1,46 @@
 # DSIM Lab
 
-This repository contains ROS 2 Humble/Gazebo research code for extremum-seeking
-control, including the completed V1 GESC + adaptive Gaussian evidence line.
+ROS 2 Humble/Gazebo workspace for extremum-seeking source seeking. The active
+implementation contains the original ESC methods and the V3 GESC/Gaussian
+algorithm. V3 is under software qualification; Gazebo behavioral testing follows
+this refactor. Physical V1 remains the protected robot installation.
 
-**V1 branch closed (2026-09-08).** The commit
-`docs: close V1 with environment guidance` is the final change to
-`feature/gesc-gaussian-robustness-v1`. Future work belongs on a separate branch
-unless the user explicitly reopens V1. Research evidence and physical
-validation limitations remain unchanged.
+Start with [usage and build commands](docs/esc_usage.md),
+[architecture and recovery behavior](docs/esc_architecture.md), and
+[environment parameters](docs/environment_parameters.md). Use the
+[software test guide](docs/esc_testing.md) for bounded checks. The
+[refactor status](docs/codex/gesc_gaussian/v3/refactor_status.md) records what has
+actually been checked and what remains incomplete.
 
-## Environment: simulation / Gazebo
+Interactive Gazebo runs keep automatic Matplotlib live plots. A small standard
+rosbag records by default; plotting and recording are optional observers.
+Ordinary runs continue until Ctrl+C. Neither a recorder failure nor a rejected
+Gaussian candidate authorizes a terminal control failure.
 
-This is the **simulation workspace**. The physical source copy is in
-`/home/mattb/physical_TB3_files_snapshot/pi/ros2_ws/src`; the live physical
-home is accessible through `/home/mattb/tb3-pi` only when SSHFS is mounted.
-Read [AGENTS.md](AGENTS.md) and the
-[simulation/physical parameter comparison](docs/environment_parameters.md)
-before copying configurations between them.
+## Workspace boundaries
 
-| Differing setting | This simulation workspace | Selected physical workspace |
-| --- | --- | --- |
-| Algorithm-node `use_sim_time` | `True` | `False` |
-| `supervisor_use_sim_time` | `True` | `False` |
-| Controller/filter `--use-sim-time` | `True` | `False` |
-| `observability_source_mode` | `simulation` | `physical` |
-| Recorder `--mode` | `simulation` | `physical` |
-| Selected controller `set_max_vx` / `set_max_wz` | `0.1` m/s / `0.5` rad/s | `0.05` m/s / `0.30` rad/s |
-| Selected `pde_omega` | `5.0` rad/s | `2.09439510239` rad/s |
-| Selected launch `startup_timeout_sec` | `5.0` s | `100.0` s |
+- `ros2_ws/src/ros_esc`: shared algorithms, original configurable objects,
+  observation interface, optional plotting/bag analysis and simulated adapters.
+- `ros2_ws/src/ros_esc_interfaces`: eight messages; no command/acknowledgment
+  protocol between Gaussian runtime nodes.
+- `ros2_ws/src/turtlebot3_rotating_sensor`: Gazebo model, worlds, launch and
+  short original-method aliases.
+- `extremum-seeking`: original mathematical library.
+- `/home/mattb/physical_TB3_files_snapshot`: offline physical source mirror.
+  Physical `turtlebot3_vehicle_nodes` stays there and on the Pi, outside this
+  repository. `/home/mattb/tb3-pi` is live only when mounted.
 
-The last three rows are selected-case tuning, not universal environment
-requirements. The full comparison records hardware-only settings, source and
-pose routing, recorder timing, file owners, and legacy exceptions. Shared
-algorithm parameters are omitted. Gazebo algorithm nodes use `/clock`; bag
-recording/watchdogs retain their existing independent timing. Shared node
-constructors must preserve an explicit physical `False` override.
+Read [AGENTS.md](AGENTS.md) before agent work. Source clocks, hardware adapters,
+calibration and speed settings must be resolved for the selected environment;
+a simulation change does not authorize deployment or motion.
 
-Use the selected scenario/wrapper to resolve parameters. Bare Gazebo launch
-retains legacy/HBESC defaults, and the physical profile YAML is a parameter
-record rather than a ROS parameter loader. Copying it alone does not select
-the physical settings.
+## Preserved research
 
-The canonical project summary is the LaTeX-typeset
-[GESC + Robust Gaussian V1 Final Project Report](docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.pdf).
-Its [LaTeX source](docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.tex) and
-[auditable Markdown companion](docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.md)
-are retained beside it.
-Its [coverage matrix](docs/codex/gesc_gaussian/validation/phase_10_report_coverage.tsv)
-accounts for the full implementation package and material Phase 00–10
-evidence. Start with those files before relying on historical README examples.
+[Historical references and restoration evidence](docs/esc_history.md) locate
+frozen V1/V2 source, reports, failed experiments and the verified pre-refactor
+archive. Old implementations and policy tests are outside the active install.
+Historical results retain their original acceptance limits.
 
-V1 preserved legacy ESC behavior and implemented an opt-in
-`robust_gaussian_v1` pipeline with typed observability, an explicit supervisor,
-adaptive Gaussian fills, managed rosbag recording, deterministic scenarios,
-offline analysis, and a selected physical workflow. It demonstrated selected
-two-basin behavior, but it did **not** establish broad simulation robustness,
-broad physical readiness, or complete second-extremum physical acceptance.
-
-## Repository map
-
-- [`docs`](docs/README.md): project documentation, implementation package,
-  and historical reports formerly under `writing/`.
-- [`ros2_ws/src/ros_esc`](ros2_ws/src/ros_esc/README.md): algorithm, recorder,
-  validator, scenario runner, and analysis owners.
-- [`ros2_ws/src/ros_esc_interfaces`](ros2_ws/src/ros_esc_interfaces/README.md):
-  six robust typed messages and five preserved compatibility messages.
-- [`ros2_ws/src/turtlebot3_rotating_sensor`](ros2_ws/src/turtlebot3_rotating_sensor/README.md):
-  Gazebo model, launch graph, worlds, and simulation wrappers.
-- [`DSIM_GESC_Gaussian_Codex_Implementation_Package`](docs/DSIM_GESC_Gaussian_Codex_Implementation_Package/START_HERE.md):
-  original requirements, source material, phase prompts, templates, and tools.
-- [`docs/codex/gesc_gaussian`](docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.pdf):
-  Plans, statuses, handoffs, validation, technical reference, and final report.
-- [`EXPERIMENT_STORAGE.md`](EXPERIMENT_STORAGE.md): external run retention and
-  evidence-authority rules.
-
-## Minimal build
-
-New simulated light settings use `light_N_brightness_percent` (0–100), with
-100% mapped to a nominal 1600 lumens. See the
-[brightness guide](docs/simulation_brightness.md) for YAML/JSON examples and
-compatibility with existing lumen-based experiments.
-
-```bash
-cd /home/mattb/dsim-lab/ros2_ws
-source /opt/ros/humble/setup.bash
-colcon build --symlink-install \
-  --packages-select ros_esc_interfaces ros_esc turtlebot3_rotating_sensor
-source install/setup.bash
-```
-
-Use `algorithm_profile:=robust_gaussian_v1` explicitly for the V1 robust path;
-direct launches retain `legacy` compatibility defaults. Use
-`ros2 run ros_esc record_run` for managed evidence and
-`ros2 run ros_esc validate_run` for completeness. Verified simulation,
-analysis, and operator commands are in
-[Section 15 of the report](docs/codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.md#15-verified-operating-instructions).
-
-Raw bags, CSVs, plots, and physical run products remain outside Git. Failed and
-partial evidence is retained and must not be overwritten. The future intended
-branch `feature/gesc-gaussian-robustness-v2` must begin from a reviewed,
-committed V1 closeout; Phase 10 did not create it.
+V1 remains frozen at `1af67c6`; accepted V2 simulation remains at `d1779b6`.
+Physical V2 remains paused and unqualified. This refactor has not modified the
+Pi or run a new physical experiment.

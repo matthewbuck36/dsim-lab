@@ -2,6 +2,21 @@
 
 These instructions apply to the entire repository.
 
+## Active V3 work
+
+The current refactor authority is
+`docs/codex/gesc_gaussian/v3/refactor_plan.md`, with live evidence in
+`refactor_status.md` beside it. Start there, the active usage/architecture guides,
+current Git diff and environment guidance. The retained phase tools do not
+support V3; use the accepted plan's bounded plan/status/diff/receipt checkpoint
+equivalent for this refactor. Historical phase criteria remain attached to their
+original experiments and are not relabeled as V3 acceptance.
+
+Original ESC methods and V3 are active. Gaussian V1/V2 implementations and policy
+tests remain on frozen refs and in external archives. Keep interactive Gazebo
+Matplotlib plots; keep physical `turtlebot3_vehicle_nodes` outside this checkout.
+No repository refactor authorizes Pi deployment or physical motion.
+
 ## Simulation and physical environment boundary
 
 - This checkout is the **simulation/Gazebo** workspace. Read
