@@ -12,6 +12,8 @@ ros2_ws/log/
 # Python cache artifacts
 **/__pycache__/
 *.pyc
+*.egg-info/
+.pytest_cache/
 
 # Local AI assistant workspace/session artifacts
 .codex
