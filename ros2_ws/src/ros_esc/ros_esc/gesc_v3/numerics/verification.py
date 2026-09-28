@@ -2,9 +2,6 @@
 import math
 import numpy as np
 
-APPROACH_NS = 8_000_000_000
-COLLECTION_NS = 12_000_000_000
-TOTAL_NS = 20_000_000_000
 ADMISSION_RADIUS_M = .08
 
 def tracking_command(controller, center, position, yaw, elapsed_sec, *, approach=False):

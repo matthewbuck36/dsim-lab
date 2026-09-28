@@ -84,6 +84,18 @@ profiles are resolved from the selected workspace. Built-in object references
 use Python module names; custom original JSON objects may still use `filepath`.
 The V3 controller JSON owns its effective gains and speed caps. Scene parameters
 belong to the modeled cost configuration, not the controller's observations.
+The current V3 development caps are 0.10 m/s and 0.50 rad/s, matching the archived
+full-rotation light GESC baseline. Its linear gain remains 0.5. This portable
+development profile has not been deployed to the Pi; restored physical V1 is
+unchanged. Gazebo's visible light models use the selected cost JSON positions.
+
+Valid moving approach and verification have no elapsed-time deadline. They
+continue while motion, fresh inputs and candidate geometry remain valid, until
+the evidence is ready or the run is interrupted. Automated Gazebo test bounds
+do not impose an internal candidate deadline. Input freshness and finite
+numerical-worker budgets remain separate requirements. Escape likewise ends
+on measured spatial exit, invalid control evidence or interruption, rather
+than an elapsed attempt deadline.
 
 Analyze a **closed** ordinary bag directory; no project manifest is required:
 

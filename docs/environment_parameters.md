@@ -18,7 +18,7 @@ superseded. Measured arm speed in the retained operator run was about 17.2 RPM.
 | Algorithm pose | Observed `/odom` | OpenCR `/odom`; Vicon evaluation only |
 | Cost/phase | Modeled 5 Hz cost, observed joint phase | Serial cost, calibrated encoder phase; no fabricated ADC timestamp/sequence |
 | Arm | nominal 20 RPM, observed phase | nominal 20 RPM; speed variation must be measured |
-| Selected V3 gains/caps | controller JSON: k_vx0.5, k_wz5, max_vx0.05, max_wz0.30 | Not deployed; preserve working physical V1 configuration |
+| Selected V3 gains/caps | controller JSON: k_vx0.5, k_wz5, max_vx0.10, max_wz0.50 | Not deployed; preserve working physical V1 configuration |
 | Plotting | Automatic interactive Matplotlib; off headless | Off |
 | Recording | Optional standard bag; records `/clock` without forcing recorder clock | Optional observer contract; no control readiness |
 | Source owner | This checkout | Pi and `physical_TB3_files_snapshot`; physical package stays external |

@@ -120,13 +120,26 @@ def test_physical_profile_does_not_select_plotting_or_simulation_clock():
     assert resolved["v3"]["sample_rate_hz"] == 5.0
     assert resolved["v3"]["arm_rpm"] == 20.0
     assert resolved["v3"]["encoder_offset_deg"] == 54.0
-    assert (resolved["v3"]["max_vx"], resolved["v3"]["max_wz"]) == (0.05, 0.30)
+    # This portable development profile is not the installed physical V1.
+    assert (resolved["v3"]["max_vx"], resolved["v3"]["max_wz"]) == (0.10, 0.50)
     assert resolved["v3"]["k_vx"] == .5
     controller = _json(resolved["config_paths"]["controller"])
     assert resolved["v3"]["k_vx"] == controller["gains"]["k_vx"]
     assert resolved["v3"]["max_vx"] == controller["params"]["set_max_vx"]
     resolved["v3"]["max_vx"] = 99
-    assert resolve_profile("gesc_v3", "physical", directory=PROFILES)["v3"]["max_vx"] == .05
+    assert resolve_profile("gesc_v3", "physical", directory=PROFILES)["v3"]["max_vx"] == .10
+
+
+def test_v3_development_caps_match_archived_full_rotation_light_baseline():
+    original_path = ("ros2_ws/src/ros_esc/ros_esc/controller_node/controller_config_files/"
+                     "turtlebot_vehicle/gradient_methods/gesc_controller_full_rotation_voltage.json")
+    baseline = json.loads(subprocess.check_output(
+        ["git", "show", f"archive/pre-v3-refactor-20260928:{original_path}"], cwd=ROOT, text=True))
+    selected = resolve_profile("gesc_v3", directory=PROFILES)
+    actual = parse_object_config(_json(selected["config_paths"]["controller"]))
+    assert actual.max_vx == selected["v3"]["max_vx"] == baseline["params"]["set_max_vx"]
+    assert actual.max_wz == selected["v3"]["max_wz"] == baseline["params"]["set_max_wz"]
+    assert actual.k_vx == .5  # Match caps without silently doubling the gain.
 
 
 def _launch_module():
@@ -165,7 +178,7 @@ def test_launch_describes_observers_without_starting_graph(monkeypatch):
                for command in observer_commands)
     assert sum("live_plot_node" in command for command in observer_commands) == 1
     assert sum("record_bag" in command for command in observer_commands) == 1
-    assert sum(isinstance(action, Node) for action in actions) == 3  # spawn, observation, control
+    assert sum(isinstance(action, Node) for action in actions) == 5  # robot, two lights, observation, control
     context.launch_configurations.update(gui="false")
     assert not any("live_plot_node" in command_text(action) for action in module._launch(context) if type(action) is ExecuteProcess)
     context.launch_configurations.update(environment="physical")

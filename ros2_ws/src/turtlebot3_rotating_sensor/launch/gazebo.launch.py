@@ -53,6 +53,27 @@ def algorithm_commands(profile):
     return commands
 
 
+def light_marker_arguments(profile, share):
+    """Spawn visual markers from the same source positions as the cost model.
+
+    These are Gazebo scene assets only. No source coordinates are passed to
+    the controller, and acoustic/arbitrary expression models have no lights.
+    """
+    cost = json.loads(Path(profile["config_paths"]["cost"]).read_text())["CostFunction"]
+    parameters = cost.get("params", {})
+    if cost["object_name"] == "Multi_Light_Source_Cost":
+        positions = [(source["x"], source["y"])
+                     for source in parameters.get("light_sources") or []]
+    elif cost["object_name"] == "Photoresistor_Interpolated_Map":
+        positions = [(parameters["x_optimal"], parameters["y_optimal"])]
+    else:
+        return []
+    model = str(share / "models" / "light_source" / "model.sdf")
+    return [["-file", model, "-entity", f"manual_light_{index}",
+             "-x", str(x), "-y", str(y), "-z", "0.0"]
+            for index, (x, y) in enumerate(positions, start=1)]
+
+
 def _launch(context):
     get = lambda key: LaunchConfiguration(key).perform(context)
     profile = resolve_profile(get("profile"), get("environment"))
@@ -86,6 +107,9 @@ def _launch(context):
             "-x", str(start["x"]), "-y", str(start["y"]), "-Y", str(start["yaw"]),
         ], output="screen"),
     ]
+    actions.extend(Node(package="gazebo_ros", executable="spawn_entity.py",
+                        arguments=arguments, output="screen")
+                   for arguments in light_marker_arguments(profile, share))
     actions.extend(ros_process(command) for command in algorithm_commands(profile))
     if profile["algorithm"] == "gesc_v3":
         parameters = {"profile": get("profile"), "environment": get("environment"), "use_sim_time": True}

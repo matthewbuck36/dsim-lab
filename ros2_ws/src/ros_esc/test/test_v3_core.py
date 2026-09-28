@@ -192,6 +192,60 @@ def test_stationary_verification_cancels_research_without_terminal_stop():
     assert 'verification_translation_interrupted' in event_reasons(core)
 
 
+def test_fresh_moving_approach_continues_beyond_old_approach_and_total_deadlines():
+    core=make_core();drive(core)
+    core.begin_candidate((.2,0.),10.,10.)
+    candidate=core.candidate
+    # A moving trajectory stays in the neighborhood but outside the admission
+    # radius for45s. This is a policy fixture, not a Gazebo trajectory claim.
+    for index in range(1,226):
+        elapsed=index*.2
+        angle=.2*elapsed
+        phase=2*math.pi*elapsed/3
+        feed(core,10.+elapsed,index+1,x=.2-.2*math.cos(angle),
+             y=.2*math.sin(angle),phase=phase,raw=-2.+.3*math.cos(phase))
+        command=core.tick(10.+elapsed,10.+elapsed)
+        assert core.availability=='ACTIVE' and command.valid()
+        assert core.activity=='VERIFY' and core.candidate.identity==candidate.identity
+        assert core.candidate.collection_started is None
+    assert core.candidate.started==10.
+    assert not any('timeout' in reason for reason in event_reasons(core))
+    # Unlimited approach time does not make an old measurement usable.
+    assert core.tick(55.500001,55.500001)==Command()
+    assert core.availability=='WAITING_INPUT' and core.candidate is None
+
+
+def test_moving_collection_waits_for_late_evidence_without_coverage_deadline(monkeypatch):
+    core=make_core();drive(core,x=.05)
+    core.begin_candidate((.03,0.),10.,10.)
+    evaluate=core.evidence.evaluate
+    pending=[True]
+    def delayed_evidence(*args,**kwargs):
+        result=evaluate(*args,**kwargs)
+        return replace(result,ready=False,reason='synthetic_pending_coverage') if pending[0] else result
+    monkeypatch.setattr(core.evidence,'evaluate',delayed_evidence)
+    for index in range(1,226):
+        elapsed=index*.2
+        angle=.4*elapsed
+        phase=2*math.pi*elapsed/3
+        feed(core,10.+elapsed,index+1,x=.03+.02*math.cos(angle),
+             y=.02*math.sin(angle),phase=phase,raw=-2.+.3*math.cos(phase))
+        core.tick(10.+elapsed,10.+elapsed)
+        assert core.availability=='ACTIVE' and core.activity=='VERIFY'
+    assert core.candidate.started==10.
+    assert core.candidate.collection_started==pytest.approx(10.2)
+    # Release actual qualified evidence after45s; the same candidate proceeds
+    # to bounded numerical design, with its original tracking phase intact.
+    pending[0]=False
+    elapsed=45.2;angle=.4*elapsed;phase=2*math.pi*elapsed/3
+    feed(core,10.+elapsed,227,x=.03+.02*math.cos(angle),
+         y=.02*math.sin(angle),phase=phase,raw=-2.+.3*math.cos(phase))
+    core.tick(10.+elapsed,10.+elapsed)
+    assert core.activity=='DESIGN' and core.pending_fill is not None
+    assert core.design_started==pytest.approx(55.2)
+    assert core.candidate.started==10.
+
+
 def test_fill_worker_rejection_cancels_candidate_but_driving_continues():
     core=make_core();drive(core)
     core.begin_candidate((0.,0.),10.,10.)
@@ -415,13 +469,79 @@ def test_escape_uses_selected_raw_off_affine_on_weights():
     assert value.augmented==pytest.approx(value.gaussian+value.affine)
 
 
-def escaping_core():
+def escaping_core(*, exit_radius=None):
     core=make_core();drive(core)
     key=arm_design(core)
-    core.worker.results.append(JobResult(key,value=prepared_proposal()))
+    proposal=prepared_proposal()
+    if exit_radius is not None:
+        values=dict(proposal.version_values)
+        values['exit_radius']=exit_radius
+        proposal=replace(proposal,version_values=tuple(values.items()))
+    core.worker.results.append(JobResult(key,value=proposal))
     core.tick(10.05,10.05);feed(core,10.2,2,x=.002)
     assert core.activity=='ESCAPE'
     return core
+
+
+def slow_escape_beyond_former_deadline():
+    core=escaping_core(exit_radius=.8)
+    for index in range(1,226):
+        elapsed=index*.2
+        stamp=10.2+elapsed
+        phase=2*math.pi*elapsed/3
+        feed(core,stamp,index+2,x=.002+.005*elapsed,
+             phase=phase,raw=-2.+.3*math.cos(phase))
+        command=core.tick(stamp,stamp)
+        assert core.availability=='ACTIVE' and command.valid()
+        assert core.activity=='ESCAPE' and core.pending_search is None
+    assert core.escape_assisted
+    assert core.last_objective.affine!=0.
+    assert core.last_objective.augmented==pytest.approx(
+        core.last_objective.gaussian+core.last_objective.affine)
+    assert sum(event.kind=='escape_assist' for event in core.drain_events())==1
+    return core,stamp,index+2
+
+
+def test_escape_and_affine_guidance_continue_until_late_measured_spatial_exit():
+    core,stamp,sequence=slow_escape_beyond_former_deadline()
+    revision=core.objective_revision
+    start=stamp
+    # Continue the same fresh trajectory until it crosses the frozen exit
+    # radius and satisfies the actual progress / stable-exit hold criteria.
+    for step in range(1,151):
+        stamp=start+step*.2
+        x=.227+.05*step*.2
+        sequence+=1
+        feed(core,stamp,sequence,x=x,phase=2*math.pi*(stamp-10.2)/3)
+        core.tick(stamp,stamp)
+        if core.pending_search is not None:
+            break
+    assert core.pending_search=='escape_complete'
+    assert core.escape_tracker.latest.stable_exit
+    assert core.activity=='ESCAPE' and core.objective_revision==revision
+    assert core.affine_terms
+    feed(core,stamp+.2,sequence+1,x=x+.01,phase=2*math.pi*(stamp+.2-10.2)/3)
+    assert core.activity=='SEARCH' and not core.affine_terms
+    assert core.objective_revision==revision+1
+    assert core.last_objective.affine==0.
+    assert not any(reason=='escape_timeout' for reason in event_reasons(core))
+
+
+@pytest.mark.parametrize('ending',['input_expiry','operator_stop','frame_fault'])
+def test_unlimited_escape_duration_preserves_actual_stop_conditions(ending):
+    core,stamp,_=slow_escape_beyond_former_deadline()
+    if ending=='input_expiry':
+        command=core.tick(stamp+.500001,stamp+.500001)
+        assert core.availability=='WAITING_INPUT'
+    elif ending=='operator_stop':
+        command=core.stop(stamp+.1)
+        assert core.availability=='STOPPED'
+    else:
+        assert not core.update_pose(Pose(stamp+.1,.227,0.,0.,'map'),stamp+.1,stamp+.1)
+        command=core.tick(stamp+.1,stamp+.1)
+        assert core.availability=='FAULTED'
+    assert command==Command()
+    assert not core.affine_terms and core.escape_tracker is None
 
 
 def report_stable_exit(core):

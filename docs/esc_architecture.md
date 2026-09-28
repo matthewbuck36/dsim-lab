@@ -33,7 +33,8 @@ workspace. No physical adapter package is copied into `dsim-lab`.
 | First finite usable direction and fresh pose | ACTIVE immediately | No rotations, fit, plot or bag readiness required |
 | Missing/expired pose or direction | WAITING_INPUT; publish zero | Automatically resumes with coherent fresh input |
 | Duplicate, old, future or invalid sample | Reject without renewing freshness | A subsequent valid sample can recover |
-| Incomplete coverage, failed fit, expired numerical job, candidate leaves its neighborhood | Cancel affected research work; continue fresh basic control | Another candidate can be evaluated later |
+| Incomplete coverage with valid moving input | Keep the candidate and continue collecting evidence | Qualifies when adequate evidence arrives; no candidate deadline |
+| Failed fit, expired numerical job, candidate leaves its neighborhood | Cancel affected research work; continue fresh basic control | Another candidate can be evaluated later |
 | Optional plot, recorder, report or telemetry failure | Warn; control remains independent | Observer may be restarted separately |
 | Frame/time integrity conflict, competing command publisher, invalid actuator output | FAULTED; zero | Explicit process restart after correction |
 | Ctrl+C/SIGTERM | STOPPED; final zero while ROS context is live | Never automatically resumes |
@@ -72,13 +73,17 @@ simulator ground truth enters the controller.
 
 SEARCH/VERIFY/DESIGN use raw plus Gaussian cost. ESCAPE first uses Gaussian plus
 affine GESC repulsion, then switches to bounded direct assistance after a radial
-stall. Selected assist persists to a stable exit or its deadline. Effective
+stall. Selected assist persists to a measured stable exit while inputs remain
+valid; no elapsed escape deadline or V3 affine-guidance age cutoff applies. Effective
 objective changes apply at a new source observation; old directions/history are
 not silently relabeled or replayed. The current profile is the retained
 **two-source, one-fill** experiment, not a general unknown-source-count solver.
 
-The original selected forward gain is 0.5. V3 deliberately uses the physical
-target caps 0.05 m/s and 0.30 rad/s instead of the prior simulated 0.1/0.5 caps.
+The selected forward gain remains 0.5. The user-authorized development profile
+now matches the archived full-rotation light GESC caps: 0.10 m/s and 0.50 rad/s.
+The initial pilots used 0.05/0.30; their evidence remains tied to those settings.
+The baseline light controller's linear gain is 1.0, so matching caps does not
+claim complete controller parity. Physical V1 has not been changed.
 The selected field is run05's local 400-lumen source at
 (0.5740251485476348, 1.38581929876693) and 1600-lumen source at (3.5, 3.5).
 
@@ -96,7 +101,9 @@ evaluations per observation; exhaustion drops/reset that sample recoverably.
 VERIFY/DESIGN never switch to stationary collection. They retain the selected
 moving tracking law and cancel research when measured translation is absent
 (less than 1 mm over a 0.5 s check window), essential input expires or the
-candidate neighborhood is left. The retained fill-sweep predicate rejects a
+candidate neighborhood is left. Approach and verification have no elapsed-time
+deadline; the 8 cm entry radius remains a spatial evidence criterion.
+The retained fill-sweep predicate rejects a
 tracking route through a prior mathematical fill; cancellation returns to
 fresh GESC rather than stationary verification. A fill is not a physical
 obstacle, and this predicate is not collision detection.

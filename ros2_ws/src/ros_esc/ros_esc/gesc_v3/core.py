@@ -323,8 +323,10 @@ class V3Core:
         if selected is None:
             self.cancel_candidate(now, 'escape_direction_unavailable')
             return
+        # This term belongs to the active escape and is removed on measured
+        # completion or cancellation; elapsed time alone does not revoke it.
         self.affine_terms = (AffineTerm(tuple(fill.center),
-            tuple(.5*v for v in selected.direction), now, maximum_age_sec=35.),)
+            tuple(.5*v for v in selected.direction), now, maximum_age_sec=0.),)
         self.escape_direction = selected.direction
         self.escape_tracker = EscapeProgressTracker(geometry)
         self.escape_tracker.update(self.pose_history[-1])
@@ -334,9 +336,8 @@ class V3Core:
 
     def _verify(self, now):
         candidate = self.candidate
-        if now-candidate.started > 20.:
-            self.cancel_candidate(now, 'verification_timeout')
-            return
+        # Valid moving approach / coverage has no elapsed-time deadline. Fresh
+        # input, neighborhood, translation and evidence validity still govern it.
         position = (self.pose.x, self.pose.y)
         if math.dist(position, candidate.center) > self.config.candidate_radius:
             self.cancel_candidate(now, 'candidate_neighborhood_left')
@@ -355,11 +356,6 @@ class V3Core:
             self.candidate = candidate = Candidate(candidate.identity, candidate.center,
                 candidate.confirmed, candidate.started, now)
         if candidate.collection_started is None:
-            if now-candidate.started >= 8.:
-                self.cancel_candidate(now, 'verification_approach_timeout')
-            return
-        if now-candidate.collection_started > self.config.verification_timeout:
-            self.cancel_candidate(now, 'verification_coverage_timeout')
             return
         evidence = self.evidence.evaluate(candidate.center, self.config.candidate_radius,
                                            .15, ns(candidate.confirmed))
@@ -448,8 +444,8 @@ class V3Core:
                 tracker = self.escape_tracker
                 progress = tracker.update(Pose2D(pose.stamp, pose.x, pose.y, pose.yaw))
                 transition = None
-                if progress.stable_exit or now-tracker.geometry.started_sec > self.config.escape_timeout:
-                    transition = 'escape_complete' if progress.stable_exit else 'escape_timeout'
+                if progress.stable_exit:
+                    transition = 'escape_complete'
                 elif progress.stalled and not self.escape_assisted:
                     self.escape_assisted = True
                     self.emit(now, 'escape_assist', 'radial_progress_stalled')

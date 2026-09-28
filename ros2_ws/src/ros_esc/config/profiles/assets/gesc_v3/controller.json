@@ -9,7 +9,7 @@
     "wheel_radius": 0.033,
     "wheel_distance": 0.158,
     "wheel_max_rpm": 70,
-    "set_max_vx": 0.05,
-    "set_max_wz": 0.3
+    "set_max_vx": 0.1,
+    "set_max_wz": 0.5
   }
 }

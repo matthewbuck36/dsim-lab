@@ -78,16 +78,14 @@ class CoreConfig:
     sensor_radius: float = 0.18
     washout_omega: float = 1.0
     candidate_radius: float = 0.75
-    verification_timeout: float = 12.0
     preparation_timeout: float = 5.0
-    escape_timeout: float = 35.0
     maximum_history: int = 20_000
     maximum_snapshot: int = 4_000
 
     def __post_init__(self):
         for name in ('input_expiry', 'control_hz', 'max_vx', 'max_wz', 'k_vx',
                      'k_wz', 'sensor_radius', 'washout_omega', 'candidate_radius',
-                     'verification_timeout', 'preparation_timeout', 'escape_timeout'):
+                     'preparation_timeout'):
             value = getattr(self, name)
             if not math.isfinite(value) or value <= 0:
                 raise ValueError(f'{name} must be finite and positive')

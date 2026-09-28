@@ -281,3 +281,149 @@ behavior is wrong. Best-source telemetry does not stop a run automatically.
 Recoverable data loss should permit automatic recovery; this does not remove
 essential motion inhibition when safe control is unavailable. No V3 hardware
 deployment or physical test is authorized by these Gazebo results.
+
+## Baseline-speed / no-verification-deadline amendment — active
+
+User requested higher caps matching baseline full-rotation light GESC,
+removal of arbitrary approach timing, and restoration of visible lights.
+See the [plan amendment](gazebo_plan.md). Evidence root:
+`/home/mattb/Experiments/GESC-Gaussian/v3/gazebo_speed_lights_20260928T231502Z`.
+Starting commit `58ddec7`, clean tree before edits; no physical operations.
+
+- Archived `gesc_controller_full_rotation_voltage.json` has 0.10 m/s and
+  0.50 rad/s caps. Selected V3 controller JSON now matches these. Its gain
+  remains 0.5/5, while baseline linear gain is 1.0. The same portable V3
+  development profile is available to either environment adapter, but has
+  never been deployed to the Pi; its restored V1 source/settings are unchanged.
+- Removed 8 s approach, 20 s total verification, and 12 s coverage cancellation,
+  plus unused configuration/constants. Fresh moving evidence can take as long
+  as needed. The 8 cm entry radius, neighborhood, translation, freshness and
+  bounded worker computations remain. The existing 35 s escape policy was
+  audited and is unchanged; it is not a FAILSAFE transition.
+- Light spawning was omitted in refactor `73d1975`: the XML spawn actions were
+  removed without replacements in the Python launch. Original SDF and modeled
+  field were preserved. Restored one-shot Gazebo spawners use positions directly
+  from selected light-cost JSON; acoustic fields do not gain fictitious lights.
+  No persistent observer/control node or duplicated source configuration added.
+- Focused deadline tests: 67 PASS, 1.49 s. Light tests: 5 PASS, 0.13 s; earlier
+  fixture naming errors retained. Build: all three packages PASS, 2.21 s.
+  Installed full suite: **236 PASS**, no skips, 372 existing warnings, 16.59 s.
+  Receipts: `approach_deadline_tests.log`, `light_marker_test_receipt.json`,
+  `build.log`, `installed_tests.log`. Full test command is the 75 s installed
+  invocation used above, with `--basetemp` at this root's `installed_tests`.
+- Run06 active: GUI/live plot/recording, nominal 20 RPM, selected 5 Hz and
+  600 s wall bound plus 20 s shutdown grace. Exact manifest, changed-source
+  archive, source diff, archived baseline JSON and selected controller/cost
+  JSON are retained under `run06_baseline_caps_no_verification_deadline`.
+  This is a multi-change development pilot, not isolated speed attribution.
+- Both `manual_light_1` and `manual_light_2` spawned successfully. Read-only
+  Gazebo model poses match (0.574025, 1.38582, 0) and (3.5, 3.5, 0); original
+  noncolliding marker visible in `gazebo_lights.png`. Full behavior pending.
+
+### Run06 outcome — fill, measured escape and stronger-source approach observed
+
+The agent interrupted the run after observing approximately one minute near
+the stronger source, rather than waiting for the maximum 600 s budget.
+`operator_stop.json` records the exact launch PID/start identity and SIGINT.
+This observational stop was not a predeclared statistical convergence gate.
+Exit 0; bag closed; all owned processes ended cleanly. The separate read-only
+event echo was also stopped. `cleanup.json` records no remaining graph process.
+
+Closed bag chronology (`pilot_analysis.json`):
+
+| Simulated time | Observed transition |
+| --- | --- |
+| 78.7 s | Candidate confirmed; moving VERIFY |
+| 89.8 s | DESIGN, 41 source evidence samples |
+| 90.0 s | Fill 1 committed; ESCAPE begins |
+| 93.9 s | Radial-progress stall invokes existing escape assistance |
+| 108.8 s | `escape_complete` |
+| 109.0 s | Fresh observation applies return to SEARCH |
+| 217.1–233.2 s | Another moving verification/ranking, then SEARCH |
+| 269.3 and 323.4 s | Further candidate ranking returns to SEARCH |
+| 349.4 s | Agent SIGINT; STOPPED/final zero |
+
+- Fill center (0.657987, 1.427387), about 9.37 cm from the configured local
+  source. Amplitude 0.1, principal widths 0.5062 m, exit radius 1.3668 m,
+  fitted sample count 30. This is an actual committed fill, not a proposal.
+- First VERIFY lasted 11.1 s with 0.366 m measured path; 21 offline translation
+  windows all exceeded 1 mm (minimum 8.86 mm). DESIGN lasted 0.2 s, with
+  3.25 mm measured translation over its recorded 0.17 s odometry segment.
+  Neither state had zero commands. Short DESIGN cannot support a full 0.5 s
+  translation window; report that evidence limit explicitly.
+- Escape completed after 18.8 s, before the then-active 35 s deadline. Its
+  outcome was `escape_complete`, not `escape_timeout`; assistance was used.
+- Whole run: 14.951 m path, 4.803 m net displacement; 1,710 valid observations,
+  no invalid notices; 4.902 Hz cost, 19.985 RPM mean arm, RTF 0.9946. Recorded
+  commands respect the selected 0.10/0.50 caps.
+- Closest stronger-source distance 0.865 mm at 241.318 s; final distance
+  146.4 mm. A finite live interval 228.262–287.966 s stayed near it while
+  moving. No `best_source` event occurred; physical observation/agent stopping
+  is separate from internal source ranking or automatic goal hold.
+- Final zero/STOPPED and process shutdown are confirmed, but no odometry after
+  the final zero was recorded. Actual final stationary duration is unavailable.
+
+This selected Gazebo case now demonstrates Gaussian filling, assisted escape,
+return to SEARCH and arrival near the stronger source. It does not establish
+general robustness, independent effect of each change, a faithful Arduino/
+servo/timing model, or physical qualification. The previous failed cases remain
+unchanged. Closed-bag plots/CSV are in `offline_analysis/`.
+
+### Remaining elapsed escape cutoff removed after Run06
+
+Further source audit confirmed that ESCAPE's 35 s return-to-SEARCH transition
+and the coupled 35 s affine-age cutoff were behavioral policies, not freshness
+or command-authority requirements. The user's general instruction applies to
+both. They are removed from the selected V3 core; generic affine helper defaults
+and mathematical decay remain unchanged. Escape now waits for measured stable
+exit, actual control invalidity or operator interruption. Existing stalled-
+progress assistance and its measurement windows remain.
+
+Run06 predates this final edit; its escape finished at 18.8 s, so neither removed
+cutoff had fired in that case. Later long-escape regressions are separate evidence
+and do not rewrite Run06's source snapshot. Final test results follow below.
+
+### Spatial corroboration and final checkpoint
+
+`run06_baseline_caps_no_verification_deadline/outcome_geometry.json` supplies
+additional independent odometry measurements:
+
+- Exit radius 1.36677 m was crossed at 107.630 s. Replaying the retained
+  progress tracker reaches stable exit at 108.650 s after 1.020 s outside,
+  with 0.30071 m radial gain over its 3 s window. This corroborates the runtime
+  `escape_complete` event at 108.8 s; the exact callback subset is not replayed.
+- ESCAPE has 384 mapped commands with no zero translation/turn-only samples.
+  All 37 offline translation windows exceed 1 mm, minimum 5.187 mm. Thus this
+  case preserves observed translation during VERIFY, short DESIGN and ESCAPE.
+- First stronger-source distance crossings: 0.15 m at 220.884 s, 0.10 m at
+  221.870 s. These are descriptive measurements, not predeclared acceptance
+  thresholds. Strict internal source ranking remains uncorroborated because
+  no `best_source` event occurred.
+- Replayed candidate center (0.621410, 1.397905); recorded path first enters
+  its 8 cm radius at 83.184 s, 4.484 s after the candidate event. The old
+  eight-second approach limit therefore would not demonstrably bind this
+  higher-cap path. Its improvement cannot be credited solely to timer removal.
+
+After the final escape-policy edit, focused core/numerics/worker regressions:
+**71 PASS**, 1.90 s (`escape_deadline_tests.log`). The installed full suite:
+**240 PASS**, no skips, 372 existing NumPy matrix warnings, 17.00 s
+(`final_installed_tests.log`, artifacts `final_installed_tests/`). Exact command:
+
+```bash
+timeout 75s bash -c 'source /opt/ros/humble/setup.bash; source ros2_ws/install/setup.bash; export ROS_LOCALHOST_ONLY=1; python3 -m pytest -q ros2_ws/src/ros_esc/test --basetemp=/home/mattb/Experiments/GESC-Gaussian/v3/gazebo_speed_lights_20260928T231502Z/final_installed_tests'
+```
+
+Tests retain a valid moving candidate/escape beyond the old deadlines, then
+admit later real evidence/spatial exit, and verify that stale inputs, operator
+stop and integrity faults still remove motion/escape authority. Generic affine
+defaults/decay and finite numerical budgets remain intact. The symlink install
+resolves current Python source; no build dependency/interface changed after
+the successful three-package build.
+
+The user-requested speed, deadline and light restoration changes are complete
+for this iteration. `git diff --check` passes; the bounded source/test/doc
+checkpoint is committed on `refactor/esc-v3`, with final Git status and unchanged
+frozen refs recorded in external `checkpoint.json`. No push or physical action.
+All runs/tests/temporary observers have ended. Broader V3 qualification remains
+open: realistic acquisition/serial/servo/pose timing, noise and load, repeatability,
+and internal ranking still need separate evidence. Preserve working physical V1.
