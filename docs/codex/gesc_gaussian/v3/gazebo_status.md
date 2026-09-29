@@ -618,3 +618,101 @@ off; the 5.0 experiment remains externally reproducible. Exactly one run was
 performed. No further tests, Pi changes or physical qualification are implied.
 The bounded source/test/documentation checkpoint is committed on `refactor/esc-v3`;
 external `checkpoint.json` records clean Git state and unchanged frozen refs.
+
+## Selected affine slope 2.0 — selected-case escape and global approach
+
+The user selected 2.0 and authorized exactly one more simulation run, retaining
+direct assistance off. This updates the selected development profile; the
+omitted-field compatibility default remains 0.5. Starting clean HEAD `a3383f0`,
+no active Gazebo/recording processes. Evidence root:
+`/home/mattb/Experiments/GESC-Gaussian/v3/affine_2_20260929T013558Z`.
+
+Only the controller JSON magnitude and two selected-profile test expectations
+changed; no runtime algorithm code changed. Focused core/profile/node tests:
+126 PASS, no skips, 372 existing warnings, 2.51 s. Three-package installed
+build PASS in 2.22 s. Exact commands and configuration comparison: `validation.json`;
+logs `focused_tests.log`, `build.log`. Installed and captured custom profiles
+both select 2.0/assistance false, all other settings match the previous run.
+
+Exactly one GUI/live-plot/recorded run started, tool session 73254, launch
+PID/start identity in `started.json`. Outer bound 600 s wall plus 20 s shutdown
+grace. Manifest pins 215 runtime files and six external configurations.
+The agent stopped by SIGINT after sustained observed stronger-source vicinity;
+the live trace was still orbiting about 0.21–0.33 m from the source. This is an
+observation stop, not proof of source-center convergence. Launch PID/start/argv
+were checked before signaling (`operator_stop.json`). Session 73254 exited 0.
+
+Closed bag: `bags/20260929T013734.407314Z-52815`. Recording finalized; all runtime
+nodes exited cleanly, no domain 191 processes remained, and all source/config
+pins matched. No pre-stop traceback. Matplotlib/Tkinter emitted KeyboardInterrupt
+during SIGINT and then exited cleanly. No SIGTERM/SIGKILL escalation: the generic
+`signal_handler(SIGINT/SIGTERM)` label is not a sent SIGTERM. `cleanup.json`
+retains the distinction. No physical operations or additional simulation runs.
+
+The installed ordinary-bag analyzer completed with exit 0, producing trajectory,
+signals, summary and CSVs in `analysis/`. Exact invocation:
+
+```bash
+timeout 120s bash -c 'source /opt/ros/humble/setup.bash; source ros2_ws/install/setup.bash; ros2 run ros_esc analyze_bag /home/mattb/Experiments/GESC-Gaussian/v3/affine_2_20260929T013558Z/bags/20260929T013734.407314Z-52815 --output /home/mattb/Experiments/GESC-Gaussian/v3/affine_2_20260929T013558Z/analysis --csv'
+```
+
+Closed-recording analysis corrects the last live-probe impression: the robot
+moved inward after that probe and ended 0.023327 m from the stronger source.
+It remained within 0.10 m for its final 21.352 s. No active bag was inspected.
+The user then clarified that a roughly 20–30 cm global-source orbit is already
+sufficiently close for the current testing goal. This run met that observed
+arrival goal before its later inward approach; exact-center convergence is not
+required. Record this preference for subsequent tests without adding a runtime
+arrival gate or changing historical measurements.
+
+| Simulated time | Recorded behavior |
+| --- | --- |
+| 144.7 s | First candidate admitted; moving VERIFY |
+| 149.9 s | DESIGN, 46 evidence samples |
+| 150.2 s | One fill committed; ESCAPE |
+| 172.8 s | Measured `escape_complete` |
+| 173.0 s | Return to SEARCH |
+| 204.389 s | First within 0.5 m of stronger source, remaining inside afterward |
+| 293.1–306.2 s | Moving verification/ranking near stronger source, then SEARCH |
+| 297.991 s | First within 0.10 m, remaining inside afterward |
+| 319.3 s | SIGINT; STOPPED and final zero |
+
+| Escape metric | Magnitude 0.5 | Selected 2.0 | Magnitude 5.0 |
+| --- | ---: | ---: | ---: |
+| Start to completion | 21.8 s | 22.6 s | 20.4 s |
+| Measured path | 2.001 m | 2.097 m | 1.880 m |
+| Linear commands at cap | 84.16% | 92.79% | 96.11% |
+| Angular commands at cap | 64.71% | 91.27% | 95.62% |
+| Signed linear-command reversals | 25 | 32 | 27 |
+
+Selected 2.0 produced the user's preferred higher saturation while still
+escaping without direct assistance. It did not escape faster in this one
+comparison. All three are single executions with different pre-escape histories
+and fill centers; neither monotonic performance nor physical suitability is
+established. First candidate times 78.5 / 144.7 / 276.4 s all precede affine
+activation; the underlying detector-admission variability remains unresolved.
+
+In the new run, all 458 event-bounded escape commands have nonzero translation,
+with no turn-only commands or direct-assistance events. Measured escape path
+2.09696 m, net displacement 1.43926 m; all 44 half-second displacement screens
+exceed 1 mm, minimum 4.487 mm. There are 32 signed reversals over the 22.8 s
+ESCAPE-to-SEARCH interval (1.4035/s); these are command changes, not measured
+stops. Moving verification/design also translated. Offline geometry corroborates
+the 1.36677 m exit radius: crossing 171.647 s, stable exit 172.667 s; radius
+1.47917 m near runtime completion with 0.28447 m three-second radial progress.
+This is recorded-odometry support, not an exact callback replay.
+
+Actual 1563 valid observations at 4.90196 Hz; no invalid observations, duplicate
+or regressing source stamps. Mean observed arm 19.9795 RPM. No `best_source`
+event; proximity is descriptive, not broad convergence or internal-ranking
+qualification. Final zero is recorded, but only one odometry receipt follows
+about 9.67 ms later, insufficient to establish a measured stopping interval.
+
+Detailed metrics, reproducible scripts and three-way trajectory comparison are
+retained in the evidence root (`pilot_analysis.json`, `outcome_geometry.json`,
+comparison report/JSON and `trajectory_comparison.png`). The selected profile
+remains magnitude 2.0 with direct assistance off. This evening's authorized
+single run is complete; no further simulation was launched. Focused checks,
+build and diff review passed; the bounded checkpoint is committed on
+`refactor/esc-v3`, with clean Git state/frozen refs in external `checkpoint.json`.
+Working physical V1 and broader V3 qualification boundaries remain unchanged.

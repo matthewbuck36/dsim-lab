@@ -112,3 +112,29 @@ measured translation, global proximity, acquisition cadence and shutdown.
 Do not simultaneously tune gain, caps, stall windows, assistance distance or
 sampling. Do not automatically launch another test if this case fails. Keep
 all results, ordinary V3 defaults and physical V1 intact.
+
+## User amendment — selected slope 2.0 and final evening run
+
+After the 5.0 comparison, the user selected affine magnitude 2.0 for the V3
+simulation profile and authorized exactly one more visible run before leaving.
+This supersedes the preceding instruction to retain selected magnitude 0.5;
+older custom profiles with the field omitted still resolve to 0.5. Direct
+assistance remains off. Preserve gains, caps, nominal 5 Hz/20 RPM, field/start,
+Gaussian/exit rules and all prior evidence. This is a configuration-only change.
+
+Update the existing selected-profile expectations, run focused regressions and
+an installed build, then one recorded GUI/live-plot trial with a 600 s wall
+maximum and 20 s shutdown grace. Stop after sustained observed stronger-source
+proximity or at the outer bound, and report the actual termination reason.
+Compare closed-recording escape duration, command saturation, translation,
+candidate/fill timing and global proximity against retained 0.5/5.0 runs.
+Different pre-escape histories remain a causal-comparison limitation. Preserve
+failure or incompleteness without launching another run. Finish analysis,
+shutdown and the Git/evidence checkpoint; leave selected slope 2.0 for the next
+session. No Pi actions or new physical qualification.
+
+The user subsequently clarified that orbiting about 20–30 cm from the global
+source is sufficiently close for the current testing goal. Treat that as
+acceptable observed global-source vicinity; do not require convergence to the
+exact source center. Preserve measured distances and internal-ranking evidence
+separately. This evaluation preference does not add an automatic runtime stop.

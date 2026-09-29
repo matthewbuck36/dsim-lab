@@ -84,7 +84,7 @@ def unavailable(_message):
 def test_selected_no_assistance_setting_reaches_core_without_blocking_startup(owner):
     node, *_ = owner
     assert node.core.config.direct_escape_assistance_enabled is False
-    assert node.core.config.escape_affine_magnitude == .5
+    assert node.core.config.escape_affine_magnitude == 2.
     start(owner)
 
 
