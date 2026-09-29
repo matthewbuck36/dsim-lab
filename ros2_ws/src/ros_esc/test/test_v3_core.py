@@ -483,6 +483,38 @@ def escaping_core(*, exit_radius=None, config=None):
     return core
 
 
+def test_larger_affine_magnitude_scales_only_escape_slope_without_enabling_assistance():
+    baseline_config=CoreConfig(direct_escape_assistance_enabled=False)
+    baseline=escaping_core(config=baseline_config)
+    stronger=escaping_core(config=replace(baseline_config,escape_affine_magnitude=5.))
+    original_term=baseline.affine_terms[0]
+    stronger_term=stronger.affine_terms[0]
+    np.testing.assert_allclose(stronger_term.b0,10.*np.asarray(original_term.b0))
+    assert math.hypot(*stronger_term.b0)==pytest.approx(5.)
+    assert stronger_term==replace(original_term,b0=stronger_term.b0)
+    np.testing.assert_array_equal(stronger.escape_direction,baseline.escape_direction)
+    assert stronger.escape_tracker.geometry==baseline.escape_tracker.geometry
+    assert stronger.last_objective.raw==baseline.last_objective.raw
+    assert stronger.last_objective.gaussian==baseline.last_objective.gaussian
+    assert stronger.last_objective.affine==pytest.approx(10.*baseline.last_objective.affine)
+    assert stronger.last_objective.augmented==pytest.approx(
+        stronger.last_objective.gaussian+stronger.last_objective.affine)
+    for core in (baseline,stronger):
+        assert core.config.direct_escape_assistance_enabled is False
+        assert not core.escape_assisted
+        command=core.tick(10.25,10.25)
+        assert core.availability=='ACTIVE' and core.activity=='ESCAPE'
+        assert abs(command.vx)<=baseline_config.max_vx
+        assert abs(command.wz)<=baseline_config.max_wz
+    assert replace(stronger.config,escape_affine_magnitude=.5)==baseline.config
+
+
+@pytest.mark.parametrize('value',[0.,-1.,math.nan,math.inf,-math.inf,True,'5',None])
+def test_escape_affine_magnitude_requires_finite_positive_number(value):
+    with pytest.raises(ValueError,match='escape_affine_magnitude must be finite and positive'):
+        CoreConfig(escape_affine_magnitude=value)
+
+
 def slow_escape_beyond_former_deadline(*, direct_assistance=True):
     core=escaping_core(exit_radius=.8,
         config=CoreConfig(direct_escape_assistance_enabled=direct_assistance))

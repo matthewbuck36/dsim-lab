@@ -93,6 +93,9 @@ The V3 controller JSON currently sets `direct_escape_assistance_enabled: false`
 for the user-requested unaided escape experiment. Gaussian and affine cost
 shaping remain active; only direct heading-command assistance is disabled.
 Setting this boolean true retains the earlier fallback for explicit comparisons.
+The same controller JSON accepts `escape_affine_magnitude` (default 0.5).
+Use an external custom profile for one-off slope comparisons so the built-in
+development settings stay unchanged.
 
 Valid moving approach and verification have no elapsed-time deadline. They
 continue while motion, fresh inputs and candidate geometry remain valid, until

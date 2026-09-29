@@ -515,3 +515,106 @@ repeats, or physical qualification. Higher affine magnitude and the proposed
 15 s/shorter-distance fallback are not needed for this observed outcome and
 remain unapplied. Keep direct assistance disabled for subsequent V3 studies;
 retain the selectable historical fallback and all earlier failed evidence.
+
+## Tenfold affine-slope pilot — selected-case success
+
+User requested one exploratory run with a much larger affine slope and direct
+assistance off. Starting clean HEAD `240834c`; no Gazebo or recording active.
+Evidence root: `/home/mattb/Experiments/GESC-Gaussian/v3/affine_10x_20260929T011129Z`.
+The external custom profile selects 5.0 versus retained baseline 0.5;
+ordinary V3 defaults remain unchanged. All other selected settings are preserved.
+See the plan amendment; no Pi operations.
+
+- `escape_affine_magnitude` now passes through the existing controller JSON,
+  profile resolver and V3 node to the core. Default/built-in 0.5; only this
+  external custom profile selects 5.0. The direction, decay, objective weights,
+  exit criteria, caps/gains and direct-assistance setting remain unchanged.
+- Focused tests: 126 PASS, no skips, 372 existing warnings, 2.63 s. Initial 125/1
+  result was a new test's NumPy array-equality assertion; corrected comparator
+  without runtime changes, retaining both logs and `affine_focused_receipt.json`.
+- Three-package installed build passed in 2.19 s. Installed resolution and independent
+  review confirm the external 5.0 and built-in 0.5 selections, both assistance
+  false. `comparison_preflight.json` confirms all other controller fields and
+  cost/rotation configuration match the preceding no-assist run.
+- Exactly one visible Gazebo run: tool session 84326, recorded launch PID/start
+  identity in `started.json`, maximum 600 s wall plus 20 s grace. `manifest.json`
+  pins 215 runtime files and six external configuration files. GUI, live plot
+  and bag enabled. No active SQLite inspection; all analysis used the closed bag.
+
+The agent sent SIGINT after sustained observed stronger-source proximity,
+checking launch PID/start identity first (`operator_stop.json`). This was an
+observation stop, not statistical convergence. Session 84326 exited 0; all
+runtime nodes exited cleanly, recording finalized, no tracebacks or escalation,
+and no domain 191 processes remained. Runtime source and external configuration
+pins were unchanged. See `cleanup.json` and `launch.log`.
+
+Closed bag: `bags/20260929T011459.310299Z-50159`. The installed ordinary-bag
+analyzer produced `analysis/trajectory.png`, `signals.png`, `summary.json` and
+CSVs. Its exact invocation was:
+
+```bash
+timeout 120s bash -c 'source /opt/ros/humble/setup.bash; source ros2_ws/install/setup.bash; ros2 run ros_esc analyze_bag /home/mattb/Experiments/GESC-Gaussian/v3/affine_10x_20260929T011129Z/bags/20260929T011459.310299Z-50159 --output /home/mattb/Experiments/GESC-Gaussian/v3/affine_10x_20260929T011129Z/analysis --csv'
+```
+
+Existing offline pilot/geometry analysis used the captured controller/cost
+configuration. Scripts, logs and results are retained beside `comparison.json`
+and `comparison.md`; no decode errors. The focused test command and source
+hashes are in `affine_focused_receipt.json`. The full suite was not rerun for
+this bounded coefficient change; the preceding 249-test result belongs to the
+previous checkpoint, not this one.
+
+| Simulated time | Recorded behavior |
+| --- | --- |
+| 276.4 s | First candidate admitted; moving VERIFY begins |
+| 279.3 s | DESIGN begins |
+| 279.6 s | One Gaussian committed; ESCAPE begins |
+| 300.0 s | Measured `escape_complete`; return to SEARCH |
+| 384.1–397.3 s | Moving candidate verification/ranking; return to SEARCH |
+| 413.1 s | Agent SIGINT; STOPPED and final zero |
+
+| Escape metric | Previous magnitude 0.5 | Magnitude 5.0 |
+| --- | ---: | ---: |
+| Start to recorded completion | 21.8 s | 20.4 s |
+| Measured path | 2.001 m | 1.880 m |
+| Linear commands at cap | 84.16% | 96.11% |
+| Angular commands at cap | 64.71% | 95.62% |
+| Signed linear-command reversals | 25 | 27 |
+| Reversals per ESCAPE event second | 1.136 | 1.324 |
+| Returned SEARCH to first within 0.5 m of global source | 28.976 s | 25.746 s |
+
+Reversal rates use start-to-SEARCH event intervals (22.0 s versus 20.4 s),
+while completion elapsed uses the actual `escape_complete` event. Both runs
+have zero direct-assistance events and no zero-translation/turn-only commands
+during escape. In the new run, all 39 half-second measured escape-displacement
+screens exceed 1 mm, minimum 2.57 mm; VERIFY and DESIGN also translated.
+Signed command reversals remain ordinary GESC behavior, not direct assistance.
+
+Recorded odometry corroborates the 1.36677 m escape radius: first crossing
+298.886 s, offline stable exit 299.906 s, runtime completion 300.0 s with
+nearest-pose radius 1.47592 m and 0.28910 m radial progress over three seconds.
+This is an offline geometry check, not an exact callback-subset replay.
+
+Actual 2024 valid observations at 4.90196 Hz, mean arm 19.9957 RPM, no invalid
+observations, source gaps above 0.5 s, duplicate stamps or regressions. First
+within 0.5 m of the stronger source at 325.746 s and within 0.10 m at 389.190 s;
+remained inside each afterward through the final recorded pose at 413.126 s.
+Final distance 0.08455 m, closest 0.05064 m. These are descriptive thresholds;
+no `best_source` event occurred. Final zero is recorded, but the sole subsequent
+odometry receipt followed it by only about 62 microseconds, insufficient to prove
+a measured stationary interval.
+
+The conspicuous longer initial circling preceded affine activation: first
+candidate 276.4 s versus 78.5 s, with no earlier candidate, cancellation or
+post-startup WAITING_INPUT. The affine term is applied only on ESCAPE entry;
+the delay is in SEARCH/detector admission, not evidence of stronger affine
+impeding verification. Its deeper cause was not isolated. Fill centers differ
+by 0.115 m, retained fit samples 40 versus 30, and fit condition/residual differ;
+amplitude 0.1 and width 0.506211 m match. Therefore this single pair cannot
+isolate a general performance advantage from the coefficient alone.
+
+The tenfold slope yielded much more command clipping and only a small observed
+escape-time reduction. Keep the ordinary profile at 0.5 with direct assistance
+off; the 5.0 experiment remains externally reproducible. Exactly one run was
+performed. No further tests, Pi changes or physical qualification are implied.
+The bounded source/test/documentation checkpoint is committed on `refactor/esc-v3`;
+external `checkpoint.json` records clean Git state and unchanged frozen refs.

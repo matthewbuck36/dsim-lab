@@ -11,6 +11,7 @@
     "wheel_max_rpm": 70,
     "set_max_vx": 0.1,
     "set_max_wz": 0.5,
-    "direct_escape_assistance_enabled": false
+    "direct_escape_assistance_enabled": false,
+    "escape_affine_magnitude": 0.5
   }
 }

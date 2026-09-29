@@ -1,7 +1,9 @@
 """V3 ROS boundary fault isolation on an isolated local DDS domain."""
 
+import json
 import math
 import os
+from pathlib import Path
 import time
 from types import SimpleNamespace
 
@@ -82,7 +84,41 @@ def unavailable(_message):
 def test_selected_no_assistance_setting_reaches_core_without_blocking_startup(owner):
     node, *_ = owner
     assert node.core.config.direct_escape_assistance_enabled is False
+    assert node.core.config.escape_affine_magnitude == .5
     start(owner)
+
+
+@pytest.mark.parametrize('magnitude',[None,5.])
+def test_custom_affine_magnitude_reaches_actual_node_and_old_profile_defaults(tmp_path,magnitude):
+    assert os.environ.get('ROS_LOCALHOST_ONLY') == '1'
+    selected=runtime.resolve_profile('gesc_v3')
+    controller=json.loads(Path(selected['config_paths']['controller']).read_text())
+    if magnitude is None:
+        controller['params'].pop('escape_affine_magnitude',None)
+    else:
+        controller['params']['escape_affine_magnitude']=magnitude
+    controller_path=tmp_path/'controller.json'
+    controller_path.write_text(json.dumps(controller))
+    profile={key:selected[key] for key in ('algorithm','append_encoder','start','v3')}
+    profile['configs']=dict(selected['config_paths'],controller=str(controller_path))
+    profile_path=tmp_path/'profile.json'
+    profile_path.write_text(json.dumps(profile))
+    context=Context()
+    rclpy.init(context=context,domain_id=190)
+    node=None
+    try:
+        node=runtime.V3Controller(worker=InertWorker(),context=context,parameter_overrides=[
+            Parameter('profile',value=str(profile_path)),
+            Parameter('environment',value='physical'),Parameter('use_sim_time',value=False)])
+        assert node.core.config.escape_affine_magnitude == (.5 if magnitude is None else magnitude)
+        assert node.core.config.direct_escape_assistance_enabled is False
+        assert (node.core.config.max_vx,node.core.config.max_wz)==(.1,.5)
+        assert (node.core.config.k_vx,node.core.config.k_wz)==(.5,5.)
+    finally:
+        if node is not None:
+            node.stop()
+            node.destroy_node()
+        context.try_shutdown()
 
 
 @pytest.mark.parametrize('publisher', ['filter_publisher', 'control_publisher', 'event_publisher', 'fill_publisher'])

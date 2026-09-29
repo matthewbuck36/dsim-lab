@@ -76,6 +76,7 @@ def resolve_profile(profile="gesc_v3", environment="gazebo", *, directory=None):
             max_vx=controller["params"]["set_max_vx"], max_wz=controller["params"]["set_max_wz"],
             direct_escape_assistance_enabled=controller["params"].get(
                 "direct_escape_assistance_enabled", True),
+            escape_affine_magnitude=controller["params"].get("escape_affine_magnitude", 0.5),
         )
     entity = selected["entity"]
     selected["topics"] = {

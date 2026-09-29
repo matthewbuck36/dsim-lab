@@ -326,7 +326,8 @@ class V3Core:
         # This term belongs to the active escape and is removed on measured
         # completion or cancellation; elapsed time alone does not revoke it.
         self.affine_terms = (AffineTerm(tuple(fill.center),
-            tuple(.5*v for v in selected.direction), now, maximum_age_sec=0.),)
+            tuple(self.config.escape_affine_magnitude*v for v in selected.direction),
+            now, maximum_age_sec=0.),)
         self.escape_direction = selected.direction
         self.escape_tracker = EscapeProgressTracker(geometry)
         self.escape_tracker.update(self.pose_history[-1])

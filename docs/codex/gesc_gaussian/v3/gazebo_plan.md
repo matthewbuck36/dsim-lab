@@ -92,3 +92,23 @@ conditional fallback ideas if unaided escape proves inadequate. They are not
 changes in this pilot. A higher affine magnitude is likewise a later isolated
 comparison if the recorded controls justify it. Higher-rate V2 successes are
 historical comparisons, not proof that sampling caused the outcome. No Pi work.
+
+## User amendment — one tenfold affine-slope experiment
+
+The user requested one deliberately large affine-slope comparison, retaining
+direct assistance off. Use magnitude 5.0 versus the previous 0.5 at the same
+nominal 5 Hz/20 RPM, gains 0.5/5, caps 0.10/0.50, field/start, Gaussian rules and
+measured exit. Expose this existing numerical coefficient through the existing
+controller JSON, default 0.5. An external custom profile selects 5.0 for this one
+run; the ordinary V3 profile retains 0.5 and direct assistance false.
+
+Validate scalar plumbing/objective scaling, build, then launch exactly one
+visible recorded run with 600 s wall maximum and 20 s shutdown grace. The agent
+may interrupt after a sustained observed stronger-source interval. This is an
+exploratory comparison against retained no-assist evidence, not a paired
+statistical estimate: inspect pre-escape trajectory and fill differences too.
+Compare escape duration/path, radial exit, saturation, signed command reversals,
+measured translation, global proximity, acquisition cadence and shutdown.
+Do not simultaneously tune gain, caps, stall windows, assistance distance or
+sampling. Do not automatically launch another test if this case fails. Keep
+all results, ordinary V3 defaults and physical V1 intact.

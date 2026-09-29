@@ -145,6 +145,7 @@ def test_v3_development_caps_match_archived_full_rotation_light_baseline():
 def test_v3_direct_assistance_uses_controller_json_and_preserves_old_default(tmp_path):
     selected = resolve_profile("gesc_v3", directory=PROFILES)
     assert selected["v3"]["direct_escape_assistance_enabled"] is False
+    assert selected["v3"]["escape_affine_magnitude"] == .5
     profile = _json(PROFILES / "algorithms.json")["gesc_v3"]
     profile["configs"] = dict(selected["config_paths"])
     controller = _json(profile["configs"]["controller"])
