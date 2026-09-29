@@ -427,3 +427,91 @@ frozen refs recorded in external `checkpoint.json`. No push or physical action.
 All runs/tests/temporary observers have ended. Broader V3 qualification remains
 open: realistic acquisition/serial/servo/pose timing, noise and load, repeatability,
 and internal ranking still need separate evidence. Preserve working physical V1.
+
+## Direct-assistance-disabled pilot — selected-case success
+
+User authorized testing V3 without direct heading assistance on 2026-09-28;
+see the new plan amendment. Starting HEAD `8b7c383`, clean tree and no active
+Gazebo/control/recording processes. Evidence root:
+`/home/mattb/Experiments/GESC-Gaussian/v3/escape_no_assist_20260929T005416Z`.
+This is one selected 5 Hz/20 RPM pilot, preserving affine magnitude 0.5,
+gains 0.5/5, caps 0.10/0.50, field and start. The 15 s fallback-window and
+shorter-distance suggestions are conditional future comparisons, not applied.
+No physical operation is included.
+
+- Implemented `controller.json` parameter `direct_escape_assistance_enabled`.
+  Selected V3 sets false; omitted values retain true for older comparisons.
+  Only the stalled-progress transition to direct commands is gated. Both
+  selections preserve the objective, measured exit and stopping conditions.
+- Focused core/profile/ROS-boundary tests: 115 PASS, 2.64 s. Existing prolonged
+  escape/late spatial exit and stop tests now cover both selections; disabled
+  mode proves commands still come from GESC while progress is stalled.
+- Fresh installed build: all three packages PASS, 2.34 s. Installed suite:
+  249 PASS, no skips, 372 existing warnings, 17.40 s. Exact invocations/results:
+  `no_assist_focused_receipt.json`, `build.log`, `installed_tests.log` at the
+  evidence root. Independent source/install review found no blocker.
+- Visible run started with GUI, automatic Matplotlib and ordinary bag recording.
+  Manifest pins 215 source files, selected config, source diff and prior HEAD.
+  Tool session80810, exact launch identity in `started.json`; maximum600 s
+  wall plus20 s shutdown grace. Closed results follow; no active bag was inspected.
+
+The agent sent SIGINT to the verified launch PID after sustained observed
+stronger-source proximity (`live_probe_03.json`, `operator_stop.json`). This
+was an observation stop, not statistical convergence or an automatic goal gate.
+Session80810 exited0. The bag finalized, every runtime process has a clean-exit
+receipt, no SIGTERM/SIGKILL escalation occurred, and no domain191 process remains.
+Matplotlib emitted a KeyboardInterrupt traceback during SIGINT, then exited
+cleanly; there was no pre-stop traceback. All215 source pins stayed unchanged.
+See `cleanup.json` and `shutdown_review.json`.
+
+Closed bag: `bags/20260929T005716.079166Z-47151`. Existing installed ordinary-bag
+analysis generated `analysis/trajectory.png`, `signals.png`, `summary.json`
+and CSVs. Existing external `analyze_pilot.py` used the captured controller/cost
+JSON explicitly; exact output is `pilot_analysis.json` with no decode errors.
+
+| Simulated time | Recorded behavior |
+| --- | --- |
+| 78.5 s | Moving VERIFY begins |
+| 94.1 s | DESIGN begins, 40 evidence samples |
+| 94.3 s | One Gaussian committed; ESCAPE begins |
+| 116.1 s | Measured `escape_complete` |
+| 116.3 s | Next real sample applies return to SEARCH |
+| 194.4–206.5 s | Moving candidate verification/ranking; return to SEARCH |
+| 236.9 s | Agent SIGINT; STOPPED and final zero |
+
+- **Zero direct-assistance events.** All444 mapped ESCAPE commands have nonzero
+  translation; no turn-only command. ESCAPE measured2.001 m path and1.601 m net
+  displacement. Both VERIFY intervals have nonzero commanded translation and
+  all0.5 s measured-motion screens exceed1 mm. DESIGN measured5.48 mm path;
+  its0.2 s duration cannot support a full0.5 s motion screen.
+- Actual1160 valid observations at4.90196 Hz, no invalid notices or source
+  gaps above0.5 s. Measured mean arm19.9954 RPM. Selected gains/caps and affine
+  magnitude0.5 remained unchanged; Gaussian amplitude0.1, widths0.5062 m.
+- Final recorded stronger-source distance22.38 mm. Final zero is present,
+  but no subsequent odometry proves a stationary interval after that command.
+  No `best_source` event occurred; physical/internal ranking is not qualified.
+
+`outcome_geometry.json` independently corroborates measured exit: the1.36677 m
+radius was crossed114.914 s, offline stable exit115.934 s, and the recorded
+completion at116.1 s has nearest-pose radius1.47321 m and0.28185 m outward
+progress over3 s. This uses recorded odometry, not the exact callback subset.
+The old3 s/5 cm stall rule first flags this same trajectory at98.322 s
+(4.903 cm progress), yet continued GESC completed escape. A short stall therefore
+does not establish that direct assistance is necessary.
+
+The event-receipt interval contains442 escape commands (the earlier clock-mapped
+interval includes444 boundary samples); both methods find no zero translation.
+There are25 signed command reversals. Commands spend84.16% at the linear cap and
+64.71% at the angular cap, so simply increasing affine magnitude need not create
+more useful motion. All43 half-second odometry windows exceed1 mm, minimum6.45 mm.
+First stronger-source distance crossings are0.5 m at145.276 s,0.15 m at197.840 s,
+and0.10 m at199.132 s, remaining inside each afterward to236.940 s. These are
+descriptive thresholds, not a new statistical convergence criterion.
+
+This case demonstrates escape through Gaussian-plus-affine GESC at nominal5 Hz
+without direct heading assistance. It does not establish broad robustness,
+causal sampling-rate superiority, identical pre-escape trajectories across
+repeats, or physical qualification. Higher affine magnitude and the proposed
+15 s/shorter-distance fallback are not needed for this observed outcome and
+remain unapplied. Keep direct assistance disabled for subsequent V3 studies;
+retain the selectable historical fallback and all earlier failed evidence.

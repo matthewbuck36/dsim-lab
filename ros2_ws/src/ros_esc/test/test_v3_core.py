@@ -469,8 +469,8 @@ def test_escape_uses_selected_raw_off_affine_on_weights():
     assert value.augmented==pytest.approx(value.gaussian+value.affine)
 
 
-def escaping_core(*, exit_radius=None):
-    core=make_core();drive(core)
+def escaping_core(*, exit_radius=None, config=None):
+    core=make_core(config);drive(core)
     key=arm_design(core)
     proposal=prepared_proposal()
     if exit_radius is not None:
@@ -483,8 +483,9 @@ def escaping_core(*, exit_radius=None):
     return core
 
 
-def slow_escape_beyond_former_deadline():
-    core=escaping_core(exit_radius=.8)
+def slow_escape_beyond_former_deadline(*, direct_assistance=True):
+    core=escaping_core(exit_radius=.8,
+        config=CoreConfig(direct_escape_assistance_enabled=direct_assistance))
     for index in range(1,226):
         elapsed=index*.2
         stamp=10.2+elapsed
@@ -494,16 +495,25 @@ def slow_escape_beyond_former_deadline():
         command=core.tick(stamp,stamp)
         assert core.availability=='ACTIVE' and command.valid()
         assert core.activity=='ESCAPE' and core.pending_search is None
-    assert core.escape_assisted
+        if not direct_assistance:
+            # Use the actual measured-cost GESC direction and the transparent
+            # fixture controller; a direct heading command cannot substitute.
+            direction=core.last_direction.final_body
+            assert command==Command(
+                float(np.clip(.5*direction[0],-.05,.05)),
+                float(np.clip(5.*direction[1],-.3,.3)))
+    assert core.escape_tracker.latest.stalled
+    assert core.escape_assisted is direct_assistance
     assert core.last_objective.affine!=0.
     assert core.last_objective.augmented==pytest.approx(
         core.last_objective.gaussian+core.last_objective.affine)
-    assert sum(event.kind=='escape_assist' for event in core.drain_events())==1
+    assert sum(event.kind=='escape_assist' for event in core.drain_events())==int(direct_assistance)
     return core,stamp,index+2
 
 
-def test_escape_and_affine_guidance_continue_until_late_measured_spatial_exit():
-    core,stamp,sequence=slow_escape_beyond_former_deadline()
+@pytest.mark.parametrize('direct_assistance',[True,False])
+def test_escape_and_affine_guidance_continue_until_late_measured_spatial_exit(direct_assistance):
+    core,stamp,sequence=slow_escape_beyond_former_deadline(direct_assistance=direct_assistance)
     revision=core.objective_revision
     start=stamp
     # Continue the same fresh trajectory until it crosses the frozen exit
@@ -527,9 +537,10 @@ def test_escape_and_affine_guidance_continue_until_late_measured_spatial_exit():
     assert not any(reason=='escape_timeout' for reason in event_reasons(core))
 
 
+@pytest.mark.parametrize('direct_assistance',[True,False])
 @pytest.mark.parametrize('ending',['input_expiry','operator_stop','frame_fault'])
-def test_unlimited_escape_duration_preserves_actual_stop_conditions(ending):
-    core,stamp,_=slow_escape_beyond_former_deadline()
+def test_unlimited_escape_duration_preserves_actual_stop_conditions(ending,direct_assistance):
+    core,stamp,_=slow_escape_beyond_former_deadline(direct_assistance=direct_assistance)
     if ending=='input_expiry':
         command=core.tick(stamp+.500001,stamp+.500001)
         assert core.availability=='WAITING_INPUT'
@@ -636,6 +647,12 @@ def test_selected_escape_repulse_switches_once_to_assist_and_stall_does_not_abor
     assert core.activity=='ESCAPE' and core.pending_search is None
     events=core.drain_events()
     assert sum(event.kind=='escape_assist' for event in events)==1
+
+
+@pytest.mark.parametrize('value',['false',0,None])
+def test_direct_escape_assistance_requires_an_actual_boolean(value):
+    with pytest.raises(ValueError,match='direct_escape_assistance_enabled must be boolean'):
+        CoreConfig(direct_escape_assistance_enabled=value)
 
 
 def test_fresh_authoritative_observation_outside_design_radius_cannot_commit():

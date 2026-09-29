@@ -142,6 +142,28 @@ def test_v3_development_caps_match_archived_full_rotation_light_baseline():
     assert actual.k_vx == .5  # Match caps without silently doubling the gain.
 
 
+def test_v3_direct_assistance_uses_controller_json_and_preserves_old_default(tmp_path):
+    selected = resolve_profile("gesc_v3", directory=PROFILES)
+    assert selected["v3"]["direct_escape_assistance_enabled"] is False
+    profile = _json(PROFILES / "algorithms.json")["gesc_v3"]
+    profile["configs"] = dict(selected["config_paths"])
+    controller = _json(profile["configs"]["controller"])
+    path = tmp_path / "controller.json"
+    profile["configs"]["controller"] = str(path)
+    profile_path = tmp_path / "profile.json"
+    profile_path.write_text(json.dumps(profile))
+    for enabled in (True, False, None):
+        if enabled is None:
+            controller["params"].pop("direct_escape_assistance_enabled")
+        else:
+            controller["params"]["direct_escape_assistance_enabled"] = enabled
+        path.write_text(json.dumps(controller))
+        actual = resolve_profile(str(profile_path), directory=PROFILES)
+        assert actual["v3"]["direct_escape_assistance_enabled"] is (enabled is not False)
+        assert actual["v3"]["max_vx"] == .1 and actual["v3"]["max_wz"] == .5
+        assert actual["v3"]["k_vx"] == .5 and actual["v3"]["k_wz"] == 5.
+
+
 def _launch_module():
     pytest.importorskip("launch")
     spec = importlib.util.spec_from_file_location("test_gazebo_launch", SIMULATION / "launch/gazebo.launch.py")

@@ -67,3 +67,28 @@ authority, numerical-job and motion/progress checks remain. Record Run06's
 earlier source separately. Validate long-lived escape and later spatial exit,
 then use a fresh bounded pilot for the final source if required by the observed
 escape outcome. No deadline is renamed or hidden in another owner.
+
+## User amendment — test escape without direct assistance
+
+On 2026-09-28 the user authorized a V3 Gazebo test with direct heading assistance
+disabled. Add one boolean in the existing controller configuration and select
+false for the V3 development profile. Preserve the enabled path for comparison.
+Keep Gaussian plus affine cost shaping through GESC, affine magnitude 0.5,
+selected 5 Hz/20 RPM, gains 0.5/5, caps 0.10/0.50, field/start pose and measured
+stable-exit criteria unchanged. This isolates the direct-assistance selection;
+do not simultaneously increase affine magnitude or change the progress window.
+
+After focused core/configuration tests and an installed build, run one visible,
+recorded pilot with a 600 s wall maximum and 20 s shutdown grace. The agent may
+stop earlier after observing sustained stronger-source proximity, explicitly
+reporting an observation stop rather than statistical convergence. If escape
+does not finish within the experiment, preserve it as incomplete; do not add an
+internal escape deadline or silently enable assistance. Record actual rates,
+fill/escape/SEARCH transitions, zero assist events, commanded/measured motion,
+trajectory, global proximity and shutdown independently. Read closed bags only.
+
+The user's suggested 15 s stall window and shorter assistance distance are
+conditional fallback ideas if unaided escape proves inadequate. They are not
+changes in this pilot. A higher affine magnitude is likewise a later isolated
+comparison if the recorded controls justify it. Higher-rate V2 successes are
+historical comparisons, not proof that sampling caused the outcome. No Pi work.

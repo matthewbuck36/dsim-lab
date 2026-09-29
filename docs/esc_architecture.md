@@ -71,10 +71,12 @@ separate. Basin fitting retains the selected base-position convention; the
 objective is evaluated at the measured sensor position. No source location or
 simulator ground truth enters the controller.
 
-SEARCH/VERIFY/DESIGN use raw plus Gaussian cost. ESCAPE first uses Gaussian plus
-affine GESC repulsion, then switches to bounded direct assistance after a radial
-stall. Selected assist persists to a measured stable exit while inputs remain
-valid; no elapsed escape deadline or V3 affine-guidance age cutoff applies. Effective
+SEARCH/VERIFY/DESIGN use raw plus Gaussian cost. ESCAPE uses Gaussian plus
+affine GESC repulsion. The controller JSON selects
+`direct_escape_assistance_enabled`; the current development profile sets it
+false to evaluate escape through GESC alone. When enabled, radial stall switches
+to direct assistance until a measured stable exit while inputs remain valid.
+Neither selection imposes an elapsed escape deadline or V3 affine-guidance age cutoff. Effective
 objective changes apply at a new source observation; old directions/history are
 not silently relabeled or replayed. The current profile is the retained
 **two-source, one-fill** experiment, not a general unknown-source-count solver.

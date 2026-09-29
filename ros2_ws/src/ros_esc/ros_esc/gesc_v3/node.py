@@ -61,6 +61,7 @@ class V3Controller(Node):
             max_wz=settings['max_wz'], k_vx=settings['k_vx'], k_wz=settings['k_wz'],
             sensor_radius=settings['sensor_radius_m'],
             preparation_timeout=settings['fill_timeout_sec'],
+            direct_escape_assistance_enabled=settings['direct_escape_assistance_enabled'],
             maximum_snapshot=settings['maximum_fit_samples'])
         with open(selected['config_paths']['controller'], encoding='utf-8') as stream:
             controller = parse_object_config(json.load(stream))

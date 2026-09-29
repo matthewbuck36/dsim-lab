@@ -79,6 +79,12 @@ def unavailable(_message):
     raise RuntimeError('injected optional publication failure')
 
 
+def test_selected_no_assistance_setting_reaches_core_without_blocking_startup(owner):
+    node, *_ = owner
+    assert node.core.config.direct_escape_assistance_enabled is False
+    start(owner)
+
+
 @pytest.mark.parametrize('publisher', ['filter_publisher', 'control_publisher', 'event_publisher', 'fill_publisher'])
 def test_optional_publication_failure_cannot_fault_fresh_control(owner, publisher):
     node, now, steady, commands, _ = owner

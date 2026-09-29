@@ -10,6 +10,7 @@
     "wheel_distance": 0.158,
     "wheel_max_rpm": 70,
     "set_max_vx": 0.1,
-    "set_max_wz": 0.5
+    "set_max_wz": 0.5,
+    "direct_escape_assistance_enabled": false
   }
 }

@@ -79,10 +79,13 @@ class CoreConfig:
     washout_omega: float = 1.0
     candidate_radius: float = 0.75
     preparation_timeout: float = 5.0
+    direct_escape_assistance_enabled: bool = True
     maximum_history: int = 20_000
     maximum_snapshot: int = 4_000
 
     def __post_init__(self):
+        if not isinstance(self.direct_escape_assistance_enabled, bool):
+            raise ValueError('direct_escape_assistance_enabled must be boolean')
         for name in ('input_expiry', 'control_hz', 'max_vx', 'max_wz', 'k_vx',
                      'k_wz', 'sensor_radius', 'washout_omega', 'candidate_radius',
                      'preparation_timeout'):

@@ -89,6 +89,11 @@ full-rotation light GESC baseline. Its linear gain remains 0.5. This portable
 development profile has not been deployed to the Pi; restored physical V1 is
 unchanged. Gazebo's visible light models use the selected cost JSON positions.
 
+The V3 controller JSON currently sets `direct_escape_assistance_enabled: false`
+for the user-requested unaided escape experiment. Gaussian and affine cost
+shaping remain active; only direct heading-command assistance is disabled.
+Setting this boolean true retains the earlier fallback for explicit comparisons.
+
 Valid moving approach and verification have no elapsed-time deadline. They
 continue while motion, fresh inputs and candidate geometry remain valid, until
 the evidence is ready or the run is interrupted. Automated Gazebo test bounds

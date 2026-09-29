@@ -446,7 +446,8 @@ class V3Core:
                 transition = None
                 if progress.stable_exit:
                     transition = 'escape_complete'
-                elif progress.stalled and not self.escape_assisted:
+                elif (progress.stalled and not self.escape_assisted
+                      and self.config.direct_escape_assistance_enabled):
                     self.escape_assisted = True
                     self.emit(now, 'escape_assist', 'radial_progress_stalled')
                 if transition is not None and self.pending_search is None:
