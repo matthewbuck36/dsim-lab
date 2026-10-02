@@ -1,6 +1,7 @@
 """Optional recording lifecycle and real ordinary-bag analysis."""
 
 import json
+import math
 import sys
 import threading
 import time
@@ -9,7 +10,9 @@ from types import SimpleNamespace
 import pytest
 
 from ros_esc.run_tools.record_bag import bag_command, run_recorder
-from ros_esc.run_tools.analyze_bag import analyze_bag, cadence, json_finite, message_row, summarize
+from ros_esc.run_tools.analyze_bag import (
+    analyze_bag, cadence, cost_plot_rows, json_finite, message_row, summarize,
+)
 
 
 def test_recording_failure_is_nonfatal_without_control_messages(capsys):
@@ -171,6 +174,149 @@ def test_motion_metrics_do_not_combine_different_pose_frames():
     assert report['motion']['pose_frames'] == ['map', 'odom']
     assert report['motion']['net_displacement_m'] is None
     assert report['motion']['path_length_m'] is None
+
+
+def observation_row(stamp, *, source='physical_sensor', valid=True, basis=2):
+    return {'bag_time_ns': round((100+stamp)*1e9), 'source_time_s': stamp,
+            'source_instance': source, 'valid': valid, 'timestamp_basis': basis,
+            'phase_rad': (1.2+stamp*2*math.pi/3) % (2*math.pi),
+            'raw_cost': -2.5, 'acquisition_uncertainty_sec': math.nan}
+
+
+def test_observation_rpm_fallback_uses_measured_five_hz_phase_with_wrap():
+    topic = '/gesc/observation'
+    records = [observation_row(index*.2) for index in range(21)]
+    arm = summarize({topic: 'ros_esc_interfaces/msg/SensorObservation'}, {topic: records})['arm']
+    assert arm['mean_observed_rpm'] == pytest.approx(20.)
+    assert arm['source_topic'] == topic
+    assert arm['accepted_pairs'] == 20 and arm['excluded_pairs'] == 0
+    assert arm['retained_elapsed_sec'] == pytest.approx(4.)
+    assert arm['minimum_pair_alias_limit_rpm'] == pytest.approx(150.)
+    assert arm['retained_timestamp_bases'] == ['2']
+    assert 'ADC timing is not inferred' in arm['time_basis']
+    assert 'extra turns alias' in arm['method']
+    # No nominal20RPM constant: changing only the observed phase changes result.
+    for row in records:
+        row['phase_rad'] = (row['source_time_s']*2*math.pi*17.2/60) % (2*math.pi)
+    assert summarize({topic: 'ros_esc_interfaces/msg/SensorObservation'},
+                     {topic: records})['arm']['mean_observed_rpm'] == pytest.approx(17.2)
+
+
+def test_observation_rpm_never_bridges_invalid_restart_long_gap_or_clock_change():
+    topic = '/gesc/observation'
+    records = [observation_row(0), observation_row(.2), observation_row(.4),
+               observation_row(.6, valid=False), observation_row(.8),
+               observation_row(1., source='reopened'), observation_row(1.2, source='reopened'),
+               observation_row(2., source='reopened'), observation_row(2.2, source='reopened'),
+               observation_row(2.2, source='reopened'), observation_row(2.1, source='reopened'),
+               observation_row(2.3, source='reopened', basis=1),
+               observation_row(2.5, source='reopened', basis=1)]
+    arm = summarize({topic: 'ros_esc_interfaces/msg/SensorObservation'}, {topic: records})['arm']
+    assert arm['mean_observed_rpm'] == pytest.approx(20.)
+    assert arm['accepted_pairs'] == 5 and arm['excluded_pairs'] == 7
+    assert arm['excluded_pair_reasons'] == {
+        'invalid_observation_or_phase': 2, 'source_instance_changed': 1,
+        'source_gap_over_policy_limit': 1, 'nonincreasing_source_time': 2,
+        'timestamp_basis_unavailable_or_changed': 1,
+    }
+    assert arm['retained_elapsed_sec'] == pytest.approx(1.)
+    assert arm['maximum_pair_gap_sec'] == .5
+    assert 'offline reporting bound' in arm['pair_gap_policy']
+    assert arm['retained_timestamp_bases'] == ['1', '2']
+
+
+def test_observation_rpm_does_not_cross_undecodable_phase_records():
+    topic = '/gesc/observation'
+    records = [observation_row(0), dict(observation_row(.2), phase_rad=math.nan),
+               observation_row(.4), observation_row(.6)]
+    arm = summarize({topic: 'ros_esc_interfaces/msg/SensorObservation'}, {topic: records})['arm']
+    assert arm['mean_observed_rpm'] == pytest.approx(20.)
+    assert arm['accepted_pairs'] == 1
+    assert arm['excluded_pair_reasons'] == {'invalid_observation_or_phase': 2}
+
+
+def test_legacy_encoder_and_cost_keep_precedence_over_observation_fallback():
+    topic = '/gesc/observation'
+    types = {topic: 'ros_esc_interfaces/msg/SensorObservation',
+             '/turtlebot3/encoder_chatter': 'ros_esc_interfaces/msg/StampedFloat64MultiArray'}
+    rows = {topic: [observation_row(0), observation_row(.2)],
+            '/turtlebot3/encoder_chatter': [
+                {'bag_time_ns': 1, 'source_time_s': 0., 'values': [0.]},
+                {'bag_time_ns': 2, 'source_time_s': .2, 'values': [math.pi/10]}]}
+    assert summarize(types, rows)['arm'] == {
+        'mean_observed_rpm': pytest.approx(15.),
+        'method': 'absolute wrapped angle increments; ambiguous if travel exceeds pi between samples',
+    }
+    legacy_cost = [{'bag_time_ns': 1, 'values': [-4.]}]
+    types['/turtlebot3/cost_value_chatter'] = 'ros_esc_interfaces/msg/StampedFloat64MultiArray'
+    rows['/turtlebot3/cost_value_chatter'] = legacy_cost
+    selected, fallback = cost_plot_rows(types, rows)
+    assert selected is legacy_cost and fallback is False
+    # Existing but empty legacy topics retain their historical unavailable state.
+    rows['/turtlebot3/encoder_chatter'] = []
+    rows['/turtlebot3/cost_value_chatter'] = []
+    assert summarize(types, rows)['arm']['mean_observed_rpm'] is None
+    assert cost_plot_rows(types, rows) == ([], False)
+
+
+def test_cost_plot_fallback_uses_only_valid_observed_negative_voltage():
+    topic = '/gesc/observation'
+    records = [observation_row(0), dict(observation_row(.2), raw_cost=-3.1),
+               dict(observation_row(.4, valid=False), raw_cost=-9.),
+               dict(observation_row(.6), raw_cost=math.nan)]
+    costs, fallback = cost_plot_rows({topic: 'ros_esc_interfaces/msg/SensorObservation'},
+                                    {topic: records})
+    assert fallback is True
+    assert [row['values'] for row in costs] == [[-2.5], [-3.1]]
+    assert [row['bag_time_ns'] for row in costs] == [records[0]['bag_time_ns'], records[1]['bag_time_ns']]
+    assert all('values' not in row for row in records)  # Analysis never mutates decoded evidence.
+
+
+def test_closed_physical_observation_only_bag_produces_rpm_and_voltage_plot(tmp_path, monkeypatch):
+    rosbag2_py = pytest.importorskip('rosbag2_py')
+    messages = pytest.importorskip('ros_esc_interfaces.msg')
+    from rclpy.serialization import serialize_message
+    from matplotlib.axes import Axes
+    topic = '/gesc/observation'
+    bag = tmp_path / 'physical_observation_only'
+    writer = rosbag2_py.SequentialWriter()
+    writer.open(rosbag2_py.StorageOptions(uri=str(bag), storage_id='sqlite3'),
+                rosbag2_py.ConverterOptions('', ''))
+    writer.create_topic(rosbag2_py.TopicMetadata(
+        name=topic, type='ros_esc_interfaces/msg/SensorObservation', serialization_format='cdr'))
+    expected_costs = []
+    for index in range(21):
+        stamp_ns = 10_000_000_000+index*200_000_000
+        cost = -2.5-.1*math.cos(index*.2)
+        expected_costs.append(cost)
+        observation = messages.SensorObservation(
+            source_instance='physical', sequence=index+1, frame_id='odom',
+            raw_cost=cost, phase_rad=(1.2+index*.2*2*math.pi/3) % (2*math.pi),
+            acquisition_uncertainty_sec=math.nan, valid=True,
+            timestamp_basis=messages.SensorObservation.RECEIPT_TIME)
+        observation.stamp.sec, observation.stamp.nanosec = divmod(stamp_ns, 1_000_000_000)
+        observation.receipt_stamp = observation.stamp
+        writer.write(topic, serialize_message(observation), stamp_ns+50_000_000)
+    del writer  # Analyzer opens only the closed ordinary bag.
+    plotted = []
+    original_plot = Axes.plot
+
+    def capture_plot(self, *args, **kwargs):
+        if kwargs.get('label') == 'Observation raw cost':
+            plotted.append(list(args[1]))
+        return original_plot(self, *args, **kwargs)
+
+    monkeypatch.setattr(Axes, 'plot', capture_plot)
+    output = tmp_path / 'physical_analysis'
+    report = analyze_bag(bag, output)
+    assert not report['warnings']
+    assert report['arm']['mean_observed_rpm'] == pytest.approx(20.)
+    assert report['arm']['accepted_pairs'] == 20
+    assert report['arm']['excluded_pairs'] == 0
+    assert report['plots'] == ['signals.png']
+    assert (output / 'signals.png').stat().st_size > 1000
+    assert plotted == [expected_costs]
+    assert json.loads((output / 'summary.json').read_text()) == report
 
 
 def test_recorder_started_before_best_effort_clock_records_late_publisher(tmp_path):

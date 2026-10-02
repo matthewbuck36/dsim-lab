@@ -75,8 +75,11 @@ def resolve_profile(profile="gesc_v3", environment="gazebo", *, directory=None):
             k_vx=controller["gains"]["k_vx"], k_wz=controller["gains"]["k_wz"],
             max_vx=controller["params"]["set_max_vx"], max_wz=controller["params"]["set_max_wz"],
             direct_escape_assistance_enabled=controller["params"].get(
-                "direct_escape_assistance_enabled", True),
+                "direct_escape_assistance_enabled", False),
             escape_affine_magnitude=controller["params"].get("escape_affine_magnitude", 0.5),
+            escape_assist_stall_window_sec=controller["params"].get(
+                "escape_assist_stall_window_sec", 15.0),
+            escape_assist_distance_m=controller["params"].get("escape_assist_distance_m", 0.20),
         )
     entity = selected["entity"]
     selected["topics"] = {

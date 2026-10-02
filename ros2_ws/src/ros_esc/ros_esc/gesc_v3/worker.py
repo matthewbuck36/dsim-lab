@@ -1,13 +1,22 @@
 """One optional numerical process; computation never owns control state."""
 
 from dataclasses import dataclass
+import importlib
 import multiprocessing as mp
+import os
 import queue
 import time
 
 
-def _serve(requests, results):
+def _serve(requests, results, parent_pid):
     """Top-level spawn target. No ROS initialization or inherited node handles."""
+    from .process_lease import bind_parent_death
+    bind_parent_death(parent_pid)
+    # Cold NumPy/SciPy imports belong to child initialization, not a submitted
+    # job's deadline. The parent keeps driving from fresh instantaneous data
+    # while this worker is not ready; no input or result age is extended.
+    importlib.import_module('.numerics.coherence', package=__package__)
+    importlib.import_module('.numerics.fill', package=__package__)
     results.put(('ready', None, None))
     while True:
         request = requests.get()
@@ -52,7 +61,7 @@ class NumericalWorker:
             self.requests = self.context.Queue(maxsize=1)
             self.results = self.context.Queue(maxsize=1)
             self.process = self.context.Process(target=_serve,
-                                                args=(self.requests, self.results),
+                                                args=(self.requests, self.results, os.getpid()),
                                                 daemon=True)
             self.process.start()
         except (OSError, RuntimeError) as error:

@@ -71,6 +71,10 @@ def observation(stamp, sequence):
 
 def start(owner):
     node, now, _, commands, _ = owner
+    pose(node, now[0]-.2)
+    initial=observation(now[0]-.2, 0)
+    initial.raw_cost=-1.9
+    node.observation_callback(initial)
     pose(node, now[0])
     node.observation_callback(observation(now[0], 1))
     node.tick()
@@ -85,7 +89,61 @@ def test_selected_no_assistance_setting_reaches_core_without_blocking_startup(ow
     node, *_ = owner
     assert node.core.config.direct_escape_assistance_enabled is False
     assert node.core.config.escape_affine_magnitude == 2.
+    assert node.core.config.escape_assist_stall_window_sec == 15.
+    assert node.core.config.escape_assist_distance_m == .20
     start(owner)
+
+
+def test_process_lease_follows_actual_command_even_when_waiting_for_data(owner):
+    node, _, _, commands, _ = owner
+    order = []
+    node.process_lease = SimpleNamespace(check_guard=lambda: order.append('guard'),
+        tick=lambda: order.append('lease'), close=lambda: None)
+    node.command_publisher = SimpleNamespace(publish=lambda message:
+        (order.append('command'), commands.append(message)))
+    node.tick()
+    assert node.core.availability == 'WAITING_INPUT'
+    assert order == ['guard', 'command', 'lease']
+    assert commands[-1].linear.x == commands[-1].angular.z == 0.
+
+
+def test_failed_command_publication_does_not_renew_process_lease(owner):
+    node, _, _, commands, _ = owner
+    start(owner)
+    renewed = []
+    node.process_lease = SimpleNamespace(check_guard=lambda: None,
+        tick=lambda: renewed.append(True), close=lambda: None, enabled=False)
+    def fail_nonzero(message):
+        if message.linear.x or message.angular.z:
+            raise RuntimeError('injected command publication failure')
+        commands.append(message)
+    node.command_publisher = SimpleNamespace(publish=fail_nonzero)
+    node.tick()
+    assert not renewed
+    assert node.core.availability == 'FAULTED'
+    assert commands[-1].linear.x == commands[-1].angular.z == 0.
+
+
+@pytest.mark.parametrize('trigger', ['ownership_callback', 'control_exception', 'frame_fault'])
+def test_terminal_physical_fault_exits_after_zero_without_renewing_driver_lease(owner, trigger):
+    node, now, _, commands, _ = owner
+    start(owner)
+    renewed = []
+    node.process_lease = SimpleNamespace(check_guard=lambda: None,
+        tick=lambda: renewed.append(True), close=lambda: None, enabled=True)
+    if trigger == 'ownership_callback':
+        node.count_publishers = lambda _: 2
+        node.check_ownership()
+    elif trigger == 'control_exception':
+        def broken_tick(*_):
+            raise ValueError('injected control failure')
+        node.core.tick = broken_tick
+    else:
+        node.core.fault(now[0], 'observation_frame_conflict')
+    with pytest.raises(RuntimeError, match='terminal physical control fault'):
+        node.tick()
+    assert not renewed
+    assert commands[-1].linear.x == commands[-1].angular.z == 0.
 
 
 @pytest.mark.parametrize('magnitude',[None,5.])
@@ -243,13 +301,15 @@ def test_controller_defers_sim_clock_lead_without_refreshing_steady_age(owner):
     assert commands[-1].linear.x == 0.
     now[0], steady[0] = 100.1, 200.1
     node.tick()
-    assert node.core.availability == 'ACTIVE'
+    assert node.core.availability == 'WAITING_INPUT'  # first cost primes only
     assert node.core.pose.stamp == 100.01
     assert node.core.pose_received == node.core.observation_received == 200.
-    assert commands[-1].linear.x > 0.
+    assert commands[-1].linear.x == 0.
+    assert node.core.gesc.state == -2.
     steady[0] = 200.51
     node.tick()
     assert node.core.availability == 'WAITING_INPUT'
+    assert node.core.inputs_interrupted
     assert commands[-1].linear.x == 0.
 
 

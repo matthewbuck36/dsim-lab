@@ -12,6 +12,8 @@
     "set_max_vx": 0.1,
     "set_max_wz": 0.5,
     "direct_escape_assistance_enabled": false,
-    "escape_affine_magnitude": 2.0
+    "escape_affine_magnitude": 2.0,
+    "escape_assist_stall_window_sec": 15.0,
+    "escape_assist_distance_m": 0.20
   }
 }

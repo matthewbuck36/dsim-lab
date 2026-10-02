@@ -70,6 +70,10 @@ def feed(core,t=10.,sequence=1,*,steady=None,**kwargs):
 
 
 def drive(core,t=10.,sequence=1,**kwargs):
+    if core.observation is None:
+        # Establish startup brightness before supplying a usable change.
+        initial=dict(kwargs,raw=kwargs.get('raw',-2.)+.1)
+        feed(core,t-.2,sequence-1,**initial)
     obs=feed(core,t,sequence,**kwargs)
     command=core.tick(t,t)
     assert core.availability=='ACTIVE' and command.vx>0
@@ -80,6 +84,20 @@ def event_reasons(core):
     return [event.reason for event in core.drain_events()]
 
 
+@pytest.mark.parametrize('cost,phase', [(-.0391, .576), (-.0196, .944), (-2., 0.)])
+def test_initial_brightness_primes_filter_without_inventing_a_direction(cost, phase):
+    core=make_core()
+    feed(core,raw=cost,phase=phase)
+    assert core.tick(10.,10.)==Command()
+    assert not core.terminal and core.gesc.state==cost
+    assert core.gesc.previous_source_ns==10_000_000_000
+    # A changing second reading starts control; no full turn or worker needed.
+    feed(core,10.2,2,raw=cost-.01,phase=phase+.4)
+    command=core.tick(10.2,10.2)
+    assert command!=Command() and core.availability=='ACTIVE'
+    assert not core.worker.ready and core.last_direction.completed_cycle_count==0
+
+
 def test_first_usable_direction_drives_without_worker_recording_or_cycles():
     core=make_core()
     _,command=drive(core)
@@ -88,7 +106,7 @@ def test_first_usable_direction_drives_without_worker_recording_or_cycles():
     assert core.last_direction.completed_cycle_count==0
     assert core.last_direction.fallback_used
     assert core.gesc.previous_source_ns==10_000_000_000
-    assert core.gesc.state==0.  # first source is dt=0, not wall-clock catch-up
+    assert core.gesc.state==pytest.approx(-1.92)  # one 0.2 s step after priming
 
 
 def test_first_zero_direction_waits_then_recovers_on_real_sample():
@@ -584,12 +602,16 @@ def test_unlimited_escape_duration_preserves_actual_stop_conditions(ending,direc
         command=core.tick(stamp+.1,stamp+.1)
         assert core.availability=='FAULTED'
     assert command==Command()
-    assert not core.affine_terms and core.escape_tracker is None
+    if ending=='input_expiry':
+        assert core.affine_terms and core.escape_tracker is not None
+        assert core.activity=='ESCAPE'
+    else:
+        assert not core.affine_terms and core.escape_tracker is None
 
 
 def report_stable_exit(core):
     core.escape_tracker=SimpleNamespace(
-        geometry=SimpleNamespace(started_sec=10.2,exit_radius=.4),
+        geometry=core.escape_tracker.geometry,
         update=lambda pose:SimpleNamespace(stable_exit=True,stalled=False,radial_distance=.6))
 
 
@@ -614,9 +636,10 @@ def test_deferred_escape_transition_cannot_continue_past_input_expiry():
     assert abs(core.tick(10.25,10.25).vx)>0
     assert core.tick(10.700001,10.700001)==Command()
     assert core.availability=='WAITING_INPUT' and not core.terminal
-    assert core.pending_search is None and not core.affine_terms
+    assert core.pending_search is None and core.affine_terms
     feed(core,10.8,3,x=.004)
     assert abs(core.tick(10.8,10.8).vx)>0 and core.availability=='ACTIVE'
+    assert core.activity=='ESCAPE' and core.pending_search is None
 
 
 def install_known_fill(core):
@@ -666,11 +689,11 @@ def test_leaving_candidate_during_design_cancels_prepared_fill_before_commit():
 
 
 def test_selected_escape_repulse_switches_once_to_assist_and_stall_does_not_abort():
-    core=escaping_core();revision=core.objective_revision
+    core=escaping_core(config=CoreConfig(direct_escape_assistance_enabled=True))
+    revision=core.objective_revision
     command=core.tick(10.21,10.21)
     assert not core.escape_assisted and command.vx<0  # selected GESC repulsion
-    core.escape_tracker=SimpleNamespace(
-        geometry=SimpleNamespace(started_sec=10.2,exit_radius=.4),
+    core.escape_assist_tracker=SimpleNamespace(
         update=lambda pose:SimpleNamespace(stable_exit=False,stalled=True,radial_distance=.2))
     assert core.tick(10.25,10.25).vx>0
     assert core.escape_assisted and core.pending_search is None
@@ -685,6 +708,170 @@ def test_selected_escape_repulse_switches_once_to_assist_and_stall_does_not_abor
 def test_direct_escape_assistance_requires_an_actual_boolean(value):
     with pytest.raises(ValueError,match='direct_escape_assistance_enabled must be boolean'):
         CoreConfig(direct_escape_assistance_enabled=value)
+
+
+@pytest.mark.parametrize('field', ['escape_assist_stall_window_sec', 'escape_assist_distance_m'])
+@pytest.mark.parametrize('value', [0., -1., math.nan, math.inf, True, '15', None])
+def test_assist_limits_require_finite_positive_numbers(field, value):
+    with pytest.raises(ValueError, match=field):
+        CoreConfig(**{field: value})
+
+
+@pytest.mark.parametrize('interruption', ['expiry', 'source_gap', 'source_restart', 'pose_gap'])
+def test_input_recovery_preserves_committed_escape_and_original_affine_age(interruption):
+    core=escaping_core(exit_radius=.8)
+    core.tick(10.2,10.2)
+    original_affine=core.affine_terms
+    original_geometry=core.escape_tracker.geometry
+    original_revision=core.objective_revision
+    original_generation=core.registry.generation
+    original_epoch=core.epoch
+    core.worker.results.append(JobResult(('coherence',original_epoch,original_revision,0),
+                                        value=SimpleNamespace()))
+    if interruption=='expiry':
+        assert core.tick(10.71,10.71)==Command()
+        assert core.last_direction is None
+        # Fresh pose by itself cannot reuse the old direction, even with a
+        # short source-time gap after a long steady-clock delay.
+        assert core.update_pose(Pose(10.8,.01,0.,0.),10.8,10.8)
+        assert core.tick(10.8,10.8)==Command()
+        obs=observation(10.8,3,x=.01)
+        assert core.ingest_observation(obs,10.8,10.8)
+        resumed=10.8
+    elif interruption=='source_gap':
+        for t in (10.4,10.6,10.8):
+            assert core.update_pose(Pose(t,.01,0.,0.),t,t)
+        assert core.ingest_observation(observation(10.8,3,x=.01),10.8,10.8)
+        resumed=10.8
+    elif interruption=='source_restart':
+        feed(core,10.4,1,x=.01,source='sensor-B')
+        assert not core.ingest_observation(observation(10.41,99,source='sensor-A'),10.41,10.41)
+        resumed=10.4
+    else:
+        # Sensor delivery continues while the independent odometry stream is
+        # absent; the later pose must not join that unobserved path.
+        for i,t in enumerate((10.4,10.6),3):
+            assert core.ingest_observation(observation(t,i,x=.01),t,t)
+        assert core.update_pose(Pose(10.8,.01,0.,0.),10.8,10.8)
+        assert core.tick(10.8,10.8)==Command()
+        assert core.ingest_observation(observation(10.8,5,x=.01),10.8,10.8)
+        resumed=10.8
+    assert core.tick(resumed,resumed).valid()
+    assert core.availability=='ACTIVE' and core.activity=='ESCAPE'
+    assert core.affine_terms is original_affine
+    assert core.escape_tracker.geometry==original_geometry
+    assert core.objective_revision==original_revision and core.registry.generation==original_generation
+    assert core.epoch>original_epoch
+    assert core.gesc.state==0. and not core.last_direction.coherence_available
+    assert core.last_direction.completed_cycle_count==0
+    assert not core.escape_tracker.latest.radial_progress_valid
+    assert core.pending_key is None and core.ready_proposal is None
+    term=original_affine[0]
+    expected=term.value((core.observation.sensor_x,core.observation.sensor_y),resumed)
+    assert core.last_objective.affine==pytest.approx(expected)
+
+
+def stalled_escape_until(core, start, sequence, duration):
+    for index in range(1,round(duration/.2)+1):
+        stamp=start+index*.2
+        feed(core,stamp,sequence+index,x=.002,phase=index*.4)
+        core.tick(stamp,stamp)
+    return stamp,sequence+index
+
+
+def assisted_core():
+    core=escaping_core(exit_radius=.8,
+        config=CoreConfig(direct_escape_assistance_enabled=True))
+    core.tick(10.2,10.2)
+    stamp,sequence=stalled_escape_until(core,10.2,2,14.8)
+    assert not core.escape_assist_used and not core.escape_assisted
+    assert core.escape_tracker.config.stall_window_sec==3.
+    stamp,sequence=stalled_escape_until(core,stamp,sequence,.2)
+    assert core.escape_assisted and core.escape_assist_used
+    return core,stamp,sequence
+
+
+def test_optional_assistance_waits_fifteen_seconds_then_ends_on_measured_path_once():
+    core,stamp,sequence=assisted_core()
+    # Control ticks without new odometry never advance the path budget.
+    for elapsed in (.01,.02,.03):
+        assert core.tick(stamp+elapsed,stamp+elapsed).vx>0
+    assert core.escape_assist_path==0.
+    # Forward and reverse odometry count travelled path, not net displacement.
+    for index,(x,expected) in enumerate(((.082,.08),(.002,.16),(.042,.20)),1):
+        feed(core,stamp+index*.1,sequence+index,x=x,phase=0.)
+        core.tick(stamp+index*.1,stamp+index*.1)
+        assert core.escape_assist_path==pytest.approx(expected)
+    assert not core.escape_assisted and core.escape_assist_used
+    assert core.activity=='ESCAPE'
+    stalled_escape_until(core,stamp+.3,sequence+3,16.)
+    assert not core.escape_assisted and core.escape_assist_used
+    assert sum(event.kind=='escape_assist' for event in core.drain_events())==1
+
+
+def test_assistance_uses_signed_translation_instead_of_turn_to_align():
+    core,stamp,sequence=assisted_core()
+    feed(core,stamp+.1,sequence+1,x=.002,yaw=2*math.pi/3,phase=.2)
+    command=core.tick(stamp+.1,stamp+.1)
+    assert core.escape_assisted
+    assert command.vx<0 and command.wz<0
+    assert abs(command.vx)<=core.config.max_vx and abs(command.wz)<=core.config.max_wz
+
+
+@pytest.mark.parametrize('gap_kind', ['expiry', 'pose_gap', 'source_restart'])
+def test_interrupted_assistance_is_consumed_and_never_counts_unknown_path(gap_kind):
+    core,stamp,sequence=assisted_core()
+    feed(core,stamp+.2,sequence+1,x=.052)
+    core.tick(stamp+.2,stamp+.2)
+    assert core.escape_assist_path==pytest.approx(.05)
+    if gap_kind=='expiry':
+        assert core.tick(stamp+.8,stamp+.8)==Command()
+        resumed=stamp+1.
+        feed(core,resumed,sequence+2,x=.3)
+    elif gap_kind=='pose_gap':
+        resumed=stamp+1.
+        feed(core,resumed,sequence+2,x=.3)
+    else:
+        resumed=stamp+.4
+        # Restart arrives first. Motion prior to a later pose cannot be
+        # attributed to an interrupted assist pulse.
+        assert core.ingest_observation(observation(resumed,1,source='sensor-B',x=.3),resumed,resumed)
+        assert core.update_pose(Pose(resumed,.3,0.,0.),resumed,resumed)
+    core.tick(resumed,resumed)
+    assert core.activity=='ESCAPE' and core.availability=='ACTIVE'
+    assert not core.escape_assisted and core.escape_assist_used
+    assert core.escape_assist_path==pytest.approx(.05)
+    assert core.escape_assist_pose is None
+    assert not core.escape_assist_tracker.latest.radial_progress_valid
+
+
+def test_pre_assist_gap_restarts_the_entire_fifteen_second_observed_window():
+    core=escaping_core(exit_radius=.8,
+        config=CoreConfig(direct_escape_assistance_enabled=True))
+    core.tick(10.2,10.2)
+    stamp,sequence=stalled_escape_until(core,10.2,2,14.8)
+    assert core.tick(stamp+.51,stamp+.51)==Command()
+    feed(core,stamp+.6,sequence+1,x=.002)
+    core.tick(stamp+.6,stamp+.6)
+    assert not core.escape_assist_used
+    stamp,sequence=stalled_escape_until(core,stamp+.6,sequence+1,14.8)
+    assert not core.escape_assist_used
+    stalled_escape_until(core,stamp,sequence,.2)
+    assert core.escape_assisted and core.escape_assist_used
+
+
+def test_repeated_source_restarts_before_control_tick_each_reset_direction_history():
+    core=escaping_core(exit_radius=.8)
+    core.tick(10.2,10.2)
+    term=core.affine_terms[0]
+    for index,source in enumerate(('sensor-B','sensor-C'),1):
+        stamp=10.2+index*.1
+        assert core.ingest_observation(observation(stamp,1,source=source),stamp,stamp)
+        assert core.gesc.state==0.
+        assert core.affine_terms[0] is term
+    assert core.update_pose(Pose(10.4,.002,0.,0.),10.4,10.4)
+    assert core.tick(10.4,10.4).valid()
+    assert core.availability=='ACTIVE' and core.activity=='ESCAPE'
 
 
 def test_fresh_authoritative_observation_outside_design_radius_cannot_commit():

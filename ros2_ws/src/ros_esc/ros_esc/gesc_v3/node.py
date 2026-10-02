@@ -16,12 +16,13 @@ from ros_esc_interfaces.msg import (
     AlgorithmEvent, GaussianFill, SensorObservation, StampedFloat64MultiArray, Timekeeper,
 )
 
-from ros_esc.config_parsing import parse_object_config
 from ros_esc.deferred_signal_shutdown import DeferredSignalShutdown
 from ros_esc.profiles import resolve_profile
 from .clock_delivery import ClockDelivery
 from .core import V3Core
 from .observation_node import pose_from_message, seconds, set_stamp
+from .object_config import parse_object_config
+from .process_lease import LeaseClient
 from .records import CoreConfig, Observation, Pose
 from .worker import NumericalWorker
 
@@ -56,13 +57,20 @@ class V3Controller(Node):
         if self.get_parameter('use_sim_time').value != selected['use_sim_time']:
             raise ValueError('clock selection conflicts with environment')
         settings = selected['v3']
+        self.declare_parameter('direct_escape_assistance_enabled',
+                               settings['direct_escape_assistance_enabled'])
+        assistance = self.get_parameter('direct_escape_assistance_enabled').value
+        if type(assistance) is not bool:
+            raise ValueError('direct_escape_assistance_enabled must be Boolean')
         config = CoreConfig(input_expiry=settings['input_expiry_sec'],
             control_hz=settings['control_hz'], max_vx=settings['max_vx'],
             max_wz=settings['max_wz'], k_vx=settings['k_vx'], k_wz=settings['k_wz'],
             sensor_radius=settings['sensor_radius_m'],
             preparation_timeout=settings['fill_timeout_sec'],
-            direct_escape_assistance_enabled=settings['direct_escape_assistance_enabled'],
+            direct_escape_assistance_enabled=assistance,
             escape_affine_magnitude=settings['escape_affine_magnitude'],
+            escape_assist_stall_window_sec=settings['escape_assist_stall_window_sec'],
+            escape_assist_distance_m=settings['escape_assist_distance_m'],
             maximum_snapshot=settings['maximum_fit_samples'])
         with open(selected['config_paths']['controller'], encoding='utf-8') as stream:
             controller = parse_object_config(json.load(stream))
@@ -87,6 +95,9 @@ class V3Controller(Node):
         self.ownership_timer = self.create_timer(1., self.check_ownership, clock=self.steady_clock)
         self.origin = None
         self.stopped = False
+        # Enabled only by the physical process owner; simulation has no lease.
+        # It tracks completed command ticks, never research/data/recording readiness.
+        self.process_lease = LeaseClient(role='controller')
         self.get_logger().info(f'V3 {selected["environment"]}: one controller owner; optional recording/plots')
 
     def now_seconds(self):
@@ -175,6 +186,7 @@ class V3Controller(Node):
     def tick(self):
         now = self.now_seconds()
         try:
+            self.process_lease.check_guard()
             steady = time.monotonic()
             self._drain_delivery(now, steady)
             command = self.core.tick(now, steady)
@@ -183,11 +195,20 @@ class V3Controller(Node):
             self.get_logger().error(self.core.reason)
         try:
             self.publish_command(command, now)
+            if not self.core.terminal:
+                self.process_lease.tick()
         except Exception as error:
             self.core.fault(now, f'actuator_publish_error: {error}')
             self.get_logger().error(self.core.reason)
             # Best effort zero through the actual command endpoint.
             self.command_publisher.publish(Twist())
+        if self.core.availability == 'FAULTED' and self.process_lease.enabled:
+            # An actual ownership/frame/actuator fault must also stop the
+            # physical driver, especially if another publisher commands it.
+            # Exiting reaches the parent's critical-child stop path; a stuck
+            # cleanup also cannot renew the execution lease. WAITING_INPUT
+            # continues renewing normally and recovers without a restart.
+            raise RuntimeError(f'terminal physical control fault: {self.core.reason}')
         try:
             self.publish_control_telemetry(command, now)
             self.publish_telemetry(now)
@@ -254,6 +275,7 @@ class V3Controller(Node):
                     self.get_logger().warning(f'Optional shutdown telemetry unavailable: {error}')
             finally:
                 self.worker.close()
+                self.process_lease.close()
 
 
 def main(args=None):

@@ -53,7 +53,9 @@ class Driver(Node):
                 message.timestamp_basis = message.RECEIPT_TIME
                 message.acquisition_uncertainty_sec = float('nan')
                 message.frame_id = 'odom'
-                message.raw_cost = -2.
+                # A changing signal supplies a real direction after startup
+                # priming; a constant level correctly has no initial gradient.
+                message.raw_cost = -2. - .01*self.sequence
                 message.phase_rad = 0.
                 message.sensor_x_m = .18
                 message.valid = True

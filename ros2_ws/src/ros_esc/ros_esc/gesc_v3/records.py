@@ -79,7 +79,9 @@ class CoreConfig:
     washout_omega: float = 1.0
     candidate_radius: float = 0.75
     preparation_timeout: float = 5.0
-    direct_escape_assistance_enabled: bool = True
+    direct_escape_assistance_enabled: bool = False
+    escape_assist_stall_window_sec: float = 15.0
+    escape_assist_distance_m: float = 0.20
     escape_affine_magnitude: float = 0.5
     maximum_history: int = 20_000
     maximum_snapshot: int = 4_000
@@ -94,9 +96,11 @@ class CoreConfig:
             raise ValueError('escape_affine_magnitude must be finite and positive')
         for name in ('input_expiry', 'control_hz', 'max_vx', 'max_wz', 'k_vx',
                      'k_wz', 'sensor_radius', 'washout_omega', 'candidate_radius',
-                     'preparation_timeout'):
+                     'preparation_timeout', 'escape_assist_stall_window_sec',
+                     'escape_assist_distance_m'):
             value = getattr(self, name)
-            if not math.isfinite(value) or value <= 0:
+            if (isinstance(value, bool) or not isinstance(value, (int, float))
+                    or not math.isfinite(value) or value <= 0):
                 raise ValueError(f'{name} must be finite and positive')
         if not 1 <= self.maximum_snapshot <= 4000:
             raise ValueError('maximum_snapshot must be in [1, 4000]')

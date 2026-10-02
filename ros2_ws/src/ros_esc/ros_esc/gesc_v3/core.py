@@ -15,9 +15,9 @@ from .records import Command, CoreConfig, Event
 from .numerics.basin import BasinSample, EstimatorConfig
 from .numerics.evidence import MovingRawEvidence, RawObservation
 from .numerics.escape import (
-    EscapeGeometry, EscapeProgressTracker, FillAvoidance, Pose2D, RecenterControlConfig,
+    EscapeGeometry, EscapeProgressConfig, EscapeProgressTracker, FillAvoidance, Pose2D,
     approach_continuity_evidence, latch_direct_escape_direction,
-    recent_approach, recenter_command, command_sweep_is_safe,
+    recent_approach, command_sweep_is_safe,
 )
 from .numerics.fill import PreparationInput, compute_fill_proposal
 from .numerics.fill_design import FillDesignConfig
@@ -65,6 +65,7 @@ class V3Core:
             maximum_cluster_samples=config.maximum_snapshot))
         self.gesc = InstantaneousGesc(omega=config.washout_omega,
                                      arm_length_m=config.sensor_radius)
+        self._initial_cost_pending = True
         self.rolling = RollingGesc()
         self.detector = RecurrentGeometryDetector()
         self.evidence = MovingRawEvidence(max_observations=config.maximum_history,
@@ -75,6 +76,10 @@ class V3Core:
         self.escape_tracker = self.escape_direction = None
         self.pending_search = None
         self.escape_assisted = False
+        self.escape_assist_used = False
+        self.escape_assist_tracker = self.escape_assist_pose = None
+        self.escape_assist_path = 0.
+        self.inputs_interrupted = False
         self.motion_anchor = None
         self.last_objective = self.last_direction = None
         self.command = Command()
@@ -124,6 +129,17 @@ class V3Core:
             return False
         if self.pose is not None and pose.stamp <= self.pose.stamp:
             return False
+        if self.pose is not None and (
+                pose.stamp-self.pose.stamp > self.config.input_expiry
+                or receipt-self.pose_received > self.config.input_expiry):
+            self._interrupt_inputs(now, 'pose_gap', force=True)
+        if self.escape_assisted:
+            previous = self.escape_assist_pose
+            if previous is not None:
+                self.escape_assist_path += math.dist((previous.x, previous.y), (pose.x, pose.y))
+            self.escape_assist_pose = pose
+            if self.escape_assist_path >= self.config.escape_assist_distance_m-1e-12:
+                self._finish_assistance(now, 'measured_path_complete')
         self.pose, self.pose_received = pose, receipt
         self.pose_history.append(Pose2D(pose.stamp, pose.x, pose.y, pose.yaw))
         if self.activity == 'SEARCH' and self.source_instance is not None and self._fresh(now, steady) is None:
@@ -159,19 +175,18 @@ class V3Core:
                 return False
             if self.source_instance is not None:
                 self.retired_sources.append(self.source_instance)
+                self._interrupt_inputs(now, 'source_restart', force=True)
+            else:
+                self._search_epoch(observation.stamp, 'initial_source')
             self.source_instance = observation.source_instance
             self.observation = None
-            self.gesc.reset()
-            self.rolling.invalidate('source_restart')
-            self.cancel_candidate(now, 'source_restart')
-            self._search_epoch(observation.stamp, 'source_restart')
         old = self.observation
         if old is not None and (observation.stamp <= old.stamp
                                 or observation.sequence <= old.sequence):
             return False  # receipt of a duplicate never refreshes control
-        if old is not None and observation.stamp-old.stamp > expiry:
-            self.cancel_candidate(now, 'observation_gap')
-            self._search_epoch(observation.stamp, 'observation_gap')
+        if old is not None and (observation.stamp-old.stamp > expiry
+                                or receipt-self.observation_received > expiry):
+            self._interrupt_inputs(now, 'observation_gap', force=True)
         if self.pending_search is not None:
             self.cancel_candidate(now, self.pending_search)
         # Apply prepared objective changes at a new real sample, never by
@@ -191,8 +206,13 @@ class V3Core:
                 affine_terms=self.affine_terms,
                 sensor_weight=0. if self.activity == 'ESCAPE' else 1.,
                 affine_weight=1. if self.activity == 'ESCAPE' else 0.)
+            if self._initial_cost_pending:
+                # One brightness level is not a measured gradient. Prime only
+                # initial acquisition, not in-motion objective transitions.
+                self.gesc.state = objective.augmented
             demod = self.gesc.update(ns(observation.stamp), objective.augmented,
                                      observation.phase)
+            self._initial_cost_pending = False
             world_phase = observation.pose.yaw + observation.phase
             direction_observation = DirectionObservation(
                 observation.sequence, ns(observation.stamp), ns(observation.receipt_stamp),
@@ -238,6 +258,9 @@ class V3Core:
         self.escape_tracker = self.escape_direction = None
         self.pending_search = None
         self.escape_assisted = False
+        self.escape_assist_used = False
+        self.escape_assist_tracker = self.escape_assist_pose = None
+        self.escape_assist_path = 0.
         if self.activity == 'ESCAPE':
             self._reset_objective('escape_finished')
         self.affine_terms = ()
@@ -251,6 +274,40 @@ class V3Core:
         self.gesc.reset()
         self.rolling.invalidate(reason)
         self.last_direction = None
+
+    def _interrupt_inputs(self, now, reason, *, force=False):
+        """Discard temporal evidence, retaining an already committed escape.
+
+        This is idempotent until fresh data drives control again. A disconnected
+        interval never contributes path length, radial progress, exit hold or
+        approach history. The affine term retains its original creation time.
+        """
+        if self.inputs_interrupted and not force:
+            return
+        if self.activity == 'ESCAPE':
+            geometry = self.escape_tracker.geometry
+            self.escape_tracker = EscapeProgressTracker(geometry)
+            self.escape_assist_tracker = EscapeProgressTracker(geometry,
+                EscapeProgressConfig(stall_window_sec=self.config.escape_assist_stall_window_sec))
+            self._finish_assistance(now, 'input_interrupted')
+            self.pending_search = None
+            self.candidate = self.motion_anchor = None
+        else:
+            self.cancel_candidate(now, reason)
+        self.pending_fill = self.pending_key = self.ready_proposal = self.design_started = None
+        self.gesc.reset()
+        self.rolling.invalidate(reason)
+        self.last_direction = self.last_coherence_key = None
+        self.pose_history.clear()
+        self._search_epoch(now, reason)
+        self.inputs_interrupted = True
+
+    def _finish_assistance(self, now, reason):
+        if self.escape_assisted:
+            self.emit(now, 'escape_assist_finished',
+                      f'{reason}; measured_path_m={self.escape_assist_path:.6f}')
+        self.escape_assisted = False
+        self.escape_assist_pose = None
 
     def _fresh_pose(self, now, steady):
         return (self.pose is not None
@@ -331,8 +388,14 @@ class V3Core:
         self.escape_direction = selected.direction
         self.escape_tracker = EscapeProgressTracker(geometry)
         self.escape_tracker.update(self.pose_history[-1])
+        self.escape_assist_tracker = EscapeProgressTracker(geometry,
+            EscapeProgressConfig(stall_window_sec=self.config.escape_assist_stall_window_sec))
+        self.escape_assist_tracker.update(self.pose_history[-1])
         self.activity = 'ESCAPE'
         self.escape_assisted = False
+        self.escape_assist_used = False
+        self.escape_assist_pose = None
+        self.escape_assist_path = 0.
         self.emit(now, 'escape_started', f'fill={fill.fill_id}')
 
     def _verify(self, now):
@@ -407,7 +470,7 @@ class V3Core:
         self.last_tick = now
         reason = self._fresh(now, steady)
         if reason is not None:
-            self.cancel_candidate(now, reason)
+            self._interrupt_inputs(now, reason)
             self._availability(now, 'WAITING_INPUT', reason)
             self.command = Command()
             # Reap optional work, but never commit a fill while input is absent.
@@ -421,6 +484,7 @@ class V3Core:
             self.command = Command()
             return self.command
         self._availability(now, 'ACTIVE', 'fresh_inputs')
+        self.inputs_interrupted = False
         if self.activity in ('VERIFY', 'DESIGN'):
             self._verify(now) if self.activity == 'VERIFY' else self._check_design_motion(now)
         self._submit_work(now)
@@ -444,12 +508,18 @@ class V3Core:
             elif self.activity == 'ESCAPE':
                 tracker = self.escape_tracker
                 progress = tracker.update(Pose2D(pose.stamp, pose.x, pose.y, pose.yaw))
+                assist_progress = self.escape_assist_tracker.update(
+                    Pose2D(pose.stamp, pose.x, pose.y, pose.yaw))
                 transition = None
                 if progress.stable_exit:
                     transition = 'escape_complete'
-                elif (progress.stalled and not self.escape_assisted
+                    self._finish_assistance(now, transition)
+                elif (assist_progress.stalled and not self.escape_assist_used
                       and self.config.direct_escape_assistance_enabled):
                     self.escape_assisted = True
+                    self.escape_assist_used = True
+                    self.escape_assist_pose = pose
+                    self.escape_assist_path = 0.
                     self.emit(now, 'escape_assist', 'radial_progress_stalled')
                 if transition is not None and self.pending_search is None:
                     self.pending_search = transition
@@ -457,11 +527,12 @@ class V3Core:
                 # Change the objective on the next actual source sample. This
                 # short bounded continuation avoids a synthetic transition stop.
                 if self.escape_assisted:
-                    distance = max(0., tracker.geometry.exit_radius-progress.radial_distance)+.5
-                    linear, angular = recenter_command(self.escape_direction, pose.yaw, distance,
-                        RecenterControlConfig(max_linear_velocity_mps=self.config.max_vx,
-                                               max_angular_velocity_rps=self.config.max_wz))
-                    command = Command(linear, angular)
+                    dx, dy = self.escape_direction
+                    body = (math.cos(pose.yaw)*dx + math.sin(pose.yaw)*dy,
+                            -math.sin(pose.yaw)*dx + math.cos(pose.yaw)*dy)
+                    # The normal signed-translation controller has no
+                    # turn-to-align state or center-arrival tolerance.
+                    command = self._direction_command(now, body)
                 else:
                     command = self._search_command(now)
             else:
@@ -489,10 +560,13 @@ class V3Core:
                 self.motion_anchor = self.pose
 
     def _search_command(self, now):
+        return self._direction_command(now, self.last_direction.final_body)
+
+    def _direction_command(self, now, direction):
         pose = self.pose
         values = self.controller.controller_output(now,
             np.array([pose.x, pose.y, 0., 0., 0., pose.yaw]),
-            np.asarray(self.last_direction.final_body))
+            np.asarray(direction))
         return Command(float(values[0]), float(values[5]))
 
     def drain_events(self):

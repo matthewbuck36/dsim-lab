@@ -215,6 +215,7 @@ class RollingGesc:
         self._last_sample = None
         self._instant_world = None
         self._result = RollingResult()
+        self._accepted_result = None
         self._last_evaluation_ns = None
 
     def invalidate(self, reason):
@@ -229,6 +230,7 @@ class RollingGesc:
         self._last_sample = None
         self._instant_world = None
         self._last_evaluation_ns = None
+        self._accepted_result = None
         self._result = RollingResult(reset_sequence=self.reset_sequence,
                                      reset_reason=self.reset_reason, fallback_reason=self.reset_reason,
                                      coherence_reason=self.reset_reason)
@@ -255,6 +257,7 @@ class RollingGesc:
         self._cycle_start = point
         self._last_sample = sample
         self._instant_world = q_world
+        self._accepted_result = None
         self._result = self._snapshot(reason or "initializing")
         return self._result
 
@@ -317,6 +320,8 @@ class RollingGesc:
                 self.invalidate("cycle_duration")
                 return self._seed(sample, world, "cycle_duration")
             self._result = self._snapshot()
+            if self._result.coherence_reason != "pending_coherence":
+                self._accepted_result = None
             # Keep the first crossing support (including plateaus) and current
             # anchored-cycle support; confidence itself retains only summaries.
             if self._direction and self._result.mean_full:
@@ -410,6 +415,7 @@ class RollingGesc:
             coherence_reason=value['reason'], norm_new_evaluations=value['new_evaluations'],
             norm_window_evaluations=value['window_evaluations'],
             fallback_reason="" if value['qualified'] else value['reason'])
+        self._accepted_result = self._result if value['qualified'] else None
         return True
 
     def _snapshot_geometry(self, reason=""):
@@ -453,6 +459,14 @@ class RollingGesc:
             return replace(result, fallback_reason="incomplete_cycle_coverage")
         return result
 
+    def _observation_fresh(self, observation, now_ns):
+        if observation is None:
+            return False
+        stamps = (observation.source_stamp_ns, observation.receipt_stamp_ns,
+                  observation.oldest_receipt_stamp_ns)
+        return all(0 <= now_ns-stamp <= self.config.freshness_ns
+                   for stamp in stamps if stamp is not None)
+
     def evaluate(self, now_ns, output_yaw, output_pose_stamp_ns):
         """Rotate into a fresh actual pose's body frame; yaw is held, not predicted."""
         if _ns(now_ns):
@@ -463,14 +477,21 @@ class RollingGesc:
         obs = result.observation
         if (obs is None or not _ns(now_ns) or not _ns(output_pose_stamp_ns)
                 or not _finite(output_yaw)
-                or not 0 <= now_ns - obs.source_stamp_ns <= self.config.freshness_ns
-                or not 0 <= now_ns - obs.receipt_stamp_ns <= self.config.freshness_ns
-                or (obs.oldest_receipt_stamp_ns is not None
-                    and not 0 <= now_ns - obs.oldest_receipt_stamp_ns <= self.config.freshness_ns)
+                or not self._observation_fresh(obs, now_ns)
                 or not 0 <= now_ns - output_pose_stamp_ns <= self.config.freshness_ns):
             return replace(result, output_valid=False, fallback_used=False,
                            actual_blend_weight=0.0, final_body=None, final_magnitude=None,
                            fallback_reason="stale_or_invalid_output_input")
+        accepted = self._accepted_result
+        if (result.coherence_reason == "pending_coherence" and accepted is not None
+                and accepted.reset_sequence == result.reset_sequence
+                and accepted.observation.identity == obs.identity
+                and accepted.observation.objective == obs.objective
+                and self._observation_fresh(accepted.observation, now_ns)):
+            # Hold the accepted snapshot, including its original timestamps.
+            # New input still creates a new job; old confidence never qualifies
+            # its uncomputed geometry. Reproject the held vector at current yaw.
+            result = accepted
         return self._evaluate_moving(result, output_yaw, output_pose_stamp_ns)
 
     def _evaluate_moving(self, result, output_yaw, output_pose_stamp_ns):

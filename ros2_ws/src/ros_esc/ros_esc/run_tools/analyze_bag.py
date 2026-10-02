@@ -126,6 +126,80 @@ def cadence(times):
             'timestamp_regressions': regressions, 'duplicate_timestamps': sum(gap == 0 for gap in gaps)}
 
 
+def observation_topic(types):
+    """Prefer the canonical combined sensor stream without joining producers."""
+    topics = [topic for topic, kind in types.items() if kind.endswith('/SensorObservation')]
+    return '/gesc/observation' if '/gesc/observation' in topics else next(iter(topics), None)
+
+
+def observation_arm_summary(topic, records):
+    """Estimate phase speed only across adjacent, compatible fresh observations.
+
+    The 0.5-second pair bound is an offline reporting policy, not a new runtime
+    gate. Keeping invalid rows in the adjacency test prevents bridging them.
+    Wrapped increments cannot reveal extra revolutions between observations.
+    """
+    maximum_gap = 0.5
+    excluded = Counter()
+    elapsed = travel = 0.0
+    accepted = 0
+    retained_gaps = []
+    bases = set()
+    for left, right in zip(records, records[1:]):
+        if any(row.get('valid') is not True
+               or not finite(row.get('source_time_s'), row.get('phase_rad'))
+               or not isinstance(row.get('source_instance'), str)
+               or not row['source_instance'].strip() for row in (left, right)):
+            excluded['invalid_observation_or_phase'] += 1
+            continue
+        if left['source_instance'] != right['source_instance']:
+            excluded['source_instance_changed'] += 1
+            continue
+        if (left.get('timestamp_basis') not in (0, 1, 2)
+                or left.get('timestamp_basis') != right.get('timestamp_basis')):
+            excluded['timestamp_basis_unavailable_or_changed'] += 1
+            continue
+        gap = right['source_time_s']-left['source_time_s']
+        if gap <= 0:
+            excluded['nonincreasing_source_time'] += 1
+            continue
+        if gap > maximum_gap:
+            excluded['source_gap_over_policy_limit'] += 1
+            continue
+        travel += abs(math.remainder(right['phase_rad']-left['phase_rad'], 2*math.pi))
+        elapsed += gap
+        retained_gaps.append(gap)
+        bases.add(str(left['timestamp_basis']))
+        accepted += 1
+    return {
+        'mean_observed_rpm': travel/elapsed*60/(2*math.pi) if accepted else None,
+        'source_topic': topic,
+        'method': ('absolute wrapped phase increments over retained adjacent valid observations; '
+                   'assumes actual travel is less than pi radians per pair; extra turns alias'),
+        'time_basis': ('SensorObservation source stamps with producer timestamp_basis '
+                       '(0=device, 1=estimated, 2=receipt); ADC timing is not inferred'),
+        'retained_timestamp_bases': sorted(bases),
+        'maximum_pair_gap_sec': maximum_gap,
+        'pair_gap_policy': 'offline reporting bound matching 0.5-second input freshness',
+        'accepted_pairs': accepted,
+        'excluded_pairs': sum(excluded.values()),
+        'excluded_pair_reasons': dict(excluded),
+        'retained_elapsed_sec': elapsed,
+        'retained_absolute_wrapped_travel_rad': travel,
+        'minimum_pair_alias_limit_rpm': 30/max(retained_gaps) if retained_gaps else None,
+        'alias_limit_basis': '30 / pair duration in seconds; equality or greater can alias',
+    }
+
+
+def cost_plot_rows(types, rows):
+    """Use legacy cost unchanged, or the combined observation's valid raw cost."""
+    if '/turtlebot3/cost_value_chatter' in rows:
+        return rows['/turtlebot3/cost_value_chatter'], False
+    topic = observation_topic(types)
+    return [dict(row, values=[row['raw_cost']]) for row in rows.get(topic, [])
+            if row.get('valid') is True and finite(row.get('raw_cost'))], True
+
+
 def summarize(types, rows):
     """Unavailable data stays null; recorded commands are not measured stopping."""
     topics = {}
@@ -169,6 +243,10 @@ def summarize(types, rows):
             travel = sum(abs(math.remainder(b['values'][0] - a['values'][0], 2 * math.pi))
                          for a, b in zip(encoder, encoder[1:]))
             rpm = travel / sum(gaps) * 60 / (2 * math.pi)
+    arm = {'mean_observed_rpm': rpm, 'method': 'absolute wrapped angle increments; ambiguous if travel exceeds pi between samples'}
+    sensor_topic = observation_topic(types)
+    if '/turtlebot3/encoder_chatter' not in rows and sensor_topic is not None:
+        arm = observation_arm_summary(sensor_topic, rows.get(sensor_topic, []))
     fills = {}
     events = Counter()
     for topic, kind in types.items():
@@ -179,7 +257,7 @@ def summarize(types, rows):
         elif kind.endswith('/AlgorithmEvent'):
             events.update(str(row['event_type']) for row in rows[topic] if 'event_type' in row)
     return {'topics': topics, 'motion': motion,
-            'arm': {'mean_observed_rpm': rpm, 'method': 'absolute wrapped angle increments; ambiguous if travel exceeds pi between samples'},
+            'arm': arm,
             'gaussian': {'observed_fill_ids': len(fills) if any(kind.endswith('/GaussianFill') for kind in types.values()) else None,
                          'last_fill_records': list(fills.values())},
             'events_by_type': dict(events)}
@@ -217,7 +295,7 @@ def write_plots(directory, types, rows):
         figure.savefig(directory / 'trajectory.png', dpi=150)
         plt.close(figure)
         files.append('trajectory.png')
-    costs = rows.get('/turtlebot3/cost_value_chatter', [])
+    costs, observation_cost = cost_plot_rows(types, rows)
     commands = rows.get('/cmd_vel', [])
     if costs or commands:
         figure, axes = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
@@ -229,7 +307,8 @@ def write_plots(directory, types, rows):
                 for channel in range(channel_count):
                     valid = [row for row in costs if len(row.get('values', [])) > channel and finite(row['values'][channel])]
                     axis.plot([(row['bag_time_ns'] - origin) * 1e-9 for row in valid],
-                              [row['values'][channel] for row in valid], label=f'Cost {channel + 1}')
+                              [row['values'][channel] for row in valid],
+                              label='Observation raw cost' if observation_cost else f'Cost {channel + 1}')
             else:
                 for key in ('vx', 'wz'):
                     valid = [row for row in commands if finite(row.get(key))]
