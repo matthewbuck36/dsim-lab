@@ -1,15 +1,21 @@
 # Simulation and physical environment parameters
 
-## Active V3 simulation and protected physical V1
+## Active V3 simulation and physical commissioning
 
 The active Gazebo entrypoint is `gazebo.launch.py` with a named profile. Read
 [usage](esc_usage.md), [architecture](esc_architecture.md) and the
 [refactor status](codex/gesc_gaussian/v3/refactor_status.md) for current behavior.
-The selected physical installation remains restored V1; no V3 deployment is
-part of this refactor. The [restoration evidence](esc_history.md) owns the
+Physical V3 deployment was separately authorized on 2026-09-29 in the existing
+Pi `~/ros2_ws`; see [physical usage](esc_physical_v3.md) and its linked deployment
+status. Complete V1 source/build/install and numerical-library backups are under
+`~/mbuck_backups/gesc_v3_deployment_20260929T210229Z`. Software deployment is not
+physical qualification. The [restoration evidence](esc_history.md) owns the
 54-degree offset, fixed approximately 5 Hz Arduino application and nominal
-20 RPM settings. Earlier 354-degree or selectable 10/15 Hz instructions are
-superseded. Measured arm speed in the retained operator run was about 17.2 RPM.
+20 RPM settings. Deployment leaves the firmware unchanged; it does not claim
+a fresh flash readback. Earlier354-degree or selectable10/15Hz instructions are
+superseded. Measured arm speed in the retained V1 operator run was about17.2RPM;
+The V3 raised-wheel normal-stop test observed about 4.972 Hz and 17.95 RPM;
+this short result does not establish sustained timing or floor behavior.
 
 | Owner | Active V3 Gazebo | External physical adapter contract |
 | --- | --- | --- |
@@ -18,9 +24,9 @@ superseded. Measured arm speed in the retained operator run was about 17.2 RPM.
 | Algorithm pose | Observed `/odom` | OpenCR `/odom`; Vicon evaluation only |
 | Cost/phase | Modeled 5 Hz cost, observed joint phase | Serial cost, calibrated encoder phase; no fabricated ADC timestamp/sequence |
 | Arm | nominal 20 RPM, observed phase | nominal 20 RPM; speed variation must be measured |
-| Selected V3 gains/caps | controller JSON: k_vx0.5, k_wz5, max_vx0.10, max_wz0.50 | Not deployed; preserve working physical V1 configuration |
+| Selected V3 gains/caps | controller JSON: k_vx0.5, k_wz5, max_vx0.10, max_wz0.50 | k_vx0.5, k_wz5, max_vx0.05, max_wz0.30 after first floor-run review; affine2.0, assistance off |
 | Plotting | Automatic interactive Matplotlib; off headless | Off |
-| Recording | Optional standard bag; records `/clock` without forcing recorder clock | Optional observer contract; no control readiness |
+| Recording | Optional standard bag; records `/clock` without forcing recorder clock | Optional standard bag plus separate Vicon evaluation topic; no control readiness |
 | Source owner | This checkout | Pi and `physical_TB3_files_snapshot`; physical package stays external |
 
 Built-ins resolve installed JSON/module resources. Physical adapters must use

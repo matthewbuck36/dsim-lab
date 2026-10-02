@@ -1,8 +1,9 @@
 # Running ESC in Gazebo
 
 This checkout runs the original ESC methods and the V3 development algorithm.
-Gaussian V1/V2 are frozen references; the working physical V1 installation is
-unchanged. Software checks do not establish Gazebo behavior or physical
+Gaussian V1/V2 are frozen references; physical V1 is preserved in complete
+backups during the separately authorized [V3 deployment](esc_physical_v3.md).
+Software checks do not establish Gazebo behavior or physical
 qualification. See [architecture](esc_architecture.md) and [history](esc_history.md).
 
 ## Build and source
@@ -85,14 +86,19 @@ use Python module names; custom original JSON objects may still use `filepath`.
 The V3 controller JSON owns its effective gains and speed caps. Scene parameters
 belong to the modeled cost configuration, not the controller's observations.
 The current V3 development caps are 0.10 m/s and 0.50 rad/s, matching the archived
-full-rotation light GESC baseline. Its linear gain remains 0.5. This portable
-development profile has not been deployed to the Pi; restored physical V1 is
-unchanged. Gazebo's visible light models use the selected cost JSON positions.
+full-rotation light GESC baseline. Its linear gain remains 0.5. Physical V3 uses
+the shared algorithm with separately selected caps of 0.05 m/s and 0.30 rad/s;
+the physical guide owns its configuration and qualification status. V1 is backed
+up. Gazebo's visible light models use the selected cost JSON positions.
 
 The V3 controller JSON currently sets `direct_escape_assistance_enabled: false`
 for the user-requested unaided escape experiment. Gaussian and affine cost
 shaping remain active; only direct heading-command assistance is disabled.
-Setting this boolean true retains the earlier fallback for explicit comparisons.
+Setting this boolean true enables the last-resort fallback: less than 5 cm
+outward progress over 15 seconds permits one nominal 20 cm measured-path pulse
+per escape, followed by ordinary GESC. The controller JSON owns
+`escape_assist_stall_window_sec` and `escape_assist_distance_m`; odometry/control
+sampling determines the actual cutoff resolution.
 The same controller JSON accepts `escape_affine_magnitude`. The user-selected
 V3 development value is now 2.0; omitted values in older custom profiles still
 default to 0.5. Use an external custom profile for one-off slope comparisons.

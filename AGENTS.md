@@ -17,6 +17,22 @@ tests remain on frozen refs and in external archives. Keep interactive Gazebo
 Matplotlib plots; keep physical `turtlebot3_vehicle_nodes` outside this checkout.
 No repository refactor authorizes Pi deployment or physical motion.
 
+Physical V3 deployment was separately authorized on 2026-09-29. Its current
+authority and evidence are `docs/codex/gesc_gaussian/v3/physical_deployment_plan.md`
+and `physical_deployment_status.md`. Read `docs/esc_physical_v3.md` for the
+same-workspace build/source/launch command and preserved V1 backup. The user
+explicitly selected physical V3 caps 0.05/0.30 after the first floor-run review,
+superseding the initial 0.10/0.50 caps; Gazebo retains 0.10/0.50. Affine 2.0,
+fixed 5 Hz, nominal 20 RPM and 54-degree calibration remain selected. Older
+rate-switching instructions are superseded for V3. No SSH-loss monitor.
+Hardware stopping/behavior require operator testing.
+
+For continued physical V3 work, start with
+`docs/codex/gesc_gaussian/v3/physical_fresh_chat_handoff.md` (2026-10-01).
+It records the latest post-correction floor run, physical-first priorities,
+and proposed tuning that has **not** been deployed. Do not confuse the older
+deployment-time qualification statements with the latest run evidence.
+
 ## Simulation and physical environment boundary
 
 - This checkout is the **simulation/Gazebo** workspace. Read

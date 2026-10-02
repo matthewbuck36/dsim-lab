@@ -56,6 +56,11 @@ Research activity is local SEARCH, VERIFY, DESIGN and ESCAPE. Candidate failure
 has no authority to latch the entire run into failure. Best-source ranking is
 an informational event, never automatic goal hold.
 
+Ordinary data expiry, gaps and same-frame source reconnects retain a committed
+escape's fill, direction, affine field and original decay age. They discard
+stale direction/progress evidence and pending numerical work. Fresh observations
+resume ESCAPE automatically; interrupted verification/design may be retried.
+
 ## Selected numerical baseline
 
 The first V3 profile retains the selected 5 Hz V2 mathematics: measured-angle
@@ -64,6 +69,27 @@ moving verification, raw three-cycle evidence, robust basin/fill design and
 Gaussian/affine escape. Portable golden fixtures compare these calculations
 with the frozen pre-refactor source. These are selected-case numerical
 comparisons, not proof of equivalent complete trajectories.
+
+The private numerical child imports its coherence and fill dependencies before
+announcing ready. Until then, fresh instantaneous control remains available;
+the control thread does not wait for imports. The existing 0.5-second coherence
+and 5-second fill budgets begin on job submission, and original source/result
+ages remain enforced. Startup work cannot consume a job budget and repeatedly
+restart a cold worker.
+
+At initial acquisition, V3 seeds the washout state from the first valid cost:
+one absolute brightness reading supplies no gradient. A subsequent usable
+change can start control immediately, without a sleep or rotation gate. This
+priming applies only when a core starts; it does not insert a zero at in-motion
+objective changes. The original standalone numerical helper is unchanged.
+
+While replacement coherence is pending, steering may retain the entire last
+accepted snapshot within its original 0.5-second source/receipt freshness and
+unchanged frame/objective/history context. It reprojects that vector using the
+current fresh yaw; it never assigns old confidence to new geometry. Rejection,
+invalid geometry or a context reset discards the snapshot. Expiry falls back to
+the current fresh instantaneous direction, and stale live inputs still command
+zero. New observations continue submitting replacement work normally.
 
 The recurrent detector consumes observed odometry at its actual rate; raw cost
 evidence remains at acquisition cadence. Raw cost and augmented objective stay
@@ -74,8 +100,11 @@ simulator ground truth enters the controller.
 SEARCH/VERIFY/DESIGN use raw plus Gaussian cost. ESCAPE uses Gaussian plus
 affine GESC repulsion. The controller JSON selects
 `direct_escape_assistance_enabled`; the current development profile sets it
-false to evaluate escape through GESC alone. When enabled, radial stall switches
-to direct assistance until a measured stable exit while inputs remain valid.
+false to evaluate escape through GESC alone. When enabled, less than 5 cm of
+outward progress over a separate 15-second window permits one nominal 20 cm
+measured-path pulse per escape, then ordinary GESC resumes. An interrupted pulse
+is consumed; missing odometry never contributes an inferred path segment.
+The existing 3-second stable-exit window is independent of this assist window.
 Neither selection imposes an elapsed escape deadline or V3 affine-guidance age cutoff. Effective
 objective changes apply at a new source observation; old directions/history are
 not silently relabeled or replayed. The current profile is the retained
@@ -85,7 +114,9 @@ The selected forward gain remains 0.5. The user-authorized development profile
 now matches the archived full-rotation light GESC caps: 0.10 m/s and 0.50 rad/s.
 The initial pilots used 0.05/0.30; their evidence remains tied to those settings.
 The baseline light controller's linear gain is 1.0, so matching caps does not
-claim complete controller parity. Physical V1 has not been changed.
+claim complete controller parity. The separately authorized physical V3 deployment
+now uses 0.05/0.30 after the first floor-run review; original V1 source/configuration
+remain in its complete backup.
 The selected field is run05's local 400-lumen source at
 (0.5740251485476348, 1.38581929876693) and 1600-lumen source at (3.5, 3.5).
 
@@ -135,3 +166,9 @@ CSV is an optional post-run export, not duplicate live recording.
 Gazebo timing/noise/load sweeps remain subsequent work. In particular, the
 inherited optional ADC model has a nearest-match defect; V3 currently selects
 `apply_adc=false`. It must not be described as a faithful Arduino quantizer.
+
+Physical V3 also starts the retained Vicon client as an optional evaluation
+process and records `/gesc_gaussian/evaluation/vicon_odom`. It cannot provide
+control pose, renew a process lease or gate startup/motion. Its absence or exit
+is isolated from the controller, acquisition and OpenCR driver. The physical
+usage guide describes the inherited one-shot UDP connection procedure.

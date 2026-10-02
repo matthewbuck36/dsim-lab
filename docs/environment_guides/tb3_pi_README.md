@@ -1,5 +1,14 @@
 # TurtleBot SSHFS mount point — local instructions
 
+Current physical V3 commissioning guidance is
+[physical usage](../esc_physical_v3.md). The user authorized deployment into the
+original `~/ros2_ws` on2026-09-29, with complete V1 backup in `mbuck_backups`.
+V3 selects physical caps 0.05/0.30 after the first floor-run review, gains 0.5/5,
+affine 2.0, fixed 5 Hz, nominal 20 RPM and 54°. Gazebo retains 0.10/0.50.
+Its script uses ordinary build/source/launch; no SSH-loss heartbeat is present.
+The old selected Phase09 tables below describe historical V1, not the V3 graph.
+No physical motion is authorized by reading this guide.
+
 **Environment: physical TurtleBot when mounted; local mount-point directory
 when unmounted.** These README/AGENTS files were created locally while
 unmounted. They are not on the robot. SSHFS hides them while mounted and they

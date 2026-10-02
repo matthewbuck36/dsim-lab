@@ -1,5 +1,13 @@
 # Local TurtleBot mount-point agent instructions
 
+For current V3 work read `../esc_physical_v3.md` and
+`../codex/gesc_gaussian/v3/physical_deployment_{plan,status}.md`. User-authorized
+V3 uses the existing Pi `~/ros2_ws`, preserves V1 in `mbuck_backups`, ordinary
+build/source/launch, physical caps 0.05/0.30 after the first floor-run review,
+affine 2.0, fixed 5 Hz, nominal 20 RPM, 54-degree offset and no SSH-loss monitor.
+Gazebo retains 0.10/0.50. Hardware stopping and behavior are unqualified
+until tested with operator readiness; deployment does not imply floor testing.
+
 Before any file operation, check `findmnt --mountpoint /home/mattb/tb3-pi`.
 When unmounted, this directory contains local guidance, not robot source;
 use the offline physical snapshot for source inspection. Write local guides
