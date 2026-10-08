@@ -58,7 +58,22 @@ earlier bugs are deferred and GOAL_HOLD remains optional for arrival acceptance.
 At that V2 closeout, no further simulation work was scheduled. Physical implementation/validation and
 broader research claims are separate; the historical study limitations remain.
 
-## Current GESC + Gaussian V1 report
+## GESC Gaussian V3 master report
+
+The [complete V3 project and learning report](codex/gesc_gaussian/FINAL_PROJECT_REPORT_V3.pdf)
+explains the active packages, runtime, mathematics, configuration, worked
+examples, retained simulation results and latest physical testing boundary.
+The user considers the simulation/Gazebo baseline satisfactory; physical
+Gaussian fill and escape remain unqualified. Its
+[editable Markdown](codex/gesc_gaussian/FINAL_PROJECT_REPORT_V3.md),
+[LaTeX source](codex/gesc_gaussian/FINAL_PROJECT_REPORT_V3.tex),
+[file coverage](codex/gesc_gaussian/v3/report_coverage.tsv),
+[parameter index](codex/gesc_gaussian/v3/report_parameters.tsv), and
+[validation receipt](codex/gesc_gaussian/v3/report_validation.md) are retained
+alongside it. This report documents the source at `2be0bad` and does not apply
+the undeployed physical tuning proposals.
+
+## Frozen GESC + Gaussian V1 report
 
 The complete V1 project narrative and evidence boundary is the LaTeX-typeset
 [FINAL_PROJECT_REPORT_V1.pdf](codex/gesc_gaussian/FINAL_PROJECT_REPORT_V1.pdf).

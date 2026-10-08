@@ -1,0 +1,43 @@
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{float}
+\usepackage{titlesec}
+\usepackage{xurl}
+\usepackage{needspace}
+\usepackage[section]{placeins}
+\usepackage{microtype}
+\usepackage{caption}
+\usepackage{etoolbox}
+\definecolor{ReportBlue}{HTML}{285B8B}
+\definecolor{ReportGray}{HTML}{606B75}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small GESC Gaussian V3}
+\fancyhead[R]{\small Project and Learning Report}
+\fancyfoot[C]{\small \thepage\ / \pageref*{LastPage}}
+\setlength{\headheight}{15pt}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\footrulewidth}{0pt}
+\titleformat{\section}{\Large\bfseries\color{ReportBlue}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{18pt}{8pt}
+\titlespacing*{\subsection}{0pt}{12pt}{6pt}
+\setlength{\emergencystretch}{3em}
+\setlength{\parskip}{4pt plus 1pt}
+\captionsetup{font=small,labelfont=bf,skip=7pt}
+\floatplacement{figure}{htbp}
+\BeforeBeginEnvironment{lstlisting}{\needspace{7\baselineskip}}
+\lstset{basicstyle=\ttfamily\footnotesize,breaklines=true,
+ breakatwhitespace=false,columns=fullflexible,showstringspaces=false,
+ frame=single,rulecolor=\color{gray!30},backgroundcolor=\color{gray!4},
+ literate={→}{{$\rightarrow$}}1 {←}{{$\leftarrow$}}1
+ {×}{{$\times$}}1 {≤}{{$\leq$}}1 {≥}{{$\geq$}}1
+ {−}{{$-$}}1 {–}{{-}}1 {π}{{$\pi$}}1 {φ}{{$\phi$}}1
+ {ψ}{{$\psi$}}1 {ω}{{$\omega$}}1 {μ}{{$\mu$}}1
+ {Σ}{{$\Sigma$}}1 {²}{{$^2$}}1}
+\AtBeginEnvironment{longtable}{\footnotesize}
+\renewcommand{\arraystretch}{1.15}
+\hypersetup{colorlinks=true,linkcolor=ReportBlue,urlcolor=ReportBlue,
+ pdftitle={GESC Gaussian V3 Complete Project and Learning Report},pdfauthor={DSIM Lab}}
