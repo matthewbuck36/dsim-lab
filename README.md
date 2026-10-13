@@ -1,6 +1,10 @@
 # DSIM Lab
 
-ROS 2 Humble/Gazebo workspace for extremum-seeking source seeking. The active
+Current thesis development starts from Gokay's baseline in the official shared
+DSIM Lab GitLab. This personal GitHub checkout preserves previous work as
+evidence and references, including [retired files](docs/Depreciated/README.md).
+
+ROS 2 Humble/Gazebo workspace for extremum-seeking source seeking. The preserved
 implementation contains the original ESC methods and the V3 GESC/Gaussian
 algorithm. V3 is under software qualification; Gazebo behavioral testing follows
 this refactor. Physical V1 remains the protected robot installation.

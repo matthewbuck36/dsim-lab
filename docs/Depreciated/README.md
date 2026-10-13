@@ -3,6 +3,10 @@
 This folder is the project-level holding area for files that would otherwise
 be deleted during cleanup or renaming.
 
+Its canonical location is `docs/Depreciated/`. Older work logs may refer to
+the former root-level `Depreciated/` path; use the same relative path beneath
+`docs/` to locate those files. Contents are preserved as historical references.
+
 Rules for future AI/code-agent work:
 
 - Do not hard-delete project files unless Matt explicitly asks for deletion.
@@ -15,13 +19,13 @@ Rules for future AI/code-agent work:
 Suggested layout:
 
 ```text
-Depreciated/YYYY-MM-DD/<reason-or-area>/
+docs/Depreciated/YYYY-MM-DD/<reason-or-area>/
 ```
 
 Examples:
 
 ```text
-Depreciated/2026-05-13/old_work_logs/
-Depreciated/2026-05-13/duplicate_configs/
+docs/Depreciated/2026-05-13/old_work_logs/
+docs/Depreciated/2026-05-13/duplicate_configs/
 ```
 

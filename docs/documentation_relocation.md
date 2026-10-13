@@ -11,6 +11,28 @@ physical validation boundary remains as recorded in the Phase 09 status.
 | `writing/gaussian_fill_light_source_sweep_report.md` | `docs/gaussian_fill_light_source_sweep_report.md` |
 | `writing/gesc_gaussian_source_fix_report.md` | `docs/gesc_gaussian_source_fix_report.md` |
 | `writing/heavy_ball_PDE_ESC/` | `docs/heavy_ball_PDE_ESC/` |
+| `Depreciated/` | `docs/Depreciated/` |
+
+## Retired-file folder relocation — 2026-10-13
+
+At the user's request, the root-level `Depreciated/` folder moved intact to
+`docs/Depreciated/`. Its dated directory structure is retained. Historical
+work logs and phase plans keep their original paths; translate the leading
+`Depreciated/` to `docs/Depreciated/` when locating an archived file.
+
+The move preserved all ten files and their permissions, including seven
+Git-tracked files. Only the holding-area README was subsequently updated to
+describe its new location. Root/docs navigation now links to that location
+and records the user's restart from Gokay's baseline in official shared
+DSIM Lab GitLab, with this personal GitHub checkout retained as evidence and
+references. No research result or archived source payload was changed.
+
+Validation: before/after SHA-256 and permission checks pass for all moved
+files; the README's path-only edits are the sole archive content exception.
+Maintained navigation links resolve and `git diff --check` passes. The
+before-file manifest is `/tmp/dsim-depreciated-relocation-before.json`.
+No build, experiment, physical workspace change, commit, or push is part of
+this documentation maintenance.
 
 ## Root shortcut removal — 2026-09-08
 

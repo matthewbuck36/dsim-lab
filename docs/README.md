@@ -1,9 +1,13 @@
 # Project documentation
 
-Active work: [ESC usage](esc_usage.md), [architecture and recovery](esc_architecture.md),
+Current thesis development starts from Gokay's baseline in the official shared
+DSIM Lab GitLab. This personal GitHub checkout preserves previous work as
+evidence and references.
+
+Preserved implementation guides: [ESC usage](esc_usage.md), [architecture and recovery](esc_architecture.md),
 [environment](environment_parameters.md), [software checks](esc_testing.md), [preserved history](esc_history.md), and
 [V3 refactor status](codex/gesc_gaussian/v3/refactor_status.md). The original ESC
-methods and V3 are the active runtime; historical phase documents below retain
+methods and V3 remain available in this checkout; historical phase documents below retain
 their original evidence limits.
 
 The implementation package and the former `writing/` contents are collected
@@ -19,6 +23,8 @@ here. Use these locations for new documentation references:
 - [GESC Gaussian source-fix report](gesc_gaussian_source_fix_report.md).
 - [Heavy-Ball baseline report](heavy_ball_PDE_ESC/baseline_hb_report/README.md)
   and [archive](heavy_ball_PDE_ESC/archive/README.md).
+- [Retired files](Depreciated/README.md): dated historical files moved from
+  the former root-level `Depreciated/` folder.
 - [Relocation record](documentation_relocation.md): path mapping and validation.
 
 The old root shortcuts have been removed. Historical reports, commands, and
