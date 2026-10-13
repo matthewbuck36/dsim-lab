@@ -9,9 +9,12 @@ Physical V3 deployment was separately authorized on 2026-09-29 in the existing
 Pi `~/ros2_ws`; see [physical usage](esc_physical_v3.md) and its linked deployment
 status. Complete V1 source/build/install and numerical-library backups are under
 `~/mbuck_backups/gesc_v3_deployment_20260929T210229Z`. Software deployment is not
-physical qualification. The [restoration evidence](esc_history.md) owns the
-54-degree offset, fixed approximately 5 Hz Arduino application and nominal
-20 RPM settings. Deployment leaves the firmware unchanged; it does not claim
+physical qualification. The [restoration evidence](esc_history.md) records the
+historical 54-degree offset, fixed approximately 5 Hz Arduino application and
+nominal 20 RPM settings. On 2026-10-09 the operator measured 298–300 degrees
+with the arm straight ahead, after the old 54-degree subtraction. The authorized
+physical offset is now 353 degrees, applied once; the implied raw forward angle
+was 352–354 degrees. See the physical deployment status for validation. Deployment leaves the firmware unchanged; it does not claim
 a fresh flash readback. Earlier354-degree or selectable10/15Hz instructions are
 superseded. Measured arm speed in the retained V1 operator run was about17.2RPM;
 The V3 raised-wheel normal-stop test observed about 4.972 Hz and 17.95 RPM;
@@ -24,14 +27,15 @@ this short result does not establish sustained timing or floor behavior.
 | Algorithm pose | Observed `/odom` | OpenCR `/odom`; Vicon evaluation only |
 | Cost/phase | Modeled 5 Hz cost, observed joint phase | Serial cost, calibrated encoder phase; no fabricated ADC timestamp/sequence |
 | Arm | nominal 20 RPM, observed phase | nominal 20 RPM; speed variation must be measured |
-| Selected V3 gains/caps | controller JSON: k_vx0.5, k_wz5, max_vx0.10, max_wz0.50 | k_vx0.5, k_wz5, max_vx0.05, max_wz0.30 after first floor-run review; affine2.0, assistance off |
+| Selected V3 gains/caps | controller JSON: k_vx0.5, k_wz5, max_vx0.10, max_wz0.50 | Trial k_vx0.10, k_wz1.0 selected2026-10-09; restored max_vx0.05, max_wz0.30; affine2.0, assistance off |
+| Static confinement | Shared 0.06m radius, 30s support, 0.005m/s drift (2026-10-09 correction) | Same detector; selected physical escapes recorded2026-10-09 |
 | Plotting | Automatic interactive Matplotlib; off headless | Off |
 | Recording | Optional standard bag; records `/clock` without forcing recorder clock | Optional standard bag plus separate Vicon evaluation topic; no control readiness |
 | Source owner | This checkout | Pi and `physical_TB3_files_snapshot`; physical package stays external |
 
 Built-ins resolve installed JSON/module resources. Physical adapters must use
 Pi-local paths and must not import a laptop snapshot path. Calibration belongs
-to acquisition: do not add the 54-degree offset again to an already calibrated
+to acquisition: do not add the physical offset again to an already calibrated
 angle, or apply it to a Gazebo joint. The shared algorithm receives observed
 pose, angle and cost; simulator source locations/brightness remain in the
 model/analysis configuration. Optional nearest support carries its actual age,

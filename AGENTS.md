@@ -21,17 +21,26 @@ Physical V3 deployment was separately authorized on 2026-09-29. Its current
 authority and evidence are `docs/codex/gesc_gaussian/v3/physical_deployment_plan.md`
 and `physical_deployment_status.md`. Read `docs/esc_physical_v3.md` for the
 same-workspace build/source/launch command and preserved V1 backup. The user
-explicitly selected physical V3 caps 0.05/0.30 after the first floor-run review,
-superseding the initial 0.10/0.50 caps; Gazebo retains 0.10/0.50. Affine 2.0,
-fixed 5 Hz, nominal 20 RPM and 54-degree calibration remain selected. Older
+selected physical V3 caps 0.05/0.30 for the successful lower-speed trials, then
+tested 0.10/0.50 on 2026-10-09 and authorized returning to 0.05/0.30
+for a third lower-cap trial.
+Gazebo retains 0.10/0.50. Affine 2.0,
+fixed 5 Hz, nominal 20 RPM and 353-degree calibration (authorized 2026-10-09) remain selected. Older
 rate-switching instructions are superseded for V3. No SSH-loss monitor.
 Hardware stopping/behavior require operator testing.
 
 For continued physical V3 work, start with
-`docs/codex/gesc_gaussian/v3/physical_fresh_chat_handoff.md` (2026-10-01).
+`docs/codex/gesc_gaussian/v3/physical_fresh_chat_handoff.md` (updated2026-10-09).
 It records the latest post-correction floor run, physical-first priorities,
 and proposed tuning that has **not** been deployed. Do not confuse the older
 deployment-time qualification statements with the latest run evidence.
+The2026-10-09 physical trial selects gains0.10/1.0 with caps0.05/0.30;
+Gazebo gains stay0.5/5. The shared V3 static detector radius is now0.06m
+(authorized2026-10-09), retaining30s support and0.005m/s drift.
+After ending testing on2026-10-09, the user authorized the offline-mirror refresh.
+It now matches the live Pi within the established source/data/backup scope;
+receipt: `/home/mattb/physical_TB3_files_snapshot/sync_records/20261010T024420Z_pi_refresh/README.md`.
+The Pi remains the physical configuration authority.
 
 ## Simulation and physical environment boundary
 

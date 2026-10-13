@@ -3,8 +3,8 @@
 Current physical V3 commissioning guidance is
 [physical usage](../esc_physical_v3.md). The user authorized deployment into the
 original `~/ros2_ws` on2026-09-29, with complete V1 backup in `mbuck_backups`.
-V3 selects physical caps 0.05/0.30 after the first floor-run review, gains 0.5/5,
-affine 2.0, fixed 5 Hz, nominal 20 RPM and 54°. Gazebo retains 0.10/0.50.
+V3 selects physical caps 0.05/0.30 and trial gains 0.10/1.0 (2026-10-09),
+affine 2.0, fixed 5 Hz, nominal 20 RPM and 353° (authorized 2026-10-09). Gazebo retains 0.10/0.50.
 Its script uses ordinary build/source/launch; no SSH-loss heartbeat is present.
 The old selected Phase09 tables below describe historical V1, not the V3 graph.
 No physical motion is authorized by reading this guide.
@@ -123,3 +123,7 @@ behavior. The Pi terminal owns physical builds, overlays, devices, recording,
 and motion under the user's authorization; these documents are not a launch
 or transfer request. Source parity and passing clock tests are not physical
 runtime qualification.
+
+Current shared V3 static confinement radius is0.06m (authorized2026-10-09);
+30s support and0.005m/s drift remain unchanged. The offline mirror was refreshed after testing ended2026-10-09 and now matches
+the live Pi within its established scope; see snapshot sync_records/20261010T024420Z_pi_refresh.

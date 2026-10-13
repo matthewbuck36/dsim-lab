@@ -556,3 +556,380 @@ main, frozen-ref changes, Pi connection/deployment, hardware action or new
 Gazebo trial is part of this Git task. Gain5, physical caps0.05/0.30 and current
 detector settings remain selected; proposed tuning is still unimplemented.
 Physical Gaussian fill, local escape and global approach remain unqualified.
+
+## Two-light trial — 2026-10-09 read-only review
+
+Latest operator run `20261009T175942_765128Z-1267` is reviewed in
+[two-light evidence](/home/mattb/Experiments/GESC-Gaussian/v3/physical_runs/two_light_review_20261009_run1267/REVIEW.md).
+Original closed files were copied and SHA256-verified; no robot changes or
+launches occurred. The operator confirms lamps at lab-grid (1,1)/(3,3) m.
+First Vicon position is the plot origin, but grid/Vicon rotation is unknown.
+
+- 89.08 s moving, SEARCH only, no candidate/fill/escape, final zero/operator_stop.
+  445 consecutive valid samples at4.978 Hz;821 Vicon readings at8.989 Hz.
+- Forward/yaw requests saturated97.42%/85.68% of moving time;83 yaw sign changes
+  after15 s. Strong opposite turns largely cancel while forward motion persists.
+- Recorded-input replay supports participating averaged steering (256/257
+  distinguishable comparisons favor blend). The remaining25% instantaneous
+  lateral component dominates the75% mean in74.34% of selected comparisons.
+  Clipping reverses replayed mean turn bias in9/21 complete post15 s arm turns.
+  This is a steering/saturation mechanism, not proof of lamp-bearing accuracy
+  or a prediction of a corrected trajectory. Pure-mean replay still oscillates.
+- Detector replay: zero confirmations; all17 complete circular evaluations
+  fail at least one radius gate, and none meets low drift. No Gaussian action
+  was exercised. Detailed gate attribution is replay-derived.
+
+The older gain5→7.5 proposal is not supported as the first response to this
+already-saturated run. Next diagnosis should address direction estimation and
+capped command generation, retaining unknown lamp-axis alignment and optical
+effects as limits. No gain/cap/blend/detector changes or rollback were applied.
+Five selected runtime files match Pi source, installation and host replay source.
+Offline analysis completed; no new runtime regression/hardware tests were run.
+
+## Physical gain comparison installed — 2026-10-09
+
+User-authorized common0.1 scaling is installed: k_vx0.05/k_wz0.5, previously
+0.5/5. Physical caps0.05/0.30 and all other configuration values are unchanged.
+No algorithm,75%/25% blend, detector, calibration, firmware or legacy changes.
+The matching existing physical integration-test expectation was updated.
+
+Evidence/commands: `/home/mattb/Experiments/GESC-Gaussian/v3/physical_gains_20261009_trial02`.
+Original source/installed JSON and test are backed up on Pi under
+`/home/pi/mbuck_backups/physical_gains_20261009_trial02`, with verified laptop copies.
+
+- Idle preflight and source/installed baseline equality: PASS.
+- Usual Bash runner with `--check-only`, bounded150 s on Pi: ordinary build
+  of3 packages PASS in12.4 s; effective installed gains0.05/0.5 verified.
+- Existing bringup and mocked-device acquisition/ROS checks,100 s bound,
+  localhost domain191 for the transport test: **17 passed in8.50 s**.
+  No real serial/GPIO device or actuator was opened.
+- Final393-entry manifest: exactly controller JSON and test expectation
+  changed;391 unchanged. All117 runtime Python files,7configs and12interfaces
+  match installation. No remaining control/recording/build/test processes.
+- Gazebo controller JSON unchanged. `git diff --check` passes. No commit/push.
+
+The user explicitly deferred offline-mirror refresh until they announce the
+end of today's testing. No mirror file was written; its old gains/test remain
+intentional and must not overwrite the live selection. Operator floor outcome
+is pending; software/configuration checks do not establish physical convergence.
+
+## Lower-gain floor outcome — 2026-10-09
+
+Run `20261009T181236_873027Z-2626` confirms gains0.05/0.5 but remains
+SEARCH-only for103.93 s with no candidate/fill/escape, final zero/operator_stop.
+519 consecutive valid observations at4.978 Hz; Vicon present. Turn saturation
+fell85.68%→4.28% (none after15 s), yet the broad path persists. Gain scaling
+reduced clipping but did not solve source seeking; prior causal diagnosis was
+incomplete. All1468 distinguishable post15 s comparisons favor blended steering.
+
+The operator confirms starting directly toward the weaker lamp and unchanged
+lamp positions/brightness; carry these facts forward without asking repeatedly.
+Using that heading as a manual frame reference, early qualified mean direction
+is about84.5 degrees clockwise from the inferred weaker-light bearing. The
+first-harmonic raw-light direction also differs by roughly54–65 degrees early.
+These are model/heading-dependent observations, not surveyed lamp bearings or
+proof of a bad54-degree calibration. Source applies that offset once.
+
+[Full review](/home/mattb/Experiments/GESC-Gaussian/v3/physical_runs/two_light_review_20261009_run2626/REVIEW.md)
+recommends checking physical angle reference and raw-signal phase/response before
+further gain/blend/detector tuning. No new tuning, hardware diagnostic or rollback
+was applied. Live gains remain0.05/0.5; offline mirror refresh remains deferred.
+
+## Encoder reference correction installed — 2026-10-09
+
+Operator stationary forward-arm observation: calibration reader displayed
+298–300 degrees. Read-only live inspection confirmed the reader and V3 both
+subtracted 54 degrees, implying raw forward 352–354 degrees. The user explicitly
+authorized the proposed 353-degree offset. This supersedes the earlier statement
+that calibration remained only a hypothesis: a stationary reference mismatch
+is now measured, while its full contribution to the floor trajectory is unproven.
+
+Installed 353 degrees once in the shared physical encoder reader and V3
+acquisition; startup message, run receipt, both physical profile metadata fields
+and tests agree. Nine source files changed, 384 of the 393-entry baseline
+unchanged. This updates the calibration used by legacy physical readers too;
+legacy algorithms and Gazebo source/settings remain unchanged. Gains 0.05/0.5,
+caps 0.05/0.30 and all other selected control settings are unchanged.
+
+- Pi backup: `/home/pi/mbuck_backups/physical_encoder_20261009_353`.
+- Redundant backups, exact commands, source diff and validation:
+  `/home/mattb/Experiments/GESC-Gaussian/v3/physical_encoder_20261009_353/RECEIPT.md`.
+- Ordinary Bash build/check-only: PASS; final top-level and nested encoder
+  receipt fields both 353. Initial check exposed stale profile metadata, which
+  was corrected before final validation.
+- Native acquisition, bringup and mocked-device ROS tests: **41 passed in
+  8.58 seconds**, including measured-forward/wraparound and quadrant cases.
+- 136 installed runtime/config/interface files match source, including all
+  changed runtime/config files. Two unchanged noninstalled analysis scripts
+  are explicitly excluded in the audit receipt. Idle after verification.
+- No hardware startup, mirror write, commit or push. `git diff --check` passes.
+
+Next operator check: stationary forward reading near 0/360 degrees (expected
+359–1 from the reported samples), then an operator-controlled floor trial.
+Physical recheck, convergence, Gaussian fill/escape and global approach remain
+pending/unqualified. The offline mirror still has the prior gains and 54-degree
+calibration; refresh remains deferred until the user ends today's testing.
+
+## Corrected-reference floor outcome — 2026-10-09
+
+The operator verified forward readings near 359–1 degrees, then ran
+`20261009T182811_021920Z-4810`. They report much better steering and a direct
+approach to the weaker hanging lamp, whose final robot position was almost
+underneath it. Lamp hangs about one foot above the robot; preserve this setup.
+[Latest run review](/home/mattb/Experiments/GESC-Gaussian/v3/physical_runs/two_light_review_20261009_run4810/REVIEW.md)
+and its `slowdown.png` explain the remaining issue.
+
+Live events show SEARCH for all 87.50 seconds, no candidate, VERIFY, DESIGN,
+ESCAPE or fill. All 438 observations valid at 4.980 Hz. Odometry and Vicon both
+show about 1.569 m net displacement. Final 30-second commands averaged 1.224 cm/s
+forward magnitude; actual odometry path speed about 0.63 cm/s. It was creeping,
+not paused for a calculation. Last static-detector replay support radius was
+9.33 cm (limit 4 cm), drift 0.608 cm/s (limit 0.5); no qualifying orbit either.
+
+Next proposal: gains 0.05/0.5 -> 0.10/1.0 with unchanged 0.05/0.30 caps,
+353-degree calibration and detector. Fixed-input command rescaling suggests
+more response near the lamp, not a proven trajectory or detection improvement.
+**Not authorized or installed:** gains remain 0.05/0.5. No Pi/mirror changes.
+Closed bag hashes and five selected source/install/host files verified.
+Physical source approach improved in this observed trial; fill/escape/global
+approach remain unqualified. Offline-mirror refresh remains deferred.
+
+## Post-calibration gain comparison installed — 2026-10-09
+
+The user authorized the run4810 review's proposed doubling. Physical gains are
+now **0.10/1.0**, superseding the prior proposal-only statement and0.05/0.5
+selection. Caps0.05/0.30, calibration353 degrees, detector, blend, firmware,
+arm speed and assistance are unchanged. Gazebo gains remain0.5/5.
+
+Evidence/commands: `/home/mattb/Experiments/GESC-Gaussian/v3/physical_gains_20261009_trial04/RECEIPT.md`.
+Pi backup: `/home/pi/mbuck_backups/physical_gains_20261009_trial04`.
+Idle preflight, independently verified laptop originals, ordinary build/check-only
+and installed configuration validation passed. **17 focused native checks passed
+in8.58 seconds**. Exactly controller JSON and its existing integration-test gain
+assertion changed;391/393 source entries unchanged.136 installed runtime/config/
+interface files match source; no active control/recording/build/test processes.
+
+Next operator trial uses the same Bash command and a restarted Vicon server.
+No hardware launched, offline mirror refreshed, commit or push performed.
+Floor outcome is pending; stronger response is not yet evidence of an orbit,
+Gaussian fill, escape or global-source approach. Offline refresh remains deferred.
+
+## Latest floor run: confined but undetected — 2026-10-09
+
+Run `20261009T183636_203123Z-6323` used gains0.10/1.0, caps0.05/0.30,
+calibration353. Operator reports promising near-light behavior but no escape.
+[Review](/home/mattb/Experiments/GESC-Gaussian/v3/physical_runs/two_light_review_20261009_run6323/REVIEW.md)
+and `confinement.png` supersede run4810 as the latest floor evidence.
+
+279.88s SEARCH-only; no candidate, verification, design, fill or escape.
+1395 consecutive valid observations at4.979Hz; Vicon present. After80s, odometry
+stayed within16.5x14.8cm but commands alternated forward/reverse (49.3% reverse)
+and turning reached its cap53.5% of the time. This is confined irregular motion,
+not the earlier slow creep. Detector replay: all30 static evaluations after100s
+fail4cm radius (median5cm);29/30 already pass the drift limit. Circle/oscillation
+models never achieve persistence. No escape action actually started.
+
+Recommendation, **not authorized or installed**: retain current gains/caps,
+compare static support radius4->6cm with30s window/drift/other criteria intact.
+Retained-window sweep first passes at90s from epoch in this run and never in
+three earlier runs; this is selected retrospective evidence, not qualification.
+Avoid interpreting increased speed as a demonstrated remedy for detection.
+
+Live original GESC baseline is gains1.0/5.0, caps0.10/0.50; initial V3 was
+0.5/5.0 with those caps, so it was not an exact baseline gain match.
+No Pi/mirror changes during review. Current gains0.10/1.0 remain installed.
+Any proposed detector correction needs focused validation and explicit handling
+of shared simulation/physical parity. Fill/escape/global approach unqualified.
+
+## Static-confinement correction installed — 2026-10-09
+
+The user authorized the run6323 recommendation. Shared V3 static support radius
+is now **0.06m**, replacing0.04m in both host source and installed Pi code.
+This supersedes the preceding proposal-only status. Thirty-second support,
+0.005m/s drift, all circle/oscillation conditions, moving verification and
+fill/escape behavior are unchanged. Gains0.10/1.0, caps0.05/0.30, encoder353,
+arm/firmware settings are unchanged. This shared threshold also applies to
+Gazebo; no new simulation run or behavioral qualification is claimed.
+
+- Host numerical/core regression: **118 passed in2.50s**, including six new
+  radius boundary, retained drift rejection and full30s support checks.
+- Changed detector replay on four retained traces: run6323 confirms at90s
+  from epoch; runs1267/2626/4810 do not confirm. No closed-loop outcome claim.
+- Ordinary Pi build/check-only passed. **23 native checks passed in8.50s**.
+- Exactly1/393 source entries changed;392 unchanged.136 installed runtime/
+  config/interface files match source; shared recurrent.py hash matches host.
+  Idle before/after; no hardware started. `git diff --check` passed.
+
+Evidence and exact commands:
+`/home/mattb/Experiments/GESC-Gaussian/v3/physical_static_radius_20261009_6cm/RECEIPT.md`.
+Pi backup: `/home/pi/mbuck_backups/physical_static_radius_20261009_6cm`;
+redundant laptop original verified before deployment. Only shared numerical
+source, focused tests and current documentation changed in the host checkout.
+No commit/push; existing documentation work preserved.
+
+Operator next trial uses the usual Bash script after restarting the Vicon server.
+Physical recognition/verification/fill/escape remains pending. Offline mirror
+is untouched and intentionally retains4cm/older gains/calibration until the
+user declares today's tests complete.
+
+## Selected physical fill/escape success — 2026-10-09
+
+Latest run `20261009T185541_391452Z-1262` follows battery replacement/reboot.
+Operator reports local escape and arrival near the stronger lamp, stopping just
+before contact. [Successful-run review](/home/mattb/Experiments/GESC-Gaussian/v3/physical_runs/two_light_review_20261009_run1262/REVIEW.md)
+and `successful_escape.png` now supersede the earlier SEARCH-only qualification
+boundary for this selected physical trial.
+
+Live events: candidate/VERIFY90.05s, DESIGN90.10s with54 samples, fill1 and
+ESCAPE90.45s, escape_complete124.47s, SEARCH124.60s, operator stop165.06s.
+One active fill, no retries/escalations or optional assistance. Escape completed
+in34.02s; at return to SEARCH the robot was1.427m from the fitted center versus
+exit radius1.367m. Vicon/odom show continued approach afterward and total net
+travel4.225/4.263m. Operator-observed global arrival is trajectory-supported;
+no automatic best_source/global-confinement event occurred before stopping.
+
+822 consecutive valid samples at4.979Hz, maximum gap0.251s.826 invalid-status
+notices are817 pending pose support and9 encoder notices:820 precede the same
+valid sequence by about50ms,6 reference already published valid sequences.
+No lost valid sequences, mid-run WAITING_INPUT or internal zero command.
+Valid-only measured arm17.51RPM; generic analyzer arm output has too few adjacent
+valid pairs because notices alternate and must not be treated as a full-run rate.
+
+All393 source entries match the6cm deployment; seven selected runtime files
+match host/Pi source/install. Closed original files SHA256 verified. No Pi edits,
+hardware startup or mirror refresh. Keep gains0.10/1.0, caps0.05/0.30,
+calibration353 and static radius0.06m for a repeat run. Battery change prevents
+calling this a strict single-variable A/B experiment. Selected physical local
+fill/escape is now demonstrated; repeatability, automatic global ranking,
+sustained global behavior and broad physical qualification remain open.
+Offline mirror remains deferred until the user ends today's testing.
+
+## Second consecutive physical success — 2026-10-09
+
+Run `20261009T190351_141387Z-2037` repeats the fill/escape success with unchanged
+settings. Operator again observes arrival at the global lamp. Recorded candidate
+90.04s, DESIGN90.08s, fill/ESCAPE90.35s, escape_complete121.88s, operator stop
+159.49s. Escape31.52s versus34.02s in the first success. One fill,56 samples,
+no design escalation/rejection, optional assistance off. No mid-run WAITING_INPUT
+or internal zero commands; final zero.795 consecutive valid observations at
+4.980Hz, maximum gap0.251s and **zero invalid-status notices**.
+
+[Latest review](/home/mattb/Experiments/GESC-Gaussian/v3/physical_runs/two_light_review_20261009_run2037/REVIEW.md)
+and `repeat_comparison.png` show closely overlapping Vicon paths. Vicon net
+4.156m; endpoint8.3cm from the first success. These are two consecutive selected
+physical local fill/escape successes, with operator-observed global approach.
+No automatic best_source/global-confinement event before either stop; broad
+robustness and sustained global behavior remain unqualified. Preserve the exact
+current settings; no new tuning proposed.
+
+Closed originals SHA256 verified;393 source entries unchanged since deployment,
+seven selected runtime files match host/Pi source/install. No Pi/mirror changes,
+new hardware tests, commit or push. Offline mirror remains deferred until the
+user says today's testing is complete.
+
+## Higher-cap comparison installed — 2026-10-09
+
+After runs1262/2037 succeeded at lower caps, the user authorized **0.10m/s /
+0.50rad/s** for the next comparison, replacing0.05/0.30. Gains remain0.10/1.0,
+encoder353, static radius0.06m,30s support/0.005m/s drift; all other numerical,
+firmware and assistance selections remain unchanged. Prior success belongs to
+the lower-cap configuration; higher-cap behavior is pending operator testing.
+
+Backup: `/home/pi/mbuck_backups/physical_caps_20261009_010_050`.
+Laptop originals, exact commands and receipts:
+`/home/mattb/Experiments/GESC-Gaussian/v3/physical_caps_20261009_010_050/RECEIPT.md`.
+Idle preflight and independently verified backups passed. Ordinary build/check-only
+reports installed caps0.10/0.50. **17 native checks passed in8.42s**, including
+selected configuration, command ceilings and mocked input-loss/recovery/stop.
+Exactly controller JSON and two existing test files changed;390/393 source
+entries unchanged.136 installed runtime/config/interface files match source;
+no active control/recording/build/test processes remain. Diff checks pass.
+
+Operator will restart Vicon and use the same V3 Bash command. No hardware
+launched, offline mirror refreshed, commit or push performed. The successful
+lower-cap configuration and both successful runs remain preserved. Offline
+mirror refresh remains deferred until the user ends today's testing.
+
+## Higher-cap physical success and delay diagnosis — 2026-10-09
+
+Run `20261009T191502_046584Z-3461`: operator again observes local escape and
+arrival at global. Candidate138.046s, DESIGN138.081s, fill/ESCAPE138.452s,
+escape_complete159.581s, SEARCH159.705s, operator stop182.208s. One fill,
+no escalation, optional assistance off. Compared with lower-cap runs1262/2037,
+detection is48s later while escape is21.129s versus34.021/31.524s. VERIFY+DESIGN
+only0.406s; no internal zero command or mid-run WAITING_INPUT; final zero.
+
+[Detailed review](/home/mattb/Experiments/GESC-Gaussian/v3/physical_runs/two_light_review_20261009_run3461/REVIEW.md)
+contains scripts, metrics and visually checked trajectory/detector plots.
+Pre-candidate replay confirms recorded90/90/138s detection. Higher-cap drift
+passes from66s onward, but30s support radius stays above6cm until138s:
+7.77cm at90s,6.14cm at132s,5.962cm at138s. Near the fitted center the command
+reverses41.5% of time, with mean absolute forward3.99cm/s versus signed0.232cm/s.
+This explains small net motion and longer confinement qualification, without
+claiming all trials at higher caps necessarily behave this way. No prescribed
+circle exists in SEARCH; current physical gains are five times lower than
+Gazebo's, and the XY light model does not represent overhead lamp height.
+
+908 consecutive valid samples at4.9794Hz, maximum gap0.2522s;340 invalid-status
+notices resolve to valid sequences without loss (one notice follows already-valid
+output). No input-induced pause. Vicon net4.101m and subsequent approach support
+operator observation; no automatic best_source/global-confinement event.
+Original files SHA256 verified;393 source entries unchanged since cap deployment,
+seven selected runtime files match host/Pi source/install. Existing bag analysis
+and bounded pre-candidate replay completed; exact replay command and receipts
+in review. No implementation change, new hardware test, Pi write, mirror refresh,
+commit or push. Git diff check passes. Lower caps are proposed as the better-
+supported reference; higher0.10/0.50 remain installed pending user direction.
+
+## Lower caps restored for third repeat — 2026-10-09
+
+User authorized restoring0.05m/s /0.30rad/s after higher-cap run3461. Installed
+caps now match successful runs1262/2037; gains0.10/1.0, encoder353,6cm detector,
+30s support/0.005m/s drift and other settings unchanged. Only controller JSON
+and the two matching test files restored from preserved originals, with current
+higher-cap state backed up first on Pi and laptop. No hardware launch.
+
+[Restoration receipt](/home/mattb/Experiments/GESC-Gaussian/v3/physical_caps_20261009_restore_005_030/RECEIPT.md)
+retains scripts, original files, exact commands, build/test logs and audit.
+Initial build retained stale installed JSON due to preserved backup timestamps;
+5 native cap checks caught it. Source JSON timestamp refreshed and ordinary
+check-only build rerun: resolved0.05/0.30 verified,17 native checks pass in8.44s.
+136 installed files match source;3/393 source entries changed,390 unchanged.
+No active control/recording/build/test processes. Diff check passes; no commit,
+push or offline-mirror refresh. Third lower-cap floor result pending operator run.
+
+## Third lower-cap success and repeat-path explanation — 2026-10-09
+
+Run `20261009T193016_331844Z-5245` confirms candidate90.026s, fill90.353s,
+escape_complete122.920s (32.567s escape), SEARCH123.104s, operator stop157.188s.
+Operator again reports global arrival.783 consecutive valid samples,4.9793Hz,
+maximum gap0.2504s, zero invalid notices; no internal zero/input pause, final zero.
+Three selected lower-cap successes plus one higher-cap success now recorded.
+No automatic best_source/global-confinement before stop; broad robustness open.
+
+[Path explanation and evidence](/home/mattb/Experiments/GESC-Gaussian/v3/physical_runs/two_light_review_20261009_run5245/REVIEW.md)
+includes four-path Vicon overlay. Left bends follow the ESCAPE->SEARCH objective
+switch: ESCAPE uses Gaussian+approach-derived affine with raw sensor weight0;
+SEARCH restores raw sensor weight1 and removes affine, retaining Gaussian fill.
+Reconstructed lower-cap preferred direction39.6–41.4degrees versus observed
+escape6.1–7.3degrees in Vicon frame. Isolated exact-washout linear-field probe
+predicts30.8degree clockwise rotation at measured17.56RPM/5Hz, supporting phase
+rotation as a contributor, not complete physical causal isolation or a proposed
+calibration change. No fixed right-turn path or global coordinates are commanded.
+
+Closed originals SHA256 verified,393 source entries unchanged from restoration,
+five relevant runtime files match host/Pi source/install. Bounded bag analysis,
+path reconstruction and isolated numerical probe completed; plot inspected.
+No settings/Pi/mirror changes, hardware launch, commit or push. Caps0.05/0.30
+remain selected. Exact scripts/results/validation bounds retained in review.
+
+## End-of-testing offline mirror refresh — 2026-10-09
+
+The user ended testing and authorized the deferred Pi-to-laptop refresh.
+[Sync receipt](/home/mattb/physical_TB3_files_snapshot/sync_records/20261010T024420Z_pi_refresh/README.md) records verified direct-SSH Pi identity, established
+filters, full pre-refresh archive outside pi/, transfer and source audits.
+All eight floor runs and trial backups are included.393 source files match by
+path/SHA256/size/mode; final scoped checksum dry run has zero changes. No Pi
+writes, hardware launch, build, shutdown, commit or push. Current physical
+caps0.05/0.30, gains0.10/1.0, encoder353 and6cm detector are mirrored.
+Previous statements that refresh is deferred are historical and superseded.

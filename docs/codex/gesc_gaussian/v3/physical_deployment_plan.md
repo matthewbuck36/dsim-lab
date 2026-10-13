@@ -8,10 +8,10 @@ The simulation refactor's no-build runner rule remains simulation-specific.
 
 ## Selected behavior
 
-- Shared V3 algorithm, gains 0.5/5, physical caps 0.05 m/s and 0.30 rad/s,
-  affine 2.0. The user authorized these lower caps after the first floor-run
-  review; initial deployment and Gazebo used 0.10/0.50.
-- Original fixed 5 Hz UNO firmware, nominal arm 20 RPM, calibration 54 degrees
+- Shared V3 algorithm, trial gains0.10/1.0 (second gain comparison authorized2026-10-09), physical trial caps0.10 m/s and0.50 rad/s,
+  affine 2.0. Higher caps restored by the user on 2026-10-09 after two successful
+  lower-cap (0.05/0.30) trials; initial deployment and Gazebo used 0.10/0.50.
+- Original fixed 5 Hz UNO firmware, nominal arm 20 RPM, calibration 353 degrees
   applied once; no firmware/rate command change.
 - Direct assistance disabled by default. Optional one pulse per escape after
   less than 5 cm outward progress over 15 seconds, limited to 20 cm measured
@@ -146,3 +146,88 @@ specific tuning/window changes remain **unapproved and unimplemented**. Do not
 silently deploy them from this discussion, increase only the radius ceiling,
 or treat the lack of a second light as the cause of no candidate. Recover the
 current state and agree the concrete next experiment in the continuing chat.
+
+## Authorized physical gain comparison — 2026-10-09
+
+The user authorized the proposed common0.1 gain scaling for the next floor
+trial: physical k_vx0.5→0.05 and k_wz5→0.5. Preserve caps0.05/0.30,75%/25%
+steering blend, detector settings, affine2, assistance off, clocks, firmware,
+arm speed/calibration and legacy behavior. Gazebo gains remain0.5/5.
+Back up the selected Pi source/installed configuration, change the physical
+source JSON, ordinary-build through the existing runner's `--check-only` path,
+and verify effective installed selection and focused existing checks without
+hardware startup. Retain exact source differences and backup/validation receipts.
+The operator will launch the next floor trial after deployment.
+
+The user explicitly deferred offline-mirror refresh until they announce that
+testing is finished for the day. Leave that mirror untouched during testing;
+keep Pi backups and redundant laptop receipts, and record the temporary mismatch.
+
+## Authorized encoder reference correction — 2026-10-09
+
+With the arm physically straight ahead, the operator measured 298–300 degrees
+using `calibrate_encoder_zero_angle.py`. Live inspection confirms its reader
+already subtracts 54 degrees, as does installed V3. The implied raw forward
+angle is 352–354 degrees. The user authorized replacing the offset with the
+midpoint, 353 degrees, applied once. Update the shared physical encoder reader,
+V3 acquisition, startup/receipt labels and matching tests; preserve backups on
+Pi and laptop. This also corrects the encoder reference used by legacy physical
+readers, without changing their algorithms. Keep gains, caps, arm speed,
+firmware and shared simulation algorithms unchanged. Ordinary check-only build,
+focused software tests and source/install verification precede the operator's
+stationary forward-angle recheck. Floor behavior remains unqualified. Offline
+mirror refresh remains deferred until the user ends today's testing.
+
+## Authorized post-calibration gain comparison — 2026-10-09
+
+Following the corrected-reference run4810 review, the user authorized gains
+0.05/0.5 -> 0.10/1.0. Preserve 353-degree calibration, caps0.05/0.30, detector,
+blend, firmware, arm speed, assistance and lamp setup. Back up source/installed
+controller JSON and the matching integration-test expectation to Pi and laptop;
+ordinary build/check-only, focused native tests and installed configuration
+verification precede the operator's next run. No hardware launch or offline
+mirror refresh is part of this deployment. This is an unqualified response
+comparison, not a claim of orbit formation or successful escape.
+
+## Authorized static-confinement radius correction — 2026-10-09
+
+The user authorized the run6323 recommendation: static support radius0.04->0.06m
+only. Preserve30s support,0.005m/s drift threshold, all circle/oscillation model
+and persistence criteria, moving verification and fill/escape logic. Keep gains
+0.10/1.0, caps0.05/0.30 and encoder353. Maintain shared algorithm parity by the
+same one-line numerical change in this checkout and the Pi; no Gazebo retuning
+or simulation qualification is implied. Add focused radius/drift/support tests,
+run numerical/core regressions, replay the four retained physical traces, then
+back up and install the matching Pi source with ordinary check-only build and
+native checks. No physical motion or offline-mirror refresh is included.
+
+## Authorized higher-cap comparison — 2026-10-09
+
+After two consecutive successful local fill/escape trials, the user authorized
+caps0.05->0.10m/s and0.30->0.50rad/s only. Preserve gains0.10/1.0, encoder353,
+static radius0.06m, detector/evidence/escape behavior, clocks, firmware and arm
+speed. These restore initial V3/baseline ceilings without restoring baseline
+gains. Preserve the successful lower-cap configuration on Pi and laptop before
+editing. Ordinary check-only build, native selected-configuration/command-limit
+checks and source/install audit precede the operator's run. No hardware launch
+or offline-mirror refresh. Prior successful runs remain lower-cap evidence;
+the higher-cap physical behavior is a new, unqualified comparison.
+
+## Authorized return to successful lower caps — 2026-10-09
+
+Following successful higher-cap run3461 and its longer confinement delay, the
+user authorized restoring physical0.05m/s /0.30rad/s for a third lower-cap trial.
+Restore only controller JSON and the two matching test files from the preserved
+pre-cap-change originals, after checking no intervening source changes. Preserve
+the higher-cap state on Pi/laptop first, ordinary build/check-only, native checks,
+and source/install audit. Gains0.10/1.0, encoder353, detector6cm and other settings
+stay fixed. Operator owns launch; offline mirror refresh remains deferred.
+
+## Authorized end-of-testing mirror refresh — 2026-10-09
+
+The user ended testing and explicitly authorized the previously deferred live
+Pi-to-local snapshot synchronization. Preserve the complete previous snapshot,
+use the established source/data/full-backup filter with active generated trees
+excluded, keep the Pi read-only, and verify independent source hashes plus a
+zero-change full-scope checksum dry run. Completed evidence is linked in status;
+no physical build, launch, tuning, shutdown, Git commit or push is included.

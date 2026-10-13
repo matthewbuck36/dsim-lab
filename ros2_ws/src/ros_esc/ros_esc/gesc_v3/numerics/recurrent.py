@@ -172,7 +172,7 @@ def evaluate_model(branch, width, stamps, points, end):
                               centered * np.sqrt(weights[:, None]), rcond=None)[0]
         out.update(drift_m_s=float(np.linalg.norm(coef[1])),
                    fit_residual_rms_m=math.sqrt(float(np.sum(weights[:, None] * (design @ coef - centered) ** 2))))
-        passed = radius <= .04 and out['drift_m_s'] <= .005
+        passed = radius <= .06 and out['drift_m_s'] <= .005
     elif branch == 'circle':
         half = width / 2
         old = circle_fit(*support(stamps, points, end - width, end - half))

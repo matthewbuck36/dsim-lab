@@ -19,6 +19,41 @@ from ros_esc.gesc_v3.numerics import (
 FIXTURE = Path(__file__).parent/'fixtures/test_v3_numerics_golden.json'
 
 
+@pytest.mark.parametrize('radius, eligible', [(.04, True), (.05, True), (.0599, True), (.0601, False)])
+def test_static_confinement_radius_boundary(radius, eligible):
+    times = np.arange(151) * .2
+    phase = 2 * np.pi * times / 6
+    points = radius * np.column_stack((np.cos(phase), np.sin(phase)))
+    result = recurrent.evaluate_model('static', 30, times, points, 30)
+    assert result['radius_m'] == pytest.approx(radius)
+    assert result['drift_m_s'] < .005
+    assert result['eligible'] is eligible
+
+
+def test_static_confinement_still_rejects_drift_inside_radius():
+    times = np.arange(151) * .2
+    points = np.column_stack((.055 * np.tanh(2 * (times - 15)), np.zeros(len(times))))
+    result = recurrent.evaluate_model('static', 30, times, points, 30)
+    assert result['radius_m'] < .06
+    assert result['drift_m_s'] > .005
+    assert not result['eligible']
+
+
+def test_static_confinement_requires_full_thirty_seconds():
+    detector = recurrent.RecurrentGeometryDetector()
+    detector.start_epoch('six_cm', 0)
+    confirmed = []
+    for i in range(151):
+        phase = 2 * math.pi * (i * .2) / 6
+        for result in detector.update(i * 200_000_000,
+                                      (.05 * math.cos(phase), .05 * math.sin(phase)), 'odom'):
+            if result.confirmed_event:
+                confirmed.append(result)
+    assert len(confirmed) == 1
+    assert confirmed[0].branch == 'static'
+    assert confirmed[0].end_ns == 30_000_000_000
+
+
 def assert_tree(actual, expected):
     if isinstance(expected, dict):
         assert set(actual) == set(expected)

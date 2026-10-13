@@ -12,8 +12,13 @@ initialization fault was corrected on 2026-09-30 and verified on the Pi without
 devices. A subsequent steering correction was followed by a 382-second
 SEARCH-only floor run, with no candidate or fill. Read the current
 [physical handoff](codex/gesc_gaussian/v3/physical_fresh_chat_handoff.md) for that
-analysis and the physical-first continuation. Physical Gaussian escape and
-measured stopping latency remain unproven.
+analysis and the physical-first continuation. Two consecutive 2026-10-09 runs now each confirm a physical Gaussian fill and
+completed local escape with optional assistance off, followed by operator-observed
+arrival near the stronger lamp. Runs1262 and2037 used lower caps; a third run3461
+also escaped with higher caps, but recognized confinement48s later and escaped
+faster once its fill was created. See deployment status for the comparison.
+This is initial repeatability evidence under one setup; broad reliability,
+automatic global ranking and measured stopping latency remain unproven.
 
 ## Operator command
 
@@ -41,13 +46,16 @@ CH340 and OpenCR by-id paths; OpenCR remains the algorithm pose provider.
 
 ## Selected settings and recovery
 
-- Gains 0.5/5; physical caps **0.05 m/s and 0.30 rad/s**; affine magnitude 2.0.
-  These lower caps were authorized after the first floor-run review; the
-  initial deployment and Gazebo use 0.10/0.50. The startup message displays
-  the resolved physical caps.
-- Original fixed5Hz UNO application,9600baud; nominal arm20RPM and54-degree
-  calibration once. The short raised-wheel run measured 4.972 Hz and about
+- Trial gains **0.10/1.0** selected on2026-10-09 (previously0.05/0.5); physical caps **0.05 m/s and 0.30 rad/s**; affine magnitude 2.0.
+  The user restored these lower caps for a third repeat on 2026-10-09 after
+  one successful higher-cap trial with longer detection delay. Gains stay 0.10/1.0.
+  The startup message displays the resolved physical caps.
+- Original fixed5Hz UNO application,9600baud; nominal arm20RPM and353-degree
+  calibration once (authorized 2026-10-09 after a stationary forward reading). The short raised-wheel run measured 4.972 Hz and about
   17.95 RPM; these are selected-run observations, not long-run qualification.
+- Static confinement detection uses a **6 cm** support radius with the existing
+  **30-second** history and **0.5 cm/s** drift limit (authorized 2026-10-09).
+  Circle/oscillation and moving-verification criteria are unchanged.
 - Assistance off by default. When enabled, less than5cm outward progress over
   15seconds allows one nominal20cm measured-path pulse per escape, then GESC.
   Actual cutoff has odometry/control sampling resolution. A data interruption
@@ -110,6 +118,9 @@ or timekeeper requirement in this V3 path.
 
 The physical selected controller source is
 `~/ros2_ws/src/ros_esc/config/profiles/assets/gesc_v3/controller.json`.
+The2026-10-09 trial uses gains0.10/1.0. The user ended testing and authorized
+refreshing the offline mirror; it now includes these gains,353-degree calibration
+and6cm static radius, with restored0.05/0.30 caps. See the latest snapshot receipt.
 The script rebuilds before each run. Use this source configuration for deliberate
 changes; do not edit generated installation copies or switch build modes in the
 same cached workspace. Original ESC scripts and numerical/configuration sources

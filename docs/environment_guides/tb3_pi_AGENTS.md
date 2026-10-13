@@ -3,8 +3,9 @@
 For current V3 work read `../esc_physical_v3.md` and
 `../codex/gesc_gaussian/v3/physical_deployment_{plan,status}.md`. User-authorized
 V3 uses the existing Pi `~/ros2_ws`, preserves V1 in `mbuck_backups`, ordinary
-build/source/launch, physical caps 0.05/0.30 after the first floor-run review,
-affine 2.0, fixed 5 Hz, nominal 20 RPM, 54-degree offset and no SSH-loss monitor.
+build/source/launch, physical caps 0.05/0.30 (restored 2026-10-09 after the higher-cap comparison),
+trial gains0.10/1.0 (2026-10-09), affine2.0, fixed5Hz, nominal20RPM,
+353-degree offset (authorized 2026-10-09) and no SSH-loss monitor.
 Gazebo retains 0.10/0.50. Hardware stopping and behavior are unqualified
 until tested with operator readiness; deployment does not imply floor testing.
 
@@ -29,7 +30,7 @@ For mounted work, explicitly read the always-visible tracked copies in
   evaluation-only. Do not introduce Gazebo sensor/controller interfaces or
   simulated light inputs into physical control.
 - Preserve the selected physical controller ceilings `set_max_vx=0.05` m/s
-  and `set_max_wz=0.30` rad/s. Other differing selected/hardware values are
+  and `set_max_wz=0.30` rad/s for the third lower-cap trial. Other differing selected/hardware values are
   in the README; these are current configured choices, not universal tuning.
 - Trace the selected wrapper, launch overrides and JSON, then resolved node
   values. `phase09_selected_profile.yaml` is evidence, not a parameter loader.
@@ -46,3 +47,7 @@ These folders are not Git projects on the laptop. Start an agent session at
 this documented root or explicitly provide this AGENTS file; do not assume
 ancestor discovery from arbitrary nested working directories. Versioned copies
 of these instructions live under `dsim-lab/docs/environment_guides`.
+
+Current shared V3 static confinement radius is0.06m (authorized2026-10-09);
+30s support and0.005m/s drift remain unchanged. The offline mirror was refreshed after testing ended2026-10-09 and now matches
+the live Pi within its established scope; see snapshot sync_records/20261010T024420Z_pi_refresh.
